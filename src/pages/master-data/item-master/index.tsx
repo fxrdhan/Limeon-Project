@@ -164,6 +164,32 @@ const ItemMasterNew = memo(() => {
   // Row grouping state (only for items tab)
   const [isRowGroupingEnabled, setIsRowGroupingEnabled] = useState(false);
 
+  // Handle row grouping toggle
+  const handleRowGroupingToggle = useCallback(() => {
+    const newGroupingState = !isRowGroupingEnabled;
+    setIsRowGroupingEnabled(newGroupingState);
+    
+    // Clear grouping immediately when disabling
+    if (!newGroupingState && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+      // Clear all row group columns
+      unifiedGridApi.setRowGroupColumns([]);
+      // Reset column state to remove grouping
+      const columnState = unifiedGridApi.getColumnState();
+      const resetState = columnState.map(col => ({
+        ...col,
+        rowGroup: false,
+        rowGroupIndex: null,
+      }));
+      unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
+      // Refresh grid to ensure clean state
+      setTimeout(() => {
+        if (!unifiedGridApi.isDestroyed()) {
+          unifiedGridApi.refreshCells();
+        }
+      }, 50);
+    }
+  }, [isRowGroupingEnabled, unifiedGridApi]);
+
   // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
     enabled: true,
@@ -851,7 +877,7 @@ const ItemMasterNew = memo(() => {
           {activeTab === 'items' && (
             <div className="ml-4">
               <button
-                onClick={() => setIsRowGroupingEnabled(!isRowGroupingEnabled)}
+                onClick={handleRowGroupingToggle}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   isRowGroupingEnabled
                     ? 'bg-blue-600 text-white hover:bg-blue-700'

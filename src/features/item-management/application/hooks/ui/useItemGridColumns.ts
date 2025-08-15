@@ -51,7 +51,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('manufacturer') || undefined,
-        enableRowGroup: enableRowGrouping,
+        enableRowGroup: true,
       },
       code: {
         ...createTextColumn({
@@ -111,8 +111,8 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('category.name') || undefined,
-        enableRowGroup: enableRowGrouping,
-        rowGroup: enableRowGrouping,
+        enableRowGroup: true, // Always enable for groupable columns
+        rowGroup: enableRowGrouping, // Only set as active group when enabled
       },
       'type.name': {
         ...createWrapTextColumn({
@@ -132,7 +132,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('type.name') || undefined,
-        enableRowGroup: enableRowGrouping,
+        enableRowGroup: true,
       },
       'unit.name': {
         ...createTextColumn({
@@ -152,7 +152,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('unit.name') || undefined,
-        enableRowGroup: enableRowGrouping,
+        enableRowGroup: true,
       },
       'dosage.name': {
         ...createTextColumn({
@@ -174,7 +174,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('dosage.name') || undefined,
-        enableRowGroup: enableRowGrouping,
+        enableRowGroup: true,
       },
       package_conversions: {
         ...createTextColumn({
