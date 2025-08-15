@@ -269,7 +269,7 @@ const ItemMasterNew = memo(() => {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
-          valueGetter: params => params.data.code || '-',
+          valueGetter: params => params.data?.code || '-',
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -316,7 +316,7 @@ const ItemMasterNew = memo(() => {
               ...createTextColumn({
                 field: 'nci_code',
                 headerName: 'Kode NCI',
-                valueGetter: params => params.data.nci_code || '-',
+                valueGetter: params => params.data?.nci_code || '-',
               }),
               filter: 'agMultiColumnFilter',
               filterParams: {
@@ -338,9 +338,9 @@ const ItemMasterNew = memo(() => {
           flex: 1,
           valueGetter: params => {
             if (entityCurrentConfig.hasAddress) {
-              return params.data.address || '-';
+              return params.data?.address || '-';
             }
-            return params.data.description || '-';
+            return params.data?.description || '-';
           },
         }),
         suppressHeaderFilterButton: true,
@@ -665,6 +665,23 @@ const ItemMasterNew = memo(() => {
       if (value !== activeTab) {
         navigate(`/master-data/item-master/${value}`);
 
+        // Clear row grouping when leaving items tab
+        if (activeTab === 'items' && isRowGroupingEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+          unifiedGridApi.setRowGroupColumns([]);
+          const columnState = unifiedGridApi.getColumnState();
+          const resetState = columnState.map(col => ({
+            ...col,
+            rowGroup: false,
+            rowGroupIndex: null,
+          }));
+          unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
+        }
+
+        // Reset grouping state when leaving items tab
+        if (activeTab === 'items' && isRowGroupingEnabled) {
+          setIsRowGroupingEnabled(false);
+        }
+
         // Clear search when switching tabs - both DOM value and all React states
         if (searchInputRef.current) {
           searchInputRef.current.value = '';
@@ -700,6 +717,8 @@ const ItemMasterNew = memo(() => {
       handleItemFilterSearch,
       handleEntityFilterSearch,
       unifiedGridApi,
+      isRowGroupingEnabled,
+      setIsRowGroupingEnabled,
     ]
   );
 
