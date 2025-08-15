@@ -231,7 +231,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
     const handleGoogleSheetsExport = useCallback(async () => {
       console.log('🚀 Starting Google Sheets export...');
-      
+
       if (!gridApi || gridApi.isDestroyed()) {
         console.log('❌ Grid API not available');
         return;
@@ -244,8 +244,10 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
         // Check if already authorized
         if (googleSheetsService.isAuthorized()) {
-          console.log('✅ Already authorized (token found in session), proceeding directly to export...');
-          
+          console.log(
+            '✅ Already authorized (token found in session), proceeding directly to export...'
+          );
+
           // Open placeholder tab and start export
           const placeholderTab = window.open('about:blank', '_blank');
           if (!placeholderTab) {
@@ -277,7 +279,6 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
         showLoadingInTab(placeholderTab);
         performExportToTab(placeholderTab);
-
       } catch (error) {
         console.error('❌ Auth process failed:', error);
         setIsAuthenticating(false);
@@ -308,11 +309,13 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         try {
           console.log('📊 Starting export process...');
           setIsGoogleSheetsLoading(true);
-          
+
           // Process data from AG Grid
           console.log('📋 Processing grid data...');
           const { processedData, headers } = await processAndExportData();
-          console.log(`📋 Processed ${processedData.length} rows with ${headers.length} columns`);
+          console.log(
+            `📋 Processed ${processedData.length} rows with ${headers.length} columns`
+          );
 
           // Export to Google Sheets
           console.log('☁️ Uploading to Google Sheets...');
@@ -333,16 +336,20 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
             placeholderTab.close();
             alert('Failed to create Google Sheet. Please try again.');
           }
-
         } catch (error) {
           console.error('❌ Failed to export to Google Sheets:', error);
-          
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          
+
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
           // Check if token expired - offer to retry
           if (errorMessage.includes('Authentication token expired')) {
             placeholderTab.close();
-            if (confirm('Your Google authentication has expired. Click OK to re-authenticate and try again.')) {
+            if (
+              confirm(
+                'Your Google authentication has expired. Click OK to re-authenticate and try again.'
+              )
+            ) {
               // Retry the whole export process which will trigger new auth
               handleGoogleSheetsExport();
               return;
@@ -357,7 +364,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         } finally {
           console.log('🏁 Cleaning up export state...');
           setIsGoogleSheetsLoading(false);
-          
+
           // Only close dropdown if export was successful
           if (exportSuccess) {
             console.log('✅ Export successful, closing dropdown');
@@ -374,7 +381,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       const handleClickOutside = (event: MouseEvent) => {
         // Don't close dropdown if we're in the middle of auth or export process
         if (isAuthenticating || isGoogleSheetsLoading) {
-          console.log('🔒 Preventing dropdown close during auth/export process');
+          console.log(
+            '🔒 Preventing dropdown close during auth/export process'
+          );
           return;
         }
 
@@ -479,8 +488,8 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                         {isAuthenticating
                           ? 'Authenticating...'
                           : isGoogleSheetsLoading
-                          ? 'Exporting...'
-                          : 'Export ke Google Sheets'}
+                            ? 'Exporting...'
+                            : 'Export ke Google Sheets'}
                       </span>
                     </Button>
                   </div>
