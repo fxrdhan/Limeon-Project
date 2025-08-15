@@ -73,6 +73,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       onColumnPinned,
       onColumnMoved,
       onColumnRowGroupChanged,
+      onRowGroupOpened,
       rowNumbers = false,
       suppressHeaderFilterButton = false,
       // Pagination props
@@ -246,6 +247,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           onColumnRowGroupChanged={onColumnRowGroupChanged}
+          onRowGroupOpened={onRowGroupOpened}
           rowNumbers={rowNumbers}
           getContextMenuItems={getContextMenuItems}
           // Pagination props
