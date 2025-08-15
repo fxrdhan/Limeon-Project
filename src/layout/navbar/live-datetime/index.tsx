@@ -44,7 +44,7 @@ const DateTimeDisplay = () => {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    
+
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHoveringClock(true);
       hoverTimeoutRef.current = null;
@@ -80,16 +80,21 @@ const DateTimeDisplay = () => {
       setDatePart(now.toLocaleDateString('id-ID', optionsDate));
 
       const currentHour = now.getHours();
-      
+
       if (is24HourFormat) {
         setHours(String(currentHour).padStart(2, '0'));
         setAmpm('');
       } else {
-        const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+        const hour12 =
+          currentHour === 0
+            ? 12
+            : currentHour > 12
+              ? currentHour - 12
+              : currentHour;
         setHours(String(hour12).padStart(2, '0'));
         setAmpm(currentHour >= 12 ? 'PM' : 'AM');
       }
-      
+
       setMinutes(String(now.getMinutes()).padStart(2, '0'));
       setSeconds(String(now.getSeconds()).padStart(2, '0'));
 
@@ -149,7 +154,7 @@ const DateTimeDisplay = () => {
           <span className="mx-0.5">:</span>
           <span>{seconds || '--'}</span>
           {!is24HourFormat && ampm && (
-            <span 
+            <span
               className="ml-2 text-sm font-medium"
               style={{ fontFamily: '"Google Sans Code", monospace' }}
             >
@@ -161,13 +166,13 @@ const DateTimeDisplay = () => {
         {/* Format Toggle Portal */}
         <AnimatePresence>
           {isHoveringClock && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: -5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -5 }}
-              transition={{ 
+              transition={{
                 duration: 0.1,
-                ease: "easeOut"
+                ease: 'easeOut',
               }}
               className="absolute top-full left-0 mt-1 z-50"
               onMouseEnter={handleMouseEnter}
