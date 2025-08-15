@@ -301,7 +301,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       if (event.node.group) {
         return; // Don't try to edit group rows
       }
-      
+
       // Only process data rows with valid data
       if (event.data) {
         onRowClick(event.data);
@@ -331,7 +331,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           // Column order should already be applied via columnDefs ordering
           // But trigger autosize to ensure proper layout
           params.api.autoSizeAllColumns();
-          
+
           // Row grouping restore is handled in parent component
         }
       }, 100);
@@ -350,28 +350,31 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   );
 
   // Handle row group opened/closed - scroll child rows into view
-  const handleRowGroupOpened = useCallback((event: RowGroupOpenedEvent) => {
-    // Only for items tab when row grouping is enabled
-    if (activeTab !== 'items' || !isRowGroupingEnabled) {
-      return;
-    }
-
-    if (event.expanded && gridApi && !gridApi.isDestroyed()) {
-      const rowNodeIndex = event.node.rowIndex;
-      
-      // Check if rowIndex is valid
-      if (rowNodeIndex !== null && rowNodeIndex !== undefined) {
-        // Factor in child nodes so we can scroll to correct position
-        const childCount = event.node.childrenAfterSort 
-          ? event.node.childrenAfterSort.length 
-          : 0;
-        const newIndex = rowNodeIndex + childCount;
-        
-        // Ensure the expanded group and its children are visible
-        gridApi.ensureIndexVisible(newIndex);
+  const handleRowGroupOpened = useCallback(
+    (event: RowGroupOpenedEvent) => {
+      // Only for items tab when row grouping is enabled
+      if (activeTab !== 'items' || !isRowGroupingEnabled) {
+        return;
       }
-    }
-  }, [activeTab, isRowGroupingEnabled, gridApi]);
+
+      if (event.expanded && gridApi && !gridApi.isDestroyed()) {
+        const rowNodeIndex = event.node.rowIndex;
+
+        // Check if rowIndex is valid
+        if (rowNodeIndex !== null && rowNodeIndex !== undefined) {
+          // Factor in child nodes so we can scroll to correct position
+          const childCount = event.node.childrenAfterSort
+            ? event.node.childrenAfterSort.length
+            : 0;
+          const newIndex = rowNodeIndex + childCount;
+
+          // Ensure the expanded group and its children are visible
+          gridApi.ensureIndexVisible(newIndex);
+        }
+      }
+    },
+    [activeTab, isRowGroupingEnabled, gridApi]
+  );
 
   // Custom menu items (items-specific features)
   const getMainMenuItems: GetMainMenuItems = useCallback(
@@ -491,8 +494,16 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           paginationPageSize={itemsPerPage}
           suppressPaginationPanel={true}
           // Row Grouping configuration (only for items tab)
-          rowGroupPanelShow={activeTab === 'items' && isRowGroupingEnabled && showGroupPanel ? 'always' : 'never'}
-          groupDefaultExpanded={activeTab === 'items' && isRowGroupingEnabled ? defaultExpanded : undefined}
+          rowGroupPanelShow={
+            activeTab === 'items' && isRowGroupingEnabled && showGroupPanel
+              ? 'always'
+              : 'never'
+          }
+          groupDefaultExpanded={
+            activeTab === 'items' && isRowGroupingEnabled
+              ? defaultExpanded
+              : undefined
+          }
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}

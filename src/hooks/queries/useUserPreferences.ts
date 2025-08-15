@@ -364,7 +364,7 @@ export const useRowGroupingPreference = () => {
   };
 
   return {
-    rowGroupingState: preference?.preference_value 
+    rowGroupingState: preference?.preference_value
       ? (preference.preference_value as RowGroupingState)
       : defaultState,
     isLoading: isLoading || setPreference.isPending,

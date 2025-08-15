@@ -262,7 +262,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           // Row grouping props
           rowGroupPanelShow={rowGroupPanelShow}
           groupDefaultExpanded={groupDefaultExpanded}
-          suppressGroupChangesColumnVisibility={suppressGroupChangesColumnVisibility}
+          suppressGroupChangesColumnVisibility={
+            suppressGroupChangesColumnVisibility
+          }
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType={groupDisplayType}
         />

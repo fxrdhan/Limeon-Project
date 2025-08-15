@@ -170,7 +170,7 @@ const ItemMasterNew = memo(() => {
   const handleRowGroupingToggle = useCallback(() => {
     const willBeEnabled = !isRowGroupingEnabled;
     setIsRowGroupingEnabled(willBeEnabled);
-    
+
     // Clear grouping when disabling
     if (!willBeEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
       unifiedGridApi.setRowGroupColumns([]);
@@ -863,7 +863,7 @@ const ItemMasterNew = memo(() => {
               }
             />
           </div>
-          
+
           {/* Row Grouping Controls - Only for Items Tab */}
           {activeTab === 'items' && (
             <div className="ml-4 flex gap-2">
@@ -926,7 +926,9 @@ const ItemMasterNew = memo(() => {
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
-            isRowGroupingEnabled={activeTab === 'items' ? isRowGroupingEnabled : false}
+            isRowGroupingEnabled={
+              activeTab === 'items' ? isRowGroupingEnabled : false
+            }
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
           />
