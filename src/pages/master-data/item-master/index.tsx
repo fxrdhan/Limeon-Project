@@ -243,7 +243,8 @@ const ItemMasterNew = memo(() => {
     handleColumnPinning: handleEntityColumnPinning,
     orderingState: entityOrderingState,
     handleColumnOrdering: handleEntityColumnOrdering,
-    handleColumnVisibilityChangedFromGrid: handleEntityColumnVisibilityChangedFromGrid,
+    handleColumnVisibilityChangedFromGrid:
+      handleEntityColumnVisibilityChangedFromGrid,
   } = useEntityColumnVisibility({
     entityType: activeTab as EntityType,
     currentConfig: entityCurrentConfig,
