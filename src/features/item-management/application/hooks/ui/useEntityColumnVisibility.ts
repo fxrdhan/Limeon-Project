@@ -201,7 +201,10 @@ export const useEntityColumnVisibility = ({
 
         initialSyncDone.current = true;
       } catch (error) {
-        console.error('Failed to restore entity column state to AG Grid:', error);
+        console.error(
+          'Failed to restore entity column state to AG Grid:',
+          error
+        );
       }
     }
   }, [gridApi, visibilityState, isDbLoading]);
@@ -434,7 +437,10 @@ export const useEntityColumnVisibility = ({
         }
       }
     } catch (error) {
-      console.error('Failed to sync entity column visibility from AG Grid:', error);
+      console.error(
+        'Failed to sync entity column visibility from AG Grid:',
+        error
+      );
     }
   }, [gridApi, visibilityState, setDbColumnVisibility]);
 
