@@ -175,7 +175,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                     />
                     
                     {/* Modal Content */}
-                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-4 min-w-[300px]">
+                    <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-4 min-w-[150px]">
                       <div className="space-y-4">
                         {/* Header */}
                         <div className="flex items-center justify-between">
