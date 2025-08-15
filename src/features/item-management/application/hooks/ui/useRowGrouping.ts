@@ -14,7 +14,8 @@ export const useRowGrouping = () => {
   } = useRowGroupingPreference();
 
   // Local state for optimistic updates
-  const [optimisticState, setOptimisticState] = useState<RowGroupingState | null>(null);
+  const [optimisticState, setOptimisticState] =
+    useState<RowGroupingState | null>(null);
 
   // Use optimistic state during saves, otherwise use DB state
   const currentState = useMemo(() => {
@@ -34,40 +35,43 @@ export const useRowGrouping = () => {
     try {
       // Save to database
       await setDbRowGroupingState(newState);
-      
+
       // Clear optimistic state after successful save
       setOptimisticState(null);
     } catch (error) {
       console.error('Failed to save row grouping state to database:', error);
-      
+
       // Revert optimistic state on error
       setOptimisticState(null);
     }
   }, [currentState, setDbRowGroupingState]);
 
   // Update grouped columns
-  const setGroupedColumns = useCallback(async (columns: string[]) => {
-    const newState: RowGroupingState = {
-      ...currentState,
-      groupedColumns: columns,
-    };
+  const setGroupedColumns = useCallback(
+    async (columns: string[]) => {
+      const newState: RowGroupingState = {
+        ...currentState,
+        groupedColumns: columns,
+      };
 
-    // Set optimistic state for immediate UI update
-    setOptimisticState(newState);
+      // Set optimistic state for immediate UI update
+      setOptimisticState(newState);
 
-    try {
-      // Save to database
-      await setDbRowGroupingState(newState);
-      
-      // Clear optimistic state after successful save
-      setOptimisticState(null);
-    } catch (error) {
-      console.error('Failed to save row grouping state to database:', error);
-      
-      // Revert optimistic state on error
-      setOptimisticState(null);
-    }
-  }, [currentState, setDbRowGroupingState]);
+      try {
+        // Save to database
+        await setDbRowGroupingState(newState);
+
+        // Clear optimistic state after successful save
+        setOptimisticState(null);
+      } catch (error) {
+        console.error('Failed to save row grouping state to database:', error);
+
+        // Revert optimistic state on error
+        setOptimisticState(null);
+      }
+    },
+    [currentState, setDbRowGroupingState]
+  );
 
   // Note: setDefaultExpanded removed - now uses fixed value of 1
 
@@ -86,48 +90,51 @@ export const useRowGrouping = () => {
     try {
       // Save to database
       await setDbRowGroupingState(newState);
-      
+
       // Clear optimistic state after successful save
       setOptimisticState(null);
     } catch (error) {
       console.error('Failed to save row grouping state to database:', error);
-      
+
       // Revert optimistic state on error
       setOptimisticState(null);
     }
   }, [currentState, setDbRowGroupingState]);
 
   // Handle column row group changes from AG Grid (drag-drop, menu actions)
-  const handleColumnRowGroupChanged = useCallback(async (groupedColumnIds: string[]) => {
-    const newState: RowGroupingState = {
-      ...currentState,
-      enabled: groupedColumnIds.length > 0, // Auto-enable if columns are grouped
-      groupedColumns: groupedColumnIds,
-    };
+  const handleColumnRowGroupChanged = useCallback(
+    async (groupedColumnIds: string[]) => {
+      const newState: RowGroupingState = {
+        ...currentState,
+        enabled: groupedColumnIds.length > 0, // Auto-enable if columns are grouped
+        groupedColumns: groupedColumnIds,
+      };
 
-    try {
-      // Direct save without optimistic state to prevent loops
-      await setDbRowGroupingState(newState);
-    } catch (error) {
-      console.error('Failed to save row grouping state to database:', error);
-    }
-  }, [currentState, setDbRowGroupingState]);
+      try {
+        // Direct save without optimistic state to prevent loops
+        await setDbRowGroupingState(newState);
+      } catch (error) {
+        console.error('Failed to save row grouping state to database:', error);
+      }
+    },
+    [currentState, setDbRowGroupingState]
+  );
 
   return {
     // State
     isRowGroupingEnabled: currentState.enabled,
     groupedColumns: currentState.groupedColumns,
-    
+
     // Fixed UI values (no need to persist)
     defaultExpanded: 1, // Always expand first level
     showGroupPanel: currentState.enabled, // Always show when enabled
-    
+
     // Actions
     toggleRowGrouping,
     setGroupedColumns,
     disableRowGrouping,
     handleColumnRowGroupChanged,
-    
+
     // Meta
     isLoading: isDbLoading,
     error: dbError,

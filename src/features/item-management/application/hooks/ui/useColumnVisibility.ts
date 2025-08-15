@@ -132,7 +132,12 @@ export const useColumnVisibility = (props: UseColumnVisibilityProps = {}) => {
 
   // Restore column state to AG Grid when grid API is available and state is loaded
   useEffect(() => {
-    if (gridApi && !gridApi.isDestroyed() && !isDbLoading && !initialSyncDone.current) {
+    if (
+      gridApi &&
+      !gridApi.isDestroyed() &&
+      !isDbLoading &&
+      !initialSyncDone.current
+    ) {
       // Apply visibility state to AG Grid
       const columnsToHide: string[] = [];
       const columnsToShow: string[] = [];
@@ -221,7 +226,10 @@ export const useColumnVisibility = (props: UseColumnVisibilityProps = {}) => {
         try {
           gridApi.setColumnsVisible([columnKey], visible);
         } catch (error) {
-          console.error('Failed to sync column visibility with AG Grid:', error);
+          console.error(
+            'Failed to sync column visibility with AG Grid:',
+            error
+          );
         }
       }
 
@@ -236,13 +244,16 @@ export const useColumnVisibility = (props: UseColumnVisibilityProps = {}) => {
 
         // Revert optimistic state on error
         setOptimisticState(null);
-        
+
         // Revert AG Grid state too
         if (gridApi && !gridApi.isDestroyed()) {
           try {
             gridApi.setColumnsVisible([columnKey], !visible);
           } catch (revertError) {
-            console.error('Failed to revert AG Grid column visibility:', revertError);
+            console.error(
+              'Failed to revert AG Grid column visibility:',
+              revertError
+            );
           }
         }
       }
@@ -351,15 +362,20 @@ export const useColumnVisibility = (props: UseColumnVisibilityProps = {}) => {
     try {
       // Get current visibility state from AG Grid
       const allColumns = gridApi.getAllGridColumns();
-      const newVisibilityState: Record<string, boolean> = { ...visibilityState };
+      const newVisibilityState: Record<string, boolean> = {
+        ...visibilityState,
+      };
       let hasChanges = false;
 
       allColumns.forEach(column => {
         const colId = column.getColId();
         const isVisible = column.isVisible();
-        
+
         // Only update if this is a column we track and visibility changed
-        if (Object.prototype.hasOwnProperty.call(newVisibilityState, colId) && newVisibilityState[colId] !== isVisible) {
+        if (
+          Object.prototype.hasOwnProperty.call(newVisibilityState, colId) &&
+          newVisibilityState[colId] !== isVisible
+        ) {
           newVisibilityState[colId] = isVisible;
           hasChanges = true;
         }
@@ -373,12 +389,15 @@ export const useColumnVisibility = (props: UseColumnVisibilityProps = {}) => {
         try {
           // Save to database
           await setDbColumnVisibility(newVisibilityState);
-          
+
           // Clear optimistic state after successful save
           setOptimisticState(null);
         } catch (error) {
-          console.error('Failed to save column visibility from grid changes:', error);
-          
+          console.error(
+            'Failed to save column visibility from grid changes:',
+            error
+          );
+
           // Revert optimistic state on error
           setOptimisticState(null);
         }

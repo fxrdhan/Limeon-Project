@@ -79,9 +79,16 @@ export interface DataGridProps {
   // Row grouping props
   rowGroupPanelShow?: 'always' | 'onlyWhenGrouping' | 'never';
   groupDefaultExpanded?: number;
-  suppressGroupChangesColumnVisibility?: 'suppressHideOnGroup' | 'suppressShowOnUngroup' | boolean;
+  suppressGroupChangesColumnVisibility?:
+    | 'suppressHideOnGroup'
+    | 'suppressShowOnUngroup'
+    | boolean;
   autoGroupColumnDef?: ColDef;
-  groupDisplayType?: 'singleColumn' | 'multipleColumns' | 'groupRows' | 'custom';
+  groupDisplayType?:
+    | 'singleColumn'
+    | 'multipleColumns'
+    | 'groupRows'
+    | 'custom';
 }
 
 export interface DataGridRef {
