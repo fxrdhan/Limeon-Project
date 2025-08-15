@@ -105,20 +105,11 @@ export const useRowGrouping = () => {
       groupedColumns: groupedColumnIds,
     };
 
-    // Set optimistic state for immediate UI update
-    setOptimisticState(newState);
-
     try {
-      // Save to database
+      // Direct save without optimistic state to prevent loops
       await setDbRowGroupingState(newState);
-      
-      // Clear optimistic state after successful save
-      setOptimisticState(null);
     } catch (error) {
       console.error('Failed to save row grouping state to database:', error);
-      
-      // Revert optimistic state on error
-      setOptimisticState(null);
     }
   }, [currentState, setDbRowGroupingState]);
 
