@@ -84,7 +84,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       // Row grouping props
       rowGroupPanelShow = 'never',
       groupDefaultExpanded,
-      suppressRowGroupHidesColumns = false,
+      suppressGroupChangesColumnVisibility = false,
+      autoGroupColumnDef,
+      groupDisplayType = 'singleColumn',
     },
     ref
   ) => {
@@ -254,7 +256,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           // Row grouping props
           rowGroupPanelShow={rowGroupPanelShow}
           groupDefaultExpanded={groupDefaultExpanded}
-          suppressRowGroupHidesColumns={suppressRowGroupHidesColumns}
+          suppressGroupChangesColumnVisibility={suppressGroupChangesColumnVisibility}
+          autoGroupColumnDef={autoGroupColumnDef}
+          groupDisplayType={groupDisplayType}
         />
       </div>
     );

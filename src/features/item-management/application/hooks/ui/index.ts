@@ -6,3 +6,4 @@ export * from './useItemGridColumns';
 export * from './useColumnVisibility';
 export * from './useColumnDisplayMode';
 export * from './useEntityColumnVisibility';
+export * from './useRowGrouping';

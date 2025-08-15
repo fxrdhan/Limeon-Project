@@ -73,6 +73,9 @@ interface MasterDataGridProps {
   itemColumnDefs?: ColDef[];
   itemColumnsToAutoSize?: string[];
   isRowGroupingEnabled?: boolean;
+  groupedColumns?: string[];
+  defaultExpanded?: number;
+  showGroupPanel?: boolean;
 
   // Entity config
   entityConfig?: EntityConfig | null;
@@ -103,6 +106,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   itemColumnDefs = [],
   itemColumnsToAutoSize = [],
   isRowGroupingEnabled = false,
+  groupedColumns = [],
+  defaultExpanded = 1,
+  showGroupPanel = true,
   entityConfig,
   entityColumnDefs = [],
   onRowClick,
@@ -266,6 +272,20 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [gridApi, activeTab]);
 
+  // Handle column visibility for grouped columns using AG Grid API
+  useEffect(() => {
+    if (gridApi && !gridApi.isDestroyed() && activeTab === 'items') {
+      if (isRowGroupingEnabled && groupedColumns.length > 0) {
+        // Hide columns that are being grouped to avoid duplication
+        gridApi.setColumnsVisible(groupedColumns, false);
+      } else {
+        // Show all columns when grouping is disabled
+        const allColumns = columnDefs.map(col => col.field).filter(Boolean) as string[];
+        gridApi.setColumnsVisible(allColumns, true);
+      }
+    }
+  }, [gridApi, activeTab, isRowGroupingEnabled, groupedColumns, columnDefs]);
+
   // Toggle display mode for items reference columns
   const toggleColumnDisplayMode = useCallback(
     (colId: string) => {
@@ -365,6 +385,38 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );
 
+  // Auto group column definition for row grouping
+  const autoGroupColumnDef = useMemo(() => {
+    if (!isRowGroupingEnabled || activeTab !== 'items' || groupedColumns.length === 0) {
+      return undefined;
+    }
+
+    // Map field names to user-friendly headers
+    const fieldToHeaderMap: Record<string, string> = {
+      'category.name': 'Kategori',
+      'type.name': 'Jenis',
+      'manufacturer': 'Produsen',
+      'unit.name': 'Kemasan',
+      'dosage.name': 'Sediaan',
+    };
+
+    // Use the first grouped column for header name
+    const primaryGroupField = groupedColumns[0];
+    const headerName = fieldToHeaderMap[primaryGroupField] || 'Group';
+
+    return {
+      headerName,
+      minWidth: 250,
+      cellRenderer: 'agGroupCellRenderer',
+      cellRendererParams: {
+        suppressCount: false,
+        // checkbox removed - use rowSelection.checkboxLocation instead
+      },
+      sortable: true,
+      resizable: true,
+    };
+  }, [isRowGroupingEnabled, activeTab, groupedColumns]);
+
   // Overlay template
   const overlayTemplate = useMemo(() => {
     if (activeTab === 'items') {
@@ -425,9 +477,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           paginationPageSize={itemsPerPage}
           suppressPaginationPanel={true}
           // Row Grouping configuration (only for items tab)
-          rowGroupPanelShow={activeTab === 'items' && isRowGroupingEnabled ? 'always' : 'never'}
-          groupDefaultExpanded={activeTab === 'items' && isRowGroupingEnabled ? 1 : undefined}
-          suppressRowGroupHidesColumns={activeTab === 'items' && isRowGroupingEnabled}
+          rowGroupPanelShow={activeTab === 'items' && isRowGroupingEnabled && showGroupPanel ? 'always' : 'never'}
+          groupDefaultExpanded={activeTab === 'items' && isRowGroupingEnabled ? defaultExpanded : undefined}
+          suppressGroupChangesColumnVisibility="suppressHideOnGroup" // Suppress auto hide, we handle it manually
+          autoGroupColumnDef={autoGroupColumnDef}
+          groupDisplayType="singleColumn"
         />
       </div>
 
