@@ -24,6 +24,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
   ({ gridApi, filename = 'data-export', className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isGoogleSheetsLoading, setIsGoogleSheetsLoading] = useState(false);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -153,120 +154,237 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       closeDropdown();
     }, [gridApi, filename, closeDropdown]);
 
-    const handleGoogleSheetsExport = useCallback(async () => {
+    const processAndExportData = useCallback(async (): Promise<{
+      processedData: string[][];
+      headers: string[];
+    }> => {
       if (!gridApi || gridApi.isDestroyed()) {
+        throw new Error('Grid API is not available');
+      }
+
+      // Get column definitions from AG Grid
+      const columnDefs = gridApi.getColumnDefs() || [];
+      const visibleColumns = columnDefs.filter(
+        (col): col is import('ag-grid-community').ColDef =>
+          'field' in col && col.field != null && !col.hide
+      );
+
+      // Create headers and extract processed data handling nested objects and valueGetters
+      const headers = visibleColumns.map(col => col.headerName || col.field!);
+
+      // Helper function to get nested values
+      function getNestedValue(
+        obj: Record<string, unknown>,
+        path: string
+      ): unknown {
+        const keys = path.split('.');
+        let current: unknown = obj;
+
+        for (const key of keys) {
+          if (current && typeof current === 'object' && current !== null) {
+            current = (current as Record<string, unknown>)[key];
+          } else {
+            return null;
+          }
+        }
+
+        return current;
+      }
+
+      // Extract data using column valueGetter or nested field access
+      const processedData: string[][] = [];
+      gridApi.forEachNodeAfterFilterAndSort(node => {
+        if (node.data) {
+          const rowValues = visibleColumns.map(col => {
+            let value: unknown;
+
+            // If column has valueGetter function, use it
+            if (col.valueGetter && typeof col.valueGetter === 'function') {
+              value = col.valueGetter({
+                data: node.data,
+                node: node,
+                colDef: col,
+                api: gridApi,
+                columnApi: gridApi,
+                context: undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                column: { getColId: () => col.field || '' } as any,
+                getValue: (field: string) => {
+                  // Helper function for nested field access
+                  return getNestedValue(node.data, field);
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              } as any);
+            } else if (col.field) {
+              // Handle nested field access (e.g., 'category.name')
+              value = getNestedValue(node.data, col.field);
+            }
+
+            return value !== null && value !== undefined ? String(value) : '';
+          });
+          processedData.push(rowValues);
+        }
+      });
+
+      return { processedData, headers };
+    }, [gridApi]);
+
+    const handleGoogleSheetsExport = useCallback(async () => {
+      console.log('🚀 Starting Google Sheets export...');
+      
+      if (!gridApi || gridApi.isDestroyed()) {
+        console.log('❌ Grid API not available');
         return;
       }
 
-      setIsGoogleSheetsLoading(true);
       try {
-        // Initialize Google Sheets service if not already done
+        // Initialize service first if needed
+        console.log('📝 Initializing Google Sheets service...');
         await googleSheetsService.initialize();
 
-        // Extract data from AG Grid
-        const rowData: unknown[] = [];
-        gridApi.forEachNodeAfterFilterAndSort(node => {
-          if (node.data) {
-            rowData.push(node.data);
-          }
-        });
-
-        // Get column definitions from AG Grid
-        const columnDefs = gridApi.getColumnDefs() || [];
-        const visibleColumns = columnDefs.filter(
-          (col): col is import('ag-grid-community').ColDef =>
-            'field' in col && col.field != null && !col.hide
-        );
-
-        // Create headers and extract processed data handling nested objects and valueGetters
-        const headers = visibleColumns.map(col => col.headerName || col.field!);
-
-        // Extract data using column valueGetter or nested field access
-        const processedData: string[][] = [];
-        gridApi.forEachNodeAfterFilterAndSort(node => {
-          if (node.data) {
-            const rowValues = visibleColumns.map(col => {
-              let value: unknown;
-
-              // If column has valueGetter function, use it
-              if (col.valueGetter && typeof col.valueGetter === 'function') {
-                value = col.valueGetter({
-                  data: node.data,
-                  node: node,
-                  colDef: col,
-                  api: gridApi,
-                  columnApi: gridApi,
-                  context: undefined,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  column: { getColId: () => col.field || '' } as any,
-                  getValue: (field: string) => {
-                    // Helper function for nested field access
-                    return getNestedValue(node.data, field);
-                  },
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-              } else if (col.field) {
-                // Handle nested field access (e.g., 'category.name')
-                value = getNestedValue(node.data, col.field);
-              }
-
-              return value !== null && value !== undefined ? String(value) : '';
-            });
-            processedData.push(rowValues);
-          }
-        });
-
-        // Helper function to get nested values
-        function getNestedValue(
-          obj: Record<string, unknown>,
-          path: string
-        ): unknown {
-          const keys = path.split('.');
-          let current: unknown = obj;
-
-          for (const key of keys) {
-            if (current && typeof current === 'object' && current !== null) {
-              current = (current as Record<string, unknown>)[key];
-            } else {
-              return null;
-            }
+        // Check if already authorized
+        if (googleSheetsService.isAuthorized()) {
+          console.log('✅ Already authorized (token found in session), proceeding directly to export...');
+          
+          // Open placeholder tab and start export
+          const placeholderTab = window.open('about:blank', '_blank');
+          if (!placeholderTab) {
+            alert('Please allow popups to open Google Sheets.');
+            return;
           }
 
-          return current;
+          showLoadingInTab(placeholderTab);
+          performExportToTab(placeholderTab);
+          return;
         }
 
-        // Export to Google Sheets
-        const sheetUrl = await googleSheetsService.exportGridDataToSheets(
-          processedData,
-          headers,
-          filename
-        );
+        // Need authentication - set state and trigger auth
+        console.log('🔑 Not authorized, starting authentication...');
+        setIsAuthenticating(true);
 
-        // Open the created Google Sheet in a new tab
-        if (sheetUrl) {
-          window.open(sheetUrl, '_blank');
+        // Trigger auth popup (synchronous with user click)
+        await googleSheetsService.authorize();
+        console.log('✅ Authorization successful!');
+        setIsAuthenticating(false);
+
+        // Open placeholder tab after successful auth
+        console.log('🪟 Opening placeholder tab...');
+        const placeholderTab = window.open('about:blank', '_blank');
+        if (!placeholderTab) {
+          alert('Please allow popups to open Google Sheets.');
+          return;
         }
 
-        closeDropdown();
+        showLoadingInTab(placeholderTab);
+        performExportToTab(placeholderTab);
+
       } catch (error) {
-        console.error('Failed to export to Google Sheets:', error);
-        alert(
-          'Failed to export to Google Sheets. Please make sure you are signed in to your Google account.'
-        );
-      } finally {
-        setIsGoogleSheetsLoading(false);
+        console.error('❌ Auth process failed:', error);
+        setIsAuthenticating(false);
+        alert('Authentication failed. Please allow popups and try again.');
       }
-    }, [gridApi, filename, closeDropdown]);
+
+      function showLoadingInTab(tab: Window) {
+        try {
+          tab.document.write(`
+            <html>
+              <head><title>Creating Google Sheet...</title></head>
+              <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5;">
+                <h2>☁️ Creating your Google Sheet...</h2>
+                <p>Please wait while we prepare your data...</p>
+                <div style="margin: 20px auto; width: 50px; height: 50px; border: 3px solid #e3e3e3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+              </body>
+            </html>
+          `);
+        } catch (e) {
+          console.log('Could not write to placeholder tab:', e);
+        }
+      }
+
+      async function performExportToTab(placeholderTab: Window) {
+        let exportSuccess = false;
+
+        try {
+          console.log('📊 Starting export process...');
+          setIsGoogleSheetsLoading(true);
+          
+          // Process data from AG Grid
+          console.log('📋 Processing grid data...');
+          const { processedData, headers } = await processAndExportData();
+          console.log(`📋 Processed ${processedData.length} rows with ${headers.length} columns`);
+
+          // Export to Google Sheets
+          console.log('☁️ Uploading to Google Sheets...');
+          const sheetUrl = await googleSheetsService.exportGridDataToSheets(
+            processedData,
+            headers,
+            filename
+          );
+          console.log('✅ Google Sheets export successful:', sheetUrl);
+
+          // Redirect placeholder tab to actual Google Sheet
+          if (sheetUrl) {
+            console.log('🌐 Redirecting to Google Sheet...');
+            placeholderTab.location.href = sheetUrl;
+            exportSuccess = true;
+          } else {
+            console.warn('⚠️ No sheet URL returned');
+            placeholderTab.close();
+            alert('Failed to create Google Sheet. Please try again.');
+          }
+
+        } catch (error) {
+          console.error('❌ Failed to export to Google Sheets:', error);
+          
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          
+          // Check if token expired - offer to retry
+          if (errorMessage.includes('Authentication token expired')) {
+            placeholderTab.close();
+            if (confirm('Your Google authentication has expired. Click OK to re-authenticate and try again.')) {
+              // Retry the whole export process which will trigger new auth
+              handleGoogleSheetsExport();
+              return;
+            }
+          } else {
+            // Close placeholder tab on other errors
+            if (placeholderTab && !placeholderTab.closed) {
+              placeholderTab.close();
+            }
+            alert(`Failed to export to Google Sheets: ${errorMessage}`);
+          }
+        } finally {
+          console.log('🏁 Cleaning up export state...');
+          setIsGoogleSheetsLoading(false);
+          
+          // Only close dropdown if export was successful
+          if (exportSuccess) {
+            console.log('✅ Export successful, closing dropdown');
+            closeDropdown();
+          } else {
+            console.log('❌ Export failed, keeping dropdown open');
+          }
+        }
+      }
+    }, [gridApi, filename, closeDropdown, processAndExportData]);
 
     // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
+        // Don't close dropdown if we're in the middle of auth or export process
+        if (isAuthenticating || isGoogleSheetsLoading) {
+          console.log('🔒 Preventing dropdown close during auth/export process');
+          return;
+        }
+
         if (
           dropdownRef.current &&
           !dropdownRef.current.contains(event.target as Node) &&
           buttonRef.current &&
           !buttonRef.current.contains(event.target as Node)
         ) {
+          console.log('👆 Click outside detected, closing dropdown');
           closeDropdown();
         }
       };
@@ -278,7 +396,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
-    }, [isOpen, closeDropdown]);
+    }, [isOpen, closeDropdown, isAuthenticating, isGoogleSheetsLoading]);
 
     return (
       <div className={`relative inline-block ${className}`}>
@@ -353,12 +471,14 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                       size="sm"
                       withUnderline={false}
                       onClick={handleGoogleSheetsExport}
-                      disabled={isGoogleSheetsLoading}
+                      disabled={isGoogleSheetsLoading || isAuthenticating}
                       className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FaGoogle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
                       <span>
-                        {isGoogleSheetsLoading
+                        {isAuthenticating
+                          ? 'Authenticating...'
+                          : isGoogleSheetsLoading
                           ? 'Exporting...'
                           : 'Export ke Google Sheets'}
                       </span>

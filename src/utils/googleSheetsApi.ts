@@ -92,9 +92,15 @@ class GoogleSheetsService {
   private clientId: string;
   private tokenClient: TokenClient | null = null;
   private accessToken: string | null = null;
+  private tokenStorageKey = 'google_sheets_access_token';
 
   constructor(clientId: string) {
     this.clientId = clientId;
+    // Restore token from session storage if available
+    this.accessToken = sessionStorage.getItem(this.tokenStorageKey);
+    if (this.accessToken) {
+      console.log('🔄 Restored Google Sheets token from session storage');
+    }
   }
 
   // Initialize Google APIs
@@ -177,19 +183,35 @@ class GoogleSheetsService {
         return;
       }
 
-      // Set the callback to resolve the promise
-      this.tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: this.clientId,
-        scope: 'https://www.googleapis.com/auth/spreadsheets',
-        callback: (tokenResponse: TokenResponse) => {
-          this.accessToken = tokenResponse.access_token;
-          resolve(tokenResponse.access_token);
-        },
-      });
+      // Only create new token client if we don't have one or need new token
+      if (!this.accessToken) {
+        this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: this.clientId,
+          scope: 'https://www.googleapis.com/auth/spreadsheets',
+          callback: (tokenResponse: TokenResponse) => {
+            this.accessToken = tokenResponse.access_token;
+            // Store token in session storage for reuse
+            sessionStorage.setItem(this.tokenStorageKey, tokenResponse.access_token);
+            console.log('💾 Saved Google Sheets token to session storage');
+            resolve(tokenResponse.access_token);
+          },
+        });
 
-      this.tokenClient.requestAccessToken();
+        this.tokenClient.requestAccessToken();
+      } else {
+        // Already have token, resolve immediately
+        resolve(this.accessToken);
+      }
     });
   }
+
+  // Clear stored token
+  clearToken(): void {
+    this.accessToken = null;
+    sessionStorage.removeItem(this.tokenStorageKey);
+    console.log('🗑️ Cleared Google Sheets token');
+  }
+
 
   // Create a new spreadsheet with data
   async createSpreadsheetWithData(
@@ -238,6 +260,11 @@ class GoogleSheetsService {
     }
   }
 
+  // Check if user is authorized
+  isAuthorized(): boolean {
+    return !!this.accessToken;
+  }
+
   // Export AG Grid data to Google Sheets
   async exportGridDataToSheets(
     processedData: string[][],
@@ -263,6 +290,17 @@ class GoogleSheetsService {
       return result.spreadsheetUrl;
     } catch (error) {
       console.error('Error exporting to Google Sheets:', error);
+      
+      // If error might be due to expired/invalid token, clear it and retry once
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('invalid')) {
+        console.log('🔄 Token might be expired, clearing and retrying...');
+        this.clearToken();
+        
+        // Don't auto-retry to avoid infinite loop - let caller handle retry
+        throw new Error('Authentication token expired. Please try again.');
+      }
+      
       throw error;
     }
   }
