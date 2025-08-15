@@ -5,7 +5,6 @@ import {
   GridReadyEvent,
   ColumnPinnedEvent,
   ColumnMovedEvent,
-  ColumnRowGroupChangedEvent,
   ColDef,
 } from 'ag-grid-community';
 import { createTextColumn } from '@/components/ag-grid';
@@ -30,7 +29,6 @@ import { useItemsManagement } from '@/hooks/useItemsManagement';
 import {
   useItemGridColumns,
   useColumnVisibility,
-  useRowGrouping,
 } from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import {
@@ -140,9 +138,6 @@ const ItemMasterNew = memo(() => {
 
   // Unified Grid API reference from MasterDataGrid
   const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
-  
-  // Flag to ignore programmatic row group changes (to prevent saving to DB)
-  const [ignoringRowGroupEvents, setIgnoringRowGroupEvents] = useState(false);
 
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemMasterRealtime({ enabled: true });
@@ -166,60 +161,27 @@ const ItemMasterNew = memo(() => {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
-  // Row grouping state (persistent, only for items tab)
-  const {
-    isRowGroupingEnabled,
-    groupedColumns,
-    defaultExpanded,
-    showGroupPanel,
-    toggleRowGrouping,
-    handleColumnRowGroupChanged,
-  } = useRowGrouping();
+  // Simple row grouping state (client-side only, no persistence)
+  const [isRowGroupingEnabled, setIsRowGroupingEnabled] = useState(false);
+  const showGroupPanel = true;
+  const defaultExpanded = 1;
 
-  // Handle row grouping toggle with persistence
-  const handleRowGroupingToggle = useCallback(async () => {
+  // Simple row grouping toggle (client-side only)
+  const handleRowGroupingToggle = useCallback(() => {
     const willBeEnabled = !isRowGroupingEnabled;
+    setIsRowGroupingEnabled(willBeEnabled);
     
-    // Toggle the persistent state
-    await toggleRowGrouping();
-    
-    // Clear grouping immediately when disabling
+    // Clear grouping when disabling
     if (!willBeEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-      // Set flag to ignore subsequent events
-      setIgnoringRowGroupEvents(true);
-      
-      // Clear all row group columns
       unifiedGridApi.setRowGroupColumns([]);
-      // Reset column state to remove grouping
-      const columnState = unifiedGridApi.getColumnState();
-      const resetState = columnState.map(col => ({
-        ...col,
-        rowGroup: false,
-        rowGroupIndex: null,
-      }));
-      unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
-      // Refresh grid to ensure clean state
-      setTimeout(() => {
-        if (!unifiedGridApi.isDestroyed()) {
-          unifiedGridApi.refreshCells();
-        }
-        // Re-enable event handling after operations complete
-        setIgnoringRowGroupEvents(false);
-      }, 50);
     }
-  }, [isRowGroupingEnabled, toggleRowGrouping, unifiedGridApi, setIgnoringRowGroupEvents]);
+  }, [isRowGroupingEnabled, unifiedGridApi]);
 
-  // Handle column row group changes from AG Grid (drag-drop, menu actions)
-  const handleColumnRowGroupChangedEvent = useCallback((event: ColumnRowGroupChangedEvent) => {
-    if (activeTab !== 'items') return; // Only for items tab
-    if (ignoringRowGroupEvents) return; // Skip programmatic changes
-    
-    // Get currently grouped column IDs
-    const groupedColumnIds = event.columns?.map(col => col.getColId()) || [];
-    
-    // Save to database via hook
-    handleColumnRowGroupChanged(groupedColumnIds);
-  }, [activeTab, handleColumnRowGroupChanged, ignoringRowGroupEvents]);
+  // No event handling needed for simple client-side row grouping
+
+  // Clean and simple - no persistence logic needed
+
+  // Simple client-side row grouping - no complex state management needed
 
   // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
@@ -265,8 +227,6 @@ const ItemMasterNew = memo(() => {
     isColumnVisible,
     getColumnPinning,
     columnOrder: orderingState,
-    enableRowGrouping: isRowGroupingEnabled,
-    groupedColumns,
   });
 
   // Entity column visibility management
@@ -697,30 +657,7 @@ const ItemMasterNew = memo(() => {
       if (value !== activeTab) {
         navigate(`/master-data/item-master/${value}`);
 
-        // Clear row grouping when leaving items tab (UI only, don't change user preference)
-        if (activeTab === 'items' && isRowGroupingEnabled) {
-          // Clear grid grouping state immediately (visual only)
-          if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-            // Set flag to ignore subsequent events (preserve user preference!)
-            setIgnoringRowGroupEvents(true);
-            
-            unifiedGridApi.setRowGroupColumns([]);
-            const columnState = unifiedGridApi.getColumnState();
-            const resetState = columnState.map(col => ({
-              ...col,
-              rowGroup: false,
-              rowGroupIndex: null,
-            }));
-            unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
-            
-            // Re-enable event handling after a short delay
-            setTimeout(() => {
-              setIgnoringRowGroupEvents(false);
-            }, 100);
-          }
-          
-          // DON'T call disableRowGrouping() - preserve user preference!
-        }
+        // Simple client-side grouping - no need to clear on tab switch
 
         // Clear search when switching tabs - both DOM value and all React states
         if (searchInputRef.current) {
@@ -757,8 +694,6 @@ const ItemMasterNew = memo(() => {
       handleItemFilterSearch,
       handleEntityFilterSearch,
       unifiedGridApi,
-      isRowGroupingEnabled,
-      setIgnoringRowGroupEvents,
     ]
   );
 
@@ -932,9 +867,9 @@ const ItemMasterNew = memo(() => {
             />
           </div>
           
-          {/* Row Grouping Toggle Button - Only for Items Tab */}
+          {/* Row Grouping Controls - Only for Items Tab */}
           {activeTab === 'items' && (
-            <div className="ml-4">
+            <div className="ml-4 flex gap-2">
               <button
                 onClick={handleRowGroupingToggle}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -945,6 +880,7 @@ const ItemMasterNew = memo(() => {
               >
                 {isRowGroupingEnabled ? '🗂️ Grouping ON' : '🗂️ Grouping OFF'}
               </button>
+              {/* Simple row grouping - no sync needed */}
             </div>
           )}
         </div>
@@ -989,12 +925,10 @@ const ItemMasterNew = memo(() => {
             }
             onColumnPinned={unifiedColumnPinnedHandler}
             onColumnMoved={unifiedColumnMovedHandler}
-            onColumnRowGroupChanged={handleColumnRowGroupChangedEvent}
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
             isRowGroupingEnabled={activeTab === 'items' ? isRowGroupingEnabled : false}
-            groupedColumns={activeTab === 'items' ? groupedColumns : []}
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
           />

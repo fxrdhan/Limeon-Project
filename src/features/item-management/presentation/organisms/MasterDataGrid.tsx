@@ -5,7 +5,6 @@ import {
   RowClickedEvent,
   ColumnPinnedEvent,
   ColumnMovedEvent,
-  ColumnRowGroupChangedEvent,
   ColDef,
   IRowNode,
   GetMainMenuItems,
@@ -74,7 +73,6 @@ interface MasterDataGridProps {
   itemColumnDefs?: ColDef[];
   itemColumnsToAutoSize?: string[];
   isRowGroupingEnabled?: boolean;
-  groupedColumns?: string[];
   defaultExpanded?: number;
   showGroupPanel?: boolean;
 
@@ -89,7 +87,6 @@ interface MasterDataGridProps {
   doesExternalFilterPass: (node: IRowNode) => boolean;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
-  onColumnRowGroupChanged?: (event: ColumnRowGroupChangedEvent) => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // Pagination (for items)
@@ -108,7 +105,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   itemColumnDefs = [],
   itemColumnsToAutoSize = [],
   isRowGroupingEnabled = false,
-  groupedColumns = [],
   defaultExpanded = 1,
   showGroupPanel = true,
   entityConfig,
@@ -119,7 +115,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   doesExternalFilterPass,
   onColumnPinned,
   onColumnMoved,
-  onColumnRowGroupChanged,
   onGridApiReady,
   currentPage = 1,
   itemsPerPage = 10,
@@ -275,30 +270,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [gridApi, activeTab]);
 
-  // Handle column visibility for grouped columns using AG Grid API
-  useEffect(() => {
-    if (gridApi && !gridApi.isDestroyed() && activeTab === 'items') {
-      if (isRowGroupingEnabled && groupedColumns.length > 0) {
-        // Hide columns that are being grouped to avoid duplication
-        gridApi.setColumnsVisible(groupedColumns, false);
-      } else {
-        // When grouping is disabled, only restore visibility for previously grouped columns
-        // Don't force all columns visible - respect user's column visibility preferences
-        if (groupedColumns.length > 0) {
-          // Only restore columns that were hidden due to grouping
-          // Check if these columns should be visible based on columnDefs (user preferences)
-          const columnsToRestore = groupedColumns.filter(colId => {
-            const colDef = columnDefs.find(def => def.field === colId);
-            return !!colDef; // Only restore if column is in current columnDefs (user hasn't hidden it via preferences)
-          });
-          
-          if (columnsToRestore.length > 0) {
-            gridApi.setColumnsVisible(columnsToRestore, true);
-          }
-        }
-      }
-    }
-  }, [gridApi, activeTab, isRowGroupingEnabled, groupedColumns, columnDefs]);
+  // Initial restore is now handled in parent component (index.tsx)
+  // This component only handles UI concerns
+
+  // Column visibility is handled automatically by suppressGroupChangesColumnVisibility={true}
+  // No need for manual visibility management that causes cascading events
 
   // Toggle display mode for items reference columns
   const toggleColumnDisplayMode = useCallback(
@@ -318,7 +294,15 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   // Handle row clicks
   const handleRowClicked = useCallback(
     (event: RowClickedEvent) => {
-      onRowClick(event.data);
+      // Check if this is a group row - group rows don't have meaningful data for editing
+      if (event.node.group) {
+        return; // Don't try to edit group rows
+      }
+      
+      // Only process data rows with valid data
+      if (event.data) {
+        onRowClick(event.data);
+      }
     },
     [onRowClick]
   );
@@ -344,6 +328,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           // Column order should already be applied via columnDefs ordering
           // But trigger autosize to ensure proper layout
           params.api.autoSizeAllColumns();
+          
+          // Row grouping restore is handled in parent component
         }
       }, 100);
 
@@ -401,35 +387,21 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Auto group column definition for row grouping
   const autoGroupColumnDef = useMemo(() => {
-    if (!isRowGroupingEnabled || activeTab !== 'items' || groupedColumns.length === 0) {
+    if (!isRowGroupingEnabled || activeTab !== 'items') {
       return undefined;
     }
 
-    // Map field names to user-friendly headers
-    const fieldToHeaderMap: Record<string, string> = {
-      'category.name': 'Kategori',
-      'type.name': 'Jenis',
-      'manufacturer': 'Produsen',
-      'unit.name': 'Kemasan',
-      'dosage.name': 'Sediaan',
-    };
-
-    // Use the first grouped column for header name
-    const primaryGroupField = groupedColumns[0];
-    const headerName = fieldToHeaderMap[primaryGroupField] || 'Group';
-
     return {
-      headerName,
+      // No headerName - let AG Grid use the column name being grouped
       minWidth: 250,
       cellRenderer: 'agGroupCellRenderer',
       cellRendererParams: {
-        suppressCount: false,
-        // checkbox removed - use rowSelection.checkboxLocation instead
+        suppressCount: false, // Show count in parentheses
       },
       sortable: true,
       resizable: true,
     };
-  }, [isRowGroupingEnabled, activeTab, groupedColumns]);
+  }, [isRowGroupingEnabled, activeTab]);
 
   // Overlay template
   const overlayTemplate = useMemo(() => {
@@ -477,7 +449,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           mainMenuItems={getMainMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
-          onColumnRowGroupChanged={onColumnRowGroupChanged}
           rowNumbers={true}
           domLayout="normal"
           style={{
@@ -494,7 +465,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           // Row Grouping configuration (only for items tab)
           rowGroupPanelShow={activeTab === 'items' && isRowGroupingEnabled && showGroupPanel ? 'always' : 'never'}
           groupDefaultExpanded={activeTab === 'items' && isRowGroupingEnabled ? defaultExpanded : undefined}
-          suppressGroupChangesColumnVisibility="suppressHideOnGroup" // Suppress auto hide, we handle it manually
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
         />

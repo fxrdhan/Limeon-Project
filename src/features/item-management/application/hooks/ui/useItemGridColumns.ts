@@ -14,12 +14,10 @@ interface UseItemGridColumnsProps {
   isColumnVisible?: (columnKey: string) => boolean;
   getColumnPinning?: (columnKey: string) => 'left' | 'right' | null;
   columnOrder?: string[];
-  enableRowGrouping?: boolean;
-  groupedColumns?: string[];
 }
 
 export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
-  const { isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping = false, groupedColumns = [] } = props;
+  const { isColumnVisible, getColumnPinning, columnOrder } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
     // Create column definitions map for ordering
@@ -53,7 +51,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('manufacturer') || undefined,
         enableRowGroup: true,
-        rowGroup: enableRowGrouping && groupedColumns.includes('manufacturer'), // Only group if explicitly selected
+        // Remove rowGroup property - let AG Grid handle grouping state natively
       },
       code: {
         ...createTextColumn({
@@ -114,7 +112,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('category.name') || undefined,
         enableRowGroup: true, // Always enable for groupable columns
-        rowGroup: enableRowGrouping && groupedColumns.includes('category.name'), // Only group if explicitly selected
+        // Remove rowGroup property - let AG Grid handle grouping state natively
       },
       'type.name': {
         ...createWrapTextColumn({
@@ -135,7 +133,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('type.name') || undefined,
         enableRowGroup: true,
-        rowGroup: enableRowGrouping && groupedColumns.includes('type.name'), // Only group if explicitly selected
+        // Remove rowGroup property - let AG Grid handle grouping state natively
       },
       'unit.name': {
         ...createTextColumn({
@@ -156,7 +154,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('unit.name') || undefined,
         enableRowGroup: true,
-        rowGroup: enableRowGrouping && groupedColumns.includes('unit.name'), // Only group if explicitly selected
+        // Remove rowGroup property - let AG Grid handle grouping state natively
       },
       'dosage.name': {
         ...createTextColumn({
@@ -179,7 +177,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('dosage.name') || undefined,
         enableRowGroup: true,
-        rowGroup: enableRowGrouping && groupedColumns.includes('dosage.name'), // Only group if explicitly selected
+        // Remove rowGroup property - let AG Grid handle grouping state natively
       },
       package_conversions: {
         ...createTextColumn({
@@ -293,7 +291,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     }
 
     return allColumns;
-  }, [isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping, groupedColumns]);
+  }, [isColumnVisible, getColumnPinning, columnOrder]);
 
   const columnsToAutoSize = useMemo(() => {
     const allColumnsToAutoSize = [
