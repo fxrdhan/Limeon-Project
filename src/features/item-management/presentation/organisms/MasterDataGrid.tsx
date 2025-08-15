@@ -282,9 +282,20 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         // Hide columns that are being grouped to avoid duplication
         gridApi.setColumnsVisible(groupedColumns, false);
       } else {
-        // Show all columns when grouping is disabled
-        const allColumns = columnDefs.map(col => col.field).filter(Boolean) as string[];
-        gridApi.setColumnsVisible(allColumns, true);
+        // When grouping is disabled, only restore visibility for previously grouped columns
+        // Don't force all columns visible - respect user's column visibility preferences
+        if (groupedColumns.length > 0) {
+          // Only restore columns that were hidden due to grouping
+          // Check if these columns should be visible based on columnDefs (user preferences)
+          const columnsToRestore = groupedColumns.filter(colId => {
+            const colDef = columnDefs.find(def => def.field === colId);
+            return !!colDef; // Only restore if column is in current columnDefs (user hasn't hidden it via preferences)
+          });
+          
+          if (columnsToRestore.length > 0) {
+            gridApi.setColumnsVisible(columnsToRestore, true);
+          }
+        }
       }
     }
   }, [gridApi, activeTab, isRowGroupingEnabled, groupedColumns, columnDefs]);
