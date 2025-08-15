@@ -864,25 +864,13 @@ const ItemMasterNew = memo(() => {
                             ? 'produsen-item'
                             : 'satuan-item'
               }
+              // Row grouping props - only for items tab
+              isRowGroupingEnabled={activeTab === 'items' ? isRowGroupingEnabled : undefined}
+              onRowGroupingToggle={activeTab === 'items' ? handleRowGroupingToggle : undefined}
+              showGridModal={activeTab === 'items'}
             />
           </div>
 
-          {/* Row Grouping Controls - Only for Items Tab */}
-          {activeTab === 'items' && (
-            <div className="ml-4 flex gap-2">
-              <button
-                onClick={handleRowGroupingToggle}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isRowGroupingEnabled
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {isRowGroupingEnabled ? '🗂️ Grouping ON' : '🗂️ Grouping OFF'}
-              </button>
-              {/* Simple row grouping - no sync needed */}
-            </div>
-          )}
         </div>
 
         {/* Unified MasterDataGrid */}
