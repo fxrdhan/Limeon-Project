@@ -10,14 +10,12 @@ import {
 } from '@/components/ag-grid';
 import type { PackageConversion } from '@/types';
 interface UseItemGridColumnsProps {
-  visibleColumns?: string[];
-  isColumnVisible?: (columnKey: string) => boolean;
   getColumnPinning?: (columnKey: string) => 'left' | 'right' | null;
   columnOrder?: string[];
 }
 
 export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
-  const { isColumnVisible, getColumnPinning, columnOrder } = props;
+  const { getColumnPinning, columnOrder } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
     // Create column definitions map for ordering
@@ -281,19 +279,15 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     });
 
     // Use ordered columns without manual row number column (AG Grid built-in rowNumbers will handle this)
+    // IMPORTANT: Don't filter by visibility here! Send all columns to AG Grid.
+    // Let AG Grid handle column visibility via setColumnsVisible() API to maintain correct ordering.
     const allColumns = orderedColumnDefs;
 
-    // Filter columns based on visibility
-    if (isColumnVisible) {
-      return allColumns.filter(column =>
-        isColumnVisible(column.field as string)
-      );
-    }
-
     return allColumns;
-  }, [isColumnVisible, getColumnPinning, columnOrder]);
+  }, [getColumnPinning, columnOrder]);
 
   const columnsToAutoSize = useMemo(() => {
+    // Return all columns for autosize - AG Grid will only autosize visible columns anyway
     const allColumnsToAutoSize = [
       'name', // ← Added: Include name column in autosize
       'code',
@@ -309,15 +303,8 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
       'stock', // ← Added: Include stock column in autosize
     ];
 
-    // Filter columns to auto-size based on visibility
-    if (isColumnVisible) {
-      return allColumnsToAutoSize.filter(columnKey =>
-        isColumnVisible(columnKey)
-      );
-    }
-
     return allColumnsToAutoSize;
-  }, [isColumnVisible]);
+  }, []);
 
   return {
     columnDefs,

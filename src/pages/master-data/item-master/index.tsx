@@ -213,8 +213,6 @@ const ItemMasterNew = memo(() => {
   // Column visibility management
   const {
     columnOptions,
-    visibleColumns,
-    isColumnVisible,
     handleColumnToggle,
     getColumnPinning,
     handleColumnPinning,
@@ -224,8 +222,6 @@ const ItemMasterNew = memo(() => {
   } = useColumnVisibility({ gridApi: unifiedGridApi });
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
-    visibleColumns,
-    isColumnVisible,
     getColumnPinning,
     columnOrder: orderingState,
   });
