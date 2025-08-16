@@ -14,5 +14,24 @@
 # Images
 *.png binary
 
+# Language detection
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
+*.js linguist-language=JavaScript
+
+# Documentation (exclude from language stats)
+README* linguist-documentation
+
+# Config files (exclude from language stats)
+*.config.js linguist-vendored
+*.config.ts linguist-vendored
+tsconfig*.json linguist-vendored
+package.json linguist-vendored
+yarn.lock linguist-vendored
+eslint.config.js linguist-vendored
+
+# Supabase files (exclude from language stats)
+supabase/** linguist-detectable=false
+
 # Generated files
-dist/** linguist-generated=true
+dist/** linguist-generated
