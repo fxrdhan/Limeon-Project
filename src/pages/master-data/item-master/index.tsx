@@ -683,6 +683,9 @@ const ItemMasterNew = memo(() => {
                             ? 'produsen-item'
                             : 'satuan-item'
               }
+              // Enable manual state management buttons
+              enableManualStateButtons={true}
+              currentTableType={activeTab}
             />
           </div>
         </div>

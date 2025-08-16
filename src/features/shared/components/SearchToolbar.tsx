@@ -1,9 +1,15 @@
 import { memo } from 'react';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import { TbTablePlus } from 'react-icons/tb';
+import { TbTablePlus, TbDeviceFloppy, TbRestore } from 'react-icons/tb';
 import { ExportDropdown } from '@/components/export';
 import { GridApi } from 'ag-grid-community';
 import type { SearchColumn, FilterSearch } from '@/types/search';
+import {
+  saveGridState,
+  restoreGridState,
+  hasSavedState,
+  type TableType,
+} from '@/features/shared/utils/gridStateManager';
 
 interface SearchToolbarProps<T = unknown> {
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -27,6 +33,9 @@ interface SearchToolbarProps<T = unknown> {
   // Export props
   gridApi?: GridApi | null;
   exportFilename?: string;
+  // Manual state management props
+  currentTableType?: TableType;
+  enableManualStateButtons?: boolean;
 }
 
 const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
@@ -40,6 +49,8 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   onItemSelect,
   gridApi,
   exportFilename = 'data-export',
+  currentTableType,
+  enableManualStateButtons = false,
 }: SearchToolbarProps<T>) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Use custom onKeyDown if provided
@@ -64,6 +75,24 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     }
   };
 
+  // Manual state management handlers
+  const handleSaveState = () => {
+    if (gridApi && currentTableType) {
+      saveGridState(gridApi, currentTableType);
+    }
+  };
+
+  const handleRestoreState = () => {
+    if (gridApi && currentTableType) {
+      restoreGridState(gridApi, currentTableType);
+    }
+  };
+
+  // Check if saved state exists for current table
+  const hasExistingSavedState = currentTableType
+    ? hasSavedState(currentTableType)
+    : false;
+
   return (
     <>
       <div className="flex items-center">
@@ -81,6 +110,35 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
         >
           <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
         </span>
+
+        {/* Manual State Management Buttons */}
+        {enableManualStateButtons && gridApi && currentTableType && (
+          <>
+            <span
+              className="inline-block ml-3 mb-2"
+              onClick={handleSaveState}
+              title={`Simpan Layout Grid ${currentTableType}`}
+            >
+              <TbDeviceFloppy className="h-7 w-7 text-blue-600 cursor-pointer hover:text-blue-500 transition-colors duration-200" />
+            </span>
+            <span
+              className={`inline-block ml-2 mb-2 ${
+                hasExistingSavedState
+                  ? 'text-green-600 hover:text-green-500 cursor-pointer'
+                  : 'text-gray-400 cursor-not-allowed'
+              }`}
+              onClick={hasExistingSavedState ? handleRestoreState : undefined}
+              title={
+                hasExistingSavedState
+                  ? `Restore Layout Grid ${currentTableType}`
+                  : `Tidak ada layout tersimpan untuk ${currentTableType}`
+              }
+            >
+              <TbRestore className="h-7 w-7 transition-colors duration-200" />
+            </span>
+          </>
+        )}
+
         <div className="inline-block ml-2 mb-1 mt-0.5">
           <ExportDropdown gridApi={gridApi || null} filename={exportFilename} />
         </div>
