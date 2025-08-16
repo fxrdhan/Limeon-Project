@@ -1,11 +1,10 @@
 import { BaseService, ServiceResponse } from './base.service';
-import { itemRepository, ItemRepository, ItemQueryOptions } from '../repositories/ItemRepository';
+import {
+  itemRepository,
+  ItemQueryOptions,
+} from '../repositories/ItemRepository';
 import { ItemTransformer } from '../transformers/ItemTransformer';
-import type {
-  DBItem,
-  DBPackageConversion,
-  Item
-} from '@/types/database';
+import type { DBItem, DBPackageConversion, Item } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 export class ItemsService extends BaseService<DBItem> {
@@ -16,23 +15,22 @@ export class ItemsService extends BaseService<DBItem> {
   /**
    * Get all items with related data (optimized with caching)
    */
-  async getAll(options: ItemQueryOptions = {}): Promise<ServiceResponse<Item[]>> {
+  async getAll(
+    options: ItemQueryOptions = {}
+  ): Promise<ServiceResponse<Item[]>> {
     try {
       // Get items from repository
       const { data: dbItems, error } = await itemRepository.getItems({
         ...options,
-        orderBy: options.orderBy || { column: 'name', ascending: true }
+        orderBy: options.orderBy || { column: 'name', ascending: true },
       });
 
       if (error || !dbItems) {
         return { data: null, error };
       }
 
-      // Get cached manufacturer data
-      const manufacturers = await itemRepository.getManufacturers();
-
-      // Transform data using transformer
-      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems, manufacturers);
+      // Transform data using transformer (manufacturer data included in JOIN)
+      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems);
 
       return { data: transformedData, error: null };
     } catch (error) {
@@ -52,11 +50,8 @@ export class ItemsService extends BaseService<DBItem> {
         return { data: null, error };
       }
 
-      // Get cached manufacturer data
-      const manufacturers = await itemRepository.getManufacturers();
-
-      // Transform data using transformer
-      const transformedItem = ItemTransformer.transformDBItemToItem(dbItem, manufacturers);
+      // Transform data using transformer (manufacturer data included in JOIN)
+      const transformedItem = ItemTransformer.transformDBItemToItem(dbItem);
 
       return { data: transformedItem, error: null };
     } catch (error) {
@@ -72,13 +67,13 @@ export class ItemsService extends BaseService<DBItem> {
     options: ItemQueryOptions = {}
   ): Promise<ServiceResponse<Item[]>> {
     try {
-      // Search using repository
+      // Search using repository (using joined manufacturer table)
       const { data: dbItems, error } = await itemRepository.searchItems(
         query,
-        ['name', 'code', 'barcode', 'manufacturer'],
+        ['name', 'code', 'barcode', 'item_manufacturers.name'],
         {
           ...options,
-          orderBy: options.orderBy || { column: 'name', ascending: true }
+          orderBy: options.orderBy || { column: 'name', ascending: true },
         }
       );
 
@@ -86,11 +81,8 @@ export class ItemsService extends BaseService<DBItem> {
         return { data: null, error };
       }
 
-      // Get cached manufacturer data
-      const manufacturers = await itemRepository.getManufacturers();
-
-      // Transform data using transformer
-      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems, manufacturers);
+      // Transform data using transformer (manufacturer data included in JOIN)
+      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems);
 
       return { data: transformedData, error: null };
     } catch (error) {
@@ -101,10 +93,12 @@ export class ItemsService extends BaseService<DBItem> {
   /**
    * Get items by category
    */
-  async getItemsByCategory(categoryId: string): Promise<ServiceResponse<Item[]>> {
+  async getItemsByCategory(
+    categoryId: string
+  ): Promise<ServiceResponse<Item[]>> {
     return this.getAll({
       filters: { category_id: categoryId },
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
@@ -114,27 +108,27 @@ export class ItemsService extends BaseService<DBItem> {
   async getItemsByType(typeId: string): Promise<ServiceResponse<Item[]>> {
     return this.getAll({
       filters: { type_id: typeId },
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
   /**
    * Get low stock items (optimized)
    */
-  async getLowStockItems(threshold: number = 10): Promise<ServiceResponse<Item[]>> {
+  async getLowStockItems(
+    threshold: number = 10
+  ): Promise<ServiceResponse<Item[]>> {
     try {
       // Get low stock items from repository
-      const { data: dbItems, error } = await itemRepository.getLowStockItems(threshold);
+      const { data: dbItems, error } =
+        await itemRepository.getLowStockItems(threshold);
 
       if (error || !dbItems) {
         return { data: null, error };
       }
 
-      // Get cached manufacturer data
-      const manufacturers = await itemRepository.getManufacturers();
-
-      // Transform data using transformer
-      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems, manufacturers);
+      // Transform data using transformer (manufacturer data included in JOIN)
+      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems);
 
       return { data: transformedData, error: null };
     } catch (error) {
@@ -157,7 +151,10 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform data for database
-      const dataToInsert = ItemTransformer.transformItemToDBItem(itemData, packageConversions);
+      const dataToInsert = ItemTransformer.transformItemToDBItem(
+        itemData,
+        packageConversions
+      );
 
       return this.create(dataToInsert);
     } catch (error) {
@@ -183,7 +180,10 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform data for database
-      const updateData = ItemTransformer.transformItemUpdateToDBItem(itemData, packageConversions);
+      const updateData = ItemTransformer.transformItemUpdateToDBItem(
+        itemData,
+        packageConversions
+      );
 
       return this.update(id, updateData);
     } catch (error) {
@@ -194,11 +194,14 @@ export class ItemsService extends BaseService<DBItem> {
   /**
    * Update stock
    */
-  async updateStock(id: string, newStock: number): Promise<ServiceResponse<DBItem>> {
+  async updateStock(
+    id: string,
+    newStock: number
+  ): Promise<ServiceResponse<DBItem>> {
     if (newStock < 0) {
-      return { 
-        data: null, 
-        error: { message: 'Stock cannot be negative' } as PostgrestError 
+      return {
+        data: null,
+        error: { message: 'Stock cannot be negative' } as PostgrestError,
       };
     }
 
@@ -214,9 +217,11 @@ export class ItemsService extends BaseService<DBItem> {
     // Validate all stock values
     for (const update of updates) {
       if (update.stock < 0) {
-        return { 
-          data: null, 
-          error: { message: `Stock cannot be negative for item ${update.id}` } as PostgrestError 
+        return {
+          data: null,
+          error: {
+            message: `Stock cannot be negative for item ${update.id}`,
+          } as PostgrestError,
         };
       }
     }
@@ -262,11 +267,8 @@ export class ItemsService extends BaseService<DBItem> {
   }
 
   /**
-   * Clear manufacturer cache (useful for cache invalidation)
+   * No cache to clear - manufacturer data comes from JOIN!
    */
-  static clearCache(): void {
-    ItemRepository.clearManufacturerCache();
-  }
 
   /**
    * Create empty item template

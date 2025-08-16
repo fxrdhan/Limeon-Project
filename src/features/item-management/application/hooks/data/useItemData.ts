@@ -45,14 +45,14 @@ export const useItemData = ({
       try {
         formState.setLoading(true);
 
-        // Fetch item data from database
+        // Fetch item data from database with manufacturer FK
         const { data: itemData, error: itemError } = await supabase
           .from('items')
           .select(
             `
           *, updated_at,
           package_conversions,
-          manufacturer,
+          manufacturer_id,
           package_id
         `
           )
@@ -62,16 +62,8 @@ export const useItemData = ({
         if (itemError) throw itemError;
         if (!itemData) throw new Error('Item tidak ditemukan');
 
-        // Reverse lookup manufacturer name to ID for edit mode
-        let manufacturerId = '';
-        if (itemData.manufacturer) {
-          const { data: manufacturerData } = await supabase
-            .from('item_manufacturers')
-            .select('id')
-            .eq('name', itemData.manufacturer)
-            .single();
-          manufacturerId = manufacturerData?.id || '';
-        }
+        // Use manufacturer_id directly - no reverse lookup needed!
+        const manufacturerId = itemData.manufacturer_id || '';
 
         // Transform database data to form data structure
         const fetchedFormData: ItemFormData = {

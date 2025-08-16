@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import type { ItemManufacturer } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 // Raw database result with joined tables
@@ -17,10 +16,12 @@ export interface DBItemWithRelations {
   type_id?: string;
   package_id?: string;
   dosage_id?: string;
+  manufacturer_id?: string;
   item_categories?: { id: string; code?: string; name: string } | null;
   item_types?: { id: string; code?: string; name: string } | null;
   item_packages?: { id: string; code?: string; name: string } | null;
   item_dosages?: { id: string; code?: string; name: string } | null;
+  item_manufacturers?: { id: string; code?: string; name: string } | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -42,37 +43,15 @@ export class ItemRepository {
     item_categories!inner(id, code, name),
     item_types!inner(id, code, name), 
     item_packages!inner(id, code, name),
-    item_dosages(id, code, name)
+    item_dosages(id, code, name),
+    item_manufacturers!inner(id, code, name)
   `;
 
-  // Cached manufacturer data to avoid N+1 queries
-  private static manufacturerCache: ItemManufacturer[] | null = null;
-  private static manufacturerCacheExpiry = 0;
-  private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  // Manufacturer data now comes from JOIN - no caching needed!
 
-  async getManufacturers(): Promise<ItemManufacturer[]> {
-    const now = Date.now();
-    
-    // Return cached data if still valid
-    if (ItemRepository.manufacturerCache && now < ItemRepository.manufacturerCacheExpiry) {
-      return ItemRepository.manufacturerCache;
-    }
-
-    // Fetch fresh data
-    const { data } = await supabase
-      .from('item_manufacturers')
-      .select('id, code, name');
-
-    if (data) {
-      ItemRepository.manufacturerCache = data;
-      ItemRepository.manufacturerCacheExpiry = now + ItemRepository.CACHE_TTL;
-      return data;
-    }
-
-    return ItemRepository.manufacturerCache || [];
-  }
-
-  async getItems(options: ItemQueryOptions = {}): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
+  async getItems(
+    options: ItemQueryOptions = {}
+  ): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
     try {
       let query = supabase
         .from('items')
@@ -87,8 +66,8 @@ export class ItemRepository {
 
       // Apply ordering
       if (options.orderBy) {
-        query = query.order(options.orderBy.column, { 
-          ascending: options.orderBy.ascending ?? true 
+        query = query.order(options.orderBy.column, {
+          ascending: options.orderBy.ascending ?? true,
         });
       }
 
@@ -99,7 +78,9 @@ export class ItemRepository {
     }
   }
 
-  async getItemById(id: string): Promise<ItemRepositoryResponse<DBItemWithRelations>> {
+  async getItemById(
+    id: string
+  ): Promise<ItemRepositoryResponse<DBItemWithRelations>> {
     try {
       const { data, error } = await supabase
         .from('items')
@@ -114,8 +95,8 @@ export class ItemRepository {
   }
 
   async searchItems(
-    query: string, 
-    searchFields: string[] = ['name', 'code', 'barcode', 'manufacturer'],
+    query: string,
+    searchFields: string[] = ['name', 'code', 'barcode', 'item_manufacturers.name'],
     options: ItemQueryOptions = {}
   ): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
     try {
@@ -123,11 +104,11 @@ export class ItemRepository {
         .from('items')
         .select(options.select || ItemRepository.DEFAULT_SELECT);
 
-      // Build OR condition for search
+      // Build OR condition for search (using joined manufacturer table)
       const orConditions = searchFields
         .map(field => `${field}.ilike.%${query}%`)
         .join(',');
-      
+
       supabaseQuery = supabaseQuery.or(orConditions);
 
       // Apply additional filters
@@ -140,7 +121,7 @@ export class ItemRepository {
       // Apply ordering
       if (options.orderBy) {
         supabaseQuery = supabaseQuery.order(options.orderBy.column, {
-          ascending: options.orderBy.ascending ?? true
+          ascending: options.orderBy.ascending ?? true,
         });
       }
 
@@ -151,7 +132,9 @@ export class ItemRepository {
     }
   }
 
-  async getLowStockItems(threshold: number = 10): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
+  async getLowStockItems(
+    threshold: number = 10
+  ): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
     try {
       const { data, error } = await supabase
         .from('items')
@@ -207,10 +190,7 @@ export class ItemRepository {
     }
   }
 
-  static clearManufacturerCache(): void {
-    ItemRepository.manufacturerCache = null;
-    ItemRepository.manufacturerCacheExpiry = 0;
-  }
+  // No cache to clear - manufacturer data comes from JOIN!
 }
 
 export const itemRepository = new ItemRepository();

@@ -120,24 +120,16 @@ export function useRandomItemCreation(
 
     try {
       // Generate random item data
-      const { itemFormData, manufacturer } = generateRandomItemData(entities);
+      const { itemFormData } = generateRandomItemData(entities);
 
       // Use business logic to create item with auto-generated code
+      // manufacturer_id FK is already set in itemFormData, no separate update needed!
       const result = await saveItemBusinessLogic({
         formData: itemFormData,
         conversions: [], // No package conversions for testing data
         baseUnit: '', // Will be determined by business logic
         isEditMode: false,
       });
-
-      // Update manufacturer name in database after creation
-      if (result.itemId && manufacturer) {
-        const { supabase } = await import('@/lib/supabase');
-        await supabase
-          .from('items')
-          .update({ manufacturer })
-          .eq('id', result.itemId);
-      }
 
       // Trigger cache invalidation to refresh UI
       const keysToInvalidate = getInvalidationKeys.items.all();
