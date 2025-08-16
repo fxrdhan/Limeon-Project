@@ -95,6 +95,9 @@ interface MasterDataGridProps {
   onColumnVisible?: () => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
+  // AG Grid sidebar
+  sideBar?: boolean;
+
   // Pagination (for items)
   currentPage?: number;
   itemsPerPage?: number;
@@ -123,6 +126,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   onColumnMoved,
   onColumnVisible,
   onGridApiReady,
+  sideBar = false,
   currentPage = 1,
   itemsPerPage = 10,
 }) {
@@ -262,14 +266,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       // Clear filters to prevent filter carryover between tabs
       gridApi.setFilterModel(null);
 
-      // ✅ NEW: Clear column pinning state without affecting order/visibility
-      // Get current column state and remove pinning
-      const columnState = gridApi.getColumnState();
-      const unpinnedState = columnState.map(col => ({
-        ...col,
-        pinned: null, // Clear pinning for all columns
-      }));
-      gridApi.applyColumnState({ state: unpinnedState });
+      // Clear pinning for all columns without affecting visibility/order
+      const allColumns = gridApi.getAllGridColumns();
+      const columnIds = allColumns.map(col => col.getColId());
+      gridApi.setColumnsPinned(columnIds, null);
 
       // Small delay to ensure clean state before autosize
       const timer = setTimeout(() => {
@@ -514,6 +514,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}
+          // AG Grid Sidebar
+          sideBar={sideBar}
         />
       </div>
 

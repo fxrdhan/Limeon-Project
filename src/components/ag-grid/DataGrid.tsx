@@ -90,6 +90,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       suppressGroupChangesColumnVisibility = false,
       autoGroupColumnDef,
       groupDisplayType = 'singleColumn',
+      // Side bar props
+      sideBar,
     },
     ref
   ) => {
@@ -267,6 +269,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           }
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType={groupDisplayType}
+          // Side bar props
+          sideBar={sideBar}
         />
       </div>
     );

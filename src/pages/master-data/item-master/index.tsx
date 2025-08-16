@@ -26,10 +26,7 @@ import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 
 // Hooks and utilities
 import { useItemsManagement } from '@/hooks/useItemsManagement';
-import {
-  useItemGridColumns,
-  useColumnVisibility,
-} from '@/features/item-management/application/hooks/ui';
+import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import {
   getOrderedSearchColumnsByEntity,
@@ -41,7 +38,6 @@ import {
   useEntityManager,
   useGenericEntityManagement,
 } from '@/features/item-management/application/hooks/collections';
-import { useEntityColumnVisibility } from '@/features/item-management/application/hooks/ui';
 
 // Types
 import type { Item as ItemDataType } from '@/types/database';
@@ -142,14 +138,6 @@ const ItemMasterNew = memo(() => {
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemMasterRealtime({ enabled: true });
 
-  // Update active tab when URL changes
-  useEffect(() => {
-    const newTab = getTabFromPath(location.pathname);
-    if (newTab !== activeTab) {
-      setActiveTab(newTab);
-    }
-  }, [location.pathname, activeTab, getTabFromPath]);
-
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isItemModalClosing, setIsItemModalClosing] = useState(false);
@@ -162,20 +150,9 @@ const ItemMasterNew = memo(() => {
   const [modalRenderId, setModalRenderId] = useState(0);
 
   // Simple row grouping state (client-side only, no persistence)
-  const [isRowGroupingEnabled, setIsRowGroupingEnabled] = useState(false);
+  const [isRowGroupingEnabled] = useState(false);
   const showGroupPanel = true;
   const defaultExpanded = 1;
-
-  // Simple row grouping toggle (client-side only)
-  const handleRowGroupingToggle = useCallback(() => {
-    const willBeEnabled = !isRowGroupingEnabled;
-    setIsRowGroupingEnabled(willBeEnabled);
-
-    // Clear grouping when disabling
-    if (!willBeEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-      unifiedGridApi.setRowGroupColumns([]);
-    }
-  }, [isRowGroupingEnabled, unifiedGridApi]);
 
   // No event handling needed for simple client-side row grouping
 
@@ -210,21 +187,16 @@ const ItemMasterNew = memo(() => {
   // Generic entity data management
   const entityData = useGenericEntityManagement(entityManagementOptions);
 
-  // Column visibility management
-  const {
-    columnOptions,
-    handleColumnToggle,
-    getColumnPinning,
-    handleColumnPinning,
-    orderingState,
-    handleColumnOrdering,
-    handleColumnVisibilityChangedFromGrid,
-  } = useColumnVisibility({ gridApi: unifiedGridApi });
+  const { columnDefs: itemColumnDefs, columnsToAutoSize } =
+    useItemGridColumns();
 
-  const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
-    getColumnPinning,
-    columnOrder: orderingState,
-  });
+  // Update active tab when URL changes
+  useEffect(() => {
+    const newTab = getTabFromPath(location.pathname);
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [location.pathname, activeTab, getTabFromPath]);
 
   // Entity column visibility management
   const entityCurrentConfig = useMemo(
@@ -235,29 +207,12 @@ const ItemMasterNew = memo(() => {
     [activeTab, entityManager.entityConfigs]
   );
 
-  const {
-    columnOptions: entityColumnOptions,
-    isColumnVisible: isEntityColumnVisible,
-    handleColumnToggle: handleEntityColumnToggle,
-    getColumnPinning: getEntityColumnPinning,
-    handleColumnPinning: handleEntityColumnPinning,
-    orderingState: entityOrderingState,
-    handleColumnOrdering: handleEntityColumnOrdering,
-    handleColumnVisibilityChangedFromGrid:
-      handleEntityColumnVisibilityChangedFromGrid,
-  } = useEntityColumnVisibility({
-    entityType: activeTab as EntityType,
-    currentConfig: entityCurrentConfig,
-    gridApi: unifiedGridApi,
-  });
-
-  // Entity column definitions (similar to EntityMasterPage logic)
+  // Entity column definitions (simplified without custom column visibility)
   const entityColumnDefs: ColDef[] = useMemo(() => {
     if (activeTab === 'items' || !entityCurrentConfig) return [];
 
-    // Create column definitions map for ordering
-    const columnDefinitionsMap: Record<string, ColDef> = {
-      code: {
+    const columns: ColDef[] = [
+      {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
@@ -271,9 +226,8 @@ const ItemMasterNew = memo(() => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getEntityColumnPinning('code') || undefined,
       },
-      name: {
+      {
         field: 'name',
         headerName: entityCurrentConfig.nameColumnHeader || 'Nama',
         filter: 'agTextColumnFilter',
@@ -299,80 +253,46 @@ const ItemMasterNew = memo(() => {
         sortable: true,
         resizable: true,
         suppressHeaderFilterButton: true,
-        pinned: getEntityColumnPinning('name') || undefined,
       },
-      // Add NCI Code column for packages and dosages
-      ...(entityCurrentConfig.hasNciCode
-        ? {
-            nci_code: {
-              ...createTextColumn({
-                field: 'nci_code',
-                headerName: 'Kode NCI',
-                valueGetter: params => params.data?.nci_code || '-',
-              }),
-              filter: 'agMultiColumnFilter',
-              filterParams: {
-                filters: [
-                  { filter: 'agTextColumnFilter' },
-                  { filter: 'agSetColumnFilter' },
-                ],
-              },
-              suppressHeaderFilterButton: true,
-              pinned: getEntityColumnPinning('nci_code') || undefined,
-            },
-          }
-        : {}),
-      // Address or description column
-      [entityCurrentConfig.hasAddress ? 'address' : 'description']: {
-        ...createTextColumn({
-          field: entityCurrentConfig.hasAddress ? 'address' : 'description',
-          headerName: entityCurrentConfig.hasAddress ? 'Alamat' : 'Deskripsi',
-          flex: 1,
-          valueGetter: params => {
-            if (entityCurrentConfig.hasAddress) {
-              return params.data?.address || '-';
-            }
-            return params.data?.description || '-';
-          },
-        }),
-        suppressHeaderFilterButton: true,
-        pinned:
-          getEntityColumnPinning(
-            entityCurrentConfig.hasAddress ? 'address' : 'description'
-          ) || undefined,
-      },
-    };
+    ];
 
-    // Handle ordering state - if empty, use natural order from column definitions
-    let orderedColumns = entityOrderingState;
-    if (orderedColumns.length === 0) {
-      // Use natural order from columnDefinitionsMap keys (first time users)
-      orderedColumns = Object.keys(columnDefinitionsMap);
+    // Add NCI Code column for packages and dosages
+    if (entityCurrentConfig.hasNciCode) {
+      columns.push({
+        ...createTextColumn({
+          field: 'nci_code',
+          headerName: 'Kode NCI',
+          valueGetter: params => params.data?.nci_code || '-',
+        }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            { filter: 'agTextColumnFilter' },
+            { filter: 'agSetColumnFilter' },
+          ],
+        },
+        suppressHeaderFilterButton: true,
+      });
     }
 
-    // Create ordered column array
-    const orderedColumnDefs = orderedColumns
-      .map(fieldName => columnDefinitionsMap[fieldName])
-      .filter(Boolean);
-
-    // Add any missing columns that aren't in the order (fallback)
-    Object.keys(columnDefinitionsMap).forEach(fieldName => {
-      if (!orderedColumns.includes(fieldName)) {
-        orderedColumnDefs.push(columnDefinitionsMap[fieldName]);
-      }
+    // Add address or description column
+    columns.push({
+      ...createTextColumn({
+        field: entityCurrentConfig.hasAddress ? 'address' : 'description',
+        headerName: entityCurrentConfig.hasAddress ? 'Alamat' : 'Deskripsi',
+        flex: 1,
+        valueGetter: params => {
+          if (entityCurrentConfig.hasAddress) {
+            return params.data?.address || '-';
+          }
+          return params.data?.description || '-';
+        },
+      }),
+      suppressHeaderFilterButton: true,
     });
 
-    // Filter columns based on visibility
-    return orderedColumnDefs.filter(column =>
-      isEntityColumnVisible(column.field as string)
-    );
-  }, [
-    activeTab,
-    entityCurrentConfig,
-    isEntityColumnVisible,
-    getEntityColumnPinning,
-    entityOrderingState,
-  ]);
+    return columns;
+  }, [activeTab, entityCurrentConfig]);
 
   // Memoize modal handlers
   const openAddItemModal = useCallback(
@@ -492,10 +412,10 @@ const ItemMasterNew = memo(() => {
     [unifiedGridApi, isMultiFilterColumn]
   );
 
-  // Get ordered search columns based on user preferences
+  // Get search columns for items (use default ordering since AG Grid sidebar handles column order)
   const orderedSearchColumns = useMemo(() => {
-    return getOrderedSearchColumnsByEntity('items', orderingState);
-  }, [orderingState]);
+    return getOrderedSearchColumnsByEntity('items', []);
+  }, []);
 
   const {
     search: itemSearch,
@@ -605,53 +525,6 @@ const ItemMasterNew = memo(() => {
     };
   }, []);
 
-  // Handle column pinning events
-  const handleColumnPinned = useCallback(
-    (event: ColumnPinnedEvent) => {
-      // Save pinning state to database
-      if (event.column && handleColumnPinning) {
-        const colId = event.column.getColId();
-        // AG Grid returns true for left pin, 'right' for right pin, false/null/undefined for unpinned
-        let pinned: 'left' | 'right' | null = null;
-        if (event.pinned === true || event.pinned === 'left') {
-          pinned = 'left';
-        } else if (event.pinned === 'right') {
-          pinned = 'right';
-        }
-        handleColumnPinning(colId, pinned);
-      }
-    },
-    [handleColumnPinning]
-  );
-
-  // Handle column moved events
-  const handleColumnMoved = useCallback(
-    (event: ColumnMovedEvent) => {
-      // Only save if the column was actually moved (not just during initialization)
-      if (event.finished && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        try {
-          // Get current column order from the grid API
-          const allColumns = unifiedGridApi.getAllGridColumns();
-          const newOrder: string[] = [];
-
-          allColumns.forEach(column => {
-            const colId = column.getColId();
-            // Skip the row number column as it's not movable and not part of ordering
-            if (colId !== 'rowNumber') {
-              newOrder.push(colId);
-            }
-          });
-
-          // Save new column order
-          handleColumnOrdering(newOrder);
-        } catch (error) {
-          console.error('Failed to update column order:', error);
-        }
-      }
-    },
-    [handleColumnOrdering, unifiedGridApi]
-  );
-
   const handleTabChange = useCallback(
     (_key: string, value: MasterDataType) => {
       if (value !== activeTab) {
@@ -722,63 +595,15 @@ const ItemMasterNew = memo(() => {
     [activeTab, enhancedItemOnGridReady, entityOnGridReady]
   );
 
-  const unifiedColumnPinnedHandler = useCallback(
-    (event: ColumnPinnedEvent) => {
-      if (activeTab === 'items') {
-        handleColumnPinned(event);
-      } else {
-        // Entity column pinning logic
-        if (event.column && handleEntityColumnPinning) {
-          const colId = event.column.getColId();
-          let pinned: 'left' | 'right' | null = null;
-          if (event.pinned === true || event.pinned === 'left') {
-            pinned = 'left';
-          } else if (event.pinned === 'right') {
-            pinned = 'right';
-          }
-          handleEntityColumnPinning(colId, pinned);
-        }
-      }
-    },
-    [activeTab, handleColumnPinned, handleEntityColumnPinning]
-  );
+  const unifiedColumnPinnedHandler = useCallback((event: ColumnPinnedEvent) => {
+    // Column pinning is now handled by AG Grid sidebar
+    console.log('Column pinned:', event.column?.getColId(), event.pinned);
+  }, []);
 
-  const unifiedColumnMovedHandler = useCallback(
-    (event: ColumnMovedEvent) => {
-      if (activeTab === 'items') {
-        handleColumnMoved(event);
-      } else {
-        // Entity column moved logic
-        if (event.finished && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-          // 🚨 FIX: Prevent automatic saves during grid initialization
-          // Only save if this is a real user drag (has source/toIndex changes)
-          const isUserDrag =
-            event.column &&
-            (event.source === 'uiColumnMoved' ||
-              event.source === 'uiColumnDragged');
-
-          if (!isUserDrag) {
-            return;
-          }
-
-          try {
-            const allColumns = unifiedGridApi.getAllGridColumns();
-            const newOrder: string[] = [];
-            allColumns.forEach(column => {
-              const colId = column.getColId();
-              if (colId !== 'rowNumber') {
-                newOrder.push(colId);
-              }
-            });
-            handleEntityColumnOrdering(newOrder);
-          } catch (error) {
-            console.error('Failed to update entity column order:', error);
-          }
-        }
-      }
-    },
-    [activeTab, handleColumnMoved, handleEntityColumnOrdering, unifiedGridApi]
-  );
+  const unifiedColumnMovedHandler = useCallback((event: ColumnMovedEvent) => {
+    // Column ordering is now handled by AG Grid sidebar
+    console.log('Column moved:', event.column?.getColId(), event.source);
+  }, []);
 
   // No need for mouse handlers - handled by SlidingSelector
 
@@ -840,14 +665,6 @@ const ItemMasterNew = memo(() => {
                   ? (item: { id: string }) => handleItemSelect(item.id)
                   : undefined
               }
-              columnOptions={
-                activeTab === 'items' ? columnOptions : entityColumnOptions
-              }
-              onColumnToggle={
-                activeTab === 'items'
-                  ? handleColumnToggle
-                  : handleEntityColumnToggle
-              }
               gridApi={unifiedGridApi}
               exportFilename={
                 activeTab === 'items'
@@ -864,14 +681,6 @@ const ItemMasterNew = memo(() => {
                             ? 'produsen-item'
                             : 'satuan-item'
               }
-              // Row grouping props - only for items tab
-              isRowGroupingEnabled={
-                activeTab === 'items' ? isRowGroupingEnabled : undefined
-              }
-              onRowGroupingToggle={
-                activeTab === 'items' ? handleRowGroupingToggle : undefined
-              }
-              showGridModal={activeTab === 'items'}
             />
           </div>
         </div>
@@ -916,11 +725,7 @@ const ItemMasterNew = memo(() => {
             }
             onColumnPinned={unifiedColumnPinnedHandler}
             onColumnMoved={unifiedColumnMovedHandler}
-            onColumnVisible={
-              activeTab === 'items'
-                ? handleColumnVisibilityChangedFromGrid
-                : handleEntityColumnVisibilityChangedFromGrid
-            }
+            onColumnVisible={undefined}
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
@@ -929,6 +734,7 @@ const ItemMasterNew = memo(() => {
             }
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
+            sideBar={true} // Enable AG Grid built-in sidebar
           />
         </div>
       </Card>

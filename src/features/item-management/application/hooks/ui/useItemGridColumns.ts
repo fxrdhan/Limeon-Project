@@ -9,16 +9,9 @@ import {
   formatBaseCurrency,
 } from '@/components/ag-grid';
 import type { PackageConversion } from '@/types';
-interface UseItemGridColumnsProps {
-  getColumnPinning?: (columnKey: string) => 'left' | 'right' | null;
-  columnOrder?: string[];
-}
-
-export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
-  const { getColumnPinning, columnOrder } = props;
-
+export const useItemGridColumns = () => {
   const columnDefs: ColDef[] = useMemo(() => {
-    // Create column definitions map for ordering
+    // Create column definitions (order and pinning handled by AG Grid sidebar)
     const columnDefinitionsMap: Record<string, ColDef> = {
       name: {
         ...createWrapTextColumn({
@@ -27,7 +20,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           flex: 1,
         }),
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('name') || undefined,
       },
       'manufacturer.name': {
         ...createTextColumn({
@@ -47,7 +39,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('manufacturer.name') || undefined,
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -68,7 +59,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('code') || undefined,
       },
       barcode: {
         ...createTextColumn({
@@ -89,7 +79,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('barcode') || undefined,
       },
       'category.name': {
         ...createTextColumn({
@@ -108,7 +97,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('category.name') || undefined,
         enableRowGroup: true, // Always enable for groupable columns
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -129,7 +117,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('type.name') || undefined,
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -150,7 +137,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('package.name') || undefined,
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -173,7 +159,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('dosage.name') || undefined,
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -189,9 +174,13 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
                 .map((uc: PackageConversion) => uc.unit_name || 'N/A')
                 .join(', ');
             }
-            return '-';
+            return ''; // Return empty string instead of "-" for better AG Grid behavior
           },
         }),
+        cellRenderer: (params: { value: string }) => {
+          // Display "-" in UI when value is empty, but keep internal value as empty string
+          return params.value || '-';
+        },
         filter: 'agMultiColumnFilter',
         filterParams: {
           filters: [
@@ -204,7 +193,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('package_conversions') || undefined,
       },
       base_price: {
         ...createCurrencyColumn({
@@ -214,7 +202,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           valueFormatter: params => formatBaseCurrency(params.value),
         }),
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('base_price') || undefined,
       },
       sell_price: {
         ...createCurrencyColumn({
@@ -224,7 +211,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           valueFormatter: params => formatCurrency(params.value),
         }),
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('sell_price') || undefined,
       },
       stock: {
         ...createCenterAlignColumn({
@@ -243,48 +229,12 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('stock') || undefined,
       },
     };
 
-    // Default column order if not specified
-    const defaultOrder = [
-      'name',
-      'manufacturer.name', // ← Fix: seharusnya manufacturer.name
-      'code',
-      'barcode',
-      'category.name',
-      'type.name',
-      'package.name', // ← Fix: ganti unit.name dengan package.name
-      'dosage.name',
-      'package_conversions',
-      'base_price',
-      'sell_price',
-      'stock',
-    ];
-
-    // Use provided order or default order
-    const orderedColumns = columnOrder || defaultOrder;
-
-    // Create ordered column array
-    const orderedColumnDefs = orderedColumns
-      .map(fieldName => columnDefinitionsMap[fieldName])
-      .filter(Boolean); // Remove undefined columns
-
-    // Add any missing columns that aren't in the order (fallback)
-    Object.keys(columnDefinitionsMap).forEach(fieldName => {
-      if (!orderedColumns.includes(fieldName)) {
-        orderedColumnDefs.push(columnDefinitionsMap[fieldName]);
-      }
-    });
-
-    // Use ordered columns without manual row number column (AG Grid built-in rowNumbers will handle this)
-    // IMPORTANT: Don't filter by visibility here! Send all columns to AG Grid.
-    // Let AG Grid handle column visibility via setColumnsVisible() API to maintain correct ordering.
-    const allColumns = orderedColumnDefs;
-
-    return allColumns;
-  }, [getColumnPinning, columnOrder]);
+    // Return all columns in default order (AG Grid sidebar handles column ordering)
+    return Object.values(columnDefinitionsMap);
+  }, []);
 
   const columnsToAutoSize = useMemo(() => {
     // Return all columns for autosize - AG Grid will only autosize visible columns anyway
