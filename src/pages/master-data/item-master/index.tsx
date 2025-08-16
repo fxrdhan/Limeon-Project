@@ -1,12 +1,6 @@
 import { useState, useRef, useCallback, useEffect, memo, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  GridApi,
-  GridReadyEvent,
-  ColumnPinnedEvent,
-  ColumnMovedEvent,
-  ColDef,
-} from 'ag-grid-community';
+import { GridApi, GridReadyEvent, ColDef } from 'ag-grid-community';
 import { createTextColumn } from '@/components/ag-grid';
 
 // Components
@@ -149,10 +143,10 @@ const ItemMasterNew = memo(() => {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
-  // Simple row grouping state (client-side only, no persistence)
-  const [isRowGroupingEnabled] = useState(false);
+  // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
+  const [isRowGroupingEnabled] = useState(true);
   const showGroupPanel = true;
-  const defaultExpanded = 1;
+  const defaultExpanded = -1; // -1 means expand all groups by default
 
   // No event handling needed for simple client-side row grouping
 
@@ -595,14 +589,14 @@ const ItemMasterNew = memo(() => {
     [activeTab, enhancedItemOnGridReady, entityOnGridReady]
   );
 
-  const unifiedColumnPinnedHandler = useCallback((event: ColumnPinnedEvent) => {
+  const unifiedColumnPinnedHandler = useCallback(() => {
     // Column pinning is now handled by AG Grid sidebar
-    console.log('Column pinned:', event.column?.getColId(), event.pinned);
+    // Event handled by AG Grid's built-in functionality
   }, []);
 
-  const unifiedColumnMovedHandler = useCallback((event: ColumnMovedEvent) => {
+  const unifiedColumnMovedHandler = useCallback(() => {
     // Column ordering is now handled by AG Grid sidebar
-    console.log('Column moved:', event.column?.getColId(), event.source);
+    // Event handled by AG Grid's built-in functionality
   }, []);
 
   // No need for mouse handlers - handled by SlidingSelector
@@ -734,7 +728,7 @@ const ItemMasterNew = memo(() => {
             }
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
-            sideBar={false}
+            sideBar={'columns'}
           />
         </div>
       </Card>
