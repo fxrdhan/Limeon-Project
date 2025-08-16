@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useColumnDisplayModePreference } from '@/hooks/queries/useUserPreferences';
+import { useState, useCallback } from 'react';
 
 // Column display mode type
 export type ColumnDisplayMode = 'name' | 'code';
@@ -10,51 +9,16 @@ const getDefaultDisplayModes = (): Record<string, ColumnDisplayMode> => {
     'manufacturer.name': 'name',
     'category.name': 'name',
     'type.name': 'name',
-    'package.name': 'name', // ← Ini yang hilang!
+    'package.name': 'name',
     'dosage.name': 'name',
   };
 };
 
 export const useColumnDisplayMode = () => {
-  // Use database-backed user preferences
-  const {
-    columnDisplayModes: dbDisplayModes,
-    setColumnDisplayModes: setDbDisplayModes,
-    isLoading: isDbLoading,
-    error: dbError,
-  } = useColumnDisplayModePreference();
-
-  // Local state for optimistic updates
-  const [optimisticState, setOptimisticState] = useState<Record<
-    string,
-    ColumnDisplayMode
-  > | null>(null);
-
-  // Use optimistic state during saves, otherwise use DB state or defaults
-  const displayModeState = useMemo(() => {
-    if (optimisticState) {
-      return optimisticState;
-    }
-
-    if (dbDisplayModes) {
-      // Merge DB state with defaults (for new columns)
-      const mergedState: Record<string, ColumnDisplayMode> = {};
-      const defaultModes = getDefaultDisplayModes();
-
-      Object.keys(defaultModes).forEach(key => {
-        const dbValue = dbDisplayModes[key];
-        // Validate DB value is either 'name' or 'code', fallback to default
-        mergedState[key] =
-          dbValue === 'name' || dbValue === 'code'
-            ? dbValue
-            : defaultModes[key];
-      });
-
-      return mergedState;
-    }
-
-    return getDefaultDisplayModes();
-  }, [dbDisplayModes, optimisticState]);
+  // Simple client-side state management (no database sync)
+  const [displayModeState, setDisplayModeState] = useState<
+    Record<string, ColumnDisplayMode>
+  >(getDefaultDisplayModes());
 
   // Helper to check if a column is a reference column
   const isReferenceColumn = useCallback((colId: string) => {
@@ -62,41 +26,25 @@ export const useColumnDisplayMode = () => {
       'manufacturer.name',
       'category.name',
       'type.name',
-      'package.name', // ← Tambah ini yang hilang!
+      'package.name',
       'dosage.name',
     ].includes(colId);
   }, []);
 
   // Toggle display mode for a single column
   const toggleColumnDisplayMode = useCallback(
-    async (columnKey: string) => {
+    (columnKey: string) => {
       if (!isReferenceColumn(columnKey)) {
         return;
       }
 
-      // Create new display mode state
-      const newDisplayModes: Record<string, ColumnDisplayMode> = {
-        ...displayModeState,
-        [columnKey]: displayModeState[columnKey] === 'name' ? 'code' : 'name',
-      };
-
-      // Set optimistic state for immediate UI update
-      setOptimisticState(newDisplayModes);
-
-      try {
-        // Save to database
-        await setDbDisplayModes(newDisplayModes);
-
-        // Clear optimistic state after successful save
-        setOptimisticState(null);
-      } catch (error) {
-        console.error('Failed to save column display mode to database:', error);
-
-        // Revert optimistic state on error
-        setOptimisticState(null);
-      }
+      // Update state immediately (client-side only)
+      setDisplayModeState(prevState => ({
+        ...prevState,
+        [columnKey]: prevState[columnKey] === 'name' ? 'code' : 'name',
+      }));
     },
-    [displayModeState, setDbDisplayModes, isReferenceColumn]
+    [isReferenceColumn]
   );
 
   // Get display mode for a specific column
@@ -112,7 +60,7 @@ export const useColumnDisplayMode = () => {
     isReferenceColumn,
     toggleColumnDisplayMode,
     getColumnDisplayMode,
-    isLoading: isDbLoading,
-    error: dbError,
+    isLoading: false, // No loading since no database calls
+    error: null, // No errors since no database calls
   };
 };
