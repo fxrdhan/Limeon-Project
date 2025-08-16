@@ -177,7 +177,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           ],
       mainMenuItems: mainMenuItems,
       cellDataType: false,
-      minWidth: 80,
+      // Remove hardcoded minWidth to allow optimal autosize
       // Enable cell change flash animation for real-time updates
       enableCellChangeFlash: true,
     };
