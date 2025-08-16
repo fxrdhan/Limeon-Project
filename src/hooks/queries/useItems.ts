@@ -20,6 +20,9 @@ export const useItems = (options?: {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    // Disable caching for items data
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -32,6 +35,9 @@ export const useItem = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    // Disable caching for individual item data
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -53,6 +59,9 @@ export const useSearchItems = (
       return result.data;
     },
     enabled: (options?.enabled ?? true) && query.length > 0,
+    // Disable caching for items search data
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 

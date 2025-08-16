@@ -7,8 +7,11 @@ import type {
 } from 'ag-grid-community';
 import { EntityType } from '../collections/useEntityManager';
 
-interface UseEntityColumnVisibilityStateOptions {
-  entityType: EntityType;
+// Extended type to include items tab
+type GridTableType = EntityType | 'items';
+
+interface UseColumnVisibilityStateOptions {
+  tableType: GridTableType;
   enabled?: boolean;
   gridApi?: GridApi | null;
 }
@@ -17,7 +20,7 @@ interface ColumnVisibilityState {
   hiddenColIds: string[];
 }
 
-interface EntityColumnVisibilityManager {
+interface ColumnVisibilityManager {
   initialState: Partial<GridState> | undefined;
   onStateUpdated: (event: StateUpdatedEvent) => void;
   onGridPreDestroyed: (event: GridPreDestroyedEvent) => void;
@@ -68,11 +71,11 @@ const extractColumnVisibility = (
   return undefined;
 };
 
-export const useEntityColumnVisibilityState = (
-  options: UseEntityColumnVisibilityStateOptions
-): EntityColumnVisibilityManager => {
-  const { entityType, enabled = true } = options;
-  const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${entityType}`;
+export const useColumnVisibilityState = (
+  options: UseColumnVisibilityStateOptions
+): ColumnVisibilityManager => {
+  const { tableType, enabled = true } = options;
+  const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${tableType}`;
   const lastSavedState = useRef<ColumnVisibilityState | undefined>(undefined);
 
   // 🚀 SYNCHRONOUS state loading - no filtering needed since field names are unique per table
@@ -155,17 +158,18 @@ export const useEntityColumnVisibilityState = (
   };
 };
 
-// Helper function to get entity column visibility state for debugging
-export const getEntityColumnVisibilityState = (
-  entityType: EntityType
+// Helper function to get column visibility state for debugging (supports items + entities)
+export const getColumnVisibilityState = (
+  tableType: GridTableType
 ): ColumnVisibilityState | undefined => {
-  const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${entityType}`;
+  const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${tableType}`;
   return loadColumnVisibilityState(storageKey);
 };
 
-// Helper function to clear all entity column visibility states
-export const clearAllEntityColumnVisibilityStates = () => {
-  const entityTypes: EntityType[] = [
+// Helper function to clear all column visibility states (items + entities)
+export const clearAllColumnVisibilityStates = () => {
+  const allTableTypes: GridTableType[] = [
+    'items',
     'categories',
     'types',
     'packages',
@@ -174,12 +178,25 @@ export const clearAllEntityColumnVisibilityStates = () => {
     'units',
   ];
 
-  entityTypes.forEach(entityType => {
-    const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${entityType}`;
+  allTableTypes.forEach(tableType => {
+    const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${tableType}`;
     try {
       localStorage.removeItem(storageKey);
     } catch {
       // Silently fail
     }
+  });
+};
+
+// Backward compatibility alias for entity tables
+export const useEntityColumnVisibilityState = (options: {
+  entityType: EntityType;
+  enabled?: boolean;
+  gridApi?: GridApi | null;
+}): ColumnVisibilityManager => {
+  return useColumnVisibilityState({
+    tableType: options.entityType,
+    enabled: options.enabled,
+    gridApi: options.gridApi,
   });
 };
