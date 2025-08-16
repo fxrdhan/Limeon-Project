@@ -188,38 +188,8 @@ export const userPreferencesService = new UserPreferencesService();
 
 // Predefined preference keys for type safety
 export const PREFERENCE_KEYS = {
-  // Column visibility preferences
-  ITEM_COLUMN_VISIBILITY: 'item_column_visibility',
-  CATEGORY_COLUMN_VISIBILITY: 'category_column_visibility',
-  TYPE_COLUMN_VISIBILITY: 'type_column_visibility',
-  PACKAGE_COLUMN_VISIBILITY: 'package_column_visibility',
-  DOSAGE_COLUMN_VISIBILITY: 'dosage_column_visibility',
-  MANUFACTURER_COLUMN_VISIBILITY: 'manufacturer_column_visibility',
-  UNIT_COLUMN_VISIBILITY: 'unit_column_visibility',
-
-  // Column pinning preferences
-  ITEM_COLUMN_PINNING: 'item_column_pinning',
-  CATEGORY_COLUMN_PINNING: 'category_column_pinning',
-  TYPE_COLUMN_PINNING: 'type_column_pinning',
-  PACKAGE_COLUMN_PINNING: 'package_column_pinning',
-  DOSAGE_COLUMN_PINNING: 'dosage_column_pinning',
-  MANUFACTURER_COLUMN_PINNING: 'manufacturer_column_pinning',
-  UNIT_COLUMN_PINNING: 'unit_column_pinning',
-
-  // Column ordering preferences
-  ITEM_COLUMN_ORDER: 'item_column_order',
-  CATEGORY_COLUMN_ORDER: 'category_column_order',
-  TYPE_COLUMN_ORDER: 'type_column_order',
-  PACKAGE_COLUMN_ORDER: 'package_column_order',
-  DOSAGE_COLUMN_ORDER: 'dosage_column_order',
-  MANUFACTURER_COLUMN_ORDER: 'manufacturer_column_order',
-  UNIT_COLUMN_ORDER: 'unit_column_order',
-
-  // Column display mode preferences (kode/nama toggle) - hanya untuk item table
+  // Column display mode preferences (kode/nama toggle) - still used for item table
   ITEM_COLUMN_DISPLAY_MODE: 'item_column_display_mode',
-
-  // Row grouping preferences
-  ITEM_ROW_GROUPING: 'item_row_grouping',
 
   // Other preferences
   THEME: 'theme',

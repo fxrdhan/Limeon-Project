@@ -17,6 +17,7 @@ import {
   ColumnRowGroupChangedEvent,
   RowGroupOpenedEvent,
 } from 'ag-grid-community';
+import { SideBarDef } from 'ag-grid-enterprise';
 
 export interface ColumnConfig {
   field: string;
@@ -89,6 +90,8 @@ export interface DataGridProps {
     | 'multipleColumns'
     | 'groupRows'
     | 'custom';
+  // Side bar props
+  sideBar?: boolean | string | string[] | SideBarDef;
 }
 
 export interface DataGridRef {
