@@ -266,24 +266,29 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     debug: false,
   });
 
-  // Auto trigger autosize when switching tabs or column definitions change
+  // Auto trigger autosize when column definitions change - different timing for entity vs items
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // Small delay to ensure grid has updated with new column definitions
+      // Entity tables need longer delay for proper column width calculation
+      const delay = activeTab !== 'items' ? 300 : 100;
+
       const timer = setTimeout(() => {
+        // Autosize applies to all tabs: items, categories, types, packages, dosages, manufacturers, units
         gridApi.autoSizeAllColumns();
-      }, 100);
+      }, delay);
 
       return () => clearTimeout(timer);
     }
-  }, [gridApi, activeTab, columnDefs]);
+  }, [gridApi, columnDefs, activeTab]);
 
-  // Show loading state when switching tabs and applying column visibility state
+  // Apply column visibility state for ALL tabs (items + 6 entities) and autosize
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
       setIsStateLoading(true);
 
-      // Delay to ensure grid is fully ready after column def changes
+      // Entity tables need longer delay for proper state application and column calculation
+      const delay = activeTab !== 'items' ? 250 : 150;
+
       const timer = setTimeout(() => {
         if (!gridApi.isDestroyed()) {
           // Apply appropriate column visibility state based on active tab
@@ -299,9 +304,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
             gridApi.setState(entityColumnVisibilityManager.initialState);
           }
         }
+        // Autosize for ALL tabs after applying column visibility state
         gridApi.autoSizeAllColumns();
         setIsStateLoading(false);
-      }, 150);
+      }, delay);
 
       return () => {
         clearTimeout(timer);
@@ -317,22 +323,27 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     entityColumnVisibilityManager.initialState,
   ]);
 
-  // Show loading state during tab transitions
+  // Show loading state during ALL tab transitions - no premature autosize
   useEffect(() => {
     setIsStateLoading(true);
-    const timer = setTimeout(() => {
-      setIsStateLoading(false);
-    }, 200);
 
-    return () => clearTimeout(timer);
+    // Entity tables need longer loading time for proper rendering
+    const loadingDuration = activeTab !== 'items' ? 350 : 200;
+
+    // Only show loading - autosize will happen after grid ready and data loaded
+    const loadingTimer = setTimeout(() => {
+      setIsStateLoading(false);
+    }, loadingDuration);
+
+    return () => clearTimeout(loadingTimer);
   }, [activeTab]);
 
-  // Toggle display mode for items reference columns
+  // Toggle display mode for items reference columns (items tab only)
   const toggleColumnDisplayMode = useCallback(
     (colId: string) => {
       toggleDisplayMode(colId);
 
-      // Auto trigger autosize after toggle
+      // Auto trigger autosize after toggle (items tab only - reference columns feature)
       setTimeout(() => {
         if (gridApi) {
           gridApi.autoSizeAllColumns();
@@ -358,7 +369,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onRowClick]
   );
 
-  // Handle grid ready
+  // Handle grid ready - setup only, real autosize happens in onFirstDataRendered
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
@@ -372,12 +383,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         params.api.paginationGoToPage(currentPage - 1);
       }
 
-      // Trigger autosize to ensure proper layout
-      setTimeout(() => {
-        if (!params.api.isDestroyed()) {
-          params.api.autoSizeAllColumns();
-        }
-      }, 100);
+      // No autosize here - will be done optimally in onFirstDataRendered after data loads
 
       // Notify parent about grid API
       if (onGridApiReady) {
@@ -388,6 +394,31 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     },
     [onGridReady, activeTab, currentPage, onGridApiReady]
   );
+
+  // Handle first data rendered - optimal time for autosize after data loaded
+  const handleFirstDataRendered = useCallback(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      // This is the OPTIMAL time for autosize - grid ready + data loaded
+      if (activeTab !== 'items') {
+        // Entity tables: Double autosize for perfect column width calculation
+        gridApi.autoSizeAllColumns();
+
+        // Final autosize after brief delay to ensure DOM measurements are accurate
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            gridApi.autoSizeAllColumns();
+          }
+        }, 150);
+      } else {
+        // Items: Single autosize after data rendered
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            gridApi.autoSizeAllColumns();
+          }
+        }, 50);
+      }
+    }
+  }, [gridApi, activeTab]);
 
   // Handle row group opened/closed - scroll child rows into view
   const handleRowGroupOpened = useCallback(
@@ -416,10 +447,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [activeTab, isRowGroupingEnabled, gridApi]
   );
 
-  // Custom menu items (items-specific features)
+  // Custom menu items for ALL tabs (items + 6 entities)
   const getMainMenuItems: GetMainMenuItems = useCallback(
     params => {
-      if (activeTab !== 'items' || !params.column) {
+      if (!params.column) {
         return getPinAndFilterMenuItems(params);
       }
 
@@ -429,11 +460,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         'separator',
         'pinSubMenu',
         'separator',
-        'autoSizeAll',
+        'autoSizeAll', // Available for ALL tabs now
       ] as const;
 
-      // Add toggle menu for reference columns only (items tab)
-      if (isReferenceColumn(colId)) {
+      // Items tab: Add toggle menu for reference columns
+      if (activeTab === 'items' && isReferenceColumn(colId)) {
         const currentMode = columnDisplayModes[colId];
         const nextMode = currentMode === 'name' ? 'kode' : 'nama';
 
@@ -450,6 +481,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         ];
       }
 
+      // Entity tabs: Standard menu with autosize
       return [...baseMenuItems];
     },
     [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
@@ -514,6 +546,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           columnDefs={columnDefs}
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
+          onFirstDataRendered={handleFirstDataRendered}
           loading={isLoading || isStateLoading}
           overlayNoRowsTemplate={overlayTemplate}
           autoSizeColumns={activeTab === 'items' ? itemColumnsToAutoSize : []}
@@ -569,7 +602,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}
-          // AG Grid Sidebar - configured to suppress row groups section
+          // AG Grid Sidebar - closed by default for cleaner UI
           sideBar={{
             toolPanels: [
               {
@@ -584,7 +617,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                 },
               },
             ],
-            defaultToolPanel: 'columns',
+            // No defaultToolPanel = sidebar closed by default
           }}
           // Ensure smooth state transitions
           suppressColumnMoveAnimation={true}
