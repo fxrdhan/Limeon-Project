@@ -262,7 +262,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                                 searchList={true}
                                 mode="input"
                                 portalWidth="content"
-                                position="bottom"
+                                position="left"
                               />
                             </div>
 
@@ -319,7 +319,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                     searchList={true}
                     mode="input"
                     portalWidth="content"
-                    position="bottom"
+                    position="left"
                   />
 
                   {/* Icon overlay - positioned over the invisible button */}

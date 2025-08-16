@@ -8,7 +8,7 @@ A flexible, accessible React dropdown component with search functionality, keybo
 - **Keyboard Navigation**: Full arrow key and Enter/Escape support with auto pre-selection
 - **Validation**: Form validation with custom error messages
 - **Accessibility**: ARIA labels, roles, and keyboard navigation
-- **Smart Positioning**: Manual position control (auto/top/bottom) with intelligent fallback
+- **Smart Positioning**: Manual position control (auto/top/bottom/left) with intelligent fallback
 - **Portal Width Control**: Custom width sizing for dropdown portals
 - **Text Expansion**: Expandable text for long option names on hover
 - **Radio Mode**: Optional radio button indicators
@@ -39,6 +39,7 @@ const MyComponent = () => {
       value={selectedValue}
       onChange={setSelectedValue}
       placeholder="Select an option"
+      name="basic-dropdown"
     />
   );
 };
@@ -72,7 +73,7 @@ const MyComponent = () => {
 | `name`                    | `string`                                   | `undefined`     | Form field name for validation            |
 | `tabIndex`                | `number`                                   | `undefined`     | Tab order for accessibility               |
 | **`portalWidth`**         | `'auto' \| string \| number`               | `'auto'`        | Control dropdown portal width             |
-| **`position`**            | `'auto' \| 'top' \| 'bottom'`              | `'auto'`        | Force dropdown position direction         |
+| **`position`**            | `'auto' \| 'top' \| 'bottom' \| 'left'`   | `'auto'`        | Force dropdown position direction         |
 | **`enableHoverDetail`**   | `boolean`                                  | `false`         | Enable hover detail tooltips              |
 | **`hoverDetailDelay`**    | `number`                                   | `800`           | Delay before showing hover detail (ms)    |
 | **`onFetchHoverDetail`**  | `(optionId: string) => Promise<HoverData>` | `undefined`     | Async function to fetch hover detail data |
@@ -160,6 +161,31 @@ const MyComponent = () => {
   portalWidth="300px"
   position="bottom"
   placeholder="Fixed width, always bottom"
+/>
+```
+
+### Left Positioning (NEW)
+
+```tsx
+// Ideal for toolbar buttons or right-aligned dropdowns
+<Dropdown
+  options={columnOptions}
+  value={selectedColumns}
+  onChange={setSelectedColumns}
+  position="left"
+  portalWidth="content"
+  placeholder="Column Visibility"
+  withCheckbox={true}
+/>
+
+// Smart fallback when no space on left
+<Dropdown
+  options={options}
+  value={selectedValue}
+  onChange={setSelectedValue}
+  position="left"  // Auto-fallback to normal positioning if no space
+  portalWidth="auto"
+  placeholder="Smart left positioning"
 />
 ```
 
@@ -311,9 +337,11 @@ const customValidate = (value: string) => {
 - **`auto`** (default): Smart positioning based on available viewport space
 - **`top`**: Force dropdown to always open upward
 - **`bottom`**: Force dropdown to always open downward
+- **`left`**: ✨ **NEW** - Dropdown appears to the left of the trigger button
 
 ### Position Logic
 
+#### Vertical Positioning (auto/top/bottom)
 ```tsx
 // Auto positioning considers:
 const shouldDropUp =
@@ -321,11 +349,106 @@ const shouldDropUp =
   (spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
 ```
 
+#### Left Positioning Logic
+```tsx
+// Left positioning with intelligent fallback
+const spaceLeft = buttonRect.left - margin;
+const minRequiredSpace = dropdownWidth + VIEWPORT_MARGIN;
+
+if (spaceLeft < minRequiredSpace) {
+  // Auto-fallback to regular positioning
+  isLeftPositioning = false;
+  // Use align prop (left/right) for normal positioning
+} else {
+  // Position to the left of button
+  leftPosition = buttonRect.left - dropdownWidth - spacing;
+  // Align dropdown top with button top
+  topPosition = buttonRect.top + scrollY;
+}
+```
+
+### Position Use Cases
+
+| Position | Best For | Example |
+|----------|----------|---------|
+| `auto` | General dropdowns | Form fields, general selection |
+| `top` | Bottom toolbar buttons | Footer actions, bottom navigation |
+| `bottom` | Header dropdowns | Navigation menus, top toolbars |
+| `left` | Right-aligned buttons | Column visibility, toolbar options |
+
+### Fallback Behavior
+
+- **Viewport Boundaries**: All positions respect viewport margins
+- **Insufficient Space**: `left` position auto-falls back to normal positioning
+- **Direction Locking**: Prevents flickering during resize (except left mode)
+- **Scroll Awareness**: Positions account for page scroll offset
+
 ### Portal Width Options
 
-- **`auto`**: Match trigger button width
+- **`auto`**: Match trigger button width (default)
+- **`content`**: Calculate width based on option content (recommended for `left` positioning)
 - **`string`**: CSS width value (e.g., "300px", "20rem")
 - **`number`**: Width in pixels
+
+#### Content Width Calculation
+```tsx
+// Uses Canvas API for precise text measurement
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto';
+
+const maxWidth = Math.max(
+  ...options.map(option => context.measureText(option.name).width)
+);
+
+// Add padding for icons, checkboxes, and spacing
+const contentWidth = maxWidth + 80;
+return Math.max(120, Math.min(contentWidth, 400)); // Min 120px, Max 400px
+```
+
+## Left Positioning Best Practices
+
+### When to Use Left Positioning
+
+✅ **Good Use Cases:**
+- Toolbar buttons positioned on the right side
+- Column visibility controls
+- Action menus in table headers
+- Context menus triggered from right-aligned icons
+- Settings dropdowns in navigation bars
+
+❌ **Avoid Left Positioning For:**
+- Form fields in narrow containers
+- Mobile interfaces (limited horizontal space)
+- Buttons positioned at screen left edge
+
+### Configuration Recommendations
+
+```tsx
+// Recommended for toolbar usage
+<Dropdown
+  position="left"
+  portalWidth="content"    // Auto-size based on options
+  align="right"           // When fallback occurs
+  searchList={true}       // Enable search for long lists
+/>
+
+// For column visibility specifically
+<Dropdown
+  position="left"
+  portalWidth="content"
+  withCheckbox={true}     // Multiple selection
+  searchList={true}       // Search through columns
+  placeholder="Select columns to show"
+/>
+```
+
+### Responsive Behavior
+
+- **Desktop**: Full left positioning with proper spacing
+- **Tablet**: Smart fallback when insufficient space
+- **Mobile**: Always falls back to normal positioning
+- **Viewport Resize**: Maintains position stability
 
 ## Animation System
 
@@ -334,6 +457,7 @@ Simplified animation matching design system:
 - **Duration**: 150ms (consistent with calendar components)
 - **Easing**: `ease-out` for natural movement
 - **States**: `opacity-0 scale-95` ↔ `opacity-100 scale-100`
+- **Transform Origin**: `origin-top` (down), `origin-bottom` (up), dynamic for left
 
 ## Customization
 
@@ -360,8 +484,18 @@ export const DROPDOWN_CONSTANTS = {
   HOVER_TIMEOUT: 100, // Hover open delay
   DEBOUNCE_DELAY: 150, // Search debounce
   MAX_HEIGHT: 240, // Portal max height (60 * 4)
-  VIEWPORT_MARGIN: 16, // Viewport edge margin
-  DROPDOWN_MARGIN: 4, // Button-to-portal margin
+  VIEWPORT_MARGIN: 16, // Viewport edge margin for all positions
+  DROPDOWN_MARGIN: 4, // Button-to-portal margin (vertical)
+  DROPDOWN_SPACING: 2, // Button-to-portal spacing (horizontal for left)
   PAGE_SIZE: 5, // PageUp/PageDown jump size
+  PORTAL_Z_INDEX: 1060, // Z-index for dropdown portals
 };
 ```
+
+### Left Positioning Constants
+
+Specific constants that affect left positioning behavior:
+
+- **`DROPDOWN_SPACING`**: Horizontal gap between button and left-positioned dropdown
+- **`VIEWPORT_MARGIN`**: Minimum distance from viewport edges
+- **Portal positioning**: Uses `absolute` instead of `fixed` for left mode
