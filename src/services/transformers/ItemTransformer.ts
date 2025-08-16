@@ -37,7 +37,10 @@ export class ItemTransformer {
    * Get manufacturer info from JOIN data (no lookup needed!)
    */
   static getManufacturerInfo(
-    manufacturerData: { id: string; code?: string; name: string } | null | undefined,
+    manufacturerData:
+      | { id: string; code?: string; name: string }
+      | null
+      | undefined,
     legacyManufacturerName?: string
   ): ItemManufacturer {
     // Use JOIN data if available (new FK relationship)
@@ -45,24 +48,22 @@ export class ItemTransformer {
       return {
         id: manufacturerData.id,
         code: manufacturerData.code,
-        name: manufacturerData.name
+        name: manufacturerData.name,
       };
     }
-    
+
     // Fallback for legacy data (should be rare after migration)
     return {
       id: '',
       code: undefined,
-      name: legacyManufacturerName || ''
+      name: legacyManufacturerName || '',
     };
   }
 
   /**
    * Transform single DB item to UI Item format
    */
-  static transformDBItemToItem(
-    dbItem: DBItemWithRelations
-  ): Item {
+  static transformDBItemToItem(dbItem: DBItemWithRelations): Item {
     const manufacturerInfo = this.getManufacturerInfo(
       dbItem.item_manufacturers,
       dbItem.manufacturer // Fallback for legacy data
@@ -87,9 +88,7 @@ export class ItemTransformer {
   /**
    * Transform array of DB items to UI Items format
    */
-  static transformDBItemsToItems(
-    dbItems: DBItemWithRelations[]
-  ): Item[] {
+  static transformDBItemsToItems(dbItems: DBItemWithRelations[]): Item[] {
     return dbItems.map(item => this.transformDBItemToItem(item));
   }
 
