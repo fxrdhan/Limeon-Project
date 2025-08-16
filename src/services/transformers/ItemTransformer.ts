@@ -76,12 +76,12 @@ export class ItemTransformer {
       ...dbItem,
       category: dbItem.item_categories || { name: '' },
       type: dbItem.item_types || { name: '' },
-      unit: dbItem.item_packages || { name: '' },
+      package: dbItem.item_packages || { name: '' }, // Kemasan dari item_packages
+      unit: { name: dbItem.base_unit || '' }, // Satuan dari base_unit string
       dosage: dbItem.item_dosages || { name: '' },
-      manufacturer: manufacturerInfo.name,
-      manufacturer_info: manufacturerInfo,
+      manufacturer: manufacturerInfo,
       package_conversions: packageConversions,
-      base_unit: dbItem.item_packages?.name || '',
+      base_unit: dbItem.base_unit || '', // base_unit tetap dari field base_unit
     };
   }
 
@@ -158,21 +158,17 @@ export class ItemTransformer {
       name: '',
       code: '',
       barcode: '',
-      manufacturer: '',
       stock: 0,
       base_price: 0,
       sell_price: 0,
       category: { name: '' },
       type: { name: '' },
-      unit: { name: '' },
+      package: { name: '' }, // Kemasan
+      unit: { name: '' }, // Satuan
       dosage: { name: '' },
+      manufacturer: { id: '', code: undefined, name: '' },
       package_conversions: [],
       base_unit: '',
-      manufacturer_info: {
-        id: '',
-        code: undefined,
-        name: '',
-      },
     };
   }
 
@@ -184,7 +180,7 @@ export class ItemTransformer {
       item.name || '',
       item.code || '',
       item.barcode || '',
-      item.manufacturer || '',
+      item.manufacturer?.name || '',
       item.category?.name || '',
       item.type?.name || '',
     ].filter(field => field.trim() !== '');

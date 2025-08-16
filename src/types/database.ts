@@ -116,8 +116,7 @@ export interface Doctor {
 export interface Item {
   id: string;
   name: string;
-  manufacturer?: string;
-  manufacturer_info?: { id?: string; code?: string | null; name: string };
+  manufacturer: { id?: string; code?: string | null; name: string };
   code?: string;
   barcode?: string | null;
   base_price: number;
@@ -129,7 +128,8 @@ export interface Item {
   customer_level_discounts?: CustomerLevelDiscount[];
   category: { name: string };
   type: { name: string };
-  unit: { name: string };
+  package: { name: string }; // Kemasan (dari item_packages)
+  unit: { name: string }; // Satuan (dari base_unit string atau item_units)
   dosage?: { name: string };
 }
 
@@ -160,7 +160,7 @@ export interface DBPackageConversion {
 export interface DBItem {
   id: string;
   name: string;
-  manufacturer?: string;
+  manufacturer_id?: string;
   code?: string;
   barcode?: string | null;
   base_price: number;

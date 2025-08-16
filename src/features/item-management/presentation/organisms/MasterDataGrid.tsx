@@ -33,16 +33,20 @@ import {
 // Extended entity types with code property for display mode
 type EntityWithCode = {
   name: string;
-  code?: string;
+  code?: string | null;
 };
 
 // Extended Item interface for column display mode transformations
 interface ItemWithExtendedEntities
-  extends Omit<Item, 'category' | 'type' | 'unit' | 'dosage'> {
+  extends Omit<
+    Item,
+    'category' | 'type' | 'package' | 'dosage' | 'manufacturer'
+  > {
   category?: EntityWithCode;
   type?: EntityWithCode;
-  unit?: EntityWithCode;
+  package?: EntityWithCode; // Kemasan (yang ditampilkan di grid)
   dosage?: EntityWithCode;
+  manufacturer?: EntityWithCode;
 }
 
 type MasterDataType = 'items' | EntityType;
@@ -151,9 +155,12 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         Object.entries(columnDisplayModes).forEach(([colId, mode]) => {
           if (mode === 'code') {
             switch (colId) {
-              case 'manufacturer':
-                if (item.manufacturer_info?.code) {
-                  modifiedItem.manufacturer = item.manufacturer_info.code;
+              case 'manufacturer.name':
+                if (item.manufacturer?.code) {
+                  modifiedItem.manufacturer = {
+                    name: item.manufacturer.code,
+                    code: item.manufacturer.code,
+                  };
                 }
                 break;
               case 'category.name':
@@ -182,16 +189,16 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                   };
                 }
                 break;
-              case 'unit.name':
-                // Type guard: Check if unit has code property
+              case 'package.name':
+                // Type guard: Check if package has code property
                 if (
-                  item.unit &&
-                  'code' in item.unit &&
-                  typeof item.unit.code === 'string'
+                  item.package &&
+                  'code' in item.package &&
+                  typeof item.package.code === 'string'
                 ) {
-                  modifiedItem.unit = {
-                    name: item.unit.code,
-                    code: item.unit.code,
+                  modifiedItem.package = {
+                    name: item.package.code,
+                    code: item.package.code,
                   };
                 }
                 break;

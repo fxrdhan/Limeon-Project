@@ -7,10 +7,10 @@ export type ColumnDisplayMode = 'name' | 'code';
 // Default display modes for reference columns
 const getDefaultDisplayModes = (): Record<string, ColumnDisplayMode> => {
   return {
-    manufacturer: 'name',
+    'manufacturer.name': 'name',
     'category.name': 'name',
     'type.name': 'name',
-    'unit.name': 'name',
+    'package.name': 'name', // ← Ini yang hilang!
     'dosage.name': 'name',
   };
 };
@@ -59,10 +59,10 @@ export const useColumnDisplayMode = () => {
   // Helper to check if a column is a reference column
   const isReferenceColumn = useCallback((colId: string) => {
     return [
-      'manufacturer',
+      'manufacturer.name',
       'category.name',
       'type.name',
-      'unit.name',
+      'package.name', // ← Tambah ini yang hilang!
       'dosage.name',
     ].includes(colId);
   }, []);

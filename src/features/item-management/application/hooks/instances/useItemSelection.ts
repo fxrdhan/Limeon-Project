@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useItems } from '@/hooks/queries';
 import { fuzzyMatch } from '@/utils/search';
-import type { Item, UseItemSelectionOptions, DBItem } from '@/types';
+import type { Item, UseItemSelectionOptions } from '@/types';
 
 export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const { enabled = true } = options;
@@ -24,12 +24,12 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
     const searchTerm = searchItem.toLowerCase();
     const matches = allItems
-      .filter((item: DBItem) => {
+      .filter((item: Item) => {
         // Check if item matches search term in any field
         const nameMatch = fuzzyMatch(item.name || '', searchTerm);
         const codeMatch = item.code ? fuzzyMatch(item.code, searchTerm) : false;
-        const manufacturerMatch = item.manufacturer
-          ? fuzzyMatch(item.manufacturer, searchTerm)
+        const manufacturerMatch = item.manufacturer?.name
+          ? fuzzyMatch(item.manufacturer.name, searchTerm)
           : false;
         const barcodeMatch = item.barcode
           ? fuzzyMatch(item.barcode, searchTerm)
@@ -37,23 +37,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
         return nameMatch || codeMatch || manufacturerMatch || barcodeMatch;
       })
-      .slice(0, 20) // Limit results
-      .map((item: DBItem) => {
-        // Transform DBItem to Item format for compatibility
-        const transformedItem: Item = {
-          ...item,
-          category: item.item_categories?.[0] || { name: '' },
-          type: item.item_types?.[0] || { name: '' },
-          unit: item.item_packages?.[0] || { name: '' },
-          base_unit: item.item_packages?.[0]?.name || '',
-          package_conversions:
-            typeof item.package_conversions === 'string'
-              ? JSON.parse(item.package_conversions || '[]')
-              : item.package_conversions || [],
-        };
-
-        return transformedItem;
-      });
+      .slice(0, 20); // Limit results - no need to transform, already Item[]
 
     return matches;
   }, [allItems, searchItem]);

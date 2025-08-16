@@ -20,12 +20,12 @@ interface ColumnOption {
 
 const COLUMN_CONFIGS: ColumnVisibilityConfig[] = [
   { key: 'name', label: 'Nama Item', defaultVisible: true },
-  { key: 'manufacturer', label: 'Produsen', defaultVisible: true },
+  { key: 'manufacturer.name', label: 'Produsen', defaultVisible: true },
   { key: 'code', label: 'Kode', defaultVisible: true },
   { key: 'barcode', label: 'Barcode', defaultVisible: true },
   { key: 'category.name', label: 'Kategori', defaultVisible: true },
   { key: 'type.name', label: 'Jenis', defaultVisible: true },
-  { key: 'unit.name', label: 'Kemasan', defaultVisible: true },
+  { key: 'package.name', label: 'Kemasan', defaultVisible: true },
   { key: 'dosage.name', label: 'Sediaan', defaultVisible: true },
   {
     key: 'package_conversions',
