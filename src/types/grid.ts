@@ -93,6 +93,9 @@ export interface DataGridProps {
     | 'multipleColumns'
     | 'groupRows'
     | 'custom';
+  // Enhanced grouping props for multi-grouping
+  suppressAggFuncInHeader?: boolean;
+  suppressDragLeaveHidesColumns?: boolean;
   // Side bar props
   sideBar?: boolean | string | string[] | SideBarDef;
   // Grid state management props

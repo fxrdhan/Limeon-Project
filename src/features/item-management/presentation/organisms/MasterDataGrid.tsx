@@ -418,7 +418,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );
 
-  // Auto group column definition for row grouping
+  // Auto group column definition for row grouping with enhanced multi-grouping support
   const autoGroupColumnDef = useMemo(() => {
     if (!isRowGroupingEnabled || activeTab !== 'items') {
       return undefined;
@@ -426,13 +426,17 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
     return {
       // No headerName - let AG Grid use the column name being grouped
-      minWidth: 250,
+      headerName: 'Grup',
+      minWidth: 300,
       cellRenderer: 'agGroupCellRenderer',
       cellRendererParams: {
-        suppressCount: false, // Show count in parentheses
+        suppressCount: false, // Show count in parentheses - AG Grid handles this automatically
+        suppressDoubleClickExpand: false,
       },
       sortable: true,
       resizable: true,
+      pinned: 'left' as const,
+      lockPinned: true,
     };
   }, [isRowGroupingEnabled, activeTab]);
 
@@ -501,6 +505,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
               ? 'always'
               : 'never'
           }
+          // Enable multi-grouping and enhanced grouping features
+          suppressAggFuncInHeader={false}
+          suppressDragLeaveHidesColumns={true}
           groupDefaultExpanded={
             activeTab === 'items' && isRowGroupingEnabled
               ? defaultExpanded

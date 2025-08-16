@@ -97,6 +97,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       onStateUpdated,
       onGridPreDestroyed,
       suppressColumnMoveAnimation = false,
+      // Enhanced grouping props for multi-grouping
+      suppressAggFuncInHeader = false,
+      suppressDragLeaveHidesColumns = true,
     },
     ref
   ) => {
@@ -283,6 +286,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           groupDisplayType={groupDisplayType}
           // Side bar props
           sideBar={sideBar}
+          // Enhanced grouping props for multi-grouping
+          suppressAggFuncInHeader={suppressAggFuncInHeader}
+          suppressDragLeaveHidesColumns={suppressDragLeaveHidesColumns}
           // Grid state management props
           onStateUpdated={onStateUpdated}
         />
