@@ -267,28 +267,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
-  // Apply column visibility state for ALL tabs (items + 6 entities)
+  // Remove double state application - AG Grid's initialState prop handles this automatically
+  // Only do autosize when grid API becomes available or tab changes
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // Apply appropriate column visibility state based on active tab
-      if (activeTab === 'items' && itemsColumnVisibilityManager.initialState) {
-        gridApi.setState(itemsColumnVisibilityManager.initialState);
-      } else if (
-        activeTab !== 'items' &&
-        entityColumnVisibilityManager.initialState
-      ) {
-        gridApi.setState(entityColumnVisibilityManager.initialState);
-      }
-
-      // Simple autosize after state applied
+      // Simple autosize when grid ready or tab switched
       gridApi.autoSizeAllColumns();
     }
-  }, [
-    gridApi,
-    activeTab,
-    itemsColumnVisibilityManager.initialState,
-    entityColumnVisibilityManager.initialState,
-  ]);
+  }, [gridApi, activeTab]);
 
   // No artificial loading state - rely on data loading state only
 
