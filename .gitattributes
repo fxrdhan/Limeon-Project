@@ -14,13 +14,16 @@
 # Images
 *.png binary
 
-# Language detection
+# Language detection (force TypeScript)
 *.ts linguist-language=TypeScript
 *.tsx linguist-language=TypeScript
-*.js linguist-language=JavaScript
+*.js linguist-language=TypeScript
 
 # Documentation (exclude from language stats)
 README* linguist-documentation
+
+# CSS files (exclude from language stats)
+*.css linguist-vendored
 
 # Config files (exclude from language stats)
 *.config.js linguist-vendored
