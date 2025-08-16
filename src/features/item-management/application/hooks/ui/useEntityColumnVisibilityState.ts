@@ -75,7 +75,7 @@ export const useEntityColumnVisibilityState = (
   const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${entityType}`;
   const lastSavedState = useRef<ColumnVisibilityState | undefined>(undefined);
 
-  // 🚀 SYNCHRONOUS state loading to avoid timing issues
+  // 🚀 SYNCHRONOUS state loading - no filtering needed since field names are unique per table
   const initialState = useMemo(() => {
     if (!enabled) {
       return undefined;
@@ -90,7 +90,7 @@ export const useEntityColumnVisibilityState = (
     }
 
     return undefined;
-  }, [entityType, enabled, storageKey]);
+  }, [enabled, storageKey]);
 
   // Save column visibility state
   const saveState = useCallback(

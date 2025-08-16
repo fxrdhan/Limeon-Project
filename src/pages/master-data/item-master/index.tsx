@@ -201,14 +201,17 @@ const ItemMasterNew = memo(() => {
     [activeTab, entityManager.entityConfigs]
   );
 
-  // Entity column definitions (simplified without custom column visibility)
+  // Entity column definitions with unique field IDs per table
   const entityColumnDefs: ColDef[] = useMemo(() => {
     if (activeTab === 'items' || !entityCurrentConfig) return [];
+
+    // 🎯 Create unique field IDs by prefixing with entity type
+    const tablePrefix = activeTab as string;
 
     const columns: ColDef[] = [
       {
         ...createTextColumn({
-          field: 'code',
+          field: `${tablePrefix}.code`, // ← UNIQUE: packages.code, dosages.code, etc
           headerName: 'Kode',
           valueGetter: params => params.data?.code || '-',
         }),
@@ -222,7 +225,7 @@ const ItemMasterNew = memo(() => {
         suppressHeaderFilterButton: true,
       },
       {
-        field: 'name',
+        field: `${tablePrefix}.name`, // ← UNIQUE: packages.name, dosages.name, etc
         headerName: entityCurrentConfig.nameColumnHeader || 'Nama',
         filter: 'agTextColumnFilter',
         filterParams: {
@@ -244,6 +247,7 @@ const ItemMasterNew = memo(() => {
           whiteSpace: 'nowrap',
         },
         tooltipField: 'name',
+        valueGetter: params => params.data?.name || '-',
         sortable: true,
         resizable: true,
         suppressHeaderFilterButton: true,
@@ -254,7 +258,7 @@ const ItemMasterNew = memo(() => {
     if (entityCurrentConfig.hasNciCode) {
       columns.push({
         ...createTextColumn({
-          field: 'nci_code',
+          field: `${tablePrefix}.nci_code`, // ← UNIQUE: packages.nci_code vs dosages.nci_code
           headerName: 'Kode NCI',
           valueGetter: params => params.data?.nci_code || '-',
         }),
@@ -272,7 +276,7 @@ const ItemMasterNew = memo(() => {
     // Add address or description column
     columns.push({
       ...createTextColumn({
-        field: entityCurrentConfig.hasAddress ? 'address' : 'description',
+        field: `${tablePrefix}.${entityCurrentConfig.hasAddress ? 'address' : 'description'}`, // ← UNIQUE per table
         headerName: entityCurrentConfig.hasAddress ? 'Alamat' : 'Deskripsi',
         flex: 1,
         valueGetter: params => {
@@ -460,6 +464,10 @@ const ItemMasterNew = memo(() => {
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
         try {
+          // 🎯 Convert field names to table-specific format
+          const tablePrefix = activeTab as string;
+          const tablePrefixedField = `${tablePrefix}.${filterSearch.field}`;
+
           // Entity columns are simpler - mostly text filters
           // Special handling for 'code' and 'nci_code' which use multi-filter
           const isMultiFilter =
@@ -467,7 +475,7 @@ const ItemMasterNew = memo(() => {
 
           if (isMultiFilter) {
             // For multi-filter columns (code, nci_code)
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+            await unifiedGridApi.setColumnFilterModel(tablePrefixedField, {
               filterType: 'multi',
               filterModels: [
                 {
@@ -479,7 +487,7 @@ const ItemMasterNew = memo(() => {
             });
           } else {
             // For single filter columns (name, description, address)
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+            await unifiedGridApi.setColumnFilterModel(tablePrefixedField, {
               filterType: 'text',
               type: filterSearch.operator,
               filter: filterSearch.value,
@@ -492,7 +500,7 @@ const ItemMasterNew = memo(() => {
         }
       }
     },
-    [unifiedGridApi]
+    [unifiedGridApi, activeTab]
   );
 
   const {
