@@ -83,7 +83,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
   // Get item by ID (useful for pre-selecting items)
   const getItemById = (id: string) => {
-    return allItems?.find(item => item.id === id) || null;
+    return allItems?.find(item => item.id === id) || undefined;
   };
 
   // Check if item has stock

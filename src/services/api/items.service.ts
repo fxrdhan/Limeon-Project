@@ -1,12 +1,11 @@
 import { BaseService, ServiceResponse } from './base.service';
-import { supabase } from '@/lib/supabase';
+import { itemRepository, ItemRepository, ItemQueryOptions } from '../repositories/ItemRepository';
+import { ItemTransformer } from '../transformers/ItemTransformer';
 import type {
   DBItem,
-  PackageConversion,
   DBPackageConversion,
-  ItemManufacturer,
+  Item
 } from '@/types/database';
-import type { Item } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 export class ItemsService extends BaseService<DBItem> {
@@ -14,141 +13,50 @@ export class ItemsService extends BaseService<DBItem> {
     super('items');
   }
 
-  // Override getAll to include related data
-  async getAll(options: Parameters<BaseService<DBItem>['getAll']>[0] = {}) {
+  /**
+   * Get all items with related data (optimized with caching)
+   */
+  async getAll(options: ItemQueryOptions = {}): Promise<ServiceResponse<Item[]>> {
     try {
-      const defaultSelect = `
-        *,
-        item_categories!inner(id, code, name),
-        item_types!inner(id, code, name),
-        item_packages!inner(id, code, name),
-        item_dosages(id, code, name)
-      `;
-
-      const result = await super.getAll({
+      // Get items from repository
+      const { data: dbItems, error } = await itemRepository.getItems({
         ...options,
-        select: options.select || defaultSelect,
+        orderBy: options.orderBy || { column: 'name', ascending: true }
       });
 
-      // Get manufacturer data separately for code mapping
-      const { data: manufacturerLookupAll } = await supabase
-        .from('item_manufacturers')
-        .select('id, code, name');
-
-      if (result.error || !result.data) {
-        return result;
+      if (error || !dbItems) {
+        return { data: null, error };
       }
 
-      // Transform the data to the expected format
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transformedData = (result.data as any[]).map((item: any) => {
-        // Parse unit conversions
-        let packageConversions: PackageConversion[] = [];
-        if (item.package_conversions) {
-          if (typeof item.package_conversions === 'string') {
-            try {
-              packageConversions = JSON.parse(item.package_conversions);
-            } catch {
-              packageConversions = [];
-            }
-          } else if (Array.isArray(item.package_conversions)) {
-            packageConversions = item.package_conversions;
-          }
-        }
+      // Get cached manufacturer data
+      const manufacturers = await itemRepository.getManufacturers();
 
-        // Find manufacturer data by name for code mapping
-        const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupAll?.find(
-          (m: ItemManufacturer) => m.name === manufacturerName
-        );
+      // Transform data using transformer
+      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems, manufacturers);
 
-        // Transform to Item interface
-        return {
-          ...item,
-          category: item.item_categories || { name: '' },
-          type: item.item_types || { name: '' },
-          unit: item.item_packages || { name: '' },
-          dosage: item.item_dosages || { name: '' },
-          manufacturer: manufacturerName,
-          manufacturer_info: manufacturerInfo || {
-            code: null,
-            name: manufacturerName,
-          },
-          package_conversions: packageConversions,
-          base_unit: item.item_packages?.name || '',
-        };
-      });
-
-      return {
-        ...result,
-        data: transformedData,
-      };
+      return { data: transformedData, error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
   }
 
-  // Get item with full details including unit conversions
+  /**
+   * Get single item with full details
+   */
   async getItemWithDetails(id: string): Promise<ServiceResponse<Item>> {
     try {
-      const { data: item, error } = await supabase
-        .from('items')
-        .select(
-          `
-          *,
-          item_categories!inner(id, code, name),
-          item_types!inner(id, code, name),
-          item_packages!inner(id, code, name),
-          item_dosages(id, code, name)
-        `
-        )
-        .eq('id', id)
-        .single();
+      // Get item from repository
+      const { data: dbItem, error } = await itemRepository.getItemById(id);
 
-      // Get manufacturer data separately for code mapping
-      const { data: manufacturerLookupDetail } = await supabase
-        .from('item_manufacturers')
-        .select('id, code, name');
-
-      if (error || !item) {
+      if (error || !dbItem) {
         return { data: null, error };
       }
 
-      // Find manufacturer data by name for code mapping
-      const manufacturerName = item.manufacturer || '';
-      const manufacturerInfo = manufacturerLookupDetail?.find(
-        (m: ItemManufacturer) => m.name === manufacturerName
-      );
+      // Get cached manufacturer data
+      const manufacturers = await itemRepository.getManufacturers();
 
-      // Parse unit conversions
-      let packageConversions: PackageConversion[] = [];
-      if (item.package_conversions) {
-        if (typeof item.package_conversions === 'string') {
-          try {
-            packageConversions = JSON.parse(item.package_conversions);
-          } catch {
-            packageConversions = [];
-          }
-        } else if (Array.isArray(item.package_conversions)) {
-          packageConversions = item.package_conversions;
-        }
-      }
-
-      // Transform to Item interface
-      const transformedItem: Item = {
-        ...item,
-        category: item.item_categories || { name: '' },
-        type: item.item_types || { name: '' },
-        unit: item.item_packages || { name: '' },
-        dosage: item.item_dosages || { name: '' },
-        manufacturer: manufacturerName,
-        manufacturer_info: manufacturerInfo || {
-          code: null,
-          name: manufacturerName,
-        },
-        package_conversions: packageConversions,
-        base_unit: item.item_packages?.name || '',
-      };
+      // Transform data using transformer
+      const transformedItem = ItemTransformer.transformDBItemToItem(dbItem, manufacturers);
 
       return { data: transformedItem, error: null };
     } catch (error) {
@@ -156,188 +64,100 @@ export class ItemsService extends BaseService<DBItem> {
     }
   }
 
-  // Search items with related data
+  /**
+   * Search items with related data
+   */
   async searchItems(
     query: string,
-    options: Parameters<BaseService<DBItem>['getAll']>[0] = {}
-  ) {
+    options: ItemQueryOptions = {}
+  ): Promise<ServiceResponse<Item[]>> {
     try {
-      const defaultSelect = `
-        *,
-        item_categories!inner(id, code, name),
-        item_types!inner(id, code, name),
-        item_packages!inner(id, code, name),
-        item_dosages(id, code, name)
-      `;
-
-      const result = await this.search(
+      // Search using repository
+      const { data: dbItems, error } = await itemRepository.searchItems(
         query,
         ['name', 'code', 'barcode', 'manufacturer'],
         {
           ...options,
-          select: options.select || defaultSelect,
+          orderBy: options.orderBy || { column: 'name', ascending: true }
         }
       );
 
-      // Get manufacturer data separately for code mapping
-      const { data: manufacturerLookupSearch } = await supabase
-        .from('item_manufacturers')
-        .select('id, code, name');
-
-      if (result.error || !result.data) {
-        return result;
+      if (error || !dbItems) {
+        return { data: null, error };
       }
 
-      // Transform the data to the expected format
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transformedData = (result.data as any[]).map((item: any) => {
-        // Parse unit conversions
-        let packageConversions: PackageConversion[] = [];
-        if (item.package_conversions) {
-          if (typeof item.package_conversions === 'string') {
-            try {
-              packageConversions = JSON.parse(item.package_conversions);
-            } catch {
-              packageConversions = [];
-            }
-          } else if (Array.isArray(item.package_conversions)) {
-            packageConversions = item.package_conversions;
-          }
-        }
+      // Get cached manufacturer data
+      const manufacturers = await itemRepository.getManufacturers();
 
-        // Find manufacturer data by name for code mapping
-        const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupSearch?.find(
-          (m: ItemManufacturer) => m.name === manufacturerName
-        );
+      // Transform data using transformer
+      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems, manufacturers);
 
-        // Transform to Item interface
-        return {
-          ...item,
-          category: item.item_categories || { name: '' },
-          type: item.item_types || { name: '' },
-          unit: item.item_packages || { name: '' },
-          dosage: item.item_dosages || { name: '' },
-          manufacturer: manufacturerName,
-          manufacturer_info: manufacturerInfo || {
-            code: null,
-            name: manufacturerName,
-          },
-          package_conversions: packageConversions,
-          base_unit: item.item_packages?.name || '',
-        };
-      });
-
-      return {
-        ...result,
-        data: transformedData,
-      };
+      return { data: transformedData, error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
   }
 
-  // Get items by category
-  async getItemsByCategory(categoryId: string) {
+  /**
+   * Get items by category
+   */
+  async getItemsByCategory(categoryId: string): Promise<ServiceResponse<Item[]>> {
     return this.getAll({
       filters: { category_id: categoryId },
-      orderBy: { column: 'name', ascending: true },
+      orderBy: { column: 'name', ascending: true }
     });
   }
 
-  // Get items by type
-  async getItemsByType(typeId: string) {
+  /**
+   * Get items by type
+   */
+  async getItemsByType(typeId: string): Promise<ServiceResponse<Item[]>> {
     return this.getAll({
       filters: { type_id: typeId },
-      orderBy: { column: 'name', ascending: true },
+      orderBy: { column: 'name', ascending: true }
     });
   }
 
-  // Get low stock items
-  async getLowStockItems(threshold: number = 10) {
+  /**
+   * Get low stock items (optimized)
+   */
+  async getLowStockItems(threshold: number = 10): Promise<ServiceResponse<Item[]>> {
     try {
-      const { data, error } = await supabase
-        .from('items')
-        .select(
-          `
-          *,
-          item_categories!inner(id, code, name),
-          item_types!inner(id, code, name),
-          item_packages!inner(id, code, name),
-          item_dosages(id, code, name)
-        `
-        )
-        .lte('stock', threshold)
-        .order('stock', { ascending: true });
+      // Get low stock items from repository
+      const { data: dbItems, error } = await itemRepository.getLowStockItems(threshold);
 
-      // Get manufacturer data separately for code mapping
-      const { data: manufacturerLookupLowStock } = await supabase
-        .from('item_manufacturers')
-        .select('id, code, name');
-
-      if (error || !data) {
-        return { data, error };
+      if (error || !dbItems) {
+        return { data: null, error };
       }
 
-      // Transform the data to the expected format
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transformedData = (data as any[]).map((item: any) => {
-        // Parse unit conversions
-        let packageConversions: PackageConversion[] = [];
-        if (item.package_conversions) {
-          if (typeof item.package_conversions === 'string') {
-            try {
-              packageConversions = JSON.parse(item.package_conversions);
-            } catch {
-              packageConversions = [];
-            }
-          } else if (Array.isArray(item.package_conversions)) {
-            packageConversions = item.package_conversions;
-          }
-        }
+      // Get cached manufacturer data
+      const manufacturers = await itemRepository.getManufacturers();
 
-        // Find manufacturer data by name for code mapping
-        const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupLowStock?.find(
-          (m: ItemManufacturer) => m.name === manufacturerName
-        );
+      // Transform data using transformer
+      const transformedData = ItemTransformer.transformDBItemsToItems(dbItems, manufacturers);
 
-        // Transform to Item interface
-        return {
-          ...item,
-          category: item.item_categories || { name: '' },
-          type: item.item_types || { name: '' },
-          unit: item.item_packages || { name: '' },
-          dosage: item.item_dosages || { name: '' },
-          manufacturer: manufacturerName,
-          manufacturer_info: manufacturerInfo || {
-            code: null,
-            name: manufacturerName,
-          },
-          package_conversions: packageConversions,
-          base_unit: item.item_packages?.name || '',
-        };
-      });
-
-      return { data: transformedData, error };
+      return { data: transformedData, error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
   }
 
-  // Create item with unit conversions
+  /**
+   * Create item with unit conversions (with validation)
+   */
   async createItemWithConversions(
     itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>,
     packageConversions?: DBPackageConversion[]
   ): Promise<ServiceResponse<DBItem>> {
     try {
-      // Prepare item data with unit conversions
-      const dataToInsert = {
-        ...itemData,
-        package_conversions: packageConversions
-          ? JSON.stringify(packageConversions)
-          : '[]',
-      };
+      // Validate data before processing
+      const validation = ItemTransformer.validateItemData(itemData);
+      if (!validation.isValid) {
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+
+      // Transform data for database
+      const dataToInsert = ItemTransformer.transformItemToDBItem(itemData, packageConversions);
 
       return this.create(dataToInsert);
     } catch (error) {
@@ -345,18 +165,25 @@ export class ItemsService extends BaseService<DBItem> {
     }
   }
 
-  // Update item with unit conversions
+  /**
+   * Update item with unit conversions (with validation)
+   */
   async updateItemWithConversions(
     id: string,
     itemData: Partial<Omit<DBItem, 'id' | 'created_at'>>,
     packageConversions?: DBPackageConversion[]
   ): Promise<ServiceResponse<DBItem>> {
     try {
-      const updateData = { ...itemData };
-
-      if (packageConversions !== undefined) {
-        updateData.package_conversions = JSON.stringify(packageConversions);
+      // Validate data before processing
+      if (Object.keys(itemData).length > 0) {
+        const validation = ItemTransformer.validateItemData(itemData);
+        if (!validation.isValid) {
+          throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+        }
       }
+
+      // Transform data for database
+      const updateData = ItemTransformer.transformItemUpdateToDBItem(itemData, packageConversions);
 
       return this.update(id, updateData);
     } catch (error) {
@@ -364,65 +191,88 @@ export class ItemsService extends BaseService<DBItem> {
     }
   }
 
-  // Update stock
-  async updateStock(
-    id: string,
-    newStock: number
-  ): Promise<ServiceResponse<DBItem>> {
+  /**
+   * Update stock
+   */
+  async updateStock(id: string, newStock: number): Promise<ServiceResponse<DBItem>> {
+    if (newStock < 0) {
+      return { 
+        data: null, 
+        error: { message: 'Stock cannot be negative' } as PostgrestError 
+      };
+    }
+
     return this.update(id, { stock: newStock });
   }
 
-  // Bulk update stock (for purchases/sales)
+  /**
+   * Bulk update stock (for purchases/sales)
+   */
   async bulkUpdateStock(
     updates: { id: string; stock: number }[]
   ): Promise<ServiceResponse<DBItem[]>> {
+    // Validate all stock values
+    for (const update of updates) {
+      if (update.stock < 0) {
+        return { 
+          data: null, 
+          error: { message: `Stock cannot be negative for item ${update.id}` } as PostgrestError 
+        };
+      }
+    }
+
     return this.bulkUpdate(
       updates.map(({ id, stock }) => ({ id, data: { stock } }))
     );
   }
 
-  // Check if code exists
+  /**
+   * Check if code is unique (using repository)
+   */
   async isCodeUnique(code: string, excludeId?: string): Promise<boolean> {
+    return itemRepository.isCodeUnique(code, excludeId);
+  }
+
+  /**
+   * Check if barcode is unique (using repository)
+   */
+  async isBarcodeUnique(barcode: string, excludeId?: string): Promise<boolean> {
+    return itemRepository.isBarcodeUnique(barcode, excludeId);
+  }
+
+  /**
+   * Get formatted stock display for an item
+   */
+  async getFormattedStock(id: string): Promise<string> {
     try {
-      let query = supabase.from('items').select('id').eq('code', code);
-
-      if (excludeId) {
-        query = query.neq('id', excludeId);
+      const result = await this.getItemWithDetails(id);
+      if (!result.data) {
+        return '0';
       }
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error checking code uniqueness:', error);
-        return false;
-      }
-
-      return !data || data.length === 0;
+      const item = result.data;
+      return ItemTransformer.formatStockDisplay(
+        item.stock || 0,
+        item.package_conversions || [],
+        item.base_unit || ''
+      );
     } catch {
-      return false;
+      return '0';
     }
   }
 
-  // Check if barcode exists
-  async isBarcodeUnique(barcode: string, excludeId?: string): Promise<boolean> {
-    try {
-      let query = supabase.from('items').select('id').eq('barcode', barcode);
+  /**
+   * Clear manufacturer cache (useful for cache invalidation)
+   */
+  static clearCache(): void {
+    ItemRepository.clearManufacturerCache();
+  }
 
-      if (excludeId) {
-        query = query.neq('id', excludeId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error checking barcode uniqueness:', error);
-        return false;
-      }
-
-      return !data || data.length === 0;
-    } catch {
-      return false;
-    }
+  /**
+   * Create empty item template
+   */
+  createEmptyItem(): Partial<Item> {
+    return ItemTransformer.createEmptyItem();
   }
 }
 

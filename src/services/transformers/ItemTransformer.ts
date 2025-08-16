@@ -1,0 +1,225 @@
+import type { 
+  DBItem, 
+  Item, 
+  PackageConversion, 
+  DBPackageConversion,
+  ItemManufacturer 
+} from '@/types/database';
+import type { DBItemWithRelations } from '../repositories/ItemRepository';
+
+export class ItemTransformer {
+  /**
+   * Parse package conversions from string or array format
+   */
+  static parsePackageConversions(packageConversions: unknown): PackageConversion[] {
+    if (!packageConversions) {
+      return [];
+    }
+
+    if (typeof packageConversions === 'string') {
+      try {
+        return JSON.parse(packageConversions);
+      } catch {
+        return [];
+      }
+    }
+
+    if (Array.isArray(packageConversions)) {
+      return packageConversions;
+    }
+
+    return [];
+  }
+
+  /**
+   * Find manufacturer info by name
+   */
+  static findManufacturerInfo(
+    manufacturerName: string, 
+    manufacturers: ItemManufacturer[]
+  ): ItemManufacturer {
+    const found = manufacturers.find(m => m.name === manufacturerName);
+    return found || {
+      id: '',
+      code: undefined,
+      name: manufacturerName
+    };
+  }
+
+  /**
+   * Transform single DB item to UI Item format
+   */
+  static transformDBItemToItem(
+    dbItem: DBItemWithRelations, 
+    manufacturers: ItemManufacturer[]
+  ): Item {
+    const manufacturerName = dbItem.manufacturer || '';
+    const manufacturerInfo = this.findManufacturerInfo(manufacturerName, manufacturers);
+    const packageConversions = this.parsePackageConversions(dbItem.package_conversions);
+
+    return {
+      ...dbItem,
+      category: dbItem.item_categories || { name: '' },
+      type: dbItem.item_types || { name: '' },
+      unit: dbItem.item_packages || { name: '' },
+      dosage: dbItem.item_dosages || { name: '' },
+      manufacturer: manufacturerName,
+      manufacturer_info: manufacturerInfo,
+      package_conversions: packageConversions,
+      base_unit: dbItem.item_packages?.name || '',
+    };
+  }
+
+  /**
+   * Transform array of DB items to UI Items format
+   */
+  static transformDBItemsToItems(
+    dbItems: DBItemWithRelations[], 
+    manufacturers: ItemManufacturer[]
+  ): Item[] {
+    return dbItems.map(item => this.transformDBItemToItem(item, manufacturers));
+  }
+
+  /**
+   * Transform UI Item data to DB format for creation
+   */
+  static transformItemToDBItem(
+    itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>,
+    packageConversions?: DBPackageConversion[]
+  ): Omit<DBItem, 'id' | 'created_at' | 'updated_at'> {
+    return {
+      ...itemData,
+      package_conversions: packageConversions 
+        ? JSON.stringify(packageConversions)
+        : '[]'
+    };
+  }
+
+  /**
+   * Transform UI Item data to DB format for updates
+   */
+  static transformItemUpdateToDBItem(
+    itemData: Partial<Omit<DBItem, 'id' | 'created_at'>>,
+    packageConversions?: DBPackageConversion[]
+  ): Partial<Omit<DBItem, 'id' | 'created_at'>> {
+    const updateData = { ...itemData };
+
+    if (packageConversions !== undefined) {
+      updateData.package_conversions = JSON.stringify(packageConversions);
+    }
+
+    return updateData;
+  }
+
+  /**
+   * Validate item data before transformation
+   */
+  static validateItemData(itemData: Partial<DBItem>): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!itemData.name?.trim()) {
+      errors.push('Item name is required');
+    }
+
+    if (!itemData.code?.trim()) {
+      errors.push('Item code is required');
+    }
+
+    if (itemData.stock !== undefined && itemData.stock < 0) {
+      errors.push('Stock cannot be negative');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Create empty item template for forms
+   */
+  static createEmptyItem(): Partial<Item> {
+    return {
+      name: '',
+      code: '',
+      barcode: '',
+      manufacturer: '',
+      stock: 0,
+      base_price: 0,
+      sell_price: 0,
+      category: { name: '' },
+      type: { name: '' },
+      unit: { name: '' },
+      dosage: { name: '' },
+      package_conversions: [],
+      base_unit: '',
+      manufacturer_info: {
+        id: '',
+        code: undefined,
+        name: ''
+      }
+    };
+  }
+
+  /**
+   * Extract search-relevant fields from item
+   */
+  static extractSearchableFields(item: Item): string[] {
+    return [
+      item.name || '',
+      item.code || '',
+      item.barcode || '',
+      item.manufacturer || '',
+      item.category?.name || '',
+      item.type?.name || ''
+    ].filter(field => field.trim() !== '');
+  }
+
+  /**
+   * Calculate total package units based on conversions
+   */
+  static calculateTotalUnits(stock: number, packageConversions: PackageConversion[]): number {
+    if (!packageConversions.length) {
+      return stock;
+    }
+
+    // Find the largest package conversion rate
+    const maxRate = Math.max(...packageConversions.map(pc => pc.conversion_rate || 1));
+    return stock * maxRate;
+  }
+
+  /**
+   * Format stock display with unit conversions
+   */
+  static formatStockDisplay(
+    stock: number, 
+    packageConversions: PackageConversion[],
+    baseUnit: string
+  ): string {
+    if (!packageConversions.length) {
+      return `${stock} ${baseUnit}`;
+    }
+
+    // Display stock in largest unit first
+    const sorted = packageConversions.sort((a, b) => (b.conversion_rate || 1) - (a.conversion_rate || 1));
+    
+    let remaining = stock;
+    const parts: string[] = [];
+
+    for (const conversion of sorted) {
+      const rate = conversion.conversion_rate || 1;
+      const units = Math.floor(remaining / rate);
+      
+      if (units > 0) {
+        parts.push(`${units} ${conversion.unit_name}`);
+        remaining = remaining % rate;
+      }
+    }
+
+    if (remaining > 0) {
+      parts.push(`${remaining} ${baseUnit}`);
+    }
+
+    return parts.join(', ') || `0 ${baseUnit}`;
+  }
+}

@@ -19,7 +19,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
+        manualChunks: id => {
           // AG-Grid components (very heavy)
           if (id.includes('ag-grid')) {
             return 'ag-grid';
@@ -36,7 +36,11 @@ export default defineConfig({
           }
 
           // React ecosystem
-          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+          if (
+            id.includes('react') ||
+            id.includes('react-dom') ||
+            id.includes('react-router-dom')
+          ) {
             return 'react-vendor';
           }
 
@@ -56,7 +60,11 @@ export default defineConfig({
           }
 
           // Items service and related files
-          if (id.includes('items.service') || id.includes('useItems') || id.includes('item-management')) {
+          if (
+            id.includes('items.service') ||
+            id.includes('useItems') ||
+            id.includes('item-management')
+          ) {
             return 'items-feature';
           }
 
@@ -66,8 +74,12 @@ export default defineConfig({
           }
 
           // UI/Utility libraries
-          if (id.includes('@headlessui/react') || id.includes('react-icons') || 
-              id.includes('compressorjs') || id.includes('react-spinners')) {
+          if (
+            id.includes('@headlessui/react') ||
+            id.includes('react-icons') ||
+            id.includes('compressorjs') ||
+            id.includes('react-spinners')
+          ) {
             return 'ui-libs';
           }
 
