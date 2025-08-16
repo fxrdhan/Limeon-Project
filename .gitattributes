@@ -28,7 +28,19 @@ README* linguist-documentation
 tsconfig*.json linguist-vendored
 package.json linguist-vendored
 yarn.lock linguist-vendored
+package-lock.json linguist-vendored
 eslint.config.js linguist-vendored
+postcss.config.js linguist-vendored
+tailwind.config.js linguist-vendored
+vite.config.ts linguist-vendored
+*.toml linguist-vendored
+.env* linguist-vendored
+.gitignore linguist-vendored
+.gitattributes linguist-vendored
+.prettierrc* linguist-vendored
+.babelrc* linguist-vendored
+babel.config.* linguist-vendored
+webpack.config.* linguist-vendored
 
 # Supabase files (exclude from language stats)
 supabase/** linguist-detectable=false
