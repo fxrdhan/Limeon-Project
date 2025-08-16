@@ -67,7 +67,7 @@ export const itemSearchColumns: SearchColumn[] = [
     description: 'Cari berdasarkan nama item',
   },
   {
-    field: 'manufacturer',
+    field: 'manufacturer.name',
     headerName: 'Produsen',
     searchable: true,
     type: 'text',
@@ -107,7 +107,7 @@ export const itemSearchColumns: SearchColumn[] = [
     isMultiFilter: true,
   },
   {
-    field: 'unit.name',
+    field: 'package.name',
     headerName: 'Kemasan',
     searchable: true,
     type: 'text',

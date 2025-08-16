@@ -29,11 +29,11 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('name') || undefined,
       },
-      manufacturer: {
+      'manufacturer.name': {
         ...createTextColumn({
-          field: 'manufacturer',
+          field: 'manufacturer.name',
           headerName: 'Produsen',
-          valueGetter: params => params.data?.manufacturer || '-',
+          valueGetter: params => params.data?.manufacturer?.name || '-',
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -47,7 +47,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('manufacturer') || undefined,
+        pinned: getColumnPinning?.('manufacturer.name') || undefined,
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -133,9 +133,9 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
-      'unit.name': {
+      'package.name': {
         ...createTextColumn({
-          field: 'unit.name',
+          field: 'package.name',
           headerName: 'Kemasan',
         }),
         filter: 'agMultiColumnFilter',
@@ -150,7 +150,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           ],
         },
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning?.('unit.name') || undefined,
+        pinned: getColumnPinning?.('package.name') || undefined,
         enableRowGroup: true,
         // Remove rowGroup property - let AG Grid handle grouping state natively
       },
@@ -250,12 +250,12 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     // Default column order if not specified
     const defaultOrder = [
       'name',
-      'manufacturer',
+      'manufacturer.name', // ← Fix: seharusnya manufacturer.name
       'code',
       'barcode',
       'category.name',
       'type.name',
-      'unit.name',
+      'package.name', // ← Fix: ganti unit.name dengan package.name
       'dosage.name',
       'package_conversions',
       'base_price',
@@ -291,11 +291,11 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     const allColumnsToAutoSize = [
       'name', // ← Added: Include name column in autosize
       'code',
-      'manufacturer',
+      'manufacturer.name', // ← Fix: seharusnya manufacturer.name
       'barcode',
       'category.name',
       'type.name',
-      'unit.name',
+      'package.name', // ← Fix: ganti unit.name dengan package.name
       'dosage.name',
       'package_conversions',
       'base_price',

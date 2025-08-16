@@ -7,10 +7,11 @@ export interface DBItemWithRelations {
   name: string;
   code?: string;
   barcode?: string | null;
-  manufacturer?: string;
+  manufacturer?: string; // Legacy fallback
   base_price: number;
   sell_price: number;
   stock: number;
+  base_unit?: string; // Add missing base_unit field
   package_conversions: string;
   category_id?: string;
   type_id?: string;
