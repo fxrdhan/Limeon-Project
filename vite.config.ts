@@ -19,40 +19,66 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
+          // AG-Grid components (very heavy)
+          if (id.includes('ag-grid')) {
+            return 'ag-grid';
+          }
+
           // Charts library - very heavy
-          charts: ['chart.js', 'react-chartjs-2'],
+          if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
+            return 'charts';
+          }
 
           // Animation library
-          animations: ['framer-motion'],
+          if (id.includes('framer-motion')) {
+            return 'animations';
+          }
 
           // React ecosystem
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            return 'react-vendor';
+          }
 
           // Data fetching and state management
-          'data-libs': [
-            '@tanstack/react-query',
-            '@tanstack/react-query-devtools',
-            'zustand',
-          ],
+          if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
+            return 'data-libs';
+          }
 
           // Backend/API libraries
-          'api-libs': ['@supabase/supabase-js', 'axios'],
+          if (id.includes('@supabase/supabase-js') || id.includes('axios')) {
+            return 'api-libs';
+          }
 
           // Supabase realtime (large chunk)
-          supabaseRealtime: ['@supabase/realtime-js'],
+          if (id.includes('@supabase/realtime-js')) {
+            return 'supabaseRealtime';
+          }
+
+          // Items service and related files
+          if (id.includes('items.service') || id.includes('useItems') || id.includes('item-management')) {
+            return 'items-feature';
+          }
+
+          // Other API services
+          if (id.includes('/services/api/') || id.includes('/hooks/queries/')) {
+            return 'api-services';
+          }
 
           // UI/Utility libraries
-          'ui-libs': [
-            '@headlessui/react',
-            'react-icons',
-            'compressorjs',
-            'react-spinners',
-          ],
+          if (id.includes('@headlessui/react') || id.includes('react-icons') || 
+              id.includes('compressorjs') || id.includes('react-spinners')) {
+            return 'ui-libs';
+          }
+
+          // Node modules vendor chunks
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         },
       },
     },
-    chunkSizeWarningLimit: 1500, // Increase warning limit to 1.5MB for large dependencies
+    chunkSizeWarningLimit: 500, // Lower limit to catch chunking issues early
 
     // Optimize for better performance - updated for Vite v7
     target: ['chrome107', 'firefox104', 'safari16', 'edge107'],
