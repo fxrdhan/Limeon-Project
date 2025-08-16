@@ -1,6 +1,11 @@
 import { memo, useMemo, useState } from 'react';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import { TbTablePlus, TbTableOptions, TbFolder, TbFolderOff } from 'react-icons/tb';
+import {
+  TbTablePlus,
+  TbTableOptions,
+  TbFolder,
+  TbFolderOff,
+} from 'react-icons/tb';
 import Dropdown from '@/components/dropdown';
 import { ExportDropdown } from '@/components/export';
 import { GridApi } from 'ag-grid-community';
@@ -169,23 +174,35 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                 {isGridModalOpen && (
                   <>
                     {/* Backdrop */}
-                    <div 
-                      className="fixed inset-0 z-40" 
+                    <div
+                      className="fixed inset-0 z-40"
                       onClick={() => setIsGridModalOpen(false)}
                     />
-                    
+
                     {/* Modal Content */}
                     <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-4 min-w-[150px]">
                       <div className="space-y-4">
                         {/* Header */}
                         <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-semibold text-gray-900">Grid Settings</h3>
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            Grid Settings
+                          </h3>
                           <button
                             onClick={() => setIsGridModalOpen(false)}
                             className="text-gray-400 hover:text-gray-600"
                           >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -209,7 +226,9 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                               ) : (
                                 <TbFolderOff className="h-4 w-4" />
                               )}
-                              {isRowGroupingEnabled ? 'Grouping ON' : 'Grouping OFF'}
+                              {isRowGroupingEnabled
+                                ? 'Grouping ON'
+                                : 'Grouping OFF'}
                             </button>
                           </div>
                         )}

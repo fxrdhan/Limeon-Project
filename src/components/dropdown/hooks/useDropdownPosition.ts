@@ -82,7 +82,7 @@ export const useDropdownPosition = (
     // Determine drop direction based on position prop
     let targetDirection: DropDirection;
     let currentIsLeftPositioning = false;
-    
+
     if (position === 'left') {
       // Left positioning: dropdown appears to the left of button
       currentIsLeftPositioning = true;
@@ -126,13 +126,15 @@ export const useDropdownPosition = (
 
     // Calculate left position based on positioning mode
     let leftPosition: number;
-    
+
     if (currentIsLeftPositioning) {
       // Left positioning: dropdown appears to the left of button
-      leftPosition = buttonRect.left - dropdownWidth - DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
-      
+      leftPosition =
+        buttonRect.left - dropdownWidth - DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+
       // Check if there's enough space on the left
-      const minRequiredSpace = dropdownWidth + DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+      const minRequiredSpace =
+        dropdownWidth + DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
       if (spaceLeft < minRequiredSpace) {
         // Fallback to regular positioning if no space on left
         currentIsLeftPositioning = false;
@@ -163,7 +165,7 @@ export const useDropdownPosition = (
           viewportWidth - dropdownWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
       }
     }
-    
+
     if (leftPosition < DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
       leftPosition = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
@@ -172,17 +174,20 @@ export const useDropdownPosition = (
     const isDropUp = finalDirection === 'up';
 
     let topPosition: number;
-    
+
     if (currentIsLeftPositioning) {
       // For left positioning, align dropdown top with button top
       topPosition = buttonRect.top + window.scrollY;
-      
+
       // Ensure dropdown doesn't go below viewport
-      const maxTop = viewportHeight - dropdownActualHeight - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+      const maxTop =
+        viewportHeight -
+        dropdownActualHeight -
+        DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
       if (topPosition + dropdownActualHeight > maxTop + window.scrollY) {
         topPosition = maxTop + window.scrollY;
       }
-      
+
       // Ensure dropdown doesn't go above viewport
       const minTop = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN + window.scrollY;
       if (topPosition < minTop) {
