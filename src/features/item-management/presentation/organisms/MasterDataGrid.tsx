@@ -10,7 +10,6 @@ import {
   GetMainMenuItems,
   RowGroupOpenedEvent,
 } from 'ag-grid-community';
-import { SideBarDef } from 'ag-grid-enterprise';
 
 // Components
 import {
@@ -96,9 +95,6 @@ interface MasterDataGridProps {
   onColumnVisible?: () => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
-  // AG Grid sidebar
-  sideBar?: boolean | string | string[] | SideBarDef;
-
   // Pagination (for items)
   currentPage?: number;
   itemsPerPage?: number;
@@ -127,7 +123,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   onColumnMoved,
   onColumnVisible,
   onGridApiReady,
-  sideBar = false,
   currentPage = 1,
   itemsPerPage = 10,
 }) {
@@ -516,8 +511,23 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}
-          // AG Grid Sidebar
-          sideBar={sideBar}
+          // AG Grid Sidebar - configured to suppress row groups section
+          sideBar={{
+            toolPanels: [
+              {
+                id: 'columns',
+                labelDefault: 'Columns',
+                labelKey: 'columns',
+                iconKey: 'columns',
+                toolPanel: 'agColumnsToolPanel',
+                toolPanelParams: {
+                  suppressRowGroups: true, // Remove Row Groups section
+                  suppressValues: true, // Remove Values (aggregate) section
+                },
+              },
+            ],
+            defaultToolPanel: 'columns',
+          }}
           // Ensure smooth state transitions
           suppressColumnMoveAnimation={true}
         />
