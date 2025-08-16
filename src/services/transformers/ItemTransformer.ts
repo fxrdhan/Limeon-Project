@@ -1,9 +1,9 @@
-import type { 
-  DBItem, 
-  Item, 
-  PackageConversion, 
+import type {
+  DBItem,
+  Item,
+  PackageConversion,
   DBPackageConversion,
-  ItemManufacturer 
+  ItemManufacturer,
 } from '@/types/database';
 import type { DBItemWithRelations } from '../repositories/ItemRepository';
 
@@ -11,7 +11,9 @@ export class ItemTransformer {
   /**
    * Parse package conversions from string or array format
    */
-  static parsePackageConversions(packageConversions: unknown): PackageConversion[] {
+  static parsePackageConversions(
+    packageConversions: unknown
+  ): PackageConversion[] {
     if (!packageConversions) {
       return [];
     }
@@ -32,17 +34,26 @@ export class ItemTransformer {
   }
 
   /**
-   * Find manufacturer info by name
+   * Get manufacturer info from JOIN data (no lookup needed!)
    */
-  static findManufacturerInfo(
-    manufacturerName: string, 
-    manufacturers: ItemManufacturer[]
+  static getManufacturerInfo(
+    manufacturerData: { id: string; code?: string; name: string } | null | undefined,
+    legacyManufacturerName?: string
   ): ItemManufacturer {
-    const found = manufacturers.find(m => m.name === manufacturerName);
-    return found || {
+    // Use JOIN data if available (new FK relationship)
+    if (manufacturerData) {
+      return {
+        id: manufacturerData.id,
+        code: manufacturerData.code,
+        name: manufacturerData.name
+      };
+    }
+    
+    // Fallback for legacy data (should be rare after migration)
+    return {
       id: '',
       code: undefined,
-      name: manufacturerName
+      name: legacyManufacturerName || ''
     };
   }
 
@@ -50,12 +61,15 @@ export class ItemTransformer {
    * Transform single DB item to UI Item format
    */
   static transformDBItemToItem(
-    dbItem: DBItemWithRelations, 
-    manufacturers: ItemManufacturer[]
+    dbItem: DBItemWithRelations
   ): Item {
-    const manufacturerName = dbItem.manufacturer || '';
-    const manufacturerInfo = this.findManufacturerInfo(manufacturerName, manufacturers);
-    const packageConversions = this.parsePackageConversions(dbItem.package_conversions);
+    const manufacturerInfo = this.getManufacturerInfo(
+      dbItem.item_manufacturers,
+      dbItem.manufacturer // Fallback for legacy data
+    );
+    const packageConversions = this.parsePackageConversions(
+      dbItem.package_conversions
+    );
 
     return {
       ...dbItem,
@@ -63,7 +77,7 @@ export class ItemTransformer {
       type: dbItem.item_types || { name: '' },
       unit: dbItem.item_packages || { name: '' },
       dosage: dbItem.item_dosages || { name: '' },
-      manufacturer: manufacturerName,
+      manufacturer: manufacturerInfo.name,
       manufacturer_info: manufacturerInfo,
       package_conversions: packageConversions,
       base_unit: dbItem.item_packages?.name || '',
@@ -74,10 +88,9 @@ export class ItemTransformer {
    * Transform array of DB items to UI Items format
    */
   static transformDBItemsToItems(
-    dbItems: DBItemWithRelations[], 
-    manufacturers: ItemManufacturer[]
+    dbItems: DBItemWithRelations[]
   ): Item[] {
-    return dbItems.map(item => this.transformDBItemToItem(item, manufacturers));
+    return dbItems.map(item => this.transformDBItemToItem(item));
   }
 
   /**
@@ -89,9 +102,9 @@ export class ItemTransformer {
   ): Omit<DBItem, 'id' | 'created_at' | 'updated_at'> {
     return {
       ...itemData,
-      package_conversions: packageConversions 
+      package_conversions: packageConversions
         ? JSON.stringify(packageConversions)
-        : '[]'
+        : '[]',
     };
   }
 
@@ -114,7 +127,10 @@ export class ItemTransformer {
   /**
    * Validate item data before transformation
    */
-  static validateItemData(itemData: Partial<DBItem>): { isValid: boolean; errors: string[] } {
+  static validateItemData(itemData: Partial<DBItem>): {
+    isValid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
     if (!itemData.name?.trim()) {
@@ -131,7 +147,7 @@ export class ItemTransformer {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -156,8 +172,8 @@ export class ItemTransformer {
       manufacturer_info: {
         id: '',
         code: undefined,
-        name: ''
-      }
+        name: '',
+      },
     };
   }
 
@@ -171,20 +187,25 @@ export class ItemTransformer {
       item.barcode || '',
       item.manufacturer || '',
       item.category?.name || '',
-      item.type?.name || ''
+      item.type?.name || '',
     ].filter(field => field.trim() !== '');
   }
 
   /**
    * Calculate total package units based on conversions
    */
-  static calculateTotalUnits(stock: number, packageConversions: PackageConversion[]): number {
+  static calculateTotalUnits(
+    stock: number,
+    packageConversions: PackageConversion[]
+  ): number {
     if (!packageConversions.length) {
       return stock;
     }
 
     // Find the largest package conversion rate
-    const maxRate = Math.max(...packageConversions.map(pc => pc.conversion_rate || 1));
+    const maxRate = Math.max(
+      ...packageConversions.map(pc => pc.conversion_rate || 1)
+    );
     return stock * maxRate;
   }
 
@@ -192,7 +213,7 @@ export class ItemTransformer {
    * Format stock display with unit conversions
    */
   static formatStockDisplay(
-    stock: number, 
+    stock: number,
     packageConversions: PackageConversion[],
     baseUnit: string
   ): string {
@@ -201,15 +222,17 @@ export class ItemTransformer {
     }
 
     // Display stock in largest unit first
-    const sorted = packageConversions.sort((a, b) => (b.conversion_rate || 1) - (a.conversion_rate || 1));
-    
+    const sorted = packageConversions.sort(
+      (a, b) => (b.conversion_rate || 1) - (a.conversion_rate || 1)
+    );
+
     let remaining = stock;
     const parts: string[] = [];
 
     for (const conversion of sorted) {
       const rate = conversion.conversion_rate || 1;
       const units = Math.floor(remaining / rate);
-      
+
       if (units > 0) {
         parts.push(`${units} ${conversion.unit_name}`);
         remaining = remaining % rate;

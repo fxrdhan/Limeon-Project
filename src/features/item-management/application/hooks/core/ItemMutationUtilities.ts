@@ -23,7 +23,7 @@ import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
 /**
  * Prepares item data for database insertion/update
  *
- * Handles complex transformations like manufacturer name resolution,
+ * Handles complex transformations using manufacturer_id FK,
  * package conversions, and field mapping for the items table.
  */
 export const prepareItemData = async (
@@ -32,20 +32,10 @@ export const prepareItemData = async (
   baseUnit: string,
   isUpdate: boolean = false
 ) => {
-  // Get manufacturer name from ID
-  let manufacturerName = null;
-  if (formData.manufacturer_id) {
-    const { data: manufacturerData } = await supabase
-      .from('item_manufacturers')
-      .select('name')
-      .eq('id', formData.manufacturer_id)
-      .single();
-    manufacturerName = manufacturerData?.name || null;
-  }
-
+  // Use manufacturer_id FK directly - no name lookup needed!
   const baseData = {
     name: formData.name,
-    manufacturer: manufacturerName,
+    manufacturer_id: formData.manufacturer_id || null,
     category_id: formData.category_id,
     type_id: formData.type_id,
     package_id: formData.package_id,
