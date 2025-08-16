@@ -1,6 +1,6 @@
 # Limeon Project - Welcome to the Agentic Era
 
-A cutting-edge web application with built-in Agentic AI's to perform your task more efficiently.
+Let the AI Agents work and chill like a panda 🐼.
 
 ---
 
@@ -17,7 +17,7 @@ A cutting-edge web application with built-in Agentic AI's to perform your task m
 ![Zustand](https://img.shields.io/badge/zustand-%233068b7.svg?style=for-the-badge&logo=zustand&logoColor=white)
 ![Framer](https://img.shields.io/badge/Framer-black?style=for-the-badge&logo=framer&logoColor=blue)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+![AG Grid](https://img.shields.io/badge/AG%20Grid-7C68C4?style=for-the-badge&logo=ag-grid&logoColor=white)
 
 </div>
 
@@ -36,7 +36,7 @@ This project is built with:
 | **Supabase Database**       | [Website](https://supabase.com/database)       | PostgreSQL database with real-time capabilities       |
 | **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Supabase's Deno serverless backend                    |
 | **Supabase Storage**        | [Website](https://supabase.com/storage)        | Storing and serving files                             |
-| **Upstash Redis**           | [Website](https://upstash.com/)                | Server-side caching                                   |
+| **AG Grid**                 | [Website](https://ag-grid.com/)                | High-performance data grid for React applications     |
 
 ### Development Tools
 
@@ -62,11 +62,8 @@ This project is built with:
 
 ### Additional Libraries
 
-This project incorporates and builds upon several outstanding open-source libraries:
-
 | Library             | Link                                                  | Description                                                            |
 | ------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| **AG Grid**         | [Website](https://ag-grid.com/)                       | High-performance, feature rich, and fully customisable Data Grids      |
 | **classnames**      | [GitHub](https://github.com/JedWatson/classnames)     | Utility for conditionally joining CSS class names by Jed Watson        |
 | **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff implementation using Myers O(ND) algorithm by Kevin Decker   |
 | **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | Fast SublimeText-like fuzzy search with intelligent ranking by farzher |
