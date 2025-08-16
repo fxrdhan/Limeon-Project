@@ -455,6 +455,18 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [activeTab, isRowGroupingEnabled, gridApi]);
 
+  // Handle pagination changes - autosize when new rows appear
+  const handlePaginationChanged = useCallback(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      // Autosize when pagination changes (new rows with potentially different content widths)
+      setTimeout(() => {
+        if (!gridApi.isDestroyed()) {
+          gridApi.autoSizeAllColumns();
+        }
+      }, 150); // Delay to let new rows render first
+    }
+  }, [gridApi]);
+
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
     (event: RowGroupOpenedEvent) => {
@@ -628,6 +640,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           pagination={true}
           paginationPageSize={itemsPerPage}
           suppressPaginationPanel={true}
+          onPaginationChanged={handlePaginationChanged}
           // Row Grouping configuration (only for items tab)
           rowGroupPanelShow={
             activeTab === 'items' && isRowGroupingEnabled && showGroupPanel
