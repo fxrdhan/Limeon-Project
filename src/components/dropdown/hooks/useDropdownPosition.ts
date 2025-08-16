@@ -27,6 +27,7 @@ export const useDropdownPosition = (
     useState<DropDirection | null>(null);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [isPositionReady, setIsPositionReady] = useState(false);
+  const [isLeftPositioning, setIsLeftPositioning] = useState(false);
 
   // Calculate content-based width
   const calculateContentWidth = useCallback(() => {
@@ -76,10 +77,22 @@ export const useDropdownPosition = (
     const margin = DROPDOWN_CONSTANTS.DROPDOWN_MARGIN;
     const spaceBelow = viewportHeight - buttonRect.bottom - margin;
     const spaceAbove = buttonRect.top - margin;
+    const spaceLeft = buttonRect.left - margin;
 
     // Determine drop direction based on position prop
     let targetDirection: DropDirection;
-    if (position === 'top') {
+    let currentIsLeftPositioning = false;
+    
+    if (position === 'left') {
+      // Left positioning: dropdown appears to the left of button
+      currentIsLeftPositioning = true;
+      // For left positioning, we still need to decide up/down within the left space
+      const shouldDropUp =
+        (spaceBelow < dropdownActualHeight &&
+          spaceAbove > dropdownActualHeight) ||
+        (spaceBelow < dropdownActualHeight && spaceAbove > spaceBelow);
+      targetDirection = shouldDropUp ? 'up' : 'down';
+    } else if (position === 'top') {
       targetDirection = 'up';
     } else if (position === 'bottom') {
       targetDirection = 'down';
@@ -111,24 +124,46 @@ export const useDropdownPosition = (
           : parseInt(portalWidth as string, 10) || buttonRect.width;
     }
 
-    // Align the dropdown based on align prop
+    // Calculate left position based on positioning mode
     let leftPosition: number;
-    if (align === 'left') {
-      // Left-align: dropdown starts at button's left edge
-      leftPosition = buttonRect.left;
+    
+    if (currentIsLeftPositioning) {
+      // Left positioning: dropdown appears to the left of button
+      leftPosition = buttonRect.left - dropdownWidth - DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+      
+      // Check if there's enough space on the left
+      const minRequiredSpace = dropdownWidth + DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+      if (spaceLeft < minRequiredSpace) {
+        // Fallback to regular positioning if no space on left
+        currentIsLeftPositioning = false;
+        if (align === 'left') {
+          leftPosition = buttonRect.left;
+        } else {
+          leftPosition = buttonRect.right - dropdownWidth;
+        }
+      }
     } else {
-      // Right-align: dropdown ends at button's right edge
-      leftPosition = buttonRect.right - dropdownWidth;
+      // Regular positioning: align the dropdown based on align prop
+      if (align === 'left') {
+        // Left-align: dropdown starts at button's left edge
+        leftPosition = buttonRect.left;
+      } else {
+        // Right-align: dropdown ends at button's right edge
+        leftPosition = buttonRect.right - dropdownWidth;
+      }
     }
 
-    // Keep dropdown within viewport bounds
-    if (
-      leftPosition + dropdownWidth >
-      viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN
-    ) {
-      leftPosition =
-        viewportWidth - dropdownWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+    // Keep dropdown within viewport bounds (only if not in left positioning mode)
+    if (!currentIsLeftPositioning) {
+      if (
+        leftPosition + dropdownWidth >
+        viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN
+      ) {
+        leftPosition =
+          viewportWidth - dropdownWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+      }
     }
+    
     if (leftPosition < DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
       leftPosition = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
@@ -137,22 +172,41 @@ export const useDropdownPosition = (
     const isDropUp = finalDirection === 'up';
 
     let topPosition: number;
-    if (isDropUp) {
-      topPosition =
-        buttonRect.top +
-        window.scrollY -
-        dropdownActualHeight -
-        DROPDOWN_CONSTANTS.DROPDOWN_SPACING -
-        3; // Extra offset untuk portal yang muncul ke atas
+    
+    if (currentIsLeftPositioning) {
+      // For left positioning, align dropdown top with button top
+      topPosition = buttonRect.top + window.scrollY;
+      
+      // Ensure dropdown doesn't go below viewport
+      const maxTop = viewportHeight - dropdownActualHeight - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+      if (topPosition + dropdownActualHeight > maxTop + window.scrollY) {
+        topPosition = maxTop + window.scrollY;
+      }
+      
+      // Ensure dropdown doesn't go above viewport
+      const minTop = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN + window.scrollY;
+      if (topPosition < minTop) {
+        topPosition = minTop;
+      }
     } else {
-      topPosition =
-        buttonRect.bottom +
-        window.scrollY +
-        DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+      // Regular vertical positioning
+      if (isDropUp) {
+        topPosition =
+          buttonRect.top +
+          window.scrollY -
+          dropdownActualHeight -
+          DROPDOWN_CONSTANTS.DROPDOWN_SPACING -
+          3; // Extra offset untuk portal yang muncul ke atas
+      } else {
+        topPosition =
+          buttonRect.bottom +
+          window.scrollY +
+          DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+      }
     }
 
     const portalStyleBase: CSSProperties = {
-      position: 'fixed',
+      position: currentIsLeftPositioning ? 'absolute' : 'fixed',
       left: `${leftPosition}px`,
       zIndex: DROPDOWN_CONSTANTS.PORTAL_Z_INDEX,
       top: `${topPosition}px`,
@@ -173,6 +227,7 @@ export const useDropdownPosition = (
     }
 
     setPortalStyle(portalStyleBase);
+    setIsLeftPositioning(currentIsLeftPositioning);
     setIsPositionReady(true);
   }, [
     isOpen,
@@ -207,5 +262,6 @@ export const useDropdownPosition = (
     isPositionReady,
     calculateDropdownPosition,
     resetPosition,
+    isLeftPositioning,
   };
 };
