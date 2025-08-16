@@ -268,44 +268,21 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
-  // Apply column visibility state for ALL tabs (items + 6 entities) and autosize
+  // Apply column visibility state for ALL tabs (items + 6 entities)
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      setIsStateLoading(true);
+      // Apply appropriate column visibility state based on active tab
+      if (activeTab === 'items' && itemsColumnVisibilityManager.initialState) {
+        gridApi.setState(itemsColumnVisibilityManager.initialState);
+      } else if (
+        activeTab !== 'items' &&
+        entityColumnVisibilityManager.initialState
+      ) {
+        gridApi.setState(entityColumnVisibilityManager.initialState);
+      }
 
-      // Entity tables need longer delay for proper state application and column calculation
-      const delay = activeTab !== 'items' ? 250 : 150;
-
-      const timer = setTimeout(() => {
-        if (!gridApi.isDestroyed()) {
-          // Apply appropriate column visibility state based on active tab
-          if (
-            activeTab === 'items' &&
-            itemsColumnVisibilityManager.initialState
-          ) {
-            gridApi.setState(itemsColumnVisibilityManager.initialState);
-          } else if (
-            activeTab !== 'items' &&
-            entityColumnVisibilityManager.initialState
-          ) {
-            gridApi.setState(entityColumnVisibilityManager.initialState);
-          }
-        }
-        // Autosize after column visibility state is applied (not premature)
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
-          }
-        }, 100);
-        setIsStateLoading(false);
-      }, delay);
-
-      return () => {
-        clearTimeout(timer);
-        setIsStateLoading(false);
-      };
-    } else {
-      setIsStateLoading(false);
+      // Simple autosize after state applied
+      gridApi.autoSizeAllColumns();
     }
   }, [
     gridApi,
@@ -314,17 +291,13 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     entityColumnVisibilityManager.initialState,
   ]);
 
-  // Show loading state during ALL tab transitions - no premature autosize
+  // Show loading state during tab transitions
   useEffect(() => {
     setIsStateLoading(true);
-
-    // Entity tables need longer loading time for proper rendering
-    const loadingDuration = activeTab !== 'items' ? 350 : 200;
-
-    // Only show loading - autosize will happen after grid ready and data loaded
+    // Simple loading state - autosize handled by events
     const loadingTimer = setTimeout(() => {
       setIsStateLoading(false);
-    }, loadingDuration);
+    }, 200);
 
     return () => clearTimeout(loadingTimer);
   }, [activeTab]);
@@ -334,12 +307,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     (colId: string) => {
       toggleDisplayMode(colId);
 
-      // Auto trigger autosize after toggle (items tab only - reference columns feature)
-      setTimeout(() => {
-        if (gridApi) {
-          gridApi.autoSizeAllColumns();
-        }
-      }, 50);
+      // Auto trigger autosize after toggle
+      if (gridApi && !gridApi.isDestroyed()) {
+        gridApi.autoSizeAllColumns();
+      }
     },
     [toggleDisplayMode, gridApi]
   );
@@ -386,57 +357,20 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onGridReady, activeTab, currentPage, onGridApiReady]
   );
 
-  // Handle first data rendered - MANDATORY autosize when data ready
+  // Handle first data rendered - autosize when data ready
   const handleFirstDataRendered = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // WAJIB autosize setiap kali data ready untuk ditampilkan
-      if (activeTab !== 'items') {
-        // Entity tables: Immediate autosize when data rendered
-        gridApi.autoSizeAllColumns();
-
-        // Second autosize with delay for perfect measurement
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
-          }
-        }, 200);
-
-        // Final insurance autosize for stubborn columns
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
-          }
-        }, 500);
-      } else {
-        // Items: Immediate autosize when data rendered
-        gridApi.autoSizeAllColumns();
-
-        // Backup autosize for reliability
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
-          }
-        }, 100);
-      }
+      // Simple autosize when data ready
+      gridApi.autoSizeAllColumns();
     }
-  }, [gridApi, activeTab]);
+  }, [gridApi]);
 
-  // Fallback autosize - ensures autosize even if onFirstDataRendered doesn't trigger
+  // Autosize when row data changes
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed() && rowData.length > 0) {
-      // Fallback autosize after data changes (with delay to avoid premature)
-      const fallbackTimer = setTimeout(
-        () => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
-          }
-        },
-        activeTab !== 'items' ? 1000 : 300
-      );
-
-      return () => clearTimeout(fallbackTimer);
+      gridApi.autoSizeAllColumns();
     }
-  }, [gridApi, rowData, activeTab]);
+  }, [gridApi, rowData]);
 
   // Handle column row group changes - autosize when grouping is applied/removed
   const handleColumnRowGroupChanged = useCallback(() => {
@@ -446,24 +380,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
 
     if (gridApi && !gridApi.isDestroyed()) {
-      // Autosize after grouping structure changes
-      setTimeout(() => {
-        if (!gridApi.isDestroyed()) {
-          gridApi.autoSizeAllColumns();
-        }
-      }, 200); // Longer delay for group structure changes
+      gridApi.autoSizeAllColumns();
     }
   }, [activeTab, isRowGroupingEnabled, gridApi]);
 
   // Handle pagination changes - autosize when new rows appear
   const handlePaginationChanged = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // Autosize when pagination changes (new rows with potentially different content widths)
-      setTimeout(() => {
-        if (!gridApi.isDestroyed()) {
-          gridApi.autoSizeAllColumns();
-        }
-      }, 150); // Delay to let new rows render first
+      gridApi.autoSizeAllColumns();
     }
   }, [gridApi]);
 
@@ -490,12 +414,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           gridApi.ensureIndexVisible(newIndex);
         }
 
-        // Autosize after group expansion to accommodate new visible rows
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
-          }
-        }, 100);
+        // Autosize after group expansion
+        gridApi.autoSizeAllColumns();
       }
     },
     [activeTab, isRowGroupingEnabled, gridApi]
