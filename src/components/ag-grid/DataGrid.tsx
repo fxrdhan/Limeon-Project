@@ -94,6 +94,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       // Side bar props
       sideBar,
       // Grid state management props
+      initialState,
       onStateUpdated,
       onGridPreDestroyed,
       suppressColumnMoveAnimation = false,
@@ -246,6 +247,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
           onGridPreDestroyed={handleGridPreDestroyed}
+          {...(initialState && { initialState })}
           {...(normalizedRowSelection && {
             rowSelection: normalizedRowSelection,
           })}

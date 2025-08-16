@@ -99,6 +99,7 @@ export interface DataGridProps {
   // Side bar props
   sideBar?: boolean | string | string[] | SideBarDef;
   // Grid state management props
+  initialState?: object;
   onStateUpdated?: (event: StateUpdatedEvent) => void;
   onGridPreDestroyed?: (event: GridPreDestroyedEvent) => void;
   suppressColumnMoveAnimation?: boolean;
