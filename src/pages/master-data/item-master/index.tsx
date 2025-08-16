@@ -734,7 +734,7 @@ const ItemMasterNew = memo(() => {
             }
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
-            sideBar={true} // Enable AG Grid built-in sidebar
+            sideBar={false}
           />
         </div>
       </Card>

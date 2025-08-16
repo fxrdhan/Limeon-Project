@@ -15,13 +15,14 @@ import {
   ModuleRegistry,
   ColumnMenuTab,
   GetContextMenuItems,
+  GridPreDestroyedEvent,
 } from 'ag-grid-community';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { DataGridProps, DataGridRef } from '@/types';
 // Import CSS for green flash animation
 import '../../styles/ag-grid-flash.css';
 
-// Register AG Grid Enterprise modules
+// Register AG Grid modules
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 // Configure AG Grid Enterprise License
@@ -92,6 +93,10 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       groupDisplayType = 'singleColumn',
       // Side bar props
       sideBar,
+      // Grid state management props
+      onStateUpdated,
+      onGridPreDestroyed,
+      suppressColumnMoveAnimation = false,
     },
     ref
   ) => {
@@ -179,10 +184,16 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       }
     };
 
-    const handleGridPreDestroyed = useCallback(() => {
-      // Clean up any references or listeners here if needed
-      // This is called just before the grid is destroyed
-    }, []);
+    const handleGridPreDestroyed = useCallback(
+      (event: GridPreDestroyedEvent) => {
+        // Clean up any references or listeners here if needed
+        // This is called just before the grid is destroyed
+        if (onGridPreDestroyed) {
+          onGridPreDestroyed(event);
+        }
+      },
+      [onGridPreDestroyed]
+    );
 
     // Convert deprecated string values to new object format
     const normalizedRowSelection = useMemo(() => {
@@ -240,6 +251,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           suppressScrollOnNewData={suppressScrollOnNewData}
           suppressAnimationFrame={suppressAnimationFrame}
           suppressRowTransform={true}
+          suppressColumnMoveAnimation={suppressColumnMoveAnimation}
           loading={loading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           rowClass={rowClass}
@@ -271,6 +283,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           groupDisplayType={groupDisplayType}
           // Side bar props
           sideBar={sideBar}
+          // Grid state management props
+          onStateUpdated={onStateUpdated}
         />
       </div>
     );

@@ -10,6 +10,7 @@ import {
   GetMainMenuItems,
   RowGroupOpenedEvent,
 } from 'ag-grid-community';
+import { SideBarDef } from 'ag-grid-enterprise';
 
 // Components
 import {
@@ -96,7 +97,7 @@ interface MasterDataGridProps {
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // AG Grid sidebar
-  sideBar?: boolean;
+  sideBar?: boolean | string | string[] | SideBarDef;
 
   // Pagination (for items)
   currentPage?: number;
@@ -134,6 +135,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
+
+  // Grid state management with localStorage persistence (temporarily disabled)
+  // const tableId = activeTab === 'items' ? TABLE_IDS.ITEMS : activeTab;
+  // const gridStateManager = useGridState({
+  //   tableId,
+  //   enabled: false, // Temporarily disabled to debug row selection error
+  //   gridApi,
+  // });
 
   // Column display mode for items (reference columns)
   const {
@@ -260,21 +269,16 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [gridApi, activeTab, columnDefs]);
 
-  // Reset grid state when switching tabs to prevent state carryover
+  // Load and apply state when switching tabs (not on initial mount)
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // Clear filters to prevent filter carryover between tabs
-      gridApi.setFilterModel(null);
-
-      // Clear pinning for all columns without affecting visibility/order
-      const allColumns = gridApi.getAllGridColumns();
-      const columnIds = allColumns.map(col => col.getColId());
-      gridApi.setColumnsPinned(columnIds, null);
-
-      // Small delay to ensure clean state before autosize
+      // Delay to ensure grid is fully ready after column def changes
       const timer = setTimeout(() => {
-        gridApi.autoSizeAllColumns();
-      }, 50);
+        if (!gridApi.isDestroyed()) {
+          // gridStateManager.loadAndApplyState(); // Temporarily disabled
+          gridApi.autoSizeAllColumns();
+        }
+      }, 150);
 
       return () => clearTimeout(timer);
     }
@@ -331,15 +335,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         params.api.paginationGoToPage(currentPage - 1);
       }
 
-      // ✅ RESTORE COLUMN ORDER - Ensure column order is applied after grid ready
-      // Small delay to ensure column definitions are fully loaded
-      const restoreTimer = setTimeout(() => {
+      // Trigger autosize to ensure proper layout
+      setTimeout(() => {
         if (!params.api.isDestroyed()) {
-          // Column order should already be applied via columnDefs ordering
-          // But trigger autosize to ensure proper layout
           params.api.autoSizeAllColumns();
-
-          // Row grouping restore is handled in parent component
         }
       }, 100);
 
@@ -349,9 +348,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       }
 
       onGridReady(params);
-
-      // Cleanup timer on unmount
-      return () => clearTimeout(restoreTimer);
     },
     [onGridReady, activeTab, currentPage, onGridApiReady]
   );
@@ -472,7 +468,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     <>
       <div className="relative">
         <DataGrid
-          key="master-data-unified-grid" // Single stable key for all tabs
           ref={dataGridRef}
           rowData={rowData}
           columnDefs={columnDefs}
@@ -516,6 +511,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onRowGroupOpened={handleRowGroupOpened}
           // AG Grid Sidebar
           sideBar={sideBar}
+          // Ensure smooth state transitions
+          suppressColumnMoveAnimation={true}
         />
       </div>
 

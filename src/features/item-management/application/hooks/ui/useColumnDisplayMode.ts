@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // Column display mode type
 export type ColumnDisplayMode = 'name' | 'code';
+
+const DISPLAY_MODE_STORAGE_KEY = 'pharmasys_column_display_modes';
 
 // Default display modes for reference columns
 const getDefaultDisplayModes = (): Record<string, ColumnDisplayMode> => {
@@ -14,11 +16,40 @@ const getDefaultDisplayModes = (): Record<string, ColumnDisplayMode> => {
   };
 };
 
+// Load display modes from localStorage
+const loadDisplayModes = (): Record<string, ColumnDisplayMode> => {
+  try {
+    const saved = localStorage.getItem(DISPLAY_MODE_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Merge with defaults in case new columns were added
+      return { ...getDefaultDisplayModes(), ...parsed };
+    }
+  } catch {
+    // Silently fail
+  }
+  return getDefaultDisplayModes();
+};
+
+// Save display modes to localStorage
+const saveDisplayModes = (modes: Record<string, ColumnDisplayMode>) => {
+  try {
+    localStorage.setItem(DISPLAY_MODE_STORAGE_KEY, JSON.stringify(modes));
+  } catch {
+    // Silently fail
+  }
+};
+
 export const useColumnDisplayMode = () => {
-  // Simple client-side state management (no database sync)
-  const [displayModeState, setDisplayModeState] = useState<
-    Record<string, ColumnDisplayMode>
-  >(getDefaultDisplayModes());
+  // Client-side state management with localStorage persistence
+  const [displayModeState, setDisplayModeState] =
+    useState<Record<string, ColumnDisplayMode>>(loadDisplayModes);
+
+  // Load from localStorage on mount (in case of external changes)
+  useEffect(() => {
+    const modes = loadDisplayModes();
+    setDisplayModeState(modes);
+  }, []);
 
   // Helper to check if a column is a reference column
   const isReferenceColumn = useCallback((colId: string) => {
@@ -38,11 +69,20 @@ export const useColumnDisplayMode = () => {
         return;
       }
 
-      // Update state immediately (client-side only)
-      setDisplayModeState(prevState => ({
-        ...prevState,
-        [columnKey]: prevState[columnKey] === 'name' ? 'code' : 'name',
-      }));
+      // Update state and persist to localStorage
+      setDisplayModeState(prevState => {
+        const newMode: ColumnDisplayMode =
+          prevState[columnKey] === 'name' ? 'code' : 'name';
+        const newState: Record<string, ColumnDisplayMode> = {
+          ...prevState,
+          [columnKey]: newMode,
+        };
+
+        // Save to localStorage
+        saveDisplayModes(newState);
+
+        return newState;
+      });
     },
     [isReferenceColumn]
   );

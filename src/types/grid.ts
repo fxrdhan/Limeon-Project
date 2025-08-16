@@ -16,7 +16,10 @@ import {
   PaginationChangedEvent,
   ColumnRowGroupChangedEvent,
   RowGroupOpenedEvent,
+  StateUpdatedEvent,
+  GridPreDestroyedEvent,
 } from 'ag-grid-community';
+import type { CellSelectionOptions } from 'ag-grid-enterprise';
 import { SideBarDef } from 'ag-grid-enterprise';
 
 export interface ColumnConfig {
@@ -50,7 +53,7 @@ export interface DataGridProps {
   getRowHeight?: () => number | undefined;
   rowClass?: string;
   suppressMovableColumns?: boolean;
-  cellSelection?: boolean;
+  cellSelection?: boolean | CellSelectionOptions;
   suppressScrollOnNewData?: boolean;
   suppressAnimationFrame?: boolean;
   animateRows?: boolean;
@@ -92,6 +95,10 @@ export interface DataGridProps {
     | 'custom';
   // Side bar props
   sideBar?: boolean | string | string[] | SideBarDef;
+  // Grid state management props
+  onStateUpdated?: (event: StateUpdatedEvent) => void;
+  onGridPreDestroyed?: (event: GridPreDestroyedEvent) => void;
+  suppressColumnMoveAnimation?: boolean;
 }
 
 export interface DataGridRef {
