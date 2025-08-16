@@ -135,8 +135,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
 
-  // State loading coordination for both items and entities
-  const [isStateLoading, setIsStateLoading] = useState(false);
+  // Remove artificial state loading - rely on data loading state only
 
   // Column visibility state management for all tabs
   const itemsColumnVisibilityManager = useColumnVisibilityState({
@@ -291,16 +290,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     entityColumnVisibilityManager.initialState,
   ]);
 
-  // Show loading state during tab transitions
-  useEffect(() => {
-    setIsStateLoading(true);
-    // Simple loading state - autosize handled by events
-    const loadingTimer = setTimeout(() => {
-      setIsStateLoading(false);
-    }, 200);
-
-    return () => clearTimeout(loadingTimer);
-  }, [activeTab]);
+  // No artificial loading state - rely on data loading state only
 
   // Toggle display mode for items reference columns (items tab only)
   const toggleColumnDisplayMode = useCallback(
@@ -521,7 +511,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
-          loading={isLoading || isStateLoading}
+          loading={isLoading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           autoSizeColumns={activeTab === 'items' ? itemColumnsToAutoSize : []}
           isExternalFilterPresent={isExternalFilterPresent}
