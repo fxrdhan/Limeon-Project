@@ -22,10 +22,7 @@ import { StandardPagination } from '../atoms';
 // Hooks
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
-import {
-  useEntityColumnVisibilityState,
-  useColumnVisibilityState,
-} from '@/features/item-management/application/hooks/ui/useEntityColumnVisibilityState';
+// Remove auto column visibility state management imports
 
 // Types
 import type { Item } from '@/types/database';
@@ -137,20 +134,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove artificial state loading - rely on data loading state only
 
-  // Column visibility state management for all tabs
-  const itemsColumnVisibilityManager = useColumnVisibilityState({
-    tableType: 'items',
-    enabled: activeTab === 'items',
-    gridApi,
-  });
-
-  // Entity column visibility state management (only for entity tabs)
-  const entityColumnVisibilityManager = useEntityColumnVisibilityState({
-    entityType:
-      activeTab !== 'items' ? (activeTab as EntityType) : 'categories',
-    enabled: activeTab !== 'items',
-    gridApi,
-  });
+  // Remove automatic column visibility state management - will be replaced with manual buttons
 
   // Column display mode for items (reference columns)
   const {
@@ -267,11 +251,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
-  // Remove double state application - AG Grid's initialState prop handles this automatically
-  // Only do autosize when grid API becomes available or tab changes
+  // Simple autosize when grid ready or tab switched
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // Simple autosize when grid ready or tab switched
       gridApi.autoSizeAllColumns();
     }
   }, [gridApi, activeTab]);
@@ -507,22 +489,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onColumnMoved={onColumnMoved}
           onColumnVisible={onColumnVisible}
           onColumnRowGroupChanged={handleColumnRowGroupChanged}
-          // Column visibility state management for all tabs
-          initialState={
-            activeTab === 'items'
-              ? itemsColumnVisibilityManager.initialState
-              : entityColumnVisibilityManager.initialState
-          }
-          onStateUpdated={
-            activeTab === 'items'
-              ? itemsColumnVisibilityManager.onStateUpdated
-              : entityColumnVisibilityManager.onStateUpdated
-          }
-          onGridPreDestroyed={
-            activeTab === 'items'
-              ? itemsColumnVisibilityManager.onGridPreDestroyed
-              : entityColumnVisibilityManager.onGridPreDestroyed
-          }
+          // Manual state management will be handled via Save/Restore buttons
           rowNumbers={true}
           domLayout="normal"
           style={{
