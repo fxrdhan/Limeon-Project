@@ -6,7 +6,7 @@ export type { ColumnConfig };
 export const createTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  minWidth: config.minWidth || 100,
+  minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth,
   flex: config.flex,
   cellStyle: config.cellStyle || {
@@ -24,7 +24,7 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
 export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  minWidth: config.minWidth || 120,
+  minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || {
     overflow: 'visible',
@@ -40,7 +40,7 @@ export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
 export const createNumberColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  minWidth: config.minWidth || 120,
+  minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || { textAlign: 'right' },
   valueGetter: config.valueGetter,
@@ -52,7 +52,7 @@ export const createNumberColumn = (config: ColumnConfig): ColDef => ({
 export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  minWidth: config.minWidth || 120,
+  minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || { textAlign: 'right' },
   valueFormatter:
@@ -72,7 +72,7 @@ export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
 export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  minWidth: config.minWidth || 80,
+  minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth, // Support maxWidth to prevent excessive expansion
   cellStyle: config.cellStyle || { textAlign: 'center' },
   valueGetter: config.valueGetter,
@@ -108,7 +108,7 @@ export const createMatchScoreColumn = (
 ): ColDef => ({
   field: 'matchScore',
   headerName: config.headerName,
-  width: config.minWidth || 100,
+  width: config.minWidth, // Only use explicit width, no default fallback
   sort: 'desc',
   filter: false,
   sortable: true,
