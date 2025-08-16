@@ -23,20 +23,20 @@ A cutting-edge web application with built-in Agentic AI's to perform your task m
 
 This project is built with:
 
-| Technology                  | Link                                           | Description                                                      |
-| --------------------------- | ---------------------------------------------- | ---------------------------------------------------------------- |
-| **TypeScript**              | [Website](https://www.typescriptlang.org/)     | Typed programming language that builds on JavaScript             |
-| **React**                   | [Website](https://react.dev/)                  | UI library for building user interfaces                          |
-| **Zod**                     | [Website](https://zod.dev/)                    | Schema validation library for type-safe data handling            |
-| **Tailwind CSS**            | [Website](https://tailwindcss.com/)            | Utility-first CSS framework for styling                          |
-| **React Router DOM**        | [Website](https://reactrouter.com/)            | Client-side routing for single page applications                 |
-| **TanStack Query**          | [Website](https://tanstack.com/query/latest)   | Data fetching and caching library                                |
-| **Zustand**                 | [Website](https://zustand-demo.pmnd.rs/)       | Bear necessities for state management in React                   |
-| **Framer Motion**           | [Website](https://www.framer.com/motion/)      | Animation library for React components                           |
-| **Supabase Database**       | [Website](https://supabase.com/database)       | PostgreSQL database with real-time capabilities                  |
-| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Supabase's Deno serverless backend                               |
-| **Supabase Storage**        | [Website](https://supabase.com/storage)        | Storing and serving files                                        |
-| **Upstash Redis**           | [Website](https://upstash.com/)                | Server-side caching                                              |
+| Technology                  | Link                                           | Description                                           |
+| --------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| **TypeScript**              | [Website](https://www.typescriptlang.org/)     | Typed programming language that builds on JavaScript  |
+| **React**                   | [Website](https://react.dev/)                  | UI library for building user interfaces               |
+| **Zod**                     | [Website](https://zod.dev/)                    | Schema validation library for type-safe data handling |
+| **Tailwind CSS**            | [Website](https://tailwindcss.com/)            | Utility-first CSS framework for styling               |
+| **React Router DOM**        | [Website](https://reactrouter.com/)            | Client-side routing for single page applications      |
+| **TanStack Query**          | [Website](https://tanstack.com/query/latest)   | Data fetching and caching library                     |
+| **Zustand**                 | [Website](https://zustand-demo.pmnd.rs/)       | Bear necessities for state management in React        |
+| **Framer Motion**           | [Website](https://www.framer.com/motion/)      | Animation library for React components                |
+| **Supabase Database**       | [Website](https://supabase.com/database)       | PostgreSQL database with real-time capabilities       |
+| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Supabase's Deno serverless backend                    |
+| **Supabase Storage**        | [Website](https://supabase.com/storage)        | Storing and serving files                             |
+| **Upstash Redis**           | [Website](https://upstash.com/)                | Server-side caching                                   |
 
 ### Development Tools
 
@@ -51,14 +51,14 @@ This project is built with:
 
 </div>
 
-| Technology                  | Link                                           | Description                                                      |
-| --------------------------- | ---------------------------------------------- | ---------------------------------------------------------------- |
-| **Yarn**                    | [Website](https://www.yarnpkg.com/)            | Package manager for dependency management                        |
-| **Vite**                    | [Website](https://vitejs.dev/)                 | Build tool for fast development and bundling                     |
-| **SWC**                     | [Website](https://swc.rs/)                     | Fast TypeScript/JavaScript compiler via @vitejs/plugin-react-swc |
-| **TypeScript ESLint**       | [Website](https://typescript-eslint.io/)       | Linter for code quality                                          |
-| **Prettier**                | [Website](https://prettier.io/)                | Code formatter for consistent styling                            |
-| **Husky**                   | [Website](https://typicode.github.io/husky/)   | Git hooks for pre-commit and pre-push automation                 |
+| Technology            | Link                                         | Description                                                      |
+| --------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
+| **Yarn**              | [Website](https://www.yarnpkg.com/)          | Package manager for dependency management                        |
+| **Vite**              | [Website](https://vitejs.dev/)               | Build tool for fast development and bundling                     |
+| **SWC**               | [Website](https://swc.rs/)                   | Fast TypeScript/JavaScript compiler via @vitejs/plugin-react-swc |
+| **TypeScript ESLint** | [Website](https://typescript-eslint.io/)     | Linter for code quality                                          |
+| **Prettier**          | [Website](https://prettier.io/)              | Code formatter for consistent styling                            |
+| **Husky**             | [Website](https://typicode.github.io/husky/) | Git hooks for pre-commit and pre-push automation                 |
 
 ### Additional Libraries
 
