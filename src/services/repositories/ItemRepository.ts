@@ -96,7 +96,12 @@ export class ItemRepository {
 
   async searchItems(
     query: string,
-    searchFields: string[] = ['name', 'code', 'barcode', 'item_manufacturers.name'],
+    searchFields: string[] = [
+      'name',
+      'code',
+      'barcode',
+      'item_manufacturers.name',
+    ],
     options: ItemQueryOptions = {}
   ): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
     try {
