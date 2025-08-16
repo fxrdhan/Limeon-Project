@@ -73,7 +73,7 @@ const MyComponent = () => {
 | `name`                    | `string`                                   | `undefined`     | Form field name for validation            |
 | `tabIndex`                | `number`                                   | `undefined`     | Tab order for accessibility               |
 | **`portalWidth`**         | `'auto' \| string \| number`               | `'auto'`        | Control dropdown portal width             |
-| **`position`**            | `'auto' \| 'top' \| 'bottom' \| 'left'`   | `'auto'`        | Force dropdown position direction         |
+| **`position`**            | `'auto' \| 'top' \| 'bottom' \| 'left'`    | `'auto'`        | Force dropdown position direction         |
 | **`enableHoverDetail`**   | `boolean`                                  | `false`         | Enable hover detail tooltips              |
 | **`hoverDetailDelay`**    | `number`                                   | `800`           | Delay before showing hover detail (ms)    |
 | **`onFetchHoverDetail`**  | `(optionId: string) => Promise<HoverData>` | `undefined`     | Async function to fetch hover detail data |
@@ -342,6 +342,7 @@ const customValidate = (value: string) => {
 ### Position Logic
 
 #### Vertical Positioning (auto/top/bottom)
+
 ```tsx
 // Auto positioning considers:
 const shouldDropUp =
@@ -350,6 +351,7 @@ const shouldDropUp =
 ```
 
 #### Left Positioning Logic
+
 ```tsx
 // Left positioning with intelligent fallback
 const spaceLeft = buttonRect.left - margin;
@@ -369,12 +371,12 @@ if (spaceLeft < minRequiredSpace) {
 
 ### Position Use Cases
 
-| Position | Best For | Example |
-|----------|----------|---------|
-| `auto` | General dropdowns | Form fields, general selection |
-| `top` | Bottom toolbar buttons | Footer actions, bottom navigation |
-| `bottom` | Header dropdowns | Navigation menus, top toolbars |
-| `left` | Right-aligned buttons | Column visibility, toolbar options |
+| Position | Best For               | Example                            |
+| -------- | ---------------------- | ---------------------------------- |
+| `auto`   | General dropdowns      | Form fields, general selection     |
+| `top`    | Bottom toolbar buttons | Footer actions, bottom navigation  |
+| `bottom` | Header dropdowns       | Navigation menus, top toolbars     |
+| `left`   | Right-aligned buttons  | Column visibility, toolbar options |
 
 ### Fallback Behavior
 
@@ -391,6 +393,7 @@ if (spaceLeft < minRequiredSpace) {
 - **`number`**: Width in pixels
 
 #### Content Width Calculation
+
 ```tsx
 // Uses Canvas API for precise text measurement
 const canvas = document.createElement('canvas');
@@ -411,6 +414,7 @@ return Math.max(120, Math.min(contentWidth, 400)); // Min 120px, Max 400px
 ### When to Use Left Positioning
 
 ✅ **Good Use Cases:**
+
 - Toolbar buttons positioned on the right side
 - Column visibility controls
 - Action menus in table headers
@@ -418,6 +422,7 @@ return Math.max(120, Math.min(contentWidth, 400)); // Min 120px, Max 400px
 - Settings dropdowns in navigation bars
 
 ❌ **Avoid Left Positioning For:**
+
 - Form fields in narrow containers
 - Mobile interfaces (limited horizontal space)
 - Buttons positioned at screen left edge

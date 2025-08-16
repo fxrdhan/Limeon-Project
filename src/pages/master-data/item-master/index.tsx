@@ -865,12 +865,15 @@ const ItemMasterNew = memo(() => {
                             : 'satuan-item'
               }
               // Row grouping props - only for items tab
-              isRowGroupingEnabled={activeTab === 'items' ? isRowGroupingEnabled : undefined}
-              onRowGroupingToggle={activeTab === 'items' ? handleRowGroupingToggle : undefined}
+              isRowGroupingEnabled={
+                activeTab === 'items' ? isRowGroupingEnabled : undefined
+              }
+              onRowGroupingToggle={
+                activeTab === 'items' ? handleRowGroupingToggle : undefined
+              }
               showGridModal={activeTab === 'items'}
             />
           </div>
-
         </div>
 
         {/* Unified MasterDataGrid */}
