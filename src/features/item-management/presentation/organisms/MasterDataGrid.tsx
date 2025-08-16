@@ -22,7 +22,10 @@ import { StandardPagination } from '../atoms';
 // Hooks
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
-import { useEntityColumnVisibilityState } from '@/features/item-management/application/hooks/ui/useEntityColumnVisibilityState';
+import {
+  useEntityColumnVisibilityState,
+  useColumnVisibilityState,
+} from '@/features/item-management/application/hooks/ui/useEntityColumnVisibilityState';
 
 // Types
 import type { Item } from '@/types/database';
@@ -132,16 +135,15 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
 
-  // Entity state loading coordination
-  const [isEntityStateLoading, setIsEntityStateLoading] = useState(false);
+  // State loading coordination for both items and entities
+  const [isStateLoading, setIsStateLoading] = useState(false);
 
-  // Grid state management with localStorage persistence (temporarily disabled)
-  // const tableId = activeTab === 'items' ? TABLE_IDS.ITEMS : activeTab;
-  // const gridStateManager = useGridState({
-  //   tableId,
-  //   enabled: false, // Temporarily disabled to debug row selection error
-  //   gridApi,
-  // });
+  // Column visibility state management for all tabs
+  const itemsColumnVisibilityManager = useColumnVisibilityState({
+    tableType: 'items',
+    enabled: activeTab === 'items',
+    gridApi,
+  });
 
   // Entity column visibility state management (only for entity tabs)
   const entityColumnVisibilityManager = useEntityColumnVisibilityState({
@@ -276,38 +278,54 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [gridApi, activeTab, columnDefs]);
 
-  // Apply entity column visibility state when switching tabs
+  // Show loading state when switching tabs and applying column visibility state
   useEffect(() => {
-    if (gridApi && !gridApi.isDestroyed() && activeTab !== 'items') {
-      setIsEntityStateLoading(true);
+    if (gridApi && !gridApi.isDestroyed()) {
+      setIsStateLoading(true);
 
       // Delay to ensure grid is fully ready after column def changes
       const timer = setTimeout(() => {
-        if (
-          !gridApi.isDestroyed() &&
-          entityColumnVisibilityManager.initialState
-        ) {
-          // Apply column visibility state manually for tab switches
-          gridApi.setState(entityColumnVisibilityManager.initialState);
+        if (!gridApi.isDestroyed()) {
+          // Apply appropriate column visibility state based on active tab
+          if (
+            activeTab === 'items' &&
+            itemsColumnVisibilityManager.initialState
+          ) {
+            gridApi.setState(itemsColumnVisibilityManager.initialState);
+          } else if (
+            activeTab !== 'items' &&
+            entityColumnVisibilityManager.initialState
+          ) {
+            gridApi.setState(entityColumnVisibilityManager.initialState);
+          }
         }
         gridApi.autoSizeAllColumns();
-        setIsEntityStateLoading(false);
+        setIsStateLoading(false);
       }, 150);
 
       return () => {
         clearTimeout(timer);
-        setIsEntityStateLoading(false);
+        setIsStateLoading(false);
       };
     } else {
-      setIsEntityStateLoading(false);
+      setIsStateLoading(false);
     }
-  }, [gridApi, activeTab, entityColumnVisibilityManager.initialState]);
+  }, [
+    gridApi,
+    activeTab,
+    itemsColumnVisibilityManager.initialState,
+    entityColumnVisibilityManager.initialState,
+  ]);
 
-  // Initial restore is now handled in parent component (index.tsx)
-  // This component only handles UI concerns
+  // Show loading state during tab transitions
+  useEffect(() => {
+    setIsStateLoading(true);
+    const timer = setTimeout(() => {
+      setIsStateLoading(false);
+    }, 200);
 
-  // Column visibility is handled automatically by suppressGroupChangesColumnVisibility={true}
-  // No need for manual visibility management that causes cascading events
+    return () => clearTimeout(timer);
+  }, [activeTab]);
 
   // Toggle display mode for items reference columns
   const toggleColumnDisplayMode = useCallback(
@@ -496,7 +514,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           columnDefs={columnDefs}
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
-          loading={isLoading || (activeTab !== 'items' && isEntityStateLoading)}
+          loading={isLoading || isStateLoading}
           overlayNoRowsTemplate={overlayTemplate}
           autoSizeColumns={activeTab === 'items' ? itemColumnsToAutoSize : []}
           isExternalFilterPresent={isExternalFilterPresent}
@@ -505,21 +523,21 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           onColumnVisible={onColumnVisible}
-          // Entity column visibility state management
+          // Column visibility state management for all tabs
           initialState={
-            activeTab !== 'items'
-              ? entityColumnVisibilityManager.initialState
-              : undefined
+            activeTab === 'items'
+              ? itemsColumnVisibilityManager.initialState
+              : entityColumnVisibilityManager.initialState
           }
           onStateUpdated={
-            activeTab !== 'items'
-              ? entityColumnVisibilityManager.onStateUpdated
-              : undefined
+            activeTab === 'items'
+              ? itemsColumnVisibilityManager.onStateUpdated
+              : entityColumnVisibilityManager.onStateUpdated
           }
           onGridPreDestroyed={
-            activeTab !== 'items'
-              ? entityColumnVisibilityManager.onGridPreDestroyed
-              : undefined
+            activeTab === 'items'
+              ? itemsColumnVisibilityManager.onGridPreDestroyed
+              : entityColumnVisibilityManager.onGridPreDestroyed
           }
           rowNumbers={true}
           domLayout="normal"
