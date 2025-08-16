@@ -1,0 +1,18 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source code
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.sql text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+
+# Images
+*.png binary
+
+# Generated files
+dist/** linguist-generated=true
