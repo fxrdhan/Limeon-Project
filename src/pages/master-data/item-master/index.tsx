@@ -248,8 +248,7 @@ const ItemMasterNew = memo(() => {
         },
         tooltipField: 'name',
         valueGetter: params => params.data?.name || '-',
-        sortable: true,
-        resizable: true,
+        // Remove hardcoded sortable, resizable - let saved state control these
         suppressHeaderFilterButton: true,
       },
     ];
@@ -732,7 +731,6 @@ const ItemMasterNew = memo(() => {
             onColumnMoved={unifiedColumnMovedHandler}
             onColumnVisible={undefined}
             onGridApiReady={handleUnifiedGridApiReady}
-            currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
             isRowGroupingEnabled={
               activeTab === 'items' ? isRowGroupingEnabled : false

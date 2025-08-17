@@ -17,8 +17,9 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
   tooltipField: config.tooltipField || config.field,
   valueGetter: config.valueGetter,
   valueFormatter: config.valueFormatter,
-  sortable: config.sortable !== false,
-  resizable: config.resizable !== false,
+  // Remove default sortable, resizable - let saved state and explicit config control these
+  ...(config.sortable !== undefined && { sortable: config.sortable }),
+  ...(config.resizable !== undefined && { resizable: config.resizable }),
 });
 
 export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
@@ -33,8 +34,9 @@ export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
   },
   valueGetter: config.valueGetter,
   valueFormatter: config.valueFormatter,
-  sortable: config.sortable !== false,
-  resizable: config.resizable !== false,
+  // Remove default sortable, resizable - let saved state and explicit config control these
+  ...(config.sortable !== undefined && { sortable: config.sortable }),
+  ...(config.resizable !== undefined && { resizable: config.resizable }),
 });
 
 export const createNumberColumn = (config: ColumnConfig): ColDef => ({
@@ -45,8 +47,9 @@ export const createNumberColumn = (config: ColumnConfig): ColDef => ({
   cellStyle: config.cellStyle || { textAlign: 'right' },
   valueGetter: config.valueGetter,
   valueFormatter: config.valueFormatter,
-  sortable: config.sortable !== false,
-  resizable: config.resizable !== false,
+  // Remove default sortable, resizable - let saved state and explicit config control these
+  ...(config.sortable !== undefined && { sortable: config.sortable }),
+  ...(config.resizable !== undefined && { resizable: config.resizable }),
 });
 
 export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
@@ -65,8 +68,9 @@ export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
         maximumFractionDigits: 0,
       }) || ''),
   valueGetter: config.valueGetter,
-  sortable: config.sortable !== false,
-  resizable: config.resizable !== false,
+  // Remove default sortable, resizable - let saved state and explicit config control these
+  ...(config.sortable !== undefined && { sortable: config.sortable }),
+  ...(config.resizable !== undefined && { resizable: config.resizable }),
 });
 
 export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
@@ -77,8 +81,9 @@ export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
   cellStyle: config.cellStyle || { textAlign: 'center' },
   valueGetter: config.valueGetter,
   valueFormatter: config.valueFormatter,
-  sortable: config.sortable !== false,
-  resizable: config.resizable !== false,
+  // Remove default sortable, resizable - let saved state and explicit config control these
+  ...(config.sortable !== undefined && { sortable: config.sortable }),
+  ...(config.resizable !== undefined && { resizable: config.resizable }),
 });
 
 export const formatCurrency = (value: number): string => {
@@ -111,8 +116,9 @@ export const createMatchScoreColumn = (
   width: config.minWidth, // Only use explicit width, no default fallback
   sort: 'desc',
   filter: false,
-  sortable: true,
-  resizable: config.resizable !== false,
+  // Remove default sortable, resizable - let saved state and explicit config control these
+  ...(config.sortable !== undefined && { sortable: config.sortable }),
+  ...(config.resizable !== undefined && { resizable: config.resizable }),
   valueGetter: params => {
     return config.getMatchScore(params.data);
   },

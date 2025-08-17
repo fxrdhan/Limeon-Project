@@ -22,7 +22,12 @@ import { StandardPagination } from '../atoms';
 // Hooks
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
-// Remove auto column visibility state management imports
+// Manual grid state management for auto-restore
+import {
+  loadSavedStateForInit,
+  hasSavedState,
+  type TableType,
+} from '@/features/shared/utils/gridStateManager';
 
 // Types
 import type { Item } from '@/types/database';
@@ -97,7 +102,6 @@ interface MasterDataGridProps {
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // Pagination (for items)
-  currentPage?: number;
   itemsPerPage?: number;
 }
 
@@ -124,7 +128,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   onColumnMoved,
   onColumnVisible,
   onGridApiReady,
-  currentPage = 1,
   itemsPerPage = 10,
 }) {
   // Single grid API for all tabs
@@ -132,9 +135,23 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
 
+  // Auto-restore loading state
+  const [isAutoRestoring, setIsAutoRestoring] = useState(false);
+
   // Remove artificial state loading - rely on data loading state only
 
-  // Remove automatic column visibility state management - will be replaced with manual buttons
+  // Auto-restore: Load saved state for current table as initialState
+  const autoRestoreInitialState = useMemo(() => {
+    const tableType = activeTab as TableType;
+    const savedState = loadSavedStateForInit(tableType);
+
+    if (savedState) {
+      console.log(`🔄 Auto-restore: Found saved layout for ${tableType}`);
+      return savedState;
+    }
+
+    return undefined;
+  }, [activeTab]);
 
   // Column display mode for items (reference columns)
   const {
@@ -251,9 +268,46 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
-  // Simple autosize when grid ready or tab switched
+  // Auto-restore on tab switch (different from initial load)
   useEffect(() => {
-    if (gridApi && !gridApi.isDestroyed()) {
+    if (!gridApi || gridApi.isDestroyed()) return;
+
+    const tableType = activeTab as TableType;
+
+    // Check if this tab has saved state
+    if (hasSavedState(tableType)) {
+      console.log(
+        `🔄 Tab switch auto-restore: Loading saved layout for ${tableType}`
+      );
+
+      setIsAutoRestoring(true);
+
+      // Load and apply saved state
+      const savedState = loadSavedStateForInit(tableType);
+      if (savedState) {
+        try {
+          gridApi.setState(savedState);
+
+          // Reset pagination after state applied + autosize
+          setTimeout(() => {
+            if (!gridApi.isDestroyed()) {
+              gridApi.paginationGoToPage(0);
+              gridApi.autoSizeAllColumns();
+              setIsAutoRestoring(false);
+            }
+          }, 150);
+        } catch (error) {
+          console.error('Failed to auto-restore on tab switch:', error);
+          setIsAutoRestoring(false);
+          // Fallback: just autosize
+          gridApi.autoSizeAllColumns();
+        }
+      } else {
+        setIsAutoRestoring(false);
+        gridApi.autoSizeAllColumns();
+      }
+    } else {
+      // No saved state, just autosize
       gridApi.autoSizeAllColumns();
     }
   }, [gridApi, activeTab]);
@@ -298,10 +352,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       const gridPageSize = params.api.paginationGetPageSize();
       setCurrentPageSize(gridPageSize);
 
-      // Set initial page if needed (for items)
-      if (activeTab === 'items' && currentPage > 1) {
-        params.api.paginationGoToPage(currentPage - 1);
-      }
+      // Remove force pagination logic - let auto-restore handle pagination naturally
+      // Since we exclude pagination from saved state, no need to force page setting
 
       // No autosize here - will be done optimally in onFirstDataRendered after data loads
 
@@ -312,7 +364,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       onGridReady(params);
     },
-    [onGridReady, activeTab, currentPage, onGridApiReady]
+    [onGridReady, onGridApiReady]
   );
 
   // Handle first data rendered - autosize when data ready
@@ -479,7 +531,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
-          loading={isLoading}
+          loading={isLoading || isAutoRestoring}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           autoSizeColumns={activeTab === 'items' ? itemColumnsToAutoSize : []}
           isExternalFilterPresent={isExternalFilterPresent}
@@ -489,6 +541,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onColumnMoved={onColumnMoved}
           onColumnVisible={onColumnVisible}
           onColumnRowGroupChanged={handleColumnRowGroupChanged}
+          // Auto-restore: Load saved state on grid initialization
+          initialState={autoRestoreInitialState}
           // Manual state management will be handled via Save/Restore buttons
           rowNumbers={true}
           domLayout="normal"
@@ -514,30 +568,36 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           suppressAggFuncInHeader={false}
           suppressDragLeaveHidesColumns={true}
           groupDefaultExpanded={
-            activeTab === 'items' && isRowGroupingEnabled
-              ? defaultExpanded
-              : undefined
+            activeTab === 'items' &&
+            isRowGroupingEnabled &&
+            !hasSavedState(activeTab as TableType)
+              ? defaultExpanded // Only apply default if no saved state
+              : undefined // Let saved state control grouping expansion
           }
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}
-          // AG Grid Sidebar - closed by default for cleaner UI
-          sideBar={{
-            toolPanels: [
-              {
-                id: 'columns',
-                labelDefault: 'Columns',
-                labelKey: 'columns',
-                iconKey: 'columns',
-                toolPanel: 'agColumnsToolPanel',
-                toolPanelParams: {
-                  suppressRowGroups: true, // Remove Row Groups section
-                  suppressValues: true, // Remove Values (aggregate) section
-                },
-              },
-            ],
-            // No defaultToolPanel = sidebar closed by default
-          }}
+          // AG Grid Sidebar - conditional configuration based on saved state
+          sideBar={
+            hasSavedState(activeTab as TableType)
+              ? true // Let saved state control sidebar completely
+              : {
+                  toolPanels: [
+                    {
+                      id: 'columns',
+                      labelDefault: 'Columns',
+                      labelKey: 'columns',
+                      iconKey: 'columns',
+                      toolPanel: 'agColumnsToolPanel',
+                      toolPanelParams: {
+                        suppressRowGroups: true, // Remove Row Groups section
+                        suppressValues: true, // Remove Values (aggregate) section
+                      },
+                    },
+                  ],
+                  // No defaultToolPanel = sidebar closed by default (only for new users)
+                }
+          }
           // Ensure smooth state transitions
           suppressColumnMoveAnimation={true}
         />

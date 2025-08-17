@@ -163,23 +163,30 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       }
     }, [autoSizeColumns, sizeColumnsToFit, onFirstDataRendered]);
 
+    // Safer defaultColDef - only essential properties that don't conflict with saved state
     const defaultColDef: ColDef = {
-      sortable: true,
-      resizable: true,
-      filter: disableFiltering ? false : 'agTextColumnFilter',
-      suppressHeaderFilterButton: suppressHeaderFilterButton,
-      menuTabs: disableFiltering
-        ? []
-        : columnMenuTabs || [
-            'filterMenuTab' as ColumnMenuTab, // Filter options
-            'generalMenuTab' as ColumnMenuTab, // Sort, Pin, Autosize, etc.
-            'columnsMenuTab' as ColumnMenuTab, // Choose/Reset Columns
-          ],
-      mainMenuItems: mainMenuItems,
+      // Essential properties that should always apply
       cellDataType: false,
-      // Remove hardcoded minWidth to allow optimal autosize
-      // Enable cell change flash animation for real-time updates
       enableCellChangeFlash: true,
+
+      // Conditional properties - only apply if not conflicting with saved state features
+      ...(disableFiltering && { filter: false }),
+      ...(suppressHeaderFilterButton && { suppressHeaderFilterButton: true }),
+
+      // Menu configuration - conditional based on filtering
+      ...(!disableFiltering && {
+        menuTabs: columnMenuTabs || [
+          'filterMenuTab' as ColumnMenuTab, // Filter options
+          'generalMenuTab' as ColumnMenuTab, // Sort, Pin, Autosize, etc.
+          'columnsMenuTab' as ColumnMenuTab, // Choose/Reset Columns
+        ],
+      }),
+
+      ...(mainMenuItems && { mainMenuItems }),
+
+      // Remove hardcoded sortable, resizable - let column definitions and saved state control these
+      // Remove hardcoded filter - let individual columns and saved state control filtering
+      // Remove hardcoded minWidth - allow optimal autosize
     };
 
     const handleGridReady = (event: GridReadyEvent) => {
