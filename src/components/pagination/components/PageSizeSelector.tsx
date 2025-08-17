@@ -12,12 +12,24 @@ export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
   isFloating = false,
 }) => {
   // Transform pageSizes to SlidingSelector format
-  const sizeOptions: SlidingSelectorOption<number>[] = pageSizes.map(size => ({
-    key: size.toString(),
-    value: size,
-    defaultLabel: size.toString(),
-    activeLabel: `${size} items`,
-  }));
+  const sizeOptions: SlidingSelectorOption<number>[] = pageSizes.map(size => {
+    // Handle unlimited option (-1)
+    if (size === -1) {
+      return {
+        key: size.toString(),
+        value: size,
+        defaultLabel: '∞',
+        activeLabel: 'Unlimited',
+      };
+    }
+
+    return {
+      key: size.toString(),
+      value: size,
+      defaultLabel: size.toString(),
+      activeLabel: `${size} items`,
+    };
+  });
 
   const handleSelectionChange = (
     _key: string,
