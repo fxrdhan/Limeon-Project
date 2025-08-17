@@ -135,8 +135,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
 
-  // Auto-restore loading state
-  const [isAutoRestoring, setIsAutoRestoring] = useState(false);
+  // Auto-restore no longer needs loading state - removed for faster UX
 
   // Column display mode for items (reference columns)
   const {
@@ -274,14 +273,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     ) {
       if (hasSavedState(tableType)) {
         console.log(`🔄 Tab switch auto-restore: ${tableType}`);
-        setIsAutoRestoring(true);
 
         // Simple delay for tab switching - maintainColumnOrder=true makes this reliable
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
             restoreGridState(gridApi, tableType);
-            // restoreGridState handles timing, just hide overlay
-            setIsAutoRestoring(false);
           }
         }, 100);
       } else {
@@ -353,14 +349,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       if (hasSavedState(tableType)) {
         console.log(`🔄 Auto-restore on data ready for ${tableType}`);
-        setIsAutoRestoring(true);
 
         // Simple delay - maintainColumnOrder=true makes this reliable
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
             restoreGridState(gridApi, tableType);
-            // restoreGridState has its own timing, just hide overlay
-            setIsAutoRestoring(false);
           }
         }, 100);
       } else {
@@ -521,7 +514,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
-          loading={isLoading || isAutoRestoring}
+          loading={isLoading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           autoSizeColumns={activeTab === 'items' ? itemColumnsToAutoSize : []}
           isExternalFilterPresent={isExternalFilterPresent}
