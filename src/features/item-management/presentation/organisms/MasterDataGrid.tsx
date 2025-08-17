@@ -138,21 +138,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   // Auto-restore loading state
   const [isAutoRestoring, setIsAutoRestoring] = useState(false);
 
-  // Remove artificial state loading - rely on data loading state only
-
-  // Auto-restore: Load saved state for current table as initialState
-  const autoRestoreInitialState = useMemo(() => {
-    const tableType = activeTab as TableType;
-    const savedState = loadSavedStateForInit(tableType);
-
-    if (savedState) {
-      console.log(`🔄 Auto-restore: Found saved layout for ${tableType}`);
-      return savedState;
-    }
-
-    return undefined;
-  }, [activeTab]);
-
   // Column display mode for items (reference columns)
   const {
     displayModeState: columnDisplayModes,
@@ -268,49 +253,65 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
-  // Auto-restore on tab switch (different from initial load)
-  useEffect(() => {
-    if (!gridApi || gridApi.isDestroyed()) return;
+  // Auto-restore: Load saved state for current table as initialState (AG Grid best practice)
+  const autoRestoreInitialState = useMemo(() => {
+    const tableType = activeTab as TableType;
+    const savedState = loadSavedStateForInit(tableType);
 
+    if (savedState) {
+      console.log(`🔄 Auto-restore: Found saved layout for ${tableType}`);
+      return savedState;
+    }
+
+    return undefined;
+  }, [activeTab]);
+
+  // Tab switching state restore (for runtime tab changes after initial load)
+  const previousActiveTabRef = useRef<TableType | null>(null);
+  useEffect(() => {
     const tableType = activeTab as TableType;
 
-    // Check if this tab has saved state
-    if (hasSavedState(tableType)) {
-      console.log(
-        `🔄 Tab switch auto-restore: Loading saved layout for ${tableType}`
-      );
+    // Skip initial load (handled by initialState)
+    if (previousActiveTabRef.current === null) {
+      previousActiveTabRef.current = tableType;
+      return;
+    }
 
-      setIsAutoRestoring(true);
-
-      // Load and apply saved state
+    // Only handle tab changes after initial load
+    if (
+      previousActiveTabRef.current !== tableType &&
+      gridApi &&
+      !gridApi.isDestroyed()
+    ) {
       const savedState = loadSavedStateForInit(tableType);
+
       if (savedState) {
+        console.log(`🔄 Tab switch auto-restore: ${tableType}`);
+        setIsAutoRestoring(true);
+
         try {
           gridApi.setState(savedState);
 
-          // Reset pagination after state applied + autosize
           setTimeout(() => {
             if (!gridApi.isDestroyed()) {
               gridApi.paginationGoToPage(0);
               gridApi.autoSizeAllColumns();
               setIsAutoRestoring(false);
             }
-          }, 150);
+          }, 100);
         } catch (error) {
-          console.error('Failed to auto-restore on tab switch:', error);
+          console.error('Tab switch auto-restore failed:', error);
           setIsAutoRestoring(false);
-          // Fallback: just autosize
           gridApi.autoSizeAllColumns();
         }
       } else {
-        setIsAutoRestoring(false);
+        // No saved state, just autosize
         gridApi.autoSizeAllColumns();
       }
-    } else {
-      // No saved state, just autosize
-      gridApi.autoSizeAllColumns();
+
+      previousActiveTabRef.current = tableType;
     }
-  }, [gridApi, activeTab]);
+  }, [activeTab, gridApi]);
 
   // No artificial loading state - rely on data loading state only
 
@@ -343,7 +344,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onRowClick]
   );
 
-  // Handle grid ready - setup only, real autosize happens in onFirstDataRendered
+  // Handle grid ready - setup and track for tab switching
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
@@ -352,10 +353,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       const gridPageSize = params.api.paginationGetPageSize();
       setCurrentPageSize(gridPageSize);
 
-      // Remove force pagination logic - let auto-restore handle pagination naturally
-      // Since we exclude pagination from saved state, no need to force page setting
-
-      // No autosize here - will be done optimally in onFirstDataRendered after data loads
+      // Initialize the current tab reference for tab switching logic
+      previousActiveTabRef.current = activeTab as TableType;
 
       // Notify parent about grid API
       if (onGridApiReady) {
@@ -364,7 +363,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       onGridReady(params);
     },
-    [onGridReady, onGridApiReady]
+    [onGridReady, onGridApiReady, activeTab]
   );
 
   // Handle first data rendered - autosize when data ready
@@ -541,7 +540,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onColumnMoved={onColumnMoved}
           onColumnVisible={onColumnVisible}
           onColumnRowGroupChanged={handleColumnRowGroupChanged}
-          // Auto-restore: Load saved state on grid initialization
+          // Auto-restore: Load saved state on grid initialization (AG Grid best practice)
           initialState={autoRestoreInitialState}
           // Manual state management will be handled via Save/Restore buttons
           rowNumbers={true}
