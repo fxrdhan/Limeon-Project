@@ -271,20 +271,21 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       gridApi &&
       !gridApi.isDestroyed()
     ) {
-      // Defer grid operations to allow smooth tab animation
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            if (hasSavedState(tableType)) {
-              console.log(`🔄 Tab switch auto-restore: ${tableType}`);
-              restoreGridState(gridApi, tableType);
-            } else {
-              // No saved state, just autosize
+      // Apply saved state quickly to minimize flicker
+      if (hasSavedState(tableType)) {
+        console.log(`🔄 Tab switch auto-restore: ${tableType}`);
+        // Apply immediately for saved state to prevent flicker
+        restoreGridState(gridApi, tableType);
+      } else {
+        // No saved state, defer autosize to allow tab animation
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (!gridApi.isDestroyed()) {
               gridApi.autoSizeAllColumns();
             }
-          }
-        }, 200); // Longer delay to ensure tab animation completes
-      });
+          }, 100); // Short delay only for autosize
+        });
+      }
 
       previousActiveTabRef.current = tableType;
     }
@@ -321,7 +322,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onRowClick]
   );
 
-  // Handle grid ready - setup and track for tab switching
+  // Handle grid ready - setup and early auto-restore to prevent flicker
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
@@ -333,6 +334,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       // Initialize the current tab reference for tab switching logic
       previousActiveTabRef.current = activeTab as TableType;
 
+      // EARLY auto-restore to prevent default state flickering
+      const tableType = activeTab as TableType;
+      if (hasSavedState(tableType)) {
+        console.log(`🚀 Early auto-restore on grid ready for ${tableType}`);
+        // Apply immediately - no delay needed since grid is ready but no data rendered yet
+        restoreGridState(params.api, tableType);
+      }
+
       // Notify parent about grid API
       if (onGridApiReady) {
         onGridApiReady(params.api);
@@ -343,22 +352,13 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onGridReady, onGridApiReady, activeTab]
   );
 
-  // Handle first data rendered - trigger auto-restore using proven manual button logic
+  // Handle first data rendered - only autosize if no saved state (auto-restore moved to onGridReady)
   const handleFirstDataRendered = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
       const tableType = activeTab as TableType;
 
-      if (hasSavedState(tableType)) {
-        console.log(`🔄 Auto-restore on data ready for ${tableType}`);
-
-        // Simple delay - maintainColumnOrder=true makes this reliable
-        setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            restoreGridState(gridApi, tableType);
-          }
-        }, 100);
-      } else {
-        // No saved state, just autosize
+      // Only autosize if no saved state (saved state already applied in onGridReady)
+      if (!hasSavedState(tableType)) {
         gridApi.autoSizeAllColumns();
       }
     }
