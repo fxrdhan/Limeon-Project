@@ -36,8 +36,13 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   });
 
   // Default values when no grid API
-  const currentPage =
+  const isPaginationEnabled =
     gridApi && !gridApi.isDestroyed()
+      ? gridApi.getGridOption('pagination')
+      : true;
+
+  const currentPage =
+    gridApi && !gridApi.isDestroyed() && isPaginationEnabled
       ? gridApi.paginationGetCurrentPage() + 1
       : 1;
 
@@ -66,10 +71,22 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
     (newPageSize: number) => {
       if (!gridApi || gridApi.isDestroyed()) return;
 
-      const currentPageSize = gridApi.paginationGetPageSize();
+      const isPaginationCurrentlyEnabled = gridApi.getGridOption('pagination');
+      const currentPageSize = isPaginationCurrentlyEnabled
+        ? gridApi.paginationGetPageSize()
+        : -1;
+
+      // Skip if same state: both unlimited or both same numbered page size
       if (newPageSize === currentPageSize) return;
 
-      gridApi.setGridOption('paginationPageSize', newPageSize);
+      // Handle unlimited items (-1) by disabling pagination
+      if (newPageSize === -1) {
+        gridApi.setGridOption('pagination', false);
+      } else {
+        // Enable pagination and set page size
+        gridApi.setGridOption('pagination', true);
+        gridApi.setGridOption('paginationPageSize', newPageSize);
+      }
 
       // Call the callback to notify parent component
       if (onPageSizeChange) {
@@ -122,8 +139,12 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   }
 
   // Get values from grid API
-  const totalPages = gridApi.paginationGetTotalPages();
-  const itemsPerPage = gridApi.paginationGetPageSize();
+  const totalPages = isPaginationEnabled
+    ? gridApi.paginationGetTotalPages()
+    : 1;
+  const itemsPerPage = isPaginationEnabled
+    ? gridApi.paginationGetPageSize()
+    : -1;
   const selectedPageSizeIndex = pageSizeOptions.indexOf(itemsPerPage);
 
   // Context value

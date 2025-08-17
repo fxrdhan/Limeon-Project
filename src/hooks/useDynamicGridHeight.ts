@@ -46,10 +46,15 @@ export const useDynamicGridHeight = ({
 
     // Calculate from data length and page size
     const dataLength = data ? data.length : 0;
-    const displayedRows = Math.min(dataLength, currentPageSize);
 
-    // Maximum rows is the smaller of: viewport capacity or page size
-    const maxRows = Math.min(maxRowsByViewport, currentPageSize);
+    // Handle unlimited page size (-1)
+    const effectivePageSize =
+      currentPageSize === -1 ? dataLength : currentPageSize;
+
+    const displayedRows = Math.min(dataLength, effectivePageSize);
+
+    // Maximum rows is the smaller of: viewport capacity or effective page size
+    const maxRows = Math.min(maxRowsByViewport, effectivePageSize);
 
     // Actual rows to display
     const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
@@ -58,7 +63,7 @@ export const useDynamicGridHeight = ({
 
     if (debug) {
       console.log(
-        `[useDynamicGridHeight] Viewport: ${availableHeight}px, max rows by viewport: ${maxRowsByViewport}, data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows: ${actualRows}, final height: ${calculatedHeight}px`
+        `[useDynamicGridHeight] Viewport: ${availableHeight}px, max rows by viewport: ${maxRowsByViewport}, data length: ${dataLength}, page size: ${currentPageSize}, effective page size: ${effectivePageSize}, displayed rows: ${displayedRows}, actual rows: ${actualRows}, final height: ${calculatedHeight}px`
       );
     }
 

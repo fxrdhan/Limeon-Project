@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { AGGridPagination } from '@/components/pagination';
+import { PAGINATION_CONSTANTS } from '@/components/pagination/constants';
 import { GridApi } from 'ag-grid-community';
 
 interface StandardPaginationProps {
@@ -12,7 +13,7 @@ const StandardPagination = memo<StandardPaginationProps>(
     return (
       <AGGridPagination
         gridApi={gridApi}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[...PAGINATION_CONSTANTS.PAGE_SIZES]}
         enableFloating={true}
         hideFloatingWhenModalOpen={false}
         onPageSizeChange={onPageSizeChange}
