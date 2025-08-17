@@ -19,8 +19,6 @@ import {
 } from 'ag-grid-community';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { DataGridProps, DataGridRef } from '@/types';
-// Import CSS for green flash animation
-import '../../styles/ag-grid-flash.css';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllEnterpriseModule]);
