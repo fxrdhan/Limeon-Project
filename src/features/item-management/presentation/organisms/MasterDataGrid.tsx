@@ -276,20 +276,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         console.log(`🔄 Tab switch auto-restore: ${tableType}`);
         setIsAutoRestoring(true);
 
-        // Give grid time to fully settle before triggering restore (tab switching)
+        // Simple delay for tab switching - maintainColumnOrder=true makes this reliable
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
-            const success = restoreGridState(gridApi, tableType);
-            if (success) {
-              // Additional delay to ensure loading overlay stays until restore complete
-              setTimeout(() => {
-                setIsAutoRestoring(false);
-              }, 200);
-            } else {
-              setIsAutoRestoring(false);
-            }
+            restoreGridState(gridApi, tableType);
+            // restoreGridState handles timing, just hide overlay
+            setIsAutoRestoring(false);
           }
-        }, 300);
+        }, 100);
       } else {
         // No saved state, just autosize
         gridApi.autoSizeAllColumns();
@@ -361,20 +355,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         console.log(`🔄 Auto-restore on data ready for ${tableType}`);
         setIsAutoRestoring(true);
 
-        // Give grid time to fully settle before triggering restore
+        // Simple delay - maintainColumnOrder=true makes this reliable
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
-            const success = restoreGridState(gridApi, tableType);
-            if (success) {
-              // Additional delay to ensure loading overlay stays until restore complete
-              setTimeout(() => {
-                setIsAutoRestoring(false);
-              }, 200);
-            } else {
-              setIsAutoRestoring(false);
-            }
+            restoreGridState(gridApi, tableType);
+            // restoreGridState has its own timing, just hide overlay
+            setIsAutoRestoring(false);
           }
-        }, 300);
+        }, 100);
       } else {
         // No saved state, just autosize
         gridApi.autoSizeAllColumns();
