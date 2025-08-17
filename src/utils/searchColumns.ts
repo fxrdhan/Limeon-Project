@@ -72,7 +72,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama produsen',
-    isMultiFilter: true,
   },
   {
     field: 'code',
@@ -80,7 +79,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode unik item',
-    isMultiFilter: true,
   },
   {
     field: 'barcode',
@@ -88,7 +86,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nomor barcode',
-    isMultiFilter: true,
   },
   {
     field: 'category.name',
@@ -96,7 +93,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kategori item',
-    isMultiFilter: true,
   },
   {
     field: 'type.name',
@@ -104,7 +100,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan jenis item',
-    isMultiFilter: true,
   },
   {
     field: 'package.name',
@@ -112,7 +107,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kemasan utama',
-    isMultiFilter: true,
   },
   {
     field: 'dosage.name',
@@ -120,7 +114,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan sediaan item',
-    isMultiFilter: true,
   },
   {
     field: 'package_conversions',
@@ -128,20 +121,19 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kemasan turunan',
-    isMultiFilter: true,
   },
   {
     field: 'base_price',
     headerName: 'Harga Pokok',
     searchable: true,
-    type: 'currency',
+    type: 'number',
     description: 'Cari berdasarkan harga pokok',
   },
   {
     field: 'sell_price',
     headerName: 'Harga Jual',
     searchable: true,
-    type: 'currency',
+    type: 'number',
     description: 'Cari berdasarkan harga jual',
   },
   {
@@ -150,7 +142,6 @@ export const itemSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'number',
     description: 'Cari berdasarkan jumlah stok',
-    isMultiFilter: true,
   },
 ];
 
@@ -253,7 +244,6 @@ export const itemCategoriesSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode kategori',
-    isMultiFilter: true,
   },
   {
     field: 'name',
@@ -281,7 +271,6 @@ export const itemTypesSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode jenis',
-    isMultiFilter: true,
   },
   {
     field: 'name',
@@ -309,7 +298,6 @@ export const itemPackagesSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode kemasan',
-    isMultiFilter: true,
   },
   {
     field: 'name',
@@ -331,7 +319,6 @@ export const itemPackagesSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode NCI',
-    isMultiFilter: true,
   },
 ];
 
@@ -345,7 +332,6 @@ export const itemDosagesSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode sediaan',
-    isMultiFilter: true,
   },
   {
     field: 'name',
@@ -367,7 +353,6 @@ export const itemDosagesSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode NCI',
-    isMultiFilter: true,
   },
 ];
 
@@ -381,7 +366,6 @@ export const itemManufacturersSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode produsen',
-    isMultiFilter: true,
   },
   {
     field: 'name',
@@ -409,7 +393,6 @@ export const itemUnitsSearchColumns: SearchColumn[] = [
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode satuan',
-    isMultiFilter: true,
   },
   {
     field: 'name',

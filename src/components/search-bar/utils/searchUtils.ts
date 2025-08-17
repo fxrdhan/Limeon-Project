@@ -1,5 +1,8 @@
 import { SearchColumn, EnhancedSearchState, FilterSearch } from '../types';
-import { DEFAULT_FILTER_OPERATORS } from '../operators';
+import {
+  DEFAULT_FILTER_OPERATORS,
+  NUMBER_FILTER_OPERATORS,
+} from '../operators';
 
 export const parseSearchValue = (
   searchValue: string,
@@ -69,7 +72,13 @@ export const parseSearchValue = (
             };
           }
 
-          const operator = DEFAULT_FILTER_OPERATORS.find(
+          // Search in appropriate operators based on column type
+          const availableOperators =
+            column.type === 'number'
+              ? NUMBER_FILTER_OPERATORS
+              : DEFAULT_FILTER_OPERATORS;
+
+          const operator = availableOperators.find(
             op => op.value.toLowerCase() === operatorInput.toLowerCase()
           );
 

@@ -1,4 +1,4 @@
-export { DEFAULT_FILTER_OPERATORS } from './operators';
+export { DEFAULT_FILTER_OPERATORS, NUMBER_FILTER_OPERATORS } from './operators';
 export type {
   SearchColumn,
   FilterSearch,

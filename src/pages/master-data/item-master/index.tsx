@@ -359,9 +359,16 @@ const ItemMasterNew = memo(() => {
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
         try {
-          // All columns use simple text filter now (row grouping handles organization)
+          // Determine filter type: number for numeric columns, text for others
+          const isNumericColumn = [
+            'stock',
+            'base_price',
+            'sell_price',
+          ].includes(filterSearch.field);
+          const filterType = isNumericColumn ? 'number' : 'text';
+
           await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-            filterType: 'text',
+            filterType,
             type: filterSearch.operator,
             filter: filterSearch.value,
           });

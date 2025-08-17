@@ -4,7 +4,7 @@ import { PiKeyReturnBold } from 'react-icons/pi';
 import fuzzysort from 'fuzzysort';
 import { EnhancedSearchBarProps, SearchColumn, FilterOperator } from './types';
 import { SEARCH_CONSTANTS } from './constants';
-import { DEFAULT_FILTER_OPERATORS } from './operators';
+import { DEFAULT_FILTER_OPERATORS, NUMBER_FILTER_OPERATORS } from './operators';
 import { buildColumnValue, findColumn } from './utils/searchUtils';
 import { useSearchState } from './hooks/useSearchState';
 import { useSelectorPosition } from './hooks/useSelectorPosition';
@@ -271,6 +271,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     return placeholder;
   };
 
+  // Determine operators based on column type
+  const operators = useMemo(() => {
+    if (searchMode.selectedColumn?.type === 'number') {
+      return [...NUMBER_FILTER_OPERATORS];
+    }
+    return [...DEFAULT_FILTER_OPERATORS];
+  }, [searchMode.selectedColumn?.type]);
+
   return (
     <>
       <div ref={containerRef} className={`mb-2 relative ${className}`}>
@@ -370,7 +378,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       />
 
       <OperatorSelector
-        operators={[...DEFAULT_FILTER_OPERATORS]}
+        operators={operators}
         isOpen={searchMode.showOperatorSelector}
         onSelect={handleOperatorSelect}
         onClose={handleCloseOperatorSelector}
