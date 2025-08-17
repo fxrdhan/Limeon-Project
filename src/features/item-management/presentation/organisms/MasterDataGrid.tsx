@@ -271,19 +271,20 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       gridApi &&
       !gridApi.isDestroyed()
     ) {
-      if (hasSavedState(tableType)) {
-        console.log(`🔄 Tab switch auto-restore: ${tableType}`);
-
-        // Simple delay for tab switching - maintainColumnOrder=true makes this reliable
+      // Defer grid operations to allow smooth tab animation
+      requestAnimationFrame(() => {
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
-            restoreGridState(gridApi, tableType);
+            if (hasSavedState(tableType)) {
+              console.log(`🔄 Tab switch auto-restore: ${tableType}`);
+              restoreGridState(gridApi, tableType);
+            } else {
+              // No saved state, just autosize
+              gridApi.autoSizeAllColumns();
+            }
           }
-        }, 100);
-      } else {
-        // No saved state, just autosize
-        gridApi.autoSizeAllColumns();
-      }
+        }, 200); // Longer delay to ensure tab animation completes
+      });
 
       previousActiveTabRef.current = tableType;
     }
@@ -381,16 +382,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [activeTab, isRowGroupingEnabled, gridApi]);
 
-  // Handle pagination changes - autosize when new rows appear
+  // Handle pagination changes - removed autosize for better animation performance
   const handlePaginationChanged = useCallback(() => {
-    if (gridApi && !gridApi.isDestroyed()) {
-      // Only autosize if no saved column widths to prevent overriding restored state
-      const tableType = activeTab as TableType;
-      if (!hasSavedState(tableType)) {
-        gridApi.autoSizeAllColumns();
-      }
-    }
-  }, [gridApi, activeTab]);
+    // No operations needed - pagination doesn't require column size changes
+    // This improves pagination slider animation performance significantly
+  }, []);
 
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
