@@ -112,9 +112,7 @@ export const restoreGridState = (
       }
     }, 100);
 
-    toast.success(
-      `Layout grid ${tableType} berhasil direstore manual (pagination direset)`
-    );
+    toast.success('Grid state telah dipulihkan');
 
     return true;
   } catch (error) {
