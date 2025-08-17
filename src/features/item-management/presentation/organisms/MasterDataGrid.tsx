@@ -271,7 +271,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   useEffect(() => {
     const tableType = activeTab as TableType;
 
-    // Skip initial load (handled by initialState)
+    // Skip initial load (handled by onFirstDataRendered)
     if (previousActiveTabRef.current === null) {
       previousActiveTabRef.current = tableType;
       return;
@@ -289,21 +289,26 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         console.log(`🔄 Tab switch auto-restore: ${tableType}`);
         setIsAutoRestoring(true);
 
-        try {
-          gridApi.setState(savedState);
+        // Use same timing as manual button for consistency
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            try {
+              gridApi.setState(savedState);
 
-          setTimeout(() => {
-            if (!gridApi.isDestroyed()) {
-              gridApi.paginationGoToPage(0);
-              gridApi.autoSizeAllColumns();
+              setTimeout(() => {
+                if (!gridApi.isDestroyed()) {
+                  gridApi.paginationGoToPage(0);
+                  gridApi.autoSizeAllColumns();
+                  setIsAutoRestoring(false);
+                }
+              }, 150);
+            } catch (error) {
+              console.error('Tab switch auto-restore failed:', error);
               setIsAutoRestoring(false);
+              gridApi.autoSizeAllColumns();
             }
-          }, 100);
-        } catch (error) {
-          console.error('Tab switch auto-restore failed:', error);
-          setIsAutoRestoring(false);
-          gridApi.autoSizeAllColumns();
-        }
+          }
+        }, 100);
       } else {
         // No saved state, just autosize
         gridApi.autoSizeAllColumns();
@@ -366,20 +371,45 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onGridReady, onGridApiReady, activeTab]
   );
 
-  // Handle first data rendered - autosize when data ready
+  // Handle first data rendered - perfect timing for auto-restore (like manual button)
   const handleFirstDataRendered = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // Simple autosize when data ready
-      gridApi.autoSizeAllColumns();
-    }
-  }, [gridApi]);
+      const tableType = activeTab as TableType;
+      const savedState = loadSavedStateForInit(tableType);
 
-  // Autosize when row data changes
-  useEffect(() => {
-    if (gridApi && !gridApi.isDestroyed() && rowData.length > 0) {
-      gridApi.autoSizeAllColumns();
+      if (savedState) {
+        console.log(`🔄 Auto-restore on data ready for ${tableType}`);
+        setIsAutoRestoring(true);
+
+        // Apply state with proper loading overlay (same as manual button pattern)
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            try {
+              gridApi.setState(savedState);
+
+              // Additional delay to ensure state fully applied (like manual button)
+              setTimeout(() => {
+                if (!gridApi.isDestroyed()) {
+                  gridApi.paginationGoToPage(0);
+                  gridApi.autoSizeAllColumns();
+                  setIsAutoRestoring(false);
+                }
+              }, 150);
+            } catch (error) {
+              console.error('Auto-restore failed:', error);
+              setIsAutoRestoring(false);
+              gridApi.autoSizeAllColumns();
+            }
+          }
+        }, 100);
+      } else {
+        // No saved state, just autosize
+        gridApi.autoSizeAllColumns();
+      }
     }
-  }, [gridApi, rowData]);
+  }, [gridApi, activeTab]);
+
+  // Note: Autosize handled in onFirstDataRendered for better timing
 
   // Handle column row group changes - autosize when grouping is applied/removed
   const handleColumnRowGroupChanged = useCallback(() => {
