@@ -271,20 +271,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       gridApi &&
       !gridApi.isDestroyed()
     ) {
-      // Apply saved state quickly to minimize flicker
       if (hasSavedState(tableType)) {
-        console.log(`🔄 Tab switch auto-restore: ${tableType}`);
-        // Apply immediately for saved state to prevent flicker
         restoreGridState(gridApi, tableType);
       } else {
-        // No saved state, defer autosize to allow tab animation
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            if (!gridApi.isDestroyed()) {
-              gridApi.autoSizeAllColumns();
-            }
-          }, 100); // Short delay only for autosize
-        });
+        // No saved state, just autosize
+        gridApi.autoSizeAllColumns();
       }
 
       previousActiveTabRef.current = tableType;
@@ -337,7 +328,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       // EARLY auto-restore to prevent default state flickering
       const tableType = activeTab as TableType;
       if (hasSavedState(tableType)) {
-        console.log(`🚀 Early auto-restore on grid ready for ${tableType}`);
         // Apply immediately - no delay needed since grid is ready but no data rendered yet
         restoreGridState(params.api, tableType);
       }

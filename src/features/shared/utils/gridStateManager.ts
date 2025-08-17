@@ -168,7 +168,6 @@ export const loadSavedStateForInit = (
       pagination: undefined, // Remove pagination state
     };
 
-    console.log(`Auto-restore: Loading saved layout for ${tableType}`);
     return stateForInit;
   } catch (error) {
     console.error(
