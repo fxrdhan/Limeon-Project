@@ -64,9 +64,9 @@ This project is built with:
 
 ### Additional Libraries
 
-| Library             | Link                                                  | Description         |
-| ------------------- | ----------------------------------------------------- | ------------------- |
+| Library             | Link                                                  | Description                                 |
+| ------------------- | ----------------------------------------------------- | ------------------------------------------- |
 | **classnames**      | [GitHub](https://github.com/JedWatson/classnames)     | JS utility to join classNames conditionally |
-| **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff           |
-| **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | SublimeText-like fuzzy search        |
-| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | React toast notifications |
+| **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff                                   |
+| **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | SublimeText-like fuzzy search               |
+| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | React toast notifications                   |
