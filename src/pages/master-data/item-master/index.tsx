@@ -347,22 +347,6 @@ const ItemMasterNew = memo(() => {
     itemsManagement.setSearch('');
   }, [itemsManagement]);
 
-  // Helper function to determine if column uses multi-filter
-  const isMultiFilterColumn = useCallback((columnField: string) => {
-    const multiFilterColumns = [
-      'manufacturer',
-      'code',
-      'barcode',
-      'category.name',
-      'type.name',
-      'unit.name',
-      'dosage.name',
-      'package_conversions',
-      'stock',
-    ];
-    return multiFilterColumns.includes(columnField);
-  }, []);
-
   const handleItemFilterSearch = useCallback(
     async (filterSearch: FilterSearch | null) => {
       if (!filterSearch) {
@@ -375,30 +359,12 @@ const ItemMasterNew = memo(() => {
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
         try {
-          const isMultiFilter = isMultiFilterColumn(filterSearch.field);
-
-          if (isMultiFilter) {
-            // For multi-filter columns, use the multi-filter structure
-            const filterType =
-              filterSearch.field === 'stock' ? 'number' : 'text';
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-              filterType: 'multi',
-              filterModels: [
-                {
-                  filterType,
-                  type: filterSearch.operator,
-                  filter: filterSearch.value,
-                },
-              ],
-            });
-          } else {
-            // For single filter columns, use the original structure
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-              filterType: 'text',
-              type: filterSearch.operator,
-              filter: filterSearch.value,
-            });
-          }
+          // All columns use simple text filter now (row grouping handles organization)
+          await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+            filterType: 'text',
+            type: filterSearch.operator,
+            filter: filterSearch.value,
+          });
 
           unifiedGridApi.onFilterChanged();
         } catch (error) {
@@ -406,7 +372,7 @@ const ItemMasterNew = memo(() => {
         }
       }
     },
-    [unifiedGridApi, isMultiFilterColumn]
+    [unifiedGridApi]
   );
 
   // Get search columns for items (use default ordering since AG Grid sidebar handles column order)
