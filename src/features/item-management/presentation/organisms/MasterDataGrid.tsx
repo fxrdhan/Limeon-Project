@@ -24,8 +24,8 @@ import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
 // Manual grid state management for auto-restore
 import {
-  loadSavedStateForInit,
   hasSavedState,
+  restoreGridState,
   type TableType,
 } from '@/features/shared/utils/gridStateManager';
 
@@ -253,18 +253,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
-  // Auto-restore: Load saved state for current table as initialState (AG Grid best practice)
-  const autoRestoreInitialState = useMemo(() => {
-    const tableType = activeTab as TableType;
-    const savedState = loadSavedStateForInit(tableType);
-
-    if (savedState) {
-      console.log(`🔄 Auto-restore: Found saved layout for ${tableType}`);
-      return savedState;
-    }
-
-    return undefined;
-  }, [activeTab]);
+  // Auto-restore now handled via manual restore function in onFirstDataRendered
 
   // Tab switching state restore (for runtime tab changes after initial load)
   const previousActiveTabRef = useRef<TableType | null>(null);
@@ -283,32 +272,24 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       gridApi &&
       !gridApi.isDestroyed()
     ) {
-      const savedState = loadSavedStateForInit(tableType);
-
-      if (savedState) {
+      if (hasSavedState(tableType)) {
         console.log(`🔄 Tab switch auto-restore: ${tableType}`);
         setIsAutoRestoring(true);
 
-        // Use same timing as manual button for consistency
+        // Give grid time to fully settle before triggering restore (tab switching)
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
-            try {
-              gridApi.setState(savedState);
-
+            const success = restoreGridState(gridApi, tableType);
+            if (success) {
+              // Additional delay to ensure loading overlay stays until restore complete
               setTimeout(() => {
-                if (!gridApi.isDestroyed()) {
-                  gridApi.paginationGoToPage(0);
-                  gridApi.autoSizeAllColumns();
-                  setIsAutoRestoring(false);
-                }
-              }, 150);
-            } catch (error) {
-              console.error('Tab switch auto-restore failed:', error);
+                setIsAutoRestoring(false);
+              }, 200);
+            } else {
               setIsAutoRestoring(false);
-              gridApi.autoSizeAllColumns();
             }
           }
-        }, 100);
+        }, 300);
       } else {
         // No saved state, just autosize
         gridApi.autoSizeAllColumns();
@@ -371,37 +352,29 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onGridReady, onGridApiReady, activeTab]
   );
 
-  // Handle first data rendered - perfect timing for auto-restore (like manual button)
+  // Handle first data rendered - trigger auto-restore using proven manual button logic
   const handleFirstDataRendered = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
       const tableType = activeTab as TableType;
-      const savedState = loadSavedStateForInit(tableType);
 
-      if (savedState) {
+      if (hasSavedState(tableType)) {
         console.log(`🔄 Auto-restore on data ready for ${tableType}`);
         setIsAutoRestoring(true);
 
-        // Apply state with proper loading overlay (same as manual button pattern)
+        // Give grid time to fully settle before triggering restore
         setTimeout(() => {
           if (!gridApi.isDestroyed()) {
-            try {
-              gridApi.setState(savedState);
-
-              // Additional delay to ensure state fully applied (like manual button)
+            const success = restoreGridState(gridApi, tableType);
+            if (success) {
+              // Additional delay to ensure loading overlay stays until restore complete
               setTimeout(() => {
-                if (!gridApi.isDestroyed()) {
-                  gridApi.paginationGoToPage(0);
-                  gridApi.autoSizeAllColumns();
-                  setIsAutoRestoring(false);
-                }
-              }, 150);
-            } catch (error) {
-              console.error('Auto-restore failed:', error);
+                setIsAutoRestoring(false);
+              }, 200);
+            } else {
               setIsAutoRestoring(false);
-              gridApi.autoSizeAllColumns();
             }
           }
-        }, 100);
+        }, 300);
       } else {
         // No saved state, just autosize
         gridApi.autoSizeAllColumns();
@@ -570,9 +543,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onColumnMoved={onColumnMoved}
           onColumnVisible={onColumnVisible}
           onColumnRowGroupChanged={handleColumnRowGroupChanged}
-          // Auto-restore: Load saved state on grid initialization (AG Grid best practice)
-          initialState={autoRestoreInitialState}
-          // Manual state management will be handled via Save/Restore buttons
+          // Auto-restore now handled via restoreGridState function in onFirstDataRendered
           rowNumbers={true}
           domLayout="normal"
           style={{
@@ -597,36 +568,30 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           suppressAggFuncInHeader={false}
           suppressDragLeaveHidesColumns={true}
           groupDefaultExpanded={
-            activeTab === 'items' &&
-            isRowGroupingEnabled &&
-            !hasSavedState(activeTab as TableType)
-              ? defaultExpanded // Only apply default if no saved state
-              : undefined // Let saved state control grouping expansion
+            activeTab === 'items' && isRowGroupingEnabled
+              ? defaultExpanded // Use default - auto-restore will handle saved state
+              : undefined
           }
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}
-          // AG Grid Sidebar - conditional configuration based on saved state
-          sideBar={
-            hasSavedState(activeTab as TableType)
-              ? true // Let saved state control sidebar completely
-              : {
-                  toolPanels: [
-                    {
-                      id: 'columns',
-                      labelDefault: 'Columns',
-                      labelKey: 'columns',
-                      iconKey: 'columns',
-                      toolPanel: 'agColumnsToolPanel',
-                      toolPanelParams: {
-                        suppressRowGroups: true, // Remove Row Groups section
-                        suppressValues: true, // Remove Values (aggregate) section
-                      },
-                    },
-                  ],
-                  // No defaultToolPanel = sidebar closed by default (only for new users)
-                }
-          }
+          // AG Grid Sidebar - use default config, auto-restore will handle saved state
+          sideBar={{
+            toolPanels: [
+              {
+                id: 'columns',
+                labelDefault: 'Columns',
+                labelKey: 'columns',
+                iconKey: 'columns',
+                toolPanel: 'agColumnsToolPanel',
+                toolPanelParams: {
+                  suppressRowGroups: true, // Remove Row Groups section
+                  suppressValues: true, // Remove Values (aggregate) section
+                },
+              },
+            ],
+            // No defaultToolPanel = sidebar closed by default
+          }}
           // Ensure smooth state transitions
           suppressColumnMoveAnimation={true}
         />

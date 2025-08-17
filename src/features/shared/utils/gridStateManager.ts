@@ -87,7 +87,23 @@ export const restoreGridState = (
         // Reset to first page
         gridApi.paginationGoToPage(0);
 
-        // Auto-resize after restore
+        // Explicitly apply column order for reliability (with maintainColumnOrder=true)
+        if (parsedState.columnOrder?.orderedColIds) {
+          const columnState = parsedState.columnOrder.orderedColIds.map(
+            colId => ({
+              colId,
+              sort: null,
+              sortIndex: null,
+            })
+          );
+
+          gridApi.applyColumnState({
+            state: columnState,
+            applyOrder: true, // Ensure column order is applied
+          });
+        }
+
+        // Auto-resize after restore and column order
         gridApi.autoSizeAllColumns();
       }
     }, 100);

@@ -264,6 +264,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           suppressAnimationFrame={suppressAnimationFrame}
           suppressRowTransform={true}
           suppressColumnMoveAnimation={suppressColumnMoveAnimation}
+          maintainColumnOrder={true}
           loading={loading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           rowClass={rowClass}
