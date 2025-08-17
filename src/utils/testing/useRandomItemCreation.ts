@@ -6,7 +6,7 @@
  * and cache invalidation.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -36,8 +36,6 @@ export interface UseRandomItemCreationOptions {
 export interface UseRandomItemCreationReturn {
   /** Function to trigger random item creation */
   createRandomItem: () => Promise<void>;
-  /** Whether item creation is in progress */
-  isCreating: boolean;
   /** Whether master data entities are still loading */
   isLoadingEntities: boolean;
   /** Whether all entities are ready for generation */
@@ -53,7 +51,6 @@ export function useRandomItemCreation(
   const { enabled = true } = options;
 
   const queryClient = useQueryClient();
-  const [isCreating, setIsCreating] = useState(false);
 
   // Entity data management
   const categoriesData = useGenericEntityManagement({
@@ -107,18 +104,13 @@ export function useRandomItemCreation(
 
   // Main creation function
   const createRandomItem = useCallback(async () => {
-    // Prevent multiple simultaneous creations
-    if (isCreating) return;
-
     // Validate entities are ready
     if (!entitiesReady) {
       toast.error('Mohon tunggu sampai data master dimuat lengkap');
       return;
     }
 
-    setIsCreating(true);
-
-    try {
+    const createItemPromise = async () => {
       // Generate random item data
       const { itemFormData } = generateRandomItemData(entities);
 
@@ -138,19 +130,48 @@ export function useRandomItemCreation(
         queryClient.refetchQueries({ queryKey: keySet });
       });
 
-      // Show success notification
-      toast.success(`Item berhasil dibuat dengan kode: ${result.code}`);
-    } catch (error) {
-      console.error('Failed to create random item:', error);
-      toast.error('Gagal membuat item acak: ' + (error as Error).message);
-    } finally {
-      setIsCreating(false);
-    }
-  }, [entities, entitiesReady, isCreating, queryClient]);
+      return result;
+    };
+
+    toast.promise(
+      createItemPromise(),
+      {
+        loading: 'Membuat item acak...',
+        success: result => `Item berhasil dibuat dengan kode: ${result.code}`,
+        error: error => `Gagal membuat item acak: ${error.message}`,
+      },
+      {
+        style: {
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          color: 'white',
+        },
+        success: {
+          style: {
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            backgroundColor: 'oklch(26.2% 0.051 172.552 / 0.7)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid oklch(26.2% 0.051 172.552 / 0.2)',
+            color: 'white',
+          },
+        },
+        error: {
+          style: {
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            backgroundColor: 'oklch(27.1% 0.105 12.094 / 0.7)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid oklch(27.1% 0.105 12.094 / 0.2)',
+            color: 'white',
+          },
+        },
+      }
+    );
+  }, [entities, entitiesReady, queryClient]);
 
   return {
     createRandomItem,
-    isCreating,
     isLoadingEntities,
     entitiesReady,
   };
