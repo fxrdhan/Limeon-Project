@@ -373,16 +373,24 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
 
     if (gridApi && !gridApi.isDestroyed()) {
-      gridApi.autoSizeAllColumns();
+      // Only autosize if no saved column widths to prevent overriding restored state
+      const tableType = activeTab as TableType;
+      if (!hasSavedState(tableType)) {
+        gridApi.autoSizeAllColumns();
+      }
     }
   }, [activeTab, isRowGroupingEnabled, gridApi]);
 
   // Handle pagination changes - autosize when new rows appear
   const handlePaginationChanged = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      gridApi.autoSizeAllColumns();
+      // Only autosize if no saved column widths to prevent overriding restored state
+      const tableType = activeTab as TableType;
+      if (!hasSavedState(tableType)) {
+        gridApi.autoSizeAllColumns();
+      }
     }
-  }, [gridApi]);
+  }, [gridApi, activeTab]);
 
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
@@ -407,8 +415,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           gridApi.ensureIndexVisible(newIndex);
         }
 
-        // Autosize after group expansion
-        gridApi.autoSizeAllColumns();
+        // Autosize after group expansion (only if no saved column widths)
+        const tableType = activeTab as TableType;
+        if (!hasSavedState(tableType)) {
+          gridApi.autoSizeAllColumns();
+        }
       }
     },
     [activeTab, isRowGroupingEnabled, gridApi]
