@@ -18,7 +18,7 @@ const getStorageKey = (tableType: TableType): string => {
   return `${GRID_STATE_PREFIX}${tableType}`;
 };
 
-// Save current grid state to localStorage
+// Save current grid state to localStorage (excluding pagination to avoid conflicts)
 export const saveGridState = (
   gridApi: GridApi,
   tableType: TableType
@@ -32,9 +32,17 @@ export const saveGridState = (
     const currentState = gridApi.getState();
     const storageKey = getStorageKey(tableType);
 
-    localStorage.setItem(storageKey, JSON.stringify(currentState));
+    // Exclude pagination state to prevent conflicts with custom pagination controls
+    const stateToSave = {
+      ...currentState,
+      pagination: undefined, // Remove pagination state
+    };
 
-    toast.success(`State grid ${tableType} berhasil disimpan`);
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+
+    toast.success(
+      `Layout grid ${tableType} berhasil disimpan (tanpa pagination)`
+    );
 
     return true;
   } catch (error) {
@@ -44,7 +52,7 @@ export const saveGridState = (
   }
 };
 
-// Restore grid state from localStorage
+// Restore grid state from localStorage (excluding pagination to avoid conflicts)
 export const restoreGridState = (
   gridApi: GridApi,
   tableType: TableType
@@ -59,26 +67,39 @@ export const restoreGridState = (
     const savedState = localStorage.getItem(storageKey);
 
     if (!savedState) {
-      toast.error(`Tidak ada state tersimpan untuk ${tableType}`);
+      toast.error(`Tidak ada layout tersimpan untuk ${tableType}`);
       return false;
     }
 
     const parsedState: GridState = JSON.parse(savedState);
-    gridApi.setState(parsedState);
 
-    // Auto-resize after restore
+    // Ensure pagination state is excluded from restore (extra safety)
+    const stateToRestore = {
+      ...parsedState,
+      pagination: undefined, // Remove pagination state
+    };
+
+    gridApi.setState(stateToRestore);
+
+    // Reset pagination to page 1 after restore to avoid conflicts
     setTimeout(() => {
       if (!gridApi.isDestroyed()) {
+        // Reset to first page
+        gridApi.paginationGoToPage(0);
+
+        // Auto-resize after restore
         gridApi.autoSizeAllColumns();
       }
     }, 100);
 
-    toast.success(`State grid ${tableType} berhasil direstore`);
+    toast.success(
+      `Layout grid ${tableType} berhasil direstore (pagination direset)`
+    );
 
     return true;
   } catch (error) {
     console.error('Failed to restore grid state:', error);
-    toast.error('Gagal restore state grid');
+    toast.error('Gagal restore layout grid');
     return false;
   }
 };
