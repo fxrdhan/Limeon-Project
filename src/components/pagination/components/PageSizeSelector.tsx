@@ -18,7 +18,7 @@ export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
       return {
         key: size.toString(),
         value: size,
-        defaultLabel: '∞',
+        defaultLabel: 'U',
         activeLabel: 'Unlimited',
       };
     }

@@ -128,7 +128,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   onColumnMoved,
   onColumnVisible,
   onGridApiReady,
-  itemsPerPage = 10,
+  itemsPerPage = 20,
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -289,9 +289,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     (colId: string) => {
       toggleDisplayMode(colId);
 
-      // Auto trigger autosize after toggle
+      // Auto trigger autosize after toggle, wait for data transformation to complete
       if (gridApi && !gridApi.isDestroyed()) {
-        gridApi.autoSizeAllColumns();
+        // Use setTimeout with longer delay to ensure column data transformation is complete
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            gridApi.autoSizeAllColumns();
+          }
+        }, 100);
       }
     },
     [toggleDisplayMode, gridApi]
