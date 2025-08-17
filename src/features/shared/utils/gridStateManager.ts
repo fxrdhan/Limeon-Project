@@ -103,8 +103,12 @@ export const restoreGridState = (
           });
         }
 
-        // Auto-resize after restore and column order
-        gridApi.autoSizeAllColumns();
+        // Only autosize if no column widths were restored (prevent flickering)
+        const hasColumnWidths =
+          (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
+        if (!hasColumnWidths) {
+          gridApi.autoSizeAllColumns();
+        }
       }
     }, 100);
 
