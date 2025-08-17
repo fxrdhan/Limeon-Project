@@ -1,7 +1,10 @@
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 import { EnhancedSearchState } from '../types';
-import { DEFAULT_FILTER_OPERATORS } from '../operators';
+import {
+  DEFAULT_FILTER_OPERATORS,
+  NUMBER_FILTER_OPERATORS,
+} from '../operators';
 
 interface SearchBadgeProps {
   searchMode: EnhancedSearchState;
@@ -56,11 +59,17 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700"
             >
               <span>
-                {
-                  DEFAULT_FILTER_OPERATORS.find(
+                {(() => {
+                  // Search in appropriate operators based on column type
+                  const availableOperators =
+                    searchMode.filterSearch!.column.type === 'number'
+                      ? NUMBER_FILTER_OPERATORS
+                      : DEFAULT_FILTER_OPERATORS;
+
+                  return availableOperators.find(
                     op => op.value === searchMode.filterSearch!.operator
-                  )?.label
-                }
+                  )?.label;
+                })()}
               </span>
               <button
                 onClick={onClearTargeted}
