@@ -1,17 +1,11 @@
 import { memo } from 'react';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import {
-  TbTablePlus,
-  TbDeviceFloppy,
-  TbRestore,
-  TbDownload,
-} from 'react-icons/tb';
+import { TbTablePlus, TbDeviceFloppy, TbDownload } from 'react-icons/tb';
 import { ExportDropdown } from '@/components/export';
 import { GridApi } from 'ag-grid-community';
 import type { SearchColumn, FilterSearch } from '@/types/search';
 import {
   saveGridState,
-  restoreGridState,
   downloadGridState,
   hasSavedState,
   type TableType,
@@ -88,12 +82,6 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     }
   };
 
-  const handleRestoreState = () => {
-    if (gridApi && currentTableType) {
-      restoreGridState(gridApi, currentTableType);
-    }
-  };
-
   const handleDownloadState = () => {
     if (currentTableType) {
       downloadGridState(currentTableType);
@@ -123,7 +111,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
         </span>
 
-        {/* Manual State Management Buttons */}
+        {/* Save & Download State Buttons (Auto-restore handles restoration) */}
         {enableManualStateButtons && gridApi && currentTableType && (
           <>
             <span
@@ -132,21 +120,6 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
               title={`Simpan Layout Grid ${currentTableType}`}
             >
               <TbDeviceFloppy className="h-7 w-7 text-blue-600 cursor-pointer hover:text-blue-500 transition-colors duration-200" />
-            </span>
-            <span
-              className={`inline-block ml-2 mb-2 ${
-                hasExistingSavedState
-                  ? 'text-green-600 hover:text-green-500 cursor-pointer'
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
-              onClick={hasExistingSavedState ? handleRestoreState : undefined}
-              title={
-                hasExistingSavedState
-                  ? `Restore Layout Grid ${currentTableType}`
-                  : `Tidak ada layout tersimpan untuk ${currentTableType}`
-              }
-            >
-              <TbRestore className="h-7 w-7 transition-colors duration-200" />
             </span>
             <span
               className={`inline-block ml-2 mb-2 ${
