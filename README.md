@@ -23,20 +23,20 @@ Let the AI Agents work and chill like a panda 🐼.
 
 This project is built with:
 
-| Technology                  | Link                                           | Description                                           |
-| --------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
-| **TypeScript**              | [Website](https://www.typescriptlang.org/)     | Typed programming language that builds on JavaScript  |
-| **React**                   | [Website](https://react.dev/)                  | UI library for building user interfaces               |
-| **Zod**                     | [Website](https://zod.dev/)                    | Schema validation library for type-safe data handling |
-| **Tailwind CSS**            | [Website](https://tailwindcss.com/)            | Utility-first CSS framework for styling               |
-| **React Router DOM**        | [Website](https://reactrouter.com/)            | Client-side routing for single page applications      |
-| **TanStack Query**          | [Website](https://tanstack.com/query/latest)   | Data fetching and caching library                     |
-| **Zustand**                 | [Website](https://zustand-demo.pmnd.rs/)       | Bear necessities for state management in React        |
-| **Framer Motion**           | [Website](https://www.framer.com/motion/)      | Animation library for React components                |
-| **Supabase Database**       | [Website](https://supabase.com/database)       | PostgreSQL database with real-time capabilities       |
-| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Supabase's Deno serverless backend                    |
-| **Supabase Storage**        | [Website](https://supabase.com/storage)        | Storing and serving files                             |
-| **AG Grid**                 | [Website](https://ag-grid.com/)                | High-performance data grid for React applications     |
+| Technology                  | Link                                           | Description                 |
+| --------------------------- | ---------------------------------------------- | --------------------------- |
+| **TypeScript**              | [Website](https://www.typescriptlang.org/)     | Typed JavaScript            |
+| **React**                   | [Website](https://react.dev/)                  | UI library                  |
+| **Zod**                     | [Website](https://zod.dev/)                    | Schema validation           |
+| **Tailwind CSS**            | [Website](https://tailwindcss.com/)            | Utility-first CSS framework |
+| **React Router DOM**        | [Website](https://reactrouter.com/)            | Client-side routing         |
+| **TanStack Query**          | [Website](https://tanstack.com/query/latest)   | Data fetching & caching     |
+| **Zustand**                 | [Website](https://zustand-demo.pmnd.rs/)       | State management            |
+| **Framer Motion**           | [Website](https://www.framer.com/motion/)      | Animation library           |
+| **Supabase Database**       | [Website](https://supabase.com/database)       | PostgreSQL database         |
+| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Deno serverless backend     |
+| **Supabase Storage**        | [Website](https://supabase.com/storage)        | File storage                |
+| **AG Grid**                 | [Website](https://ag-grid.com/)                | Data grid                   |
 
 ### Development Tools
 
@@ -44,6 +44,7 @@ This project is built with:
 
 ![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
+![Sass](https://img.shields.io/badge/Sass-CC6699?style=for-the-badge&logo=sass&logoColor=white)
 ![SWC](https://img.shields.io/badge/swc-%23FFFFFF.svg?style=for-the-badge&logo=swc&logoColor=black)
 ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/prettier-%23F7B93E.svg?style=for-the-badge&logo=prettier&logoColor=black)
@@ -51,20 +52,21 @@ This project is built with:
 
 </div>
 
-| Technology            | Link                                         | Description                                                      |
-| --------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
-| **Yarn**              | [Website](https://www.yarnpkg.com/)          | Package manager for dependency management                        |
-| **Vite**              | [Website](https://vitejs.dev/)               | Build tool for fast development and bundling                     |
-| **SWC**               | [Website](https://swc.rs/)                   | Fast TypeScript/JavaScript compiler via @vitejs/plugin-react-swc |
-| **TypeScript ESLint** | [Website](https://typescript-eslint.io/)     | Linter for code quality                                          |
-| **Prettier**          | [Website](https://prettier.io/)              | Code formatter for consistent styling                            |
-| **Husky**             | [Website](https://typicode.github.io/husky/) | Git hooks for pre-commit and pre-push automation                 |
+| Technology            | Link                                         | Description      |
+| --------------------- | -------------------------------------------- | ---------------- |
+| **Yarn**              | [Website](https://www.yarnpkg.com/)          | Package manager  |
+| **Vite**              | [Website](https://vitejs.dev/)               | Build tool       |
+| **Sass/SCSS**         | [Website](https://sass-lang.com/)            | CSS preprocessor |
+| **SWC**               | [Website](https://swc.rs/)                   | TS/JS compiler   |
+| **TypeScript ESLint** | [Website](https://typescript-eslint.io/)     | Linter           |
+| **Prettier**          | [Website](https://prettier.io/)              | Code formatter   |
+| **Husky**             | [Website](https://typicode.github.io/husky/) | Git hooks        |
 
 ### Additional Libraries
 
-| Library             | Link                                                  | Description                                                            |
-| ------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| **classnames**      | [GitHub](https://github.com/JedWatson/classnames)     | Utility for conditionally joining CSS class names by Jed Watson        |
-| **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff implementation using Myers O(ND) algorithm by Kevin Decker   |
-| **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | Fast SublimeText-like fuzzy search with intelligent ranking by farzher |
-| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | Smoking hot Notifications for React by Timo Lins                       |
+| Library             | Link                                                  | Description         |
+| ------------------- | ----------------------------------------------------- | ------------------- |
+| **classnames**      | [GitHub](https://github.com/JedWatson/classnames)     | CSS class utility   |
+| **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff           |
+| **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | Fuzzy search        |
+| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | Toast notifications |
