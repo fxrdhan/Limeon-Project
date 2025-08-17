@@ -66,7 +66,7 @@ This project is built with:
 
 | Library             | Link                                                  | Description         |
 | ------------------- | ----------------------------------------------------- | ------------------- |
-| **classnames**      | [GitHub](https://github.com/JedWatson/classnames)     | CSS class utility   |
+| **classnames**      | [GitHub](https://github.com/JedWatson/classnames)     | JS utility to join classNames conditionally |
 | **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff           |
-| **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | Fuzzy search        |
-| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | Toast notifications |
+| **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | SublimeText-like fuzzy search        |
+| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | React toast notifications |
