@@ -481,7 +481,12 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   // No data overlay template
   const overlayNoRowsTemplate = useMemo(() => {
     if (activeTab === 'items') {
-      if (search) {
+      // Items tab: Handle badge mode (targeted search)
+      const isBadgeMode =
+        search.startsWith('#') &&
+        (search.includes(':') || search.includes(' #'));
+
+      if (search && !isBadgeMode) {
         return `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${search}"</span>`;
       }
       return '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>';
