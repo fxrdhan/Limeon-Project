@@ -287,7 +287,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
-              className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
+              className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out placeholder-gray-400 ${
                 searchState === 'not-found'
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
                   : searchMode.isFilterMode &&
