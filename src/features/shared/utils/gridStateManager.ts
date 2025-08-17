@@ -93,7 +93,7 @@ export const restoreGridState = (
     }, 100);
 
     toast.success(
-      `Layout grid ${tableType} berhasil direstore (pagination direset)`
+      `Layout grid ${tableType} berhasil direstore manual (pagination direset)`
     );
 
     return true;
@@ -127,6 +127,37 @@ export const hasSavedState = (tableType: TableType): boolean => {
     return savedState !== null;
   } catch {
     return false;
+  }
+};
+
+// Load saved state for auto-restore on grid initialization
+export const loadSavedStateForInit = (
+  tableType: TableType
+): GridState | undefined => {
+  try {
+    const storageKey = getStorageKey(tableType);
+    const savedState = localStorage.getItem(storageKey);
+
+    if (!savedState) {
+      return undefined;
+    }
+
+    const parsedState: GridState = JSON.parse(savedState);
+
+    // Ensure pagination is excluded from auto-restore (same as manual restore)
+    const stateForInit = {
+      ...parsedState,
+      pagination: undefined, // Remove pagination state
+    };
+
+    console.log(`Auto-restore: Loading saved layout for ${tableType}`);
+    return stateForInit;
+  } catch (error) {
+    console.error(
+      `Failed to load saved state for auto-restore (${tableType}):`,
+      error
+    );
+    return undefined;
   }
 };
 
