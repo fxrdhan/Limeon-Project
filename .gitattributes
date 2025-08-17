@@ -7,6 +7,7 @@
 *.tsx text eol=lf
 *.json text eol=lf
 *.css text eol=lf
+*.scss text eol=lf
 *.sql text eol=lf
 *.md text eol=lf
 *.toml text eol=lf
@@ -18,6 +19,7 @@
 *.ts linguist-language=TypeScript
 *.tsx linguist-language=TypeScript
 *.js linguist-language=TypeScript
+*.scss linguist-language=TypeScript
 
 # Documentation (exclude from language stats)
 README* linguist-documentation
