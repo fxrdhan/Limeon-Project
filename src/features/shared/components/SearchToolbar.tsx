@@ -1,12 +1,18 @@
 import { memo } from 'react';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import { TbTablePlus, TbDeviceFloppy, TbRestore } from 'react-icons/tb';
+import {
+  TbTablePlus,
+  TbDeviceFloppy,
+  TbRestore,
+  TbDownload,
+} from 'react-icons/tb';
 import { ExportDropdown } from '@/components/export';
 import { GridApi } from 'ag-grid-community';
 import type { SearchColumn, FilterSearch } from '@/types/search';
 import {
   saveGridState,
   restoreGridState,
+  downloadGridState,
   hasSavedState,
   type TableType,
 } from '@/features/shared/utils/gridStateManager';
@@ -88,6 +94,12 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     }
   };
 
+  const handleDownloadState = () => {
+    if (currentTableType) {
+      downloadGridState(currentTableType);
+    }
+  };
+
   // Check if saved state exists for current table
   const hasExistingSavedState = currentTableType
     ? hasSavedState(currentTableType)
@@ -135,6 +147,21 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
               }
             >
               <TbRestore className="h-7 w-7 transition-colors duration-200" />
+            </span>
+            <span
+              className={`inline-block ml-2 mb-2 ${
+                hasExistingSavedState
+                  ? 'text-purple-600 hover:text-purple-500 cursor-pointer'
+                  : 'text-gray-400 cursor-not-allowed'
+              }`}
+              onClick={hasExistingSavedState ? handleDownloadState : undefined}
+              title={
+                hasExistingSavedState
+                  ? `Download Layout Grid ${currentTableType} sebagai JSON`
+                  : `Tidak ada layout tersimpan untuk ${currentTableType}`
+              }
+            >
+              <TbDownload className="h-7 w-7 transition-colors duration-200" />
             </span>
           </>
         )}

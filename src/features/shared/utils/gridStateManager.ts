@@ -172,6 +172,59 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
   }
 };
 
+// Download saved grid state as JSON file
+export const downloadGridState = (tableType: TableType): boolean => {
+  try {
+    const storageKey = getStorageKey(tableType);
+    const savedState = localStorage.getItem(storageKey);
+
+    if (!savedState) {
+      toast.error(`Tidak ada layout tersimpan untuk ${tableType}`);
+      return false;
+    }
+
+    const parsedState: GridState = JSON.parse(savedState);
+
+    // Create export object with metadata
+    const exportData = {
+      metadata: {
+        tableType,
+        exportedAt: new Date().toISOString(),
+        version: '1.0',
+        description: `Grid layout configuration for ${tableType} table`,
+      },
+      gridState: parsedState,
+    };
+
+    // Create JSON string with pretty formatting
+    const jsonString = JSON.stringify(exportData, null, 2);
+
+    // Create blob and download
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pharmasys-grid-state-${tableType}-${new Date().toISOString().split('T')[0]}.json`;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success(`Layout grid ${tableType} berhasil didownload`);
+    return true;
+  } catch (error) {
+    console.error('Failed to download grid state:', error);
+    toast.error('Gagal download layout grid');
+    return false;
+  }
+};
+
 // Clear all saved states (for cleanup)
 export const clearAllGridStates = (): boolean => {
   try {
