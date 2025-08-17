@@ -150,7 +150,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   const [editingEntity, setEditingEntity] = useState<EntityData | null>(null);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Sync internal state with prop changes
   useEffect(() => {

@@ -31,7 +31,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
 
   // Simple pagination state (for potential future use with AG Grid)
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Fetch items data using existing useItems hook
   const {

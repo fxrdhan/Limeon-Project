@@ -49,7 +49,7 @@ export const useGenericEntityManagement = (
   const {
     entityType,
     search = '',
-    itemsPerPage = 10,
+    itemsPerPage = 20,
     enabled = true,
   } = options;
 
