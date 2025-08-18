@@ -116,15 +116,15 @@ const DaysGrid: React.FC<DaysGridProps> = ({
               onMouseLeave={() => onDateHighlight(null)}
               disabled={isDisabled}
               className={classNames(
-                `py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm`,
+                `py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm cursor-pointer`,
                 isDisabled
                   ? 'text-gray-300 cursor-not-allowed'
-                  : 'hover:bg-emerald-100',
+                  : 'hover:bg-emerald-50',
                 !isDisabled &&
                   (isSelected
-                    ? 'bg-primary text-white hover:ring-2 hover:ring-emerald-200 hover:text-primary hover:font-semibold hover:bg-emerald-100'
+                    ? 'bg-primary text-white hover:ring-2 hover:ring-emerald-200 hover:text-primary hover:font-semibold transition-colors duration-150'
                     : isHighlighted
-                      ? 'bg-emerald-100 ring-2 ring-emerald-200'
+                      ? 'bg-emerald-50 ring-2 ring-emerald-200'
                       : isToday
                         ? 'ring ring-emerald-200 text-primary'
                         : 'text-gray-700')
