@@ -35,9 +35,9 @@ export const saveGridState = (
     // Include pagination state for complete state persistence
     localStorage.setItem(storageKey, JSON.stringify(currentState));
 
-    toast.success(
-      `Layout grid ${tableType} berhasil disimpan (dengan pagination)`
-    );
+    // toast.success(
+    //   `Layout grid ${tableType} berhasil disimpan (dengan pagination)`
+    // );
 
     return true;
   } catch (error) {
@@ -85,7 +85,7 @@ export const restoreGridState = (
     const savedState = localStorage.getItem(storageKey);
 
     if (!savedState) {
-      toast.error(`Tidak ada layout tersimpan untuk ${tableType}`);
+      // toast.error(`Tidak ada layout tersimpan untuk ${tableType}`);
       return false;
     }
 
@@ -122,7 +122,7 @@ export const restoreGridState = (
       }
     }, 100);
 
-    toast.success('Grid state telah dipulihkan (dengan pagination)');
+    // toast.success('Grid state telah dipulihkan (dengan pagination)');
 
     return true;
   } catch (error) {
@@ -138,7 +138,7 @@ export const clearGridState = (tableType: TableType): boolean => {
     const storageKey = getStorageKey(tableType);
     localStorage.removeItem(storageKey);
 
-    toast.success(`State grid ${tableType} berhasil dihapus`);
+    // toast.success(`State grid ${tableType} berhasil dihapus`);
     return true;
   } catch (error) {
     console.error('Failed to clear grid state:', error);
@@ -201,7 +201,7 @@ export const downloadGridState = (tableType: TableType): boolean => {
     const savedState = localStorage.getItem(storageKey);
 
     if (!savedState) {
-      toast.error(`Tidak ada layout tersimpan untuk ${tableType}`);
+      // toast.error(`Tidak ada layout tersimpan untuk ${tableType}`);
       return false;
     }
 
@@ -238,7 +238,7 @@ export const downloadGridState = (tableType: TableType): boolean => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast.success(`Layout grid ${tableType} berhasil didownload`);
+    // toast.success(`Layout grid ${tableType} berhasil didownload`);
     return true;
   } catch (error) {
     console.error('Failed to download grid state:', error);
@@ -265,7 +265,7 @@ export const clearAllGridStates = (): boolean => {
       localStorage.removeItem(storageKey);
     });
 
-    toast.success('Semua state grid berhasil dihapus');
+    // toast.success('Semua state grid berhasil dihapus');
     return true;
   } catch (error) {
     console.error('Failed to clear all grid states:', error);
