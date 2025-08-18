@@ -3,8 +3,6 @@ import {
   GridApi,
   GridReadyEvent,
   RowClickedEvent,
-  ColumnPinnedEvent,
-  ColumnMovedEvent,
   ColDef,
   IRowNode,
   GetMainMenuItems,
@@ -26,6 +24,7 @@ import { useColumnDisplayMode } from '@/features/item-management/application/hoo
 import {
   hasSavedState,
   restoreGridState,
+  autoSaveGridState,
   type TableType,
 } from '@/features/shared/utils/gridStateManager';
 
@@ -96,9 +95,6 @@ interface MasterDataGridProps {
   onGridReady: (params: GridReadyEvent) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
-  onColumnPinned?: (event: ColumnPinnedEvent) => void;
-  onColumnMoved?: (event: ColumnMovedEvent) => void;
-  onColumnVisible?: () => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // Pagination (for items)
@@ -124,9 +120,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   onGridReady,
   isExternalFilterPresent,
   doesExternalFilterPass,
-  onColumnPinned,
-  onColumnMoved,
-  onColumnVisible,
   onGridApiReady,
   itemsPerPage = 20,
 }) {
@@ -252,6 +245,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
+  // Auto-save helper function for live state persistence
+  const autoSaveState = useCallback(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      const tableType = activeTab as TableType;
+      autoSaveGridState(gridApi, tableType);
+    }
+  }, [gridApi, activeTab]);
+
   // Auto-restore now handled via manual restore function in onFirstDataRendered
 
   // Tab switching state restore (for runtime tab changes after initial load)
@@ -374,14 +375,53 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       if (!hasSavedState(tableType)) {
         gridApi.autoSizeAllColumns();
       }
+
+      // Auto-save row grouping state
+      autoSaveState();
     }
-  }, [activeTab, isRowGroupingEnabled, gridApi]);
+  }, [activeTab, isRowGroupingEnabled, gridApi, autoSaveState]);
 
   // Handle pagination changes - removed autosize for better animation performance
   const handlePaginationChanged = useCallback(() => {
     // No operations needed - pagination doesn't require column size changes
     // This improves pagination slider animation performance significantly
   }, []);
+
+  // Live save event handlers
+  const handleColumnResized = useCallback(() => {
+    // Auto-save when columns are resized
+    setTimeout(autoSaveState, 100); // Small delay to ensure resize is complete
+  }, [autoSaveState]);
+
+  const handleColumnMoved = useCallback(() => {
+    // Auto-save when columns are moved
+    autoSaveState();
+  }, [autoSaveState]);
+
+  const handleColumnPinned = useCallback(() => {
+    // Auto-save when columns are pinned/unpinned
+    autoSaveState();
+  }, [autoSaveState]);
+
+  const handleColumnVisible = useCallback(() => {
+    // Auto-save when column visibility changes
+    autoSaveState();
+  }, [autoSaveState]);
+
+  const handleSortChanged = useCallback(() => {
+    // Auto-save when sorting changes
+    autoSaveState();
+  }, [autoSaveState]);
+
+  const handleFilterChanged = useCallback(() => {
+    // Auto-save when filters change
+    autoSaveState();
+  }, [autoSaveState]);
+
+  const handleDisplayedColumnsChanged = useCallback(() => {
+    // Auto-save when displayed columns change (sidebar column panel)
+    autoSaveState();
+  }, [autoSaveState]);
 
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
@@ -411,9 +451,12 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         if (!hasSavedState(tableType)) {
           gridApi.autoSizeAllColumns();
         }
+
+        // Auto-save row group state
+        autoSaveState();
       }
     },
-    [activeTab, isRowGroupingEnabled, gridApi]
+    [activeTab, isRowGroupingEnabled, gridApi, autoSaveState]
   );
 
   // Custom menu items for ALL tabs (items + 6 entities)
@@ -527,9 +570,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getMainMenuItems}
-          onColumnPinned={onColumnPinned}
-          onColumnMoved={onColumnMoved}
-          onColumnVisible={onColumnVisible}
+          // Live save event handlers
+          onColumnResized={handleColumnResized}
+          onColumnMoved={handleColumnMoved}
+          onColumnPinned={handleColumnPinned}
+          onColumnVisible={handleColumnVisible}
+          onSortChanged={handleSortChanged}
+          onFilterChanged={handleFilterChanged}
+          onDisplayedColumnsChanged={handleDisplayedColumnsChanged}
           onColumnRowGroupChanged={handleColumnRowGroupChanged}
           // Auto-restore now handled via restoreGridState function in onFirstDataRendered
           rowNumbers={true}

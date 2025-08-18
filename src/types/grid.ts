@@ -13,9 +13,13 @@ import {
   GetContextMenuItems,
   ColumnPinnedEvent,
   ColumnMovedEvent,
+  ColumnResizedEvent,
   PaginationChangedEvent,
   ColumnRowGroupChangedEvent,
   RowGroupOpenedEvent,
+  SortChangedEvent,
+  FilterChangedEvent,
+  DisplayedColumnsChangedEvent,
   StateUpdatedEvent,
   GridPreDestroyedEvent,
 } from 'ag-grid-community';
@@ -68,9 +72,13 @@ export interface DataGridProps {
   getContextMenuItems?: GetContextMenuItems;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
+  onColumnResized?: (event: ColumnResizedEvent) => void;
   onColumnRowGroupChanged?: (event: ColumnRowGroupChangedEvent) => void;
   onRowGroupOpened?: (event: RowGroupOpenedEvent) => void;
   onColumnVisible?: () => void;
+  onSortChanged?: (event: SortChangedEvent) => void;
+  onFilterChanged?: (event: FilterChangedEvent) => void;
+  onDisplayedColumnsChanged?: (event: DisplayedColumnsChangedEvent) => void;
   rowNumbers?: boolean;
   suppressHeaderFilterButton?: boolean;
   // Pagination props
