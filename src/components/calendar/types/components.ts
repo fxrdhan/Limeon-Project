@@ -56,23 +56,3 @@ export interface DaysGridProps {
   onDateHighlight: (date: Date | null) => void;
   animated?: boolean;
 }
-
-export interface MonthsGridProps {
-  displayDate: Date;
-  value: CustomDateValueType;
-  highlightedMonth: number | null;
-  minDate?: Date;
-  maxDate?: Date;
-  onMonthSelect: (month: number) => void;
-  onMonthHighlight: (month: number | null) => void;
-}
-
-export interface YearsGridProps {
-  displayDate: Date;
-  value: CustomDateValueType;
-  highlightedYear: number | null;
-  minDate?: Date;
-  maxDate?: Date;
-  onYearSelect: (year: number) => void;
-  onYearHighlight: (year: number | null) => void;
-}
