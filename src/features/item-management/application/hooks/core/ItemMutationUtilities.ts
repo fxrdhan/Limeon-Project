@@ -54,8 +54,8 @@ export const prepareItemData = async (
       unit_name: uc.unit.name,
       to_unit_id: uc.to_unit_id,
       conversion_rate: uc.conversion_rate,
-      base_price: uc.basePrice,
-      sell_price: uc.sellPrice,
+      base_price: uc.base_price,
+      sell_price: uc.sell_price,
     })),
   };
 

@@ -69,10 +69,9 @@ export const useItemFormReset = ({
             to_unit_id: unitDetails.id,
             unit_name: unitDetails.name,
             unit: unitDetails,
-            conversion: convDataFromDB.conversion,
-            basePrice: convDataFromDB.basePrice || 0,
-            sellPrice: convDataFromDB.sellPrice || 0,
             conversion_rate: convDataFromDB.conversion_rate,
+            base_price: convDataFromDB.base_price || 0,
+            sell_price: convDataFromDB.sell_price || 0,
           });
         }
       });

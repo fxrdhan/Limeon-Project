@@ -37,7 +37,7 @@ export default function PackageConversionInput({
     const { value } = e.target;
     onFormDataChange({
       ...formData,
-      conversion: parseFloat(value) || 0,
+      conversion_rate: parseFloat(value) || 0,
     });
   };
 
@@ -49,7 +49,7 @@ export default function PackageConversionInput({
   };
 
   const isAddButtonActive =
-    formData.unit && formData.conversion > 0 && baseUnit;
+    formData.unit && formData.conversion_rate > 0 && baseUnit;
 
   return (
     <div>
@@ -86,9 +86,9 @@ export default function PackageConversionInput({
         >
           <div className="relative w-full">
             <Input
-              name="conversion"
+              name="conversion_rate"
               tabIndex={tabIndex + 1}
-              value={formData.conversion?.toString() || ''}
+              value={formData.conversion_rate?.toString() || ''}
               onChange={handleConversionChange}
               type="number"
               min={formData.unit ? '1' : undefined}

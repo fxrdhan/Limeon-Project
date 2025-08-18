@@ -11,8 +11,8 @@ interface UsePackageConversionLogicProps {
   formData: PackageConversionLogicFormData;
   addPackageConversion: (
     conversion: Omit<PackageConversion, 'id'> & {
-      basePrice?: number;
-      sellPrice?: number;
+      base_price?: number;
+      sell_price?: number;
     }
   ) => void;
   setFormData: (data: PackageConversionLogicFormData) => void;
@@ -38,7 +38,7 @@ export const usePackageConversionLogic = ({
     }
 
     // Validate conversion value
-    if (formData.conversion <= 0) {
+    if (formData.conversion_rate <= 0) {
       return { success: false, error: 'Nilai konversi harus lebih dari 0!' };
     }
 
@@ -73,16 +73,15 @@ export const usePackageConversionLogic = ({
       },
       unit_name: selectedUnit.name,
       to_unit_id: selectedUnit.id,
-      conversion: formData.conversion,
-      basePrice: 0,
-      sellPrice: 0,
-      conversion_rate: formData.conversion,
+      conversion_rate: formData.conversion_rate,
+      base_price: 0,
+      sell_price: 0,
     });
 
     // Reset form
     setFormData({
       unit: '',
-      conversion: 0,
+      conversion_rate: 0,
     });
 
     return { success: true };

@@ -18,7 +18,7 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
 
   const [packageConversionFormData, setPackageConversionFormData] = useState({
     unit: '',
-    conversion: 0,
+    conversion_rate: 0,
   });
 
   useEffect(() => {
@@ -39,29 +39,28 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   const addPackageConversion = useCallback(
     (
       packageConversion: Omit<PackageConversion, 'id'> & {
-        basePrice?: number;
-        sellPrice?: number;
+        base_price?: number;
+        sell_price?: number;
       }
     ) => {
       const calculatedBasePrice =
-        packageConversion.basePrice !== undefined
-          ? packageConversion.basePrice
-          : basePrice / packageConversion.conversion;
+        packageConversion.base_price !== undefined
+          ? packageConversion.base_price
+          : basePrice / packageConversion.conversion_rate;
 
       const calculatedSellPrice =
-        packageConversion.sellPrice !== undefined
-          ? packageConversion.sellPrice
-          : sellPrice / packageConversion.conversion;
+        packageConversion.sell_price !== undefined
+          ? packageConversion.sell_price
+          : sellPrice / packageConversion.conversion_rate;
 
       const newPackageConversion: PackageConversion = {
         id: `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
         unit: packageConversion.unit,
         unit_name: packageConversion.unit_name,
         to_unit_id: packageConversion.to_unit_id,
-        conversion: packageConversion.conversion,
         conversion_rate: packageConversion.conversion_rate,
-        basePrice: calculatedBasePrice,
-        sellPrice: calculatedSellPrice,
+        base_price: calculatedBasePrice,
+        sell_price: calculatedSellPrice,
       };
       setPackageConversions(prevConversions => [
         ...prevConversions,
@@ -87,11 +86,11 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
       return;
 
     const needsUpdate = packageConversions.some(uc => {
-      const newBasePrice = basePrice > 0 ? basePrice / uc.conversion : 0;
-      const newSellPrice = sellPrice > 0 ? sellPrice / uc.conversion : 0;
+      const newBasePrice = basePrice > 0 ? basePrice / uc.conversion_rate : 0;
+      const newSellPrice = sellPrice > 0 ? sellPrice / uc.conversion_rate : 0;
       return (
-        Math.abs(uc.basePrice - newBasePrice) > 0.001 ||
-        Math.abs(uc.sellPrice - newSellPrice) > 0.001
+        Math.abs(uc.base_price - newBasePrice) > 0.001 ||
+        Math.abs(uc.sell_price - newSellPrice) > 0.001
       );
     });
 
@@ -99,8 +98,8 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
       setPackageConversions(prevConversions =>
         prevConversions.map(uc => ({
           ...uc,
-          basePrice: basePrice > 0 ? basePrice / uc.conversion : 0,
-          sellPrice: sellPrice > 0 ? sellPrice / uc.conversion : 0,
+          base_price: basePrice > 0 ? basePrice / uc.conversion_rate : 0,
+          sell_price: sellPrice > 0 ? sellPrice / uc.conversion_rate : 0,
         }))
       );
     }
@@ -115,7 +114,7 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
     // Also reset the form data to clear input fields
     setPackageConversionFormData({
       unit: '',
-      conversion: 0,
+      conversion_rate: 0,
     });
   }, []);
 

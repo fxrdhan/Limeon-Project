@@ -174,10 +174,9 @@ function mapPackageConversions(
       unit: unitDetail
         ? { id: unitDetail.id, name: unitDetail.name }
         : { id: conv.to_unit_id || '', name: conv.unit_name || 'Unknown Unit' },
-      conversion: conv.conversion_rate || 0,
-      basePrice: conv.base_price || 0,
-      sellPrice: conv.sell_price || 0,
       conversion_rate: conv.conversion_rate || 0,
+      base_price: conv.base_price || 0,
+      sell_price: conv.sell_price || 0,
     };
   });
 }
@@ -218,10 +217,9 @@ function initializePackageConversions(
         to_unit_id: unitDetail.id,
         unit_name: unitDetail.name,
         unit: { id: unitDetail.id, name: unitDetail.name },
-        conversion: conv.conversion_rate || 0,
-        basePrice: conv.base_price || 0,
-        sellPrice: conv.sell_price || 0,
         conversion_rate: conv.conversion_rate || 0,
+        base_price: conv.base_price || 0,
+        sell_price: conv.sell_price || 0,
       });
     } else if (typeof conv.conversion_rate === 'number') {
       // Add conversion with placeholder unit
@@ -243,10 +241,9 @@ function initializePackageConversions(
         to_unit_id: placeholderUnit.id,
         unit_name: placeholderUnit.name,
         unit: placeholderUnit,
-        conversion: conv.conversion_rate || 0,
-        basePrice: conv.base_price || 0,
-        sellPrice: conv.sell_price || 0,
         conversion_rate: conv.conversion_rate || 0,
+        base_price: conv.base_price || 0,
+        sell_price: conv.sell_price || 0,
       });
     }
   }

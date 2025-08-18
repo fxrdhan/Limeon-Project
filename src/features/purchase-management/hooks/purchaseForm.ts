@@ -226,9 +226,9 @@ export const usePurchaseForm = ({
           );
           if (packageConversion) {
             price =
-              packageConversion.basePrice ||
-              itemData.base_price / packageConversion.conversion;
-            conversionRate = packageConversion.conversion;
+              packageConversion.base_price ||
+              itemData.base_price / packageConversion.conversion_rate;
+            conversionRate = packageConversion.conversion_rate;
           }
         }
 

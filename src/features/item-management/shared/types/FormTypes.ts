@@ -34,5 +34,5 @@ export interface PackageConversionFormData {
 // Additional PackageConversionFormData variant for logic hook
 export interface PackageConversionLogicFormData {
   unit: string;
-  conversion: number;
+  conversion_rate: number;
 }

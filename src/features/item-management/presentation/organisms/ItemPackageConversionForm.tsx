@@ -76,20 +76,20 @@ export default function ItemPackageConversionManager({
                   flex: 1,
                 }),
                 createTextColumn({
-                  field: 'conversion',
+                  field: 'conversion_rate',
                   headerName: 'Konversi',
                   minWidth: 140,
                   flex: 2,
                   cellStyle: { textAlign: 'center' },
                 }),
                 createCurrencyColumn({
-                  field: 'basePrice',
+                  field: 'base_price',
                   headerName: 'H. Pokok',
                   minWidth: 100,
                   flex: 1,
                 }),
                 createCurrencyColumn({
-                  field: 'sellPrice',
+                  field: 'sell_price',
                   headerName: 'H. Jual',
                   minWidth: 100,
                   flex: 1,
