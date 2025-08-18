@@ -274,6 +274,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     ) {
       if (hasSavedState(tableType)) {
         restoreGridState(gridApi, tableType);
+
+        // Sync local page size state with restored pagination state
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            const restoredPageSize = gridApi.paginationGetPageSize();
+            setCurrentPageSize(restoredPageSize);
+          }
+        }, 150); // After restoration timeout
       } else {
         // No saved state, just autosize
         gridApi.autoSizeAllColumns();
@@ -336,6 +344,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       if (hasSavedState(tableType)) {
         // Apply immediately - no delay needed since grid is ready but no data rendered yet
         restoreGridState(params.api, tableType);
+
+        // Sync local page size state with restored pagination state
+        setTimeout(() => {
+          if (!params.api.isDestroyed()) {
+            const restoredPageSize = params.api.paginationGetPageSize();
+            setCurrentPageSize(restoredPageSize);
+          }
+        }, 150); // After restoration timeout
       }
 
       // Notify parent about grid API
@@ -381,11 +397,25 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [activeTab, isRowGroupingEnabled, gridApi, autoSaveState]);
 
-  // Handle pagination changes - removed autosize for better animation performance
+  // ✅ PAGINATION STATE CACHING SYSTEM ✅
+  // Auto-saves current page and page size to localStorage for persistence
+  // Restores pagination state when switching tabs or reloading
+
+  // Handle pagination changes - now includes state saving for pagination persistence
   const handlePaginationChanged = useCallback(() => {
-    // No operations needed - pagination doesn't require column size changes
-    // This improves pagination slider animation performance significantly
-  }, []);
+    // Auto-save pagination state for persistence across sessions and tab switches
+    autoSaveState();
+  }, [autoSaveState]);
+
+  // Handle page size changes - save state when user changes items per page
+  const handlePageSizeChange = useCallback(
+    (newPageSize: number) => {
+      setCurrentPageSize(newPageSize);
+      // Auto-save pagination state after page size change
+      setTimeout(autoSaveState, 100); // Small delay to ensure page size is applied
+    },
+    [autoSaveState]
+  );
 
   // Live save event handlers
   const handleColumnResized = useCallback(() => {
@@ -636,7 +666,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       {/* Custom Pagination Component using AG Grid API */}
       <StandardPagination
         gridApi={gridApi}
-        onPageSizeChange={setCurrentPageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
     </>
   );

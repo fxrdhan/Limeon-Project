@@ -18,7 +18,7 @@ const getStorageKey = (tableType: TableType): string => {
   return `${GRID_STATE_PREFIX}${tableType}`;
 };
 
-// Save current grid state to localStorage (excluding pagination to avoid conflicts)
+// Save current grid state to localStorage (including pagination state)
 export const saveGridState = (
   gridApi: GridApi,
   tableType: TableType
@@ -32,16 +32,11 @@ export const saveGridState = (
     const currentState = gridApi.getState();
     const storageKey = getStorageKey(tableType);
 
-    // Exclude pagination state to prevent conflicts with custom pagination controls
-    const stateToSave = {
-      ...currentState,
-      pagination: undefined, // Remove pagination state
-    };
-
-    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    // Include pagination state for complete state persistence
+    localStorage.setItem(storageKey, JSON.stringify(currentState));
 
     toast.success(
-      `Layout grid ${tableType} berhasil disimpan (tanpa pagination)`
+      `Layout grid ${tableType} berhasil disimpan (dengan pagination)`
     );
 
     return true;
@@ -65,13 +60,8 @@ export const autoSaveGridState = (
     const currentState = gridApi.getState();
     const storageKey = getStorageKey(tableType);
 
-    // Exclude pagination state to prevent conflicts with custom pagination controls
-    const stateToSave = {
-      ...currentState,
-      pagination: undefined, // Remove pagination state
-    };
-
-    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    // Include pagination state for complete state persistence
+    localStorage.setItem(storageKey, JSON.stringify(currentState));
 
     return true;
   } catch (error) {
@@ -80,7 +70,7 @@ export const autoSaveGridState = (
   }
 };
 
-// Restore grid state from localStorage (excluding pagination to avoid conflicts)
+// Restore grid state from localStorage (including pagination state)
 export const restoreGridState = (
   gridApi: GridApi,
   tableType: TableType
@@ -101,20 +91,12 @@ export const restoreGridState = (
 
     const parsedState: GridState = JSON.parse(savedState);
 
-    // Ensure pagination state is excluded from restore (extra safety)
-    const stateToRestore = {
-      ...parsedState,
-      pagination: undefined, // Remove pagination state
-    };
+    // Include pagination state for complete state restoration
+    gridApi.setState(parsedState);
 
-    gridApi.setState(stateToRestore);
-
-    // Reset pagination to page 1 after restore to avoid conflicts
+    // Apply additional column order and sizing settings after state restoration
     setTimeout(() => {
       if (!gridApi.isDestroyed()) {
-        // Reset to first page
-        gridApi.paginationGoToPage(0);
-
         // Explicitly apply column order for reliability (with maintainColumnOrder=true)
         if (parsedState.columnOrder?.orderedColIds) {
           const columnState = parsedState.columnOrder.orderedColIds.map(
@@ -140,7 +122,7 @@ export const restoreGridState = (
       }
     }, 100);
 
-    toast.success('Grid state telah dipulihkan');
+    toast.success('Grid state telah dipulihkan (dengan pagination)');
 
     return true;
   } catch (error) {
@@ -190,13 +172,8 @@ export const loadSavedStateForInit = (
 
     const parsedState: GridState = JSON.parse(savedState);
 
-    // Ensure pagination is excluded from auto-restore (same as manual restore)
-    const stateForInit = {
-      ...parsedState,
-      pagination: undefined, // Remove pagination state
-    };
-
-    return stateForInit;
+    // Include pagination state for complete auto-restore
+    return parsedState;
   } catch (error) {
     console.error(
       `Failed to load saved state for auto-restore (${tableType}):`,
