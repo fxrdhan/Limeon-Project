@@ -21,18 +21,29 @@ const queryClient = new QueryClient({
 });
 
 // Configure custom IndexedDB persistence (works in both dev and production)
-configurePersistence(queryClient);
+const initializeApp = async () => {
+  try {
+    await configurePersistence(queryClient);
+  } catch (error) {
+    console.warn(
+      'Failed to configure persistence, continuing with in-memory cache:',
+      error
+    );
+  }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-      {/* Only load DevTools in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
-    </QueryClientProvider>
-  </StrictMode>
-);
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+        {/* Only load DevTools in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
+      </QueryClientProvider>
+    </StrictMode>
+  );
+};
+
+initializeApp();

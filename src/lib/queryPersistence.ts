@@ -8,7 +8,7 @@ import { setupIndexedDBPersistence } from './indexedDBPersistence';
 /**
  * Configure IndexedDB persistence for pharmacy data
  */
-export const configurePersistence = (queryClient: QueryClient) => {
+export const configurePersistence = async (queryClient: QueryClient) => {
   // Only enable in browser environment
   if (typeof window === 'undefined') {
     return queryClient;
@@ -16,7 +16,7 @@ export const configurePersistence = (queryClient: QueryClient) => {
 
   try {
     // Setup custom IndexedDB persistence
-    setupIndexedDBPersistence(queryClient);
+    await setupIndexedDBPersistence(queryClient);
     return queryClient;
   } catch (error) {
     console.warn('IndexedDB not available, using in-memory cache only:', error);
