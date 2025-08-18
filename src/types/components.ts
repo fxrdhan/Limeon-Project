@@ -81,6 +81,7 @@ export interface BadgeProps {
   animate?: boolean;
 }
 
+// Button component types with enhanced type safety
 export type ButtonVariant =
   | 'primary'
   | 'secondary'
@@ -90,13 +91,33 @@ export type ButtonVariant =
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+// Extended button props with all available features
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Button visual variant */
   variant?: ButtonVariant;
+  /** Button size */
   size?: ButtonSize;
+  /** Loading state with spinner */
   isLoading?: boolean;
+  /** Full width button */
   fullWidth?: boolean;
+  /** Enable glow effect on hover/focus */
+  withGlow?: boolean;
+  /** Show underline for text variants */
+  withUnderline?: boolean;
 }
+
+// Type guards for runtime type checking
+export const isButtonVariant = (value: string): value is ButtonVariant => {
+  return ['primary', 'secondary', 'text', 'danger', 'text-danger'].includes(
+    value
+  );
+};
+
+export const isButtonSize = (value: string): value is ButtonSize => {
+  return ['sm', 'md', 'lg'].includes(value);
+};
 
 export interface CardProps {
   children: React.ReactNode;
