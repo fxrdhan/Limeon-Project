@@ -232,8 +232,9 @@ export const setupIndexedDBPersistence = (queryClient: QueryClient) => {
  */
 function shouldPersistQuery(queryKey: string): boolean {
   return [
-    'masterData', // All master data (categories, types, etc)
+    'masterData', // All master data (categories, types, packages, dosages, manufacturers)
     'items', // Items list
+    'item_units', // Item units (units tab)
   ].includes(queryKey);
 }
 
