@@ -634,12 +634,12 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                               </motion.div>
                             </motion.div>
                             <p
-                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? 'text-emerald-700' : 'text-gray-700'}`}
+                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? 'text-primary' : 'text-gray-700'}`}
                             >
                               Klik atau seret untuk mengunggah gambar faktur
                             </p>
                             <p
-                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? 'text-emerald-500' : 'text-gray-500'}`}
+                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? 'text-primary/70' : 'text-gray-500'}`}
                             >
                               PNG, JPG (Maks. 5MB)
                             </p>
