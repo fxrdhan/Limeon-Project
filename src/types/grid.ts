@@ -22,6 +22,7 @@ import {
   DisplayedColumnsChangedEvent,
   StateUpdatedEvent,
   GridPreDestroyedEvent,
+  RowSelectionOptions,
 } from 'ag-grid-community';
 import type { CellSelectionOptions } from 'ag-grid-enterprise';
 import { SideBarDef } from 'ag-grid-enterprise';
@@ -62,7 +63,7 @@ export interface DataGridProps {
   suppressAnimationFrame?: boolean;
   animateRows?: boolean;
   loadThemeGoogleFonts?: boolean;
-  rowSelection?: 'single' | 'multiple' | { mode: 'singleRow' | 'multiRow' };
+  rowSelection?: 'single' | 'multiple' | RowSelectionOptions;
   colResizeDefault?: 'shift' | undefined;
   isExternalFilterPresent?: () => boolean;
   doesExternalFilterPass?: (node: IRowNode) => boolean;
