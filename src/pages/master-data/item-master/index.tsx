@@ -181,6 +181,12 @@ const ItemMasterNew = memo(() => {
   // Generic entity data management
   const entityData = useGenericEntityManagement(entityManagementOptions);
 
+  // Preload item_units data in background for better caching
+  useGenericEntityManagement({
+    entityType: 'units',
+    enabled: true, // Always fetch units data for complete cache
+  });
+
   const { columnDefs: itemColumnDefs, columnsToAutoSize } =
     useItemGridColumns();
 
