@@ -31,19 +31,15 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
   };
 
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
-      <div className="relative">
+    <div className="calendar-button-wrapper">
+      {label && <label className="calendar-button-label">{label}</label>}
+      <div className="calendar-button-input-wrapper">
         <Input
           ref={triggerInputRef}
           type="text"
           value={formattedDisplayValue()}
           placeholder={placeholder}
-          className={classNames('cursor-pointer', inputClassName)}
+          className={classNames('calendar-button-input', inputClassName)}
           onClick={trigger === 'click' ? handleTriggerClick : undefined}
           onMouseEnter={
             trigger === 'hover' ? handleTriggerMouseEnter : undefined

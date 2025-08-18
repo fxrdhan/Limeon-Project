@@ -72,18 +72,22 @@ const DaysGrid: React.FC<DaysGridProps> = ({
 
     return (
       <div
-        className={`grid grid-cols-7 gap-1 text-center text-sm ${animated ? 'm-1' : ''}`}
+        className={
+          animated ? 'calendar-days-grid-animated' : 'calendar-days-grid-static'
+        }
       >
         {/* Day labels - show only if not animated (static version) */}
         {!animated &&
           DAY_LABELS.map(day => (
-            <div key={day} className="font-medium text-gray-500 py-2 px-1">
+            <div key={day} className="calendar-day-label">
               {day}
             </div>
           ))}
         {calendarDays.map((day, index) => {
           if (day === null)
-            return <div key={`empty-${index}`} className="py-2 px-2"></div>;
+            return (
+              <div key={`empty-${index}`} className="calendar-day-empty"></div>
+            );
 
           const currentDate = new Date(year, month, day);
           const isSelected =
@@ -115,20 +119,14 @@ const DaysGrid: React.FC<DaysGridProps> = ({
               onMouseEnter={() => !isDisabled && onDateHighlight(currentDate)}
               onMouseLeave={() => onDateHighlight(null)}
               disabled={isDisabled}
-              className={classNames(
-                `py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm cursor-pointer`,
-                isDisabled
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : 'hover:bg-emerald-50',
-                !isDisabled &&
-                  (isSelected
-                    ? 'bg-primary text-white hover:ring-2 hover:ring-emerald-200 hover:text-primary hover:font-semibold transition-colors duration-150'
-                    : isHighlighted
-                      ? 'bg-emerald-50 ring-2 ring-emerald-200'
-                      : isToday
-                        ? 'ring ring-emerald-200 text-primary'
-                        : 'text-gray-700')
-              )}
+              className={classNames('calendar-day-button', {
+                'calendar-day-button-disabled': isDisabled,
+                'calendar-day-button-selected': !isDisabled && isSelected,
+                'calendar-day-button-highlighted':
+                  !isDisabled && !isSelected && isHighlighted,
+                'calendar-day-button-today':
+                  !isDisabled && !isSelected && !isHighlighted && isToday,
+              })}
             >
               {day}
             </button>
@@ -141,24 +139,26 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   // Render with or without animation based on prop
   if (!animated) {
     return (
-      <div className="text-center text-sm">{renderDatesGrid(displayDate)}</div>
+      <div className="calendar-animation-container">
+        {renderDatesGrid(displayDate)}
+      </div>
     );
   }
 
   // Animated version
   return (
-    <div className="text-center text-sm">
+    <div className="calendar-animation-container">
       {/* Static day labels header */}
-      <div className="grid grid-cols-7 gap-1 text-center text-sm mb-1">
+      <div className="calendar-animation-header">
         {DAY_LABELS.map(day => (
-          <div key={day} className="font-medium text-gray-500 py-2 px-1">
+          <div key={day} className="calendar-day-label">
             {day}
           </div>
         ))}
       </div>
 
       {/* Animated dates grid */}
-      <div className="relative overflow-hidden px-1 pb-1">
+      <div className="calendar-animation-content">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={gridKey}
@@ -174,7 +174,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
               ease: [0.4, 0.0, 0.2, 1],
               duration: 0.25,
             }}
-            className="w-full"
+            className="calendar-animation-grid"
           >
             {renderDatesGrid(displayDate)}
           </motion.div>

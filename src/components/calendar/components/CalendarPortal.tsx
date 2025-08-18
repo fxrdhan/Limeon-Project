@@ -34,17 +34,15 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
       style={{
         ...portalStyle,
         outline: 'none',
-        ...(dropDirection === 'up' && {
-          boxShadow:
-            '0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)',
-        }),
       }}
       className={classNames(
-        'bg-white rounded-xl border border-gray-200 p-4',
-        dropDirection === 'down' ? 'shadow-xl' : '',
-        dropDirection === 'down' ? 'origin-top' : 'origin-bottom',
-        'transition-all duration-150 ease-out focus:outline-hidden',
-        isClosing || isOpening ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+        'calendar-container-portal',
+        dropDirection === 'down' ? 'calendar-drop-down' : 'calendar-drop-up',
+        {
+          'calendar-portal-closing': isClosing,
+          'calendar-portal-opening': isOpening,
+          'calendar-portal-open': !isClosing && !isOpening,
+        }
       )}
       onKeyDown={handleCalendarKeyDown}
       onMouseEnter={trigger === 'hover' ? handleCalendarMouseEnter : undefined}

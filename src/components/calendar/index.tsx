@@ -9,6 +9,7 @@ import {
 } from './components';
 import { CALENDAR_SIZE_PRESETS } from './constants';
 import type { CalendarProps } from './types';
+import './style.scss';
 
 const CalendarContent: React.FC<{
   mode?: 'datepicker' | 'inline';
@@ -112,7 +113,7 @@ const CalendarContent: React.FC<{
     const width = portalWidth || `${sizeConfig.width}px`;
     return (
       <div
-        className="bg-white rounded-xl border border-gray-200 p-4 shadow-xl"
+        className="calendar-container-inline"
         style={{
           width: width,
           minWidth: width,
@@ -146,7 +147,7 @@ const CalendarContent: React.FC<{
           }
           onKeyDown={handleInputKeyDown}
           tabIndex={0}
-          style={{ outline: 'none' }}
+          className="calendar-custom-trigger"
         >
           {children}
         </div>
