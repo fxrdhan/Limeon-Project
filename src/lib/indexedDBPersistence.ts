@@ -13,30 +13,87 @@ interface PersistedQuery {
 
 class PharmacyIndexedDB {
   private dbName = 'pharmasys-cache';
-  private version = 1;
+  private version = 2; // Increment version to force upgrade
   private storeName = 'queries';
   private db: IDBDatabase | null = null;
+  private recreationAttempts = 0;
+  private maxRecreationAttempts = 2;
 
   async init(): Promise<void> {
+    if (this.db) return; // Already initialized
+
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
 
       request.onerror = () => reject(request.error);
+
       request.onsuccess = () => {
         this.db = request.result;
+
+        // Verify the object store exists
+        if (!this.db.objectStoreNames.contains(this.storeName)) {
+          if (this.recreationAttempts < this.maxRecreationAttempts) {
+            console.warn(
+              `Object store '${this.storeName}' not found, attempting to recreate database (attempt ${this.recreationAttempts + 1})...`
+            );
+            this.db.close();
+            this.db = null;
+            this.recreationAttempts++;
+            this.recreateDatabase().then(resolve).catch(reject);
+            return;
+          } else {
+            console.error(
+              `Object store '${this.storeName}' not found after ${this.maxRecreationAttempts} recreation attempts`
+            );
+            reject(
+              new Error(
+                `Failed to create object store after ${this.maxRecreationAttempts} attempts`
+              )
+            );
+            return;
+          }
+        }
+
+        console.log('IndexedDB initialized successfully');
+        this.recreationAttempts = 0; // Reset counter on success
         resolve();
       };
 
       request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
+        console.log('IndexedDB upgrade needed, creating object stores...');
 
-        // Create queries store if it doesn't exist
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, {
-            keyPath: 'key',
-          });
-          store.createIndex('timestamp', 'timestamp');
+        // Delete existing store if it exists (clean slate)
+        if (db.objectStoreNames.contains(this.storeName)) {
+          db.deleteObjectStore(this.storeName);
         }
+
+        // Create queries store
+        const store = db.createObjectStore(this.storeName, {
+          keyPath: 'key',
+        });
+        store.createIndex('timestamp', 'timestamp');
+        console.log(`Created object store: ${this.storeName}`);
+      };
+    });
+  }
+
+  private async recreateDatabase(): Promise<void> {
+    console.log('Recreating IndexedDB database...');
+
+    return new Promise((resolve, reject) => {
+      const deleteRequest = indexedDB.deleteDatabase(this.dbName);
+
+      deleteRequest.onsuccess = () => {
+        console.log('Old database deleted, creating new one...');
+        // Increment version to force a clean creation
+        this.version += 1;
+        this.init().then(resolve).catch(reject);
+      };
+
+      deleteRequest.onerror = () => {
+        console.error('Failed to delete database');
+        reject(deleteRequest.error);
       };
     });
   }
@@ -47,22 +104,30 @@ class PharmacyIndexedDB {
     dataUpdatedAt: number,
     staleTime: number
   ): Promise<void> {
-    if (!this.db) await this.init();
-    if (!this.db) return;
-
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-
-    const queryData: PersistedQuery & { key: string; timestamp: number } = {
-      key: JSON.stringify(queryKey),
-      queryKey,
-      data,
-      dataUpdatedAt,
-      staleTime,
-      timestamp: Date.now(),
-    };
-
     try {
+      if (!this.db) await this.init();
+      if (!this.db) return;
+
+      // Double-check that the object store exists
+      if (!this.db.objectStoreNames.contains(this.storeName)) {
+        console.warn(
+          `Object store '${this.storeName}' not available for saveQuery`
+        );
+        return;
+      }
+
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+
+      const queryData: PersistedQuery & { key: string; timestamp: number } = {
+        key: JSON.stringify(queryKey),
+        queryKey,
+        data,
+        dataUpdatedAt,
+        staleTime,
+        timestamp: Date.now(),
+      };
+
       await store.put(queryData);
     } catch (error) {
       console.warn('Failed to save query to IndexedDB:', error);
@@ -70,45 +135,64 @@ class PharmacyIndexedDB {
   }
 
   async getQuery(queryKey: unknown[]): Promise<PersistedQuery | null> {
-    if (!this.db) await this.init();
-    if (!this.db) return null;
+    try {
+      if (!this.db) await this.init();
+      if (!this.db) return null;
 
-    const transaction = this.db.transaction([this.storeName], 'readonly');
-    const store = transaction.objectStore(this.storeName);
+      if (!this.db.objectStoreNames.contains(this.storeName)) {
+        console.warn(
+          `Object store '${this.storeName}' not available for getQuery`
+        );
+        return null;
+      }
 
-    return new Promise(resolve => {
-      const request = store.get(JSON.stringify(queryKey));
-      request.onsuccess = () => {
-        const result = request.result;
-        if (result) {
-          // Check if data is still fresh
-          const now = Date.now();
-          const age = now - result.dataUpdatedAt;
+      const transaction = this.db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
 
-          if (age < result.staleTime) {
-            resolve({
-              queryKey: result.queryKey,
-              data: result.data,
-              dataUpdatedAt: result.dataUpdatedAt,
-              staleTime: result.staleTime,
-            });
-            return;
+      return new Promise(resolve => {
+        const request = store.get(JSON.stringify(queryKey));
+        request.onsuccess = () => {
+          const result = request.result;
+          if (result) {
+            // Check if data is still fresh
+            const now = Date.now();
+            const age = now - result.dataUpdatedAt;
+
+            if (age < result.staleTime) {
+              resolve({
+                queryKey: result.queryKey,
+                data: result.data,
+                dataUpdatedAt: result.dataUpdatedAt,
+                staleTime: result.staleTime,
+              });
+              return;
+            }
           }
-        }
-        resolve(null);
-      };
-      request.onerror = () => resolve(null);
-    });
+          resolve(null);
+        };
+        request.onerror = () => resolve(null);
+      });
+    } catch (error) {
+      console.warn('Failed to access IndexedDB for getQuery:', error);
+      return null;
+    }
   }
 
   async removeQuery(queryKey: unknown[]): Promise<void> {
-    if (!this.db) await this.init();
-    if (!this.db) return;
-
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-
     try {
+      if (!this.db) await this.init();
+      if (!this.db) return;
+
+      if (!this.db.objectStoreNames.contains(this.storeName)) {
+        console.warn(
+          `Object store '${this.storeName}' not available for removeQuery`
+        );
+        return;
+      }
+
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+
       await store.delete(JSON.stringify(queryKey));
     } catch (error) {
       console.warn('Failed to remove query from IndexedDB:', error);
@@ -116,13 +200,20 @@ class PharmacyIndexedDB {
   }
 
   async clear(): Promise<void> {
-    if (!this.db) await this.init();
-    if (!this.db) return;
-
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-
     try {
+      if (!this.db) await this.init();
+      if (!this.db) return;
+
+      if (!this.db.objectStoreNames.contains(this.storeName)) {
+        console.warn(
+          `Object store '${this.storeName}' not available for clear`
+        );
+        return;
+      }
+
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+
       await store.clear();
     } catch (error) {
       console.warn('Failed to clear IndexedDB:', error);
@@ -130,47 +221,70 @@ class PharmacyIndexedDB {
   }
 
   async cleanup(): Promise<void> {
-    if (!this.db) await this.init();
-    if (!this.db) return;
+    try {
+      if (!this.db) await this.init();
+      if (!this.db) return;
 
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-    const timestampIndex = store.index('timestamp');
-
-    // Remove entries older than 7 days
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const oldEntriesRequest = timestampIndex.openCursor(
-      IDBKeyRange.upperBound(sevenDaysAgo)
-    );
-
-    oldEntriesRequest.onsuccess = event => {
-      const cursor = (event.target as IDBRequest).result;
-      if (cursor) {
-        cursor.delete();
-        cursor.continue();
+      if (!this.db.objectStoreNames.contains(this.storeName)) {
+        console.warn(
+          `Object store '${this.storeName}' not available for cleanup`
+        );
+        return;
       }
-    };
+
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+      const timestampIndex = store.index('timestamp');
+
+      // Remove entries older than 7 days
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const oldEntriesRequest = timestampIndex.openCursor(
+        IDBKeyRange.upperBound(sevenDaysAgo)
+      );
+
+      oldEntriesRequest.onsuccess = event => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+    } catch (error) {
+      console.warn('Failed to cleanup IndexedDB:', error);
+    }
   }
 
   async getStats(): Promise<{ count: number; size: string }> {
-    if (!this.db) await this.init();
-    if (!this.db) return { count: 0, size: '0 B' };
+    try {
+      if (!this.db) await this.init();
+      if (!this.db) return { count: 0, size: '0 B' };
 
-    const transaction = this.db.transaction([this.storeName], 'readonly');
-    const store = transaction.objectStore(this.storeName);
+      if (!this.db.objectStoreNames.contains(this.storeName)) {
+        console.warn(
+          `Object store '${this.storeName}' not available for getStats`
+        );
+        return { count: 0, size: '0 B' };
+      }
 
-    return new Promise(resolve => {
-      const request = store.getAll();
-      request.onsuccess = () => {
-        const results = request.result || [];
-        const size = JSON.stringify(results).length;
-        resolve({
-          count: results.length,
-          size: this.formatBytes(size),
-        });
-      };
-      request.onerror = () => resolve({ count: 0, size: '0 B' });
-    });
+      const transaction = this.db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+
+      return new Promise(resolve => {
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const results = request.result || [];
+          const size = JSON.stringify(results).length;
+          resolve({
+            count: results.length,
+            size: this.formatBytes(size),
+          });
+        };
+        request.onerror = () => resolve({ count: 0, size: '0 B' });
+      });
+    } catch (error) {
+      console.warn('Failed to get IndexedDB stats:', error);
+      return { count: 0, size: '0 B' };
+    }
   }
 
   private formatBytes(bytes: number): string {
@@ -188,12 +302,17 @@ const pharmacyDB = new PharmacyIndexedDB();
 /**
  * Setup IndexedDB persistence hooks for React Query
  */
-export const setupIndexedDBPersistence = (queryClient: QueryClient) => {
-  // Initialize IndexedDB
-  pharmacyDB.init();
+export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
+  try {
+    // Initialize IndexedDB and wait for it to complete
+    await pharmacyDB.init();
 
-  // Cleanup old entries on startup
-  pharmacyDB.cleanup();
+    // Cleanup old entries on startup
+    await pharmacyDB.cleanup();
+  } catch (error) {
+    console.warn('Failed to initialize IndexedDB persistence:', error);
+    return null; // Return null to indicate setup failed
+  }
 
   // Hook into React Query cache changes
   const queryCache = queryClient.getQueryCache();
