@@ -20,9 +20,7 @@ export const useItems = (options?: {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    // Enable smart caching - realtime handles invalidation
-    staleTime: 5 * 60 * 1000, // 5 minutes fresh
-    gcTime: 10 * 60 * 1000, // 10 minutes in memory
+    // Uses global cache settings
   });
 };
 
@@ -35,9 +33,7 @@ export const useItem = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    // Enable smart caching - realtime handles invalidation
-    staleTime: 5 * 60 * 1000, // 5 minutes fresh
-    gcTime: 10 * 60 * 1000, // 10 minutes in memory
+    // Uses global cache settings
   });
 };
 
