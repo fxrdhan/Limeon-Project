@@ -18,11 +18,13 @@ export interface DBItemWithRelations {
   package_id?: string;
   dosage_id?: string;
   manufacturer_id?: string;
+  unit_id?: string;
   item_categories?: { id: string; code?: string; name: string } | null;
   item_types?: { id: string; code?: string; name: string } | null;
   item_packages?: { id: string; code?: string; name: string } | null;
   item_dosages?: { id: string; code?: string; name: string } | null;
   item_manufacturers?: { id: string; code?: string; name: string } | null;
+  item_units?: { id: string; code?: string; name: string } | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -45,7 +47,8 @@ export class ItemRepository {
     item_types!inner(id, code, name), 
     item_packages!inner(id, code, name),
     item_dosages(id, code, name),
-    item_manufacturers!inner(id, code, name)
+    item_manufacturers!inner(id, code, name),
+    item_units!inner(id, code, name)
   `;
 
   // Manufacturer data now comes from JOIN - no caching needed!

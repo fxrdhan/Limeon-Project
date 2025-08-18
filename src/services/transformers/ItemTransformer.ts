@@ -77,7 +77,7 @@ export class ItemTransformer {
       category: dbItem.item_categories || { name: '' },
       type: dbItem.item_types || { name: '' },
       package: dbItem.item_packages || { name: '' }, // Kemasan dari item_packages
-      unit: { name: dbItem.base_unit || '' }, // Satuan dari base_unit string
+      unit: dbItem.item_units || { name: dbItem.base_unit || '' }, // Satuan dari item_units JOIN atau fallback ke base_unit
       dosage: dbItem.item_dosages || { name: '' },
       manufacturer: manufacturerInfo,
       package_conversions: packageConversions,
