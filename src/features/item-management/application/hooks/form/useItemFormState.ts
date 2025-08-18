@@ -158,8 +158,8 @@ export const useAddItemFormState = ({
     type ConversionForCompare = {
       to_unit_id: string;
       conversion_rate: number;
-      basePrice: number;
-      sellPrice: number;
+      base_price: number;
+      sell_price: number;
     };
 
     const mapConversionForComparison = (
@@ -169,8 +169,8 @@ export const useAddItemFormState = ({
       return {
         to_unit_id: conv.unit.id,
         conversion_rate: conv.conversion_rate,
-        basePrice: conv.basePrice,
-        sellPrice: conv.sellPrice,
+        base_price: conv.base_price,
+        sell_price: conv.sell_price,
       };
     };
 

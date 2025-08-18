@@ -143,9 +143,8 @@ export interface PackageConversion {
     code?: string;
     name: string;
   };
-  conversion: number;
-  basePrice: number;
-  sellPrice: number;
+  base_price: number;
+  sell_price: number;
 }
 
 export interface DBPackageConversion {
@@ -179,10 +178,9 @@ export interface RawPackageConversion {
   id?: string;
   unit_name?: string;
   conversion_rate?: number;
-  conversion?: number;
   to_unit_id?: string;
-  basePrice?: number;
-  sellPrice?: number;
+  base_price?: number;
+  sell_price?: number;
 }
 
 export interface ItemType {

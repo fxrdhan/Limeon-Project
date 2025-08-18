@@ -23,10 +23,9 @@ export interface PackageConversion {
   unit_name: string;
   to_unit_id: string;
   unit: UnitData;
-  conversion: number;
-  basePrice: number;
-  sellPrice: number;
   conversion_rate: number;
+  base_price: number;
+  sell_price: number;
 }
 
 export interface DBPackageConversion {

@@ -12,19 +12,19 @@ export interface UsePackageConversionReturn {
   setSellPrice: React.Dispatch<React.SetStateAction<number>>;
   addPackageConversion: (
     packageConversion: Omit<PackageConversion, 'id'> & {
-      basePrice?: number;
-      sellPrice?: number;
+      base_price?: number;
+      sell_price?: number;
     }
   ) => void;
   removePackageConversion: (id: string) => void;
   packageConversionFormData: {
     unit: string;
-    conversion: number;
+    conversion_rate: number;
   };
   setPackageConversionFormData: React.Dispatch<
     React.SetStateAction<{
       unit: string;
-      conversion: number;
+      conversion_rate: number;
     }>
   >;
   recalculateBasePrices: () => void;
