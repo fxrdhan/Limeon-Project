@@ -28,8 +28,8 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   });
 
   return (
-    <div className="flex items-center justify-between mb-1 gap-2 pl-2">
-      <div className="flex items-center gap-4">
+    <div className="calendar-header">
+      <div className="calendar-header-controls">
         <Dropdown
           mode="text"
           portalWidth="120px"
@@ -57,10 +57,10 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         />
       </div>
 
-      <div className="flex items-center">
+      <div className="calendar-header-navigation">
         <button
           onClick={onNavigatePrev}
-          className="p-3 rounded-full hover:bg-gray-100 focus:outline-hidden transition-colors flex-shrink-0 cursor-pointer"
+          className="calendar-nav-button"
           aria-label="Previous month"
         >
           <FaChevronLeft size={12} />
@@ -68,7 +68,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
         <button
           onClick={onNavigateNext}
-          className="p-3 rounded-full hover:bg-gray-100 focus:outline-hidden transition-colors flex-shrink-0 cursor-pointer"
+          className="calendar-nav-button"
           aria-label="Next month"
         >
           <FaChevronRight size={12} />
