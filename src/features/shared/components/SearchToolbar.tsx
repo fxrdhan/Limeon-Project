@@ -1,13 +1,11 @@
 import { memo } from 'react';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import { TbTablePlus, TbDeviceFloppy, TbDownload } from 'react-icons/tb';
+import { TbTablePlus, TbDeviceFloppy } from 'react-icons/tb';
 import { ExportDropdown } from '@/components/export';
 import { GridApi } from 'ag-grid-community';
 import type { SearchColumn, FilterSearch } from '@/types/search';
 import {
   saveGridState,
-  downloadGridState,
-  hasSavedState,
   type TableType,
 } from '@/features/shared/utils/gridStateManager';
 
@@ -82,17 +80,6 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     }
   };
 
-  const handleDownloadState = () => {
-    if (currentTableType) {
-      downloadGridState(currentTableType);
-    }
-  };
-
-  // Check if saved state exists for current table
-  const hasExistingSavedState = currentTableType
-    ? hasSavedState(currentTableType)
-    : false;
-
   return (
     <>
       <div className="flex items-center">
@@ -111,32 +98,15 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
         </span>
 
-        {/* Save & Download State Buttons (Auto-restore handles restoration) */}
+        {/* Save State Button (Auto-restore handles restoration) */}
         {enableManualStateButtons && gridApi && currentTableType && (
-          <>
-            <span
-              className="inline-block ml-3 mb-2"
-              onClick={handleSaveState}
-              title={`Simpan Layout Grid ${currentTableType}`}
-            >
-              <TbDeviceFloppy className="h-7 w-7 text-blue-600 cursor-pointer hover:text-blue-500 transition-colors duration-200" />
-            </span>
-            <span
-              className={`inline-block ml-2 mb-2 ${
-                hasExistingSavedState
-                  ? 'text-purple-600 hover:text-purple-500 cursor-pointer'
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
-              onClick={hasExistingSavedState ? handleDownloadState : undefined}
-              title={
-                hasExistingSavedState
-                  ? `Download Layout Grid ${currentTableType} sebagai JSON`
-                  : `Tidak ada layout tersimpan untuk ${currentTableType}`
-              }
-            >
-              <TbDownload className="h-7 w-7 transition-colors duration-200" />
-            </span>
-          </>
+          <span
+            className="inline-block ml-3 mb-2"
+            onClick={handleSaveState}
+            title={`Simpan Layout Grid ${currentTableType}`}
+          >
+            <TbDeviceFloppy className="h-7 w-7 text-blue-600 cursor-pointer hover:text-blue-500 transition-colors duration-200" />
+          </span>
         )}
 
         <div className="inline-block ml-2 mb-1 mt-0.5">
