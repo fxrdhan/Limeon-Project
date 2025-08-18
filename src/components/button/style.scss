@@ -1,0 +1,91 @@
+@import 'tailwindcss' reference;
+
+// Button Base Styles
+.button-base {
+  @apply cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden;
+
+  &:not(.button-glow) {
+    @apply hover:opacity-80;
+  }
+
+  &.button-fullwidth {
+    @apply w-full;
+  }
+}
+
+// Button Sizes
+.button-sm {
+  @apply px-3 py-1.5 text-sm;
+}
+
+.button-md {
+  @apply px-4 py-2;
+}
+
+.button-lg {
+  @apply px-6 py-3 text-lg;
+}
+
+// Button Variants
+.button-text {
+  @apply text-gray-500 hover:text-black;
+
+  &.button-underline {
+    @apply hover:underline underline-offset-2 decoration-2;
+  }
+}
+
+.button-primary {
+  @apply rounded-lg ring-0 outline-hidden shadow-md flex items-center text-white hover:text-white;
+  background-color: oklch(50.8% 0.118 165.612);
+}
+
+.button-secondary {
+  @apply rounded-lg ring-0 outline-hidden flex items-center text-white hover:text-white;
+  background-color: oklch(59.6% 0.145 163.225);
+}
+
+.button-danger {
+  @apply hover:text-white outline-hidden;
+  color: oklch(57.7% 0.245 27.325);
+
+  &:hover {
+    background-color: oklch(57.7% 0.245 27.325 / 0.8);
+    opacity: 1 !important;
+  }
+}
+
+.button-text-danger {
+  @apply hover:bg-red-100 outline-hidden;
+  color: oklch(57.7% 0.245 27.325);
+
+  &:hover {
+    color: oklch(57.7% 0.245 27.325);
+    opacity: 1 !important;
+  }
+}
+
+// Glow Effects
+.button-glow {
+  &.button-primary {
+    &:hover,
+    &:focus {
+      box-shadow:
+        0 0 5px oklch(50.8% 0.118 165.612),
+        0 0 15px oklch(50.8% 0.118 165.612),
+        0 0 30px oklch(50.8% 0.118 165.612);
+    }
+  }
+
+  &.button-danger,
+  &.button-text-danger {
+    &:hover,
+    &:focus {
+      box-shadow:
+        0 0 5px oklch(57.7% 0.245 27.325),
+        0 0 15px oklch(57.7% 0.245 27.325),
+        0 0 30px oklch(57.7% 0.245 27.325);
+    }
+  }
+}
