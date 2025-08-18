@@ -52,6 +52,34 @@ export const saveGridState = (
   }
 };
 
+// Auto-save grid state silently (no toast notifications for live save)
+export const autoSaveGridState = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
+  try {
+    if (!gridApi || gridApi.isDestroyed()) {
+      return false;
+    }
+
+    const currentState = gridApi.getState();
+    const storageKey = getStorageKey(tableType);
+
+    // Exclude pagination state to prevent conflicts with custom pagination controls
+    const stateToSave = {
+      ...currentState,
+      pagination: undefined, // Remove pagination state
+    };
+
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+
+    return true;
+  } catch (error) {
+    console.error('Failed to auto-save grid state:', error);
+    return false;
+  }
+};
+
 // Restore grid state from localStorage (excluding pagination to avoid conflicts)
 export const restoreGridState = (
   gridApi: GridApi,

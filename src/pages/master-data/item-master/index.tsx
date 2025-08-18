@@ -575,15 +575,7 @@ const ItemMasterNew = memo(() => {
     [activeTab, enhancedItemOnGridReady, entityOnGridReady]
   );
 
-  const unifiedColumnPinnedHandler = useCallback(() => {
-    // Column pinning is now handled by AG Grid sidebar
-    // Event handled by AG Grid's built-in functionality
-  }, []);
-
-  const unifiedColumnMovedHandler = useCallback(() => {
-    // Column ordering is now handled by AG Grid sidebar
-    // Event handled by AG Grid's built-in functionality
-  }, []);
+  // Removed unified column handlers - now handled by live save in MasterDataGrid
 
   // No need for mouse handlers - handled by SlidingSelector
 
@@ -661,9 +653,6 @@ const ItemMasterNew = memo(() => {
                             ? 'produsen-item'
                             : 'satuan-item'
               }
-              // Enable manual state management buttons
-              enableManualStateButtons={true}
-              currentTableType={activeTab}
             />
           </div>
         </div>
@@ -706,9 +695,6 @@ const ItemMasterNew = memo(() => {
                 ? itemDoesExternalFilterPass
                 : entityDoesExternalFilterPass
             }
-            onColumnPinned={unifiedColumnPinnedHandler}
-            onColumnMoved={unifiedColumnMovedHandler}
-            onColumnVisible={undefined}
             onGridApiReady={handleUnifiedGridApiReady}
             itemsPerPage={itemsManagement.itemsPerPage}
             isRowGroupingEnabled={
