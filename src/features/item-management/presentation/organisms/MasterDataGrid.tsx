@@ -600,6 +600,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getMainMenuItems}
+          rowSelection={{
+            mode: 'multiRow',
+            checkboxes: false,
+            headerCheckbox: false,
+          }}
           // Live save event handlers
           onColumnResized={handleColumnResized}
           onColumnMoved={handleColumnMoved}
