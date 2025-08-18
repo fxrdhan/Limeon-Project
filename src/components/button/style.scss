@@ -1,5 +1,51 @@
 @import 'tailwindcss' reference;
 
+// CSS Custom Properties for Theme
+:root {
+  --button-primary-hue: 165.612;
+  --button-primary-chroma: 0.118;
+  --button-primary-lightness: 50.8%;
+
+  --button-secondary-hue: 163.225;
+  --button-secondary-chroma: 0.145;
+  --button-secondary-lightness: 59.6%;
+
+  --button-danger-hue: 27.325;
+  --button-danger-chroma: 0.245;
+  --button-danger-lightness: 57.7%;
+
+  // Computed colors
+  --button-primary-color: oklch(
+    var(--button-primary-lightness) var(--button-primary-chroma)
+      var(--button-primary-hue)
+  );
+  --button-secondary-color: oklch(
+    var(--button-secondary-lightness) var(--button-secondary-chroma)
+      var(--button-secondary-hue)
+  );
+  --button-danger-color: oklch(
+    var(--button-danger-lightness) var(--button-danger-chroma)
+      var(--button-danger-hue)
+  );
+}
+
+// SCSS Mixins for Better Composition
+@mixin glow-effect($color) {
+  &:hover,
+  &:focus {
+    box-shadow:
+      0 0 5px $color,
+      0 0 15px $color,
+      0 0 30px $color;
+  }
+}
+
+@mixin button-color-variant($bg-color, $text-color: white) {
+  @apply rounded-lg ring-0 outline-hidden flex items-center text-white hover:text-white;
+  background-color: $bg-color;
+  color: $text-color;
+}
+
 // Button Base Styles
 .button-base {
   @apply cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out;
@@ -37,31 +83,34 @@
 }
 
 .button-primary {
-  @apply rounded-lg ring-0 outline-hidden shadow-md flex items-center text-white hover:text-white;
-  background-color: oklch(50.8% 0.118 165.612);
+  @include button-color-variant(var(--button-primary-color));
+  @apply shadow-md;
 }
 
 .button-secondary {
-  @apply rounded-lg ring-0 outline-hidden flex items-center text-white hover:text-white;
-  background-color: oklch(59.6% 0.145 163.225);
+  @include button-color-variant(var(--button-secondary-color));
 }
 
 .button-danger {
   @apply hover:text-white outline-hidden;
-  color: oklch(57.7% 0.245 27.325);
+  color: var(--button-danger-color);
 
   &:hover {
-    background-color: oklch(57.7% 0.245 27.325 / 0.8);
+    background-color: color-mix(
+      in oklch,
+      var(--button-danger-color) 80%,
+      transparent
+    );
     opacity: 1 !important;
   }
 }
 
 .button-text-danger {
   @apply hover:bg-red-100 outline-hidden;
-  color: oklch(57.7% 0.245 27.325);
+  color: var(--button-danger-color);
 
   &:hover {
-    color: oklch(57.7% 0.245 27.325);
+    color: var(--button-danger-color);
     opacity: 1 !important;
   }
 }
@@ -69,23 +118,15 @@
 // Glow Effects
 .button-glow {
   &.button-primary {
-    &:hover,
-    &:focus {
-      box-shadow:
-        0 0 5px oklch(50.8% 0.118 165.612),
-        0 0 15px oklch(50.8% 0.118 165.612),
-        0 0 30px oklch(50.8% 0.118 165.612);
-    }
+    @include glow-effect(var(--button-primary-color));
+  }
+
+  &.button-secondary {
+    @include glow-effect(var(--button-secondary-color));
   }
 
   &.button-danger,
   &.button-text-danger {
-    &:hover,
-    &:focus {
-      box-shadow:
-        0 0 5px oklch(57.7% 0.245 27.325),
-        0 0 15px oklch(57.7% 0.245 27.325),
-        0 0 30px oklch(57.7% 0.245 27.325);
-    }
+    @include glow-effect(var(--button-danger-color));
   }
 }
