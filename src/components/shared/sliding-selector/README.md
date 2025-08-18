@@ -248,7 +248,7 @@ The component is used throughout the application:
 'absolute inset-0 bg-primary shadow-xs';
 
 // Button hover states
-'hover:bg-emerald-100 hover:text-emerald-700';
+'hover:bg-primary/10 hover:text-primary';
 ```
 
 ### Custom Styling

@@ -196,7 +196,7 @@ export const SlidingSelector = <T,>({
                   sizeClasses.button,
                   shapeClasses.button,
                   {
-                    'hover:bg-emerald-100 hover:text-emerald-700':
+                    'hover:bg-primary/10 hover:text-primary':
                       !isActive && !option.disabled,
                     'opacity-50 cursor-not-allowed': option.disabled,
                   }
@@ -224,7 +224,7 @@ export const SlidingSelector = <T,>({
                     sizeClasses.text,
                     {
                       'text-white': isActive,
-                      'text-gray-700 group-hover:text-emerald-700':
+                      'text-gray-700 group-hover:text-primary':
                         !isActive && !option.disabled,
                     }
                   )}
@@ -280,7 +280,7 @@ export const SlidingSelector = <T,>({
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="w-4 h-4 text-gray-600 group-hover:text-emerald-700"
+                  className="w-4 h-4 text-gray-600 group-hover:text-primary"
                 >
                   <svg
                     fill="none"

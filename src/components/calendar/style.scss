@@ -39,15 +39,20 @@
     }
 
     @if $selected {
-      @apply bg-emerald-700 text-white font-semibold;
+      @apply text-white font-semibold;
+      background-color: var(
+        --color-primary
+      ); // Use Tailwind v4 CSS custom property
 
       &:hover {
-        @apply ring-2 ring-emerald-200 text-emerald-700;
+        @apply ring-2 ring-emerald-200;
+        color: var(--color-primary); // Use Tailwind v4 CSS custom property
       }
     } @else if $highlighted {
       @apply bg-emerald-50 ring-2 ring-emerald-200;
     } @else if $today {
-      @apply ring ring-emerald-200 text-emerald-700;
+      @apply ring ring-emerald-200;
+      color: var(--color-primary); // Use Tailwind v4 CSS custom property
     }
   }
 }
