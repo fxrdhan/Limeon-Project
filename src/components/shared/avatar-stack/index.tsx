@@ -55,8 +55,11 @@ const Avatar = memo(
     return (
       <motion.div
         layoutId={`avatar-${user.id}`}
-        layout
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        layout="position"
+        transition={{
+          layout: { duration: 0.3, ease: 'easeInOut' },
+        }}
+        style={{ opacity: 1, zIndex: isInPortal ? 1 : 10 - index }}
         className={`
         relative rounded-full border border-white shadow-sm
         ${sizeClasses[size]}
@@ -64,7 +67,6 @@ const Avatar = memo(
         ${isInPortal ? 'flex-shrink-0' : ''}
       `}
         title={`${user.name} - Online`}
-        style={{ zIndex: isInPortal ? 1 : 10 - index }}
       >
         {user.profilephoto ? (
           <img
@@ -84,7 +86,7 @@ const Avatar = memo(
         ) : (
           <div
             className={`
-          w-full h-full rounded-full flex items-center justify-center 
+          w-full h-full rounded-full flex items-center justify-center
           text-white font-medium ${getInitialsColor(user.id)}
         `}
           >
