@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useRef } from 'react';
 import { motion, LayoutGroup } from 'framer-motion';
 import type { OnlineUser } from '@/types';
 
@@ -7,6 +7,9 @@ interface AvatarStackProps {
   maxVisible?: number;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  showPortal?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 interface AvatarProps {
@@ -100,10 +103,11 @@ const AvatarStack = memo(
     maxVisible = 3,
     size = 'md',
     className = '',
+    showPortal = false,
+    onMouseEnter,
+    onMouseLeave,
   }: AvatarStackProps) => {
-    const [showPortal, setShowPortal] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const visibleUsers = users.slice(0, maxVisible);
     const hiddenCount = Math.max(0, users.length - maxVisible);
@@ -141,40 +145,6 @@ const AvatarStack = memo(
       return colors[index % colors.length];
     };
 
-    // Handle hover with delay
-    const handleMouseEnter = () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
-
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShowPortal(true);
-        hoverTimeoutRef.current = null;
-      }, 300);
-    };
-
-    const handleMouseLeave = () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
-
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShowPortal(false);
-        hoverTimeoutRef.current = null;
-      }, 150);
-    };
-
-    // Cleanup timeout on unmount
-    useEffect(() => {
-      return () => {
-        if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-        }
-      };
-    }, []);
-
     return (
       <LayoutGroup>
         <div
@@ -183,11 +153,7 @@ const AvatarStack = memo(
         >
           {!showPortal ? (
             // Navbar Stack View
-            <div
-              className="flex items-center"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
+            <div className="flex items-center">
               {visibleUsers.map((user, index) => (
                 <Avatar
                   key={user.id}
@@ -227,8 +193,8 @@ const AvatarStack = memo(
               exit={{ opacity: 0, scale: 0.9, y: -10 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
               className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 min-w-64"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
             >
               <div className="space-y-3">
                 {users.map((user, index) => (
