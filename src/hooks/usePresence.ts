@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { OnlineUser } from '@/types';
 
 // Helper function to count unique users from presence state
 const countUniqueUsers = (presenceState: Record<string, unknown>) => {
@@ -25,9 +26,54 @@ const countUniqueUsers = (presenceState: Record<string, unknown>) => {
   return count;
 };
 
+// Helper function to get unique user IDs from presence state
+const getUniqueUserIds = (presenceState: Record<string, unknown>): string[] => {
+  const uniqueUsers = new Set<string>();
+  Object.values(presenceState).forEach((presence: unknown) => {
+    if (Array.isArray(presence)) {
+      presence.forEach((p: unknown) => {
+        if (
+          p &&
+          typeof p === 'object' &&
+          'user_id' in p &&
+          typeof p.user_id === 'string'
+        ) {
+          uniqueUsers.add(p.user_id);
+        }
+      });
+    }
+  });
+  return Array.from(uniqueUsers);
+};
+
+// Helper function to fetch user details for online users
+const fetchOnlineUsers = async (userIds: string[]): Promise<OnlineUser[]> => {
+  if (userIds.length === 0) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, profilephoto')
+      .in('id', userIds);
+
+    if (error) {
+      console.error('Error fetching online users:', error);
+      return [];
+    }
+
+    return data.map(user => ({
+      ...user,
+      online_at: new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.error('Error fetching online users:', error);
+    return [];
+  }
+};
+
 export const usePresence = () => {
   const { user } = useAuthStore();
-  const { setChannel, setOnlineUsers } = usePresenceStore();
+  const { setChannel, setOnlineUsers, setOnlineUsersList } = usePresenceStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isSetupRef = useRef(false);
   const isConnectedRef = useRef(false);
@@ -35,6 +81,29 @@ export const usePresence = () => {
   const setupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoggedCount = useRef<number>(-1);
   const lastEventType = useRef<string>('');
+
+  // Helper to handle presence state changes
+  const handlePresenceChange = useCallback(
+    async (presenceState: Record<string, unknown>) => {
+      const userCount = countUniqueUsers(presenceState);
+      const userIds = getUniqueUserIds(presenceState);
+
+      setOnlineUsers(userCount);
+
+      // Fetch user details for the online users
+      try {
+        const onlineUsers = await fetchOnlineUsers(userIds);
+        setOnlineUsersList(onlineUsers);
+      } catch (error) {
+        console.error('Error updating online users list:', error);
+        // Keep the count but clear the list on error
+        setOnlineUsersList([]);
+      }
+
+      return { userCount, userIds };
+    },
+    [setOnlineUsers, setOnlineUsersList]
+  );
 
   const logPresenceUpdate = (
     eventType: string,
@@ -123,50 +192,26 @@ export const usePresence = () => {
 
       // Set up event handlers before subscribing
       newChannel
-        .on('presence', { event: 'sync' }, () => {
+        .on('presence', { event: 'sync' }, async () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          const userCount = countUniqueUsers(presenceState);
-          const userIds = Array.from(
-            new Set(
-              Object.values(presenceState)
-                .flat()
-                .map((p: unknown) => (p as { user_id?: string })?.user_id)
-                .filter((id): id is string => Boolean(id))
-            )
-          );
+          const { userCount, userIds } =
+            await handlePresenceChange(presenceState);
           logPresenceUpdate('sync', userCount, userIds);
-          setOnlineUsers(userCount);
         })
-        .on('presence', { event: 'join' }, () => {
+        .on('presence', { event: 'join' }, async () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          const userCount = countUniqueUsers(presenceState);
-          const userIds = Array.from(
-            new Set(
-              Object.values(presenceState)
-                .flat()
-                .map((p: unknown) => (p as { user_id?: string })?.user_id)
-                .filter((id): id is string => Boolean(id))
-            )
-          );
+          const { userCount, userIds } =
+            await handlePresenceChange(presenceState);
           logPresenceUpdate('join', userCount, userIds);
-          setOnlineUsers(userCount);
         })
-        .on('presence', { event: 'leave' }, () => {
+        .on('presence', { event: 'leave' }, async () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          const userCount = countUniqueUsers(presenceState);
-          const userIds = Array.from(
-            new Set(
-              Object.values(presenceState)
-                .flat()
-                .map((p: unknown) => (p as { user_id?: string })?.user_id)
-                .filter((id): id is string => Boolean(id))
-            )
-          );
+          const { userCount, userIds } =
+            await handlePresenceChange(presenceState);
           logPresenceUpdate('leave', userCount, userIds);
-          setOnlineUsers(userCount);
         });
 
       // Mark as subscribed before calling subscribe to prevent multiple calls
@@ -188,15 +233,27 @@ export const usePresence = () => {
             });
 
             // Set initial count to 1 (current user) if no presence state yet
-            setTimeout(() => {
+            setTimeout(async () => {
               if (!isConnectedRef.current) return;
               const presenceState = newChannel.presenceState();
               const userCount = countUniqueUsers(presenceState);
               if (userCount === 0) {
                 setOnlineUsers(1);
+                // Set current user in the list if available
+                if (user) {
+                  setOnlineUsersList([
+                    {
+                      id: user.id,
+                      name: user.name,
+                      email: user.email,
+                      profilephoto: user.profilephoto,
+                      online_at: new Date().toISOString(),
+                    },
+                  ]);
+                }
                 // console.log('🟡 No presence state detected, setting to 1 user');
               } else {
-                setOnlineUsers(userCount);
+                await handlePresenceChange(presenceState);
               }
             }, 100);
           } catch (trackError) {
@@ -228,15 +285,23 @@ export const usePresence = () => {
       // Set to 1 as fallback (current user)
       setOnlineUsers(1);
     }
-  }, [user, setChannel, setOnlineUsers, cleanupChannel]);
+  }, [
+    user,
+    setChannel,
+    setOnlineUsers,
+    setOnlineUsersList,
+    cleanupChannel,
+    handlePresenceChange,
+  ]);
 
   const cleanup = useCallback(async () => {
     await cleanupChannel();
     setChannel(null);
     setOnlineUsers(0);
+    setOnlineUsersList([]);
     isSetupRef.current = false;
     isSubscribedRef.current = false;
-  }, [cleanupChannel, setChannel, setOnlineUsers]);
+  }, [cleanupChannel, setChannel, setOnlineUsers, setOnlineUsersList]);
 
   useEffect(() => {
     if (user) {

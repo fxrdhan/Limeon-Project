@@ -4,10 +4,11 @@ import { usePresenceStore } from '@/store/presenceStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
+import AvatarStack from '@/components/shared/avatar-stack';
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
-  const { onlineUsers } = usePresenceStore();
+  const { onlineUsers, onlineUsersList } = usePresenceStore();
 
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
@@ -101,6 +102,14 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
           <DateTimeDisplay />
 
           <div className="h-5 w-px bg-gray-300 mx-4"></div>
+
+          {/* Avatar Stack */}
+          <AvatarStack
+            users={onlineUsersList}
+            maxVisible={4}
+            size="md"
+            className="mr-3"
+          />
 
           <div
             className="flex items-center text-sm text-gray-600 cursor-default"

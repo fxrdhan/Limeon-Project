@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { PresenceState } from '@/types';
+import type { PresenceState, OnlineUser } from '@/types';
 
 export const usePresenceStore = create<PresenceState>((set, get) => ({
   channel: null,
   onlineUsers: 0,
+  onlineUsersList: [],
   setChannel: (channel: RealtimeChannel | null) => {
     set({ channel });
   },
@@ -17,5 +18,8 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
     if (currentCount !== validCount) {
       set({ onlineUsers: validCount });
     }
+  },
+  setOnlineUsersList: (users: OnlineUser[]) => {
+    set({ onlineUsersList: users });
   },
 }));
