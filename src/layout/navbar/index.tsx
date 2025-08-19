@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
@@ -9,9 +10,45 @@ import AvatarStack from '@/components/shared/avatar-stack';
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
+  const [showPortal, setShowPortal] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
+
+  // Handle hover with delay for online text
+  const handleOnlineTextEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowPortal(true);
+      hoverTimeoutRef.current = null;
+    }, 300);
+  };
+
+  const handleOnlineTextLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowPortal(false);
+      hoverTimeoutRef.current = null;
+    }, 150);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <nav className="bg-white px-4 py-3 sticky top-0 z-20">
@@ -109,11 +146,15 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             maxVisible={4}
             size="md"
             className="mr-3"
+            showPortal={showPortal}
+            onMouseEnter={handleOnlineTextEnter}
+            onMouseLeave={handleOnlineTextLeave}
           />
 
           <div
-            className="flex items-center text-sm text-gray-600 cursor-default"
-            title={`${displayOnlineUsers} pengguna aktif`}
+            className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
+            onMouseEnter={handleOnlineTextEnter}
+            onMouseLeave={handleOnlineTextLeave}
           >
             <span className="font-medium">{displayOnlineUsers} Online</span>
           </div>
