@@ -26,7 +26,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     hoverTimeoutRef.current = setTimeout(() => {
       setShowPortal(true);
       hoverTimeoutRef.current = null;
-    }, 300);
+    }, 200);
   };
 
   const handleOnlineTextLeave = () => {
@@ -38,7 +38,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     hoverTimeoutRef.current = setTimeout(() => {
       setShowPortal(false);
       hoverTimeoutRef.current = null;
-    }, 150);
+    }, 100);
   };
 
   // Cleanup timeout on unmount

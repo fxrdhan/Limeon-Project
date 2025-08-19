@@ -51,6 +51,8 @@ const Avatar = memo(
     return (
       <motion.div
         layoutId={`avatar-${user.id}`}
+        layout
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={`
         relative rounded-full border border-white shadow-sm
         ${sizeClasses[size]}
@@ -188,21 +190,18 @@ const AvatarStack = memo(
           ) : (
             // Portal List View
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -10 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 min-w-64"
               onMouseEnter={onMouseEnter}
               onMouseLeave={onMouseLeave}
             >
               <div className="space-y-3">
                 {users.map((user, index) => (
-                  <motion.div
-                    key={`portal-${user.id}`}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.2 }}
+                  <div
+                    key={user.id}
                     className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
                   >
                     <Avatar
@@ -219,7 +218,7 @@ const AvatarStack = memo(
                     <motion.div
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + index * 0.1 }}
+                      transition={{ duration: 0.2, delay: 0.1 }}
                       className="flex-1 min-w-0"
                     >
                       <p className="text-sm font-medium text-gray-900 truncate">
@@ -229,7 +228,7 @@ const AvatarStack = memo(
                         {user.email}
                       </p>
                     </motion.div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </motion.div>
