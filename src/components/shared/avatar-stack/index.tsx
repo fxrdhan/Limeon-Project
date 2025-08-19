@@ -8,8 +8,6 @@ interface AvatarStackProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showPortal?: boolean;
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
 }
 
 interface AvatarProps {
@@ -20,6 +18,12 @@ interface AvatarProps {
   overlap?: boolean;
   getInitials: (name: string) => string;
   getInitialsColor: (userId: string) => string;
+}
+
+interface AvatarSkeletonProps {
+  size: 'sm' | 'md' | 'lg';
+  index?: number;
+  overlap?: boolean;
 }
 
 // Individual Avatar Component with shared layout
@@ -99,6 +103,40 @@ const Avatar = memo(
 
 Avatar.displayName = 'Avatar';
 
+// Avatar Skeleton Component
+const AvatarSkeleton = memo(
+  ({ size, index = 0, overlap = false }: AvatarSkeletonProps) => {
+    const sizeClasses = {
+      sm: 'w-6 h-6',
+      md: 'w-8 h-8',
+      lg: 'w-10 h-10',
+    };
+
+    const overlapClass = {
+      sm: '-ml-1',
+      md: '-ml-2',
+      lg: '-ml-3',
+    };
+
+    return (
+      <div
+        className={`
+        relative rounded-full border border-white shadow-sm
+        ${sizeClasses[size]}
+        ${overlap ? overlapClass[size] : ''}
+        bg-gray-200
+      `}
+        style={{ zIndex: 10 - index }}
+      >
+        {/* Skeleton online indicator */}
+        <div className="absolute bottom-0 right-0 w-2 h-2 bg-gray-300 rounded-full"></div>
+      </div>
+    );
+  }
+);
+
+AvatarSkeleton.displayName = 'AvatarSkeleton';
+
 const AvatarStack = memo(
   ({
     users,
@@ -106,8 +144,6 @@ const AvatarStack = memo(
     size = 'md',
     className = '',
     showPortal = false,
-    onMouseEnter,
-    onMouseLeave,
   }: AvatarStackProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -153,86 +189,69 @@ const AvatarStack = memo(
           className={`relative flex items-center ${className}`}
           ref={containerRef}
         >
-          {!showPortal ? (
-            // Navbar Stack View
-            <div className="flex items-center">
-              {visibleUsers.map((user, index) => (
-                <Avatar
-                  key={user.id}
-                  user={user}
-                  size={size}
-                  isInPortal={false}
-                  index={index}
-                  overlap={index > 0}
-                  getInitials={getInitials}
-                  getInitialsColor={getInitialsColor}
-                />
-              ))}
-
-              {/* Show overflow count */}
-              {hiddenCount > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className={`
-                    ${sizeClasses[size]} -ml-2
-                    rounded-full bg-gray-100 border border-white
-                    flex items-center justify-center text-gray-600 font-medium
-                    shadow-sm
-                  `}
-                  title={`+${hiddenCount} more online users`}
-                >
-                  +{hiddenCount}
-                </motion.div>
-              )}
-            </div>
-          ) : (
-            // Portal List View
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 min-w-64"
-              onMouseEnter={onMouseEnter}
-              onMouseLeave={onMouseLeave}
-            >
-              <div className="space-y-3">
-                {users.map((user, index) => (
-                  <div
+          <div className="flex items-center">
+            {!showPortal ? (
+              // Normal Avatar View
+              <>
+                {visibleUsers.map((user, index) => (
+                  <Avatar
                     key={user.id}
-                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    <Avatar
-                      user={user}
-                      size="portal"
-                      isInPortal={true}
-                      index={index}
-                      overlap={false}
-                      getInitials={getInitials}
-                      getInitialsColor={getInitialsColor}
-                    />
-
-                    {/* User Info */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2, delay: 0.1 }}
-                      className="flex-1 min-w-0"
-                    >
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user.email}
-                      </p>
-                    </motion.div>
-                  </div>
+                    user={user}
+                    size={size}
+                    isInPortal={false}
+                    index={index}
+                    overlap={index > 0}
+                    getInitials={getInitials}
+                    getInitialsColor={getInitialsColor}
+                  />
                 ))}
-              </div>
-            </motion.div>
-          )}
+
+                {/* Show overflow count */}
+                {hiddenCount > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className={`
+                      ${sizeClasses[size]} -ml-2
+                      rounded-full bg-gray-100 border border-white
+                      flex items-center justify-center text-gray-600 font-medium
+                      shadow-sm
+                    `}
+                    title={`+${hiddenCount} more online users`}
+                  >
+                    +{hiddenCount}
+                  </motion.div>
+                )}
+              </>
+            ) : (
+              // Skeleton View (maintains layout while portal is open)
+              <>
+                {visibleUsers.map((user, index) => (
+                  <AvatarSkeleton
+                    key={`skeleton-${user.id}`}
+                    size={size}
+                    index={index}
+                    overlap={index > 0}
+                  />
+                ))}
+
+                {/* Skeleton overflow count */}
+                {hiddenCount > 0 && (
+                  <div
+                    className={`
+                      ${sizeClasses[size]} -ml-2
+                      rounded-full bg-gray-200 border border-white
+                      flex items-center justify-center text-gray-400 font-medium
+                      shadow-sm
+                    `}
+                  >
+                    +{hiddenCount}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </LayoutGroup>
     );

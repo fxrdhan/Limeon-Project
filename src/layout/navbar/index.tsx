@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
@@ -15,6 +15,34 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
+
+  // Helper functions for avatar display
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getInitialsColor = (userId: string) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-yellow-500',
+      'bg-red-500',
+      'bg-gray-500',
+    ];
+
+    const index = userId
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
 
   // Handle hover with delay for online text
   const handleOnlineTextEnter = () => {
@@ -140,23 +168,91 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
           <div className="h-5 w-px bg-gray-300 mx-4"></div>
 
-          {/* Avatar Stack */}
-          <AvatarStack
-            users={onlineUsersList}
-            maxVisible={4}
-            size="md"
-            className="mr-3"
-            showPortal={showPortal}
-            onMouseEnter={handleOnlineTextEnter}
-            onMouseLeave={handleOnlineTextLeave}
-          />
+          {/* Avatar Stack + Online Text Group */}
+          <div className="relative">
+            <LayoutGroup>
+              <div
+                className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-md hover:bg-gray-50 transition-colors"
+                onMouseEnter={handleOnlineTextEnter}
+                onMouseLeave={handleOnlineTextLeave}
+              >
+                <AvatarStack
+                  users={onlineUsersList}
+                  maxVisible={4}
+                  size="md"
+                  showPortal={showPortal}
+                />
 
-          <div
-            className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
-            onMouseEnter={handleOnlineTextEnter}
-            onMouseLeave={handleOnlineTextLeave}
-          >
-            <span className="font-medium">{displayOnlineUsers} Online</span>
+                <div className="flex items-center text-sm text-gray-600">
+                  <span className="font-medium">
+                    {displayOnlineUsers} Online
+                  </span>
+                </div>
+              </div>
+            </LayoutGroup>
+
+            {/* Portal - outside of opacity group */}
+            <AnimatePresence>
+              {showPortal && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 p-3 z-50 min-w-64"
+                  onMouseEnter={handleOnlineTextEnter}
+                  onMouseLeave={handleOnlineTextLeave}
+                >
+                  <div className="space-y-3">
+                    {onlineUsersList.map(user => (
+                      <div
+                        key={user.id}
+                        className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        {/* Avatar with layoutId for shared transition */}
+                        <motion.div
+                          layoutId={`avatar-${user.id}`}
+                          layout
+                          transition={{ duration: 0.3, ease: 'easeInOut' }}
+                          className="relative rounded-full border border-white shadow-sm w-10 h-10 flex-shrink-0"
+                          title={`${user.name} - Online`}
+                        >
+                          {user.profilephoto ? (
+                            <img
+                              src={user.profilephoto}
+                              alt={user.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className={`w-full h-full rounded-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(user.id)}`}
+                            >
+                              {getInitials(user.name)}
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border border-white rounded-full"></div>
+                        </motion.div>
+
+                        {/* User Info */}
+                        <motion.div
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15, delay: 0.05 }}
+                          className="flex-1 min-w-0"
+                        >
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.email}
+                          </p>
+                        </motion.div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="h-5 w-px bg-gray-300 mx-5"></div>
