@@ -51,18 +51,20 @@ const Avatar = memo(
       lg: '-ml-3',
     };
 
-    const indicatorSize = size === 'portal' ? 'w-3 h-3' : 'w-2 h-2';
-
     return (
       <motion.div
         layoutId={`avatar-${user.id}`}
-        layout="position"
+        layout
         transition={{
-          layout: { duration: 0.3, ease: 'easeInOut' },
+          layout: {
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+          },
         }}
         style={{ opacity: 1, zIndex: isInPortal ? 1 : index + 1 }}
         className={`
-        relative rounded-full border border-white shadow-sm
+        relative rounded-full shadow-sm
         ${sizeClasses[size]}
         ${overlap && !isInPortal ? overlapClass[size as keyof typeof overlapClass] || '' : ''}
         ${isInPortal ? 'flex-shrink-0' : ''}
@@ -94,11 +96,6 @@ const Avatar = memo(
             {getInitials(user.name)}
           </div>
         )}
-
-        {/* Online indicator */}
-        <div
-          className={`absolute bottom-0 right-0 ${indicatorSize} bg-green-400 border border-white rounded-full`}
-        ></div>
       </motion.div>
     );
   }
@@ -124,16 +121,13 @@ const AvatarSkeleton = memo(
     return (
       <div
         className={`
-        relative rounded-full border border-white shadow-sm
+        relative rounded-full shadow-sm
         ${sizeClasses[size]}
         ${overlap ? overlapClass[size] : ''}
         bg-gray-200
       `}
         style={{ zIndex: index + 1 }}
-      >
-        {/* Skeleton online indicator */}
-        <div className="absolute bottom-0 right-0 w-2 h-2 bg-gray-300 rounded-full"></div>
-      </div>
+      />
     );
   }
 );
@@ -234,7 +228,7 @@ const AvatarStack = memo(
                     exit={{ opacity: 0, scale: 0.8 }}
                     className={`
                       ${sizeClasses[size]} -ml-2
-                      rounded-full bg-gray-100 border border-white
+                      rounded-full bg-gray-100
                       flex items-center justify-center text-gray-600 font-medium
                       shadow-sm
                     `}
@@ -261,7 +255,7 @@ const AvatarStack = memo(
                   <div
                     className={`
                       ${sizeClasses[size]} -ml-2
-                      rounded-full bg-gray-200 border border-white
+                      rounded-full bg-gray-200
                       flex items-center justify-center text-gray-400 font-medium
                       shadow-sm
                     `}
