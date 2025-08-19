@@ -613,6 +613,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getMainMenuItems}
+          enableFilterHandlers={true}
           rowSelection={{
             mode: 'multiRow',
             checkboxes: false,
@@ -672,6 +673,13 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                   suppressRowGroups: true, // Remove Row Groups section
                   suppressValues: true, // Remove Values (aggregate) section
                 },
+              },
+              {
+                id: 'filters-new',
+                labelDefault: 'Filters',
+                labelKey: 'filters',
+                iconKey: 'filter',
+                toolPanel: 'agNewFiltersToolPanel',
               },
             ],
             // No defaultToolPanel = sidebar closed by default
