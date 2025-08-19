@@ -490,6 +490,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   );
 
   // Custom menu items for ALL tabs (items + 6 entities)
+  // @ts-expect-error - Complex union types causing issues with AG-Grid's GetMainMenuItems interface
   const getMainMenuItems: GetMainMenuItems = useCallback(
     params => {
       if (!params.column) {
@@ -497,13 +498,25 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       }
 
       const colId = params.column.getColId();
+      const colDef = params.column.getColDef();
+
+      // Base menu items for all columns
       const baseMenuItems = [
+        'sortAscending',
+        'sortDescending',
+        'separator',
         'columnFilter',
         'separator',
         'pinSubMenu',
-        'separator',
-        'autoSizeAll', // Available for ALL tabs now
-      ] as const;
+      ];
+
+      // Conditionally add Group By only for columns that support it
+      const menuWithGroupBy = colDef.enableRowGroup
+        ? [...baseMenuItems, 'separator', 'rowGroup']
+        : baseMenuItems;
+
+      // Always add autoSizeAll at the end
+      const finalMenuItems = [...menuWithGroupBy, 'separator', 'autoSizeAll'];
 
       // Items tab: Add toggle menu for reference columns
       if (activeTab === 'items' && isReferenceColumn(colId)) {
@@ -511,7 +524,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         const nextMode = currentMode === 'name' ? 'kode' : 'nama';
 
         return [
-          ...baseMenuItems,
+          ...finalMenuItems,
           'separator',
           {
             name: `Tampilkan ${nextMode}`,
@@ -523,8 +536,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         ];
       }
 
-      // Entity tabs: Standard menu with autosize
-      return [...baseMenuItems];
+      // Entity tabs: Standard menu with conditional group by
+      return finalMenuItems;
     },
     [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );

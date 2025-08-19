@@ -176,14 +176,26 @@ export const getPinOnlyMenuItems: GetMainMenuItems = () => {
 };
 
 /**
- * Show Pin Column and Filter options
+ * Show Pin Column and Filter options with Sorting and conditional Group By
  */
-export const getPinAndFilterMenuItems: GetMainMenuItems = () => {
-  return [
-    'columnFilter', // Column filter option
+// @ts-expect-error - AG-Grid typing issues with conditional menu items
+export const getPinAndFilterMenuItems: GetMainMenuItems = params => {
+  const baseItems = [
+    'sortAscending',
+    'sortDescending',
     'separator',
-    'pinSubMenu', // Pin Column submenu with Left/Right/No Pin options
+    'columnFilter',
+    'separator',
+    'pinSubMenu',
   ];
+
+  // Only add Group By if column supports it
+  const colDef = params.column?.getColDef();
+  if (colDef?.enableRowGroup) {
+    return [...baseItems, 'separator', 'rowGroup'];
+  }
+
+  return baseItems;
 };
 
 /**

@@ -1,6 +1,11 @@
 import React, { forwardRef, useCallback } from 'react';
 import { AgGridReact, AgGridReactProps } from 'ag-grid-react';
-import { GetMainMenuItems, FirstDataRenderedEvent } from 'ag-grid-community';
+import {
+  GetMainMenuItems,
+  FirstDataRenderedEvent,
+  GetContextMenuItems,
+  ColumnMenuTab,
+} from 'ag-grid-community';
 import { getDefaultGridConfig } from './gridSetup';
 
 // Simple interface - extend AgGridReactProps and add commonly used shortcuts
@@ -10,7 +15,9 @@ interface DataGridProps extends AgGridReactProps {
   autoSizeColumns?: string[];
   sizeColumnsToFit?: boolean;
   disableFiltering?: boolean;
+  // Keep backward compatibility with old prop name
   mainMenuItems?: GetMainMenuItems;
+  getContextMenuItems?: GetContextMenuItems;
 }
 
 const DataGrid = forwardRef<AgGridReact, DataGridProps>(
@@ -22,6 +29,7 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       sizeColumnsToFit,
       disableFiltering,
       mainMenuItems,
+      getContextMenuItems: customGetContextMenuItems,
       onFirstDataRendered,
       ...props
     },
@@ -32,14 +40,28 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
     // Modify default config based on props
     const finalConfig = {
       ...defaultConfig,
-      ...(disableFiltering && {
-        defaultColDef: {
-          ...defaultConfig.defaultColDef,
+      // Apply conditional defaultColDef modifications
+      defaultColDef: {
+        ...defaultConfig.defaultColDef,
+        // Add menuTabs only if no custom mainMenuItems provided AND not disabling filtering
+        ...(!mainMenuItems &&
+          !disableFiltering && {
+            menuTabs: [
+              'filterMenuTab',
+              'generalMenuTab',
+              'columnsMenuTab',
+            ] as ColumnMenuTab[],
+          }),
+        // Disable filtering if requested
+        ...(disableFiltering && {
           filter: false,
-          menuTabs: [],
-        },
+          menuTabs: [] as ColumnMenuTab[],
+        }),
+      },
+      // Override context menu if custom one provided
+      ...(customGetContextMenuItems && {
+        getContextMenuItems: customGetContextMenuItems,
       }),
-      ...(mainMenuItems && { mainMenuItems }),
     };
 
     const handleFirstDataRendered = useCallback(() => {
@@ -61,6 +83,8 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
           ref={ref}
           {...finalConfig}
           {...props}
+          // Convert mainMenuItems to correct ag-grid prop name
+          {...(mainMenuItems && { getMainMenuItems: mainMenuItems })}
           onFirstDataRendered={handleFirstDataRendered}
         />
       </div>

@@ -3,7 +3,6 @@ import {
   themeQuartz,
   ColDef,
   GetRowIdParams,
-  ColumnMenuTab,
   GetContextMenuItems,
   ClientSideRowModelModule,
   PaginationModule,
@@ -82,11 +81,10 @@ export const defaultTheme = themeQuartz.withParams({
 export const defaultColDef: ColDef = {
   cellDataType: false,
   enableCellChangeFlash: true,
-  menuTabs: [
-    'filterMenuTab' as ColumnMenuTab,
-    'generalMenuTab' as ColumnMenuTab,
-    'columnsMenuTab' as ColumnMenuTab,
-  ],
+  sortable: true, // Enable sorting by default
+  resizable: true, // Enable column resizing by default
+  // menuTabs removed - let individual grids control this
+  // This allows mainMenuItems to work properly
 };
 
 // Default getRowId function
