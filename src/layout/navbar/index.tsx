@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
@@ -186,26 +186,22 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
           {/* Avatar Stack + Online Text Group */}
           <div className="relative">
-            <LayoutGroup>
-              <div
-                className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-md hover:bg-gray-50 transition-colors"
-                onMouseEnter={handleOnlineTextEnter}
-                onMouseLeave={handleOnlineTextLeave}
-              >
-                <AvatarStack
-                  users={reorderedOnlineUsers}
-                  maxVisible={4}
-                  size="md"
-                  showPortal={showPortal}
-                />
+            <div
+              className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-md hover:bg-gray-50 transition-colors"
+              onMouseEnter={handleOnlineTextEnter}
+              onMouseLeave={handleOnlineTextLeave}
+            >
+              <AvatarStack
+                users={reorderedOnlineUsers}
+                maxVisible={4}
+                size="md"
+                showPortal={showPortal}
+              />
 
-                <div className="flex items-center text-sm text-gray-600">
-                  <span className="font-medium">
-                    {displayOnlineUsers} Online
-                  </span>
-                </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="font-medium">{displayOnlineUsers} Online</span>
               </div>
-            </LayoutGroup>
+            </div>
 
             {/* Portal - restructured to prevent avatar opacity inheritance */}
             <AnimatePresence>
@@ -232,30 +228,28 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                           key={user.id}
                           className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          {/* Avatar with layoutId for shared transition */}
+                          {/* Avatar in portal */}
                           <motion.div
-                            layoutId={`avatar-${user.id}`}
-                            layout
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1.25 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
                             transition={{
-                              layout: {
-                                type: 'spring',
-                                stiffness: 300,
-                                damping: 30,
-                              },
+                              duration: 0.2,
+                              ease: 'easeOut',
                             }}
-                            style={{ opacity: 1 }}
-                            className="relative rounded-full shadow-sm w-10 h-10 flex-shrink-0"
+                            className="relative rounded-full shadow-sm w-8 h-8 flex-shrink-0 overflow-hidden"
                             title={`${user.name} - Online`}
                           >
                             {user.profilephoto ? (
                               <img
                                 src={user.profilephoto}
                                 alt={user.name}
-                                className="w-full h-full rounded-full object-cover"
+                                className="w-full h-full object-cover"
+                                draggable={false}
                               />
                             ) : (
                               <div
-                                className={`w-full h-full rounded-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(user.id)}`}
+                                className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(user.id)}`}
                               >
                                 {getInitials(user.name)}
                               </div>
