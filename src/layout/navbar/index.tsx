@@ -226,7 +226,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     onMouseEnter={handleOnlineTextEnter}
                     onMouseLeave={handleOnlineTextLeave}
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       {reorderedOnlineUsers.map(user => (
                         <div
                           key={user.id}
@@ -235,12 +235,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                           {/* Avatar with layoutId for shared transition */}
                           <motion.div
                             layoutId={`avatar-${user.id}`}
-                            layout="position"
+                            layout
                             transition={{
-                              layout: { duration: 0.3, ease: 'easeInOut' },
+                              layout: {
+                                type: 'spring',
+                                stiffness: 300,
+                                damping: 30,
+                              },
                             }}
                             style={{ opacity: 1 }}
-                            className="relative rounded-full border border-white shadow-sm w-10 h-10 flex-shrink-0"
+                            className="relative rounded-full shadow-sm w-10 h-10 flex-shrink-0"
                             title={`${user.name} - Online`}
                           >
                             {user.profilephoto ? (
@@ -256,7 +260,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                 {getInitials(user.name)}
                               </div>
                             )}
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border border-white rounded-full"></div>
                           </motion.div>
 
                           {/* User Info */}
