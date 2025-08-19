@@ -1,5 +1,16 @@
 export { default as DataGrid } from './DataGrid';
 export type { DataGridProps, DataGridRef } from './DataGrid';
+
+// Grid setup and configuration
+export {
+  getDefaultGridConfig,
+  defaultTheme,
+  defaultColDef,
+  getRowId,
+  getContextMenuItems,
+} from './gridSetup';
+
+// Column helpers
 export {
   createTextColumn,
   createWrapTextColumn,
