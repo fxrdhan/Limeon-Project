@@ -505,8 +505,6 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         'sortAscending',
         'sortDescending',
         'separator',
-        'columnFilter',
-        'separator',
         'pinSubMenu',
       ];
 
@@ -674,13 +672,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                   suppressValues: true, // Remove Values (aggregate) section
                 },
               },
-              {
-                id: 'filters-new',
-                labelDefault: 'Filters',
-                labelKey: 'filters',
-                iconKey: 'filter',
-                toolPanel: 'agNewFiltersToolPanel',
-              },
+              'filters-new', // Shortcut untuk New Filters Tool Panel
             ],
             // No defaultToolPanel = sidebar closed by default
           }}

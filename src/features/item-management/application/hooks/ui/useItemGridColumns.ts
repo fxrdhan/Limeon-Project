@@ -41,19 +41,22 @@ export const useItemGridColumns = () => {
           headerName: 'Produsen',
           valueGetter: params => params.data?.manufacturer?.name || '-',
         }),
-        filter: 'agTextColumnFilter',
+        filter: 'agSelectableColumnFilter',
         filterParams: {
-          filterOptions: [
-            'contains',
-            'notContains',
-            'equals',
-            'notEqual',
-            'startsWith',
-            'endsWith',
+          filters: [
+            {
+              filter: true, // Simple Filter (text filter)
+              name: 'Simple Filter',
+            },
+            {
+              filter: 'agSetColumnFilter', // Selection Filter (set filter)
+              name: 'Selection Filter',
+            },
+            {
+              filter: 'agMultiColumnFilter', // Multi Filter
+              name: 'Multi Filter',
+            },
           ],
-          defaultOption: 'contains',
-          suppressAndOrCondition: false,
-          caseSensitive: false,
         },
         suppressHeaderFilterButton: true,
         enableRowGroup: true,
@@ -107,19 +110,22 @@ export const useItemGridColumns = () => {
           field: 'category.name',
           headerName: 'Kategori',
         }),
-        filter: 'agTextColumnFilter',
+        filter: 'agSelectableColumnFilter',
         filterParams: {
-          filterOptions: [
-            'contains',
-            'notContains',
-            'equals',
-            'notEqual',
-            'startsWith',
-            'endsWith',
+          filters: [
+            {
+              filter: true, // Simple Filter (text filter)
+              name: 'Simple Filter',
+            },
+            {
+              filter: 'agSetColumnFilter', // Selection Filter (set filter)
+              name: 'Selection Filter',
+            },
+            {
+              filter: 'agMultiColumnFilter', // Multi Filter
+              name: 'Multi Filter',
+            },
           ],
-          defaultOption: 'contains',
-          suppressAndOrCondition: false,
-          caseSensitive: false,
         },
         suppressHeaderFilterButton: true,
         enableRowGroup: true,
@@ -129,19 +135,22 @@ export const useItemGridColumns = () => {
           field: 'type.name',
           headerName: 'Jenis',
         }),
-        filter: 'agTextColumnFilter',
+        filter: 'agSelectableColumnFilter',
         filterParams: {
-          filterOptions: [
-            'contains',
-            'notContains',
-            'equals',
-            'notEqual',
-            'startsWith',
-            'endsWith',
+          filters: [
+            {
+              filter: true, // Simple Filter (text filter)
+              name: 'Simple Filter',
+            },
+            {
+              filter: 'agSetColumnFilter', // Selection Filter (set filter)
+              name: 'Selection Filter',
+            },
+            {
+              filter: 'agMultiColumnFilter', // Multi Filter
+              name: 'Multi Filter',
+            },
           ],
-          defaultOption: 'contains',
-          suppressAndOrCondition: false,
-          caseSensitive: false,
         },
         suppressHeaderFilterButton: true,
         enableRowGroup: true,
@@ -151,19 +160,22 @@ export const useItemGridColumns = () => {
           field: 'package.name',
           headerName: 'Kemasan',
         }),
-        filter: 'agTextColumnFilter',
+        filter: 'agSelectableColumnFilter',
         filterParams: {
-          filterOptions: [
-            'contains',
-            'notContains',
-            'equals',
-            'notEqual',
-            'startsWith',
-            'endsWith',
+          filters: [
+            {
+              filter: true, // Simple Filter (text filter)
+              name: 'Simple Filter',
+            },
+            {
+              filter: 'agSetColumnFilter', // Selection Filter (set filter)
+              name: 'Selection Filter',
+            },
+            {
+              filter: 'agMultiColumnFilter', // Multi Filter
+              name: 'Multi Filter',
+            },
           ],
-          defaultOption: 'contains',
-          suppressAndOrCondition: false,
-          caseSensitive: false,
         },
         suppressHeaderFilterButton: true,
         enableRowGroup: true,
@@ -175,19 +187,22 @@ export const useItemGridColumns = () => {
 
           valueGetter: params => params.data?.dosage?.name || '-',
         }),
-        filter: 'agTextColumnFilter',
+        filter: 'agSelectableColumnFilter',
         filterParams: {
-          filterOptions: [
-            'contains',
-            'notContains',
-            'equals',
-            'notEqual',
-            'startsWith',
-            'endsWith',
+          filters: [
+            {
+              filter: true, // Simple Filter (text filter)
+              name: 'Simple Filter',
+            },
+            {
+              filter: 'agSetColumnFilter', // Selection Filter (set filter)
+              name: 'Selection Filter',
+            },
+            {
+              filter: 'agMultiColumnFilter', // Multi Filter
+              name: 'Multi Filter',
+            },
           ],
-          defaultOption: 'contains',
-          suppressAndOrCondition: false,
-          caseSensitive: false,
         },
         suppressHeaderFilterButton: true,
         enableRowGroup: true,
