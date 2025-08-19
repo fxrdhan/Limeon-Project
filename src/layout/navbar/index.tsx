@@ -191,66 +191,78 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
               </div>
             </LayoutGroup>
 
-            {/* Portal - outside of opacity group */}
+            {/* Portal - restructured to prevent avatar opacity inheritance */}
             <AnimatePresence>
               {showPortal && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 p-3 z-50 min-w-64"
-                  onMouseEnter={handleOnlineTextEnter}
-                  onMouseLeave={handleOnlineTextLeave}
-                >
-                  <div className="space-y-3">
-                    {onlineUsersList.map(user => (
-                      <div
-                        key={user.id}
-                        className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
-                      >
-                        {/* Avatar with layoutId for shared transition */}
-                        <motion.div
-                          layoutId={`avatar-${user.id}`}
-                          layout
-                          transition={{ duration: 0.3, ease: 'easeInOut' }}
-                          className="relative rounded-full border border-white shadow-sm w-10 h-10 flex-shrink-0"
-                          title={`${user.name} - Online`}
-                        >
-                          {user.profilephoto ? (
-                            <img
-                              src={user.profilephoto}
-                              alt={user.name}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <div
-                              className={`w-full h-full rounded-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(user.id)}`}
-                            >
-                              {getInitials(user.name)}
-                            </div>
-                          )}
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border border-white rounded-full"></div>
-                        </motion.div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 min-w-64">
+                  {/* Portal Background - this fades */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="absolute inset-0 bg-white rounded-xl shadow-lg border border-gray-200"
+                  />
 
-                        {/* User Info */}
-                        <motion.div
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.15, delay: 0.05 }}
-                          className="flex-1 min-w-0"
+                  {/* Portal Content - avatars don't inherit fade */}
+                  <div
+                    className="relative p-3"
+                    onMouseEnter={handleOnlineTextEnter}
+                    onMouseLeave={handleOnlineTextLeave}
+                  >
+                    <div className="space-y-3">
+                      {onlineUsersList.map(user => (
+                        <div
+                          key={user.id}
+                          className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {user.email}
-                          </p>
-                        </motion.div>
-                      </div>
-                    ))}
+                          {/* Avatar with layoutId for shared transition */}
+                          <motion.div
+                            layoutId={`avatar-${user.id}`}
+                            layout="position"
+                            transition={{
+                              layout: { duration: 0.3, ease: 'easeInOut' },
+                            }}
+                            style={{ opacity: 1 }}
+                            className="relative rounded-full border border-white shadow-sm w-10 h-10 flex-shrink-0"
+                            title={`${user.name} - Online`}
+                          >
+                            {user.profilephoto ? (
+                              <img
+                                src={user.profilephoto}
+                                alt={user.name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <div
+                                className={`w-full h-full rounded-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(user.id)}`}
+                              >
+                                {getInitials(user.name)}
+                              </div>
+                            )}
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border border-white rounded-full"></div>
+                          </motion.div>
+
+                          {/* User Info */}
+                          <motion.div
+                            className="flex-1 min-w-0"
+                            initial={{ opacity: 1 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                          >
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {user.email}
+                            </p>
+                          </motion.div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
           </div>
