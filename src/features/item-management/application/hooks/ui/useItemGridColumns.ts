@@ -45,7 +45,7 @@ export const useItemGridColumns = () => {
         filterParams: {
           filters: [
             {
-              filter: true, // Simple Filter (text filter)
+              filter: 'agTextColumnFilter', // Simple Filter (text filter)
               name: 'Simple Filter',
             },
             {
@@ -114,7 +114,7 @@ export const useItemGridColumns = () => {
         filterParams: {
           filters: [
             {
-              filter: true, // Simple Filter (text filter)
+              filter: 'agTextColumnFilter', // Simple Filter (text filter)
               name: 'Simple Filter',
             },
             {
@@ -139,7 +139,7 @@ export const useItemGridColumns = () => {
         filterParams: {
           filters: [
             {
-              filter: true, // Simple Filter (text filter)
+              filter: 'agTextColumnFilter', // Simple Filter (text filter)
               name: 'Simple Filter',
             },
             {
@@ -164,7 +164,7 @@ export const useItemGridColumns = () => {
         filterParams: {
           filters: [
             {
-              filter: true, // Simple Filter (text filter)
+              filter: 'agTextColumnFilter', // Simple Filter (text filter)
               name: 'Simple Filter',
             },
             {
@@ -191,7 +191,7 @@ export const useItemGridColumns = () => {
         filterParams: {
           filters: [
             {
-              filter: true, // Simple Filter (text filter)
+              filter: 'agTextColumnFilter', // Simple Filter (text filter)
               name: 'Simple Filter',
             },
             {
