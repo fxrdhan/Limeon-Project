@@ -1,5 +1,6 @@
 import { memo, useRef } from 'react';
 import { motion, LayoutGroup } from 'framer-motion';
+import { useAuthStore } from '@/store/authStore';
 import type { OnlineUser } from '@/types';
 
 interface AvatarStackProps {
@@ -59,7 +60,7 @@ const Avatar = memo(
         transition={{
           layout: { duration: 0.3, ease: 'easeInOut' },
         }}
-        style={{ opacity: 1, zIndex: isInPortal ? 1 : 10 - index }}
+        style={{ opacity: 1, zIndex: isInPortal ? 1 : index + 1 }}
         className={`
         relative rounded-full border border-white shadow-sm
         ${sizeClasses[size]}
@@ -128,7 +129,7 @@ const AvatarSkeleton = memo(
         ${overlap ? overlapClass[size] : ''}
         bg-gray-200
       `}
-        style={{ zIndex: 10 - index }}
+        style={{ zIndex: index + 1 }}
       >
         {/* Skeleton online indicator */}
         <div className="absolute bottom-0 right-0 w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -148,9 +149,26 @@ const AvatarStack = memo(
     showPortal = false,
   }: AvatarStackProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const { user: currentUser } = useAuthStore();
 
-    const visibleUsers = users.slice(0, maxVisible);
-    const hiddenCount = Math.max(0, users.length - maxVisible);
+    // Reorder users so current user appears last (rightmost) if present
+    const reorderedUsers =
+      users.length > 0 && currentUser
+        ? (() => {
+            const currentUserIndex = users.findIndex(
+              u => u.id === currentUser.id
+            );
+            if (currentUserIndex !== -1) {
+              const otherUsers = users.filter(u => u.id !== currentUser.id);
+              const currentUserObj = users[currentUserIndex];
+              return [...otherUsers, currentUserObj];
+            }
+            return users;
+          })()
+        : users;
+
+    const visibleUsers = reorderedUsers.slice(0, maxVisible);
+    const hiddenCount = Math.max(0, reorderedUsers.length - maxVisible);
 
     const sizeClasses = {
       sm: 'w-6 h-6 text-xs',

@@ -16,6 +16,22 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
 
+  // Reorder users so current user appears last (rightmost) if present
+  const reorderedOnlineUsers =
+    onlineUsersList.length > 0 && user
+      ? (() => {
+          const currentUserIndex = onlineUsersList.findIndex(
+            u => u.id === user.id
+          );
+          if (currentUserIndex !== -1) {
+            const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
+            const currentUserObj = onlineUsersList[currentUserIndex];
+            return [...otherUsers, currentUserObj];
+          }
+          return onlineUsersList;
+        })()
+      : onlineUsersList;
+
   // Helper functions for avatar display
   const getInitials = (name: string) => {
     return name
@@ -177,7 +193,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                 onMouseLeave={handleOnlineTextLeave}
               >
                 <AvatarStack
-                  users={onlineUsersList}
+                  users={reorderedOnlineUsers}
                   maxVisible={4}
                   size="md"
                   showPortal={showPortal}
@@ -211,7 +227,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     onMouseLeave={handleOnlineTextLeave}
                   >
                     <div className="space-y-3">
-                      {onlineUsersList.map(user => (
+                      {reorderedOnlineUsers.map(user => (
                         <div
                           key={user.id}
                           className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
