@@ -16,12 +16,62 @@ import {
   ColumnMenuTab,
   GetContextMenuItems,
   GridPreDestroyedEvent,
+  ClientSideRowModelModule,
+  PaginationModule,
+  TextFilterModule,
+  NumberFilterModule,
+  RowStyleModule,
+  ExternalFilterModule,
+  TooltipModule,
+  CellStyleModule,
+  HighlightChangesModule,
+  GridStateModule,
+  EventApiModule,
+  ColumnApiModule,
+  ColumnAutoSizeModule,
 } from 'ag-grid-community';
-import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+import {
+  LicenseManager,
+  RowSelectionModule,
+  RowGroupingModule,
+  ColumnsToolPanelModule,
+  FiltersToolPanelModule,
+  MenuModule,
+  CellSelectionModule,
+  RowNumbersModule,
+  RowGroupingPanelModule,
+  MultiFilterModule,
+} from 'ag-grid-enterprise';
 import { DataGridProps, DataGridRef } from '@/types';
 
-// Register AG Grid modules
-ModuleRegistry.registerModules([AllEnterpriseModule]);
+// Register only required AG Grid modules (selective import for smaller bundle)
+ModuleRegistry.registerModules([
+  // Community modules
+  ClientSideRowModelModule,
+  PaginationModule,
+  TextFilterModule,
+  NumberFilterModule,
+  RowStyleModule,
+  ExternalFilterModule,
+  TooltipModule,
+  CellStyleModule,
+  HighlightChangesModule,
+  GridStateModule,
+  EventApiModule,
+  ColumnApiModule,
+  ColumnAutoSizeModule,
+
+  // Enterprise modules (only what we need)
+  RowSelectionModule,
+  RowGroupingModule,
+  ColumnsToolPanelModule,
+  FiltersToolPanelModule,
+  MenuModule,
+  CellSelectionModule,
+  RowNumbersModule,
+  RowGroupingPanelModule,
+  MultiFilterModule,
+]);
 
 // Configure AG Grid Enterprise License
 LicenseManager.setLicenseKey(

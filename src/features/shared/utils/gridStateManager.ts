@@ -89,7 +89,33 @@ export const restoreGridState = (
       return false;
     }
 
-    const parsedState: GridState = JSON.parse(savedState);
+    // Validate that savedState is valid JSON before parsing
+    if (
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
+    ) {
+      console.warn(`Invalid saved state for ${tableType}, clearing...`);
+      localStorage.removeItem(storageKey);
+      return false;
+    }
+
+    let parsedState: GridState;
+    try {
+      parsedState = JSON.parse(savedState);
+    } catch (parseError) {
+      console.warn(`Failed to parse saved state for ${tableType}:`, parseError);
+      console.warn(
+        `Corrupted state data:`,
+        savedState.substring(0, 100) + '...'
+      );
+      // Clear corrupted data
+      localStorage.removeItem(storageKey);
+      toast.error(
+        `Layout tersimpan untuk ${tableType} rusak, menggunakan default`
+      );
+      return false;
+    }
 
     // Include pagination state for complete state restoration
     gridApi.setState(parsedState);
@@ -170,7 +196,29 @@ export const loadSavedStateForInit = (
       return undefined;
     }
 
-    const parsedState: GridState = JSON.parse(savedState);
+    // Validate that savedState is valid JSON before parsing
+    if (
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
+    ) {
+      console.warn(`Invalid saved state for ${tableType}, clearing...`);
+      localStorage.removeItem(storageKey);
+      return undefined;
+    }
+
+    let parsedState: GridState;
+    try {
+      parsedState = JSON.parse(savedState);
+    } catch (parseError) {
+      console.warn(
+        `Failed to parse saved state for auto-restore (${tableType}):`,
+        parseError
+      );
+      // Clear corrupted data
+      localStorage.removeItem(storageKey);
+      return undefined;
+    }
 
     // Include pagination state for complete auto-restore
     return parsedState;
@@ -188,7 +236,27 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
   try {
     const storageKey = getStorageKey(tableType);
     const savedState = localStorage.getItem(storageKey);
-    return savedState ? JSON.parse(savedState) : null;
+
+    if (
+      !savedState ||
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
+    ) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(savedState);
+    } catch (parseError) {
+      console.warn(
+        `Failed to parse saved state info for ${tableType}:`,
+        parseError
+      );
+      // Clear corrupted data
+      localStorage.removeItem(storageKey);
+      return null;
+    }
   } catch {
     return null;
   }
@@ -205,7 +273,31 @@ export const downloadGridState = (tableType: TableType): boolean => {
       return false;
     }
 
-    const parsedState: GridState = JSON.parse(savedState);
+    // Validate that savedState is valid JSON before parsing
+    if (
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
+    ) {
+      console.warn(`Invalid saved state for ${tableType}, clearing...`);
+      localStorage.removeItem(storageKey);
+      toast.error(`Layout tersimpan untuk ${tableType} rusak`);
+      return false;
+    }
+
+    let parsedState: GridState;
+    try {
+      parsedState = JSON.parse(savedState);
+    } catch (parseError) {
+      console.warn(
+        `Failed to parse saved state for download (${tableType}):`,
+        parseError
+      );
+      // Clear corrupted data
+      localStorage.removeItem(storageKey);
+      toast.error(`Layout tersimpan untuk ${tableType} rusak`);
+      return false;
+    }
 
     // Create export object with metadata
     const exportData = {
