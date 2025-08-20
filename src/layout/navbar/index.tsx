@@ -3,14 +3,17 @@ import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaComments } from 'react-icons/fa';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
+import ChatPortal from '@/components/shared/chat-portal';
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const [showPortal, setShowPortal] = useState(false);
+  const [showChatPortal, setShowChatPortal] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Ensure at least 1 user is shown when logged in
@@ -95,10 +98,22 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
       hoverTimeoutRef.current = null;
     }
 
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShowPortal(false);
-      hoverTimeoutRef.current = null;
-    }, 100);
+    // Don't close avatar portal if chat portal is open
+    if (!showChatPortal) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setShowPortal(false);
+        hoverTimeoutRef.current = null;
+      }, 100);
+    }
+  };
+
+  // Chat handlers
+  const handleChatOpen = () => {
+    setShowChatPortal(true);
+  };
+
+  const handleChatClose = () => {
+    setShowChatPortal(false);
   };
 
   // Cleanup timeout on unmount
@@ -297,6 +312,17 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                               {portalUser.email}
                             </p>
                           </motion.div>
+
+                          {/* Chat Icon for current user */}
+                          {portalUser.id === user?.id && (
+                            <button
+                              onClick={handleChatOpen}
+                              className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                              title="Open Chat"
+                            >
+                              <FaComments size={16} />
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -304,6 +330,11 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                 </div>
               )}
             </AnimatePresence>
+
+            {/* Chat Portal - positioned to the left of avatar portal */}
+            <div className="absolute top-full left-0 transform -translate-x-full mr-4">
+              <ChatPortal isOpen={showChatPortal} onClose={handleChatClose} />
+            </div>
           </div>
 
           <div className="h-5 w-px bg-gray-300 mx-5"></div>
