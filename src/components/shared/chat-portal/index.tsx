@@ -1,4 +1,4 @@
-import { useState, memo, useEffect } from 'react';
+import { useState, memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiSendPlaneFill } from 'react-icons/ri';
 import { useAuthStore } from '@/store/authStore';
@@ -100,31 +100,25 @@ const generateLoremIpsum = (minWords = 3, maxWords = 15): string => {
 };
 
 // Initial messages for the chat
-const getInitialMessages = (targetUser?: {
-  name: string;
-  id: string;
-}): ChatMessage[] => [
-  {
-    id: '1',
-    userId: targetUser?.id || 'target_user',
-    userName: targetUser?.name || 'User',
-    message: 'Hi there! Ready to test the chat?',
-    timestamp: new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-  },
-];
+const getInitialMessages = (): ChatMessage[] => [];
 
 const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { user } = useAuthStore();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize messages when component mounts or targetUser changes
   useEffect(() => {
-    setMessages(getInitialMessages(targetUser));
+    setMessages(getInitialMessages());
   }, [targetUser]);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // Helper functions for avatar display
   const getInitials = (name: string) => {
@@ -207,10 +201,10 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           style={{ transformOrigin: 'top right' }}
-          className="relative z-50 min-w-80 bg-white rounded-xl shadow-lg border border-gray-200"
+          className="relative z-50 w-96 bg-white rounded-xl shadow-lg border border-gray-200"
         >
           {/* Chat Content */}
-          <div className="relative h-96 flex flex-col">
+          <div className="relative h-[500px] flex flex-col">
             {/* Chat Header */}
             <div className="p-3 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -231,8 +225,17 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
               {messages.map(msg => {
                 const isCurrentUser = msg.userId === 'current_user';
                 return (
-                  <div
+                  <motion.div
                     key={msg.id}
+                    initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      ease: [0.23, 1, 0.32, 1],
+                      type: 'spring',
+                      stiffness: 300,
+                      damping: 24,
+                    }}
                     className={`flex w-full ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
@@ -305,9 +308,11 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
+              {/* Invisible element for auto-scrolling */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}

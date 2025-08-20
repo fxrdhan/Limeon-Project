@@ -14,7 +14,6 @@ import {
   FormLoadingFallback,
 } from '@/components/loading-fallback';
 import ToastTester from '@/components/ToastTester';
-import { ChatTestingButton } from '@/utils/testing';
 
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const ItemMaster = lazy(() => import('@/pages/master-data/item-master'));
@@ -453,8 +452,6 @@ function App() {
           </Route>
         </Routes>
         <ToastTester />
-        {/* Chat Testing Button - only in development */}
-        {process.env.NODE_ENV === 'development' && <ChatTestingButton />}
       </ConfirmDialogProvider>
     </AlertProvider>
   );

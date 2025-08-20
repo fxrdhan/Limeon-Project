@@ -29,11 +29,7 @@ export interface ChatTestingButtonProps {
  */
 export function ChatTestingButton({
   enabled = true,
-  targetUser = {
-    id: 'test_user',
-    name: 'Test Bot',
-    email: 'test@example.com',
-  },
+  targetUser,
 }: ChatTestingButtonProps) {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
