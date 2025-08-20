@@ -122,31 +122,44 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } =
         messagesContainerRef.current;
-      const threshold = 100; // pixels from bottom
-      return scrollHeight - scrollTop - clientHeight < threshold;
+      const threshold = 100; // pixels from bottom - increased for better detection
+      const isAtBottom =
+        Math.abs(scrollHeight - scrollTop - clientHeight) <= threshold;
+      return isAtBottom;
     }
     return true;
   }, []);
 
   // Handle scroll events
   const handleScroll = useCallback(() => {
-    const atBottom = checkIfAtBottom();
-    setIsAtBottom(atBottom);
-    if (atBottom) {
-      setHasNewMessages(false);
-    }
+    // Use requestAnimationFrame to ensure the check happens after the scroll event
+    requestAnimationFrame(() => {
+      const atBottom = checkIfAtBottom();
+      setIsAtBottom(atBottom);
+      if (atBottom) {
+        setHasNewMessages(false);
+      }
+    });
   }, [checkIfAtBottom]);
 
   // Auto-scroll to bottom only if user is at bottom
   useEffect(() => {
     if (messages.length > 0) {
-      if (isAtBottom) {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // Check current scroll position before new message
+      const wasAtBottom = checkIfAtBottom();
+
+      if (wasAtBottom) {
+        // User was at bottom, auto-scroll and don't show arrow
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 10);
+        setHasNewMessages(false);
       } else {
+        // User was not at bottom, show arrow
         setHasNewMessages(true);
       }
     }
-  }, [messages, isAtBottom]);
+  }, [messages, checkIfAtBottom]);
 
   // Add scroll event listener
   useEffect(() => {
@@ -156,6 +169,19 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
+
+  // Initialize scroll position when chat opens
+  useEffect(() => {
+    if (isOpen && messagesContainerRef.current) {
+      // Reset states when chat opens
+      setIsAtBottom(true);
+      setHasNewMessages(false);
+      // Ensure we're at bottom when chat opens
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 50);
+    }
+  }, [isOpen]);
 
   // Helper functions for avatar display
   const getInitials = (name: string) => {
@@ -189,6 +215,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     setHasNewMessages(false);
+    setIsAtBottom(true);
   };
 
   const handleSendMessage = () => {
@@ -367,7 +394,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
             {/* Floating bouncing scroll-to-bottom icon */}
             <AnimatePresence>
-              {hasNewMessages && !isAtBottom && (
+              {(hasNewMessages || !isAtBottom) && messages.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{
