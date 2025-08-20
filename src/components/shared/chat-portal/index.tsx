@@ -1,6 +1,7 @@
 import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiSendPlaneFill } from 'react-icons/ri';
+import { useAuthStore } from '@/store/authStore';
 
 interface ChatMessage {
   id: string;
@@ -51,6 +52,35 @@ const getMockMessages = (targetUser?: {
 
 const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [message, setMessage] = useState('');
+  const { user } = useAuthStore();
+
+  // Helper functions for avatar display
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getInitialsColor = (userId: string) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-yellow-500',
+      'bg-red-500',
+      'bg-gray-500',
+    ];
+
+    const index = userId
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -97,21 +127,86 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
             {/* Messages Area */}
             <div className="flex-1 p-3 overflow-y-auto space-y-3">
-              {getMockMessages(targetUser).map(msg => (
-                <div key={msg.id} className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      {msg.userName}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {msg.timestamp}
-                    </span>
+              {getMockMessages(targetUser).map(msg => {
+                const isCurrentUser = msg.userId === 'current_user';
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs ${isCurrentUser ? 'order-2' : 'order-1'}`}
+                    >
+                      {/* Message Bubble */}
+                      <div
+                        className={`relative px-3 py-2 text-sm ${
+                          isCurrentUser
+                            ? 'bg-primary text-gray-100 rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl'
+                            : 'bg-gray-100 text-gray-800 rounded-tl-2xl rounded-tr-2xl rounded-br-2xl'
+                        }`}
+                        style={{
+                          [isCurrentUser
+                            ? 'borderBottomRightRadius'
+                            : 'borderBottomLeftRadius']: '2px',
+                        }}
+                      >
+                        {msg.message}
+                      </div>
+
+                      {/* Message Info */}
+                      <div
+                        className={`flex items-center gap-2 mt-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {isCurrentUser ? (
+                          <>
+                            <span className="text-xs text-gray-400">
+                              {msg.timestamp}
+                            </span>
+                            <div className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                              {user?.profilephoto ? (
+                                <img
+                                  src={user.profilephoto}
+                                  alt={user.name || 'You'}
+                                  className="w-full h-full object-cover"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <div
+                                  className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(user?.id || 'current_user')}`}
+                                >
+                                  {getInitials(user?.name || 'You')}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                              {targetUser?.profilephoto ? (
+                                <img
+                                  src={targetUser.profilephoto}
+                                  alt={targetUser.name}
+                                  className="w-full h-full object-cover"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <div
+                                  className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
+                                >
+                                  {getInitials(targetUser?.name || 'User')}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-400">
+                              {msg.timestamp}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-700">
-                    {msg.message}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Message Input */}
