@@ -32,6 +32,22 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         })()
       : onlineUsersList;
 
+  // Reorder users for portal so current user appears first (top) if present
+  const portalOrderedUsers =
+    onlineUsersList.length > 0 && user
+      ? (() => {
+          const currentUserIndex = onlineUsersList.findIndex(
+            u => u.id === user.id
+          );
+          if (currentUserIndex !== -1) {
+            const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
+            const currentUserObj = onlineUsersList[currentUserIndex];
+            return [currentUserObj, ...otherUsers];
+          }
+          return onlineUsersList;
+        })()
+      : onlineUsersList;
+
   // Helper functions for avatar display
   const getInitials = (name: string) => {
     return name
@@ -223,9 +239,9 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     onMouseLeave={handleOnlineTextLeave}
                   >
                     <div className="space-y-1">
-                      {reorderedOnlineUsers.map(user => (
+                      {portalOrderedUsers.map(portalUser => (
                         <div
-                          key={user.id}
+                          key={portalUser.id}
                           className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
                         >
                           {/* Avatar in portal */}
@@ -238,20 +254,20 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                               ease: 'easeOut',
                             }}
                             className="relative rounded-full shadow-sm w-8 h-8 flex-shrink-0 overflow-hidden"
-                            title={`${user.name} - Online`}
+                            title={`${portalUser.name} - Online`}
                           >
-                            {user.profilephoto ? (
+                            {portalUser.profilephoto ? (
                               <img
-                                src={user.profilephoto}
-                                alt={user.name}
+                                src={portalUser.profilephoto}
+                                alt={portalUser.name}
                                 className="w-full h-full object-cover"
                                 draggable={false}
                               />
                             ) : (
                               <div
-                                className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(user.id)}`}
+                                className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
                               >
-                                {getInitials(user.name)}
+                                {getInitials(portalUser.name)}
                               </div>
                             )}
                           </motion.div>
@@ -264,11 +280,21 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.25, ease: 'easeOut' }}
                           >
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {user.name}
-                            </p>
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {portalUser.name}
+                              </p>
+                              {portalUser.id === user?.id && (
+                                <span className="flex items-center gap-1 text-xs">
+                                  <span className="w-3 h-px bg-gray-400 translate-y-0.5"></span>
+                                  <span className="text-primary font-medium">
+                                    You
+                                  </span>
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500 truncate">
-                              {user.email}
+                              {portalUser.email}
                             </p>
                           </motion.div>
                         </div>
