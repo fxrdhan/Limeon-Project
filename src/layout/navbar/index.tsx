@@ -234,7 +234,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
               </div>
             </div>
 
-            {/* Portal - restructured to prevent avatar opacity inheritance */}
+            {/* Avatar Portal - fixed position */}
             <AnimatePresence>
               {showPortal && (
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 min-w-64">
@@ -313,12 +313,12 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             </p>
                           </motion.div>
 
-                          {/* Chat Icon for current user */}
-                          {portalUser.id === user?.id && (
+                          {/* Chat Icon for other users */}
+                          {portalUser.id !== user?.id && (
                             <button
                               onClick={handleChatOpen}
                               className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
-                              title="Open Chat"
+                              title="Chat with this user"
                             >
                               <FaComments size={16} />
                             </button>
@@ -332,9 +332,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             </AnimatePresence>
 
             {/* Chat Portal - positioned to the left of avatar portal */}
-            <div className="absolute top-full left-0 transform -translate-x-full mr-4">
-              <ChatPortal isOpen={showChatPortal} onClose={handleChatClose} />
-            </div>
+            <AnimatePresence>
+              {showChatPortal && (
+                <div className="absolute top-full right-50 mt-2 z-50">
+                  <ChatPortal
+                    isOpen={showChatPortal}
+                    onClose={handleChatClose}
+                  />
+                </div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="h-5 w-px bg-gray-300 mx-5"></div>
