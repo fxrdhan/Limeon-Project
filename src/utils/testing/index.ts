@@ -28,5 +28,11 @@ export {
   type RandomItemFloatingButtonProps,
 } from './RandomItemFloatingButton';
 
+// Chat testing button component
+export {
+  ChatTestingButton,
+  type ChatTestingButtonProps,
+} from './ChatTestingButton';
+
 // Re-export for convenience
 export { useRandomItemCreation as useTestingItemCreation } from './useRandomItemCreation';
