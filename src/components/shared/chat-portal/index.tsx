@@ -1,6 +1,6 @@
 import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane } from 'react-icons/fa';
+import { RiSendPlaneFill } from 'react-icons/ri';
 
 interface ChatMessage {
   id: string;
@@ -13,55 +13,43 @@ interface ChatMessage {
 interface ChatPortalProps {
   isOpen: boolean;
   onClose: () => void;
+  targetUser?: {
+    id: string;
+    name: string;
+    email: string;
+    profilephoto?: string | null;
+  };
 }
 
-// Mockup chat data
-const mockMessages: ChatMessage[] = [
+// Mockup chat data for 1-1 conversation
+const getMockMessages = (targetUser?: {
+  name: string;
+  id: string;
+}): ChatMessage[] => [
   {
     id: '1',
-    userId: 'user1',
-    userName: 'Harmony',
-    message: 'Where are you Dylan?',
-    timestamp: '07:13 AM',
+    userId: targetUser?.id || 'target_user',
+    userName: targetUser?.name || 'User',
+    message: 'Hi there! How are you doing?',
+    timestamp: '07:10 AM',
   },
   {
     id: '2',
-    userId: 'user2',
-    userName: 'Dylan',
-    message: 'At the Supabase Meetup - just getting coffee',
-    timestamp: '07:13 AM',
+    userId: 'current_user',
+    userName: 'You',
+    message: "Hey! I'm doing great, thanks for asking. How about you?",
+    timestamp: '07:11 AM',
   },
   {
     id: '3',
-    userId: 'user3',
-    userName: 'Mark S',
-    message: "I'm there too!",
-    timestamp: '07:13 AM',
-  },
-  {
-    id: '4',
-    userId: 'user4',
-    userName: 'Indio',
-    message: 'hai',
-    timestamp: '07:01 AM',
-  },
-  {
-    id: '5',
-    userId: 'user5',
-    userName: 'Orion',
-    message: 'hello',
-    timestamp: '07:01 AM',
-  },
-  {
-    id: '6',
-    userId: 'user4',
-    userName: 'Indio',
-    message: 'can you',
-    timestamp: '07:01 AM',
+    userId: targetUser?.id || 'target_user',
+    userName: targetUser?.name || 'User',
+    message: 'Pretty good! Just working on some projects.',
+    timestamp: '07:12 AM',
   },
 ];
 
-const ChatPortal = memo(({ isOpen, onClose }: ChatPortalProps) => {
+const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [message, setMessage] = useState('');
 
   const handleSendMessage = () => {
@@ -80,13 +68,13 @@ const ChatPortal = memo(({ isOpen, onClose }: ChatPortalProps) => {
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           style={{ transformOrigin: 'top right' }}
           className="relative z-50 min-w-80 bg-white rounded-xl shadow-lg border border-gray-200"
         >
@@ -95,7 +83,9 @@ const ChatPortal = memo(({ isOpen, onClose }: ChatPortalProps) => {
             {/* Chat Header */}
             <div className="p-3 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">Team Chat</h3>
+                <h3 className="font-medium text-gray-900">
+                  {targetUser ? targetUser.name : 'Chat'}
+                </h3>
                 <button
                   onClick={onClose}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -107,7 +97,7 @@ const ChatPortal = memo(({ isOpen, onClose }: ChatPortalProps) => {
 
             {/* Messages Area */}
             <div className="flex-1 p-3 overflow-y-auto space-y-3">
-              {mockMessages.map(msg => (
+              {getMockMessages(targetUser).map(msg => (
                 <div key={msg.id} className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
@@ -126,22 +116,28 @@ const ChatPortal = memo(({ isOpen, onClose }: ChatPortalProps) => {
 
             {/* Message Input */}
             <div className="p-3 border-t border-gray-100">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <input
                   type="text"
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyUp={handleKeyPress}
                   placeholder="Type a message..."
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 p-2.5 border border-gray-300 rounded-full px-3 text-sm h-[2.5rem] focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 transition-all duration-200 ease-in-out"
                 />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!message.trim()}
-                  className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${message.trim() ? 'w-10 ml-2' : 'w-0 ml-0'}`}
                 >
-                  <FaPaperPlane size={16} />
-                </button>
+                  <button
+                    onClick={handleSendMessage}
+                    className="p-1 transition-colors whitespace-nowrap"
+                  >
+                    <RiSendPlaneFill
+                      size={28}
+                      className="text-emerald-600 hover:text-primary"
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

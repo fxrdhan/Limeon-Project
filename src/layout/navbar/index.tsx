@@ -3,7 +3,7 @@ import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaComments } from 'react-icons/fa';
+import { IoChatbubblesSharp } from 'react-icons/io5';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
@@ -14,6 +14,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const [showPortal, setShowPortal] = useState(false);
   const [showChatPortal, setShowChatPortal] = useState(false);
+  const [selectedChatUser, setSelectedChatUser] = useState<
+    | {
+        id: string;
+        name: string;
+        email: string;
+        profilephoto?: string | null;
+      }
+    | undefined
+  >(undefined);
+  const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Ensure at least 1 user is shown when logged in
@@ -108,12 +118,19 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   };
 
   // Chat handlers
-  const handleChatOpen = () => {
+  const handleChatOpen = (targetUser: {
+    id: string;
+    name: string;
+    email: string;
+    profilephoto?: string | null;
+  }) => {
+    setSelectedChatUser(targetUser);
     setShowChatPortal(true);
   };
 
   const handleChatClose = () => {
     setShowChatPortal(false);
+    setSelectedChatUser(undefined);
   };
 
   // Cleanup timeout on unmount
@@ -257,72 +274,94 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       {portalOrderedUsers.map(portalUser => (
                         <div
                           key={portalUser.id}
-                          className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors"
+                          className={`px-4 py-3 mx-0 transition-colors rounded-lg ${
+                            portalUser.id !== user?.id
+                              ? 'cursor-pointer hover:bg-emerald-50'
+                              : 'cursor-default hover:bg-gray-50'
+                          }`}
+                          onMouseEnter={() => setHoveredUser(portalUser.id)}
+                          onMouseLeave={() => setHoveredUser(null)}
+                          onClick={() =>
+                            portalUser.id !== user?.id &&
+                            handleChatOpen(portalUser)
+                          }
                         >
-                          {/* Avatar in portal */}
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1.25 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{
-                              duration: 0.2,
-                              ease: 'easeOut',
-                            }}
-                            className="relative rounded-full shadow-sm w-8 h-8 flex-shrink-0 overflow-hidden"
-                            title={`${portalUser.name} - Online`}
-                          >
-                            {portalUser.profilephoto ? (
-                              <img
-                                src={portalUser.profilephoto}
-                                alt={portalUser.name}
-                                className="w-full h-full object-cover"
-                                draggable={false}
-                              />
-                            ) : (
-                              <div
-                                className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
-                              >
-                                {getInitials(portalUser.name)}
-                              </div>
-                            )}
-                          </motion.div>
-
-                          {/* User Info */}
-                          <motion.div
-                            className="flex-1 min-w-0"
-                            initial={{ opacity: 1 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.25, ease: 'easeOut' }}
-                          >
-                            <div className="flex items-center gap-1">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {portalUser.name}
-                              </p>
-                              {portalUser.id === user?.id && (
-                                <span className="flex items-center gap-1 text-xs">
-                                  <span className="w-3 h-px bg-gray-400 translate-y-0.5"></span>
-                                  <span className="text-primary font-medium">
-                                    You
-                                  </span>
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 truncate">
-                              {portalUser.email}
-                            </p>
-                          </motion.div>
-
-                          {/* Chat Icon for other users */}
-                          {portalUser.id !== user?.id && (
-                            <button
-                              onClick={handleChatOpen}
-                              className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
-                              title="Chat with this user"
+                          {/* User Info Group */}
+                          <div className="flex items-center space-x-3">
+                            {/* Avatar in portal */}
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1.25 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              transition={{
+                                duration: 0.2,
+                                ease: 'easeOut',
+                              }}
+                              className="relative rounded-full shadow-sm w-8 h-8 flex-shrink-0 overflow-hidden"
+                              title={`${portalUser.name} - Online`}
                             >
-                              <FaComments size={16} />
-                            </button>
-                          )}
+                              {portalUser.profilephoto ? (
+                                <img
+                                  src={portalUser.profilephoto}
+                                  alt={portalUser.name}
+                                  className="w-full h-full object-cover"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <div
+                                  className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
+                                >
+                                  {getInitials(portalUser.name)}
+                                </div>
+                              )}
+                            </motion.div>
+
+                            {/* User Info */}
+                            <motion.div
+                              className="flex-1 min-w-0"
+                              initial={{ opacity: 1 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.25, ease: 'easeOut' }}
+                            >
+                              <div className="flex items-center gap-1">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {portalUser.name}
+                                </p>
+                                {portalUser.id === user?.id && (
+                                  <span className="flex items-center gap-1 text-xs">
+                                    <span className="w-3 h-px bg-gray-400 translate-y-0.5"></span>
+                                    <span className="text-primary font-medium">
+                                      You
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 truncate">
+                                {portalUser.email}
+                              </p>
+                            </motion.div>
+
+                            {/* Chat Icon Indicator - only visible on hover */}
+                            <AnimatePresence>
+                              {portalUser.id !== user?.id &&
+                                hoveredUser === portalUser.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.8, x: -5 }}
+                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.8, x: -5 }}
+                                    transition={{
+                                      duration: 0.15,
+                                      ease: 'easeOut',
+                                    }}
+                                    className="p-1.5 text-emerald-600 rounded-md ml-2"
+                                    title="Click to chat with this user"
+                                  >
+                                    <IoChatbubblesSharp size={20} />
+                                  </motion.div>
+                                )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -332,16 +371,13 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             </AnimatePresence>
 
             {/* Chat Portal - positioned to the left of avatar portal */}
-            <AnimatePresence>
-              {showChatPortal && (
-                <div className="absolute top-full right-50 mt-2 z-50">
-                  <ChatPortal
-                    isOpen={showChatPortal}
-                    onClose={handleChatClose}
-                  />
-                </div>
-              )}
-            </AnimatePresence>
+            <div className="absolute top-full right-50 mt-2 z-50">
+              <ChatPortal
+                isOpen={showChatPortal}
+                onClose={handleChatClose}
+                targetUser={selectedChatUser}
+              />
+            </div>
           </div>
 
           <div className="h-5 w-px bg-gray-300 mx-5"></div>
