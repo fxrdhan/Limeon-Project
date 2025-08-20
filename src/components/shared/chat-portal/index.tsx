@@ -20,6 +20,8 @@ interface ChatMessage {
   // Virtual fields for display
   sender_name?: string;
   receiver_name?: string;
+  // Stable key for consistent animation during optimistic updates
+  stableKey?: string;
 }
 
 interface ChatPortalProps {
@@ -296,6 +298,13 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
         );
 
         setMessages(transformedMessages);
+
+        // Auto-scroll to bottom after messages are loaded
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          setIsAtBottom(true);
+          setHasNewMessages(false);
+        }, 100);
       } catch (error) {
         console.error('Error loading messages:', error);
       } finally {
@@ -580,10 +589,10 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       // Reset states when chat opens
       setIsAtBottom(true);
       setHasNewMessages(false);
-      // Ensure we're at bottom when chat opens
+      // Ensure we're at bottom when chat opens (longer delay to ensure rendering)
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-      }, 50);
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
     }
   }, [isOpen]);
 
@@ -627,6 +636,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
     const messageText = message.trim();
     const tempId = `temp_${Date.now()}`;
+    const stableKey = `${user.id}-${Date.now()}-${messageText.slice(0, 10)}`;
     setMessage(''); // Clear input immediately for better UX
 
     // Optimistic update - show message immediately
@@ -643,6 +653,8 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       reply_to_id: null,
       sender_name: user.name || 'You',
       receiver_name: targetUser.name || 'Unknown',
+      // Add stable key for consistent animation
+      stableKey,
     };
 
     setMessages(prev => [...prev, optimisticMessage]);
@@ -671,11 +683,12 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
         return;
       }
 
-      // Replace optimistic message with real message
+      // Replace optimistic message with real message (keep same stableKey)
       const realMessage: ChatMessage = {
         ...newMessage,
         sender_name: user.name || 'You',
         receiver_name: targetUser.name || 'Unknown',
+        stableKey, // Keep same stable key to prevent re-animation
       };
 
       setMessages(prev =>
@@ -730,41 +743,39 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
             {/* Chat Header */}
             <div className="p-3 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-gray-900">
-                      {targetUser ? targetUser.name : 'Chat'}
-                    </h3>
-                    {(() => {
-                      const shouldShowOnline =
-                        targetUserPresence &&
-                        targetUserPresence.is_online &&
-                        targetUserPresence.current_chat_channel ===
-                          currentChannelId;
-
-                      return (
-                        shouldShowOnline && (
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                            <span className="text-xs text-green-600 font-medium">
-                              Online
-                            </span>
-                          </div>
-                        )
-                      );
-                    })()}
-                  </div>
-                  {targetUserPresence &&
-                    targetUserPresence.last_seen &&
-                    !(
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-gray-900">
+                    {targetUser ? targetUser.name : 'Chat'}
+                  </h3>
+                  {(() => {
+                    const shouldShowOnline =
+                      targetUserPresence &&
                       targetUserPresence.is_online &&
                       targetUserPresence.current_chat_channel ===
-                        currentChannelId
-                    ) && (
-                      <div className="text-xs text-gray-400 mt-0.5">
-                        Last seen {formatLastSeen(targetUserPresence.last_seen)}
-                      </div>
-                    )}
+                        currentChannelId;
+
+                    if (shouldShowOnline) {
+                      return (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="text-xs text-green-600 font-medium">
+                            Online
+                          </span>
+                        </div>
+                      );
+                    } else if (
+                      targetUserPresence &&
+                      targetUserPresence.last_seen
+                    ) {
+                      return (
+                        <span className="text-xs text-gray-400">
+                          Last seen{' '}
+                          {formatLastSeen(targetUserPresence.last_seen)}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 <button
                   onClick={handleClose}
@@ -796,9 +807,12 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                     minute: '2-digit',
                   });
 
+                  // Use stableKey from message if available, otherwise fall back to ID
+                  const animationKey = msg.stableKey || msg.id;
+
                   return (
                     <motion.div
-                      key={msg.id}
+                      key={animationKey}
                       initial={{ opacity: 0, scale: 0.7, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       transition={{
