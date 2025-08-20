@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiSendPlaneFill } from 'react-icons/ri';
 import { useAuthStore } from '@/store/authStore';
@@ -22,8 +22,85 @@ interface ChatPortalProps {
   };
 }
 
-// Mockup chat data for 1-1 conversation
-const getMockMessages = (targetUser?: {
+// Lorem ipsum generator for auto-replies
+const loremWords = [
+  'lorem',
+  'ipsum',
+  'dolor',
+  'sit',
+  'amet',
+  'consectetur',
+  'adipiscing',
+  'elit',
+  'sed',
+  'do',
+  'eiusmod',
+  'tempor',
+  'incididunt',
+  'ut',
+  'labore',
+  'dolore',
+  'magna',
+  'aliqua',
+  'enim',
+  'ad',
+  'minim',
+  'veniam',
+  'quis',
+  'nostrud',
+  'exercitation',
+  'ullamco',
+  'laboris',
+  'nisi',
+  'aliquip',
+  'ex',
+  'ea',
+  'commodo',
+  'consequat',
+  'duis',
+  'aute',
+  'irure',
+  'in',
+  'reprehenderit',
+  'voluptate',
+  'velit',
+  'esse',
+  'cillum',
+  'fugiat',
+  'nulla',
+  'pariatur',
+  'excepteur',
+  'sint',
+  'occaecat',
+  'cupidatat',
+  'non',
+  'proident',
+  'sunt',
+  'culpa',
+  'qui',
+  'officia',
+  'deserunt',
+];
+
+const generateLoremIpsum = (minWords = 3, maxWords = 15): string => {
+  const wordCount =
+    Math.floor(Math.random() * (maxWords - minWords + 1)) + minWords;
+  const selectedWords = [];
+
+  for (let i = 0; i < wordCount; i++) {
+    const randomIndex = Math.floor(Math.random() * loremWords.length);
+    selectedWords.push(loremWords[randomIndex]);
+  }
+
+  // Capitalize first word
+  selectedWords[0] =
+    selectedWords[0].charAt(0).toUpperCase() + selectedWords[0].slice(1);
+
+  return selectedWords.join(' ') + '.';
+};
+
+// Initial messages for the chat
+const getInitialMessages = (targetUser?: {
   name: string;
   id: string;
 }): ChatMessage[] => [
@@ -31,28 +108,23 @@ const getMockMessages = (targetUser?: {
     id: '1',
     userId: targetUser?.id || 'target_user',
     userName: targetUser?.name || 'User',
-    message: 'Hi there! How are you doing?',
-    timestamp: '07:10 AM',
-  },
-  {
-    id: '2',
-    userId: 'current_user',
-    userName: 'You',
-    message: "Hey! I'm doing great, thanks for asking. How about you?",
-    timestamp: '07:11 AM',
-  },
-  {
-    id: '3',
-    userId: targetUser?.id || 'target_user',
-    userName: targetUser?.name || 'User',
-    message: 'Pretty good! Just working on some projects.',
-    timestamp: '07:12 AM',
+    message: 'Hi there! Ready to test the chat?',
+    timestamp: new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
   },
 ];
 
 const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { user } = useAuthStore();
+
+  // Initialize messages when component mounts or targetUser changes
+  useEffect(() => {
+    setMessages(getInitialMessages(targetUser));
+  }, [targetUser]);
 
   // Helper functions for avatar display
   const getInitials = (name: string) => {
@@ -84,9 +156,38 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
   const handleSendMessage = () => {
     if (message.trim()) {
-      // TODO: Send message functionality
-      console.log('Sending message:', message);
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        userId: 'current_user',
+        userName: 'You',
+        message: message.trim(),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      };
+
+      // Add user message
+      setMessages(prev => [...prev, userMessage]);
       setMessage('');
+
+      // Auto-reply with lorem ipsum after a short delay
+      setTimeout(
+        () => {
+          const replyMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            userId: targetUser?.id || 'target_user',
+            userName: targetUser?.name || 'User',
+            message: generateLoremIpsum(),
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          };
+          setMessages(prev => [...prev, replyMessage]);
+        },
+        800 + Math.random() * 1200
+      ); // Random delay between 800ms - 2s
     }
   };
 
@@ -127,7 +228,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
             {/* Messages Area */}
             <div className="flex-1 p-3 overflow-y-auto space-y-3">
-              {getMockMessages(targetUser).map(msg => {
+              {messages.map(msg => {
                 const isCurrentUser = msg.userId === 'current_user';
                 return (
                   <div
