@@ -1,6 +1,7 @@
-import { useState, memo, useEffect, useRef } from 'react';
+import { useState, memo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiSendPlaneFill } from 'react-icons/ri';
+import { PiArrowCircleDownFill } from 'react-icons/pi';
 import { useAuthStore } from '@/store/authStore';
 
 interface ChatMessage {
@@ -105,20 +106,56 @@ const getInitialMessages = (): ChatMessage[] => [];
 const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
   const { user } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Initialize messages when component mounts or targetUser changes
   useEffect(() => {
     setMessages(getInitialMessages());
   }, [targetUser]);
 
-  // Auto-scroll to bottom when new messages are added
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  // Check if user is at bottom of chat
+  const checkIfAtBottom = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        messagesContainerRef.current;
+      const threshold = 100; // pixels from bottom
+      return scrollHeight - scrollTop - clientHeight < threshold;
     }
-  }, [messages]);
+    return true;
+  }, []);
+
+  // Handle scroll events
+  const handleScroll = useCallback(() => {
+    const atBottom = checkIfAtBottom();
+    setIsAtBottom(atBottom);
+    if (atBottom) {
+      setHasNewMessages(false);
+    }
+  }, [checkIfAtBottom]);
+
+  // Auto-scroll to bottom only if user is at bottom
+  useEffect(() => {
+    if (messages.length > 0) {
+      if (isAtBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        setHasNewMessages(true);
+      }
+    }
+  }, [messages, isAtBottom]);
+
+  // Add scroll event listener
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   // Helper functions for avatar display
   const getInitials = (name: string) => {
@@ -148,6 +185,12 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     return colors[index % colors.length];
   };
 
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setHasNewMessages(false);
+  };
+
   const handleSendMessage = () => {
     if (message.trim()) {
       const userMessage: ChatMessage = {
@@ -160,6 +203,10 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
           minute: '2-digit',
         }),
       };
+
+      // Always scroll to bottom when user sends a message
+      setIsAtBottom(true);
+      setHasNewMessages(false);
 
       // Add user message
       setMessages(prev => [...prev, userMessage]);
@@ -221,7 +268,10 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 p-3 overflow-y-auto space-y-3">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 p-3 overflow-y-auto space-y-3"
+            >
               {messages.map(msg => {
                 const isCurrentUser = msg.userId === 'current_user';
                 return (
@@ -314,6 +364,39 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
               {/* Invisible element for auto-scrolling */}
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Floating bouncing scroll-to-bottom icon */}
+            <AnimatePresence>
+              {hasNewMessages && !isAtBottom && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: [0, -8, 0],
+                    transition: {
+                      opacity: { duration: 0.2 },
+                      scale: { duration: 0.2 },
+                      y: {
+                        repeat: Infinity,
+                        duration: 1.2,
+                        ease: 'easeInOut',
+                      },
+                    },
+                  }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={scrollToBottom}
+                  className="absolute bottom-16 left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-colors"
+                  style={{
+                    filter: 'drop-shadow(0 0 0 white)',
+                    background:
+                      'radial-gradient(circle at center, white 30%, transparent 30%)',
+                  }}
+                >
+                  <PiArrowCircleDownFill size={32} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Message Input */}
             <div className="p-3 border-t border-gray-100">
