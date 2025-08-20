@@ -274,7 +274,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       {portalOrderedUsers.map(portalUser => (
                         <div
                           key={portalUser.id}
-                          className={`px-4 py-3 mx-0 transition-colors rounded-lg ${
+                          className={`px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
                             portalUser.id !== user?.id
                               ? 'cursor-pointer hover:bg-emerald-50'
                               : 'cursor-default hover:bg-gray-50'
@@ -287,7 +287,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                           }
                         >
                           {/* User Info Group */}
-                          <div className="flex items-center space-x-3">
+                          <div className="relative flex items-center">
                             {/* Avatar in portal */}
                             <motion.div
                               initial={{ opacity: 0, scale: 0.8 }}
@@ -318,7 +318,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
                             {/* User Info */}
                             <motion.div
-                              className="flex-1 min-w-0"
+                              className="w-36 min-w-0 ml-3 overflow-hidden"
                               initial={{ opacity: 1 }}
                               animate={{ opacity: 1 }}
                               exit={{ opacity: 0 }}
@@ -354,7 +354,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                       duration: 0.15,
                                       ease: 'easeOut',
                                     }}
-                                    className="p-1.5 text-emerald-600 rounded-md ml-2"
+                                    className="absolute right-2 p-1.5 text-emerald-600 rounded-md"
                                     title="Click to chat with this user"
                                   >
                                     <IoChatbubblesSharp size={20} />
