@@ -124,8 +124,14 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     email: string;
     profilephoto?: string | null;
   }) => {
-    setSelectedChatUser(targetUser);
-    setShowChatPortal(true);
+    // Toggle: if same user clicked, close chat portal
+    if (selectedChatUser && selectedChatUser.id === targetUser.id) {
+      setShowChatPortal(false);
+      setSelectedChatUser(undefined);
+    } else {
+      setSelectedChatUser(targetUser);
+      setShowChatPortal(true);
+    }
   };
 
   const handleChatClose = () => {
@@ -274,7 +280,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       {portalOrderedUsers.map(portalUser => (
                         <div
                           key={portalUser.id}
-                          className={`px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
+                          className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
                             portalUser.id !== user?.id
                               ? 'cursor-pointer hover:bg-emerald-50'
                               : 'cursor-default hover:bg-gray-50'
@@ -341,27 +347,27 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                 {portalUser.email}
                               </p>
                             </motion.div>
-
-                            {/* Chat Icon Indicator - only visible on hover */}
-                            <AnimatePresence>
-                              {portalUser.id !== user?.id &&
-                                hoveredUser === portalUser.id && (
-                                  <motion.div
-                                    initial={{ opacity: 0, scale: 0.8, x: -5 }}
-                                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                                    exit={{ opacity: 0, scale: 0.8, x: -5 }}
-                                    transition={{
-                                      duration: 0.15,
-                                      ease: 'easeOut',
-                                    }}
-                                    className="absolute right-2 p-1.5 text-emerald-600 rounded-md"
-                                    title="Click to chat with this user"
-                                  >
-                                    <IoChatbubblesSharp size={20} />
-                                  </motion.div>
-                                )}
-                            </AnimatePresence>
                           </div>
+
+                          {/* Chat Icon Indicator - only visible on hover */}
+                          <AnimatePresence>
+                            {portalUser.id !== user?.id &&
+                              hoveredUser === portalUser.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  transition={{
+                                    duration: 0.15,
+                                    ease: 'easeOut',
+                                  }}
+                                  className="absolute top-3 right-3 text-emerald-600"
+                                  title="Click to chat with this user"
+                                >
+                                  <IoChatbubblesSharp size={18} />
+                                </motion.div>
+                              )}
+                          </AnimatePresence>
                         </div>
                       ))}
                     </div>
