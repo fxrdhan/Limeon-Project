@@ -57,136 +57,145 @@
   }
 }
 
-// Calendar Container Styles
-.calendar-container {
-  @include calendar-container();
-}
+// Calendar Component Styles
+.calendar {
+  // Container variants
+  &-container {
+    @include calendar-container();
 
-.calendar-container-inline {
-  @include calendar-container();
-}
+    &-inline {
+      @include calendar-container();
+    }
 
-.calendar-container-portal {
-  @include calendar-container();
-  @apply transition-all duration-150 ease-out;
+    &-portal {
+      @include calendar-container();
+      @apply transition-all duration-150 ease-out;
 
-  &.calendar-portal-closing,
-  &.calendar-portal-opening {
-    @apply opacity-0 scale-95;
+      &.calendar-portal-closing,
+      &.calendar-portal-opening {
+        @apply opacity-0 scale-95;
+      }
+
+      &.calendar-portal-open {
+        @apply opacity-100 scale-100;
+      }
+
+      &.calendar-drop-down {
+        @apply origin-top shadow-xl;
+      }
+
+      &.calendar-drop-up {
+        @apply origin-bottom;
+        box-shadow:
+          0 -20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 -10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+    }
   }
 
-  &.calendar-portal-open {
-    @apply opacity-100 scale-100;
+  // Button components
+  &-button {
+    &-wrapper {
+      @apply w-full;
+    }
+
+    &-label {
+      @apply block text-sm font-medium text-gray-700 mb-1;
+    }
+
+    &-input {
+      &-wrapper {
+        @apply relative;
+      }
+
+      @apply cursor-pointer;
+    }
   }
 
-  &.calendar-drop-down {
-    @apply origin-top shadow-xl;
+  // Header section
+  &-header {
+    @apply flex items-center justify-between mb-1 gap-2 pl-2;
+
+    &-controls {
+      @apply flex items-center gap-4;
+    }
+
+    &-navigation {
+      @apply flex items-center;
+    }
   }
 
-  &.calendar-drop-up {
-    @apply origin-bottom;
-    box-shadow:
-      0 -20px 25px -5px rgba(0, 0, 0, 0.1),
-      0 -10px 10px -5px rgba(0, 0, 0, 0.04);
+  &-nav-button {
+    @include calendar-navigation-button();
   }
-}
 
-// Calendar Button Component Styles
-.calendar-button-wrapper {
-  @apply w-full;
-}
+  // Days grid
+  &-days-grid {
+    @apply grid grid-cols-7 gap-1 text-center text-sm;
 
-.calendar-button-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
-}
+    &-animated {
+      @extend .calendar-days-grid;
+      @apply m-1;
+    }
 
-.calendar-button-input-wrapper {
-  @apply relative;
-}
+    &-static {
+      @extend .calendar-days-grid;
+    }
+  }
 
-.calendar-button-input {
-  @apply cursor-pointer;
-}
+  &-day {
+    &-label {
+      @apply font-medium text-gray-500 py-2 px-1;
+    }
 
-// Calendar Header Styles
-.calendar-header {
-  @apply flex items-center justify-between mb-1 gap-2 pl-2;
-}
+    &-empty {
+      @apply py-2 px-2;
+    }
 
-.calendar-header-controls {
-  @apply flex items-center gap-4;
-}
+    // Day button variants
+    &-button {
+      @include calendar-day-button();
 
-.calendar-header-navigation {
-  @apply flex items-center;
-}
+      &-selected {
+        @include calendar-day-button($selected: true);
+      }
 
-.calendar-nav-button {
-  @include calendar-navigation-button();
-}
+      &-highlighted {
+        @include calendar-day-button($highlighted: true);
+      }
 
-// Days Grid Styles
-.calendar-days-grid {
-  @apply grid grid-cols-7 gap-1 text-center text-sm;
-}
+      &-today {
+        @include calendar-day-button($today: true);
+      }
 
-.calendar-days-grid-animated {
-  @extend .calendar-days-grid;
-  @apply m-1;
-}
+      &-disabled {
+        @include calendar-day-button($disabled: true);
+      }
+    }
+  }
 
-.calendar-days-grid-static {
-  @extend .calendar-days-grid;
-}
+  // Animation containers
+  &-animation {
+    &-container {
+      @apply text-center text-sm;
+    }
 
-.calendar-day-label {
-  @apply font-medium text-gray-500 py-2 px-1;
-}
+    &-header {
+      @apply grid grid-cols-7 gap-1 text-center text-sm mb-1;
+    }
 
-.calendar-day-empty {
-  @apply py-2 px-2;
-}
+    &-content {
+      @apply relative overflow-hidden px-1 pb-1;
+    }
 
-// Calendar Day Button Variants
-.calendar-day-button {
-  @include calendar-day-button();
-}
+    &-grid {
+      @apply w-full;
+    }
+  }
 
-.calendar-day-button-selected {
-  @include calendar-day-button($selected: true);
-}
-
-.calendar-day-button-highlighted {
-  @include calendar-day-button($highlighted: true);
-}
-
-.calendar-day-button-today {
-  @include calendar-day-button($today: true);
-}
-
-.calendar-day-button-disabled {
-  @include calendar-day-button($disabled: true);
-}
-
-// Animation Containers
-.calendar-animation-container {
-  @apply text-center text-sm;
-}
-
-.calendar-animation-header {
-  @apply grid grid-cols-7 gap-1 text-center text-sm mb-1;
-}
-
-.calendar-animation-content {
-  @apply relative overflow-hidden px-1 pb-1;
-}
-
-.calendar-animation-grid {
-  @apply w-full;
-}
-
-// Custom Trigger Wrapper
-.calendar-custom-trigger {
-  @apply focus:outline-hidden;
-  outline: none;
+  // Custom trigger wrapper
+  &-custom-trigger {
+    @apply focus:outline-hidden;
+    outline: none;
+  }
 }
