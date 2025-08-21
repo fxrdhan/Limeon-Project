@@ -36,12 +36,15 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
         outline: 'none',
       }}
       className={classNames(
-        'calendar-container-portal',
-        dropDirection === 'down' ? 'calendar-drop-down' : 'calendar-drop-up',
+        'calendar__container',
+        'calendar__container--portal',
+        dropDirection === 'down'
+          ? 'calendar__container--drop-down'
+          : 'calendar__container--drop-up',
         {
-          'calendar-portal-closing': isClosing,
-          'calendar-portal-opening': isOpening,
-          'calendar-portal-open': !isClosing && !isOpening,
+          'calendar__container--closing': isClosing,
+          'calendar__container--opening': isOpening,
+          'calendar__container--open': !isClosing && !isOpening,
         }
       )}
       onKeyDown={handleCalendarKeyDown}

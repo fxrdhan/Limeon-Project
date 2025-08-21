@@ -59,37 +59,39 @@
 
 // Calendar Component Styles
 .calendar {
-  // Container variants
-  &-container {
+  // Container element with modifiers
+  &__container {
     @include calendar-container();
 
-    &-inline {
-      @include calendar-container();
+    // Display variant modifiers
+    &--inline {
+      // No additional styles needed, base styles from mixin
     }
 
-    &-portal {
-      @include calendar-container();
+    &--portal {
       @apply transition-all duration-150 ease-out;
+    }
 
-      &.calendar-portal-closing,
-      &.calendar-portal-opening {
-        @apply opacity-0 scale-95;
-      }
+    // State modifiers (can be combined with --portal)
+    &--closing,
+    &--opening {
+      @apply opacity-0 scale-95;
+    }
 
-      &.calendar-portal-open {
-        @apply opacity-100 scale-100;
-      }
+    &--open {
+      @apply opacity-100 scale-100;
+    }
 
-      &.calendar-drop-down {
-        @apply origin-top shadow-xl;
-      }
+    // Position modifiers (can be combined with --portal)
+    &--drop-down {
+      @apply origin-top shadow-xl;
+    }
 
-      &.calendar-drop-up {
-        @apply origin-bottom;
-        box-shadow:
-          0 -20px 25px -5px rgba(0, 0, 0, 0.1),
-          0 -10px 10px -5px rgba(0, 0, 0, 0.04);
-      }
+    &--drop-up {
+      @apply origin-bottom;
+      box-shadow:
+        0 -20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 -10px 10px -5px rgba(0, 0, 0, 0.04);
     }
   }
 
