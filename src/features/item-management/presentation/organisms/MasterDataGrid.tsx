@@ -319,22 +319,15 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     (colId: string) => {
       toggleDisplayMode(colId);
 
-      // Only autosize if auto-sizing is not globally prevented
-      if (gridApi && !gridApi.isDestroyed() && !shouldPreventAutoSize.current) {
-        const tableType = activeTab as TableType;
-
-        // Use setTimeout with longer delay to ensure column data transformation is complete
+      // Always autosize the toggled column when display mode changes
+      if (gridApi && !gridApi.isDestroyed()) {
+        // Use setTimeout to ensure column data transformation is complete
         setTimeout(() => {
-          if (!gridApi.isDestroyed() && !shouldPreventAutoSize.current) {
-            if (!hasSavedState(tableType)) {
-              // Only autosize if no saved column widths
-              gridApi.autoSizeAllColumns();
-            } else {
-              // If there's saved state, only autosize the toggled column
-              const column = gridApi.getColumn(colId);
-              if (column) {
-                gridApi.autoSizeColumns([colId]);
-              }
+          if (!gridApi.isDestroyed()) {
+            // Always autosize the specific column that was toggled
+            const column = gridApi.getColumn(colId);
+            if (column) {
+              gridApi.autoSizeColumns([colId]);
             }
           }
         }, 100);
