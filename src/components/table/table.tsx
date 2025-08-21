@@ -622,7 +622,7 @@ export const TableHeader = ({
       <div className="overflow-hidden text-ellipsis group-hover:overflow-visible flex items-center justify-between">
         <span>{children}</span>
         {isColumnSortable && (
-          <span className="ml-2 flex-shrink-0">{getSortIcon()}</span>
+          <span className="ml-2 shrink-0">{getSortIcon()}</span>
         )}
       </div>
     </th>

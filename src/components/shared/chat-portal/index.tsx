@@ -852,7 +852,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                               <span className="text-xs text-gray-400">
                                 {displayTime}
                               </span>
-                              <div className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                              <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
                                 {user?.profilephoto ? (
                                   <img
                                     src={user.profilephoto}
@@ -871,7 +871,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                             </>
                           ) : (
                             <>
-                              <div className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                              <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
                                 {targetUser?.profilephoto ? (
                                   <img
                                     src={targetUser.profilephoto}

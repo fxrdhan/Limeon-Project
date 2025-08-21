@@ -202,7 +202,7 @@ function BaseSelector<T>({
             {showHeader && (
               <>
                 <motion.div
-                  className="flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg"
+                  className="shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg"
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
@@ -251,7 +251,7 @@ function BaseSelector<T>({
                           }`}
                           onClick={() => onSelect(item)}
                         >
-                          <div className="flex-shrink-0 mt-0.5">
+                          <div className="shrink-0 mt-0.5">
                             {config.getItemIcon(item)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -292,7 +292,7 @@ function BaseSelector<T>({
           <AnimatePresence>
             {showHeader && (
               <motion.div
-                className="flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg"
+                className="shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}

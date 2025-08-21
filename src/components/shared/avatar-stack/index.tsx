@@ -56,7 +56,7 @@ const Avatar = memo(
         className={`
         relative rounded-full shadow-sm w-8 h-8 overflow-hidden
         ${overlap && !isInPortal ? overlapClass[size as keyof typeof overlapClass] || '' : ''}
-        ${isInPortal ? 'flex-shrink-0' : ''}
+        ${isInPortal ? 'shrink-0' : ''}
       `}
         title={`${user.name} - Online`}
       >

@@ -11,7 +11,7 @@ const RadioIndicator: React.FC<RadioIndicatorProps> = ({
 }) => {
   return (
     <div
-      className={`mr-2 flex ${isExpanded ? 'items-start pt-0.5' : 'items-center'} flex-shrink-0`}
+      className={`mr-2 flex ${isExpanded ? 'items-start pt-0.5' : 'items-center'} shrink-0`}
     >
       <div
         className={`w-4 h-4 rounded-full border ${
