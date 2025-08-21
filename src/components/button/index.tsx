@@ -61,13 +61,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       : 'primary';
     const safeSize: ButtonSize = isButtonSize(size) ? size : 'md';
     const buttonClasses = classNames(
-      'button-base',
-      `button-${safeSize}`,
-      `button-${safeVariant}`,
+      'button',
+      `button--${safeSize}`,
+      `button--${safeVariant}`,
       {
-        'button-glow': withGlow,
-        'button-fullwidth': fullWidth,
-        'button-underline': withUnderline && safeVariant === 'text',
+        'button--glow': withGlow,
+        'button--fullwidth': fullWidth,
+        'button--underline': withUnderline && safeVariant === 'text',
       },
       className
     );
@@ -80,7 +80,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading ? (
-          <span className="flex items-center justify-center">
+          <span className="button__spinner">
             <AiOutlineLoading3Quarters className="animate-spin -ml-1 mr-2 h-4 w-4" />
             Loading...
           </span>

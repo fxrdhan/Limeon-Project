@@ -1,108 +1,106 @@
 @import 'tailwindcss' reference;
 
-// Use Tailwind's primary color from config - no duplication
-
-// SCSS Mixins for Better Composition - simplified without color duplication
-
-// Button Base Styles
-.button-base {
+// SCSS Mixins for Better Composition
+@mixin button-base() {
   @apply cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out;
   @apply disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden;
 
-  &:not(.button-glow) {
+  &:not(.button--glow) {
     @apply hover:opacity-80;
   }
+}
 
-  &.button-fullwidth {
+@mixin button-glow-effect($color-var) {
+  &:hover,
+  &:focus {
+    box-shadow:
+      0 0 5px var($color-var),
+      0 0 15px var($color-var),
+      0 0 30px var($color-var);
+  }
+}
+
+// BEM Button Component
+.button {
+  @include button-base();
+
+  // Size modifiers
+  &--sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  &--md {
+    @apply px-4 py-2;
+  }
+
+  &--lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  // Variant modifiers
+  &--primary {
+    @apply text-white shadow-md ring-0 outline-hidden flex items-center hover:text-white;
+    background-color: var(--color-primary);
+  }
+
+  &--secondary {
+    @apply text-white ring-0 outline-hidden flex items-center hover:text-white;
+    background-color: var(--color-secondary);
+  }
+
+  &--text {
+    @apply text-gray-500 hover:text-black;
+
+    &.button--underline {
+      @apply hover:underline underline-offset-2 decoration-2;
+    }
+  }
+
+  &--danger {
+    @apply hover:text-white outline-hidden;
+    color: var(--color-danger);
+
+    &:hover {
+      background-color: color-mix(
+        in oklch,
+        var(--color-danger) 80%,
+        transparent
+      );
+      opacity: 1 !important;
+    }
+  }
+
+  &--text-danger {
+    @apply hover:bg-red-100 outline-hidden;
+    color: var(--color-danger);
+
+    &:hover {
+      opacity: 1 !important;
+    }
+  }
+
+  // State modifiers
+  &--fullwidth {
     @apply w-full;
   }
-}
 
-// Button Sizes
-.button-sm {
-  @apply px-3 py-1.5 text-sm;
-}
+  &--glow {
+    &.button--primary {
+      @include button-glow-effect(--color-primary);
+    }
 
-.button-md {
-  @apply px-4 py-2;
-}
+    &.button--secondary {
+      @include button-glow-effect(--color-secondary);
+    }
 
-.button-lg {
-  @apply px-6 py-3 text-lg;
-}
-
-// Button Variants
-.button-text {
-  @apply text-gray-500 hover:text-black;
-
-  &.button-underline {
-    @apply hover:underline underline-offset-2 decoration-2;
-  }
-}
-
-.button-primary {
-  @apply text-white shadow-md;
-  @apply rounded-lg ring-0 outline-hidden flex items-center hover:text-white;
-  background-color: var(--color-primary); // Use Tailwind v4 CSS custom property
-}
-
-.button-secondary {
-  @apply text-white;
-  @apply rounded-lg ring-0 outline-hidden flex items-center hover:text-white;
-  background-color: var(
-    --color-secondary
-  ); // Use Tailwind v4 CSS custom property
-}
-
-.button-danger {
-  @apply hover:text-white outline-hidden;
-  color: var(--color-danger); // Use Tailwind v4 CSS custom property
-
-  &:hover {
-    background-color: color-mix(in oklch, var(--color-danger) 80%, transparent);
-    opacity: 1 !important;
-  }
-}
-
-.button-text-danger {
-  @apply hover:bg-red-100 outline-hidden;
-  color: var(--color-danger); // Use Tailwind v4 CSS custom property
-
-  &:hover {
-    opacity: 1 !important;
-  }
-}
-
-// Glow Effects - using Tailwind v4 CSS custom properties
-.button-glow {
-  &.button-primary {
-    &:hover,
-    &:focus {
-      box-shadow:
-        0 0 5px var(--color-primary),
-        0 0 15px var(--color-primary),
-        0 0 30px var(--color-primary);
+    &.button--danger,
+    &.button--text-danger {
+      @include button-glow-effect(--color-danger);
     }
   }
+}
 
-  &.button-secondary {
-    &:hover,
-    &:focus {
-      box-shadow:
-        0 0 5px var(--color-secondary),
-        0 0 15px var(--color-secondary),
-        0 0 30px var(--color-secondary);
-    }
-  }
-
-  &.button-danger,
-  &.button-text-danger {
-    &:hover,
-    &:focus {
-      box-shadow:
-        0 0 5px var(--color-danger),
-        0 0 15px var(--color-danger),
-        0 0 30px var(--color-danger);
-    }
-  }
+// Loading spinner element
+.button__spinner {
+  @apply flex items-center justify-center;
 }
