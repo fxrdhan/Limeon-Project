@@ -1,5 +1,5 @@
 import { memo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import type { OnlineUser } from '@/types';
 
@@ -19,12 +19,6 @@ interface AvatarProps {
   overlap?: boolean;
   getInitials: (name: string) => string;
   getInitialsColor: (userId: string) => string;
-}
-
-interface AvatarSkeletonProps {
-  size: 'sm' | 'md' | 'lg';
-  index?: number;
-  overlap?: boolean;
 }
 
 // Individual Avatar Component with shared layout
@@ -89,37 +83,6 @@ const Avatar = memo(
 );
 
 Avatar.displayName = 'Avatar';
-
-// Avatar Skeleton Component
-const AvatarSkeleton = memo(
-  ({ size, index = 0, overlap = false }: AvatarSkeletonProps) => {
-    const sizeClasses = {
-      sm: 'w-6 h-6',
-      md: 'w-8 h-8',
-      lg: 'w-10 h-10',
-    };
-
-    const overlapClass = {
-      sm: '-ml-1',
-      md: '-ml-2',
-      lg: '-ml-3',
-    };
-
-    return (
-      <div
-        className={`
-        relative rounded-full shadow-sm
-        ${sizeClasses[size]}
-        ${overlap ? overlapClass[size] : ''}
-        bg-gray-200
-      `}
-        style={{ zIndex: index + 1 }}
-      />
-    );
-  }
-);
-
-AvatarSkeleton.displayName = 'AvatarSkeleton';
 
 const AvatarStack = memo(
   ({
@@ -189,74 +152,38 @@ const AvatarStack = memo(
         className={`relative flex items-center ${className}`}
         ref={containerRef}
       >
-        <div className="flex items-center relative">
-          {/* Skeleton View (background layer - always present) */}
+        <div
+          className={`flex items-center transition-all duration-200 ${
+            showPortal ? 'blur-xs opacity-80' : ''
+          }`}
+        >
           {visibleUsers.map((user, index) => (
-            <AvatarSkeleton
-              key={`skeleton-${user.id}`}
+            <Avatar
+              key={user.id}
+              user={user}
               size={size}
+              isInPortal={false}
               index={index}
               overlap={index > 0}
+              getInitials={getInitials}
+              getInitialsColor={getInitialsColor}
             />
           ))}
 
-          {/* Skeleton overflow count */}
+          {/* Show overflow count */}
           {hiddenCount > 0 && (
             <div
               className={`
                 ${sizeClasses[size]} -ml-2
-                rounded-full bg-gray-200
-                flex items-center justify-center text-gray-400 font-medium
+                rounded-full bg-gray-100
+                flex items-center justify-center text-gray-600 font-medium
                 shadow-sm
               `}
+              title={`+${hiddenCount} more online users`}
             >
               +{hiddenCount}
             </div>
           )}
-
-          {/* Real Avatar View (overlay - shows when portal is closed) */}
-          <div className="absolute inset-0 flex items-center">
-            <AnimatePresence>
-              {!showPortal && (
-                <>
-                  {visibleUsers.map((user, index) => (
-                    <Avatar
-                      key={user.id}
-                      user={user}
-                      size={size}
-                      isInPortal={false}
-                      index={index}
-                      overlap={index > 0}
-                      getInitials={getInitials}
-                      getInitialsColor={getInitialsColor}
-                    />
-                  ))}
-
-                  {/* Show overflow count */}
-                  {hiddenCount > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{
-                        duration: 0.2,
-                        ease: 'easeOut',
-                      }}
-                      className={`
-                        ${sizeClasses[size]} -ml-2
-                        rounded-full bg-gray-100
-                        flex items-center justify-center text-gray-600 font-medium
-                        shadow-sm
-                      `}
-                      title={`+${hiddenCount} more online users`}
-                    >
-                      +{hiddenCount}
-                    </motion.div>
-                  )}
-                </>
-              )}
-            </AnimatePresence>
-          </div>
         </div>
       </div>
     );
