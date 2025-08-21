@@ -18,42 +18,23 @@
   }
 }
 
-@mixin calendar-day-button(
-  $selected: false,
-  $highlighted: false,
-  $today: false,
-  $disabled: false
-) {
+// Single-purpose mixins for better composition
+@mixin calendar-day-base() {
   @include calendar-button-base();
-  @apply py-2 px-2 text-sm;
+  @apply py-2 px-2 text-sm text-gray-700;
   min-width: 32px;
   min-height: 32px;
 
-  @if $disabled {
-    @apply text-gray-300 cursor-not-allowed;
-  } @else {
-    @apply text-gray-700;
+  &:hover {
+    @apply bg-emerald-50;
+  }
+}
 
-    &:hover {
-      @apply bg-emerald-50;
-    }
+@mixin calendar-day-disabled() {
+  @apply text-gray-300 cursor-not-allowed;
 
-    @if $selected {
-      @apply text-white font-semibold;
-      background-color: var(
-        --color-primary
-      ); // Use Tailwind v4 CSS custom property
-
-      &:hover {
-        @apply ring-2 ring-emerald-200;
-        color: var(--color-primary); // Use Tailwind v4 CSS custom property
-      }
-    } @else if $highlighted {
-      @apply bg-emerald-50 ring-2 ring-emerald-200;
-    } @else if $today {
-      @apply ring ring-emerald-200;
-      color: var(--color-primary); // Use Tailwind v4 CSS custom property
-    }
+  &:hover {
+    @apply bg-transparent; // Override base hover
   }
 }
 
@@ -96,7 +77,7 @@
   }
 
   // Button components
-  &-button {
+  &__button {
     &-wrapper {
       @apply w-full;
     }
@@ -115,7 +96,7 @@
   }
 
   // Header section
-  &-header {
+  &__header {
     @apply flex items-center justify-between mb-1 gap-2 pl-2;
 
     &-controls {
@@ -127,25 +108,25 @@
     }
   }
 
-  &-nav-button {
+  &__nav-button {
     @include calendar-navigation-button();
   }
 
   // Days grid
-  &-days-grid {
+  &__days-grid {
     @apply grid grid-cols-7 gap-1 text-center text-sm;
 
-    &-animated {
-      @extend .calendar-days-grid;
-      @apply m-1;
+    &--animated {
+      @apply grid grid-cols-7 gap-1 text-center text-sm m-1;
     }
 
-    &-static {
-      @extend .calendar-days-grid;
+    &--static {
+      @apply grid grid-cols-7 gap-1 text-center text-sm;
     }
   }
 
-  &-day {
+  // Day elements with clean BEM structure
+  &__day {
     &-label {
       @apply font-medium text-gray-500 py-2 px-1;
     }
@@ -154,30 +135,38 @@
       @apply py-2 px-2;
     }
 
-    // Day button variants
+    // Day button with state modifiers
     &-button {
-      @include calendar-day-button();
+      @include calendar-day-base();
 
-      &-selected {
-        @include calendar-day-button($selected: true);
+      // State modifiers (additive, not overriding)
+      &--selected {
+        @apply text-white font-semibold;
+        background-color: var(--color-primary);
+
+        &:hover {
+          @apply ring-2 ring-emerald-200;
+          color: var(--color-primary);
+        }
       }
 
-      &-highlighted {
-        @include calendar-day-button($highlighted: true);
+      &--highlighted {
+        @apply bg-emerald-50 ring-2 ring-emerald-200;
       }
 
-      &-today {
-        @include calendar-day-button($today: true);
+      &--today {
+        @apply ring ring-emerald-200;
+        color: var(--color-primary);
       }
 
-      &-disabled {
-        @include calendar-day-button($disabled: true);
+      &--disabled {
+        @include calendar-day-disabled();
       }
     }
   }
 
   // Animation containers
-  &-animation {
+  &__animation {
     &-container {
       @apply text-center text-sm;
     }
@@ -196,7 +185,7 @@
   }
 
   // Custom trigger wrapper
-  &-custom-trigger {
+  &__custom-trigger {
     @apply focus:outline-hidden;
     outline: none;
   }

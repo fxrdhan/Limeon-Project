@@ -28,8 +28,8 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   });
 
   return (
-    <div className="calendar-header">
-      <div className="calendar-header-controls">
+    <div className="calendar__header">
+      <div className="calendar__header-controls">
         <Dropdown
           mode="text"
           portalWidth="120px"
@@ -57,10 +57,10 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         />
       </div>
 
-      <div className="calendar-header-navigation">
+      <div className="calendar__header-navigation">
         <button
           onClick={onNavigatePrev}
-          className="calendar-nav-button"
+          className="calendar__nav-button"
           aria-label="Previous month"
         >
           <FaChevronLeft size={12} />
@@ -68,7 +68,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
         <button
           onClick={onNavigateNext}
-          className="calendar-nav-button"
+          className="calendar__nav-button"
           aria-label="Next month"
         >
           <FaChevronRight size={12} />

@@ -73,20 +73,22 @@ const DaysGrid: React.FC<DaysGridProps> = ({
     return (
       <div
         className={
-          animated ? 'calendar-days-grid-animated' : 'calendar-days-grid-static'
+          animated
+            ? 'calendar__days-grid--animated'
+            : 'calendar__days-grid--static'
         }
       >
         {/* Day labels - show only if not animated (static version) */}
         {!animated &&
           DAY_LABELS.map(day => (
-            <div key={day} className="calendar-day-label">
+            <div key={day} className="calendar__day-label">
               {day}
             </div>
           ))}
         {calendarDays.map((day, index) => {
           if (day === null)
             return (
-              <div key={`empty-${index}`} className="calendar-day-empty"></div>
+              <div key={`empty-${index}`} className="calendar__day-empty"></div>
             );
 
           const currentDate = new Date(year, month, day);
@@ -119,12 +121,12 @@ const DaysGrid: React.FC<DaysGridProps> = ({
               onMouseEnter={() => !isDisabled && onDateHighlight(currentDate)}
               onMouseLeave={() => onDateHighlight(null)}
               disabled={isDisabled}
-              className={classNames('calendar-day-button', {
-                'calendar-day-button-disabled': isDisabled,
-                'calendar-day-button-selected': !isDisabled && isSelected,
-                'calendar-day-button-highlighted':
+              className={classNames('calendar__day-button', {
+                'calendar__day-button--disabled': isDisabled,
+                'calendar__day-button--selected': !isDisabled && isSelected,
+                'calendar__day-button--highlighted':
                   !isDisabled && !isSelected && isHighlighted,
-                'calendar-day-button-today':
+                'calendar__day-button--today':
                   !isDisabled && !isSelected && !isHighlighted && isToday,
               })}
             >
@@ -139,7 +141,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   // Render with or without animation based on prop
   if (!animated) {
     return (
-      <div className="calendar-animation-container">
+      <div className="calendar__animation-container">
         {renderDatesGrid(displayDate)}
       </div>
     );
@@ -147,18 +149,18 @@ const DaysGrid: React.FC<DaysGridProps> = ({
 
   // Animated version
   return (
-    <div className="calendar-animation-container">
+    <div className="calendar__animation-container">
       {/* Static day labels header */}
-      <div className="calendar-animation-header">
+      <div className="calendar__animation-header">
         {DAY_LABELS.map(day => (
-          <div key={day} className="calendar-day-label">
+          <div key={day} className="calendar__day-label">
             {day}
           </div>
         ))}
       </div>
 
       {/* Animated dates grid */}
-      <div className="calendar-animation-content">
+      <div className="calendar__animation-content">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={gridKey}
@@ -174,7 +176,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
               ease: [0.4, 0.0, 0.2, 1],
               duration: 0.25,
             }}
-            className="calendar-animation-grid"
+            className="calendar__animation-grid"
           >
             {renderDatesGrid(displayDate)}
           </motion.div>
