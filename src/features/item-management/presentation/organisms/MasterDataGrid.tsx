@@ -271,15 +271,15 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           if (parsedState.scroll && parsedState.scroll.top > 0) {
             const gridContainer = document.querySelector('.ag-body-viewport');
             if (gridContainer) {
-              // Force scroll position multiple times to ensure it sticks
+              // Immediate scroll restoration
               gridContainer.scrollTop = parsedState.scroll.top;
 
-              // Double-check after short delay
-              setTimeout(() => {
+              // Quick double-check using requestAnimationFrame for smoother performance
+              requestAnimationFrame(() => {
                 if (gridContainer.scrollTop !== parsedState.scroll.top) {
                   gridContainer.scrollTop = parsedState.scroll.top;
                 }
-              }, 50);
+              });
             }
           }
         } catch (error) {
@@ -407,6 +407,32 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         // Apply immediately - no delay needed since grid is ready but no data rendered yet
         restoreGridState(params.api, tableType);
 
+        // IMMEDIATELY restore scroll position to prevent flickering
+        const savedState = localStorage.getItem(
+          `pharmasys_manual_grid_state_${tableType}`
+        );
+
+        if (savedState) {
+          try {
+            const parsedState = JSON.parse(savedState);
+            if (parsedState.scroll && parsedState.scroll.top > 0) {
+              // Apply scroll position BEFORE data renders to prevent flicker
+              requestAnimationFrame(() => {
+                const gridContainer =
+                  document.querySelector('.ag-body-viewport');
+                if (gridContainer) {
+                  gridContainer.scrollTop = parsedState.scroll.top;
+                }
+              });
+            }
+          } catch (error) {
+            console.warn(
+              'Failed to preemptively restore scroll position:',
+              error
+            );
+          }
+        }
+
         // Sync local page size state with restored pagination state
         setTimeout(() => {
           if (!params.api.isDestroyed()) {
@@ -438,27 +464,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       // Re-apply saved state if exists and initial restoration not yet complete
       if (hasSavedState(tableType) && !isInitialRestorationDone.current) {
-        // Small delay to ensure data is fully rendered before re-applying state
-        setTimeout(() => {
+        // State already restored in onGridReady - just ensure scroll position is correct
+        requestAnimationFrame(() => {
           if (!gridApi.isDestroyed()) {
-            restoreGridState(gridApi, tableType);
-
-            // Use dedicated scroll restoration with proper timing
-            setTimeout(() => {
-              if (!gridApi.isDestroyed()) {
-                const restoredPageSize = gridApi.paginationGetPageSize();
-                setCurrentPageSize(restoredPageSize);
-                // Mark restoration as complete
-                isInitialRestorationDone.current = true;
-
-                // Restore scroll position after everything is settled
-                setTimeout(() => {
-                  restoreScrollPosition();
-                }, 200);
-              }
-            }, 150);
+            // Only apply scroll position as final adjustment - state already restored
+            restoreScrollPosition();
+            isInitialRestorationDone.current = true;
           }
-        }, 100); // Increased initial delay
+        });
       } else if (!shouldPreventAutoSize.current) {
         // Only autosize if no saved state and auto-sizing is not prevented
         gridApi.autoSizeAllColumns();
@@ -474,10 +487,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       // Trigger dedicated scroll restoration after data loading completes
       if (hasSavedState(tableType)) {
-        // Wait for all grid updates to finish, then restore scroll
-        setTimeout(() => {
+        // Quick restore since data is cached
+        requestAnimationFrame(() => {
           restoreScrollPosition();
-        }, 500); // Much longer delay
+        });
       }
     }
   }, [gridApi, activeTab, restoreScrollPosition]);
@@ -492,10 +505,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     ) {
       const tableType = activeTab as TableType;
       if (hasSavedState(tableType)) {
-        // Final scroll restoration after loading completes
-        setTimeout(() => {
+        // Quick final restoration since data is cached
+        requestAnimationFrame(() => {
           restoreScrollPosition();
-        }, 300);
+        });
       }
     }
   }, [isLoading, gridApi, activeTab, restoreScrollPosition]);
