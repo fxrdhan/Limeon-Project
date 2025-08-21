@@ -127,6 +127,18 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
+  const isInitialRestorationDone = useRef<boolean>(false);
+
+  // Initialize auto-size prevention based on saved state during component mount
+  const shouldPreventAutoSize = useRef<boolean>(
+    hasSavedState(activeTab as TableType)
+  );
+
+  // Update auto-size prevention when activeTab changes
+  useEffect(() => {
+    const tableType = activeTab as TableType;
+    shouldPreventAutoSize.current = hasSavedState(tableType);
+  }, [activeTab]);
 
   // Auto-restore no longer needs loading state - removed for faster UX
 
@@ -272,7 +284,12 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       gridApi &&
       !gridApi.isDestroyed()
     ) {
-      if (hasSavedState(tableType)) {
+      // Reset restoration flag for new tab
+      isInitialRestorationDone.current = false;
+
+      const hasSaved = hasSavedState(tableType);
+
+      if (hasSaved) {
         restoreGridState(gridApi, tableType);
 
         // Sync local page size state with restored pagination state
@@ -280,11 +297,15 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           if (!gridApi.isDestroyed()) {
             const restoredPageSize = gridApi.paginationGetPageSize();
             setCurrentPageSize(restoredPageSize);
+            isInitialRestorationDone.current = true;
           }
         }, 150); // After restoration timeout
       } else {
-        // No saved state, just autosize
-        gridApi.autoSizeAllColumns();
+        // No saved state, just autosize if not prevented
+        if (!shouldPreventAutoSize.current) {
+          gridApi.autoSizeAllColumns();
+        }
+        isInitialRestorationDone.current = true;
       }
 
       previousActiveTabRef.current = tableType;
@@ -298,17 +319,28 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     (colId: string) => {
       toggleDisplayMode(colId);
 
-      // Auto trigger autosize after toggle, wait for data transformation to complete
-      if (gridApi && !gridApi.isDestroyed()) {
+      // Only autosize if auto-sizing is not globally prevented
+      if (gridApi && !gridApi.isDestroyed() && !shouldPreventAutoSize.current) {
+        const tableType = activeTab as TableType;
+
         // Use setTimeout with longer delay to ensure column data transformation is complete
         setTimeout(() => {
-          if (!gridApi.isDestroyed()) {
-            gridApi.autoSizeAllColumns();
+          if (!gridApi.isDestroyed() && !shouldPreventAutoSize.current) {
+            if (!hasSavedState(tableType)) {
+              // Only autosize if no saved column widths
+              gridApi.autoSizeAllColumns();
+            } else {
+              // If there's saved state, only autosize the toggled column
+              const column = gridApi.getColumn(colId);
+              if (column) {
+                gridApi.autoSizeColumns([colId]);
+              }
+            }
           }
         }, 100);
       }
     },
-    [toggleDisplayMode, gridApi]
+    [toggleDisplayMode, gridApi, activeTab]
   );
 
   // Handle row clicks
@@ -332,6 +364,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     (params: GridReadyEvent) => {
       setGridApi(params.api);
 
+      // Reset restoration flag for new grid instance
+      isInitialRestorationDone.current = false;
+
       // Sync current page size with grid
       const gridPageSize = params.api.paginationGetPageSize();
       setCurrentPageSize(gridPageSize);
@@ -341,7 +376,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       // EARLY auto-restore to prevent default state flickering
       const tableType = activeTab as TableType;
-      if (hasSavedState(tableType)) {
+      const hasSaved = hasSavedState(tableType);
+
+      if (hasSaved) {
         // Apply immediately - no delay needed since grid is ready but no data rendered yet
         restoreGridState(params.api, tableType);
 
@@ -350,8 +387,13 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           if (!params.api.isDestroyed()) {
             const restoredPageSize = params.api.paginationGetPageSize();
             setCurrentPageSize(restoredPageSize);
+            // Mark initial restoration as done
+            isInitialRestorationDone.current = true;
           }
         }, 150); // After restoration timeout
+      } else {
+        // No saved state, mark as done immediately
+        isInitialRestorationDone.current = true;
       }
 
       // Notify parent about grid API
@@ -369,9 +411,28 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     if (gridApi && !gridApi.isDestroyed()) {
       const tableType = activeTab as TableType;
 
-      // Only autosize if no saved state (saved state already applied in onGridReady)
-      if (!hasSavedState(tableType)) {
+      // Re-apply saved state if exists and initial restoration not yet complete
+      if (hasSavedState(tableType) && !isInitialRestorationDone.current) {
+        // Small delay to ensure data is fully rendered before re-applying state
+        setTimeout(() => {
+          if (!gridApi.isDestroyed()) {
+            restoreGridState(gridApi, tableType);
+
+            // Sync page size after re-restoration
+            setTimeout(() => {
+              if (!gridApi.isDestroyed()) {
+                const restoredPageSize = gridApi.paginationGetPageSize();
+                setCurrentPageSize(restoredPageSize);
+                // Mark restoration as complete
+                isInitialRestorationDone.current = true;
+              }
+            }, 150);
+          }
+        }, 50);
+      } else if (!shouldPreventAutoSize.current) {
+        // Only autosize if no saved state and auto-sizing is not prevented
         gridApi.autoSizeAllColumns();
+        isInitialRestorationDone.current = true;
       }
     }
   }, [gridApi, activeTab]);
@@ -386,9 +447,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
 
     if (gridApi && !gridApi.isDestroyed()) {
-      // Only autosize if no saved column widths to prevent overriding restored state
+      // Only autosize if no saved column widths and auto-sizing is not prevented
       const tableType = activeTab as TableType;
-      if (!hasSavedState(tableType)) {
+      if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
         gridApi.autoSizeAllColumns();
       }
 
@@ -476,9 +537,9 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           gridApi.ensureIndexVisible(newIndex);
         }
 
-        // Autosize after group expansion (only if no saved column widths)
+        // Autosize after group expansion (only if no saved column widths and auto-sizing is not prevented)
         const tableType = activeTab as TableType;
-        if (!hasSavedState(tableType)) {
+        if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
           gridApi.autoSizeAllColumns();
         }
 
@@ -607,7 +668,13 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onFirstDataRendered={handleFirstDataRendered}
           loading={isLoading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
-          autoSizeColumns={activeTab === 'items' ? itemColumnsToAutoSize : []}
+          autoSizeColumns={
+            shouldPreventAutoSize.current
+              ? []
+              : activeTab === 'items'
+                ? itemColumnsToAutoSize
+                : []
+          }
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getMainMenuItems}
