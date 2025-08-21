@@ -9,8 +9,10 @@ export const useItems = (options?: {
   filters?: Record<string, unknown>;
   orderBy?: { column: string; ascending?: boolean };
 }) => {
-  return useQuery({
-    queryKey: QueryKeys.items.list(options?.filters),
+  const queryKey = QueryKeys.items.list(options?.filters);
+
+  const query = useQuery({
+    queryKey,
     queryFn: async () => {
       const result = await itemsService.getAll({
         filters: options?.filters,
@@ -20,8 +22,19 @@ export const useItems = (options?: {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    // Uses global cache settings
+    // Extended cache for master data stability
+    staleTime: 60 * 60 * 1000, // 1 hour (items data relatively stable)
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours in memory
+
+    // onSuccess deprecated in React Query v5
+
+    // Prevent unnecessary background refetches
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   });
+
+  return query;
 };
 
 export const useItem = (id: string, options?: { enabled?: boolean }) => {

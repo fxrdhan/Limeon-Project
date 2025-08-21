@@ -15,7 +15,7 @@ export const configurePersistence = async (queryClient: QueryClient) => {
   }
 
   try {
-    // Setup custom IndexedDB persistence
+    // Setup custom IndexedDB persistence AND wait for preloading to complete
     await setupIndexedDBPersistence(queryClient);
     return queryClient;
   } catch (error) {

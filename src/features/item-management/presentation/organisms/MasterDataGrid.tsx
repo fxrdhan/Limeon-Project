@@ -257,6 +257,38 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Remove premature autosize - let onFirstDataRendered handle it after data ready
 
+  // Dedicated scroll restoration - runs after everything else is completely finished
+  const restoreScrollPosition = useCallback(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      const tableType = activeTab as TableType;
+      const savedState = localStorage.getItem(
+        `pharmasys_manual_grid_state_${tableType}`
+      );
+
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          if (parsedState.scroll && parsedState.scroll.top > 0) {
+            const gridContainer = document.querySelector('.ag-body-viewport');
+            if (gridContainer) {
+              // Force scroll position multiple times to ensure it sticks
+              gridContainer.scrollTop = parsedState.scroll.top;
+
+              // Double-check after short delay
+              setTimeout(() => {
+                if (gridContainer.scrollTop !== parsedState.scroll.top) {
+                  gridContainer.scrollTop = parsedState.scroll.top;
+                }
+              }, 50);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to restore scroll position:', error);
+        }
+      }
+    }
+  }, [gridApi, activeTab]);
+
   // Auto-save helper function for live state persistence
   const autoSaveState = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
@@ -333,7 +365,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         }, 100);
       }
     },
-    [toggleDisplayMode, gridApi, activeTab]
+    [toggleDisplayMode, gridApi]
   );
 
   // Handle row clicks
@@ -411,24 +443,62 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           if (!gridApi.isDestroyed()) {
             restoreGridState(gridApi, tableType);
 
-            // Sync page size after re-restoration
+            // Use dedicated scroll restoration with proper timing
             setTimeout(() => {
               if (!gridApi.isDestroyed()) {
                 const restoredPageSize = gridApi.paginationGetPageSize();
                 setCurrentPageSize(restoredPageSize);
                 // Mark restoration as complete
                 isInitialRestorationDone.current = true;
+
+                // Restore scroll position after everything is settled
+                setTimeout(() => {
+                  restoreScrollPosition();
+                }, 200);
               }
             }, 150);
           }
-        }, 50);
+        }, 100); // Increased initial delay
       } else if (!shouldPreventAutoSize.current) {
         // Only autosize if no saved state and auto-sizing is not prevented
         gridApi.autoSizeAllColumns();
         isInitialRestorationDone.current = true;
       }
     }
-  }, [gridApi, activeTab]);
+  }, [gridApi, activeTab, restoreScrollPosition]);
+
+  // Backup scroll restoration when row data updates (double protection)
+  const handleRowDataUpdated = useCallback(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      const tableType = activeTab as TableType;
+
+      // Trigger dedicated scroll restoration after data loading completes
+      if (hasSavedState(tableType)) {
+        // Wait for all grid updates to finish, then restore scroll
+        setTimeout(() => {
+          restoreScrollPosition();
+        }, 500); // Much longer delay
+      }
+    }
+  }, [gridApi, activeTab, restoreScrollPosition]);
+
+  // Trigger scroll restoration when loading completes
+  useEffect(() => {
+    if (
+      !isLoading &&
+      gridApi &&
+      !gridApi.isDestroyed() &&
+      isInitialRestorationDone.current
+    ) {
+      const tableType = activeTab as TableType;
+      if (hasSavedState(tableType)) {
+        // Final scroll restoration after loading completes
+        setTimeout(() => {
+          restoreScrollPosition();
+        }, 300);
+      }
+    }
+  }, [isLoading, gridApi, activeTab, restoreScrollPosition]);
 
   // Note: Autosize handled in onFirstDataRendered for better timing
 
@@ -659,6 +729,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
+          onRowDataUpdated={handleRowDataUpdated}
           loading={isLoading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           autoSizeColumns={
