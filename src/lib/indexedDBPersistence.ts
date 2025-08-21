@@ -54,14 +54,13 @@ class PharmacyIndexedDB {
           }
         }
 
-        console.log('IndexedDB initialized successfully');
+        // IndexedDB initialized successfully
         this.recreationAttempts = 0; // Reset counter on success
         resolve();
       };
 
       request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
-        console.log('IndexedDB upgrade needed, creating object stores...');
 
         // Delete existing store if it exists (clean slate)
         if (db.objectStoreNames.contains(this.storeName)) {
@@ -73,26 +72,21 @@ class PharmacyIndexedDB {
           keyPath: 'key',
         });
         store.createIndex('timestamp', 'timestamp');
-        console.log(`Created object store: ${this.storeName}`);
       };
     });
   }
 
   private async recreateDatabase(): Promise<void> {
-    console.log('Recreating IndexedDB database...');
-
     return new Promise((resolve, reject) => {
       const deleteRequest = indexedDB.deleteDatabase(this.dbName);
 
       deleteRequest.onsuccess = () => {
-        console.log('Old database deleted, creating new one...');
         // Increment version to force a clean creation
         this.version += 1;
         this.init().then(resolve).catch(reject);
       };
 
       deleteRequest.onerror = () => {
-        console.error('Failed to delete database');
         reject(deleteRequest.error);
       };
     });
@@ -338,10 +332,8 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
     }
   });
 
-  // Load from IndexedDB on app start
-  setTimeout(async () => {
-    await loadPersistedQueries(queryClient);
-  }, 100);
+  // Load from IndexedDB and WAIT for completion before returning
+  await loadPersistedQueries(queryClient);
 
   return pharmacyDB;
 };
@@ -361,6 +353,39 @@ function shouldPersistQuery(queryKey: string): boolean {
  * Load persisted queries back into React Query cache
  */
 async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
+  // Import QueryKeys for correct key structure
+  const { QueryKeys } = await import('@/constants/queryKeys');
+
+  // Load critical queries with CORRECT query keys
+  const criticalQueries = [
+    // Items - exact match with useItems hook
+    QueryKeys.items.list(undefined), // ['items', 'list', { filters: undefined }]
+
+    // Master Data - exact match with hooks
+    QueryKeys.masterData.categories.list(undefined),
+    QueryKeys.masterData.types.list(undefined),
+    QueryKeys.masterData.packages.list(undefined),
+    QueryKeys.masterData.dosages.list(undefined),
+    QueryKeys.masterData.manufacturers.list(undefined),
+
+    // Item Units
+    QueryKeys.masterData.itemUnits.list(undefined),
+  ];
+
+  for (const queryKey of criticalQueries) {
+    try {
+      const persistedData = await pharmacyDB.getQuery([...queryKey]); // Convert readonly to mutable
+
+      if (persistedData) {
+        // Preload critical data into cache
+        queryClient.setQueryData(queryKey, persistedData.data);
+      }
+    } catch {
+      // Silent fail for preloading
+    }
+  }
+
+  // Also load existing queries in cache
   const queryCache = queryClient.getQueryCache();
   const allQueries = queryCache.getAll();
 

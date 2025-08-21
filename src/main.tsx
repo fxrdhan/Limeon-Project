@@ -11,9 +11,9 @@ import './output.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Smart cache defaults for pharmacy data
-      staleTime: 5 * 60 * 1000, // 5 minutes fresh
-      gcTime: 10 * 60 * 1000, // 10 minutes in memory
+      // Longer cache for master data that rarely changes
+      staleTime: 30 * 60 * 1000, // 30 minutes fresh (master data stable)
+      gcTime: 60 * 60 * 1000, // 1 hour in memory
       retry: 2,
       refetchOnWindowFocus: false, // Reduce unnecessary refetches
     },
