@@ -303,7 +303,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                 duration: 0.2,
                                 ease: 'easeOut',
                               }}
-                              className="relative rounded-full shadow-sm w-8 h-8 flex-shrink-0 overflow-hidden"
+                              className="relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden"
                               title={`${portalUser.name} - Online`}
                             >
                               {portalUser.profilephoto ? (

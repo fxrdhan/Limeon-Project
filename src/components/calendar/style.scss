@@ -6,7 +6,7 @@
 }
 
 @mixin calendar-button-base() {
-  @apply rounded-lg transition-colors flex-shrink-0 cursor-pointer focus:outline-hidden;
+  @apply rounded-lg transition-colors shrink-0 cursor-pointer focus:outline-hidden;
 }
 
 @mixin calendar-navigation-button() {

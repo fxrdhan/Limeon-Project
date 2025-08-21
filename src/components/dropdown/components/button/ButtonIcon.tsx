@@ -10,7 +10,7 @@ const ButtonIcon: React.FC<ButtonIconProps> = ({ isOpen, isClosing }) => {
     <svg
       className={`transition-transform duration-200 ${
         isOpen || isClosing ? 'rotate-180' : ''
-      } w-4 h-4 ml-2 flex-shrink-0 self-center`}
+      } w-4 h-4 ml-2 shrink-0 self-center`}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
