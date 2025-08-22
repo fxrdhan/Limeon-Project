@@ -464,10 +464,30 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
       // Re-apply saved state if exists and initial restoration not yet complete
       if (hasSavedState(tableType) && !isInitialRestorationDone.current) {
-        // State already restored in onGridReady - just ensure scroll position is correct
+        // Re-apply filter model after data is ready for proper filter restoration
+        const savedState = localStorage.getItem(
+          `pharmasys_manual_grid_state_${tableType}`
+        );
+        if (savedState) {
+          try {
+            const parsedState = JSON.parse(savedState);
+
+            // Critical fix: Re-apply filter model after data is loaded
+            if (parsedState.filter?.filterModel) {
+              requestAnimationFrame(() => {
+                if (!gridApi.isDestroyed()) {
+                  gridApi.setFilterModel(parsedState.filter.filterModel);
+                }
+              });
+            }
+          } catch (error) {
+            console.warn('Failed to re-apply filter model:', error);
+          }
+        }
+
+        // Apply scroll position as final adjustment
         requestAnimationFrame(() => {
           if (!gridApi.isDestroyed()) {
-            // Only apply scroll position as final adjustment - state already restored
             restoreScrollPosition();
             isInitialRestorationDone.current = true;
           }
