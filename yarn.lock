@@ -1819,6 +1819,7 @@ __metadata:
     axios: ^1.11.0
     chart.js: ^4.5.0
     classnames: ^2.5.1
+    clsx: ^2.1.1
     compressorjs: ^1.2.1
     concurrently: ^9.2.0
     dotenv: ^17.2.1
@@ -1844,6 +1845,7 @@ __metadata:
     react-spinners: ^0.17.0
     sass: ^1.90.0
     supabase: ^2.37.0
+    tailwind-merge: ^3.3.1
     tailwindcss: ^4.1.12
     tsx: ^4.20.4
     typescript: ^5.9.2
@@ -2055,7 +2057,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"clsx@npm:^2.0.0":
+"clsx@npm:^2.0.0, clsx@npm:^2.1.1":
   version: 2.1.1
   resolution: "clsx@npm:2.1.1"
   checksum: acd3e1ab9d8a433ecb3cc2f6a05ab95fe50b4a3cfc5ba47abb6cbf3754585fcb87b84e90c822a1f256c4198e3b41c7f6c391577ffc8678ad587fc0976b24fd57
@@ -4559,6 +4561,13 @@ __metadata:
   version: 6.2.0
   resolution: "tabbable@npm:6.2.0"
   checksum: f8440277d223949272c74bb627a3371be21735ca9ad34c2570f7e1752bd646ccfc23a9d8b1ee65d6561243f4134f5fbbf1ad6b39ac3c4b586554accaff4a1300
+  languageName: node
+  linkType: hard
+
+"tailwind-merge@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "tailwind-merge@npm:3.3.1"
+  checksum: ace3675227d86f1def95b25b7f6793268a6ab2f340b43ef64ad25646588d2b1d87714cd60db6947bfdb5bb85be3bb6ce1802021620c541ef7a9c3faa05915f2b
   languageName: node
   linkType: hard
 
