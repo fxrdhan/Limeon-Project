@@ -39,7 +39,7 @@ export const useSmartFormSync = ({
         onDataUpdate({ [fieldName]: pendingValue });
 
         if (showConflictNotification) {
-          toast.info(`Field "${fieldName}" diperbarui dengan data terbaru`, {
+          toast.success(`Field "${fieldName}" diperbarui dengan data terbaru`, {
             duration: 3000,
             icon: '🔄',
           });
