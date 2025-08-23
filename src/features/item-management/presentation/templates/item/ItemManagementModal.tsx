@@ -7,6 +7,7 @@ import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemP
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
 import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext';
 import { useItemManagement } from '../../../shared/contexts/useItemFormContext';
+import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
 
 // Template and Organisms
 import ItemModalTemplate from '../ItemModalTemplate';
@@ -115,6 +116,25 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       deleteItemMutation.isPending,
   });
 
+  // Realtime for current item data with smart form sync
+  const { smartFormSync } = useItemModalRealtime({
+    itemId: itemId,
+    enabled: isOpen && isEditMode, // Only enable in edit mode
+    onItemUpdated: payload => {
+      console.log('🔄 Item updated in modal:', payload);
+      // Smart sync handles the updates intelligently
+    },
+    onItemDeleted: () => {
+      console.log('🗑️ Item deleted, closing modal');
+      setIsClosing(true);
+    },
+    onSmartUpdate: updates => {
+      console.log('🧠 Applying smart updates:', updates);
+      // Apply updates that don't conflict with user input
+      updateFormData(updates);
+    },
+  });
+
   // UI event handlers
   const handleReset = useCallback(() => {
     resetForm();
@@ -197,6 +217,9 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       manufacturers,
       loading,
       isDirty,
+    },
+    realtime: {
+      smartFormSync,
     },
     ui: {
       isOpen,
