@@ -261,9 +261,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const restoreScrollPosition = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
       const tableType = activeTab as TableType;
-      const savedState = localStorage.getItem(
-        `pharmasys_manual_grid_state_${tableType}`
-      );
+      const savedState = localStorage.getItem(`grid_state_${tableType}`);
 
       if (savedState) {
         try {
@@ -408,9 +406,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         restoreGridState(params.api, tableType);
 
         // IMMEDIATELY restore scroll position to prevent flickering
-        const savedState = localStorage.getItem(
-          `pharmasys_manual_grid_state_${tableType}`
-        );
+        const savedState = localStorage.getItem(`grid_state_${tableType}`);
 
         if (savedState) {
           try {
@@ -465,9 +461,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       // Re-apply saved state if exists and initial restoration not yet complete
       if (hasSavedState(tableType) && !isInitialRestorationDone.current) {
         // Re-apply filter model after data is ready for proper filter restoration
-        const savedState = localStorage.getItem(
-          `pharmasys_manual_grid_state_${tableType}`
-        );
+        const savedState = localStorage.getItem(`grid_state_${tableType}`);
         if (savedState) {
           try {
             const parsedState = JSON.parse(savedState);

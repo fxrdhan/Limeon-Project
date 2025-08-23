@@ -2,7 +2,7 @@ import type { GridApi, GridState } from 'ag-grid-community';
 import toast from 'react-hot-toast';
 
 // Manual grid state management utilities
-const GRID_STATE_PREFIX = 'pharmasys_manual_grid_state_';
+const GRID_STATE_PREFIX = 'grid_state_';
 
 export type TableType =
   | 'items'
@@ -320,7 +320,7 @@ export const downloadGridState = (tableType: TableType): boolean => {
     // Create download link
     const link = document.createElement('a');
     link.href = url;
-    link.download = `pharmasys-grid-state-${tableType}-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `grid-state-${tableType}-${new Date().toISOString().split('T')[0]}.json`;
 
     // Trigger download
     document.body.appendChild(link);
