@@ -36,3 +36,8 @@ export const useItemActions = () => {
   const { action, businessActions } = useItemManagement();
   return { ...action, ...businessActions };
 };
+
+export const useItemRealtime = () => {
+  const { realtime } = useItemManagement();
+  return realtime;
+};

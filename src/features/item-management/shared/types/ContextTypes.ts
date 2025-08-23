@@ -59,6 +59,24 @@ export interface ItemActionState {
   addManufacturerMutation: { isPending: boolean };
 }
 
+export interface ItemRealtimeState {
+  smartFormSync?: {
+    handleRealtimeUpdate: (updates: Record<string, unknown>) => {
+      appliedImmediately: Record<string, unknown>;
+      pendingConflicts: string[];
+    };
+    getFieldHandlers: (fieldName: string) => {
+      onFocus: () => void;
+      onBlur: () => void;
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    };
+    hasPendingUpdate: (fieldName: string) => boolean;
+    applyAllPendingUpdates: () => Record<string, unknown>;
+    registerActiveField: (fieldName: string) => void;
+    unregisterActiveField: (fieldName: string) => void;
+  };
+}
+
 // Context Action Interfaces (Updated to match actual implementation)
 export interface ItemFormActions {
   updateFormData: (data: Partial<ItemFormData>) => void;
@@ -143,6 +161,7 @@ export interface ItemManagementContextValue {
   modal: ItemModalState;
   price: ItemPriceState;
   action: ItemActionState;
+  realtime?: ItemRealtimeState;
 
   // Actions
   formActions: ItemFormActions;
