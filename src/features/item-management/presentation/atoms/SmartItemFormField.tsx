@@ -65,7 +65,6 @@ const SmartItemFormField: React.FC<SmartItemFormFieldProps> = ({
       type={type}
       placeholder={placeholder}
       className={className}
-      showPendingIndicator={true}
     />
   );
 };
