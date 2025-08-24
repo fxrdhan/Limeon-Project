@@ -16,7 +16,6 @@ interface SmartInputProps
   };
   label?: string;
   error?: string;
-  showPendingIndicator?: boolean;
 }
 
 /**
@@ -36,7 +35,6 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
       smartFormSync,
       label,
       error,
-      showPendingIndicator = true,
       className,
       ...props
     },
@@ -54,8 +52,6 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
 
     // Get field handlers from smart form sync
     const fieldHandlers = smartFormSync?.getFieldHandlers(fieldName);
-    const hasPendingUpdate =
-      smartFormSync?.hasPendingUpdate(fieldName) || false;
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
@@ -80,12 +76,6 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
         {label && (
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {label}
-            {hasPendingUpdate && showPendingIndicator && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse" />
-                Perubahan tersimpan
-              </span>
-            )}
           </label>
         )}
 
@@ -100,34 +90,15 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
               'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm',
               'focus:ring-blue-500 focus:border-blue-500',
               'placeholder-gray-400',
-              // Visual indicator for pending updates
-              hasPendingUpdate &&
-                !isFocused &&
-                'border-l-4 border-l-blue-500 bg-blue-50',
               // Error state
               error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
               className
             )}
             {...props}
           />
-
-          {/* Pending update indicator */}
-          {hasPendingUpdate && !isFocused && showPendingIndicator && (
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            </div>
-          )}
         </div>
 
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-
-        {/* Development helper */}
-        {process.env.NODE_ENV === 'development' && hasPendingUpdate && (
-          <p className="mt-1 text-xs text-blue-600">
-            🔄 Ada perubahan yang akan diaplikasikan setelah Anda selesai
-            mengedit
-          </p>
-        )}
       </div>
     );
   }
