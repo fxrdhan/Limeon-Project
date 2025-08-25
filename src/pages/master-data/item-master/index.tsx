@@ -593,7 +593,7 @@ const ItemMasterNew = memo(() => {
               size="md"
               shape="rounded"
               collapsible={true}
-              defaultExpanded={true}
+              defaultExpanded={false}
               expandOnHover={true}
               autoCollapseDelay={300}
               layoutId="item-master-tabs"
