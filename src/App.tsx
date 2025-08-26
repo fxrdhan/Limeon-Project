@@ -14,6 +14,7 @@ import {
   FormLoadingFallback,
 } from '@/components/loading-fallback';
 import ToastTester from '@/components/ToastTester';
+import { ItemMasterRedirect } from '@/components/routing/ItemMasterRedirect';
 
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const ItemMaster = lazy(() => import('@/pages/master-data/item-master'));
@@ -125,9 +126,7 @@ function App() {
               <Route
                 index
                 path="item-master"
-                element={
-                  <Navigate to="/master-data/item-master/items" replace />
-                }
+                element={<ItemMasterRedirect />}
               />
               {/* Item Master sub-routes */}
               <Route path="item-master">
