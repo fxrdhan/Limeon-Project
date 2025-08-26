@@ -110,6 +110,18 @@ const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
   units: 'units',
 };
 
+// Session storage key for last visited tab
+const LAST_TAB_SESSION_KEY = 'item_master_last_tab';
+
+// Session storage utility
+const saveLastTabToSession = (tab: MasterDataType): void => {
+  try {
+    sessionStorage.setItem(LAST_TAB_SESSION_KEY, tab);
+  } catch (error) {
+    console.warn('Failed to save last tab to session storage:', error);
+  }
+};
+
 const ItemMasterNew = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -195,6 +207,8 @@ const ItemMasterNew = memo(() => {
     const newTab = getTabFromPath(location.pathname);
     if (newTab !== activeTab) {
       setActiveTab(newTab);
+      // Save tab to session storage when URL changes (for direct navigation)
+      saveLastTabToSession(newTab);
     }
   }, [location.pathname, activeTab, getTabFromPath]);
 
@@ -509,6 +523,9 @@ const ItemMasterNew = memo(() => {
     (_key: string, value: MasterDataType) => {
       if (value !== activeTab) {
         navigate(`/master-data/item-master/${value}`);
+
+        // Save selected tab to session storage for future visits
+        saveLastTabToSession(value);
 
         // Simple client-side grouping - no need to clear on tab switch
 
