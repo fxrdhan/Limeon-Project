@@ -34,8 +34,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude AI project instructions
+# AI project instructions
 CLAUDE.md
+AGENTS.md
 
 # MCP configuration (contains sensitive tokens)
 .mcp.json
