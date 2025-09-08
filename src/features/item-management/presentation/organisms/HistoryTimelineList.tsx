@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
 import { FaHistory } from 'react-icons/fa';
 import Button from '@/components/button';
 import { formatDateTime } from '@/lib/formatters';
@@ -210,7 +211,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
         <div
           ref={scrollContainerRef}
-          className="relative space-y-3 max-h-96 overflow-y-auto"
+          className="relative space-y-3 max-h-96 overflow-y-auto scrollbar-gutter-stable"
         >
           {history.map((item, index) => {
             const isSelected = isItemSelected(item);
