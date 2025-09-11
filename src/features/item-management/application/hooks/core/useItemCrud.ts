@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+
 import { usePackageConversion } from '../utils/usePackageConversion';
 import { formatDateTime } from '@/lib/formatters';
 import { useAddItemFormState } from '../form/useItemFormState';
@@ -29,20 +29,6 @@ import type {
  *
  * REFACTORED: Now orchestrates multiple specialized hooks while maintaining exact same API
  */
-
-export const getUnitById = async (unitName: string) => {
-  try {
-    const { data } = await supabase
-      .from('item_packages')
-      .select('id, name')
-      .eq('name', unitName)
-      .single();
-    return data;
-  } catch (error) {
-    console.error('Error fetching unit:', error);
-    return null;
-  }
-};
 
 export const useAddItemForm = ({
   itemId,

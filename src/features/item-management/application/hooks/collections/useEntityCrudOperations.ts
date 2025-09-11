@@ -1,21 +1,19 @@
 /**
  * Entity CRUD Operations Hook - Refactored using Configuration System
  *
- * This hook has been completely refactored to use the centralized entity configuration
- * system, eliminating a 96-line switch statement while maintaining full backward compatibility.
+ * This file replaces the previous implementation which contained unused helpers,
+ * loose `any` usage and several TypeScript lint issues.
  *
- * Before: Massive switch statement mapping table names to hooks (96 lines)
- * After: Configuration-driven lookup with external hook integration (5 lines)
- *
- * Benefits:
- * - Eliminated 90%+ switch statement duplication
- * - Type-safe entity operations
- * - Consistent error handling
- * - Single source of truth for entity mappings
- * - Better maintainability
+ * Changes:
+ * - Removed unused local helpers (code normalizer / pickers)
+ * - Tightened types (use `unknown` and `Record<string, unknown>` instead of `any`)
+ * - Use `toNormalizedMutations` to handle external mutation normalization
+ * - Memoize `refetch` so it is safe to include in hook dependency arrays
+ * - Keep behavior compatible with consumers: returns `handleModalSubmit` and a
+ *   `deleteMutation`-compatible object.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import type { PostgrestError } from '@supabase/supabase-js';
 import {
@@ -24,202 +22,154 @@ import {
   type EntityTypeKey,
 } from '../core/GenericHookFactories';
 import { ENTITY_CONFIGURATIONS } from '../core/EntityHookConfigurations';
+import {
+  toNormalizedMutations,
+  anyPending,
+  firstError,
+  type NormalizedMutations,
+  type NormalizedMutationHandle,
+} from '../core/MutationAdapter';
 
 /**
- * Get hooks for table using configuration system
- *
- * Replaces the massive 96-line switch statement with a simple configuration lookup.
+ * Lookup the external hooks provider for a given table using the centralized
+ * entity configuration system.
  */
 const getHooksForTable = (tableName: string) => {
-  // Map table name to entity type
-  const entityType = Object.entries(ENTITY_CONFIGURATIONS).find(
-    ([, config]) => config.query.tableName === tableName
-  )?.[0] as EntityTypeKey;
+  const found = Object.entries(ENTITY_CONFIGURATIONS).find(
+    ([, cfg]) => cfg.query.tableName === tableName
+  );
 
+  const entityType = found?.[0] as EntityTypeKey | undefined;
   if (!entityType || !isEntityTypeSupported(entityType)) {
     throw new Error(`Unsupported table: ${tableName}`);
   }
-
   return getExternalHooks(entityType);
 };
 
+type ItemFormPayload = {
+  id?: string;
+  kode?: string;
+  code?: string;
+  name: string;
+  description?: string;
+  address?: string;
+  nci_code?: string;
+};
+
 /**
- * Simplified hook for entity CRUD operations used by item-management module.
- * Only provides the essential operations actually used by useEntityManager.
+ * Hook used by item-management to perform basic CRUD operations for an entity.
+ *
+ * Returns:
+ * - handleModalSubmit: to create/update an entity
+ * - deleteMutation: object shaped like a mutation (mutateAsync + status fields)
  */
 export const useEntityCrudOperations = (
   tableName: string,
   entityNameLabel: string
 ) => {
-  // Get the appropriate hooks for this table
   const hooks = getHooksForTable(tableName);
 
-  // Use the appropriate data hook for refetch capability
-  const { refetch } = hooks.useData({
-    enabled: true,
-  });
+  // Minimal typing for the data hook return that we need here (only `refetch`)
+  type UseDataReturn = { refetch?: () => Promise<unknown> } | undefined;
+  const dataHookReturn = (typeof hooks.useData === 'function'
+    ? (
+        hooks.useData as (
+          opts?: { enabled?: boolean } | undefined
+        ) => UseDataReturn
+      )({ enabled: true })
+    : undefined) ?? { refetch: () => Promise.resolve() };
 
-  // Get mutations
-  const mutations = hooks.useMutations();
+  // Extract the refetch function (if present) and memoize it so it can be safely
+  // included in useCallback dependency arrays without causing spurious changes.
+  const dataRefetch = (dataHookReturn as { refetch?: unknown }).refetch;
+  const refetch = useMemo(
+    () =>
+      typeof dataRefetch === 'function'
+        ? (dataRefetch as () => Promise<unknown>)
+        : () => Promise.resolve(),
+    // depend only on the raw refetch function identity
+    [dataRefetch]
+  );
 
-  // Handle form submission (create/update)
+  // Normalize whatever raw mutations the external provider gives us.
+  const rawMutations =
+    typeof hooks.useMutations === 'function' ? hooks.useMutations() : undefined;
+  const normalized: NormalizedMutations = toNormalizedMutations(
+    rawMutations,
+    tableName
+  );
+
+  // Pick individual mutation handles with explicit types so callers don't need to cast.
+  const normalizedCreate:
+    | NormalizedMutationHandle<Record<string, unknown>, unknown>
+    | undefined = normalized.create;
+  const normalizedUpdate:
+    | NormalizedMutationHandle<
+        { id: string } & Record<string, unknown>,
+        unknown
+      >
+    | undefined = normalized.update;
+  const normalizedDelete:
+    | NormalizedMutationHandle<string, unknown>
+    | undefined = normalized.delete;
+
   const handleModalSubmit = useCallback(
-    async (itemData: {
-      id?: string;
-      kode?: string;
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-      nci_code?: string;
-    }) => {
+    async (itemData: ItemFormPayload) => {
       try {
+        // Build base data
+        const baseData: Record<string, unknown> = { name: itemData.name };
+        if (itemData.description !== undefined)
+          baseData.description = itemData.description;
+        if (itemData.address !== undefined) baseData.address = itemData.address;
+        if (itemData.nci_code !== undefined)
+          baseData.nci_code = itemData.nci_code;
+
+        // Accept either `code` or `kode` from UI and pass both to the adapter.
+        // The adapter will keep the canonical one for the table.
+        const codeValue = itemData.code ?? itemData.kode;
+        if (codeValue !== undefined) {
+          baseData.code = codeValue;
+          baseData.kode = codeValue;
+        }
+
         if (itemData.id) {
-          // Update existing item
-          const updateMutation =
-            ('updateCategory' in mutations && mutations.updateCategory) ||
-            ('updateMedicineType' in mutations &&
-              mutations.updateMedicineType) ||
-            ('updatePackage' in mutations && mutations.updatePackage) ||
-            ('updateItemUnit' in mutations && mutations.updateItemUnit) ||
-            ('updateSupplier' in mutations && mutations.updateSupplier) ||
-            ('updateItem' in mutations && mutations.updateItem) ||
-            ('updatePatient' in mutations && mutations.updatePatient) ||
-            ('updateDoctor' in mutations && mutations.updateDoctor) ||
-            ('updateMutation' in mutations && mutations.updateMutation);
-
-          if (
-            updateMutation &&
-            typeof updateMutation === 'object' &&
-            'mutateAsync' in updateMutation
-          ) {
-            const updateData: Record<string, unknown> = { name: itemData.name };
-            if (itemData.description !== undefined) {
-              updateData.description = itemData.description;
-            }
-            if (itemData.address !== undefined) {
-              updateData.address = itemData.address;
-            }
-            if (itemData.nci_code !== undefined) {
-              updateData.nci_code = itemData.nci_code;
-            }
-            // Handle code field properly for different tables
-            const codeValue = itemData.code || itemData.kode;
-            if (codeValue !== undefined) {
-              if (tableName.startsWith('item_')) {
-                // All item master tables use 'code' field
-                updateData.code = codeValue;
-              } else {
-                // Other tables (like suppliers, customers, etc.) might use 'kode'
-                updateData.kode = codeValue;
-              }
-            }
-
-            // Handle different parameter structures for different mutation types
-            if ('updateMutation' in mutations) {
-              // For generic mutations (like dosages), pass parameters directly
-              await (
-                updateMutation as unknown as {
-                  mutateAsync: (
-                    params: { id: string } & Record<string, unknown>
-                  ) => Promise<unknown>;
-                }
-              ).mutateAsync({
-                id: itemData.id!,
-                ...updateData,
-              });
-            } else {
-              // For specific mutations (categories, types, units, etc.), use nested data structure
-              await (
-                updateMutation as unknown as {
-                  mutateAsync: (params: {
-                    id: string;
-                    data: Record<string, unknown>;
-                  }) => Promise<unknown>;
-                }
-              ).mutateAsync({
-                id: itemData.id!,
-                data: updateData,
-              });
-            }
+          if (normalizedUpdate) {
+            const updatePayload: { id: string } & Record<string, unknown> = {
+              id: itemData.id,
+              ...baseData,
+            };
+            await normalizedUpdate.mutateAsync(updatePayload);
           }
         } else {
-          // Create new item
-          const createMutation =
-            ('createCategory' in mutations && mutations.createCategory) ||
-            ('createMedicineType' in mutations &&
-              mutations.createMedicineType) ||
-            ('createPackage' in mutations && mutations.createPackage) ||
-            ('createItemUnit' in mutations && mutations.createItemUnit) ||
-            ('createSupplier' in mutations && mutations.createSupplier) ||
-            ('createItem' in mutations && mutations.createItem) ||
-            ('createPatient' in mutations && mutations.createPatient) ||
-            ('createDoctor' in mutations && mutations.createDoctor) ||
-            ('createMutation' in mutations && mutations.createMutation);
-
-          if (
-            createMutation &&
-            typeof createMutation === 'object' &&
-            'mutateAsync' in createMutation
-          ) {
-            const createData: Record<string, unknown> = { name: itemData.name };
-            if (itemData.description !== undefined) {
-              createData.description = itemData.description;
-            }
-            if (itemData.address !== undefined) {
-              createData.address = itemData.address;
-            }
-            if (itemData.nci_code !== undefined) {
-              createData.nci_code = itemData.nci_code;
-            }
-            // Handle code field properly for different tables
-            const codeValue = itemData.code || itemData.kode;
-            if (codeValue !== undefined) {
-              if (tableName.startsWith('item_')) {
-                // All item master tables use 'code' field
-                createData.code = codeValue;
-              } else {
-                // Other tables (like suppliers, customers, etc.) might use 'kode'
-                createData.kode = codeValue;
-              }
-            }
-
-            await (
-              createMutation as unknown as {
-                mutateAsync: (
-                  data: Record<string, unknown>
-                ) => Promise<unknown>;
-              }
-            ).mutateAsync(createData);
+          if (normalizedCreate) {
+            const createPayload: Record<string, unknown> = baseData;
+            await normalizedCreate.mutateAsync(createPayload);
           }
         }
 
-        // Manually refetch to ensure current tab updates immediately after mutation
-        refetch();
-      } catch (error: unknown) {
-        // Check for duplicate code constraint error (409 Conflict)
-        // PostgrestError structure: {message: string, details: string, hint: string, code: string}
-        const isPostgrestError = (err: unknown): err is PostgrestError => {
+        // Ensure UI refresh
+        await refetch();
+      } catch (err: unknown) {
+        // Narrow PostgrestError-like objects
+        const isPostgrestError = (e: unknown): e is PostgrestError => {
+          if (typeof e !== 'object' || e === null) return false;
+          const rec = e as Record<string, unknown>;
           return (
-            typeof err === 'object' &&
-            err !== null &&
-            'message' in err &&
-            'code' in err
+            typeof rec.message === 'string' && typeof rec.code === 'string'
           );
         };
 
-        const errorMessage = isPostgrestError(error)
-          ? error.message
-          : (typeof error === 'string' ? error : String(error)) ||
-            'Unknown error';
-        const errorDetails = isPostgrestError(error)
-          ? (error.details ?? '')
-          : '';
-        const errorCode = isPostgrestError(error) ? (error.code ?? '') : '';
+        const errorMessage = isPostgrestError(err)
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : String(err ?? 'Unknown error');
+
+        const errorDetails = isPostgrestError(err) ? (err.details ?? '') : '';
+        const errorCode = isPostgrestError(err) ? (err.code ?? '') : '';
 
         const isDuplicateCodeError =
-          errorCode === '23505' || // PostgreSQL unique violation code
-          errorMessage.includes('item_units_kode_key') ||
+          errorCode === '23505' ||
           errorMessage.includes('duplicate key value') ||
           errorMessage.includes('violates unique constraint') ||
           errorDetails.includes('already exists') ||
@@ -227,53 +177,29 @@ export const useEntityCrudOperations = (
           (errorMessage.includes('409') && errorMessage.includes('conflict'));
 
         const action = itemData.id ? 'memperbarui' : 'menambahkan';
-        const codeValue = itemData.code || itemData.kode;
+        const codeVal = itemData.code ?? itemData.kode;
 
-        if (isDuplicateCodeError && codeValue) {
+        if (isDuplicateCodeError && codeVal) {
           toast.error(
-            `Kode "${codeValue}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. ` +
-              `Silakan gunakan kode yang berbeda.`
+            `Kode "${codeVal}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. Silakan gunakan kode yang berbeda.`
           );
         } else {
           toast.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
         }
-        throw error; // Re-throw to allow caller to handle
+        throw err;
       }
     },
-    [mutations, entityNameLabel, tableName, refetch]
+    [normalizedCreate, normalizedUpdate, entityNameLabel, refetch]
   );
 
-  // Handle delete operation
   const handleDelete = useCallback(
     async (itemId: string) => {
       try {
-        const deleteMutation =
-          ('deleteCategory' in mutations && mutations.deleteCategory) ||
-          ('deleteMedicineType' in mutations && mutations.deleteMedicineType) ||
-          ('deletePackage' in mutations && mutations.deletePackage) ||
-          ('deleteItemUnit' in mutations && mutations.deleteItemUnit) ||
-          ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
-          ('deleteItem' in mutations && mutations.deleteItem) ||
-          ('deletePatient' in mutations && mutations.deletePatient) ||
-          ('deleteDoctor' in mutations && mutations.deleteDoctor) ||
-          ('deleteMutation' in mutations && mutations.deleteMutation);
-
-        if (
-          deleteMutation &&
-          typeof deleteMutation === 'object' &&
-          'mutateAsync' in deleteMutation
-        ) {
-          await (
-            deleteMutation as unknown as {
-              mutateAsync: (id: string) => Promise<unknown>;
-            }
-          ).mutateAsync(itemId);
+        if (normalizedDelete) {
+          await normalizedDelete.mutateAsync(itemId);
         }
-
-        // Manually refetch to ensure current tab updates immediately after mutation
-        refetch();
-      } catch (error) {
-        // Check for foreign key constraint error for delete operations
+        await refetch();
+      } catch (error: unknown) {
         const isForeignKeyError =
           error instanceof Error &&
           (error.message.includes('foreign key constraint') ||
@@ -282,36 +208,45 @@ export const useEntityCrudOperations = (
 
         if (isForeignKeyError) {
           toast.error(
-            `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. ` +
-              `Hapus terlebih dahulu data yang menggunakannya.`
+            `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. Hapus terlebih dahulu data yang menggunakannya.`
           );
         } else {
-          const errorMessage =
-            error instanceof Error ? error.message : 'Unknown error';
-          toast.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
+          const message =
+            error instanceof Error ? error.message : String(error);
+          toast.error(`Gagal menghapus ${entityNameLabel}: ${message}`);
         }
-        throw error; // Re-throw to allow caller to handle
+        throw error;
       }
     },
-    [mutations, entityNameLabel, refetch]
+    [normalizedDelete, entityNameLabel, refetch]
   );
 
-  // Create deletion mutation object for compatibility with existing code
+  // Provide a deletion mutation-shaped object for compatibility with existing consumers
   const deleteMutation = {
     mutateAsync: handleDelete,
-    isLoading: Object.values(mutations).some((mutation: unknown) => {
-      const m = mutation as { isLoading?: boolean; isPending?: boolean };
-      return m?.isLoading || m?.isPending;
-    }),
-    error: (() => {
-      const mutationWithError = Object.values(mutations).find(
-        (mutation: unknown) => {
-          const m = mutation as { error?: Error };
-          return m?.error;
-        }
-      ) as { error?: Error } | undefined;
-      return mutationWithError?.error || null;
-    })(),
+    // Cast individual normalized handles to the generic form expected by anyPending/firstError.
+    // This preserves the concrete, well-typed handles locally while satisfying the
+    // invariant generic parameter expectations of the helper functions.
+    isLoading: anyPending(
+      normalizedCreate as unknown as NormalizedMutationHandle<unknown, unknown>,
+      normalizedUpdate as unknown as NormalizedMutationHandle<unknown, unknown>,
+      normalizedDelete as unknown as NormalizedMutationHandle<unknown, unknown>
+    ),
+    error:
+      (firstError(
+        normalizedCreate as unknown as NormalizedMutationHandle<
+          unknown,
+          unknown
+        >,
+        normalizedUpdate as unknown as NormalizedMutationHandle<
+          unknown,
+          unknown
+        >,
+        normalizedDelete as unknown as NormalizedMutationHandle<
+          unknown,
+          unknown
+        >
+      ) as Error | null) ?? null,
   };
 
   return {

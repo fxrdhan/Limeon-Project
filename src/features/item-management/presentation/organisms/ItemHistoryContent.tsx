@@ -8,6 +8,7 @@ import { HISTORY_DEBUG } from '../../config/debug';
 import { useItemManagement } from '../../shared/contexts/useItemFormContext';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 import DiffText from '../molecules/DiffText';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ItemHistoryContentProps {
   itemId: string;
@@ -20,6 +21,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
 }) => {
   // Single context call to prevent double renders
   const { uiActions, form } = useItemManagement();
+  const queryClient = useQueryClient();
 
   // Only log props on mount or when itemId changes
   const prevItemId = useRef(itemId);
@@ -76,8 +78,15 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     if (confirm(`Yakin ingin mengembalikan ${itemName} ke versi ${version}?`)) {
       try {
         await restoreVersion(version);
+        try {
+          await queryClient.invalidateQueries();
+        } catch (e) {
+          // Non-fatal: failing to invalidate queries should not break the flow
+          // Log for debugging purposes
+
+          console.error('Failed to invalidate queries after restore', e);
+        }
         uiActions.goBackToForm();
-        window.location.reload(); // Refresh to show restored data
       } catch (error) {
         toast.error('Gagal mengembalikan versi: ' + error);
       }
