@@ -713,19 +713,19 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     };
   }, [isRowGroupingEnabled, activeTab]);
 
-  // Sidebar configuration with default tool panel based on saved state
+  // Sidebar configuration that considers saved state
   const sideBarConfig = useMemo(() => {
     const tableType = activeTab as TableType;
     const savedState = hasSavedState(tableType)
       ? localStorage.getItem(`grid_state_${tableType}`)
       : null;
 
+    // Parse saved state to determine if sidebar should be open by default
     let defaultToolPanel = undefined;
-
-    // If there's saved state and sidebar was previously open, set defaultToolPanel
     if (savedState) {
       try {
         const parsedState = JSON.parse(savedState);
+        // Check if sidebar was visible and had an open tool panel
         if (
           parsedState.sideBar?.visible &&
           parsedState.sideBar?.openToolPanelId
@@ -752,7 +752,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
         },
         'filters-new', // Shortcut untuk New Filters Tool Panel
       ],
-      defaultToolPanel, // Use appropriate default tool panel
+      defaultToolPanel, // Set default tool panel based on saved state
     };
   }, [activeTab]);
 
