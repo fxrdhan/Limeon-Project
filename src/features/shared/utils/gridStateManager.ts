@@ -118,8 +118,7 @@ export const restoreGridState = (
     }
 
     // Include pagination state for complete state restoration
-    // Exclude scroll state initially to prevent flickering, apply it later
-    gridApi.setState(parsedState, ['scroll']);
+    gridApi.setState(parsedState);
 
     // Apply additional column order and sizing settings after state restoration
     setTimeout(() => {
@@ -146,20 +145,8 @@ export const restoreGridState = (
         if (!hasColumnWidths) {
           gridApi.autoSizeAllColumns();
         }
-
-        // Apply scroll position after a short delay to ensure smooth transition
-        if (parsedState.scroll) {
-          setTimeout(() => {
-            if (!gridApi.isDestroyed()) {
-              const gridContainer = document.querySelector('.ag-body-viewport');
-              if (gridContainer) {
-                gridContainer.scrollTop = parsedState.scroll?.top || 0;
-              }
-            }
-          }, 50);
-        }
       }
-    }, 50);
+    }, 100);
 
     // toast.success('Grid state telah dipulihkan (dengan pagination)');
 
