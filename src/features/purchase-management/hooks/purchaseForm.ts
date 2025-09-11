@@ -1,6 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  recalculateItems,
+  computeItemFinancials,
+  validatePurchaseForm,
+} from './calc';
 import type {
   Item,
   Supplier,
@@ -79,6 +84,11 @@ export const usePurchaseForm = ({
     fetchCompanyProfile();
   }, [fetchSuppliers]);
 
+  // Recalculate items when VAT inclusion flag changes to keep subtotals consistent
+  useEffect(() => {
+    setPurchaseItems(prev => recalculateItems(prev, formData.is_vat_included));
+  }, [formData.is_vat_included]);
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -103,7 +113,10 @@ export const usePurchaseForm = ({
         unit_conversion_rate: newItem.unit_conversion_rate ?? 1,
       },
     ];
-    const recalculatedItems = recalculateSubtotal(itemsWithNewOne);
+    const recalculatedItems = recalculateItems(
+      itemsWithNewOne,
+      formData.is_vat_included
+    );
     setPurchaseItems(recalculatedItems);
   };
 
@@ -182,25 +195,7 @@ export const usePurchaseForm = ({
     );
   };
 
-  const recalculateSubtotal = (items = purchaseItems) => {
-    return items.map(item => {
-      let subtotal = item.quantity * item.price;
-      if (item.discount > 0) {
-        const discountAmount = subtotal * (item.discount / 100);
-        subtotal -= discountAmount;
-      }
-
-      if (item.vat_percentage > 0 && !formData.is_vat_included) {
-        const vatAmount = subtotal * (item.vat_percentage / 100);
-        subtotal += vatAmount;
-      }
-
-      return {
-        ...item,
-        subtotal: subtotal,
-      };
-    });
-  };
+  // removed unused recalculateSubtotal after refactor
 
   const handleUnitChange = (
     id: string,
@@ -253,22 +248,25 @@ export const usePurchaseForm = ({
   };
 
   const calculateTotalVat = () => {
-    return purchaseItems.reduce((total, item) => {
-      if (item.vat_percentage > 0) {
-        const subtotalBeforeVat =
-          item.subtotal / (1 + item.vat_percentage / 100);
-        const vatAmount = item.subtotal - subtotalBeforeVat;
-        return total + vatAmount;
-      }
-      return total;
-    }, 0);
+    return purchaseItems.reduce(
+      (total, item) =>
+        total + computeItemFinancials(item, formData.is_vat_included).vatAmount,
+      0
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (purchaseItems.length === 0) {
-      alert('Silakan tambahkan minimal satu item');
+    const validation = validatePurchaseForm(formData, purchaseItems);
+    if (!validation.isValid) {
+      const message = [
+        ...validation.formErrors,
+        ...validation.itemErrors.flatMap(it =>
+          it.errors.map(err => `Item ${it.id}: ${err}`)
+        ),
+      ].join('\n');
+      alert(message || 'Form tidak valid.');
       return;
     }
 
