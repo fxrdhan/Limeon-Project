@@ -20,6 +20,7 @@ import { StandardPagination } from '../atoms';
 // Hooks
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
+import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 // Manual grid state management for auto-restore
 import {
   hasSavedState,
@@ -42,11 +43,11 @@ type EntityWithCode = {
 };
 
 // Extended Item interface for column display mode transformations
+// Extend Record<string, unknown> to satisfy generic constraints where a
+// Record<string, unknown> is required by transformation utilities.
 interface ItemWithExtendedEntities
-  extends Omit<
-    Item,
-    'category' | 'type' | 'package' | 'dosage' | 'manufacturer'
-  > {
+  extends Record<string, unknown>,
+    Omit<Item, 'category' | 'type' | 'package' | 'dosage' | 'manufacturer'> {
   category?: EntityWithCode;
   type?: EntityWithCode;
   package?: EntityWithCode; // Kemasan (yang ditampilkan di grid)
@@ -149,89 +150,23 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     toggleColumnDisplayMode: toggleDisplayMode,
   } = useColumnDisplayMode();
 
+  // Transform items based on reference column display modes (name/code)
+  // Narrow the transform result to the expected shape so `rowData` can be
+  // typed as `(ItemWithExtendedEntities | EntityData)[]` below.
+  // Use a generic parameter to strongly type the transform and avoid unsafe casts.
+  const itemsForDisplay = useItemsDisplayTransform<ItemWithExtendedEntities>(
+    itemsData as ItemWithExtendedEntities[] | undefined,
+    columnDisplayModes
+  );
+
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
     let data: (ItemWithExtendedEntities | EntityData)[] = [];
     let columns: ColDef[] = [];
 
     if (activeTab === 'items') {
-      data = itemsData || [];
+      data = itemsForDisplay || [];
       columns = itemColumnDefs;
-
-      // Apply column display mode transformations for items
-      data = (itemsData || []).map(item => {
-        const modifiedItem: ItemWithExtendedEntities = { ...item };
-
-        // Apply display mode transformations
-        Object.entries(columnDisplayModes).forEach(([colId, mode]) => {
-          if (mode === 'code') {
-            switch (colId) {
-              case 'manufacturer.name':
-                if (item.manufacturer?.code) {
-                  modifiedItem.manufacturer = {
-                    name: item.manufacturer.code,
-                    code: item.manufacturer.code,
-                  };
-                }
-                break;
-              case 'category.name':
-                // Type guard: Check if category has code property
-                if (
-                  item.category &&
-                  'code' in item.category &&
-                  typeof item.category.code === 'string'
-                ) {
-                  modifiedItem.category = {
-                    name: item.category.code,
-                    code: item.category.code,
-                  };
-                }
-                break;
-              case 'type.name':
-                // Type guard: Check if type has code property
-                if (
-                  item.type &&
-                  'code' in item.type &&
-                  typeof item.type.code === 'string'
-                ) {
-                  modifiedItem.type = {
-                    name: item.type.code,
-                    code: item.type.code,
-                  };
-                }
-                break;
-              case 'package.name':
-                // Type guard: Check if package has code property
-                if (
-                  item.package &&
-                  'code' in item.package &&
-                  typeof item.package.code === 'string'
-                ) {
-                  modifiedItem.package = {
-                    name: item.package.code,
-                    code: item.package.code,
-                  };
-                }
-                break;
-              case 'dosage.name':
-                // Type guard: Check if dosage has code property and exists
-                if (
-                  item.dosage &&
-                  'code' in item.dosage &&
-                  typeof item.dosage.code === 'string'
-                ) {
-                  modifiedItem.dosage = {
-                    name: item.dosage.code,
-                    code: item.dosage.code,
-                  };
-                }
-                break;
-            }
-          }
-        });
-
-        return modifiedItem;
-      });
     } else {
       data = entityData;
       columns = entityColumnDefs;
@@ -240,11 +175,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     return { rowData: data, columnDefs: columns };
   }, [
     activeTab,
-    itemsData,
+    itemsForDisplay,
     entityData,
     itemColumnDefs,
     entityColumnDefs,
-    columnDisplayModes,
   ]);
 
   // Call useDynamicGridHeight at top level (Rules of Hooks compliant)

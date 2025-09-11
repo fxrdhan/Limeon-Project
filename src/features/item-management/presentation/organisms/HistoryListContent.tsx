@@ -3,6 +3,7 @@ import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import toast from 'react-hot-toast';
 import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface HistoryListContentProps {
   compareMode?: boolean;
@@ -17,6 +18,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     entityTable,
     entityId
   );
+  const queryClient = useQueryClient();
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
   // Sync selection state with comparison modal state
@@ -55,9 +57,15 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     if (confirm(`Yakin ingin mengembalikan data ke versi ${version}?`)) {
       try {
         await restoreVersion(version);
-        // Close history and refresh data
+        // Invalidate caches and close history without full reload
+        try {
+          await queryClient.invalidateQueries();
+        } catch (e) {
+          // Non-fatal: failing to invalidate queries should not break the flow
+          // Log for debugging purposes
+          console.error('Failed to invalidate queries after restore', e);
+        }
         uiActions.closeHistory();
-        window.location.reload(); // Refresh to show restored data
       } catch (error) {
         toast.error('Gagal mengembalikan versi: ' + error);
       }
