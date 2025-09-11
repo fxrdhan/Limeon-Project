@@ -713,6 +713,49 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     };
   }, [isRowGroupingEnabled, activeTab]);
 
+  // Sidebar configuration with default tool panel based on saved state
+  const sideBarConfig = useMemo(() => {
+    const tableType = activeTab as TableType;
+    const savedState = hasSavedState(tableType)
+      ? localStorage.getItem(`grid_state_${tableType}`)
+      : null;
+
+    let defaultToolPanel = undefined;
+
+    // If there's saved state and sidebar was previously open, set defaultToolPanel
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        if (
+          parsedState.sideBar?.visible &&
+          parsedState.sideBar?.openToolPanelId
+        ) {
+          defaultToolPanel = parsedState.sideBar.openToolPanelId;
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved state for sidebar config', e);
+      }
+    }
+
+    return {
+      toolPanels: [
+        {
+          id: 'columns',
+          labelDefault: 'Columns',
+          labelKey: 'columns',
+          iconKey: 'columns',
+          toolPanel: 'agColumnsToolPanel',
+          toolPanelParams: {
+            suppressRowGroups: true, // Remove Row Groups section
+            suppressValues: true, // Remove Values (aggregate) section
+          },
+        },
+        'filters-new', // Shortcut untuk New Filters Tool Panel
+      ],
+      defaultToolPanel, // Use appropriate default tool panel
+    };
+  }, [activeTab]);
+
   // No data overlay template
   const overlayNoRowsTemplate = useMemo(() => {
     if (activeTab === 'items') {
@@ -816,24 +859,8 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
           onRowGroupOpened={handleRowGroupOpened}
-          // AG Grid Sidebar - use default config, auto-restore will handle saved state
-          sideBar={{
-            toolPanels: [
-              {
-                id: 'columns',
-                labelDefault: 'Columns',
-                labelKey: 'columns',
-                iconKey: 'columns',
-                toolPanel: 'agColumnsToolPanel',
-                toolPanelParams: {
-                  suppressRowGroups: true, // Remove Row Groups section
-                  suppressValues: true, // Remove Values (aggregate) section
-                },
-              },
-              'filters-new', // Shortcut untuk New Filters Tool Panel
-            ],
-            // No defaultToolPanel = sidebar closed by default
-          }}
+          // AG Grid Sidebar - use dynamic config based on saved state to prevent flickering
+          sideBar={sideBarConfig}
           // Ensure smooth state transitions
           suppressColumnMoveAnimation={true}
         />
