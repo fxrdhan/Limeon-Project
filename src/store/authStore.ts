@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase } from '@/lib/supabase';
+import authService from '@/services/authService';
 import { StorageService } from '@/utils/storage';
 import type { AuthState } from '@/types';
 
@@ -11,23 +11,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     try {
-      const { data } = await supabase.auth.getSession();
-
-      if (data.session) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, name, email, role, profilephoto')
-          .eq('id', data.session.user.id)
-          .single();
-
-        set({
-          session: data.session,
-          user: userData,
-          loading: false,
-        });
-      } else {
-        set({ loading: false });
-      }
+      const { session, user } = await authService.initializeAuth();
+      set({ session, user, loading: false });
     } catch (error) {
       console.error('Error initializing auth:', error);
       set({ loading: false });
@@ -38,22 +23,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { session, user } = await authService.signInWithEmailPassword(
         email,
-        password,
-      });
-
-      if (error) throw error;
-
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id, name, email, role, profilephoto')
-        .eq('id', data.user?.id)
-        .single();
+        password
+      );
 
       set({
-        session: data.session,
-        user: userData,
+        session,
+        user,
         loading: false,
       });
     } catch (error: unknown) {
@@ -69,7 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     try {
       set({ loading: true });
-      await supabase.auth.signOut();
+      await authService.signOut();
       set({ session: null, user: null, loading: false });
     } catch (error: unknown) {
       console.error('Logout error:', error);
@@ -105,15 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         file
       );
 
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          profilephoto: publicUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
+      await authService.updateUserProfilePhotoUrl(user.id, publicUrl);
 
       set(state => ({
         user: state.user ? { ...state.user, profilephoto: publicUrl } : null,
@@ -148,16 +117,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
 
-      // Update database to remove profile photo
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          profilephoto: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
+      await authService.clearUserProfilePhoto(user.id);
 
       // Update state
       set(state => ({
