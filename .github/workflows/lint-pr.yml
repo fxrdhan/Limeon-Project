@@ -1,0 +1,47 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+          requireScope: false
+
+  pr-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          files_changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          lines_changed=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1 | awk '{print $4+$6}')
+
+          echo "Files changed: $files_changed"
+          echo "Lines changed: $lines_changed"
+
+          if [ $files_changed -gt 50 ] || [ $lines_changed -gt 1000 ]; then
+            echo "⚠️ Warning: This PR is quite large. Consider breaking it into smaller PRs."
+            echo "Files changed: $files_changed (recommended: < 50)"
+            echo "Lines changed: $lines_changed (recommended: < 1000)"
+          fi
