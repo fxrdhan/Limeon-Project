@@ -1,43 +1,68 @@
 import { useContext } from 'react';
-import { ItemManagementContext } from './ItemFormContext';
+import {
+  ItemActionStateContext,
+  ItemBusinessActionsContext,
+  ItemFormActionsContext,
+  ItemFormStateContext,
+  ItemModalActionsContext,
+  ItemModalStateContext,
+  ItemPriceStateContext,
+  ItemRealtimeStateContext,
+  ItemUIActionsContext,
+  ItemUIStateContext,
+} from './ItemFormContext';
 
-export const useItemManagement = () => {
-  const context = useContext(ItemManagementContext);
+const ensureContext = <T>(context: T | undefined, name: string): T => {
   if (!context) {
-    throw new Error(
-      'useItemManagement must be used within ItemManagementProvider'
-    );
+    throw new Error(`${name} must be used within ItemManagementProvider`);
   }
   return context;
 };
 
 // Specialized hooks for focused access (performance optimization)
 export const useItemForm = () => {
-  const { form, formActions } = useItemManagement();
-  return { ...form, ...formActions };
+  const state = ensureContext(useContext(ItemFormStateContext), 'useItemForm');
+  const actions = ensureContext(
+    useContext(ItemFormActionsContext),
+    'useItemForm'
+  );
+  return { ...state, ...actions };
 };
 
 export const useItemUI = () => {
-  const { ui, uiActions } = useItemManagement();
-  return { ...ui, ...uiActions };
+  const state = ensureContext(useContext(ItemUIStateContext), 'useItemUI');
+  const actions = ensureContext(useContext(ItemUIActionsContext), 'useItemUI');
+  return { ...state, ...actions };
 };
 
 export const useItemModal = () => {
-  const { modal, modalActions } = useItemManagement();
-  return { ...modal, ...modalActions };
+  const state = ensureContext(
+    useContext(ItemModalStateContext),
+    'useItemModal'
+  );
+  const actions = ensureContext(
+    useContext(ItemModalActionsContext),
+    'useItemModal'
+  );
+  return { ...state, ...actions };
 };
 
 export const useItemPrice = () => {
-  const { price } = useItemManagement();
-  return price;
+  return ensureContext(useContext(ItemPriceStateContext), 'useItemPrice');
 };
 
 export const useItemActions = () => {
-  const { action, businessActions } = useItemManagement();
-  return { ...action, ...businessActions };
+  const actionState = ensureContext(
+    useContext(ItemActionStateContext),
+    'useItemActions'
+  );
+  const businessActions = ensureContext(
+    useContext(ItemBusinessActionsContext),
+    'useItemActions'
+  );
+  return { ...actionState, ...businessActions };
 };
 
 export const useItemRealtime = () => {
-  const { realtime } = useItemManagement();
-  return realtime;
+  return useContext(ItemRealtimeStateContext);
 };

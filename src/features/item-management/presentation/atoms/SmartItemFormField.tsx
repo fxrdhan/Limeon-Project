@@ -1,6 +1,9 @@
 import React from 'react';
 import SmartInput from '@/components/inputs/SmartInput';
-import { useItemManagement } from '../../shared/contexts/useItemFormContext';
+import {
+  useItemForm,
+  useItemRealtime,
+} from '../../shared/contexts/useItemFormContext';
 
 interface SmartItemFormFieldProps {
   fieldName: keyof typeof formDataMapping;
@@ -39,19 +42,20 @@ const SmartItemFormField: React.FC<SmartItemFormFieldProps> = ({
   placeholder,
   className,
 }) => {
-  const { form, formActions, realtime } = useItemManagement();
+  const { formData, updateFormData } = useItemForm();
+  const realtime = useItemRealtime();
 
   const actualFieldName = formDataMapping[fieldName];
-  const fieldValue = form.formData[actualFieldName];
+  const fieldValue = formData[actualFieldName];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
 
     if (type === 'number') {
       const numericValue = parseFloat(value) || 0;
-      formActions.updateFormData({ [actualFieldName]: numericValue });
+      updateFormData({ [actualFieldName]: numericValue });
     } else {
-      formActions.updateFormData({ [actualFieldName]: value });
+      updateFormData({ [actualFieldName]: value });
     }
   };
 

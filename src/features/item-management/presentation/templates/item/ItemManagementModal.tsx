@@ -6,7 +6,11 @@ import type {
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
 import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext';
-import { useItemManagement } from '../../../shared/contexts/useItemFormContext';
+import {
+  useItemActions,
+  useItemForm,
+  useItemUI,
+} from '../../../shared/contexts/useItemFormContext';
 import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
 
 // Template and Organisms
@@ -312,14 +316,15 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
 
 // Clean content component - only uses context
 const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
-  const { ui, action, businessActions, uiActions, formActions, form } =
-    useItemManagement();
+  const ui = useItemUI();
+  const form = useItemForm();
+  const actions = useItemActions();
 
   // Mode-based content rendering
   if (ui.mode === 'history') {
     if (!itemId) {
       // Handle no itemId case - go back to form immediately
-      uiActions.goBackToForm();
+      ui.goBackToForm();
       return null;
     }
 
@@ -327,13 +332,13 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
       <ItemModalTemplate
         isOpen={ui.isOpen}
         isClosing={ui.isClosing}
-        onBackdropClick={uiActions.handleBackdropClick}
+        onBackdropClick={ui.handleBackdropClick}
         onSubmit={(e: React.FormEvent) => e.preventDefault()} // Disable form submission in history mode
         children={{
           header: (
             <ItemFormSections.Header
               onReset={undefined}
-              onClose={uiActions.handleClose}
+              onClose={ui.handleClose}
             />
           ),
           basicInfo: (
@@ -348,7 +353,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
           modals: null,
         }}
         formAction={{
-          onCancel: () => uiActions.goBackToForm(),
+          onCancel: () => ui.goBackToForm(),
           onDelete: undefined,
           isSaving: false,
           isDeleting: false,
@@ -364,13 +369,13 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
     <ItemModalTemplate
       isOpen={ui.isOpen}
       isClosing={ui.isClosing}
-      onBackdropClick={uiActions.handleBackdropClick}
-      onSubmit={formActions.handleSubmit}
+      onBackdropClick={ui.handleBackdropClick}
+      onSubmit={form.handleSubmit}
       children={{
         header: (
           <ItemFormSections.Header
-            onReset={uiActions.handleReset}
-            onClose={uiActions.handleClose}
+            onReset={ui.handleReset}
+            onClose={ui.handleClose}
           />
         ),
         basicInfo: <ItemFormSections.BasicInfo />,
@@ -380,12 +385,12 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
         modals: <ItemModalContainer />,
       }}
       formAction={{
-        onCancel: () => businessActions.handleCancel(uiActions.setIsClosing),
-        onDelete: ui.isEditMode ? businessActions.handleDeleteItem : undefined,
-        isSaving: action.saving,
-        isDeleting: action.deleteItemMutation?.isPending || false,
+        onCancel: () => actions.handleCancel(ui.setIsClosing),
+        onDelete: ui.isEditMode ? actions.handleDeleteItem : undefined,
+        isSaving: actions.saving,
+        isDeleting: actions.deleteItemMutation?.isPending || false,
         isEditMode: ui.isEditMode,
-        isDisabled: action.finalDisabledState,
+        isDisabled: actions.finalDisabledState,
       }}
     />
   );
