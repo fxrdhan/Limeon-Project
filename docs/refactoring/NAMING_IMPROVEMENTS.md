@@ -1,38 +1,47 @@
 # Panduan Refactoring: Penyederhanaan Naming Convention
 
 ## 🎯 Tujuan
+
 Menyederhanakan naming convention yang terlalu verbose dan redundan untuk meningkatkan readability dan maintainability.
 
 ## 📋 Masalah yang Ditemukan
 
 ### 1. Redundansi Konteks
+
 **Masalah**: Nama file/fungsi mengulang konteks yang sudah jelas dari path/folder
+
 ```
 ❌ /features/item-management/presentation/templates/item/ItemManagementModal.tsx
 ❌ /features/item-management/application/hooks/form/useItemFormHandlers.ts
 ```
 
 **Solusi**: Hilangkan pengulangan konteks
+
 ```
 ✅ /features/items/components/Modal.tsx
 ✅ /features/items/hooks/useFormHandlers.ts
 ```
 
 ### 2. Over-Engineering Struktur Folder
+
 **Masalah**: Terlalu banyak nested folder dengan naming pattern DDD/Clean Architecture yang berlebihan
+
 ```
 ❌ features/item-management/presentation/templates/item/
 ❌ features/item-management/application/hooks/form/
 ```
 
 **Solusi**: Flat structure yang lebih sederhana
+
 ```
 ✅ features/items/components/
 ✅ features/items/hooks/
 ```
 
 ### 3. Context Splitting Berlebihan
+
 **Masalah**: 9+ context terpisah untuk satu form
+
 ```typescript
 ❌ ItemFormStateContext
 ❌ ItemUIStateContext
@@ -43,13 +52,16 @@ Menyederhanakan naming convention yang terlalu verbose dan redundan untuk mening
 ```
 
 **Solusi**: Gabungkan menjadi 2-3 context maksimal
+
 ```typescript
 ✅ ItemContext (state + actions)
 ✅ ItemUIContext (UI-specific state)
 ```
 
 ### 4. Naming Hook yang Terlalu Spesifik
+
 **Masalah**: Hook dengan nama terlalu panjang dan redundan
+
 ```typescript
 ❌ useAddItemPageHandlers
 ❌ useItemFormHandlers
@@ -58,6 +70,7 @@ Menyederhanakan naming convention yang terlalu verbose dan redundan untuk mening
 ```
 
 **Solusi**: Nama yang lebih ringkas dan jelas
+
 ```typescript
 ✅ useItem
 ✅ useItemForm
@@ -68,6 +81,7 @@ Menyederhanakan naming convention yang terlalu verbose dan redundan untuk mening
 ## 🔄 Rencana Refactoring
 
 ### Phase 1: Struktur Folder
+
 ```
 BEFORE:
 src/
@@ -107,6 +121,7 @@ src/
 ```
 
 ### Phase 2: Nama File
+
 ```typescript
 // Components
 ❌ ItemManagementModal.tsx
@@ -146,6 +161,7 @@ src/
 ```
 
 ### Phase 3: Context Consolidation
+
 ```typescript
 // BEFORE: 9 contexts
 ItemFormStateContext
@@ -180,6 +196,7 @@ ItemUIContext            // UI-only state
 ### Example 1: Modal Component
 
 **BEFORE** (`ItemManagementModal.tsx`):
+
 ```typescript
 import type {
   ItemManagementModalProps,
@@ -194,6 +211,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({...}) => {
 ```
 
 **AFTER** (`Modal.tsx`):
+
 ```typescript
 import type { ModalProps, ItemContext } from '../types';
 import { useItem } from '../hooks/useItem';
@@ -207,6 +225,7 @@ const Modal: React.FC<ModalProps> = ({...}) => {
 ### Example 2: Hook Organization
 
 **BEFORE**:
+
 ```typescript
 // useItemPageHandlers.ts (151 lines)
 export const useAddItemPageHandlers = ({...}) => {
@@ -220,6 +239,7 @@ export const useAddItemPageHandlers = ({...}) => {
 ```
 
 **AFTER**:
+
 ```typescript
 // useItem.ts (cleaner, focused)
 export const useItem = (props: UseItemProps) => {
@@ -227,19 +247,20 @@ export const useItem = (props: UseItemProps) => {
   const refs = useRefs();
   const ui = useUI();
   const queries = useQueries();
-  
+
   return {
     form,
     refs,
     ui,
     queries,
   };
-}
+};
 ```
 
 ### Example 3: Type Names
 
 **BEFORE**:
+
 ```typescript
 export interface ItemManagementContextValue {
   form: ItemFormState;
@@ -256,6 +277,7 @@ export interface ItemManagementContextValue {
 ```
 
 **AFTER**:
+
 ```typescript
 export interface ItemContext {
   state: {
@@ -277,6 +299,7 @@ export interface ItemContext {
 ## 🎨 Naming Guidelines
 
 ### 1. **Jangan Ulang Konteks**
+
 ```typescript
 ❌ ItemFormState (dalam folder items)
 ✅ FormState
@@ -286,6 +309,7 @@ export interface ItemContext {
 ```
 
 ### 2. **Gunakan Nama Pendek yang Jelas**
+
 ```typescript
 ❌ useAddItemPageHandlers
 ✅ useItem atau useItemHandlers
@@ -298,6 +322,7 @@ export interface ItemContext {
 ```
 
 ### 3. **Flat > Nested**
+
 ```typescript
 ❌ presentation/templates/item/ItemManagementModal.tsx
 ✅ components/ItemModal.tsx
@@ -307,15 +332,17 @@ export interface ItemContext {
 ```
 
 ### 4. **Context: State + Actions**
+
 ```typescript
 ❌ 9 separate contexts dengan suffix "Context"
 ✅ 2-3 contexts, grouped logically
 ```
 
 ### 5. **Hindari "Generic", "Management", "Handler" Suffix**
+
 ```typescript
 ❌ useGenericEntityManagement
-❌ useItemPageHandlers  
+❌ useItemPageHandlers
 ❌ ItemManagementModal
 ✅ useEntityManager
 ✅ useItem
@@ -325,12 +352,14 @@ export interface ItemContext {
 ## 📊 Impact Analysis
 
 ### Metrics Before:
+
 - Average file name length: **28 characters**
 - Average path depth: **7 levels**
 - Average hook name length: **22 characters**
 - Number of contexts: **9+**
 
 ### Target After:
+
 - Average file name length: **15 characters** (-46%)
 - Average path depth: **4 levels** (-43%)
 - Average hook name length: **12 characters** (-45%)
@@ -339,21 +368,25 @@ export interface ItemContext {
 ## ⚠️ Migration Strategy
 
 ### Step 1: Create New Structure (1-2 days)
+
 - Create new folder structure
 - Copy files with new names
 - Update imports in new files
 
 ### Step 2: Parallel Running (3-5 days)
+
 - Both old and new structure exist
 - Gradually migrate components
 - Test thoroughly
 
 ### Step 3: Full Migration (2-3 days)
+
 - Remove old structure
 - Update all imports
 - Final testing
 
 ### Step 4: Documentation (1 day)
+
 - Update README
 - Update onboarding docs
 - Add migration guide

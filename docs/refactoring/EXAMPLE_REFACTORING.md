@@ -7,6 +7,7 @@ Mari kita refactor feature `item-management` sebagai pilot project.
 ## 📁 Struktur BEFORE vs AFTER
 
 ### BEFORE (Current)
+
 ```
 src/features/item-management/
 ├── application/
@@ -79,6 +80,7 @@ src/features/item-management/
 ```
 
 ### AFTER (Proposed)
+
 ```
 src/features/items/
 ├── components/
@@ -237,9 +239,9 @@ export const useAddItemPageHandlers = ({...}: AddItemPageHandlersProps) => {
   const { isClosing, setIsClosing, showDescription, ... } = useAddItemUIState();
   const { categoriesData, typesData, ... } = useItemQueries();
   const { handleSelectChange, handleDropdownChange, ... } = useAddItemEventHandlers({...});
-  
+
   // ... 100+ lines of logic
-  
+
   return {
     formData,
     displayBasePrice,
@@ -257,7 +259,7 @@ export const useItem = (props: UseItemProps) => {
   const mutations = useItemMutations(props);
   const validation = useValidation(form.data);
   const pricing = usePricing(form.data);
-  
+
   return {
     form,
     queries,
@@ -324,6 +326,7 @@ export * from './context';
 ### Step 5: Update Imports
 
 #### Before
+
 ```typescript
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
@@ -332,6 +335,7 @@ import type { ItemManagementModalProps } from '../../../shared/types';
 ```
 
 #### After
+
 ```typescript
 import { useItem } from '../hooks/useItem';
 import { useValidation } from '../hooks/useValidation';
@@ -341,15 +345,15 @@ import type { ModalProps } from '../types';
 
 ## 📊 Comparison Table
 
-| Aspect | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **File Path Length** | 70+ chars | 35 chars | -50% |
-| **Import Path** | `../../../application/hooks/form/` | `../hooks/` | -60% |
-| **Component Name** | `ItemManagementModal` | `Modal` | -62% |
-| **Hook Name** | `useAddItemPageHandlers` | `useItem` | -73% |
-| **Context Count** | 9 contexts | 1-2 contexts | -80% |
-| **Type Name** | `ItemManagementContextValue` | `ItemContext` | -64% |
-| **Folder Depth** | 7 levels | 4 levels | -43% |
+| Aspect               | Before                             | After         | Improvement |
+| -------------------- | ---------------------------------- | ------------- | ----------- |
+| **File Path Length** | 70+ chars                          | 35 chars      | -50%        |
+| **Import Path**      | `../../../application/hooks/form/` | `../hooks/`   | -60%        |
+| **Component Name**   | `ItemManagementModal`              | `Modal`       | -62%        |
+| **Hook Name**        | `useAddItemPageHandlers`           | `useItem`     | -73%        |
+| **Context Count**    | 9 contexts                         | 1-2 contexts  | -80%        |
+| **Type Name**        | `ItemManagementContextValue`       | `ItemContext` | -64%        |
+| **Folder Depth**     | 7 levels                           | 4 levels      | -43%        |
 
 ## 🚀 Migration Commands
 
@@ -382,12 +386,14 @@ rm -rf src/features/item-management
 ## ⚠️ Breaking Changes & Migration Path
 
 ### Breaking Changes
+
 1. Import paths changed
 2. Component names changed
 3. Hook names changed
 4. Context structure changed
 
 ### Migration Path
+
 ```typescript
 // Step 1: Keep both old and new (1 week)
 // Old import still works via index.ts
@@ -419,6 +425,7 @@ export { ItemManagementModal } from './legacy';
 ## 📝 Documentation Updates
 
 After refactoring, update:
+
 1. README.md - new structure
 2. CONTRIBUTING.md - new naming conventions
 3. Code comments - remove outdated references

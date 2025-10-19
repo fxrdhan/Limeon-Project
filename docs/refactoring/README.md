@@ -7,12 +7,14 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ## 🎯 Masalah yang Diidentifikasi
 
 ### Statistik
+
 - **Average file name length**: 28 characters (target: 15)
 - **Average path depth**: 7 levels (target: 4)
 - **Number of contexts**: 9+ (target: 2-3)
 - **Average hook name**: 22 characters (target: 12)
 
 ### Contoh Masalah
+
 ```
 ❌ /features/item-management/presentation/templates/item/ItemManagementModal.tsx
 ❌ useAddItemPageHandlers (151 lines, returns 38+ properties)
@@ -22,7 +24,9 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ## 📖 Dokumentasi
 
 ### 1. [NAMING_IMPROVEMENTS.md](./NAMING_IMPROVEMENTS.md)
+
 **Panduan lengkap penyederhanaan naming**
+
 - 📋 Masalah yang ditemukan
 - 💡 Rencana refactoring
 - 📝 Contoh refactoring konkret
@@ -36,7 +40,9 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ---
 
 ### 2. [EXAMPLE_REFACTORING.md](./EXAMPLE_REFACTORING.md)
+
 **Contoh refactoring step-by-step**
+
 - 📁 Struktur before vs after
 - 🔄 Step-by-step refactoring
 - 📊 Comparison table
@@ -48,7 +54,9 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ---
 
 ### 3. [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
+
 **Quick reference guide**
+
 - 🎯 Prinsip utama
 - 📋 Naming patterns
 - 🔄 Common transformations
@@ -60,7 +68,9 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ---
 
 ### 4. [VSCODE_FIND_REPLACE.md](./VSCODE_FIND_REPLACE.md)
+
 **VS Code find & replace patterns**
+
 - 📋 Find & replace sequences
 - 🔍 Verification queries
 - 🎯 Advanced multi-cursor editing
@@ -72,7 +82,9 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ---
 
 ### 5. [refactor-naming.sh](../../scripts/refactor-naming.sh)
+
 **Automated refactoring script**
+
 - 🔄 Rename folders automatically
 - 📝 Rename files automatically
 - ✅ Type checking
@@ -84,6 +96,7 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ## 🚀 Quick Start
 
 ### Option 1: Automated (Recommended)
+
 ```bash
 # Run the script
 ./scripts/refactor-naming.sh
@@ -93,6 +106,7 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ```
 
 ### Option 2: Manual
+
 1. Read [NAMING_IMPROVEMENTS.md](./NAMING_IMPROVEMENTS.md) - Understand the problem
 2. Read [EXAMPLE_REFACTORING.md](./EXAMPLE_REFACTORING.md) - See examples
 3. Use [VSCODE_FIND_REPLACE.md](./VSCODE_FIND_REPLACE.md) - Execute changes
@@ -101,27 +115,32 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ## 📊 Refactoring Phases
 
 ### Phase 1: Folder Structure (1 day)
+
 - Rename `item-management` → `items`
 - Flatten `presentation/` → `components/`
 - Flatten `application/hooks/` → `hooks/`
 - Rename `domain/` → `services/`
 
 ### Phase 2: File Names (1 day)
+
 - `ItemManagementModal.tsx` → `Modal.tsx`
 - `useAddItemPageHandlers.ts` → `useItem.ts`
 - `ItemFormSections.tsx` → `FormSections.tsx`
 
 ### Phase 3: Context Consolidation (1 day)
+
 - Merge 9 contexts into 2-3
 - Simplify context provider
 - Update all context consumers
 
 ### Phase 4: Import Updates (1 day)
+
 - Update all import paths
 - Fix TypeScript errors
 - Run type-check
 
 ### Phase 5: Testing & Review (1 day)
+
 - Run all tests
 - Manual QA
 - Code review
@@ -132,6 +151,7 @@ Dokumentasi ini berisi panduan lengkap untuk menyederhanakan naming convention d
 ## 🎯 Expected Results
 
 ### Before
+
 ```typescript
 // Import nightmare
 import { ItemManagementModal } from '@/features/item-management/presentation/templates/item/ItemManagementModal';
@@ -145,10 +165,12 @@ const modalState = useContext(ItemModalStateContext);
 // ... 6 more
 
 // Complex component tree
-features/item-management/presentation/templates/item/ItemManagementModal.tsx
+features / item -
+  management / presentation / templates / item / ItemManagementModal.tsx;
 ```
 
 ### After
+
 ```typescript
 // Clean imports
 import { Modal } from '@/features/items/components/Modal';
@@ -159,10 +181,11 @@ import { ItemProvider } from '@/features/items/contexts/ItemContext';
 const { state, actions } = useItemContext();
 
 // Simple component tree
-features/items/components/Modal.tsx
+features / items / components / Modal.tsx;
 ```
 
 ### Metrics Improvement
+
 - File name length: **-46%** (28 → 15 chars)
 - Path depth: **-43%** (7 → 4 levels)
 - Hook name length: **-45%** (22 → 12 chars)
@@ -183,25 +206,33 @@ features/items/components/Modal.tsx
 ## ⚠️ Risks & Mitigation
 
 ### Risk 1: Breaking Changes
-**Mitigation**: 
+
+**Mitigation**:
+
 - Create backups before starting
 - Use git branches
 - Test thoroughly at each step
 
 ### Risk 2: Import Errors
+
 **Mitigation**:
+
 - Use TypeScript compiler to catch errors
 - Use VS Code's auto-fix feature
 - Run type-check frequently
 
 ### Risk 3: Merge Conflicts
+
 **Mitigation**:
+
 - Do refactoring in separate branch
 - Communicate with team
 - Merge when feature branches are stable
 
 ### Risk 4: Lost Productivity
+
 **Mitigation**:
+
 - Do during low-activity period
 - Complete in 1 week sprint
 - Provide migration guide
@@ -209,11 +240,13 @@ features/items/components/Modal.tsx
 ## 📞 Support
 
 ### Questions?
+
 1. Check [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
 2. Review examples in [EXAMPLE_REFACTORING.md](./EXAMPLE_REFACTORING.md)
 3. Ask in team chat
 
 ### Issues?
+
 1. Check git diff: `git diff`
 2. Check TypeScript: `npm run type-check`
 3. Rollback if needed: `git checkout .`
@@ -274,20 +307,22 @@ Create a GitHub issue or Trello card:
 ## 📚 Additional Resources
 
 ### Related Patterns
+
 - [Feature-Sliced Design](https://feature-sliced.design/)
 - [Bulletproof React](https://github.com/alan2207/bulletproof-react)
 - [React File Structure Best Practices](https://react.dev/learn/thinking-in-react)
 
 ### Naming Conventions
+
 - [Clean Code JavaScript](https://github.com/ryanmcdermott/clean-code-javascript)
 - [Airbnb Style Guide](https://github.com/airbnb/javascript)
 - [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
 
 ## 🔖 Document History
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2025-01-19 | 1.0 | Initial documentation |
+| Date       | Version | Changes               |
+| ---------- | ------- | --------------------- |
+| 2025-01-19 | 1.0     | Initial documentation |
 
 ---
 

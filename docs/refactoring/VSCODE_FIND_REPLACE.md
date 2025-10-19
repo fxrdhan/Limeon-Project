@@ -9,14 +9,17 @@ Jalankan replacements ini secara **berurutan** (dari atas ke bawah):
 ### Step 1: Update Folder Paths
 
 #### 1.1 Main folder rename
+
 ```
 Find:    features/item-management/
 Replace: features/items/
 ```
+
 - Enable: Case sensitive
 - Files: `src/**/*.{ts,tsx}`
 
 #### 1.2 Presentation to components
+
 ```
 Find:    presentation/templates/item/
 Replace: components/
@@ -36,9 +39,11 @@ Replace: components/
 Find:    presentation/(atoms|molecules|organisms)/
 Replace: components/
 ```
+
 - Enable: Use Regular Expression
 
 #### 1.3 Application/hooks to hooks
+
 ```
 Find:    application/hooks/form/
 Replace: hooks/
@@ -70,12 +75,14 @@ Replace: hooks/
 ```
 
 #### 1.4 Domain to services
+
 ```
 Find:    domain/use-cases/
 Replace: services/
 ```
 
 #### 1.5 Shared folders
+
 ```
 Find:    shared/contexts/
 Replace: contexts/
@@ -94,26 +101,31 @@ Replace: utils/
 ### Step 2: Update Component Names
 
 #### 2.1 ItemManagementModal
+
 ```
 Find:    ItemManagementModal
 Replace: Modal
 ```
+
 - Files: `src/features/items/**/*.{ts,tsx}`
 - Note: This will rename imports, types, and usages
 
 #### 2.2 ItemModalTemplate
+
 ```
 Find:    ItemModalTemplate
 Replace: ModalTemplate
 ```
 
 #### 2.3 ItemFormSections
+
 ```
 Find:    ItemFormSections
 Replace: FormSections
 ```
 
 #### 2.4 EntityManagementModal
+
 ```
 Find:    EntityManagementModal
 Replace: EntityModal
@@ -122,48 +134,56 @@ Replace: EntityModal
 ### Step 3: Update Hook Names
 
 #### 3.1 useAddItemPageHandlers
+
 ```
 Find:    useAddItemPageHandlers
 Replace: useItem
 ```
 
 #### 3.2 useItemFormValidation
+
 ```
 Find:    useItemFormValidation
 Replace: useValidation
 ```
 
 #### 3.3 useGenericEntityManagement
+
 ```
 Find:    useGenericEntityManagement
 Replace: useEntityManager
 ```
 
 #### 3.4 useItemModalOrchestrator
+
 ```
 Find:    useItemModalOrchestrator
 Replace: useModalState
 ```
 
 #### 3.5 useAddItemForm
+
 ```
 Find:    useAddItemForm
 Replace: useItemForm
 ```
 
 #### 3.6 useAddItemEventHandlers
+
 ```
 Find:    useAddItemEventHandlers
 Replace: useEventHandlers
 ```
 
 #### 3.7 useAddItemUIState
+
 ```
 Find:    useAddItemUIState
 Replace: useUI
 ```
 
 #### 3.8 useAddItemRefs
+
 ```
 Find:    useAddItemRefs
 Replace: useRefs
@@ -172,27 +192,32 @@ Replace: useRefs
 ### Step 4: Update Context Names
 
 #### 4.1 ItemManagementProvider
+
 ```
 Find:    ItemManagementProvider
 Replace: ItemProvider
 ```
 
 #### 4.2 ItemManagementContextValue
+
 ```
 Find:    ItemManagementContextValue
 Replace: ItemContext
 ```
 
 #### 4.3 ItemFormStateContext
+
 ```
 Find:    ItemFormStateContext
 Replace: ItemContext
 ```
+
 - Note: You may need to manually merge contexts after this
 
 ### Step 5: Update Type Names
 
 #### 5.1 Props
+
 ```
 Find:    ItemManagementModalProps
 Replace: ModalProps
@@ -209,6 +234,7 @@ Replace: UseItemProps
 ```
 
 #### 5.2 Types
+
 ```
 Find:    ItemManagementContextValue
 Replace: ItemContextValue
@@ -219,19 +245,23 @@ Replace: ItemContextValue
 Only run these if you're confident with regex!
 
 #### 6.1 Remove "Item" prefix from hooks in items folder
+
 ```
 Find:    (use)Item([A-Z]\w+)
 Replace: $1$2
 ```
+
 - Enable: Use Regular Expression
 - Files: `src/features/items/hooks/*.ts`
 - ⚠️ Review changes carefully before confirming!
 
 #### 6.2 Remove "Item" prefix from components in items folder
+
 ```
 Find:    (const|export|import.*\{.*?)Item([A-Z]\w+)
 Replace: $1$2
 ```
+
 - Enable: Use Regular Expression
 - Files: `src/features/items/components/*.tsx`
 - ⚠️ Review changes carefully before confirming!
@@ -241,21 +271,27 @@ Replace: $1$2
 After replacements, use these to verify:
 
 ### Check for remaining old paths
+
 ```
 Find: features/item-management/
 ```
+
 Should return 0 results (except in backup files)
 
 ### Check for remaining long names
+
 ```
 Find: ItemManagement
 ```
+
 Should return 0 results in items folder
 
 ### Check for orphaned imports
+
 ```
 Find: from ['"]\.\.\/\.\.\/\.\./
 ```
+
 Should be minimal (only necessary cross-feature imports)
 
 ## 🎯 Advanced: Multi-cursor Editing
@@ -270,23 +306,28 @@ For complex renames, use multi-cursor:
 ## 📝 Regex Patterns Reference
 
 ### Pattern 1: Update relative imports
+
 ```
 Find:    from ['"](\.\.\/)+(application|presentation|shared)/
 Replace: from '$1
 ```
 
 ### Pattern 2: Simplify long type names
+
 ```
 Find:    (interface|type|export type) Item(\w+)(Props|State|Actions|Value)
 Replace: $1 $2$3
 ```
+
 - Files: `src/features/items/types/*.ts`
 
 ### Pattern 3: Remove "Add" prefix from hooks
+
 ```
 Find:    useAdd(\w+)
 Replace: use$1
 ```
+
 - Files: `src/features/items/hooks/*.ts`
 
 ## ⚠️ Important Notes
