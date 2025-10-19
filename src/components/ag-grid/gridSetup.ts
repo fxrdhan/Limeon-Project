@@ -17,6 +17,7 @@ import {
   EventApiModule,
   ColumnApiModule,
   ColumnAutoSizeModule,
+  CsvExportModule,
 } from 'ag-grid-community';
 import {
   LicenseManager,
@@ -31,6 +32,7 @@ import {
   RowNumbersModule,
   RowGroupingPanelModule,
   MultiFilterModule,
+  ExcelExportModule,
 } from 'ag-grid-enterprise';
 
 // Setup AG Grid once
@@ -51,6 +53,7 @@ export const setupAgGrid = () => {
     EventApiModule,
     ColumnApiModule,
     ColumnAutoSizeModule,
+    CsvExportModule,
     // Enterprise modules
     RowSelectionModule,
     RowGroupingModule,
@@ -63,6 +66,7 @@ export const setupAgGrid = () => {
     RowNumbersModule,
     RowGroupingPanelModule,
     MultiFilterModule,
+    ExcelExportModule,
   ]);
 
   // Configure license
