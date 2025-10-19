@@ -133,6 +133,8 @@ const BasicInfoSection: React.FC = () => {
       updateFormData({ is_active: value as boolean });
     } else if (field === 'has_expiry_date') {
       updateFormData({ has_expiry_date: value as boolean });
+    } else if (field === 'code') {
+      updateFormData({ code: value as string });
     }
   };
 
