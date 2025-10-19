@@ -22,7 +22,14 @@ export { useItemGridColumns } from './application/hooks/ui';
 
 // Context Providers
 export { ItemManagementProvider } from './shared/contexts/ItemFormContext';
-export { useItemManagement } from './shared/contexts/useItemFormContext';
+export {
+  useItemForm,
+  useItemUI,
+  useItemModal,
+  useItemPrice,
+  useItemActions,
+  useItemRealtime,
+} from './shared/contexts/useItemFormContext';
 export {
   EntityModalProvider,
   useEntityModal,

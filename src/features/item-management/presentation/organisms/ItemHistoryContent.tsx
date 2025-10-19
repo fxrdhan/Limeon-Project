@@ -5,7 +5,10 @@ import { FaEye } from 'react-icons/fa';
 import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import { formatDateTime } from '@/lib/formatters';
 import { HISTORY_DEBUG } from '../../config/debug';
-import { useItemManagement } from '../../shared/contexts/useItemFormContext';
+import {
+  useItemForm,
+  useItemUI,
+} from '../../shared/contexts/useItemFormContext';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 import DiffText from '../molecules/DiffText';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,8 +22,8 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   itemId,
   itemName,
 }) => {
-  // Single context call to prevent double renders
-  const { uiActions, form } = useItemManagement();
+  const form = useItemForm();
+  const ui = useItemUI();
   const queryClient = useQueryClient();
 
   // Only log props on mount or when itemId changes
@@ -86,7 +89,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
 
           console.error('Failed to invalidate queries after restore', e);
         }
-        uiActions.goBackToForm();
+        ui.goBackToForm();
       } catch (error) {
         toast.error('Gagal mengembalikan versi: ' + error);
       }
