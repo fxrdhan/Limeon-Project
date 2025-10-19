@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type {
-  ItemManagementModalProps,
+  ItemModalProps,
   ItemManagementContextValue,
 } from '../../../shared/types';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
@@ -19,7 +19,7 @@ import { ItemFormSections } from '../ItemFormSections';
 import ItemModalContainer from '../containers/ItemModalContainer';
 import ItemHistoryContent from '../../organisms/ItemHistoryContent';
 
-const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
+const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
   onClose,
   itemId,
@@ -396,4 +396,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   );
 };
 
-export default ItemManagementModal;
+export default ItemModal;
+
+// Backward compatibility alias
+export { ItemModal as ItemManagementModal };

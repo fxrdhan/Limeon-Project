@@ -9,9 +9,9 @@ import { ComparisonModal } from '../comparison';
 import type { AddEditModalProps } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 
-type EntityManagementModalProps = AddEditModalProps;
+type EntityModalProps = AddEditModalProps;
 
-const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
+const EntityModal: React.FC<EntityModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -112,4 +112,7 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   );
 };
 
-export default EntityManagementModal;
+export default EntityModal;
+
+// Backward compatibility alias
+export { EntityModal as EntityManagementModal };

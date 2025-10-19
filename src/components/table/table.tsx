@@ -2,14 +2,14 @@ import classNames from 'classnames';
 import type { TableCellProps, TableRowProps, TableProps } from '@/types';
 import { memo, useMemo, useRef, useState, useEffect } from 'react';
 import React from 'react';
-import { useTableHeight } from '@/hooks/useTableHeight';
+import { useTableHeight } from '@/hooks/ag-grid/useTableHeight';
 import {
   ChevronUpIcon,
   ChevronDownIcon,
   ArrowsUpDownIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
-import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { useContainerWidth } from '@/hooks/ui/useContainerWidth';
 import { calculateColumnWidths, sortData, filterData } from '@/utils/table';
 import type { ColumnConfig, SortState } from '@/types/table';
 

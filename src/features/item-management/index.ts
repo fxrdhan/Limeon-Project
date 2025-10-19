@@ -13,7 +13,7 @@
  */
 
 // Core Templates
-export { default as ItemManagementModal } from './presentation/templates/item/ItemManagementModal';
+export { default as ItemManagementModal } from './presentation/templates/item/ItemModal';
 export { EntityManagementModal } from './presentation/templates/entity';
 
 // Data Components

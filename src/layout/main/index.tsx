@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '@/layout/navbar';
 import Sidebar from '@/layout/sidebar';
-import { usePresence } from '@/hooks/usePresence';
+import { usePresence } from '@/hooks/presence/usePresence';
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);

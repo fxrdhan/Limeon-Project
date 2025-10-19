@@ -1,6 +1,6 @@
 // Utility hooks
 export * from './useItemPriceCalculator';
 export * from './usePackageConversion';
-export * from './usePackageConversionLogic';
+export * from './useConversionLogic';
 export * from './useItemPricingLogic';
 export * from './useItemCodeGenerator';

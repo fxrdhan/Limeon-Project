@@ -15,13 +15,13 @@ import {
   GridReadyEvent,
 } from 'ag-grid-community';
 import { useRef, useMemo, useCallback, useState } from 'react';
-import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
+import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 import type { Doctor as DoctorType, FieldConfig } from '@/types';
 
 // Use the new modular architecture
-import { useMasterDataManagement } from '@/hooks/useMasterDataManagement';
+import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
 
-import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
+import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
 import { doctorSearchColumns } from '@/utils/searchColumns';
 
 const DoctorListNew = () => {

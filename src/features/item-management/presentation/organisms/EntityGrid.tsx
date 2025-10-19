@@ -18,7 +18,7 @@ import {
 import { StandardPagination } from '../atoms';
 
 // Hooks
-import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
+import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 // Manual grid state management for auto-restore
@@ -67,7 +67,7 @@ interface EntityConfig {
   searchNoDataMessage?: string;
 }
 
-interface MasterDataGridProps {
+interface EntityGridProps {
   activeTab: MasterDataType;
 
   // Data
@@ -102,7 +102,7 @@ interface MasterDataGridProps {
   itemsPerPage?: number;
 }
 
-const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
+const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   activeTab,
   itemsData = [],
   entityData = [],
@@ -809,4 +809,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   );
 });
 
-export default MasterDataGrid;
+export default EntityGrid;
+
+// Backward compatibility alias
+export { EntityGrid as MasterDataGrid };

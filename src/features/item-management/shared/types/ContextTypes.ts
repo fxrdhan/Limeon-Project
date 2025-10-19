@@ -170,11 +170,17 @@ export interface ItemManagementContextValue {
   businessActions: ItemBusinessActions;
 }
 
+// Shorter alias
+export type ItemContextValue = ItemManagementContextValue;
+
 // Provider Props
 export interface ItemManagementProviderProps {
   children: ReactNode;
   value: ItemManagementContextValue;
 }
+
+// Shorter alias
+export type ItemProviderProps = ItemManagementProviderProps;
 
 // Entity Modal Context Types
 export type ModalMode = 'add' | 'edit' | 'history';

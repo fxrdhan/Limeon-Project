@@ -2,21 +2,19 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
-interface UseItemMasterRealtimeOptions {
+interface ItemsSyncOptions {
   enabled?: boolean;
 }
 
 /**
- * Simple realtime hook for Item Master page
- * Listens to all master data tables and invalidates queries
+ * Realtime sync for items and related master data
+ * Listens to changes and invalidates queries automatically
  */
 // Global ref to prevent multiple instances across all hook instances
 let globalSetupRef = false;
 let globalChannelRef: ReturnType<typeof supabase.channel> | null = null;
 
-export const useItemMasterRealtime = ({
-  enabled = true,
-}: UseItemMasterRealtimeOptions = {}) => {
+export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -31,12 +29,12 @@ export const useItemMasterRealtime = ({
     const timeoutId = setTimeout(() => {
       // Only setup if network is available and document is ready
       if (navigator.onLine && document.readyState === 'complete') {
-        console.log('🔗 Setting up Item Master realtime (production)');
+        console.log('🔗 Setting up items sync (production)');
         setupRealtimeConnection();
       } else {
         // Retry after another second
         setTimeout(() => {
-          console.log('🔗 Setting up Item Master realtime (production)');
+          console.log('🔗 Setting up items sync (production)');
           setupRealtimeConnection();
         }, 1000);
       }
@@ -150,10 +148,10 @@ export const useItemMasterRealtime = ({
         )
         .subscribe(status => {
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Item Master realtime connected');
-            console.log('🔍 Monitoring:', tables.join(', '));
+            console.log('✅ Items sync connected');
+            console.log('🔍 Syncing:', tables.join(', '));
           } else if (status === 'CHANNEL_ERROR') {
-            console.log('🔌 Realtime disconnected');
+            console.log('🔌 Sync disconnected');
           }
         });
 
@@ -177,5 +175,8 @@ export const useItemMasterRealtime = ({
         globalChannelRef = null;
       }
     };
-  }, [enabled, queryClient]);
+  }, [queryClient, enabled]);
 };
+
+// Backward compatibility alias
+export const useItemMasterRealtime = useItemsSync;

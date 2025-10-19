@@ -7,21 +7,21 @@ import { createTextColumn } from '@/components/ag-grid';
 import PageTitle from '@/components/page-title';
 import { Card } from '@/components/card';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
-import { MasterDataGrid } from '@/features/item-management/presentation/organisms';
-import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
-import { EntityManagementModal } from '@/features/item-management/presentation/templates/entity';
+import { EntityGrid } from '@/features/item-management/presentation/organisms';
+import ItemModal from '@/features/item-management/presentation/templates/item/ItemModal';
+import { EntityModal } from '@/features/item-management/presentation/templates/entity';
 import {
   SlidingSelector,
   SlidingSelectorOption,
 } from '@/components/shared/sliding-selector';
 
 // Simple realtime for all item master data
-import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
+import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 
 // Hooks and utilities
-import { useItemsManagement } from '@/hooks/useItemsManagement';
+import { useItemsManagement } from '@/hooks/data/useItemsManagement';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
-import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
+import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
 import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
@@ -30,7 +30,7 @@ import {
 // Entity management hooks
 import {
   useEntityManager,
-  useGenericEntityManagement,
+  useEntity,
 } from '@/features/item-management/application/hooks/collections';
 
 // Types
@@ -142,7 +142,7 @@ const ItemMasterNew = memo(() => {
   const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
 
   // ✅ REALTIME WORKING! Use postgres_changes approach
-  useItemMasterRealtime({ enabled: true });
+  useItemsSync({ enabled: true });
 
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -191,10 +191,10 @@ const ItemMasterNew = memo(() => {
   );
 
   // Generic entity data management
-  const entityData = useGenericEntityManagement(entityManagementOptions);
+  const entityData = useEntity(entityManagementOptions);
 
   // Preload item_units data in background for better caching
-  useGenericEntityManagement({
+  useEntity({
     entityType: 'units',
     enabled: true, // Always fetch units data for complete cache
   });
@@ -676,7 +676,7 @@ const ItemMasterNew = memo(() => {
 
         {/* Unified MasterDataGrid */}
         <div>
-          <MasterDataGrid
+          <EntityGrid
             activeTab={activeTab}
             itemsData={itemsManagement.data as ItemDataType[]}
             entityData={entityData.data}
@@ -730,7 +730,7 @@ const ItemMasterNew = memo(() => {
 
       {/* Item Management Modal - only render for items tab */}
       {activeTab === 'items' && (
-        <ItemManagementModal
+        <ItemModal
           key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
           isOpen={isAddItemModalOpen}
           onClose={closeAddItemModal}
@@ -744,7 +744,7 @@ const ItemMasterNew = memo(() => {
       {/* Entity Management Modal - only render for entity tabs */}
       {activeTab !== 'items' &&
         (entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
-          <EntityManagementModal
+          <EntityModal
             isOpen={true}
             onClose={
               entityManager.isEditModalOpen

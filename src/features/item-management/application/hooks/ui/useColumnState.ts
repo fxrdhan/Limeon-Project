@@ -10,7 +10,7 @@ import { EntityType } from '../collections/useEntityManager';
 // Extended type to include items tab
 type GridTableType = EntityType | 'items';
 
-interface UseColumnVisibilityStateOptions {
+interface ColumnStateOptions {
   tableType: GridTableType;
   enabled?: boolean;
   gridApi?: GridApi | null;
@@ -20,7 +20,7 @@ interface ColumnVisibilityState {
   hiddenColIds: string[];
 }
 
-interface ColumnVisibilityManager {
+interface ColumnStateManager {
   initialState: Partial<GridState> | undefined;
   onStateUpdated: (event: StateUpdatedEvent) => void;
   onGridPreDestroyed: (event: GridPreDestroyedEvent) => void;
@@ -71,9 +71,9 @@ const extractColumnVisibility = (
   return undefined;
 };
 
-export const useColumnVisibilityState = (
-  options: UseColumnVisibilityStateOptions
-): ColumnVisibilityManager => {
+export const useColumnState = (
+  options: ColumnStateOptions
+): ColumnStateManager => {
   const { tableType, enabled = true } = options;
   const storageKey = `${ENTITY_COLUMN_VISIBILITY_PREFIX}${tableType}`;
   const lastSavedState = useRef<ColumnVisibilityState | undefined>(undefined);
@@ -193,10 +193,13 @@ export const useEntityColumnVisibilityState = (options: {
   entityType: EntityType;
   enabled?: boolean;
   gridApi?: GridApi | null;
-}): ColumnVisibilityManager => {
-  return useColumnVisibilityState({
+}): ColumnStateManager => {
+  return useColumnState({
     tableType: options.entityType,
     enabled: options.enabled,
     gridApi: options.gridApi,
   });
 };
+
+// Shorter alias
+export const useColumnVisibilityState = useColumnState;

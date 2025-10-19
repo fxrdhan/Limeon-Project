@@ -55,8 +55,8 @@ export const ItemBusinessActionsContext = createContext<
 >(undefined);
 
 /**
- * Optimized ItemManagementProvider using composition pattern
- * Eliminates deep nesting by composing providers programmatically
+ * ItemProvider - Composition pattern for context management
+ * Provides all item-related state and actions through separate contexts
  */
 export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({
   children,
@@ -109,3 +109,6 @@ export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({
     children
   ) as React.ReactElement;
 };
+
+// Shorter alias
+export const ItemProvider = ItemManagementProvider;
