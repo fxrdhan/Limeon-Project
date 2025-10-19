@@ -9,7 +9,7 @@ import React, {
 import { z } from 'zod';
 import type { InputProps } from '@/types';
 import classNames from 'classnames';
-import { useFieldValidation } from '@/hooks/useFieldValidation';
+import { useFieldValidation } from '@/hooks/forms/useFieldValidation';
 import ValidationOverlay from '@/components/validation-overlay';
 
 const Input = forwardRef<HTMLInputElement, InputProps>(

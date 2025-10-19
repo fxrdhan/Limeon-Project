@@ -1,4 +1,4 @@
-import EntityManagementModal from '../entity/EntityManagementModal';
+import EntityManagementModal from '../entity/EntityModal';
 
 interface MutationState {
   isPending: boolean;

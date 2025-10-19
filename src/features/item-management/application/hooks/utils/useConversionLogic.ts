@@ -5,7 +5,7 @@ import type {
 } from '../../../shared/types';
 import type { UnitData } from '@/types/database';
 
-interface UsePackageConversionLogicProps {
+interface ConversionLogicProps {
   conversions: PackageConversion[];
   availableUnits: UnitData[];
   formData: PackageConversionLogicFormData;
@@ -18,19 +18,18 @@ interface UsePackageConversionLogicProps {
   setFormData: (data: PackageConversionLogicFormData) => void;
 }
 
-interface UsePackageConversionLogicPropsExtended
-  extends UsePackageConversionLogicProps {
+interface ConversionProps extends ConversionLogicProps {
   baseUnit?: string;
 }
 
-export const usePackageConversionLogic = ({
+export const useConversionLogic = ({
   conversions,
   availableUnits,
   formData,
   addPackageConversion,
   setFormData,
   baseUnit,
-}: UsePackageConversionLogicPropsExtended) => {
+}: ConversionProps) => {
   const validateAndAddConversion = useCallback(() => {
     // Validate unit selection
     if (!formData.unit) {
@@ -98,3 +97,6 @@ export const usePackageConversionLogic = ({
     validateAndAddConversion,
   };
 };
+
+// Backward compatibility alias
+export const usePackageConversionLogic = useConversionLogic;

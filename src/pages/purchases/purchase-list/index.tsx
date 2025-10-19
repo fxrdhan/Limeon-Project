@@ -28,7 +28,7 @@ import {
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query';
-import { useFieldFocus } from '@/hooks/fieldFocus';
+import { useFieldFocus } from '@/hooks/forms/fieldFocus';
 import { getSearchState } from '@/utils/search';
 
 interface Purchase {

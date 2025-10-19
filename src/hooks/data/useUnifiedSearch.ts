@@ -1,6 +1,6 @@
 import { useCallback, useMemo, ChangeEvent, useRef, useEffect } from 'react';
 import { GridReadyEvent, IRowNode } from 'ag-grid-community';
-import { useEnhancedAgGridSearch } from './useEnhancedAgGridSearch';
+import { useEnhancedAgGridSearch } from '../ag-grid/useEnhancedAgGridSearch';
 import { SearchColumn, TargetedSearch, FilterSearch } from '@/types/search';
 import { getSearchState } from '@/utils/search';
 

@@ -1,4 +1,4 @@
-import { useFormCache } from '@/hooks/useFormCache';
+import { useFormCache } from '@/hooks/forms/useFormCache';
 import { CACHE_KEY } from '../../../constants';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
 

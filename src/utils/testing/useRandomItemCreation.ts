@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 // Business logic imports
 import { saveItemBusinessLogic } from '@/features/item-management/application/hooks/core/ItemMutationUtilities';
 import { getInvalidationKeys } from '@/constants/queryKeys';
-import { useGenericEntityManagement } from '@/features/item-management/application/hooks/collections';
+import { useEntity } from '@/features/item-management/application/hooks/collections';
 
 // Testing utilities
 import {
@@ -53,23 +53,23 @@ export function useRandomItemCreation(
   const queryClient = useQueryClient();
 
   // Entity data management
-  const categoriesData = useGenericEntityManagement({
+  const categoriesData = useEntity({
     entityType: 'categories',
     enabled,
   });
-  const typesData = useGenericEntityManagement({
+  const typesData = useEntity({
     entityType: 'types',
     enabled,
   });
-  const packagesData = useGenericEntityManagement({
+  const packagesData = useEntity({
     entityType: 'packages',
     enabled,
   });
-  const dosagesData = useGenericEntityManagement({
+  const dosagesData = useEntity({
     entityType: 'dosages',
     enabled,
   });
-  const manufacturersData = useGenericEntityManagement({
+  const manufacturersData = useEntity({
     entityType: 'manufacturers',
     enabled,
   });

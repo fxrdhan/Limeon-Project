@@ -1,17 +1,14 @@
 /**
- * Generic Entity Management Hook - Refactored using Configuration System
+ * Entity Hook - Configuration-driven entity data management
  *
- * This hook has been completely refactored to use the centralized entity configuration
- * system, eliminating another 42-line switch statement while maintaining all functionality.
- *
- * Before: Duplicate switch statement mapping entity types to hooks (42 lines)
- * After: Configuration-driven lookup with external hook integration (3 lines)
+ * Centralized hook for managing all entity types with consistent interface.
+ * Uses configuration system for type-safe operations.
  *
  * Benefits:
- * - Eliminated 95%+ switch statement duplication
- * - Consistent with other refactored hooks
- * - Type-safe entity operations
- * - Better maintainability and extensibility
+ * - Single interface for all entity types
+ * - Type-safe operations
+ * - Configuration-driven
+ * - Maintainable and extensible
  */
 
 import { useMemo } from 'react';
@@ -23,7 +20,7 @@ import {
   type EntityTypeKey,
 } from '../core/GenericHookFactories';
 
-export interface UseGenericEntityManagementOptions {
+export interface EntityOptions {
   entityType: EntityType;
   search?: string;
   itemsPerPage?: number;
@@ -32,8 +29,6 @@ export interface UseGenericEntityManagementOptions {
 
 /**
  * Get hooks for entity type using configuration system
- *
- * Replaces the 42-line switch statement with configuration-driven lookup.
  */
 const getHooksForEntityType = (entityType: EntityType) => {
   if (!isEntityTypeSupported(entityType)) {
@@ -43,9 +38,7 @@ const getHooksForEntityType = (entityType: EntityType) => {
   return getExternalHooks(entityType as EntityTypeKey);
 };
 
-export const useGenericEntityManagement = (
-  options: UseGenericEntityManagementOptions
-) => {
+export const useEntity = (options: EntityOptions) => {
   const {
     entityType,
     search = '',

@@ -7,8 +7,8 @@ import {
   useItemUI,
 } from '../../shared/contexts/useItemFormContext';
 import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
-import { usePackageConversionLogic } from '../../application/hooks/utils/usePackageConversionLogic';
-import { useInlineEditor } from '@/hooks/useInlineEditor';
+import { usePackageConversionLogic } from '../../application/hooks/utils/useConversionLogic';
+import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 
 // Child components
 import { ItemFormHeader } from '../molecules';
