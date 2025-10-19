@@ -72,11 +72,11 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden"
+            className="overflow-visible"
             onMouseEnter={() => !expandOnClick && setIsHovered(true)}
             onMouseLeave={() => !expandOnClick && setIsHovered(false)}
           >
-            <div className="mt-2 min-h-[100px] max-h-[200px] p-0">
+            <div className="mt-2 min-h-[100px] max-h-[200px] p-0 px-0">
               <textarea
                 ref={textareaRef}
                 name={name}
@@ -85,7 +85,8 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                 onChange={onChange}
                 placeholder={placeholder}
                 className={classNames(
-                  'text-sm w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200',
+                  'text-sm w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 focus:ring-offset-0',
+                  'transition-all duration-200 ease-in-out',
                   textareaClassName
                 )}
                 rows={rows}
