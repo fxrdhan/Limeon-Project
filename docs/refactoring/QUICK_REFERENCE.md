@@ -3,6 +3,7 @@
 ## 🎯 Prinsip Utama
 
 ### 1. **Konteks dari Path, Bukan Nama**
+
 Path sudah memberikan konteks, jangan diulang di nama file/fungsi.
 
 ```typescript
@@ -40,53 +41,53 @@ Path sudah memberikan konteks, jangan diulang di nama file/fungsi.
 
 ### Components
 
-| Bad ❌ | Good ✅ | Context |
-|--------|---------|---------|
-| `ItemManagementModal` | `Modal` | dalam folder `items/` |
-| `ItemModalTemplate` | `ModalTemplate` | dalam folder `items/` |
-| `ItemFormSections` | `FormSections` | dalam folder `items/` |
-| `EntityManagementModal` | `EntityModal` | specific entity name |
-| `GenericEditInPlaceFactory` | `EditInPlace` | factory tidak perlu "Factory" |
+| Bad ❌                      | Good ✅         | Context                       |
+| --------------------------- | --------------- | ----------------------------- |
+| `ItemManagementModal`       | `Modal`         | dalam folder `items/`         |
+| `ItemModalTemplate`         | `ModalTemplate` | dalam folder `items/`         |
+| `ItemFormSections`          | `FormSections`  | dalam folder `items/`         |
+| `EntityManagementModal`     | `EntityModal`   | specific entity name          |
+| `GenericEditInPlaceFactory` | `EditInPlace`   | factory tidak perlu "Factory" |
 
 ### Hooks
 
-| Bad ❌ | Good ✅ | Notes |
-|--------|---------|-------|
-| `useAddItemPageHandlers` | `useItem` | main hook |
-| `useItemFormValidation` | `useValidation` | dalam folder `items/` |
-| `useItemModalOrchestrator` | `useModal` | hindari "Orchestrator" |
-| `useGenericEntityManagement` | `useEntityManager` | hindari "Generic" |
-| `useItemUserInteractions` | `useInteractions` | redundant "Item" |
-| `useAddItemUIState` | `useUI` | hindari "Add" prefix |
+| Bad ❌                       | Good ✅            | Notes                  |
+| ---------------------------- | ------------------ | ---------------------- |
+| `useAddItemPageHandlers`     | `useItem`          | main hook              |
+| `useItemFormValidation`      | `useValidation`    | dalam folder `items/`  |
+| `useItemModalOrchestrator`   | `useModal`         | hindari "Orchestrator" |
+| `useGenericEntityManagement` | `useEntityManager` | hindari "Generic"      |
+| `useItemUserInteractions`    | `useInteractions`  | redundant "Item"       |
+| `useAddItemUIState`          | `useUI`            | hindari "Add" prefix   |
 
 ### Types & Interfaces
 
-| Bad ❌ | Good ✅ | Pattern |
-|--------|---------|---------|
-| `ItemManagementContextValue` | `ItemContext` | suffix "Context" sudah cukup |
-| `ItemManagementModalProps` | `ModalProps` | konteks dari import |
-| `UseItemManagementProps` | `UseItemProps` | less verbose |
-| `AddItemPageHandlersProps` | `UseItemProps` | consistent naming |
+| Bad ❌                       | Good ✅        | Pattern                      |
+| ---------------------------- | -------------- | ---------------------------- |
+| `ItemManagementContextValue` | `ItemContext`  | suffix "Context" sudah cukup |
+| `ItemManagementModalProps`   | `ModalProps`   | konteks dari import          |
+| `UseItemManagementProps`     | `UseItemProps` | less verbose                 |
+| `AddItemPageHandlersProps`   | `UseItemProps` | consistent naming            |
 
 ### Context
 
-| Bad ❌ | Good ✅ | Reason |
-|--------|---------|--------|
-| `ItemFormStateContext` | `ItemContext` | merge state & actions |
-| `ItemUIStateContext` | (merge ke `ItemContext`) | too granular |
-| `ItemModalStateContext` | (merge ke `ItemContext`) | too granular |
-| `ItemPriceStateContext` | (merge ke `ItemContext`) | too granular |
-| 9 separate contexts | 1-2 contexts | consolidate |
+| Bad ❌                  | Good ✅                  | Reason                |
+| ----------------------- | ------------------------ | --------------------- |
+| `ItemFormStateContext`  | `ItemContext`            | merge state & actions |
+| `ItemUIStateContext`    | (merge ke `ItemContext`) | too granular          |
+| `ItemModalStateContext` | (merge ke `ItemContext`) | too granular          |
+| `ItemPriceStateContext` | (merge ke `ItemContext`) | too granular          |
+| 9 separate contexts     | 1-2 contexts             | consolidate           |
 
 ### Folders
 
-| Bad ❌ | Good ✅ |
-|--------|---------|
-| `item-management/` | `items/` |
+| Bad ❌                         | Good ✅       |
+| ------------------------------ | ------------- |
+| `item-management/`             | `items/`      |
 | `presentation/templates/item/` | `components/` |
-| `application/hooks/form/` | `hooks/` |
-| `domain/use-cases/` | `services/` |
-| `shared/contexts/` | `contexts/` |
+| `application/hooks/form/`      | `hooks/`      |
+| `domain/use-cases/`            | `services/`   |
+| `shared/contexts/`             | `contexts/`   |
 
 ## 🔄 Common Transformations
 
@@ -135,19 +136,19 @@ Path sudah memberikan konteks, jangan diulang di nama file/fungsi.
 
 ```typescript
 // BEFORE: 8 separate files
-useItemFormState.ts
-useItemFormHandlers.ts
-useItemFormReset.ts
-useItemCacheManager.ts
-useItemModalOrchestrator.ts
-useItemPageHandlers.ts
-useItemUserInteractions.ts
-useItemValidation.ts
+useItemFormState.ts;
+useItemFormHandlers.ts;
+useItemFormReset.ts;
+useItemCacheManager.ts;
+useItemModalOrchestrator.ts;
+useItemPageHandlers.ts;
+useItemUserInteractions.ts;
+useItemValidation.ts;
 
 // AFTER: 2-3 consolidated files
-useItemForm.ts     // state + handlers + reset + cache
-useItem.ts         // main orchestrator
-useValidation.ts   // validation logic
+useItemForm.ts; // state + handlers + reset + cache
+useItem.ts; // main orchestrator
+useValidation.ts; // validation logic
 ```
 
 ## 📁 File Organization
@@ -204,6 +205,7 @@ types/
 ## 🚫 Anti-Patterns to Avoid
 
 ### 1. Over-Prefixing
+
 ```typescript
 ❌ useItemItemFormItemValidation  // ridiculous
 ❌ ItemManagementItemModal        // redundant
@@ -212,6 +214,7 @@ types/
 ```
 
 ### 2. Over-Suffixing
+
 ```typescript
 ❌ GenericEntityManagementHandler
 ❌ ItemModalOrchestratorManager
@@ -220,18 +223,21 @@ types/
 ```
 
 ### 3. Over-Nesting
+
 ```typescript
 ❌ features/item-management/application/hooks/form/useItemFormHandlers.ts
 ✅ features/items/hooks/useForm.ts
 ```
 
 ### 4. Context Explosion
+
 ```typescript
 ❌ 9+ separate contexts for one feature
 ✅ 1-2 consolidated contexts
 ```
 
 ### 5. Generic Naming
+
 ```typescript
 ❌ useGenericEntityManagement
 ❌ GenericEditInPlaceFactory
@@ -242,6 +248,7 @@ types/
 ## ✅ Best Practices
 
 ### 1. Import Organization
+
 ```typescript
 // Group imports logically
 import React from 'react';
@@ -255,6 +262,7 @@ import { Button } from '@/components/button';
 ```
 
 ### 2. File Structure
+
 ```typescript
 // 1. Imports
 // 2. Types (if small and local)
@@ -265,6 +273,7 @@ import { Button } from '@/components/button';
 ```
 
 ### 3. Barrel Exports
+
 ```typescript
 // features/items/index.ts
 export { Modal } from './components/Modal';
@@ -274,6 +283,7 @@ export type { ModalProps, ItemContext } from './types';
 ```
 
 ### 4. Type Co-location
+
 ```typescript
 // Small, specific types: co-locate with component
 // Shared types: separate types folder
@@ -283,6 +293,7 @@ export type { ModalProps, ItemContext } from './types';
 ## 📊 Metrics
 
 ### Target Metrics
+
 - File name: ≤ 20 characters
 - Import path: ≤ 50 characters
 - Folder depth: ≤ 4 levels
@@ -290,6 +301,7 @@ export type { ModalProps, ItemContext } from './types';
 - Hook return properties: ≤ 10
 
 ### Red Flags
+
 - File name > 30 characters
 - Import path > 80 characters
 - Folder depth > 6 levels
@@ -299,6 +311,7 @@ export type { ModalProps, ItemContext } from './types';
 ## 🎨 Examples from Codebase
 
 ### Good Examples
+
 ```typescript
 // Already good:
 import { Button } from '@/components/button';
@@ -307,6 +320,7 @@ import { Badge } from '@/components/badge';
 ```
 
 ### Need Improvement
+
 ```typescript
 // Current:
 import { ItemManagementModal } from '@/features/item-management/presentation/templates/item/ItemManagementModal';
