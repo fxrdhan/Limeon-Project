@@ -1,4 +1,4 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo, useEffect } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
@@ -109,12 +109,22 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       return createOptimizedManufacturerDetailFetcher(manufacturers);
     }, [manufacturers]);
 
+    // Update formData.code whenever the generated code changes
+    useEffect(() => {
+      if (
+        codeGeneration.generatedCode &&
+        codeGeneration.generatedCode !== formData.code
+      ) {
+        onFieldChange('code', codeGeneration.generatedCode);
+      }
+    }, [codeGeneration.generatedCode, formData.code, onFieldChange]);
+
     return (
       <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
         <div className="bg-gray-100 p-3 border-b-2 border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold">Data Umum</h2>
           <div className="text-sm text-gray-600 font-mono bg-white px-2 py-1 rounded">
-            {formData.code || codeGeneration.generatedCode || 'Auto-generated'}
+            {codeGeneration.generatedCode || formData.code || 'Auto-generated'}
           </div>
         </div>
         <div className="p-4 space-y-4">

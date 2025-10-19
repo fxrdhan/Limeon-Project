@@ -181,8 +181,12 @@ export const saveItemBusinessLogic = async ({
   // For new items, auto-generate the code
   if (!isEditMode) {
     finalFormData.code = await generateItemCode(finalFormData);
-  } else if (!finalFormData.code?.trim()) {
-    // For edit mode, generate code only if it's empty
+  } else if (
+    !finalFormData.code?.trim() ||
+    finalFormData.code.includes('[XXX]') ||
+    finalFormData.code.includes('-...')
+  ) {
+    // For edit mode, generate code if it's empty or contains placeholder
     finalFormData.code = await generateItemCode(finalFormData);
   }
 
