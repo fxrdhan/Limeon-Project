@@ -2570,26 +2570,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ag-charts-types@npm:12.1.2":
-  version: 12.1.2
-  resolution: "ag-charts-types@npm:12.1.2"
-  checksum: 0406dc31f67e9a6ef0f614a51180e44140507e359ee005bddb11177e97cedff8a2b88baf0261084ae312fc200caa7b1438281ad1c68a8a7940d95f445006c9dd
-  languageName: node
-  linkType: hard
-
 "ag-charts-types@npm:12.2.0":
   version: 12.2.0
   resolution: "ag-charts-types@npm:12.2.0"
   checksum: 193460961e54185b7b18842a99fb5481a5f95ace46e2b45c3c06655b9e5c3baab440e30563067c933df5467f0b54f2973deb837edf93053fc3697e7bb5845795
-  languageName: node
-  linkType: hard
-
-"ag-grid-community@npm:34.1.2":
-  version: 34.1.2
-  resolution: "ag-grid-community@npm:34.1.2"
-  dependencies:
-    ag-charts-types: 12.1.2
-  checksum: 4343edd4b40362321e5d19d76f5927e84a097d51c6520024ab65ca60bc1ae4359e825d9d978232492e8017bebc17e2ab4b4d75d953c6f0aedee6d81bed87e837
   languageName: node
   linkType: hard
 
@@ -2602,7 +2586,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ag-grid-enterprise@npm:^34.2.0":
+"ag-grid-enterprise@npm:34.2.0":
   version: 34.2.0
   resolution: "ag-grid-enterprise@npm:34.2.0"
   dependencies:
@@ -2618,16 +2602,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ag-grid-react@npm:^34.1.2":
-  version: 34.1.2
-  resolution: "ag-grid-react@npm:34.1.2"
+"ag-grid-react@npm:34.2.0":
+  version: 34.2.0
+  resolution: "ag-grid-react@npm:34.2.0"
   dependencies:
-    ag-grid-community: 34.1.2
+    ag-grid-community: 34.2.0
     prop-types: ^15.8.1
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 11d5793cf118b47f49712442bea4733b38268a6c90e2c542dd5fa84267eba9605f79d4c9d2ec675e94305af15b18091a528eeaf95d4a767d4fd9e88f86bc4d7c
+  checksum: 50a9e035fe81fb9e8b7b37e8bb73b54194c3cfe69b4617890fb16a6eaf9b19dbce4376cc4e5a830e177827a32aa23428c8dad23891d391ce12fb02c8ac565b36
   languageName: node
   linkType: hard
 
@@ -2711,8 +2695,8 @@ __metadata:
     "@vitejs/plugin-react-swc": ^4.0.0
     "@vitest/coverage-v8": ^2.1.8
     "@vitest/ui": ^2.1.8
-    ag-grid-enterprise: ^34.2.0
-    ag-grid-react: ^34.1.2
+    ag-grid-enterprise: 34.2.0
+    ag-grid-react: 34.2.0
     axios: ^1.12.2
     chart.js: ^4.5.0
     classnames: ^2.5.1
