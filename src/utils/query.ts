@@ -6,6 +6,7 @@ import {
   UseQueryOptions,
   UseMutationOptions,
   MutationFunction,
+  MutationFunctionContext,
 } from '@tanstack/react-query';
 
 export function useSupabaseQuery<
@@ -47,7 +48,8 @@ export function useSupabaseMutation<
     onSuccess: (
       data: TData,
       variables: TVariables,
-      context: TContext | undefined
+      context: TContext | undefined,
+      functionContext: MutationFunctionContext
     ) => {
       const keyToInvalidate = Array.isArray(key) ? key : [key];
 
@@ -60,7 +62,7 @@ export function useSupabaseMutation<
 
       if (options?.onSuccess) {
         if (context !== undefined) {
-          options.onSuccess(data, variables, context);
+          options.onSuccess(data, variables, context, functionContext);
         }
       }
     },
