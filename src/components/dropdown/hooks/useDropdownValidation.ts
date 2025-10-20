@@ -53,25 +53,27 @@ export const useDropdownValidation = ({
 
   useEffect(() => {
     if (touched && (validate || required)) {
-      const isValid = validateDropdown();
-      if (!isValid && showValidationOnBlur) {
-        if (
-          validationAutoHide &&
-          validationAutoHideDelay &&
-          validationAutoHideDelay > 0
-        ) {
+      queueMicrotask(() => {
+        const isValid = validateDropdown();
+        if (!isValid && showValidationOnBlur) {
+          if (
+            validationAutoHide &&
+            validationAutoHideDelay &&
+            validationAutoHideDelay > 0
+          ) {
+            if (validationTimeoutRef.current) {
+              clearTimeout(validationTimeoutRef.current);
+            }
+            validationTimeoutRef.current = setTimeout(() => {
+              // Auto-hide timeout is handled by overlay state
+            }, validationAutoHideDelay);
+          }
+        } else if (isValid) {
           if (validationTimeoutRef.current) {
             clearTimeout(validationTimeoutRef.current);
           }
-          validationTimeoutRef.current = setTimeout(() => {
-            // Auto-hide timeout is handled by overlay state
-          }, validationAutoHideDelay);
         }
-      } else if (isValid) {
-        if (validationTimeoutRef.current) {
-          clearTimeout(validationTimeoutRef.current);
-        }
-      }
+      });
     }
   }, [
     touched,
@@ -86,7 +88,9 @@ export const useDropdownValidation = ({
   // Clear validation when value changes to valid
   useEffect(() => {
     if (touched && (validate || required) && value && value.trim() !== '') {
-      handleCloseValidation();
+      queueMicrotask(() => {
+        handleCloseValidation();
+      });
     }
   }, [value, touched, validate, required, handleCloseValidation]);
 

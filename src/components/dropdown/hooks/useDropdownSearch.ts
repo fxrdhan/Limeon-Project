@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { DROPDOWN_CONSTANTS, SEARCH_STATES, SearchState } from '../constants';
 import { filterAndSortOptions } from '../utils/dropdownUtils';
 
@@ -8,7 +8,6 @@ export const useDropdownSearch = (
 ) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState(options);
   const [searchState, setSearchState] = useState<SearchState>(
     SEARCH_STATES.IDLE
   );
@@ -23,21 +22,33 @@ export const useDropdownSearch = (
   }, [searchTerm]);
 
   // Filter options based on search
-  useEffect(() => {
+  const filteredOptions = useMemo(() => {
     if (!searchList && debouncedSearchTerm.trim() === '') {
-      setFilteredOptions(options);
-      setSearchState(SEARCH_STATES.IDLE);
+      return options;
     } else if (debouncedSearchTerm.trim() !== '') {
-      const filtered = filterAndSortOptions(options, debouncedSearchTerm);
-      setFilteredOptions(filtered);
-      setSearchState(
-        filtered.length > 0 ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND
-      );
+      return filterAndSortOptions(options, debouncedSearchTerm);
     } else {
-      setFilteredOptions(options);
-      setSearchState(SEARCH_STATES.IDLE);
+      return options;
     }
   }, [options, debouncedSearchTerm, searchList]);
+
+  // Derive search state from filtered results
+  const derivedSearchState = useMemo(() => {
+    if (!searchList && debouncedSearchTerm.trim() === '') {
+      return SEARCH_STATES.IDLE;
+    } else if (debouncedSearchTerm.trim() !== '') {
+      return filteredOptions.length > 0
+        ? SEARCH_STATES.FOUND
+        : SEARCH_STATES.NOT_FOUND;
+    } else {
+      return SEARCH_STATES.IDLE;
+    }
+  }, [debouncedSearchTerm, searchList, filteredOptions.length]);
+
+  // Sync derived state to actual state
+  useEffect(() => {
+    setSearchState(derivedSearchState);
+  }, [derivedSearchState]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

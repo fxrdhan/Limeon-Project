@@ -39,24 +39,28 @@ export const useKeyboardNavigation = ({
   useEffect(() => {
     if (!isOpen) {
       // Reset highlighted index when dropdown closes
-      setHighlightedIndex(-1);
-      setIsKeyboardNavigation(false);
+      queueMicrotask(() => {
+        setHighlightedIndex(-1);
+        setIsKeyboardNavigation(false);
+      });
     } else if (currentFilteredOptions.length > 0 && !isKeyboardNavigation) {
       // Only set highlighted index when dropdown first opens, not during active keyboard navigation
-      if (value) {
-        // If there's a selected value, highlight it
-        const selectedIndex = currentFilteredOptions.findIndex(
-          option => option.id === value
-        );
-        if (selectedIndex >= 0) {
-          setHighlightedIndex(selectedIndex);
-          setExpandedId(currentFilteredOptions[selectedIndex].id);
+      queueMicrotask(() => {
+        if (value) {
+          // If there's a selected value, highlight it
+          const selectedIndex = currentFilteredOptions.findIndex(
+            option => option.id === value
+          );
+          if (selectedIndex >= 0) {
+            setHighlightedIndex(selectedIndex);
+            setExpandedId(currentFilteredOptions[selectedIndex].id);
+          }
+        } else {
+          // If no value selected, pre-select first option
+          setHighlightedIndex(0);
+          setExpandedId(currentFilteredOptions[0].id);
         }
-      } else {
-        // If no value selected, pre-select first option
-        setHighlightedIndex(0);
-        setExpandedId(currentFilteredOptions[0].id);
-      }
+      });
     }
   }, [
     isOpen,

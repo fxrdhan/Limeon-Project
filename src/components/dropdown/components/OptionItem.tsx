@@ -21,7 +21,6 @@ const OptionItem: FC<OptionItemProps> = ({
     withRadio = false,
     withCheckbox = false,
     isKeyboardNavigation,
-    buttonRef,
     portalStyle,
     onSelect,
     onExpansion,
@@ -29,13 +28,13 @@ const OptionItem: FC<OptionItemProps> = ({
     onHoverDetailHide,
   } = useDropdownContext();
 
-  // Use portal width if available, otherwise fall back to button width
-  const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+  // Use portal width if available, otherwise fall back to default width
+  const DEFAULT_WIDTH = 200;
   const portalWidth = portalStyle?.width
     ? typeof portalStyle.width === 'string'
       ? parseInt(portalStyle.width.replace('px', ''))
       : Number(portalStyle.width)
-    : buttonWidth;
+    : DEFAULT_WIDTH;
 
   const maxTextWidth =
     portalWidth -

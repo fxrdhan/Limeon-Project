@@ -2,6 +2,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
   RefObject,
   CSSProperties,
 } from 'react';
@@ -28,6 +29,7 @@ export const useDropdownPosition = (
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [isPositionReady, setIsPositionReady] = useState(false);
   const [isLeftPositioning, setIsLeftPositioning] = useState(false);
+  const calculatePositionRef = useRef<(() => void) | null>(null);
 
   // Calculate content-based width
   const calculateContentWidth = useCallback(() => {
@@ -64,7 +66,7 @@ export const useDropdownPosition = (
     if (!dropdownMenuRef.current || !buttonRef.current) {
       // Wait for refs to be available
       if (isOpen && !dropdownMenuRef.current) {
-        requestAnimationFrame(calculateDropdownPosition);
+        requestAnimationFrame(() => calculatePositionRef.current?.());
       }
       return;
     }
@@ -245,6 +247,11 @@ export const useDropdownPosition = (
     calculateContentWidth,
   ]);
 
+  // Store callback reference for recursive calls
+  useEffect(() => {
+    calculatePositionRef.current = calculateDropdownPosition;
+  }, [calculateDropdownPosition]);
+
   const resetPosition = useCallback(() => {
     setInitialDropDirection(null);
     setIsPositionReady(false);
@@ -254,10 +261,10 @@ export const useDropdownPosition = (
   useEffect(() => {
     if (isOpen) {
       // Calculate position first, then set ready state
-      setIsPositionReady(false);
+      queueMicrotask(() => setIsPositionReady(false));
       calculateDropdownPosition();
     } else {
-      setIsPositionReady(false);
+      queueMicrotask(() => setIsPositionReady(false));
     }
   }, [isOpen, calculateDropdownPosition]);
 
