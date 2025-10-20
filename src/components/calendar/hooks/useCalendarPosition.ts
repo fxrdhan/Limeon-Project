@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useLayoutEffect } from 'react';
 import { CALENDAR_CONSTANTS } from '../constants';
 import type {
   UseCalendarPositionParams,
@@ -59,19 +59,24 @@ export const useCalendarPosition = (
     setIsPositionReady(true);
   }, [triggerRef, portalWidth, calendarWidth, calendarHeight]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setIsPositionReady(false);
-      calculatePosition();
-      window.addEventListener('scroll', calculatePosition, true);
-      window.addEventListener('resize', calculatePosition);
-    } else {
-      setIsPositionReady(false);
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      queueMicrotask(() => setIsPositionReady(false));
+      return;
     }
 
+    queueMicrotask(() => setIsPositionReady(false));
+    calculatePosition();
+
+    const handleScroll = () => calculatePosition();
+    const handleResize = () => calculatePosition();
+
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
+
     return () => {
-      window.removeEventListener('scroll', calculatePosition, true);
-      window.removeEventListener('resize', calculatePosition);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
     };
   }, [isOpen, calculatePosition]);
 
