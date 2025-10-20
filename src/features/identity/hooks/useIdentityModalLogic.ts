@@ -126,7 +126,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     });
 
     onClose();
-  }, [onClose]);
+  }, [onClose, setIsClosing]);
 
   // Reset closing state when modal opens
   useEffect(() => {
