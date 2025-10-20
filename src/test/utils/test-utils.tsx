@@ -5,6 +5,8 @@
  * Note: Non-component exports are separated to avoid React Fast Refresh warnings.
  */
 
+/* eslint-disable react-refresh/only-export-components */
+
 import { ReactElement } from 'react';
 import { render as rtlRender, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
