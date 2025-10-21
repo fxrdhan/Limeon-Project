@@ -4,7 +4,6 @@ interface UseComparisonDataProps {
   isDualMode: boolean;
   selectedVersion?: VersionData;
   currentData: {
-    kode?: string;
     code?: string;
     name: string;
     description: string;
@@ -24,11 +23,11 @@ export const useComparisonData = ({
   isFlipped,
   entityName,
 }: UseComparisonDataProps) => {
-  // Helper function to get code field from entity data (supports both 'code' and 'kode')
+  // Helper function to get code field from entity data (all tables now use 'code')
   const getCodeField = (
     entityData: Record<string, unknown> | undefined | null
   ) => {
-    return String(entityData?.code || entityData?.kode || '');
+    return String(entityData?.code || '');
   };
 
   // Helper functions to get effective versions based on flip state
@@ -110,13 +109,12 @@ export const useComparisonData = ({
         leftKode: versionKode,
         leftName: versionName,
         leftDescription: versionDescription,
-        rightKode: currentData.code || currentData.kode || '',
+        rightKode: currentData.code || '',
         rightName: currentData.name,
         rightDescription: currentData.description,
         leftVersion: selectedVersion,
         rightVersion: null,
-        isKodeDifferent:
-          (currentData.code || currentData.kode || '') !== versionKode,
+        isKodeDifferent: (currentData.code || '') !== versionKode,
         isNameDifferent: currentData.name !== versionName,
         isDescriptionDifferent: currentData.description !== versionDescription,
       };

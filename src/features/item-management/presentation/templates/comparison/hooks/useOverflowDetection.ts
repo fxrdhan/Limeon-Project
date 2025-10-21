@@ -31,7 +31,7 @@ export const useOverflowDetection = ({
   compData,
 }: UseOverflowDetectionProps) => {
   const [overflowStates, setOverflowStates] = React.useState({
-    kode: false,
+    code: false,
     name: false,
     description: false,
   });
@@ -48,7 +48,7 @@ export const useOverflowDetection = ({
 
     const updateOverflowStates = () => {
       setOverflowStates({
-        kode: checkOverflow(kodeRef.current),
+        code: checkOverflow(kodeRef.current),
         name: checkOverflow(nameRef.current),
         description: checkOverflow(descriptionRef.current),
       });
@@ -82,7 +82,7 @@ export const useOverflowDetection = ({
     const updateOverflowStatesWithRetry = (retryCount = 0) => {
       const updateOverflowStates = () => {
         setOverflowStates({
-          kode: checkOverflow(kodeRef.current),
+          code: checkOverflow(kodeRef.current),
           name: checkOverflow(nameRef.current),
           description: checkOverflow(descriptionRef.current),
         });

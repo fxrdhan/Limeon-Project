@@ -604,7 +604,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       // Items tab: Add toggle menu for reference columns
       if (activeTab === 'items' && isReferenceColumn(colId)) {
         const currentMode = columnDisplayModes[colId];
-        const nextMode = currentMode === 'name' ? 'kode' : 'nama';
+        const nextMode = currentMode === 'name' ? 'code' : 'nama';
 
         return [
           ...finalMenuItems,

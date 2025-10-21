@@ -48,7 +48,6 @@ const getHooksForTable = (tableName: string) => {
 
 type ItemFormPayload = {
   id?: string;
-  kode?: string;
   code?: string;
   name: string;
   description?: string;
@@ -124,12 +123,9 @@ export const useEntityCrudOperations = (
         if (itemData.nci_code !== undefined)
           baseData.nci_code = itemData.nci_code;
 
-        // Accept either `code` or `kode` from UI and pass both to the adapter.
-        // The adapter will keep the canonical one for the table.
-        const codeValue = itemData.code ?? itemData.kode;
-        if (codeValue !== undefined) {
-          baseData.code = codeValue;
-          baseData.kode = codeValue;
+        // All tables now use 'code' field
+        if (itemData.code !== undefined) {
+          baseData.code = itemData.code;
         }
 
         if (itemData.id) {
@@ -177,11 +173,10 @@ export const useEntityCrudOperations = (
           (errorMessage.includes('409') && errorMessage.includes('conflict'));
 
         const action = itemData.id ? 'memperbarui' : 'menambahkan';
-        const codeVal = itemData.code ?? itemData.kode;
 
-        if (isDuplicateCodeError && codeVal) {
+        if (isDuplicateCodeError && itemData.code) {
           toast.error(
-            `Kode "${codeVal}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. Silakan gunakan kode yang berbeda.`
+            `Code "${itemData.code}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. Silakan gunakan code yang berbeda.`
           );
         } else {
           toast.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
