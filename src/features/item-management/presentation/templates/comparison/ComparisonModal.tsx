@@ -18,7 +18,6 @@ interface ComparisonModalProps {
   entityName: string;
   selectedVersion?: VersionData;
   currentData: {
-    kode?: string;
     code?: string;
     name: string;
     description: string;

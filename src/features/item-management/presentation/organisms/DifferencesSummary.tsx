@@ -70,7 +70,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
               <AnimatePresence>
                 {compData.isKodeDifferent && (
                   <motion.div
-                    key="kode-diff"
+                    key="code-diff"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -78,7 +78,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                     className="overflow-hidden"
                   >
                     <div className="text-xs font-medium text-slate-700 mb-0">
-                      Kode:
+                      Code:
                     </div>
                     <div className="relative overflow-hidden">
                       <div

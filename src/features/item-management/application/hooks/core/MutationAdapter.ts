@@ -4,7 +4,6 @@
  * Purpose:
  * - Provide a unified interface for create/update/delete mutations coming from various external hooks
  * - Normalize parameter shapes (e.g., update { id, data } vs { id, ...fields })
- * - Normalize code/kode field mapping based on table name conventions
  *
  * Why:
  * - External hooks (legacy or third-party) expose different method names and payload shapes
@@ -92,65 +91,19 @@ const DELETE_KEYS = [
 ] as const;
 
 // ============================================================================
-// CODE/KODE FIELD NORMALIZATION
+// FIELD NORMALIZATION (DEPRECATED - ALL TABLES NOW USE 'code')
 // ============================================================================
 
 /**
- * Determine whether a table uses the canonical "code" field or potentially "kode".
- *
- * Current rule-of-thumb:
- * - All item master tables use "code" (e.g., item_* tables)
- * - Non-item master legacy tables may use "kode"
- */
-export function tableUsesCode(tableName?: string): boolean {
-  if (!tableName) return true; // default to "code" if unknown
-  if (tableName.startsWith('item_')) return true;
-  return false;
-}
-
-/**
- * Normalize "code" vs "kode" field for a given table.
- * - If table uses "code": move input.kode -> code (if provided), drop kode
- * - Else: move input.code -> kode (if provided), drop code
+ * @deprecated All tables now use 'code' field. This function is kept for backward compatibility.
+ * Legacy field normalization - now a no-op since all tables standardized to 'code'.
  */
 export function normalizeCodeFieldsForTable<T extends Record<string, unknown>>(
-  tableName: string | undefined,
+  _tableName: string | undefined,
   input: T
 ): T {
-  const prefersCode = tableUsesCode(tableName);
-  const asRecord = input as Record<string, unknown>;
-  const hasCode = Object.prototype.hasOwnProperty.call(asRecord, 'code');
-  const hasKode = Object.prototype.hasOwnProperty.call(asRecord, 'kode');
-
-  if (prefersCode) {
-    // Prefer "code"
-    const codeValue =
-      (hasCode ? asRecord['code'] : undefined) ??
-      (hasKode ? asRecord['kode'] : undefined);
-
-    if (codeValue !== undefined) {
-      // Omit the legacy 'kode' property; keep 'code'
-      const rest = { ...asRecord } as Record<string, unknown>;
-      delete rest['kode'];
-      return { ...(rest as T), code: codeValue } as T;
-    }
-    // Nothing to change
-    return input;
-  } else {
-    // Prefer "kode"
-    const kodeValue =
-      (hasKode ? asRecord['kode'] : undefined) ??
-      (hasCode ? asRecord['code'] : undefined);
-
-    if (kodeValue !== undefined) {
-      // Omit the 'code' property; keep 'kode'
-      const rest = { ...asRecord } as Record<string, unknown>;
-      delete rest['code'];
-      return { ...(rest as T), kode: kodeValue } as T;
-    }
-    // Nothing to change
-    return input;
-  }
+  // All tables now use 'code' - no normalization needed
+  return input;
 }
 
 // ============================================================================
@@ -201,7 +154,7 @@ function extractCommonState(from: unknown): {
  * Build normalized mutations from raw mutations object.
  *
  * @param rawMutations The raw external mutations object (from legacy/external hooks)
- * @param tableName Optional table name for code/kode normalization
+ * @param tableName Optional table name (kept for backward compatibility)
  */
 export function toNormalizedMutations(
   rawMutations: unknown,
@@ -220,7 +173,7 @@ export function toNormalizedMutations(
     const common = extractCommonState(createRaw.value);
     normalized.create = {
       async mutateAsync(data: Record<string, unknown>) {
-        // Normalize code/kode
+        // All tables now use 'code' - normalization is a no-op
         const mapped = normalizeCodeFieldsForTable(tableName, data);
         // Most providers for create expect a flat record
         return await createRaw.value.mutateAsync(mapped);
@@ -239,7 +192,7 @@ export function toNormalizedMutations(
       ): Promise<unknown> {
         const { id, ...fields } = input ?? ({} as { id: string });
 
-        // Normalize code/kode in updated fields
+        // All tables now use 'code' - normalization is a no-op
         const mappedFields = normalizeCodeFieldsForTable(
           tableName,
           fields as Record<string, unknown>

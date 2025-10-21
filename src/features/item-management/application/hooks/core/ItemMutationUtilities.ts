@@ -129,7 +129,7 @@ export const generateItemCode = async (
 
   if (parts.length !== 5) {
     throw new Error(
-      'Semua field kategori, jenis, kemasan, sediaan, dan produsen harus dipilih untuk generate kode.'
+      'Semua field kategori, jenis, kemasan, sediaan, dan produsen harus dipilih untuk generate code.'
     );
   }
 

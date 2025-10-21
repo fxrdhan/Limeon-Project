@@ -119,7 +119,7 @@ export const entityConfigs: Record<EntityType, EntityConfig> = {
     entityName: 'Item',
     tableName: 'items',
     addButtonText: 'Tambah Item Baru',
-    searchPlaceholder: 'Cari nama, kode, atau barcode item',
+    searchPlaceholder: 'Cari nama, code, atau barcode item',
     nameColumnHeader: 'Nama Item',
     noDataMessage: 'Tidak ada data item yang ditemukan',
     searchNoDataMessage: 'Tidak ada item dengan kata kunci',
@@ -227,7 +227,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   const handleSubmit = useCallback(
     async (formData: {
       id?: string;
-      kode?: string;
       code?: string;
       name: string;
       description?: string;

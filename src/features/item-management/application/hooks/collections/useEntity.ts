@@ -71,15 +71,7 @@ export const useEntity = (options: EntityOptions) => {
       const searchTermLower = search.toLowerCase();
       filteredData = filteredData
         .filter(entity => {
-          // Check for kode field (most entities)
-          if (
-            'kode' in entity &&
-            typeof entity.kode === 'string' &&
-            fuzzyMatch(entity.kode.toLowerCase(), searchTermLower)
-          )
-            return true;
-
-          // Check for code field (units entity)
+          // Check for code field (all entities now use 'code')
           if (
             'code' in entity &&
             typeof entity.code === 'string' &&
@@ -127,19 +119,7 @@ export const useEntity = (options: EntityOptions) => {
         })
         .sort((a, b) => {
           const getScore = (entity: EntityData) => {
-            // Check kode/code first (highest priority)
-            if (
-              'kode' in entity &&
-              typeof entity.kode === 'string' &&
-              entity.kode.toLowerCase().startsWith(searchTermLower)
-            )
-              return 5;
-            if (
-              'kode' in entity &&
-              typeof entity.kode === 'string' &&
-              entity.kode.toLowerCase().includes(searchTermLower)
-            )
-              return 4;
+            // Check code first (highest priority)
             if (
               'code' in entity &&
               typeof entity.code === 'string' &&
@@ -174,15 +154,7 @@ export const useEntity = (options: EntityOptions) => {
           const scoreB = getScore(b);
           if (scoreA !== scoreB) return scoreB - scoreA;
 
-          // Secondary sort by kode/code if available, then name
-          if (
-            'kode' in a &&
-            'kode' in b &&
-            typeof a.kode === 'string' &&
-            typeof b.kode === 'string'
-          ) {
-            return a.kode.localeCompare(b.kode);
-          }
+          // Secondary sort by code if available, then name
           if (
             'code' in a &&
             'code' in b &&

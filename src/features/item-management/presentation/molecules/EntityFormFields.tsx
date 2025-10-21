@@ -22,10 +22,10 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({
     <div className="p-6 space-y-4">
       {setCode && (
         <Input
-          label={`Kode ${entityName}`}
+          label={`Code ${entityName}`}
           value={code || ''}
           onChange={e => setCode(e.target.value)}
-          placeholder={`Masukkan kode ${entityName.toLowerCase()}`}
+          placeholder={`Masukkan code ${entityName.toLowerCase()}`}
           required
           readOnly={isReadOnly}
         />

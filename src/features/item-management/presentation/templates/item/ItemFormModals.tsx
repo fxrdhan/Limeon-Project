@@ -9,7 +9,7 @@ interface ItemFormModalsProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -20,7 +20,7 @@ interface ItemFormModalsProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -31,7 +31,7 @@ interface ItemFormModalsProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -42,7 +42,7 @@ interface ItemFormModalsProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -53,7 +53,7 @@ interface ItemFormModalsProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       address?: string;
     }) => Promise<void>;
