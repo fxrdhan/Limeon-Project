@@ -134,7 +134,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     filteredOptions
   );
 
-  const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
+  const { expandedId, setExpandedId } = useTextExpansion({
     buttonRef,
     selectedOption: selectedOption || undefined,
     isOpen,
@@ -353,7 +353,6 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     onKeyDown: handleDropdownKeyDown,
     onSetHighlightedIndex: setHighlightedIndex,
     onSetIsKeyboardNavigation: setIsKeyboardNavigation,
-    onExpansion: handleExpansion,
     onMenuEnter: handleMenuEnter,
     onMenuLeave: handleMouseLeaveWithCloseIntent,
     onScroll: checkScroll,
