@@ -50,11 +50,6 @@ export interface DropdownContextType {
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   onSetHighlightedIndex: (index: number) => void;
   onSetIsKeyboardNavigation: (isKeyboard: boolean) => void;
-  onExpansion: (
-    optionId: string,
-    optionName: string,
-    shouldExpand: boolean
-  ) => void;
   onMenuEnter: () => void;
   onMenuLeave: () => void;
   onScroll: () => void;

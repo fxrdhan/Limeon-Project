@@ -36,12 +36,14 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
   ) => {
     const buttonRef = ref as React.RefObject<HTMLButtonElement>;
 
-    const { isExpanded, handleExpansionChange, isButtonTextExpanded } =
-      useTextExpansion({
-        buttonRef,
-        selectedOption,
-        isOpen,
-      });
+    const { isButtonTextExpanded } = useTextExpansion({
+      buttonRef,
+      selectedOption,
+      isOpen,
+    });
+
+    // Expansion is disabled on hover for truncated text
+    const isExpanded = false;
 
     // Calculate display text based on expansion state
     const displayText = selectedOption
@@ -68,11 +70,10 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
         tabIndex={tabIndex}
         onClick={onClick}
         onKeyDown={onKeyDown}
-        onMouseEnter={() => handleExpansionChange(true)}
-        onMouseLeave={() => handleExpansionChange(false)}
-        onFocus={() => handleExpansionChange(true)}
+        onMouseEnter={() => {}}
+        onMouseLeave={() => {}}
+        onFocus={() => {}}
         onBlur={() => {
-          handleExpansionChange(false);
           onBlur();
         }}
       />

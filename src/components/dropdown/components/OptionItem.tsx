@@ -23,7 +23,6 @@ const OptionItem: FC<OptionItemProps> = ({
     isKeyboardNavigation,
     portalStyle,
     onSelect,
-    onExpansion,
     onHoverDetailShow,
     onHoverDetailHide,
   } = useDropdownContext();
@@ -58,9 +57,7 @@ const OptionItem: FC<OptionItemProps> = ({
       isKeyboardNavigation={isKeyboardNavigation}
       onSelect={onSelect}
       onHighlight={onHighlight}
-      onExpansion={onExpansion}
       dropdownMenuRef={dropdownMenuRef}
-      optionName={option.name}
       option={option}
       onHoverDetailShow={onHoverDetailShow}
       onHoverDetailHide={onHoverDetailHide}

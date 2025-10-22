@@ -9,13 +9,7 @@ interface OptionContainerProps {
   isKeyboardNavigation: boolean;
   onSelect: (optionId: string) => void;
   onHighlight: (index: number) => void;
-  onExpansion: (
-    optionId: string,
-    optionName: string,
-    shouldExpand: boolean
-  ) => void;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
-  optionName: string;
   children: ReactNode;
   // Hover detail props
   option?: DropdownOption;
@@ -35,9 +29,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
   isKeyboardNavigation,
   onSelect,
   onHighlight,
-  onExpansion,
   dropdownMenuRef,
-  optionName,
   children,
   option,
   onHoverDetailShow,
@@ -48,7 +40,6 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
     if (isKeyboardNavigation) return;
 
     onHighlight(index);
-    onExpansion(optionId, optionName, true);
 
     // Trigger hover detail if enabled
     if (onHoverDetailShow && option) {
@@ -66,8 +57,6 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
     // Ignore mouse events during keyboard navigation
     if (isKeyboardNavigation) return;
 
-    onExpansion(optionId, optionName, false);
-
     // Hide hover detail
     if (onHoverDetailHide) {
       onHoverDetailHide();
@@ -76,11 +65,9 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
 
   const handleFocus = () => {
     onHighlight(index);
-    onExpansion(optionId, optionName, true);
   };
 
   const handleBlur = () => {
-    onExpansion(optionId, optionName, false);
     setTimeout(() => {
       if (!dropdownMenuRef.current?.contains(document.activeElement)) {
         // onHighlight(-1); // This would be handled by the parent
