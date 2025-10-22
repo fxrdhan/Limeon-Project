@@ -1,4 +1,4 @@
-import { useState, useCallback, useId } from 'react';
+import { useState, useCallback, useId, useRef } from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
 
 let activeDropdownCloseCallback: (() => void) | null = null;
@@ -9,12 +9,20 @@ export const useDropdownState = () => {
   const [isClosing, setIsClosing] = useState(false);
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
   const instanceId = useId();
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const actualCloseDropdown = useCallback(() => {
+    // Clear any existing close timeout
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
     setIsClosing(true);
-    setTimeout(() => {
+    closeTimeoutRef.current = setTimeout(() => {
       setIsOpen(false);
       setIsClosing(false);
+      closeTimeoutRef.current = null;
       if (activeDropdownId === instanceId) {
         activeDropdownCloseCallback = null;
         activeDropdownId = null;
@@ -23,6 +31,13 @@ export const useDropdownState = () => {
   }, [instanceId]);
 
   const openThisDropdown = useCallback(() => {
+    // Clear any pending close timeout
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    // Close other active dropdown
     if (
       activeDropdownId !== null &&
       activeDropdownId !== instanceId &&
@@ -30,6 +45,9 @@ export const useDropdownState = () => {
     ) {
       activeDropdownCloseCallback();
     }
+
+    // Reset closing state if it was in the middle of closing
+    setIsClosing(false);
     setIsOpen(true);
     activeDropdownCloseCallback = actualCloseDropdown;
     activeDropdownId = instanceId;
@@ -38,13 +56,17 @@ export const useDropdownState = () => {
   const toggleDropdown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
+      // Prevent toggle during closing animation to avoid race conditions
+      if (isClosing) {
+        return;
+      }
       if (isOpen) {
         actualCloseDropdown();
       } else {
         openThisDropdown();
       }
     },
-    [isOpen, actualCloseDropdown, openThisDropdown]
+    [isOpen, isClosing, actualCloseDropdown, openThisDropdown]
   );
 
   return {
