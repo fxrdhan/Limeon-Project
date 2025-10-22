@@ -120,23 +120,33 @@ const ItemModal: React.FC<ItemModalProps> = ({
       deleteItemMutation.isPending,
   });
 
-  // Realtime for current item data with smart form sync
-  const { smartFormSync } = useItemModalRealtime({
-    itemId: itemId,
-    enabled: isOpen && isEditMode, // Only enable in edit mode
-    onItemUpdated: payload => {
-      console.log('🔄 Item updated in modal:', payload);
-      // Smart sync handles the updates intelligently
-    },
-    onItemDeleted: () => {
-      console.log('🗑️ Item deleted, closing modal');
-      setIsClosing(true);
-    },
-    onSmartUpdate: updates => {
+  // Memoized callbacks for realtime to prevent unnecessary reconnections
+  const handleItemUpdated = useCallback((payload: unknown) => {
+    console.log('🔄 Item updated in modal:', payload);
+    // Smart sync handles the updates intelligently
+  }, []);
+
+  const handleItemDeleted = useCallback(() => {
+    console.log('🗑️ Item deleted, closing modal');
+    setIsClosing(true);
+  }, [setIsClosing]);
+
+  const handleSmartUpdate = useCallback(
+    (updates: Record<string, unknown>) => {
       console.log('🧠 Applying smart updates:', updates);
       // Apply updates that don't conflict with user input
       updateFormData(updates);
     },
+    [updateFormData]
+  );
+
+  // Realtime for current item data with smart form sync
+  const { smartFormSync } = useItemModalRealtime({
+    itemId: itemId,
+    enabled: isOpen && isEditMode, // Only enable in edit mode
+    onItemUpdated: handleItemUpdated,
+    onItemDeleted: handleItemDeleted,
+    onSmartUpdate: handleSmartUpdate,
   });
 
   // UI event handlers

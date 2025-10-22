@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 
 interface UseSmartFormSyncProps {
@@ -14,6 +14,14 @@ export const useSmartFormSync = ({
   onDataUpdate,
   showConflictNotification = true,
 }: UseSmartFormSyncProps) => {
+  // Use refs to avoid recreating callbacks when props change
+  const onDataUpdateRef = useRef(onDataUpdate);
+  const showConflictNotificationRef = useRef(showConflictNotification);
+
+  // Update refs when props change
+  onDataUpdateRef.current = onDataUpdate;
+  showConflictNotificationRef.current = showConflictNotification;
+
   // Track which fields are currently being interacted with
   const activeFieldsRef = useRef<Set<string>>(new Set());
   const lastFocusedFieldRef = useRef<string | null>(null);
@@ -26,28 +34,25 @@ export const useSmartFormSync = ({
   }, []);
 
   // Unregister field when user stops editing
-  const unregisterActiveField = useCallback(
-    (fieldName: string) => {
-      activeFieldsRef.current.delete(fieldName);
+  const unregisterActiveField = useCallback((fieldName: string) => {
+    activeFieldsRef.current.delete(fieldName);
 
-      // If there are pending updates for this field, apply them now
-      if (pendingUpdatesRef.current[fieldName] !== undefined) {
-        const pendingValue = pendingUpdatesRef.current[fieldName];
-        delete pendingUpdatesRef.current[fieldName];
+    // If there are pending updates for this field, apply them now
+    if (pendingUpdatesRef.current[fieldName] !== undefined) {
+      const pendingValue = pendingUpdatesRef.current[fieldName];
+      delete pendingUpdatesRef.current[fieldName];
 
-        // Apply the pending update
-        onDataUpdate({ [fieldName]: pendingValue });
+      // Apply the pending update
+      onDataUpdateRef.current({ [fieldName]: pendingValue });
 
-        if (showConflictNotification) {
-          toast.success(`Field "${fieldName}" diperbarui dengan data terbaru`, {
-            duration: 3000,
-            icon: '🔄',
-          });
-        }
+      if (showConflictNotificationRef.current) {
+        toast.success(`Field "${fieldName}" diperbarui dengan data terbaru`, {
+          duration: 3000,
+          icon: '🔄',
+        });
       }
-    },
-    [onDataUpdate, showConflictNotification]
-  );
+    }
+  }, []);
 
   // Handle realtime updates with smart conflict resolution
   const handleRealtimeUpdate = useCallback(
@@ -73,11 +78,11 @@ export const useSmartFormSync = ({
 
       // Apply safe updates immediately
       if (Object.keys(safeUpdates).length > 0) {
-        onDataUpdate(safeUpdates);
+        onDataUpdateRef.current(safeUpdates);
       }
 
       // Notify about conflicts if any
-      if (hasConflicts && showConflictNotification) {
+      if (hasConflicts && showConflictNotificationRef.current) {
         const fieldNames = conflictedFields.join(', ');
         toast.success(
           `Perubahan tersimpan untuk field: ${fieldNames}. Akan diaplikasikan setelah Anda selesai mengedit.`,
@@ -93,7 +98,7 @@ export const useSmartFormSync = ({
         pendingConflicts: conflictedFields,
       };
     },
-    [onDataUpdate, showConflictNotification]
+    []
   );
 
   // Get input event handlers for form fields
@@ -120,9 +125,9 @@ export const useSmartFormSync = ({
     pendingUpdatesRef.current = {};
 
     if (Object.keys(allPending).length > 0) {
-      onDataUpdate(allPending);
+      onDataUpdateRef.current(allPending);
 
-      if (showConflictNotification) {
+      if (showConflictNotificationRef.current) {
         toast.success('Semua perubahan terbaru telah diaplikasikan', {
           duration: 3000,
           icon: '✅',
@@ -131,14 +136,24 @@ export const useSmartFormSync = ({
     }
 
     return allPending;
-  }, [onDataUpdate, showConflictNotification]);
+  }, []);
 
-  return {
-    handleRealtimeUpdate,
-    getFieldHandlers,
-    hasPendingUpdate,
-    applyAllPendingUpdates,
-    registerActiveField,
-    unregisterActiveField,
-  };
+  return useMemo(
+    () => ({
+      handleRealtimeUpdate,
+      getFieldHandlers,
+      hasPendingUpdate,
+      applyAllPendingUpdates,
+      registerActiveField,
+      unregisterActiveField,
+    }),
+    [
+      handleRealtimeUpdate,
+      getFieldHandlers,
+      hasPendingUpdate,
+      applyAllPendingUpdates,
+      registerActiveField,
+      unregisterActiveField,
+    ]
+  );
 };

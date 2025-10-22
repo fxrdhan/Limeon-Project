@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -27,11 +27,17 @@ export const useItemModalRealtime = ({
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastUpdateRef = useRef<string>('');
 
-  // Smart form sync for handling field conflicts
-  const smartFormSync = useSmartFormSync({
-    onDataUpdate: updates => {
+  // Memoize callback to prevent useSmartFormSync from recreating functions
+  const handleDataUpdate = useCallback(
+    (updates: Record<string, unknown>) => {
       onSmartUpdate?.(updates);
     },
+    [onSmartUpdate]
+  );
+
+  // Smart form sync for handling field conflicts
+  const smartFormSync = useSmartFormSync({
+    onDataUpdate: handleDataUpdate,
     showConflictNotification: true,
   });
 
