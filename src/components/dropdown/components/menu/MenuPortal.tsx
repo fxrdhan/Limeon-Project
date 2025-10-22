@@ -31,6 +31,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
     },
     ref
   ) => {
+    // Always render portal when open or closing to ensure DOM element exists for positioning
     if (!isOpen && !isClosing) return null;
 
     return typeof document !== 'undefined'
@@ -49,7 +50,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
               bg-white rounded-xl border border-gray-200 overflow-hidden
               ${dropDirection === 'down' ? 'shadow-xl' : ''}
               transition-all duration-150 ease-out
-              ${isClosing || !applyOpenStyles || !isPositionReady ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+              ${isClosing || !applyOpenStyles ? 'opacity-0 scale-95' : !isPositionReady ? 'opacity-0' : 'opacity-100 scale-100'}
               ${isKeyboardNavigation ? 'cursor-none' : ''}
           `}
             role="menu"

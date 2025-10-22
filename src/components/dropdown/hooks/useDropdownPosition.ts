@@ -59,7 +59,6 @@ export const useDropdownPosition = (
 
   const calculateDropdownPosition = useCallback(() => {
     if (!isOpen) {
-      setIsPositionReady(false);
       return;
     }
 
@@ -260,11 +259,15 @@ export const useDropdownPosition = (
   // Auto calculate position when dropdown opens
   useEffect(() => {
     if (isOpen) {
-      // Calculate position first, then set ready state
-      queueMicrotask(() => setIsPositionReady(false));
-      calculateDropdownPosition();
+      // Reset position ready state before calculating new position
+      setIsPositionReady(false);
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        calculateDropdownPosition();
+      });
     } else {
-      queueMicrotask(() => setIsPositionReady(false));
+      // Reset position when closing
+      setIsPositionReady(false);
     }
   }, [isOpen, calculateDropdownPosition]);
 

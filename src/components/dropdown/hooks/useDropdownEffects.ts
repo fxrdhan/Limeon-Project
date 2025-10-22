@@ -114,22 +114,27 @@ export const useDropdownEffects = ({
       clearTimeouts();
 
       document.body.style.overflow = 'hidden';
-      // Immediately set open styles and calculate position
-      setApplyOpenStyles(true);
 
-      // Calculate position immediately after DOM is ready
-      if (dropdownMenuRef.current) {
-        calculateDropdownPosition();
-        manageFocusOnOpen();
-      } else {
-        // If ref not ready, use minimal timeout
-        openStyleTimerId = setTimeout(() => {
-          if (dropdownMenuRef.current) {
-            calculateDropdownPosition();
+      // Wait for portal to render in DOM, then calculate position and apply styles
+      requestAnimationFrame(() => {
+        if (dropdownMenuRef.current) {
+          calculateDropdownPosition();
+          // Apply styles in next frame to ensure position is set
+          requestAnimationFrame(() => {
+            setApplyOpenStyles(true);
             manageFocusOnOpen();
-          }
-        }, 0);
-      }
+          });
+        } else {
+          // If ref still not ready, try again with timeout
+          openStyleTimerId = setTimeout(() => {
+            if (dropdownMenuRef.current) {
+              calculateDropdownPosition();
+              setApplyOpenStyles(true);
+              manageFocusOnOpen();
+            }
+          }, 0);
+        }
+      });
 
       const events = [
         ['scroll', calculateDropdownPosition, true],
