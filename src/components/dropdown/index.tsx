@@ -185,7 +185,6 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     setHighlightedIndex,
     setIsKeyboardNavigation,
     handleDropdownKeyDown,
-    scrollToHighlightedOption,
   } = useKeyboardNavigation({
     isOpen,
     value: typeof value === 'string' ? value : undefined,
@@ -248,7 +247,6 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     isOpen,
     applyOpenStyles,
     filteredOptions,
-    scrollToHighlightedOption,
     optionsContainerRef,
   });
 

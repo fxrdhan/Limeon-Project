@@ -209,19 +209,19 @@ export const useKeyboardNavigation = ({
           }
 
           // Immediately scroll to the new highlighted option for keyboard navigation
-          setTimeout(() => {
+          // Use requestAnimationFrame for optimal performance without delay
+          requestAnimationFrame(() => {
             if (optionsContainerRef.current && newIndex >= 0) {
               const optionElements =
                 optionsContainerRef.current.querySelectorAll('[role="option"]');
               if (optionElements[newIndex]) {
                 (optionElements[newIndex] as HTMLElement).scrollIntoView({
                   block: 'nearest',
-                  behavior: 'auto',
+                  behavior: 'auto', // Instant for keyboard navigation
                 });
               }
             }
-            // Don't auto-reset here, let mouse movement handle it
-          }, 10);
+          });
         }
       }
     },
@@ -241,26 +241,6 @@ export const useKeyboardNavigation = ({
     ]
   );
 
-  const scrollToHighlightedOption = useCallback(() => {
-    if (isOpen && highlightedIndex >= 0 && optionsContainerRef.current) {
-      const optionElements =
-        optionsContainerRef.current.querySelectorAll('[role="option"]');
-      if (optionElements[highlightedIndex]) {
-        if (highlightedIndex === 0) {
-          optionsContainerRef.current.scrollTop = 0;
-        } else if (highlightedIndex === currentFilteredOptions.length - 1) {
-          optionsContainerRef.current.scrollTop =
-            optionsContainerRef.current.scrollHeight;
-        } else {
-          (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
-            block: 'nearest',
-            behavior: 'auto',
-          });
-        }
-      }
-    }
-  }, [highlightedIndex, isOpen, currentFilteredOptions, optionsContainerRef]);
-
   // Simple wrapper for external components that just need basic key handling
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -276,6 +256,5 @@ export const useKeyboardNavigation = ({
     setIsKeyboardNavigation,
     handleDropdownKeyDown,
     handleKeyDown, // Alias for backward compatibility
-    scrollToHighlightedOption,
   };
 };
