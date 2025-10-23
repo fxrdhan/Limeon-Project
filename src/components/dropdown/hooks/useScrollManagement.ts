@@ -5,7 +5,6 @@ interface UseScrollManagementProps {
   isOpen: boolean;
   applyOpenStyles: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
-  scrollToHighlightedOption: () => void;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
 }
 
@@ -13,7 +12,6 @@ export const useScrollManagement = ({
   isOpen,
   applyOpenStyles,
   filteredOptions,
-  scrollToHighlightedOption,
   optionsContainerRef,
 }: UseScrollManagementProps) => {
   const [scrollState, setScrollState] = useState({
@@ -60,12 +58,37 @@ export const useScrollManagement = ({
   // Keyboard navigation scrolling is now handled directly in useKeyboardNavigation
   // This effect is intentionally removed to prevent conflicts
 
-  // Initial scroll ONLY when dropdown first opens
+  // Initial scroll ONLY when dropdown first opens with smooth animation
   useEffect(() => {
     if (isOpen && applyOpenStyles && !hasInitialScrolled) {
       if (optionsContainerRef.current && filteredOptions.length > 0) {
-        scrollToHighlightedOption();
-        setHasInitialScrolled(true);
+        // Delay the scroll animation slightly to allow portal to render
+        const scrollTimer = setTimeout(() => {
+          if (optionsContainerRef.current) {
+            const container = optionsContainerRef.current;
+            const optionElements =
+              container.querySelectorAll('[role="option"]');
+
+            // Find the highlighted/selected option
+            const highlightedElement = Array.from(optionElements).find(
+              el =>
+                el.classList.contains('bg-gray-100') ||
+                el.classList.contains('bg-primary-50') ||
+                el.getAttribute('aria-selected') === 'true'
+            );
+
+            if (highlightedElement) {
+              // Use smooth scrolling behavior
+              (highlightedElement as HTMLElement).scrollIntoView({
+                block: 'nearest',
+                behavior: 'smooth',
+              });
+            }
+          }
+          setHasInitialScrolled(true);
+        }, 100); // Small delay for portal render
+
+        return () => clearTimeout(scrollTimer);
       }
     }
 
@@ -78,7 +101,6 @@ export const useScrollManagement = ({
     applyOpenStyles,
     hasInitialScrolled,
     filteredOptions.length,
-    scrollToHighlightedOption,
     optionsContainerRef,
   ]);
 

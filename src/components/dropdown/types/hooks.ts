@@ -39,8 +39,5 @@ export interface UseScrollManagementProps {
   isOpen: boolean;
   applyOpenStyles: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
-  highlightedIndex: number;
-  checkScroll: () => void;
-  scrollToHighlightedOption: () => void;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
 }
