@@ -22,7 +22,10 @@ export const useHoverDetail = ({
   onFetchData,
   isDropdownOpen = true,
 }: UseHoverDetailProps = {}) => {
+  // Main visibility state - portal shown to user
   const [isVisible, setIsVisible] = useState(false);
+
+  // Portal position and data
   const [position, setPosition] = useState<HoverDetailPosition>({
     top: 0,
     left: 0,
@@ -34,6 +37,7 @@ export const useHoverDetail = ({
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentOptionIdRef = useRef<string | null>(null);
+  const isPortalShownRef = useRef(false); // Track if portal has been shown
 
   const clearTimeouts = useCallback(() => {
     if (showTimeoutRef.current) {
@@ -57,14 +61,12 @@ export const useHoverDetail = ({
 
       const top = rect.top + scrollTop;
       const padding = 10;
-      const minPortalWidth = 280; // Minimum portal width
-      const maxPortalWidth = 580; // Maximum portal width
+      const minPortalWidth = 280;
+      const maxPortalWidth = 580;
 
-      // Calculate available space on both sides
       const spaceOnRight = viewportWidth - rect.right;
       const spaceOnLeft = rect.left;
 
-      // Check if we can fit on the right (preferred)
       if (spaceOnRight >= minPortalWidth + padding) {
         return {
           left: rect.right + scrollLeft + padding,
@@ -73,7 +75,6 @@ export const useHoverDetail = ({
         };
       }
 
-      // Check if we can fit on the left
       if (spaceOnLeft >= minPortalWidth + padding) {
         return {
           left: rect.left + scrollLeft - minPortalWidth - padding,
@@ -82,7 +83,6 @@ export const useHoverDetail = ({
         };
       }
 
-      // If neither side has enough space, choose the side with more space
       if (spaceOnRight >= spaceOnLeft) {
         return {
           left: Math.max(padding, rect.right + scrollLeft + padding),
@@ -114,7 +114,42 @@ export const useHoverDetail = ({
       clearTimeouts();
       currentOptionIdRef.current = optionId;
 
-      // If we already have basic data, use it immediately
+      // Always update position
+      const pos = calculatePosition(element);
+      setPosition(pos);
+
+      // If portal is already shown, update data immediately without delay
+      if (isPortalShownRef.current) {
+        // Update with basic data first for immediate response
+        if (optionData) {
+          setData({
+            id: optionId,
+            name: optionData.name || 'Unknown',
+            code: optionData.code,
+            description: optionData.description,
+            created_at: optionData.created_at,
+            updated_at: optionData.updated_at,
+          });
+        }
+
+        // Fetch detailed data if fetch function is provided
+        if (onFetchData) {
+          setIsLoading(true);
+          try {
+            const detailedData = await onFetchData(optionId);
+            if (currentOptionIdRef.current === optionId && detailedData) {
+              setData(detailedData);
+            }
+          } catch (error) {
+            console.error('Failed to fetch hover detail data:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+        return;
+      }
+
+      // First time showing portal - set initial data
       if (optionData) {
         setData({
           id: optionId,
@@ -126,12 +161,11 @@ export const useHoverDetail = ({
         });
       }
 
-      const pos = calculatePosition(element);
-      setPosition(pos);
-
+      // Wait for delay before showing portal for the first time
       showTimeoutRef.current = setTimeout(async () => {
         if (currentOptionIdRef.current !== optionId) return;
 
+        isPortalShownRef.current = true;
         setIsVisible(true);
 
         // Fetch detailed data if fetch function is provided
@@ -154,18 +188,20 @@ export const useHoverDetail = ({
   );
 
   const handleOptionLeave = useCallback(() => {
-    if (!isEnabled) return;
+    if (!isEnabled || !isPortalShownRef.current) return;
 
     clearTimeouts();
     currentOptionIdRef.current = null;
 
+    // Hide portal after delay
     hideTimeoutRef.current = setTimeout(() => {
+      isPortalShownRef.current = false;
       setIsVisible(false);
       setIsLoading(false);
-      // Delay clearing data to allow exit animation to complete
+      // Clear data after animation completes
       setTimeout(() => {
         setData(null);
-      }, 200); // Match the animation duration
+      }, 200);
     }, hideDelay);
   }, [isEnabled, hideDelay, clearTimeouts]);
 
@@ -180,13 +216,13 @@ export const useHoverDetail = ({
 
   const hidePortal = useCallback(() => {
     clearTimeouts();
+    isPortalShownRef.current = false;
     setIsVisible(false);
     setIsLoading(false);
     currentOptionIdRef.current = null;
-    // Delay clearing data to allow exit animation to complete
     setTimeout(() => {
       setData(null);
-    }, 200); // Match the animation duration
+    }, 200);
   }, [clearTimeouts]);
 
   // Hide portal when dropdown closes
@@ -200,6 +236,7 @@ export const useHoverDetail = ({
   useEffect(() => {
     return () => {
       clearTimeouts();
+      isPortalShownRef.current = false;
     };
   }, [clearTimeouts]);
 
