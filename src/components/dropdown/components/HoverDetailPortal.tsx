@@ -30,7 +30,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
       // Hide content immediately when portal hides
       setShowContent(false);
     }
-  }, [isVisible, data?.id]); // Re-trigger when data changes
+  }, [isVisible, data]); // Re-trigger when data changes
 
   return createPortal(
     <AnimatePresence>
