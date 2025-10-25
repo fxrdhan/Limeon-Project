@@ -23,7 +23,7 @@ export type UseDatepickerStateParams = UseCalendarStateParams;
 export type UseDatepickerStateReturn = UseCalendarStateReturn;
 
 export interface UseCalendarPositionParams {
-  triggerRef: React.RefObject<HTMLInputElement | null>;
+  triggerRef: React.RefObject<HTMLInputElement | HTMLDivElement | null>;
   portalRef: React.RefObject<HTMLDivElement | null>;
   isOpen: boolean;
   portalWidth?: string | number;
@@ -69,7 +69,9 @@ export interface UseCalendarKeyboardParams {
 }
 
 export interface UseCalendarKeyboardReturn {
-  handleInputKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleInputKeyDown: (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>
+  ) => void;
   handleCalendarKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
 }
 

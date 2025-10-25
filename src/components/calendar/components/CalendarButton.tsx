@@ -33,22 +33,22 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
   return (
     <div className="calendar__button-wrapper">
       {label && <label className="calendar__button-label">{label}</label>}
-      <div className="calendar__button-input-wrapper">
+      <div
+        ref={triggerInputRef as React.RefObject<HTMLDivElement>}
+        className="calendar__button-input-wrapper"
+        onClick={trigger === 'click' ? handleTriggerClick : undefined}
+        onMouseEnter={trigger === 'hover' ? handleTriggerMouseEnter : undefined}
+        onMouseLeave={trigger === 'hover' ? handleTriggerMouseLeave : undefined}
+        onKeyDown={handleInputKeyDown}
+        tabIndex={0}
+      >
         <Input
-          ref={triggerInputRef}
           type="text"
           value={formattedDisplayValue()}
           placeholder={placeholder}
           className={classNames('calendar__button-input', inputClassName)}
-          onClick={trigger === 'click' ? handleTriggerClick : undefined}
-          onMouseEnter={
-            trigger === 'hover' ? handleTriggerMouseEnter : undefined
-          }
-          onMouseLeave={
-            trigger === 'hover' ? handleTriggerMouseLeave : undefined
-          }
-          onKeyDown={handleInputKeyDown}
           onChange={e => e.preventDefault()}
+          readOnly
         />
       </div>
     </div>

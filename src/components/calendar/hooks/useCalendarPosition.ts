@@ -38,7 +38,7 @@ export const useCalendarPosition = (
 
     const newMenuStyle: React.CSSProperties = {
       position: 'fixed',
-      left: `${buttonRect.left + window.scrollX}px`,
+      left: `${buttonRect.left}px`,
       width: portalWidth
         ? typeof portalWidth === 'number'
           ? `${portalWidth}px`
@@ -48,11 +48,9 @@ export const useCalendarPosition = (
     };
 
     if (shouldDropUp) {
-      newMenuStyle.top = `${
-        buttonRect.top + window.scrollY - calendarHeight - margin - 3
-      }px`; // Extra offset untuk calendar yang muncul ke atas
+      newMenuStyle.top = `${buttonRect.top - calendarHeight - margin - 3}px`; // Extra offset untuk calendar yang muncul ke atas
     } else {
-      newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
+      newMenuStyle.top = `${buttonRect.bottom + margin}px`;
     }
 
     setPortalStyle(newMenuStyle);
@@ -61,11 +59,11 @@ export const useCalendarPosition = (
 
   useLayoutEffect(() => {
     if (!isOpen) {
-      queueMicrotask(() => setIsPositionReady(false));
+      setIsPositionReady(false);
       return;
     }
 
-    queueMicrotask(() => setIsPositionReady(false));
+    setIsPositionReady(false);
     calculatePosition();
 
     const handleScroll = () => calculatePosition();

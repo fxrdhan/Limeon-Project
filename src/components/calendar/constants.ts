@@ -48,7 +48,7 @@ export const CALENDAR_CONSTANTS = {
   DECADE_SHIFT: 10,
 
   // Z-index
-  PORTAL_Z_INDEX: 1050,
+  PORTAL_Z_INDEX: 10000,
 } as const;
 
 // Years grid configuration

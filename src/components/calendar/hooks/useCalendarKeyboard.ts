@@ -244,7 +244,7 @@ export const useCalendarKeyboard = (
   );
 
   const handleInputKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
       if (e.key === 'Tab' && isOpen) {
         e.preventDefault();
         return;
