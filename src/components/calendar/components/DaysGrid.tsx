@@ -15,8 +15,10 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   onDateHighlight,
   animated = false,
 }) => {
-  const { navigationDirection, yearNavigationDirection } = useCalendarContext();
+  const { navigationDirection, yearNavigationDirection, readOnly } =
+    useCalendarContext();
 
+  // readOnly provided by context
   // Create unique key based on year and month for AnimatePresence
   const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
 
@@ -93,8 +95,11 @@ const DaysGrid: React.FC<DaysGridProps> = ({
 
           const currentDate = new Date(year, month, day);
           const isSelected =
-            value && currentDate.toDateString() === value.toDateString();
+            !readOnly &&
+            value &&
+            currentDate.toDateString() === value.toDateString();
           const isHighlighted =
+            !readOnly &&
             highlightedDate &&
             currentDate.toDateString() === highlightedDate.toDateString();
 
@@ -117,8 +122,12 @@ const DaysGrid: React.FC<DaysGridProps> = ({
           return (
             <button
               key={day}
-              onClick={() => !isDisabled && onDateSelect(currentDate)}
-              onMouseEnter={() => !isDisabled && onDateHighlight(currentDate)}
+              onClick={() =>
+                !isDisabled && !readOnly && onDateSelect(currentDate)
+              }
+              onMouseEnter={() =>
+                !isDisabled && !readOnly && onDateHighlight(currentDate)
+              }
               onMouseLeave={() => onDateHighlight(null)}
               disabled={isDisabled}
               className={classNames('calendar__day-button', {

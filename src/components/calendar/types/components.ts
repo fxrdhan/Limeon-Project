@@ -20,6 +20,7 @@ export interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
+  readOnly?: boolean;
   children?: React.ReactNode; // For custom trigger element
 }
 
@@ -54,5 +55,6 @@ export interface DaysGridProps {
   maxDate?: Date;
   onDateSelect: (date: Date) => void;
   onDateHighlight: (date: Date | null) => void;
+  readOnly?: boolean;
   animated?: boolean;
 }

@@ -18,6 +18,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   minDate,
   maxDate,
   portalWidth,
+  readOnly,
 }) => {
   // Get size preset
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
@@ -145,6 +146,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   // Event handlers
   const handleDateSelect = useCallback(
     (date: Date) => {
+      if (readOnly) return;
       const selectedDate = new Date(
         date.getFullYear(),
         date.getMonth(),
@@ -164,7 +166,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
         }, 250);
       }
     },
-    [onChange, closeCalendar, mode]
+    [onChange, closeCalendar, mode, readOnly]
   );
 
   const handleMonthSelect = useCallback(
@@ -223,14 +225,22 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     [value, calculatePosition, focusPortal, mode]
   );
 
+  const openIfAllowed = useCallback(() => {
+    openCalendar();
+  }, [openCalendar]);
+
+  const closeIfAllowed = useCallback(() => {
+    closeCalendar();
+  }, [closeCalendar]);
+
   const {
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
   } = useCalendarHover({
-    openCalendar,
-    closeCalendar,
+    openCalendar: openIfAllowed,
+    closeCalendar: closeIfAllowed,
     portalRef: portalContentRef,
   });
 
@@ -327,6 +337,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     minDate,
     maxDate,
     portalWidth,
+    readOnly,
 
     // Portal styling
     portalStyle,
