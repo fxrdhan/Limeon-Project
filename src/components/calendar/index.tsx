@@ -17,6 +17,7 @@ const CalendarContent: React.FC<{
   inputClassName?: string;
   placeholder?: string;
   portalWidth?: string | number;
+  readOnly?: boolean;
   children?: React.ReactNode;
 }> = ({
   mode = 'datepicker',
@@ -24,6 +25,7 @@ const CalendarContent: React.FC<{
   inputClassName,
   placeholder,
   portalWidth,
+  readOnly,
   children,
 }) => {
   const {
@@ -86,9 +88,9 @@ const CalendarContent: React.FC<{
     calculatePosition?.();
   };
 
-  // Disable date selection for inline mode
+  // Disable date selection for inline mode or when readOnly
   const handleDateSelectWrapper = (date: Date) => {
-    if (mode !== 'inline') {
+    if (mode !== 'inline' && !readOnly) {
       handleDateSelect(date);
     }
   };
@@ -97,7 +99,7 @@ const CalendarContent: React.FC<{
   const renderCalendarContent = () => (
     <DaysGrid
       displayDate={displayDate}
-      value={value}
+      value={readOnly ? null : value}
       highlightedDate={highlightedDate}
       minDate={minDate}
       maxDate={maxDate}
@@ -187,10 +189,13 @@ const Calendar: React.FC<CalendarProps> = ({
   minDate,
   maxDate,
   portalWidth,
+  readOnly,
   children,
 }) => {
   // Set default trigger based on mode: inline defaults to hover, datepicker defaults to click
   const effectiveTrigger = trigger || (mode === 'inline' ? 'hover' : 'click');
+  const effectiveReadOnly =
+    readOnly ?? (mode === 'datepicker' && effectiveTrigger === 'hover');
   return (
     <CalendarProvider
       mode={mode}
@@ -201,6 +206,7 @@ const Calendar: React.FC<CalendarProps> = ({
       minDate={minDate}
       maxDate={maxDate}
       portalWidth={portalWidth}
+      readOnly={effectiveReadOnly}
     >
       <CalendarContent
         mode={mode}
@@ -208,6 +214,7 @@ const Calendar: React.FC<CalendarProps> = ({
         inputClassName={inputClassName}
         placeholder={placeholder}
         portalWidth={portalWidth}
+        readOnly={effectiveReadOnly}
       >
         {children}
       </CalendarContent>

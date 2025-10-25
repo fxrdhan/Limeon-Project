@@ -155,8 +155,13 @@
       }
 
       &--today {
-        @apply ring ring-emerald-200;
-        color: var(--color-primary);
+        @apply text-white font-semibold;
+        background-color: var(--color-primary);
+
+        &:hover {
+          @apply ring-2 ring-emerald-200;
+          color: var(--color-primary);
+        }
       }
 
       &--disabled {
