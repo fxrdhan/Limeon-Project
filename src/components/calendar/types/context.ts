@@ -61,12 +61,14 @@ export interface CalendarContextState {
   triggerMonthAnimation: (direction: 'prev' | 'next') => void;
 
   // Refs
-  triggerInputRef: React.RefObject<HTMLInputElement | null>;
+  triggerInputRef: React.RefObject<HTMLInputElement | HTMLDivElement | null>;
   portalContentRef: React.RefObject<HTMLDivElement | null>;
 
   // Additional handlers for components
   handleTriggerClick: () => void;
-  handleInputKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleInputKeyDown: (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>
+  ) => void;
   handleCalendarKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   handleTriggerMouseEnter: () => void;
   handleTriggerMouseLeave: () => void;

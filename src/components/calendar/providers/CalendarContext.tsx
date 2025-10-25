@@ -22,7 +22,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   // Get size preset
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
   // Refs
-  const triggerInputRef = useRef<HTMLInputElement>(null);
+  const triggerInputRef = useRef<HTMLInputElement | HTMLDivElement>(null);
   const portalContentRef = useRef<HTMLDivElement>(null);
 
   // State
@@ -362,6 +362,8 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
         closeCalendar();
       } else {
         openCalendar();
+        // Ensure portal position is calculated immediately after opening via click
+        calculatePosition();
       }
     },
     handleInputKeyDown,
