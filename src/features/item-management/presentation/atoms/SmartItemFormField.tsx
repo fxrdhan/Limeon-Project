@@ -1,5 +1,5 @@
 import React from 'react';
-import SmartInput from '@/components/inputs/SmartInput';
+import SmartInput from '@/components/smartinput';
 import {
   useItemForm,
   useItemRealtime,
@@ -84,22 +84,22 @@ import SmartItemFormField from '../atoms/SmartItemFormField';
 // <input name="name" value={formData.name} onChange={onChange} />
 
 // With smart input:
-<SmartItemFormField 
+<SmartItemFormField
   fieldName="itemName"
   label="Nama Item"
-  placeholder="Contoh: Panadol Extra" 
+  placeholder="Contoh: Panadol Extra"
 />
 
-<SmartItemFormField 
+<SmartItemFormField
   fieldName="itemCode"
   label="Kode Item"
-  placeholder="Contoh: ITM001" 
+  placeholder="Contoh: ITM001"
 />
 
-<SmartItemFormField 
+<SmartItemFormField
   fieldName="basePrice"
   label="Harga Dasar"
   type="number"
-  placeholder="0" 
+  placeholder="0"
 />
 */
