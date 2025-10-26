@@ -69,13 +69,16 @@ export const useScrollManagement = ({
             const optionElements =
               container.querySelectorAll('[role="option"]');
 
-            // Find the highlighted/selected option
-            const highlightedElement = Array.from(optionElements).find(
-              el =>
-                el.classList.contains('bg-gray-100') ||
-                el.classList.contains('bg-primary-50') ||
-                el.getAttribute('aria-selected') === 'true'
-            );
+            // Find the highlighted/selected option using aria-selected or current highlight classes
+            const highlightedElement =
+              Array.from(optionElements).find(
+                el => el.getAttribute('aria-selected') === 'true'
+              ) ||
+              Array.from(optionElements).find(
+                el =>
+                  el.classList.contains('bg-slate-300/50') ||
+                  el.classList.contains('bg-slate-300/30')
+              );
 
             if (highlightedElement) {
               // Use smooth scrolling behavior

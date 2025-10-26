@@ -13,6 +13,7 @@ interface UseKeyboardNavigationProps {
   onCloseDropdown: () => void;
   onCloseValidation: () => void;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
+  autoHighlightOnOpen?: boolean;
 }
 
 export const useKeyboardNavigation = ({
@@ -27,6 +28,7 @@ export const useKeyboardNavigation = ({
   onCloseDropdown,
   onCloseValidation,
   optionsContainerRef,
+  autoHighlightOnOpen = true,
 }: UseKeyboardNavigationProps) => {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
@@ -43,7 +45,12 @@ export const useKeyboardNavigation = ({
         setHighlightedIndex(-1);
         setIsKeyboardNavigation(false);
       });
-    } else if (currentFilteredOptions.length > 0 && !isKeyboardNavigation) {
+    } else if (
+      currentFilteredOptions.length > 0 &&
+      !isKeyboardNavigation &&
+      highlightedIndex === -1 &&
+      autoHighlightOnOpen
+    ) {
       // Only set highlighted index when dropdown first opens, not during active keyboard navigation
       queueMicrotask(() => {
         if (value) {
@@ -68,6 +75,8 @@ export const useKeyboardNavigation = ({
     value,
     setExpandedId,
     isKeyboardNavigation,
+    highlightedIndex,
+    autoHighlightOnOpen,
   ]);
 
   // Mouse movement detection to exit keyboard navigation mode
