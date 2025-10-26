@@ -1,506 +1,235 @@
-# Dropdown Component
+# Dropdown Component Documentation
 
-A flexible, accessible React dropdown component with search functionality, keyboard navigation, and validation support.
+## Overview
+
+The `Dropdown` component is a highly customizable React component designed for single or multiple option selection from a list of options. It supports various modes, features, and interaction patterns to provide a rich user experience for form inputs.
 
 ## Features
 
-- **Search & Filter**: Built-in search with real-time filtering
-- **Keyboard Navigation**: Full arrow key and Enter/Escape support with auto pre-selection
-- **Validation**: Form validation with custom error messages
-- **Accessibility**: ARIA labels, roles, and keyboard navigation
-- **Smart Positioning**: Manual position control (auto/top/bottom/left) with intelligent fallback
-- **Portal Width Control**: Custom width sizing for dropdown portals
-- **Text Expansion**: Expandable text for long option names on hover
-- **Radio Mode**: Optional radio button indicators
-- **Hover to Open**: Optional hover activation
-- **Hover Detail**: Rich hover tooltips with async data loading
-- **Multiple Display Modes**: Input mode for forms, text mode for inline usage
-- **Pre-selection**: Auto-highlight first option or scroll to selected value
-- **Smooth Animations**: Fast, consistent animations matching design system
-- **TypeScript**: Full type safety with organized interfaces
+- **Selection Modes**: Single selection (radio) or multiple selection (checkbox)
+- **Display Modes**: `input` mode (with input-like styling) and `text` mode (button-like)
+- **Search Functionality**: Built-in search to filter options
+- **Validation**: Customizable validation with error overlay
+- **Hover Details**: Optional hover-to-show additional details
+- **Keyboard Navigation**: Full keyboard accessibility
+- **Positioning**: Automatic positioning with manual override options
+- **Animation**: Smooth open/close animations
+- **Accessibility**: ARIA compliant with focus management
+- **TypeScript**: Fully typed with comprehensive interfaces
 
-## Basic Usage
+## Component Structure
 
-```tsx
-import Dropdown from '@/components/dropdown';
+The Dropdown component is organized into several modules:
 
-const MyComponent = () => {
-  const [selectedValue, setSelectedValue] = useState('');
+- **Main Component**: `index.tsx` - The root component
+- **Sub-components**:
+  - `DropdownButton`: The trigger element
+  - `DropdownMenu`: The menu container
+  - `HoverDetailPortal`: For hover detail popups
+- **Hooks**: Various custom hooks for state management
+- **Providers**: Context provider for state sharing
+- **Types**: TypeScript interfaces and types
+- **Utils**: Utility functions
+- **Constants**: Configuration constants
 
-  const options = [
+## Props Interface
+
+### DropdownProps (Single Selection)
+
+```src/types/components.ts#L29-39
+export interface DropdownProps {
+  mode?: DropdownMode;
+  options: DropdownOption[];
+  value: string;
+  tabIndex?: number;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  name: string;
+  required?: boolean;
+  onAddNew?: (searchTerm?: string) => void;
+  withRadio?: boolean;
+  searchList?: boolean;
+  validate?: boolean;
+  showValidationOnBlur?: boolean;
+  validationAutoHide?: boolean;
+  validationAutoHideDelay?: number;
+  hoverToOpen?: boolean;
+  // Portal width control
+  portalWidth?: DropdownPortalWidth;
+  // Position control
+  position?: DropdownPosition;
+  // Alignment control
+  align?: DropdownAlign;
+  // Hover detail functionality
+  enableHoverDetail?: boolean;
+  hoverDetailDelay?: number;
+  onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
+}
+```
+
+### CheckboxDropdownProps (Multiple Selection)
+
+```src/types/components.ts#L45-51
+export interface CheckboxDropdownProps
+  extends Omit<DropdownProps, 'value' | 'onChange' | 'withRadio'> {
+  value: string[];
+  onChange: (value: string[]) => void;
+  withCheckbox: true;
+}
+```
+
+### DropdownOption
+
+```src/types/components.ts#L6-12
+export interface DropdownOption {
+  id: string;
+  name: string;
+  code?: string;
+  description?: string;
+  updated_at?: string | null;
+}
+```
+
+### Types
+
+- `DropdownMode`: `'input' | 'text'`
+- `DropdownPortalWidth`: `'auto' | 'content' | string | number`
+- `DropdownPosition`: `'auto' | 'top' | 'bottom' | 'left'`
+- `DropdownAlign`: Defined in related types
+- `HoverDetailData`: Interface for hover detail content
+
+## Usage Examples
+
+### Basic Single Selection
+
+```src/components/dropdown/index.tsx#L123-456
+// Example usage (pseudo-code)
+<Dropdown
+  mode="input"
+  options={[
     { id: '1', name: 'Option 1' },
-    { id: '2', name: 'Option 2' },
-    { id: '3', name: 'Option 3' },
-  ];
-
-  return (
-    <Dropdown
-      options={options}
-      value={selectedValue}
-      onChange={setSelectedValue}
-      placeholder="Select an option"
-      name="basic-dropdown"
-    />
-  );
-};
-```
-
-## Props API
-
-### Required Props
-
-| Prop       | Type                                | Description                  |
-| ---------- | ----------------------------------- | ---------------------------- |
-| `options`  | `Array<{id: string, name: string}>` | List of selectable options   |
-| `value`    | `string`                            | Currently selected option ID |
-| `onChange` | `(optionId: string) => void`        | Handler for option selection |
-
-### Optional Props
-
-| Prop                      | Type                                       | Default         | Description                               |
-| ------------------------- | ------------------------------------------ | --------------- | ----------------------------------------- |
-| `mode`                    | `'input' \| 'text'`                        | `'input'`       | Display mode (form input or inline text)  |
-| `placeholder`             | `string`                                   | `"-- Pilih --"` | Placeholder text when no option selected  |
-| `searchList`              | `boolean`                                  | `true`          | Enable search functionality               |
-| `withRadio`               | `boolean`                                  | `false`         | Show radio button indicators              |
-| `required`                | `boolean`                                  | `false`         | Mark field as required for validation     |
-| `validate`                | `boolean`                                  | `false`         | Enable form validation                    |
-| `showValidationOnBlur`    | `boolean`                                  | `true`          | Show validation errors on blur            |
-| `validationAutoHide`      | `boolean`                                  | `true`          | Auto-hide validation messages             |
-| `validationAutoHideDelay` | `number`                                   | `undefined`     | Delay before auto-hiding validation       |
-| `hoverToOpen`             | `boolean`                                  | `false`         | Open dropdown on hover                    |
-| `onAddNew`                | `(searchTerm: string) => void`             | `undefined`     | Handler for adding new options            |
-| `name`                    | `string`                                   | `undefined`     | Form field name for validation            |
-| `tabIndex`                | `number`                                   | `undefined`     | Tab order for accessibility               |
-| **`portalWidth`**         | `'auto' \| string \| number`               | `'auto'`        | Control dropdown portal width             |
-| **`position`**            | `'auto' \| 'top' \| 'bottom' \| 'left'`    | `'auto'`        | Force dropdown position direction         |
-| **`enableHoverDetail`**   | `boolean`                                  | `false`         | Enable hover detail tooltips              |
-| **`hoverDetailDelay`**    | `number`                                   | `800`           | Delay before showing hover detail (ms)    |
-| **`onFetchHoverDetail`**  | `(optionId: string) => Promise<HoverData>` | `undefined`     | Async function to fetch hover detail data |
-
-## Advanced Examples
-
-### With Search and Add New
-
-```tsx
-<Dropdown
-  options={options}
-  value={selectedValue}
-  onChange={setSelectedValue}
-  searchList={true}
-  onAddNew={searchTerm => {
-    const newOption = { id: Date.now().toString(), name: searchTerm };
-    setOptions(prev => [...prev, newOption]);
-    setSelectedValue(newOption.id);
-  }}
-  placeholder="Search or add new option"
+    { id: '2', name: 'Option 2' }
+  ]}
+  value="1"
+  onChange={(value) => console.log(value)}
+  placeholder="-- Pilih --"
+  name="my-dropdown"
 />
 ```
 
-### With Validation
+### Multiple Selection (Checkbox)
 
-```tsx
+```src/components/dropdown/index.tsx#L123-456
 <Dropdown
-  options={options}
-  value={selectedValue}
-  onChange={setSelectedValue}
-  required={true}
-  validate={true}
-  name="category"
-  showValidationOnBlur={true}
-  validationAutoHide={true}
-  validationAutoHideDelay={3000}
-/>
-```
-
-### With Radio Buttons
-
-```tsx
-<Dropdown
-  options={options}
-  value={selectedValue}
-  onChange={setSelectedValue}
-  withRadio={true}
-  searchList={false}
-  placeholder="Choose one option"
-/>
-```
-
-### Hover to Open
-
-```tsx
-<Dropdown
-  options={options}
-  value={selectedValue}
-  onChange={setSelectedValue}
-  hoverToOpen={true}
-  placeholder="Hover to open"
-/>
-```
-
-### Text Mode (Inline Usage)
-
-```tsx
-<Dropdown
-  mode="text"
-  options={monthOptions}
-  value={selectedMonth}
-  onChange={setSelectedMonth}
-  placeholder="Select Month"
-  searchList={false}
-/>
-```
-
-### Custom Portal Width & Position
-
-```tsx
-<Dropdown
-  options={options}
-  value={selectedValue}
-  onChange={setSelectedValue}
-  portalWidth="300px"
-  position="bottom"
-  placeholder="Fixed width, always bottom"
-/>
-```
-
-### Left Positioning (NEW)
-
-```tsx
-// Ideal for toolbar buttons or right-aligned dropdowns
-<Dropdown
-  options={columnOptions}
-  value={selectedColumns}
-  onChange={setSelectedColumns}
-  position="left"
-  portalWidth="content"
-  placeholder="Column Visibility"
+  mode="input"
+  options={[
+    { id: '1', name: 'Option 1' },
+    { id: '2', name: 'Option 2' }
+  ]}
+  value={['1']}
+  onChange={(values) => console.log(values)}
+  placeholder="-- Pilih --"
+  name="my-checkbox-dropdown"
   withCheckbox={true}
 />
+```
 
-// Smart fallback when no space on left
+### With Validation and Hover Details
+
+```src/components/dropdown/index.tsx#L123-456
 <Dropdown
   options={options}
-  value={selectedValue}
-  onChange={setSelectedValue}
-  position="left"  // Auto-fallback to normal positioning if no space
-  portalWidth="auto"
-  placeholder="Smart left positioning"
-/>
-```
-
-### Hover Detail with Async Data
-
-```tsx
-<Dropdown
-  options={userOptions}
-  value={selectedUser}
-  onChange={setSelectedUser}
+  value={value}
+  onChange={setValue}
+  placeholder="-- Pilih --"
+  name="my-dropdown"
+  required={true}
+  validate={true}
+  showValidationOnBlur={true}
   enableHoverDetail={true}
-  hoverDetailDelay={500}
-  onFetchHoverDetail={async userId => {
-    const response = await fetch(`/api/users/${userId}`);
-    return response.json(); // Returns { id, name, description, created_at }
-  }}
-  placeholder="Hover for user details"
+  onFetchHoverDetail={async (id) => await fetchDetail(id)}
 />
 ```
 
-## Keyboard Navigation & Pre-selection
+## Key Hooks
 
-### Auto Pre-selection Behavior
+The component uses several custom hooks for state management:
 
-- **No selected value**: First option is automatically highlighted when dropdown opens
-- **Has selected value**: Dropdown scrolls to and highlights the currently selected option
+- `useDropdownState`: Manages open/close state
+- `useDropdownSearch`: Handles search functionality
+- `useDropdownValidation`: Manages validation logic
+- `useDropdownPosition`: Calculates menu position
+- `useKeyboardNavigation`: Handles keyboard interactions
+- `useFocusManagement`: Manages focus behavior
+- `useScrollManagement`: Handles scrolling in the menu
+- `useDropdownEffects`: Combines hover and effect logic
+- `useHoverDetail`: Manages hover detail popups
+- `useTextExpansion`: Handles text truncation/expansion
 
-### Keyboard Shortcuts
+## Constants
 
-| Key                 | Action                                         |
-| ------------------- | ---------------------------------------------- |
-| `ArrowDown`         | Navigate to next option                        |
-| `ArrowUp`           | Navigate to previous option                    |
-| `Enter`             | Select highlighted option or add new item      |
-| `Escape`            | Close dropdown                                 |
-| `Tab`               | Move focus and close dropdown                  |
-| `PageDown`/`PageUp` | Navigate quickly through options (5 at a time) |
+Key constants used in the component:
 
-## Architecture
-
-### Component Structure
-
-```
-dropdown/
-├── index.tsx                    # Main component orchestrator
-├── constants.ts                 # Configuration constants
-├── types/                       # TypeScript interfaces
-│   ├── context.ts              # Context type definitions
-│   ├── hooks.ts                # Hook parameter interfaces
-│   ├── components.ts           # Component prop interfaces
-│   └── index.ts                # Type exports
-├── providers/                   # React Context
-│   ├── DropdownContext.tsx     # Context provider component
-│   └── dropdownContext.ts      # Context definition
-├── components/                    # UI Components
-│   ├── DropdownButton.tsx      # Main button
-│   ├── DropdownMenu.tsx        # Menu container
-│   ├── SearchBar.tsx           # Search input
-│   ├── OptionItem.tsx          # Individual option
-│   ├── button/                 # Button sub-components
-│   ├── search/                 # Search sub-components
-│   ├── menu/                   # Menu sub-components
-│   └── options/                # Option sub-components
-├── hooks/                       # Custom hooks
-│   ├── useDropdownState.ts     # Open/close state
-│   ├── useDropdownValidation.ts# Form validation
-│   ├── useDropdownPosition.ts  # Positioning logic
-│   ├── useDropdownContext.ts   # Context access
-│   ├── search/                 # Search-related hooks
-│   ├── keyboard/               # Keyboard navigation hooks
-│   └── [other hooks]
-└── utils/                       # Utility functions
-    └── dropdownUtils.ts        # Helper functions
+```src/components/dropdown/constants.ts#L1-20
+export const DROPDOWN_CONSTANTS = {
+  ANIMATION_DURATION: 100,
+  CLOSE_TIMEOUT: 200,
+  HOVER_TIMEOUT: 100,
+  DEBOUNCE_DELAY: 150,
+  FOCUS_DELAY: 50,
+  SEARCH_FOCUS_DELAY: 5,
+  VIEWPORT_MARGIN: 16,
+  DROPDOWN_MARGIN: 4,
+  DROPDOWN_SPACING: 2,
+  MAX_HEIGHT: 240,
+  SCROLL_THRESHOLD: 2,
+  PAGE_SIZE: 5,
+  BUTTON_PADDING: 48,
+  RADIO_EXTRA_PADDING: 24,
+  PORTAL_Z_INDEX: 1060,
+} as const;
 ```
 
-### Design Patterns
+## Context and Provider
 
-**Context Pattern**: Eliminates prop drilling by sharing state through React Context
+The component uses `DropdownProvider` to share state across sub-components. The context includes:
 
-```tsx
-// Components access shared state via context
-const { isOpen, filteredOptions, onSelect } = useDropdownContext();
-```
-
-**Custom Hooks**: Encapsulates complex logic into reusable, testable units
-
-```tsx
-// State management
-const { isOpen, toggleDropdown } = useDropdownState();
-
-// Search functionality
-const { searchTerm, handleSearchChange } = useSearch();
-
-// Keyboard navigation
-const { highlightedIndex, handleNavigate } = useNavigationState();
-```
-
-**Atomic Design**: Components are broken down into focused, single-responsibility units
-
-```tsx
-// Composed from smaller components
-<DropdownMenu>
-  <SearchBar />
-  <MenuContent>
-    <OptionItem />
-  </MenuContent>
-</DropdownMenu>
-```
-
-## Validation
-
-The dropdown integrates with form validation systems:
-
-```tsx
-// Validation states
-const validationStates = {
-  idle: 'No validation performed',
-  valid: 'Field passes validation',
-  invalid: 'Field has validation errors',
-};
-
-// Custom validation logic can be added
-const customValidate = (value: string) => {
-  if (!value) return 'This field is required';
-  if (value === 'invalid') return 'Invalid option selected';
-  return null;
-};
-```
+- Open/close states
+- Current values and options
+- Search state
+- Navigation state
+- Validation state
+- Event handlers
+- Ref objects
 
 ## Accessibility
 
-- **ARIA Labels**: Proper labeling for screen readers
-- **Keyboard Navigation**: Full keyboard support
-- **Focus Management**: Logical focus flow
-- **Role Attributes**: Semantic HTML roles
-- **Screen Reader Support**: Announces state changes
+- Full keyboard navigation (Arrow keys, Tab, Enter, Escape)
+- ARIA labels and roles
+- Focus management and trapping
+- Screen reader support
+- High contrast support
 
-## Performance
+## Performance Considerations
 
-- **Debounced Search**: Prevents excessive filtering during typing
-- **Virtualization Ready**: Structure supports virtual scrolling for large lists
-- **Context Optimization**: Minimizes unnecessary re-renders
-- **Memoization**: Strategic use of React.memo and useCallback
+- Debounced search input
+- Virtualized rendering not implemented (consider for large lists > 1000 items)
+- Efficient filtering and highlighting
+- Animation optimizations with CSS transforms
 
-## Positioning System
+## Browser Support
 
-### Position Options
+Supports all modern browsers including Chrome, Firefox, Safari, and Edge. Uses CSS Grid, Flexbox, and modern JavaScript features.
 
-- **`auto`** (default): Smart positioning based on available viewport space
-- **`top`**: Force dropdown to always open upward
-- **`bottom`**: Force dropdown to always open downward
-- **`left`**: ✨ **NEW** - Dropdown appears to the left of the trigger button
+## Dependencies
 
-### Position Logic
+- React 16+
+- Preline UI (for base styling)
+- Custom utility functions for positioning and animations
 
-#### Vertical Positioning (auto/top/bottom)
+## Notes
 
-```tsx
-// Auto positioning considers:
-const shouldDropUp =
-  (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) ||
-  (spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
-```
-
-#### Left Positioning Logic
-
-```tsx
-// Left positioning with intelligent fallback
-const spaceLeft = buttonRect.left - margin;
-const minRequiredSpace = dropdownWidth + VIEWPORT_MARGIN;
-
-if (spaceLeft < minRequiredSpace) {
-  // Auto-fallback to regular positioning
-  isLeftPositioning = false;
-  // Use align prop (left/right) for normal positioning
-} else {
-  // Position to the left of button
-  leftPosition = buttonRect.left - dropdownWidth - spacing;
-  // Align dropdown top with button top
-  topPosition = buttonRect.top + scrollY;
-}
-```
-
-### Position Use Cases
-
-| Position | Best For               | Example                            |
-| -------- | ---------------------- | ---------------------------------- |
-| `auto`   | General dropdowns      | Form fields, general selection     |
-| `top`    | Bottom toolbar buttons | Footer actions, bottom navigation  |
-| `bottom` | Header dropdowns       | Navigation menus, top toolbars     |
-| `left`   | Right-aligned buttons  | Column visibility, toolbar options |
-
-### Fallback Behavior
-
-- **Viewport Boundaries**: All positions respect viewport margins
-- **Insufficient Space**: `left` position auto-falls back to normal positioning
-- **Direction Locking**: Prevents flickering during resize (except left mode)
-- **Scroll Awareness**: Positions account for page scroll offset
-
-### Portal Width Options
-
-- **`auto`**: Match trigger button width (default)
-- **`content`**: Calculate width based on option content (recommended for `left` positioning)
-- **`string`**: CSS width value (e.g., "300px", "20rem")
-- **`number`**: Width in pixels
-
-#### Content Width Calculation
-
-```tsx
-// Uses Canvas API for precise text measurement
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto';
-
-const maxWidth = Math.max(
-  ...options.map(option => context.measureText(option.name).width)
-);
-
-// Add padding for icons, checkboxes, and spacing
-const contentWidth = maxWidth + 80;
-return Math.max(120, Math.min(contentWidth, 400)); // Min 120px, Max 400px
-```
-
-## Left Positioning Best Practices
-
-### When to Use Left Positioning
-
-✅ **Good Use Cases:**
-
-- Toolbar buttons positioned on the right side
-- Column visibility controls
-- Action menus in table headers
-- Context menus triggered from right-aligned icons
-- Settings dropdowns in navigation bars
-
-❌ **Avoid Left Positioning For:**
-
-- Form fields in narrow containers
-- Mobile interfaces (limited horizontal space)
-- Buttons positioned at screen left edge
-
-### Configuration Recommendations
-
-```tsx
-// Recommended for toolbar usage
-<Dropdown
-  position="left"
-  portalWidth="content"    // Auto-size based on options
-  align="right"           // When fallback occurs
-  searchList={true}       // Enable search for long lists
-/>
-
-// For column visibility specifically
-<Dropdown
-  position="left"
-  portalWidth="content"
-  withCheckbox={true}     // Multiple selection
-  searchList={true}       // Search through columns
-  placeholder="Select columns to show"
-/>
-```
-
-### Responsive Behavior
-
-- **Desktop**: Full left positioning with proper spacing
-- **Tablet**: Smart fallback when insufficient space
-- **Mobile**: Always falls back to normal positioning
-- **Viewport Resize**: Maintains position stability
-
-## Animation System
-
-Simplified animation matching design system:
-
-- **Duration**: 150ms (consistent with calendar components)
-- **Easing**: `ease-out` for natural movement
-- **States**: `opacity-0 scale-95` ↔ `opacity-100 scale-100`
-- **Transform Origin**: `origin-top` (down), `origin-bottom` (up), dynamic for left
-
-## Customization
-
-### Styling
-
-The component uses Tailwind CSS classes that can be customized:
-
-```tsx
-// Override default classes via CSS modules or styled-components
-.dropdown-button {
-  @apply your-custom-classes;
-}
-```
-
-### Constants
-
-Modify behavior through constants:
-
-```tsx
-// constants.ts
-export const DROPDOWN_CONSTANTS = {
-  ANIMATION_DURATION: 100, // Portal animation timing
-  CLOSE_TIMEOUT: 200, // Hover close delay
-  HOVER_TIMEOUT: 100, // Hover open delay
-  DEBOUNCE_DELAY: 150, // Search debounce
-  MAX_HEIGHT: 240, // Portal max height (60 * 4)
-  VIEWPORT_MARGIN: 16, // Viewport edge margin for all positions
-  DROPDOWN_MARGIN: 4, // Button-to-portal margin (vertical)
-  DROPDOWN_SPACING: 2, // Button-to-portal spacing (horizontal for left)
-  PAGE_SIZE: 5, // PageUp/PageDown jump size
-  PORTAL_Z_INDEX: 1060, // Z-index for dropdown portals
-};
-```
-
-### Left Positioning Constants
-
-Specific constants that affect left positioning behavior:
-
-- **`DROPDOWN_SPACING`**: Horizontal gap between button and left-positioned dropdown
-- **`VIEWPORT_MARGIN`**: Minimum distance from viewport edges
-- **Portal positioning**: Uses `absolute` instead of `fixed` for left mode
+- The component uses a portal for rendering the dropdown menu to avoid z-index issues
+- Position calculation accounts for viewport boundaries
+- Animation states are managed to prevent layout thrashing
+- Validation integrates with form systems through the `name` prop
