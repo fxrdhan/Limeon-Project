@@ -85,7 +85,6 @@ export const useDropdownValidation = ({
     validationAutoHideDelay,
   ]);
 
-  // Clear validation when value changes to valid
   useEffect(() => {
     if (touched && (validate || required) && value && value.trim() !== '') {
       queueMicrotask(() => {

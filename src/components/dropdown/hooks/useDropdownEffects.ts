@@ -72,7 +72,7 @@ export const useDropdownEffects = ({
       );
     }
   }, [actualCloseDropdown, hoverToOpen, isOpen]);
-  // Set initial expanded text when dropdown opens
+
   useEffect(() => {
     if (isOpen && filteredOptions.length > 0) {
       const selectedIndex = value
@@ -110,22 +110,18 @@ export const useDropdownEffects = ({
     let openStyleTimerId: NodeJS.Timeout | undefined;
 
     if (isOpen) {
-      // Clear any pending hover timeout when dropdown opens
       clearTimeouts();
 
       document.body.style.overflow = 'hidden';
 
-      // Wait for portal to render in DOM, then calculate position and apply styles
       requestAnimationFrame(() => {
         if (dropdownMenuRef.current) {
           calculateDropdownPosition();
-          // Apply styles in next frame to ensure position is set
           requestAnimationFrame(() => {
             setApplyOpenStyles(true);
             manageFocusOnOpen();
           });
         } else {
-          // If ref still not ready, try again with timeout
           openStyleTimerId = setTimeout(() => {
             if (dropdownMenuRef.current) {
               calculateDropdownPosition();
@@ -158,8 +154,6 @@ export const useDropdownEffects = ({
       setApplyOpenStyles(false);
       resetPosition();
       resetSearch();
-
-      // Clear hover timeout when dropdown is closed
       clearTimeouts();
     }
   }, [
