@@ -37,10 +37,8 @@ export const useKeyboardNavigation = ({
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastMousePositionRef = useRef({ x: 0, y: 0 });
 
-  // Handle highlighted index on dropdown open/close
   useEffect(() => {
     if (!isOpen) {
-      // Reset highlighted index when dropdown closes
       queueMicrotask(() => {
         setHighlightedIndex(-1);
         setIsKeyboardNavigation(false);
@@ -51,10 +49,8 @@ export const useKeyboardNavigation = ({
       highlightedIndex === -1 &&
       autoHighlightOnOpen
     ) {
-      // Only set highlighted index when dropdown first opens, not during active keyboard navigation
       queueMicrotask(() => {
         if (value) {
-          // If there's a selected value, highlight it
           const selectedIndex = currentFilteredOptions.findIndex(
             option => option.id === value
           );
@@ -63,7 +59,6 @@ export const useKeyboardNavigation = ({
             setExpandedId(currentFilteredOptions[selectedIndex].id);
           }
         } else {
-          // If no value selected, pre-select first option
           setHighlightedIndex(0);
           setExpandedId(currentFilteredOptions[0].id);
         }
@@ -79,7 +74,6 @@ export const useKeyboardNavigation = ({
     autoHighlightOnOpen,
   ]);
 
-  // Mouse movement detection to exit keyboard navigation mode
   useEffect(() => {
     if (!isOpen) return;
 
@@ -87,18 +81,15 @@ export const useKeyboardNavigation = ({
       const currentPos = { x: e.clientX, y: e.clientY };
       const lastPos = lastMousePositionRef.current;
 
-      // Only reset if mouse actually moved (not just micro movements)
       const mouseMoved =
         Math.abs(currentPos.x - lastPos.x) > 5 ||
         Math.abs(currentPos.y - lastPos.y) > 5;
 
       if (mouseMoved && isKeyboardNavigation) {
-        // Clear existing timeout
         if (mouseTimeoutRef.current) {
           clearTimeout(mouseTimeoutRef.current);
         }
 
-        // Reset keyboard navigation after short delay
         mouseTimeoutRef.current = setTimeout(() => {
           setIsKeyboardNavigation(false);
         }, 50);
@@ -217,8 +208,6 @@ export const useKeyboardNavigation = ({
             setExpandedId(items[newIndex].id);
           }
 
-          // Immediately scroll to the new highlighted option for keyboard navigation
-          // Use requestAnimationFrame for optimal performance without delay
           requestAnimationFrame(() => {
             if (optionsContainerRef.current && newIndex >= 0) {
               const optionElements =
@@ -226,7 +215,7 @@ export const useKeyboardNavigation = ({
               if (optionElements[newIndex]) {
                 (optionElements[newIndex] as HTMLElement).scrollIntoView({
                   block: 'nearest',
-                  behavior: 'auto', // Instant for keyboard navigation
+                  behavior: 'auto',
                 });
               }
             }
@@ -250,7 +239,6 @@ export const useKeyboardNavigation = ({
     ]
   );
 
-  // Simple wrapper for external components that just need basic key handling
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       handleDropdownKeyDown(e);
@@ -264,6 +252,6 @@ export const useKeyboardNavigation = ({
     isKeyboardNavigation,
     setIsKeyboardNavigation,
     handleDropdownKeyDown,
-    handleKeyDown, // Alias for backward compatibility
+    handleKeyDown,
   };
 };

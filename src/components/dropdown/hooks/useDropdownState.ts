@@ -12,7 +12,6 @@ export const useDropdownState = () => {
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const actualCloseDropdown = useCallback(() => {
-    // Clear any existing close timeout
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
@@ -31,13 +30,11 @@ export const useDropdownState = () => {
   }, [instanceId]);
 
   const openThisDropdown = useCallback(() => {
-    // Clear any pending close timeout
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
 
-    // Close other active dropdown
     if (
       activeDropdownId !== null &&
       activeDropdownId !== instanceId &&
@@ -46,7 +43,6 @@ export const useDropdownState = () => {
       activeDropdownCloseCallback();
     }
 
-    // Reset closing state if it was in the middle of closing
     setIsClosing(false);
     setIsOpen(true);
     activeDropdownCloseCallback = actualCloseDropdown;

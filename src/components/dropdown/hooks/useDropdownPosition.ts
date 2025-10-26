@@ -31,7 +31,6 @@ export const useDropdownPosition = (
   const [isLeftPositioning, setIsLeftPositioning] = useState(false);
   const calculatePositionRef = useRef<(() => void) | null>(null);
 
-  // Calculate content-based width
   const calculateContentWidth = useCallback(() => {
     if (!options.length) return 200; // fallback width
 
@@ -50,10 +49,7 @@ export const useDropdownPosition = (
       maxWidth = Math.max(maxWidth, textWidth);
     });
 
-    // Add padding for checkboxes, icons, and spacing (roughly 80px)
     const contentWidth = maxWidth + 80;
-
-    // Ensure minimum and maximum width
     return Math.max(120, Math.min(contentWidth, 400));
   }, [options]);
 
@@ -63,7 +59,6 @@ export const useDropdownPosition = (
     }
 
     if (!dropdownMenuRef.current || !buttonRef.current) {
-      // Wait for refs to be available
       if (isOpen && !dropdownMenuRef.current) {
         requestAnimationFrame(() => calculatePositionRef.current?.());
       }
@@ -80,14 +75,11 @@ export const useDropdownPosition = (
     const spaceAbove = buttonRect.top - margin;
     const spaceLeft = buttonRect.left - margin;
 
-    // Determine drop direction based on position prop
     let targetDirection: DropDirection;
     let currentIsLeftPositioning = false;
 
     if (position === 'left') {
-      // Left positioning: dropdown appears to the left of button
       currentIsLeftPositioning = true;
-      // For left positioning, we still need to decide up/down within the left space
       const shouldDropUp =
         (spaceBelow < dropdownActualHeight &&
           spaceAbove > dropdownActualHeight) ||
@@ -98,7 +90,6 @@ export const useDropdownPosition = (
     } else if (position === 'bottom') {
       targetDirection = 'down';
     } else {
-      // Auto positioning logic
       const shouldDropUp =
         (spaceBelow < dropdownActualHeight &&
           spaceAbove > dropdownActualHeight) ||
@@ -106,7 +97,6 @@ export const useDropdownPosition = (
       targetDirection = shouldDropUp ? 'up' : 'down';
     }
 
-    // Set initial direction only once when dropdown first opens
     if (initialDropDirection === null) {
       setDropDirection(targetDirection);
       setInitialDropDirection(targetDirection);
@@ -114,8 +104,7 @@ export const useDropdownPosition = (
       setDropDirection(initialDropDirection);
     }
 
-    // Calculate dropdown width for positioning
-    let dropdownWidth = buttonRect.width; // default to button width
+    let dropdownWidth = buttonRect.width;
     if (portalWidth === 'content') {
       dropdownWidth = calculateContentWidth();
     } else if (portalWidth !== 'auto') {
@@ -125,19 +114,15 @@ export const useDropdownPosition = (
           : parseInt(portalWidth as string, 10) || buttonRect.width;
     }
 
-    // Calculate left position based on positioning mode
     let leftPosition: number;
 
     if (currentIsLeftPositioning) {
-      // Left positioning: dropdown appears to the left of button
       leftPosition =
         buttonRect.left - dropdownWidth - DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
 
-      // Check if there's enough space on the left
       const minRequiredSpace =
         dropdownWidth + DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
       if (spaceLeft < minRequiredSpace) {
-        // Fallback to regular positioning if no space on left
         currentIsLeftPositioning = false;
         if (align === 'left') {
           leftPosition = buttonRect.left;
@@ -146,17 +131,13 @@ export const useDropdownPosition = (
         }
       }
     } else {
-      // Regular positioning: align the dropdown based on align prop
       if (align === 'left') {
-        // Left-align: dropdown starts at button's left edge
         leftPosition = buttonRect.left;
       } else {
-        // Right-align: dropdown ends at button's right edge
         leftPosition = buttonRect.right - dropdownWidth;
       }
     }
 
-    // Keep dropdown within viewport bounds (only if not in left positioning mode)
     if (!currentIsLeftPositioning) {
       if (
         leftPosition + dropdownWidth >
@@ -177,10 +158,8 @@ export const useDropdownPosition = (
     let topPosition: number;
 
     if (currentIsLeftPositioning) {
-      // For left positioning, align dropdown top with button top
       topPosition = buttonRect.top + window.scrollY;
 
-      // Ensure dropdown doesn't go below viewport
       const maxTop =
         viewportHeight -
         dropdownActualHeight -
@@ -189,20 +168,18 @@ export const useDropdownPosition = (
         topPosition = maxTop + window.scrollY;
       }
 
-      // Ensure dropdown doesn't go above viewport
       const minTop = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN + window.scrollY;
       if (topPosition < minTop) {
         topPosition = minTop;
       }
     } else {
-      // Regular vertical positioning
       if (isDropUp) {
         topPosition =
           buttonRect.top +
           window.scrollY -
           dropdownActualHeight -
           DROPDOWN_CONSTANTS.DROPDOWN_SPACING -
-          3; // Extra offset untuk portal yang muncul ke atas
+          3;
       } else {
         topPosition =
           buttonRect.bottom +
@@ -218,16 +195,12 @@ export const useDropdownPosition = (
       top: `${topPosition}px`,
     };
 
-    // Set width based on portalWidth value
     if (portalWidth === 'auto') {
-      // Auto: use button width
       portalStyleBase.width = `${buttonRect.width}px`;
     } else if (portalWidth === 'content') {
-      // Content: calculate width based on option content
       const contentWidth = calculateContentWidth();
       portalStyleBase.width = `${contentWidth}px`;
     } else {
-      // Custom width: use provided value
       portalStyleBase.width =
         typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth;
     }
@@ -246,7 +219,6 @@ export const useDropdownPosition = (
     calculateContentWidth,
   ]);
 
-  // Store callback reference for recursive calls
   useEffect(() => {
     calculatePositionRef.current = calculateDropdownPosition;
   }, [calculateDropdownPosition]);
@@ -256,17 +228,13 @@ export const useDropdownPosition = (
     setIsPositionReady(false);
   }, []);
 
-  // Auto calculate position when dropdown opens
   useEffect(() => {
     if (isOpen) {
-      // Reset position ready state before calculating new position
       setIsPositionReady(false);
-      // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         calculateDropdownPosition();
       });
     } else {
-      // Reset position when closing
       setIsPositionReady(false);
     }
   }, [isOpen, calculateDropdownPosition]);

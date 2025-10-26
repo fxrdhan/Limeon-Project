@@ -45,7 +45,6 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
     // Expansion is disabled on hover for truncated text
     const isExpanded = false;
 
-    // Calculate display text based on expansion state
     const displayText = selectedOption
       ? isButtonTextExpanded
         ? selectedOption.name
