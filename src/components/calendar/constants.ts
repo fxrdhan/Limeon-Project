@@ -47,8 +47,8 @@ export const CALENDAR_CONSTANTS = {
   MONTHS_PER_YEAR: 12,
   DECADE_SHIFT: 10,
 
-  // Z-index
-  PORTAL_Z_INDEX: 10000,
+  // Z-index (lower than dropdown portal to allow header dropdowns to appear on top)
+  PORTAL_Z_INDEX: 1000,
 } as const;
 
 // Years grid configuration
