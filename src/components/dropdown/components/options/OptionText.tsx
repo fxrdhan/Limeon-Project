@@ -24,11 +24,13 @@ const OptionText: React.FC<OptionTextProps> = ({
           ? 'whitespace-normal break-words leading-relaxed'
           : 'truncate'
       } transition-all duration-200 text-left ${
-        isSelected
+        isSelected && isHighlighted
           ? 'text-primary font-semibold'
-          : isHighlighted
-            ? 'text-gray-800 font-semibold'
-            : ''
+          : isSelected
+            ? 'text-primary font-semibold'
+            : isHighlighted
+              ? 'text-gray-800 font-semibold'
+              : 'text-gray-800'
       }`}
       title={shouldTruncate && !isExpanded ? title : undefined}
     >

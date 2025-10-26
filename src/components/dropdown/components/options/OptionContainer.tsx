@@ -1,10 +1,12 @@
 import React, { RefObject, ReactNode } from 'react';
 import type { DropdownOption } from '@/types';
+import { useDropdownContext } from '../../hooks/useDropdownContext';
 
 interface OptionContainerProps {
   optionId: string;
   index: number;
   isHighlighted: boolean;
+  isSelected?: boolean;
   isExpanded: boolean;
   isKeyboardNavigation: boolean;
   onSelect: (optionId: string) => void;
@@ -25,6 +27,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
   optionId,
   index,
   isHighlighted,
+  isSelected,
   isExpanded,
   isKeyboardNavigation,
   onSelect,
@@ -75,17 +78,27 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
     }, 0);
   };
 
+  // Compute selection for aria-selected: prefer prop isSelected, fallback to context value
+  const { value, withCheckbox } = useDropdownContext();
+  const isSelectedByContext =
+    withCheckbox && Array.isArray(value)
+      ? value.includes(optionId)
+      : typeof value === 'string'
+        ? value === optionId
+        : false;
+  const ariaSelected =
+    isHighlighted ||
+    (typeof isSelected === 'boolean' ? isSelected : isSelectedByContext);
+
   return (
     <button
       key={optionId}
       id={`dropdown-option-${optionId}`}
       role="option"
-      aria-selected={isHighlighted}
+      aria-selected={ariaSelected}
       type="button"
-      className={`flex ${isExpanded ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-gray-800 cursor-pointer ${
-        !isKeyboardNavigation ? 'hover:bg-slate-300/50' : ''
-      } focus:outline-hidden focus:bg-gray-100 ${
-        isHighlighted ? 'bg-slate-300/30' : ''
+      className={`flex ${isExpanded ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-gray-800 cursor-pointer focus:outline-hidden ${
+        isHighlighted ? 'bg-slate-300/50' : 'hover:bg-slate-200/40'
       } transition-colors duration-150`}
       onClick={() => onSelect(optionId)}
       onMouseEnter={handleMouseEnter}

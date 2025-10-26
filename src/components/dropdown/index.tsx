@@ -197,6 +197,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     onCloseDropdown: actualCloseDropdown,
     onCloseValidation: handleCloseValidation,
     optionsContainerRef,
+    autoHighlightOnOpen: mode !== 'text',
   });
 
   const { manageFocusOnOpen, handleFocusOut } = useFocusManagement({

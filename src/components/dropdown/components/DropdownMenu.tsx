@@ -75,11 +75,11 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                     key={option.id}
                     option={option}
                     index={index}
-                    isSelected={
+                    isSelected={Boolean(
                       withCheckbox && Array.isArray(value)
                         ? value.includes(option.id)
                         : option.id === value
-                    }
+                    )}
                     isHighlighted={highlightedIndex === index}
                     isExpanded={expandedId === option.id}
                     onHighlight={index => {

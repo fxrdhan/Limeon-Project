@@ -53,6 +53,7 @@ const OptionItem: FC<OptionItemProps> = ({
       optionId={option.id}
       index={index}
       isHighlighted={isHighlighted}
+      isSelected={isSelected}
       isExpanded={shouldExpand}
       isKeyboardNavigation={isKeyboardNavigation}
       onSelect={onSelect}
