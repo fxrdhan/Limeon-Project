@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePackageConversion } from './usePackageConversion';
 import type { PackageConversion } from '@/types';
@@ -151,7 +151,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       expect(result.current.conversions).toHaveLength(1);
@@ -198,14 +198,14 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
         result.current.addPackageConversion({
           unit: { id: 'unit-3', name: 'Tablet' },
           unit_name: 'Tablet',
           to_unit_id: 'unit-3',
           conversion_rate: 2,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       expect(result.current.conversions).toHaveLength(2);
@@ -226,14 +226,14 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
         result.current.addPackageConversion({
           unit: { id: 'unit-3', name: 'Tablet' },
           unit_name: 'Tablet',
           to_unit_id: 'unit-3',
           conversion_rate: 2,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       const ids = result.current.conversions.map(c => c.id);
@@ -255,7 +255,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 0, // Problematic
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       // Result would be Infinity, which is not ideal
@@ -276,7 +276,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 0.1,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       const conversion = result.current.conversions[0];
@@ -292,18 +292,16 @@ describe('usePackageConversion', () => {
         result.current.setBasePrice(10000);
       });
 
-      let conversionId: string;
-
       act(() => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
-      conversionId = result.current.conversions[0].id;
+      const conversionId = result.current.conversions[0].id;
 
       act(() => {
         result.current.removePackageConversion(conversionId);
@@ -319,25 +317,23 @@ describe('usePackageConversion', () => {
         result.current.setBasePrice(10000);
       });
 
-      let secondConversionId: string;
-
       act(() => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
         result.current.addPackageConversion({
           unit: { id: 'unit-3', name: 'Tablet' },
           unit_name: 'Tablet',
           to_unit_id: 'unit-3',
           conversion_rate: 2,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
-      secondConversionId = result.current.conversions[1].id;
+      const secondConversionId = result.current.conversions[1].id;
 
       act(() => {
         result.current.removePackageConversion(secondConversionId);
@@ -363,7 +359,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       // Conversion should be calculated when added
@@ -384,7 +380,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       const initialPrice = result.current.conversions[0].base_price;
@@ -423,7 +419,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       act(() => {
@@ -448,7 +444,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       // When sellPrice is 0, converted sell_price should also be 0
@@ -469,7 +465,7 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 3,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       // Initial price should be 10000 / 3
@@ -483,6 +479,7 @@ describe('usePackageConversion', () => {
           to_unit_id: 'unit-3',
           conversion_rate: 5,
           base_price: 5000, // Override calculation
+          sell_price: 0,
         });
       });
 
@@ -504,14 +501,14 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
         result.current.addPackageConversion({
           unit: { id: 'unit-3', name: 'Tablet' },
           unit_name: 'Tablet',
           to_unit_id: 'unit-3',
           conversion_rate: 2,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       expect(result.current.conversions).toHaveLength(2);
@@ -536,14 +533,14 @@ describe('usePackageConversion', () => {
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       act(() => {
         result.current.setPackageConversionFormData({
           unit: 'Box',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       act(() => {
@@ -565,7 +562,7 @@ describe('usePackageConversion', () => {
         result.current.setPackageConversionFormData({
           unit: 'Box',
           conversion_rate: 10,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       expect(result.current.packageConversionFormData).toEqual({
@@ -581,7 +578,7 @@ describe('usePackageConversion', () => {
         result.current.setPackageConversionFormData({
           unit: 'Box',
           conversion_rate: 0,
-        });
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       act(() => {
