@@ -20,7 +20,9 @@ jobs:
         with:
           node-version: '18'
           cache: 'yarn'
-          enable-corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -62,7 +64,9 @@ jobs:
         with:
           node-version: '18'
           cache: 'yarn'
-          enable-corepack: true
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install dependencies
         run: yarn install --immutable
