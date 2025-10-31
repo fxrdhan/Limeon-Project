@@ -17,7 +17,8 @@ node_modules
 supabase/data/
 .env
 test.js
-.yarn/
+.yarn/cache
+.yarn/install-state.gz
 .claude/
 dist
 dist-ssr
