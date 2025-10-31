@@ -1,1 +1,9 @@
+echo "🔍 Running pre-commit checks..."
+
+echo "\n📝 Checking code style..."
 yarn lint
+
+echo "\n🧪 Running tests..."
+yarn test:run
+
+echo "\n✅ All pre-commit checks passed!"
