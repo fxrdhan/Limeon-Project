@@ -43,6 +43,7 @@ describe('UpdateItem', () => {
       });
 
       it('should fail when id is undefined', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const input = { ...validInput, id: undefined as any };
         const result = validateUpdateItemInput(input);
 
