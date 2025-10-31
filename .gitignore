@@ -18,7 +18,6 @@ supabase/data/
 .env
 test.js
 .yarn/cache
-.yarn/install-state.gz
 .claude/
 dist
 dist-ssr
