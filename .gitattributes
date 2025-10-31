@@ -34,9 +34,9 @@ tsconfig*.json linguist-vendored
 package.json linguist-vendored
 yarn.lock linguist-vendored
 package-lock.json linguist-vendored
-eslint.config.js linguist-vendored
+eslint.config.ts linguist-vendored
 postcss.config.js linguist-vendored
-tailwind.config.js linguist-vendored
+tailwind.config.ts linguist-vendored
 vite.config.ts linguist-vendored
 *.toml linguist-vendored
 .env* linguist-vendored
