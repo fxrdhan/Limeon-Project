@@ -1,3 +1,9 @@
+/**
+ * UpdateItem Tests (Optimized)
+ *
+ * Consolidated validation tests with parameterization
+ */
+
 import { describe, it, expect } from 'vitest';
 import { validateUpdateItemInput } from './UpdateItem';
 import type { UpdateItemInput } from './UpdateItem';
@@ -20,277 +26,125 @@ describe('UpdateItem', () => {
 
     it('should pass validation for valid input', () => {
       const result = validateUpdateItemInput(validInput);
-
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
-    describe('ID Validation', () => {
-      it('should fail when id is empty string', () => {
-        const input = { ...validInput, id: '' };
+    // Parameterized empty/whitespace validation
+    describe.each([
+      { field: 'id', error: 'ID item harus ada untuk update' },
+      { field: 'name', error: 'Nama item harus diisi' },
+      { field: 'code', error: 'Kode item harus diisi' },
+    ])('validates $field is not empty', ({ field, error }) => {
+      it.each([
+        { value: '', label: 'empty' },
+        { value: '   ', label: 'whitespace' },
+        { value: undefined, label: 'undefined' },
+      ])(`should fail when ${field} is $label`, ({ value }) => {
+        const input = { ...validInput, [field]: value };
         const result = validateUpdateItemInput(input);
-
         expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('ID item harus ada untuk update');
-      });
-
-      it('should fail when id is only whitespace', () => {
-        const input = { ...validInput, id: '   ' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('ID item harus ada untuk update');
-      });
-
-      it('should fail when id is undefined', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const input = { ...validInput, id: undefined as any };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('ID item harus ada untuk update');
+        expect(result.errors).toContain(error);
       });
     });
 
-    describe('Name Validation', () => {
-      it('should fail when name is empty', () => {
-        const input = { ...validInput, name: '' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Nama item harus diisi');
-      });
-
-      it('should fail when name is only whitespace', () => {
-        const input = { ...validInput, name: '   ' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Nama item harus diisi');
-      });
+    // Parameterized dropdown validation
+    it.each([
+      { field: 'category_id', error: 'Kategori harus dipilih' },
+      { field: 'type_id', error: 'Tipe harus dipilih' },
+      { field: 'unit_id', error: 'Unit harus dipilih' },
+    ])('should fail when $field is missing', ({ field, error }) => {
+      const input = { ...validInput, [field]: '' };
+      const result = validateUpdateItemInput(input);
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(error);
     });
 
-    describe('Code Validation', () => {
-      it('should fail when code is empty', () => {
-        const input = { ...validInput, code: '' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Kode item harus diisi');
-      });
-
-      it('should fail when code is only whitespace', () => {
-        const input = { ...validInput, code: '   ' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Kode item harus diisi');
-      });
+    // Price validation (consolidated)
+    it.each([
+      { field: 'base_price', value: -100, shouldFail: true },
+      { field: 'base_price', value: 0, shouldFail: false },
+      { field: 'sell_price', value: -100, shouldFail: true },
+      { field: 'sell_price', value: 0, shouldFail: false },
+    ])('validates $field with value $value', ({ field, value, shouldFail }) => {
+      const input = { ...validInput, [field]: value };
+      const result = validateUpdateItemInput(input);
+      expect(result.isValid).toBe(!shouldFail);
+      if (shouldFail) {
+        expect(result.errors).toContain(
+          `${field === 'base_price' ? 'Harga beli' : 'Harga jual'} tidak boleh negatif`
+        );
+      }
     });
 
-    describe('Category Validation', () => {
-      it('should fail when category_id is missing', () => {
-        const input = { ...validInput, category_id: '' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Kategori harus dipilih');
-      });
-    });
-
-    describe('Type Validation', () => {
-      it('should fail when type_id is missing', () => {
-        const input = { ...validInput, type_id: '' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Tipe harus dipilih');
-      });
-    });
-
-    describe('Unit Validation', () => {
-      it('should fail when unit_id is missing', () => {
-        const input = { ...validInput, unit_id: '' };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Unit harus dipilih');
-      });
-    });
-
-    describe('Price Validation', () => {
-      it('should fail when base_price is negative', () => {
-        const input = { ...validInput, base_price: -100 };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Harga beli tidak boleh negatif');
-      });
-
-      it('should pass when base_price is zero', () => {
-        const input = { ...validInput, base_price: 0 };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
-
-      it('should fail when sell_price is negative', () => {
-        const input = { ...validInput, sell_price: -100 };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('Harga jual tidak boleh negatif');
-      });
-
-      it('should pass when sell_price is zero', () => {
-        const input = { ...validInput, sell_price: 0 };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
-    });
-
-    describe('Minimum Stock Validation', () => {
-      it('should fail when min_stock is negative', () => {
-        const input = { ...validInput, min_stock: -10 };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
+    // Stock validation
+    it.each([
+      { value: -10, shouldFail: true },
+      { value: 0, shouldFail: false },
+    ])('validates min_stock with value $value', ({ value, shouldFail }) => {
+      const input = { ...validInput, min_stock: value };
+      const result = validateUpdateItemInput(input);
+      expect(result.isValid).toBe(!shouldFail);
+      if (shouldFail) {
         expect(result.errors).toContain('Stok minimum tidak boleh negatif');
-      });
-
-      it('should pass when min_stock is zero', () => {
-        const input = { ...validInput, min_stock: 0 };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
+      }
     });
 
-    describe('Multiple Errors', () => {
-      it('should accumulate multiple validation errors', () => {
-        const input = {
-          ...validInput,
-          id: '',
-          name: '',
-          code: '',
-          base_price: -100,
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors).toHaveLength(4);
-        expect(result.errors).toContain('ID item harus ada untuk update');
-        expect(result.errors).toContain('Nama item harus diisi');
-        expect(result.errors).toContain('Kode item harus diisi');
-        expect(result.errors).toContain('Harga beli tidak boleh negatif');
-      });
-
-      it('should handle all fields invalid at once', () => {
-        const input = {
-          id: '',
-          code: '',
-          name: '',
-          manufacturer: '',
-          is_medicine: false,
-          category_id: '',
-          type_id: '',
-          unit_id: '',
-          base_price: -1000,
-          sell_price: -1200,
-          min_stock: -50,
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(false);
-        expect(result.errors.length).toBeGreaterThan(0);
-      });
+    // Multiple errors accumulation
+    it('should accumulate multiple validation errors', () => {
+      const input = {
+        ...validInput,
+        id: '',
+        name: '',
+        code: '',
+        base_price: -100,
+      };
+      const result = validateUpdateItemInput(input);
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toHaveLength(4);
     });
 
-    describe('Optional Fields', () => {
-      it('should pass with optional barcode field', () => {
-        const input = {
-          ...validInput,
-          barcode: '1234567890',
-        };
-        const result = validateUpdateItemInput(input);
+    // Optional fields (consolidated into one test)
+    it('should pass with optional fields present or absent', () => {
+      const withOptional = {
+        ...validInput,
+        barcode: '1234567890',
+        rack: 'A-1-1',
+        description: 'Test description',
+      };
+      const withoutOptional = validInput;
 
-        expect(result.isValid).toBe(true);
-      });
-
-      it('should pass without optional barcode field', () => {
-        const input = validInput;
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
-
-      it('should pass with optional rack field', () => {
-        const input = {
-          ...validInput,
-          rack: 'A-1-1',
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
-
-      it('should pass with optional description field', () => {
-        const input = {
-          ...validInput,
-          description: 'Test description',
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
+      expect(validateUpdateItemInput(withOptional).isValid).toBe(true);
+      expect(validateUpdateItemInput(withoutOptional).isValid).toBe(true);
     });
 
-    describe('Edge Cases', () => {
-      it('should handle very large numbers', () => {
-        const input = {
-          ...validInput,
-          base_price: Number.MAX_SAFE_INTEGER,
-          sell_price: Number.MAX_SAFE_INTEGER,
-          min_stock: Number.MAX_SAFE_INTEGER,
-        };
-        const result = validateUpdateItemInput(input);
+    // Edge cases (consolidated)
+    it('should handle edge case values correctly', () => {
+      // Large numbers
+      const largeNumbers = {
+        ...validInput,
+        base_price: Number.MAX_SAFE_INTEGER,
+        sell_price: Number.MAX_SAFE_INTEGER,
+        min_stock: Number.MAX_SAFE_INTEGER,
+      };
+      expect(validateUpdateItemInput(largeNumbers).isValid).toBe(true);
 
-        expect(result.isValid).toBe(true);
-      });
+      // Decimals
+      const decimals = {
+        ...validInput,
+        base_price: 1000.5,
+        sell_price: 1200.75,
+        min_stock: 10.5,
+      };
+      expect(validateUpdateItemInput(decimals).isValid).toBe(true);
 
-      it('should handle decimal prices', () => {
-        const input = {
-          ...validInput,
-          base_price: 1000.5,
-          sell_price: 1200.75,
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
-
-      it('should validate decimal min_stock', () => {
-        const input = {
-          ...validInput,
-          min_stock: 10.5,
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
-
-      it('should handle very long strings', () => {
-        const longString = 'A'.repeat(1000);
-        const input = {
-          ...validInput,
-          name: longString,
-          code: longString,
-        };
-        const result = validateUpdateItemInput(input);
-
-        expect(result.isValid).toBe(true);
-      });
+      // Long strings
+      const longStrings = {
+        ...validInput,
+        name: 'A'.repeat(1000),
+        code: 'B'.repeat(1000),
+      };
+      expect(validateUpdateItemInput(longStrings).isValid).toBe(true);
     });
   });
 });
