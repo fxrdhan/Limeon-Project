@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@/test/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import Button from './index';
