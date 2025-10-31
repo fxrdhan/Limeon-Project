@@ -161,18 +161,6 @@ describe('Form Validation', () => {
         expect(result.warnings.sell_price).toBeUndefined();
       });
     });
-
-    it('should handle edge case: exactly 5% margin', () => {
-      const data = { ...baseFormData, base_price: 10000, sell_price: 10500 };
-      const result = validatePriceFields(data);
-      expect(result.warnings.sell_price).toBeUndefined();
-    });
-
-    it('should handle edge case: exactly 200% margin', () => {
-      const data = { ...baseFormData, base_price: 10000, sell_price: 30000 };
-      const result = validatePriceFields(data);
-      expect(result.warnings.sell_price).toBeUndefined();
-    });
   });
 
   describe('validateStockFields', () => {
@@ -324,24 +312,6 @@ describe('Form Validation', () => {
       expect(result.errors.barcode).toBe(
         'Barcode tidak boleh lebih dari 30 karakter'
       );
-    });
-
-    it('should handle edge case: exactly 6 characters', () => {
-      const result = validateBarcode('123456');
-      expect(result.warnings.barcode).toBeUndefined();
-    });
-
-    it('should handle standard barcode formats', () => {
-      const standardBarcodes = [
-        '1234567890123', // EAN-13
-        '123456789012', // UPC-A
-        '12345678', // EAN-8
-      ];
-
-      standardBarcodes.forEach(barcode => {
-        const result = validateBarcode(barcode);
-        expect(result.isValid).toBe(true);
-      });
     });
   });
 

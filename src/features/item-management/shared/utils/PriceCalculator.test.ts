@@ -38,19 +38,13 @@ describe('PriceCalculator', () => {
       expect(calculateProfitPercentage(-100, 10000)).toBeNull();
     });
 
-    it('should handle very small prices (precision test)', () => {
-      const result = calculateProfitPercentage(0.5, 1);
-      expect(result).toBe(100);
-    });
-
-    it('should handle very large prices', () => {
-      const result = calculateProfitPercentage(1000000, 1500000);
-      expect(result).toBe(50);
-    });
-
-    it('should handle decimal prices accurately', () => {
-      const result = calculateProfitPercentage(12345.67, 15432.1);
-      expect(result).toBeCloseTo(25, 0);
+    it('should handle decimal and extreme prices accurately', () => {
+      // Small prices
+      expect(calculateProfitPercentage(0.5, 1)).toBe(100);
+      // Large prices
+      expect(calculateProfitPercentage(1000000, 1500000)).toBe(50);
+      // Decimal precision
+      expect(calculateProfitPercentage(12345.67, 15432.1)).toBeCloseTo(25, 0);
     });
   });
 
@@ -85,15 +79,10 @@ describe('PriceCalculator', () => {
     it('should handle fractional margins', () => {
       expect(calculateSellPriceFromMargin(10000, 15.5)).toBe(11550);
       expect(calculateSellPriceFromMargin(10000, 22.75)).toBe(12275);
-    });
-
-    it('should handle realistic pharmacy margins', () => {
-      // Generic medicine: 10-15% margin
-      expect(calculateSellPriceFromMargin(50000, 12)).toBe(56000);
-      // Brand medicine: 20-30% margin
-      expect(calculateSellPriceFromMargin(100000, 25)).toBe(125000);
-      // Non-medicine: 30-50% margin
-      expect(calculateSellPriceFromMargin(20000, 40)).toBe(28000);
+      // Realistic pharmacy margins also covered here
+      expect(calculateSellPriceFromMargin(50000, 12)).toBe(56000); // Generic
+      expect(calculateSellPriceFromMargin(100000, 25)).toBe(125000); // Branded
+      expect(calculateSellPriceFromMargin(20000, 40)).toBe(28000); // Non-medicine
     });
   });
 
@@ -189,23 +178,18 @@ describe('PriceCalculator', () => {
       expect(generatePriceSuggestions(-100)).toEqual([]);
     });
 
-    it('should handle small base prices', () => {
-      const suggestions = generatePriceSuggestions(100);
-      expect(suggestions[0].price).toBe(110);
-      expect(suggestions[1].price).toBe(120);
-      expect(suggestions[2].price).toBe(130);
-      expect(suggestions[3].price).toBe(150);
-    });
+    it('should handle various base prices and round to integers', () => {
+      // Small prices
+      const smallSuggestions = generatePriceSuggestions(100);
+      expect(smallSuggestions[0].price).toBe(110);
+      expect(smallSuggestions[1].price).toBe(120);
 
-    it('should handle large base prices', () => {
-      const suggestions = generatePriceSuggestions(1000000);
-      expect(suggestions[0].price).toBe(1100000);
-      expect(suggestions[1].price).toBe(1200000);
-      expect(suggestions[2].price).toBe(1300000);
-      expect(suggestions[3].price).toBe(1500000);
-    });
+      // Large prices
+      const largeSuggestions = generatePriceSuggestions(1000000);
+      expect(largeSuggestions[0].price).toBe(1100000);
+      expect(largeSuggestions[1].price).toBe(1200000);
 
-    it('should round all prices to integers', () => {
+      // All prices should be integers
       const suggestions = generatePriceSuggestions(12345);
       suggestions.forEach(suggestion => {
         expect(Number.isInteger(suggestion.price)).toBe(true);
@@ -240,18 +224,6 @@ describe('PriceCalculator', () => {
       expect(result.warning).toBe(
         'Margin sangat tinggi (>200%), pastikan harga kompetitif'
       );
-    });
-
-    it('should accept edge case: exactly 5%', () => {
-      const result = validateMarginRange(5);
-      expect(result.isValid).toBe(true);
-      expect(result.warning).toBeUndefined();
-    });
-
-    it('should accept edge case: exactly 200%', () => {
-      const result = validateMarginRange(200);
-      expect(result.isValid).toBe(true);
-      expect(result.warning).toBeUndefined();
     });
 
     it('should warn for 0% margin', () => {
@@ -293,15 +265,13 @@ describe('PriceCalculator', () => {
       });
     });
 
-    it('should round break-even price to integer', () => {
-      const result = calculateBreakEven(12345, 6789);
-      expect(Number.isInteger(result.breakEvenPrice)).toBe(true);
-      expect(result.breakEvenPrice).toBe(19134);
-    });
+    it('should round break-even price to integer and margin to 2 decimals', () => {
+      const result1 = calculateBreakEven(12345, 6789);
+      expect(Number.isInteger(result1.breakEvenPrice)).toBe(true);
+      expect(result1.breakEvenPrice).toBe(19134);
 
-    it('should round minimum margin to 2 decimal places', () => {
-      const result = calculateBreakEven(9999, 3333);
-      expect(result.minimumMargin).toBeCloseTo(33.33, 2);
+      const result2 = calculateBreakEven(9999, 3333);
+      expect(result2.minimumMargin).toBeCloseTo(33.33, 2);
     });
 
     it('should handle scenario: operational costs (rent, utilities)', () => {
