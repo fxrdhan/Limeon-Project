@@ -10,10 +10,72 @@ permissions:
   contents: read
 
 jobs:
+  # 🔍 Detect what files changed to optimize CI runs
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      critical: ${{ steps.filter.outputs.critical }}
+      config: ${{ steps.filter.outputs.config }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            # Critical changes that need full CI (typecheck, lint, test, build)
+            critical:
+              - 'src/**'
+              - 'scripts/**'
+              - 'public/**'
+              - 'package.json'
+              - 'yarn.lock'
+              - '.yarnrc.yml'
+              - 'tsconfig*.json'
+              - 'vite.config.*'
+              - 'vitest.config.*'
+              - '.swcrc'
+              - 'index.html'
+              - '.env'
+              - '.env.*'
+              - '.github/workflows/**'
+
+            # Config-only changes that need lint + format only (skip tests & build)
+            config:
+              - '.mergify.yml'
+              - '.github/dependabot.yml'
+              - '.prettierrc*'
+              - '.prettierignore'
+              - 'eslint.config.*'
+              - '.eslintrc*'
+              - '.eslintignore'
+              - 'tailwind.config.*'
+              - 'postcss.config.*'
+              - '.husky/**'
+              - '.gitignore'
+              - '.gitattributes'
+              - '.mcp.json'
+              - '.mcp.json.example'
+              - '*.example'
+
+            # Docs & dev-only changes that need format check only (or skip entirely)
+            docs:
+              - '**/*.md'
+              - 'LICENSE'
+              - '.github/ISSUE_TEMPLATE/**'
+              - '.github/PULL_REQUEST_TEMPLATE.md'
+              - 'supabase/**'
+
   # ⚡ Fast checks - run in parallel for quick feedback
   typecheck:
     name: TypeScript Check
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.critical == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,6 +98,10 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.critical == 'true' ||
+      needs.detect-changes.outputs.config == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,6 +124,10 @@ jobs:
   format:
     name: Check Formatting
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.critical == 'true' ||
+      needs.detect-changes.outputs.config == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -81,7 +151,12 @@ jobs:
   test:
     name: Tests & Coverage
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, format]
+    needs: [detect-changes, typecheck, lint, format]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.critical == 'true' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     permissions:
       contents: read
       checks: write
@@ -117,7 +192,12 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    needs: test
+    needs: [detect-changes, test]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.critical == 'true' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     permissions:
       contents: read
       actions: write
@@ -152,3 +232,72 @@ jobs:
           name: build
           path: dist/
           retention-days: 7
+
+  # 📝 Lightweight check for docs & dev-only changes
+  docs-check:
+    name: Documentation & Dev Files Check
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.docs == 'true' &&
+      needs.detect-changes.outputs.critical == 'false' &&
+      needs.detect-changes.outputs.config == 'false'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Check formatting
+        run: yarn format:check
+
+      - name: Success message
+        run: |
+          echo "✅ Documentation/dev files changes look good!"
+          echo "📝 Changed: docs, supabase (local dev), or other non-production files"
+          echo "⚡ Skipped heavy checks (typecheck, test, build) to save CI minutes"
+
+  # ⚙️ Lightweight check for config-only changes
+  config-check:
+    name: Configuration Check
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.config == 'true' &&
+      needs.detect-changes.outputs.critical == 'false'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Lint and format check
+        run: |
+          yarn lint
+          yarn format:check
+
+      - name: Success message
+        run: |
+          echo "✅ Configuration changes look good!"
+          echo "⚡ Skipped heavy checks (typecheck, test, build) to save CI minutes"
+          echo "📋 Only ran lint + format check since no source code changed"
