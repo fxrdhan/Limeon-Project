@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // Expose to network
     fs: {
       // Allow serving files from one level up from the project root
       allow: ['..'],
