@@ -75,8 +75,11 @@ This project is built with:
 
 ## 🤖 CI/CD Automation
 
+[![codecov](https://codecov.io/gh/fxrdhan/Limeon-Project/branch/main/graph/badge.svg)](https://codecov.io/gh/fxrdhan/Limeon-Project)
+
 This project uses automated workflows for quality assurance and dependency management:
 
 - **GitHub Actions** - Runs TypeScript checks, linting, formatting, tests, and builds on every PR
+- **Codecov** - Tracks test coverage and provides detailed coverage reports
 - **Dependabot** - Automatically creates PRs for dependency updates every Monday
 - **Mergify** - Auto-merges approved PRs when all CI checks pass
