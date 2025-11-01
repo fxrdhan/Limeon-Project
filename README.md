@@ -75,11 +75,20 @@ This project is built with:
 
 ## 🤖 CI/CD Automation
 
+<div align="center">
+
+![Codecov](https://img.shields.io/badge/codecov-%23F3655B.svg?style=for-the-badge&logo=codecov&logoColor=white)
+![Dependabot](https://img.shields.io/badge/dependabot-025E8C?style=for-the-badge&logo=dependabot&logoColor=white)
+
+</div>
+
 [![codecov](https://codecov.io/gh/fxrdhan/Limeon-Project/branch/main/graph/badge.svg)](https://codecov.io/gh/fxrdhan/Limeon-Project)
 
 This project uses automated workflows for quality assurance and dependency management:
 
-- **GitHub Actions** - Runs TypeScript checks, linting, formatting, tests, and builds on every PR
-- **Codecov** - Tracks test coverage and provides detailed coverage reports
-- **Dependabot** - Automatically creates PRs for dependency updates every Monday
-- **Mergify** - Auto-merges approved PRs when all CI checks pass
+| Tool               | Link                                           | Description                                                                |
+| ------------------ | ---------------------------------------------- | -------------------------------------------------------------------------- |
+| **GitHub Actions** | [Website](https://github.com/features/actions) | Runs TypeScript checks, linting, formatting, tests, and builds on every PR |
+| **Codecov**        | [Website](https://codecov.io/)                 | Tracks test coverage and provides detailed coverage reports                |
+| **Dependabot**     | [Website](https://github.com/dependabot)       | Automatically creates PRs for dependency updates every Monday              |
+| **Mergify**        | [Website](https://mergify.com/)                | Auto-merges approved PRs when all CI checks pass                           |
