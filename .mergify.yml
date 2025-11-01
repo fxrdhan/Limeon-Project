@@ -15,7 +15,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-        commit_message: title+body
       delete_head_branch: {}
       comment:
         message: |
@@ -36,22 +35,11 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-        commit_message: title+body
       delete_head_branch: {}
       comment:
         message: |
           ✅ Auto-merged by Mergify
           All checks passed and PR has been approved.
-
-  # 🔄 Auto-update PRs when base branch changes
-  - name: Auto-update PRs when main branch updates
-    conditions:
-      - -draft
-      - -conflict
-      - '#commits-behind>0'
-    actions:
-      update:
-        method: merge
 
   # 🏷️ Auto-label Dependabot PRs
   - name: Label Dependabot PRs
@@ -63,23 +51,10 @@ pull_request_rules:
           - dependencies
           - automated
 
-  # ⚠️ Auto-label large PRs
-  - name: Label large PRs
-    conditions:
-      - files-changed>20
-    actions:
-      label:
-        add:
-          - large-pr
-      comment:
-        message: |
-          ⚠️ This PR is quite large ({{files-changed}} files changed).
-          Consider breaking it into smaller PRs for easier review.
-
   # 🐛 Auto-label by PR title prefix
   - name: Label bug fixes
     conditions:
-      - title~=^fix(\(.*\))?:
+      - 'title~=^fix'
     actions:
       label:
         add:
@@ -87,7 +62,7 @@ pull_request_rules:
 
   - name: Label features
     conditions:
-      - title~=^feat(\(.*\))?:
+      - 'title~=^feat'
     actions:
       label:
         add:
@@ -95,7 +70,7 @@ pull_request_rules:
 
   - name: Label documentation
     conditions:
-      - title~=^docs(\(.*\))?:
+      - 'title~=^docs'
     actions:
       label:
         add:
@@ -103,7 +78,7 @@ pull_request_rules:
 
   - name: Label refactoring
     conditions:
-      - title~=^refactor(\(.*\))?:
+      - 'title~=^refactor'
     actions:
       label:
         add:
@@ -111,35 +86,8 @@ pull_request_rules:
 
   - name: Label tests
     conditions:
-      - title~=^test(\(.*\))?:
+      - 'title~=^test'
     actions:
       label:
         add:
           - tests
-
-  # 🚫 Block merge if CI fails
-  - name: Block merge if checks are failing
-    conditions:
-      - or:
-          - check-failure=TypeScript Check
-          - check-failure=Lint Code
-          - check-failure=Check Formatting
-          - check-failure=Tests & Coverage
-          - check-failure=Build Application
-    actions:
-      comment:
-        message: |
-          ❌ Cannot merge: CI checks are failing
-          Please fix the failing checks before merging.
-
-  # 🔒 Require approval for non-bot PRs
-  - name: Request review for non-Dependabot PRs
-    conditions:
-      - -author=dependabot[bot]
-      - -draft
-      - '#approved-reviews-by<1'
-    actions:
-      comment:
-        message: |
-          👀 This PR needs at least 1 approval before merging.
-          Add the `automerge` label after approval to auto-merge.
