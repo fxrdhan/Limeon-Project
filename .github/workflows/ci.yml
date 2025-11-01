@@ -205,64 +205,31 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: ${{ github.actor != 'dependabot[bot]' }}
 
-  # 🏗️ Build - runs after all checks pass (only if build-affecting files changed)
+  # 🏗️ Build - always runs, but skips actual build if not needed
   build:
     name: Build Application
     runs-on: ubuntu-latest
     needs: [detect-changes, test]
     if: |
       always() &&
-      needs.detect-changes.outputs.needs_build == 'true' &&
+      (needs.detect-changes.outputs.critical == 'true' || needs.detect-changes.outputs.needs_build == 'true') &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     permissions:
       contents: read
       actions: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check if build is needed
+        id: check
+        run: |
+          if [ "${{ needs.detect-changes.outputs.needs_build }}" == "true" ]; then
+            echo "needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "needed=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Build application
-        run: yarn build
-        env:
-          # IDE warnings about these secrets are expected and safe to ignore
-          # They occur because the VSCode extension can't verify secrets
-          # The workflow will work correctly when secrets are configured
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: dist/
-          retention-days: 7
-
-  # ⏭️ Skip build for test-only or script-only changes
-  skip-build:
-    name: Build Skipped (Not Needed)
-    runs-on: ubuntu-latest
-    needs: [detect-changes, test]
-    if: |
-      always() &&
-      needs.detect-changes.outputs.critical == 'true' &&
-      needs.detect-changes.outputs.needs_build == 'false' &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
-    steps:
-      - name: Build not needed
+      - name: Skip build message
+        if: steps.check.outputs.needed == 'false'
         run: |
           echo "⏭️ Build skipped - no build-affecting files changed"
           echo ""
@@ -270,10 +237,43 @@ jobs:
           echo "  • Test files (*.test.ts, *.test.tsx)"
           echo "  • Scripts (scripts/**)"
           echo "  • Workflows (.github/workflows/**)"
-          echo "  • Type definitions (*.d.ts)"
           echo ""
           echo "✅ All checks passed (typecheck, lint, test)"
-          echo "⚡ Saved ~2 minutes of CI time by skipping build!"
+          echo "⚡ Saved ~2 minutes of CI time!"
+
+      - name: Checkout code
+        if: steps.check.outputs.needed == 'true'
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        if: steps.check.outputs.needed == 'true'
+        run: corepack enable
+
+      - name: Setup Node.js
+        if: steps.check.outputs.needed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        if: steps.check.outputs.needed == 'true'
+        run: yarn install --immutable
+
+      - name: Build application
+        if: steps.check.outputs.needed == 'true'
+        run: yarn build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Upload build artifacts
+        if: steps.check.outputs.needed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: dist/
+          retention-days: 7
 
   # 📝 Lightweight check for docs & dev-only changes
   docs-check:
