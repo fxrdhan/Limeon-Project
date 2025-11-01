@@ -70,3 +70,13 @@ This project is built with:
 | **jsdiff**          | [GitHub](https://github.com/kpdecker/jsdiff)          | Text diff                                   |
 | **fuzzysort**       | [GitHub](https://github.com/farzher/fuzzysort)        | SublimeText-like fuzzy search               |
 | **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | React toast notifications                   |
+
+---
+
+## 🤖 CI/CD Automation
+
+This project uses automated workflows for quality assurance and dependency management:
+
+- **GitHub Actions** - Runs TypeScript checks, linting, formatting, tests, and builds on every PR
+- **Dependabot** - Automatically creates PRs for dependency updates every Monday
+- **Mergify** - Auto-merges approved PRs when all CI checks pass
