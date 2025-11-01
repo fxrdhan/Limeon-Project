@@ -6,11 +6,11 @@ pull_request_rules:
   - name: Auto-merge Dependabot PRs when CI passes
     conditions:
       - author=dependabot[bot]
-      - check-success=CI / TypeScript Check (pull_request)
-      - check-success=CI / Lint Code (pull_request)
-      - check-success=CI / Check Formatting (pull_request)
-      - check-success=CI / Tests & Coverage (pull_request)
-      - check-success=CI / Build Application (pull_request)
+      - check-success=TypeScript Check
+      - check-success=Lint Code
+      - check-success=Check Formatting
+      - check-success=Tests & Coverage
+      - check-success=Build Application
       - '#approved-reviews-by>=0'
     actions:
       merge:
@@ -25,11 +25,11 @@ pull_request_rules:
   - name: Auto-merge PRs with automerge label
     conditions:
       - label=automerge
-      - check-success=CI / TypeScript Check (pull_request)
-      - check-success=CI / Lint Code (pull_request)
-      - check-success=CI / Check Formatting (pull_request)
-      - check-success=CI / Tests & Coverage (pull_request)
-      - check-success=CI / Build Application (pull_request)
+      - check-success=TypeScript Check
+      - check-success=Lint Code
+      - check-success=Check Formatting
+      - check-success=Tests & Coverage
+      - check-success=Build Application
       - '#approved-reviews-by>=0'
       - -draft
     actions:
