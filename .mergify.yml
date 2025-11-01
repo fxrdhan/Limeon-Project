@@ -2,6 +2,38 @@
 # Documentation: https://docs.mergify.com/
 
 pull_request_rules:
+  # 📝 Fast-track auto-merge for docs & dev-only changes
+  - name: Auto-merge docs & dev-only PRs
+    conditions:
+      - files~=^(.*\.md|LICENSE|\.github/(ISSUE_TEMPLATE/.*|PULL_REQUEST_TEMPLATE\.md)|supabase/.*)$
+      - check-success=Documentation & Dev Files Check
+      - '#approved-reviews-by>=1'
+      - -draft
+    actions:
+      merge:
+        method: squash
+      delete_head_branch: {}
+      comment:
+        message: |
+          ✅ Auto-merged by Mergify (docs/dev-only change)
+          📝 Only documentation or local dev files (supabase/) modified - skipped heavy checks for efficiency
+
+  # ⚙️ Fast-track auto-merge for config-only changes
+  - name: Auto-merge config-only PRs
+    conditions:
+      - files~=^(\.mergify\.yml|\.github/dependabot\.yml|\.prettierrc.*|\.prettierignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example)$
+      - check-success=Configuration Check
+      - '#approved-reviews-by>=1'
+      - -draft
+    actions:
+      merge:
+        method: squash
+      delete_head_branch: {}
+      comment:
+        message: |
+          ✅ Auto-merged by Mergify (config-only change)
+          ⚙️ Only configuration files modified - skipped tests & build for efficiency
+
   # 🤖 Auto-merge for Dependabot PRs
   - name: Auto-merge Dependabot PRs when CI passes
     conditions:
@@ -91,3 +123,35 @@ pull_request_rules:
       label:
         add:
           - tests
+
+  # 📝 Auto-label docs & dev-only PRs
+  - name: Label docs & dev-only changes
+    conditions:
+      - files~=^(.*\.md|LICENSE|\.github/(ISSUE_TEMPLATE/.*|PULL_REQUEST_TEMPLATE\.md)|supabase/.*)$
+      - -files~=^(?!.*\.md|LICENSE|\.github/(ISSUE_TEMPLATE/.*|PULL_REQUEST_TEMPLATE\.md)|supabase/.*).*$
+    actions:
+      label:
+        add:
+          - documentation
+          - skip-ci-heavy
+      comment:
+        message: |
+          📝 This PR only modifies documentation or local dev files
+          🗂️ Changed: docs, supabase (local dev setup), or other non-production files
+          ⚡ Heavy CI checks (typecheck, tests, build) will be skipped to save resources
+
+  # ⚙️ Auto-label config-only PRs
+  - name: Label config-only changes
+    conditions:
+      - files~=^(\.mergify\.yml|\.github/dependabot\.yml|\.prettierrc.*|\.prettierignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example)$
+      - -files~=^(?!\.mergify\.yml|\.github/dependabot\.yml|\.prettierrc.*|\.prettierignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example).*$
+    actions:
+      label:
+        add:
+          - configuration
+          - skip-ci-partial
+      comment:
+        message: |
+          ⚙️ This PR only modifies configuration files
+          ⚡ Heavy CI checks (typecheck, tests, build) will be skipped to save resources
+          📋 Only lint + format check will run
