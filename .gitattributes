@@ -49,6 +49,23 @@ webpack.config.* linguist-vendored
 
 # Supabase files (exclude from language stats)
 supabase/** linguist-detectable=false
+*.sql linguist-vendored
+*.json linguist-generated
+
+# GitHub workflow files
+.github/** linguist-vendored
+*.yml linguist-vendored
+*.yaml linguist-vendored
+
+# Shell scripts
+*.sh linguist-vendored
+
+# Yarn files
+.yarn/** linguist-vendored
+*.cjs linguist-vendored
+
+# HTML files
+*.html linguist-vendored
 
 # Generated files
 dist/** linguist-generated
