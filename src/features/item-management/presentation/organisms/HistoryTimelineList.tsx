@@ -56,6 +56,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     []
   );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Find the latest version number (current version should not have restore button)
   const latestVersion = history
@@ -97,6 +98,37 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   useEffect(() => {
     setSelectedForCompare([]);
   }, [allowMultiSelect]);
+
+  // Cleanup hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = (itemId: string) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    // Set new timeout for 150ms delay
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredItem(itemId);
+    }, 150);
+  };
+
+  const handleMouseLeave = () => {
+    // Clear timeout if mouse leaves before delay completes
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    // Immediately remove hover state
+    setHoveredItem(null);
+  };
 
   const handleRestore = (e: React.MouseEvent, version: number) => {
     e.stopPropagation();
@@ -274,8 +306,8 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                     )} ${
                       isExpanded ? 'shadow-md' : ''
                     } border border-gray-200 hover:border-gray-300`}
-                    onMouseEnter={() => setHoveredItem(item.id)}
-                    onMouseLeave={() => setHoveredItem(null)}
+                    onMouseEnter={() => handleMouseEnter(item.id)}
+                    onMouseLeave={handleMouseLeave}
                     onClick={() => handleItemClick(item)}
                   >
                     <div className="flex items-center justify-between text-sm">
