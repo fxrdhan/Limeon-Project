@@ -34,7 +34,7 @@ pull_request_rules:
           ✅ Auto-merged by Mergify (config-only change)
           ⚙️ Only configuration files modified - skipped tests & build for efficiency
 
-  # 🤖 Auto-merge for Dependabot PRs
+  # 🤖 Auto-merge for Dependabot PRs (with build when needed)
   - name: Auto-merge Dependabot PRs when CI passes
     conditions:
       - author=dependabot[bot]
@@ -42,7 +42,9 @@ pull_request_rules:
       - check-success=Lint Code
       - check-success=Check Formatting
       - check-success=Tests & Coverage
-      - check-success=Build Application
+      - or:
+          - check-success=Build Application
+          - check-success=Build Skipped (Not Needed)
       - '#approved-reviews-by>=1'
     actions:
       merge:
@@ -53,7 +55,7 @@ pull_request_rules:
           ✅ Auto-merged by Mergify
           All checks passed, Dependabot PR has been automatically merged.
 
-  # 🏷️ Auto-merge for PRs with 'automerge' label
+  # 🏷️ Auto-merge for PRs with 'automerge' label (with build when needed)
   - name: Auto-merge PRs with automerge label
     conditions:
       - label=automerge
@@ -61,7 +63,9 @@ pull_request_rules:
       - check-success=Lint Code
       - check-success=Check Formatting
       - check-success=Tests & Coverage
-      - check-success=Build Application
+      - or:
+          - check-success=Build Application
+          - check-success=Build Skipped (Not Needed)
       - '#approved-reviews-by>=1'
       - -draft
     actions:
