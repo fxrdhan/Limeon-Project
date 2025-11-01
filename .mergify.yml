@@ -35,7 +35,7 @@ pull_request_rules:
           ⚙️ Only configuration files modified - skipped tests & build for efficiency
 
   # 🤖 Auto-merge for Dependabot PRs
-  # Uses OR condition to accept either actual build or skip-build success
+  # Build Application always runs (either actual build or skip message)
   - name: Auto-merge Dependabot PRs when CI passes
     conditions:
       - author=dependabot[bot]
@@ -43,9 +43,7 @@ pull_request_rules:
       - check-success=Lint Code
       - check-success=Check Formatting
       - check-success=Tests & Coverage
-      - or:
-          - check-success=Build Application
-          - check-success=Build Skipped (Not Needed)
+      - check-success=Build Application
       - '#approved-reviews-by>=1'
     actions:
       merge:
@@ -57,7 +55,7 @@ pull_request_rules:
           All checks passed, Dependabot PR has been automatically merged.
 
   # 🏷️ Auto-merge for PRs with 'automerge' label
-  # Uses OR condition to accept either actual build or skip-build success
+  # Build Application always runs (either actual build or skip message)
   - name: Auto-merge PRs with automerge label
     conditions:
       - label=automerge
@@ -65,9 +63,7 @@ pull_request_rules:
       - check-success=Lint Code
       - check-success=Check Formatting
       - check-success=Tests & Coverage
-      - or:
-          - check-success=Build Application
-          - check-success=Build Skipped (Not Needed)
+      - check-success=Build Application
       - '#approved-reviews-by>=1'
       - -draft
     actions:
