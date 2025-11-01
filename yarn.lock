@@ -2252,7 +2252,7 @@ __metadata:
     framer-motion: "npm:^12.23.24"
     fuzzysort: "npm:^3.1.0"
     globals: "npm:^16.4.0"
-    google-auth-library: "npm:^10.3.0"
+    google-auth-library: "npm:^10.5.0"
     googleapis: "npm:^164.0.0"
     happy-dom: "npm:^20.0.7"
     husky: "npm:^9.1.7"
@@ -3422,6 +3422,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"gcp-metadata@npm:^8.0.0":
+  version: 8.1.2
+  resolution: "gcp-metadata@npm:8.1.2"
+  dependencies:
+    gaxios: "npm:^7.0.0"
+    google-logging-utils: "npm:^1.0.0"
+    json-bigint: "npm:^1.0.0"
+  checksum: 10c0/15a61231a9410dc11c2828d2c9fdc8b0a939f1af746195c44edc6f2ffea0acab52cef3a7b9828069a36fd5d68bda730f7328a415fe42a01258f6e249dfba6908
+  languageName: node
+  linkType: hard
+
 "get-caller-file@npm:^2.0.5":
   version: 2.0.5
   resolution: "get-caller-file@npm:2.0.5"
@@ -3538,18 +3549,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"google-auth-library@npm:^10.3.0":
-  version: 10.3.0
-  resolution: "google-auth-library@npm:10.3.0"
+"google-auth-library@npm:^10.5.0":
+  version: 10.5.0
+  resolution: "google-auth-library@npm:10.5.0"
   dependencies:
     base64-js: "npm:^1.3.0"
     ecdsa-sig-formatter: "npm:^1.0.11"
     gaxios: "npm:^7.0.0"
-    gcp-metadata: "npm:^7.0.0"
+    gcp-metadata: "npm:^8.0.0"
     google-logging-utils: "npm:^1.0.0"
     gtoken: "npm:^8.0.0"
     jws: "npm:^4.0.0"
-  checksum: 10c0/7500ee430025bbc6435094e3147767d296d2e669bb7414b44d1771046bff4bd2de684364f8c52b47e90ab88a6ea3b55ff4202397474a40ccb85a02d06edaa652
+  checksum: 10c0/49d3931d20b1f4a4d075216bf5518e2b3396dcf441a8f1952611cf3b6080afb1261c3d32009609047ee4a1cc545269a74b4957e6bba9cce840581df309c4b145
   languageName: node
   linkType: hard
 
