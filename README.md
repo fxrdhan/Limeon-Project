@@ -49,18 +49,20 @@ This project is built with:
 ![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)
 ![Prettier](https://img.shields.io/badge/prettier-%23F7B93E.svg?style=for-the-badge&logo=prettier&logoColor=black)
 ![Husky](https://img.shields.io/badge/husky-%23323330.svg?style=for-the-badge&logo=git&logoColor=white)
+![Vitest](https://img.shields.io/badge/vitest-%23729B1B.svg?style=for-the-badge&logo=vitest&logoColor=white)
 
 </div>
 
-| Technology            | Link                                         | Description      |
-| --------------------- | -------------------------------------------- | ---------------- |
-| **Yarn**              | [Website](https://www.yarnpkg.com/)          | Package manager  |
-| **Vite**              | [Website](https://vitejs.dev/)               | Build tool       |
-| **Sass/SCSS**         | [Website](https://sass-lang.com/)            | CSS preprocessor |
-| **SWC**               | [Website](https://swc.rs/)                   | TS/JS compiler   |
-| **TypeScript ESLint** | [Website](https://typescript-eslint.io/)     | Linter           |
-| **Prettier**          | [Website](https://prettier.io/)              | Code formatter   |
-| **Husky**             | [Website](https://typicode.github.io/husky/) | Git hooks        |
+| Technology            | Link                                         | Description            |
+| --------------------- | -------------------------------------------- | ---------------------- |
+| **Yarn**              | [Website](https://www.yarnpkg.com/)          | Package manager        |
+| **Vite**              | [Website](https://vitejs.dev/)               | Build tool             |
+| **Sass/SCSS**         | [Website](https://sass-lang.com/)            | CSS preprocessor       |
+| **SWC**               | [Website](https://swc.rs/)                   | TS/JS compiler         |
+| **TypeScript ESLint** | [Website](https://typescript-eslint.io/)     | Linter                 |
+| **Prettier**          | [Website](https://prettier.io/)              | Code formatter         |
+| **Husky**             | [Website](https://typicode.github.io/husky/) | Git hooks              |
+| **Vitest**            | [Website](https://vitest.dev/)               | Unit testing framework |
 
 ### Additional Libraries
 
