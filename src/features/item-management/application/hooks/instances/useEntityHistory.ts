@@ -252,8 +252,9 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         },
         payload => {
           // Client-side filtering by entity_id
-          const recordEntityId =
-            payload.new?.entity_id || payload.old?.entity_id;
+          const newRecord = payload.new as EntityHistoryItem | null;
+          const oldRecord = payload.old as EntityHistoryItem | null;
+          const recordEntityId = newRecord?.entity_id || oldRecord?.entity_id;
 
           if (HISTORY_DEBUG) {
             console.log('🔄 Entity history event received:', {
