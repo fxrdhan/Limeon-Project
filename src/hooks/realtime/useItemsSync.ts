@@ -59,14 +59,17 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
 
         // Invalidate all item master queries
         queryClient.invalidateQueries({ queryKey: ['items'] });
-        queryClient.invalidateQueries({ queryKey: ['categories'] });
-        queryClient.invalidateQueries({ queryKey: ['types'] });
-        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({
+          queryKey: ['masterData', 'categories'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['masterData', 'types'] });
         queryClient.invalidateQueries({ queryKey: ['item_units'] });
-        queryClient.invalidateQueries({ queryKey: ['packages'] });
+        queryClient.invalidateQueries({ queryKey: ['masterData', 'packages'] });
         queryClient.invalidateQueries({ queryKey: ['item_packages'] });
-        queryClient.invalidateQueries({ queryKey: ['dosages'] });
-        queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
+        queryClient.invalidateQueries({ queryKey: ['masterData', 'dosages'] });
+        queryClient.invalidateQueries({
+          queryKey: ['masterData', 'manufacturers'],
+        });
       };
 
       // All item master tables
