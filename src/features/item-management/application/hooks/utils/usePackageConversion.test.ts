@@ -44,10 +44,10 @@ describe('usePackageConversion', () => {
       });
     });
 
-    it('should set base unit and prices', () => {
+    it('should set base unit and prices', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBaseUnit('Strip');
         result.current.setBasePrice(10000);
         result.current.setSellPrice(15000);
@@ -58,10 +58,10 @@ describe('usePackageConversion', () => {
       expect(result.current.sellPrice).toBe(15000);
     });
 
-    it('should handle decimal and zero prices', () => {
+    it('should handle decimal and zero prices', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000.5);
         result.current.setSellPrice(15000.75);
       });
@@ -72,15 +72,15 @@ describe('usePackageConversion', () => {
   });
 
   describe('addPackageConversion', () => {
-    it('should calculate prices from conversion rate', () => {
+    it('should calculate prices from conversion rate', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
         result.current.setSellPrice(12000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -94,15 +94,15 @@ describe('usePackageConversion', () => {
       expect(result.current.conversions[0].sell_price).toBe(1200); // 12000 / 10
     });
 
-    it('should use provided prices when available (override)', () => {
+    it('should use provided prices when available (override)', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
         result.current.setSellPrice(12000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -117,14 +117,14 @@ describe('usePackageConversion', () => {
       expect(result.current.conversions[0].sell_price).toBe(6000);
     });
 
-    it('should add multiple conversions with unique IDs', () => {
+    it('should add multiple conversions with unique IDs', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -145,14 +145,14 @@ describe('usePackageConversion', () => {
       expect(new Set(ids).size).toBe(2); // All unique
     });
 
-    it('should handle edge cases: division by zero and very small rates', () => {
+    it('should handle edge cases: division by zero and very small rates', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
       });
 
-      act(() => {
+      await act(async () => {
         // Division by zero - returns Infinity (not ideal but handled)
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
@@ -164,7 +164,7 @@ describe('usePackageConversion', () => {
 
       expect(result.current.conversions[0].base_price).toBe(Infinity);
 
-      act(() => {
+      await act(async () => {
         // Very small rate
         result.current.addPackageConversion({
           unit: { id: 'unit-3', name: 'Tablet' },
@@ -179,14 +179,14 @@ describe('usePackageConversion', () => {
   });
 
   describe('removePackageConversion', () => {
-    it('should remove specific conversion by ID', () => {
+    it('should remove specific conversion by ID', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -204,7 +204,7 @@ describe('usePackageConversion', () => {
 
       const secondConversionId = result.current.conversions[1].id;
 
-      act(() => {
+      await act(async () => {
         result.current.removePackageConversion(secondConversionId);
       });
 
@@ -214,15 +214,15 @@ describe('usePackageConversion', () => {
   });
 
   describe('recalculateBasePrices', () => {
-    it('should calculate prices correctly when conversions exist', () => {
+    it('should calculate prices correctly when conversions exist', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
         result.current.setSellPrice(12000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -235,14 +235,14 @@ describe('usePackageConversion', () => {
       expect(result.current.conversions[0].sell_price).toBe(1200);
     });
 
-    it('should not recalculate if skipRecalculation flag is set', () => {
+    it('should not recalculate if skipRecalculation flag is set', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -253,7 +253,7 @@ describe('usePackageConversion', () => {
 
       const initialPrice = result.current.conversions[0].base_price;
 
-      act(() => {
+      await act(async () => {
         result.current.skipNextRecalculation();
         result.current.setBasePrice(20000);
         result.current.recalculateBasePrices();
@@ -262,16 +262,16 @@ describe('usePackageConversion', () => {
       expect(result.current.conversions[0].base_price).toBe(initialPrice);
     });
 
-    it('should handle zero prices and floating point calculations', () => {
+    it('should handle zero prices and floating point calculations', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
       // Test zero price handling
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(0);
         result.current.setSellPrice(0);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
@@ -285,12 +285,12 @@ describe('usePackageConversion', () => {
       // Test floating point calculations
       const { result: result2 } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result2.current.setBasePrice(10000);
         result2.current.setSellPrice(12000);
       });
 
-      act(() => {
+      await act(async () => {
         result2.current.addPackageConversion({
           unit: { id: 'unit-3', name: 'Tablet' },
           unit_name: 'Tablet',
@@ -307,30 +307,27 @@ describe('usePackageConversion', () => {
   });
 
   describe('resetConversions and setConversions', () => {
-    it('should clear all conversions and reset form data', () => {
+    it('should clear all conversions and reset form data', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
-      act(() => {
+      await act(async () => {
         result.current.setBasePrice(10000);
       });
 
-      act(() => {
+      await act(async () => {
         result.current.addPackageConversion({
           unit: { id: 'unit-2', name: 'Box' },
           unit_name: 'Box',
           to_unit_id: 'unit-2',
           conversion_rate: 10,
         } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
-      });
-
-      act(() => {
         result.current.setPackageConversionFormData({
           unit: 'Box',
           conversion_rate: 10,
         } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
-      act(() => {
+      await act(async () => {
         result.current.resetConversions();
       });
 
@@ -341,7 +338,7 @@ describe('usePackageConversion', () => {
       });
     });
 
-    it('should set conversions directly (for loading from DB)', () => {
+    it('should set conversions directly (for loading from DB)', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
       const newConversions: PackageConversion[] = [
@@ -356,7 +353,7 @@ describe('usePackageConversion', () => {
         },
       ];
 
-      act(() => {
+      await act(async () => {
         result.current.setConversions(newConversions);
       });
 
