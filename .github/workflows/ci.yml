@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       critical: ${{ steps.filter.outputs.critical }}
+      needs_build: ${{ steps.filter.outputs.needs_build }}
       config: ${{ steps.filter.outputs.config }}
       docs: ${{ steps.filter.outputs.docs }}
     steps:
@@ -27,7 +28,7 @@ jobs:
         id: filter
         with:
           filters: |
-            # Critical changes that need full CI (typecheck, lint, test, build)
+            # Critical changes that need typecheck + lint + test (but not always build)
             critical:
               - 'src/**'
               - 'scripts/**'
@@ -43,6 +44,22 @@ jobs:
               - '.env'
               - '.env.*'
               - '.github/workflows/**'
+
+            # Subset of critical that actually needs BUILD (excludes test files, scripts, workflows)
+            needs_build:
+              - 'src/**/!(*.test).{ts,tsx,scss,css}'
+              - 'src/**/*.{jpg,jpeg,png,gif,svg,webp}'
+              - 'public/**'
+              - 'package.json'
+              - 'yarn.lock'
+              - '.yarnrc.yml'
+              - 'tsconfig*.json'
+              - 'vite.config.*'
+              - '.swcrc'
+              - 'index.html'
+              - '.env'
+              - '.env.*'
+              # NOTE: .github/workflows/** excluded - workflow changes don't affect app build
 
             # Config-only changes that need lint + format only (skip tests & build)
             config:
@@ -188,14 +205,14 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: ${{ github.actor != 'dependabot[bot]' }}
 
-  # 🏗️ Build - runs after all checks pass
+  # 🏗️ Build - runs after all checks pass (only if build-affecting files changed)
   build:
     name: Build Application
     runs-on: ubuntu-latest
     needs: [detect-changes, test]
     if: |
       always() &&
-      needs.detect-changes.outputs.critical == 'true' &&
+      needs.detect-changes.outputs.needs_build == 'true' &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     permissions:
@@ -232,6 +249,31 @@ jobs:
           name: build
           path: dist/
           retention-days: 7
+
+  # ⏭️ Skip build for test-only or script-only changes
+  skip-build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [detect-changes, test]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.critical == 'true' &&
+      needs.detect-changes.outputs.needs_build == 'false' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    steps:
+      - name: Build not needed
+        run: |
+          echo "⏭️ Build skipped - no build-affecting files changed"
+          echo ""
+          echo "Changed files don't affect production build:"
+          echo "  • Test files (*.test.ts, *.test.tsx)"
+          echo "  • Scripts (scripts/**)"
+          echo "  • Workflows (.github/workflows/**)"
+          echo "  • Type definitions (*.d.ts)"
+          echo ""
+          echo "✅ All checks passed (typecheck, lint, test)"
+          echo "⚡ Saved ~2 minutes of CI time by skipping build!"
 
   # 📝 Lightweight check for docs & dev-only changes
   docs-check:
