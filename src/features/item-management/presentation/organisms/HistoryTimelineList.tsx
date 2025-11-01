@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
 import { FaHistory } from 'react-icons/fa';
 import Button from '@/components/button';
@@ -175,6 +176,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     return 'hover:bg-gray-50';
   };
 
+  // Show loading state first (prevents flash of empty state)
   if (isLoading) {
     return (
       <div className="p-6 text-center">
@@ -184,6 +186,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     );
   }
 
+  // Only show empty state when NOT loading and no history exists
   if (!history || history.length === 0) {
     return (
       <div className="p-6 text-center text-gray-500">
@@ -213,118 +216,134 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
           ref={scrollContainerRef}
           className="relative space-y-3 max-h-96 overflow-y-auto scrollbar-gutter-stable"
         >
-          {history.map((item, index) => {
-            const isSelected = isItemSelected(item);
-            const isExpanded = isSelected || hoveredItem === item.id;
-            const isFirst = index === 0;
-            const isLast = index === history.length - 1;
+          <AnimatePresence initial={false} mode="popLayout">
+            {history.map((item, index) => {
+              const isSelected = isItemSelected(item);
+              const isExpanded = isSelected || hoveredItem === item.id;
+              const isFirst = index === 0;
+              const isLast = index === history.length - 1;
 
-            return (
-              <div
-                key={item.id}
-                className={`relative ${isFirst ? 'pt-2' : ''} ${isLast ? 'pb-2' : ''}`}
-              >
-                {/* Simple bullet */}
-                <div
-                  className={`absolute left-0 w-3 h-3 rounded-full transition-all duration-200 ${
-                    isSelected
-                      ? allowMultiSelect
-                        ? (() => {
-                            const selectionIndex = selectedForCompare.findIndex(
-                              s => s.id === item.id
-                            );
-                            if (selectionIndex >= 0) {
-                              // Apply flip logic for bullet colors too
-                              if (isFlipped) {
-                                return selectionIndex === 0
-                                  ? 'border-2 border-purple-300 bg-purple-300'
-                                  : 'border-2 border-blue-300 bg-blue-300';
-                              } else {
-                                return selectionIndex === 0
-                                  ? 'border-2 border-blue-300 bg-blue-300'
-                                  : 'border-2 border-purple-300 bg-purple-300';
-                              }
-                            }
-                            return 'border-2 border-gray-300 bg-white';
-                          })()
-                        : 'border-2 border-blue-300 bg-blue-300'
-                      : 'border-2 border-gray-300 bg-white'
-                  } ${isExpanded ? 'top-5' : 'top-5'}`}
-                />
-
-                <div
-                  className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-lg ${getItemBgColor(
-                    item
-                  )} ${
-                    isExpanded ? 'shadow-md' : ''
-                  } border border-gray-200 hover:border-gray-300`}
-                  onMouseEnter={() => setHoveredItem(item.id)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  onClick={() => handleItemClick(item)}
+              return (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 30,
+                    mass: 1,
+                    layout: { duration: 0.3 },
+                  }}
+                  className={`relative ${isFirst ? 'pt-2' : ''} ${isLast ? 'pb-2' : ''}`}
                 >
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`text-xs px-2 py-1 rounded font-medium ${
-                          item.action_type === 'INSERT'
-                            ? 'bg-green-100 text-green-700'
-                            : item.action_type === 'UPDATE'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {item.action_type}
-                      </span>
-                      <span className="text-gray-500 text-xs">
-                        {formatDateTime(item.changed_at)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                        v{item.version_number}
-                      </span>
-                      {showRestoreButton &&
-                        item.version_number < latestVersion &&
-                        onRestore && (
-                          <Button
-                            variant="text"
-                            size="sm"
-                            onClick={e => handleRestore(e, item.version_number)}
-                            className="text-orange-600 hover:text-orange-700 p-1"
-                            title="Restore ke versi ini"
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 16 16"
-                              fill="currentColor"
-                            >
-                              <path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z" />
-                              <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z" />
-                            </svg>
-                          </Button>
-                        )}
-                    </div>
-                  </div>
+                  {/* Simple bullet */}
+                  <div
+                    className={`absolute left-0 w-3 h-3 rounded-full transition-all duration-200 ${
+                      isSelected
+                        ? allowMultiSelect
+                          ? (() => {
+                              const selectionIndex =
+                                selectedForCompare.findIndex(
+                                  s => s.id === item.id
+                                );
+                              if (selectionIndex >= 0) {
+                                // Apply flip logic for bullet colors too
+                                if (isFlipped) {
+                                  return selectionIndex === 0
+                                    ? 'border-2 border-purple-300 bg-purple-300'
+                                    : 'border-2 border-blue-300 bg-blue-300';
+                                } else {
+                                  return selectionIndex === 0
+                                    ? 'border-2 border-blue-300 bg-blue-300'
+                                    : 'border-2 border-purple-300 bg-purple-300';
+                                }
+                              }
+                              return 'border-2 border-gray-300 bg-white';
+                            })()
+                          : 'border-2 border-blue-300 bg-blue-300'
+                        : 'border-2 border-gray-300 bg-white'
+                    } ${isExpanded ? 'top-5' : 'top-5'}`}
+                  />
 
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isExpanded && item.changed_fields
-                        ? 'max-h-24 opacity-100 mt-3'
-                        : 'max-h-0 opacity-0 mt-0'
-                    }`}
+                    className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-lg ${getItemBgColor(
+                      item
+                    )} ${
+                      isExpanded ? 'shadow-md' : ''
+                    } border border-gray-200 hover:border-gray-300`}
+                    onMouseEnter={() => setHoveredItem(item.id)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    onClick={() => handleItemClick(item)}
                   >
-                    {item.changed_fields && (
-                      <div className="text-xs p-3 rounded-lg border transition-all duration-300 bg-gray-50 border-gray-200 text-gray-600">
-                        <span className="font-medium">Changed fields:</span>{' '}
-                        {Object.keys(item.changed_fields).join(', ')}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`text-xs px-2 py-1 rounded font-medium ${
+                            item.action_type === 'INSERT'
+                              ? 'bg-green-100 text-green-700'
+                              : item.action_type === 'UPDATE'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {item.action_type}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          {formatDateTime(item.changed_at)}
+                        </span>
                       </div>
-                    )}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+                          v{item.version_number}
+                        </span>
+                        {showRestoreButton &&
+                          item.version_number < latestVersion &&
+                          onRestore && (
+                            <Button
+                              variant="text"
+                              size="sm"
+                              onClick={e =>
+                                handleRestore(e, item.version_number)
+                              }
+                              className="text-orange-600 hover:text-orange-700 p-1"
+                              title="Restore ke versi ini"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 16 16"
+                                fill="currentColor"
+                              >
+                                <path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z" />
+                                <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z" />
+                              </svg>
+                            </Button>
+                          )}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isExpanded && item.changed_fields
+                          ? 'max-h-24 opacity-100 mt-3'
+                          : 'max-h-0 opacity-0 mt-0'
+                      }`}
+                    >
+                      {item.changed_fields && (
+                        <div className="text-xs p-3 rounded-lg border transition-all duration-300 bg-gray-50 border-gray-200 text-gray-600">
+                          <span className="font-medium">Changed fields:</span>{' '}
+                          {Object.keys(item.changed_fields).join(', ')}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
     </div>
