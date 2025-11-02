@@ -39,9 +39,8 @@ export const useDropdownPosition = (
     const context = canvas.getContext('2d');
     if (!context) return 200;
 
-    // Use typical dropdown font settings
-    context.font =
-      '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    // Use Quicksand font for text measurement
+    context.font = '14px Quicksand';
 
     let maxWidth = 0;
     options.forEach(option => {

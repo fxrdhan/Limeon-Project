@@ -2,14 +2,16 @@
 
 @config '../tailwind.config.ts';
 
-:root {
-  font-family: 'General Sans', sans-serif;
-  line-height: 1.5;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  --color-primary: oklch(50.8% 0.118 165.612);
+@layer base {
+  :root {
+    font-weight: 500;
+    line-height: 1.5;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    --color-primary: oklch(50.8% 0.118 165.612);
+  }
 }
 
 body {

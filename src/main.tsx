@@ -5,7 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { configurePersistence } from './lib/queryPersistence';
-import './fonts.css'; // Force General Sans on ALL elements
+import './fonts.css'; // AG Grid font weight customization
 import './output.css';
 
 // Create QueryClient with optimized pharmacy data caching

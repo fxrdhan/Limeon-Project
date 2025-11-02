@@ -6,8 +6,7 @@ export const truncateText = (text: string, maxWidth: number): string => {
 
   if (!context) return text;
 
-  context.font =
-    '14px Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+  context.font = '14px Quicksand';
 
   const textWidth = context.measureText(text).width;
 
@@ -32,8 +31,7 @@ export const shouldTruncateText = (text: string, maxWidth: number): boolean => {
 
   if (!context) return false;
 
-  context.font =
-    '14px Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+  context.font = '14px Quicksand';
 
   return context.measureText(text).width > maxWidth;
 };
