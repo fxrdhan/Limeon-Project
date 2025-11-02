@@ -2,16 +2,17 @@ import React, { useState, useRef } from 'react';
 import Button from '@/components/button';
 import toast from 'react-hot-toast';
 import { FaEye } from 'react-icons/fa';
-import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import { formatDateTime } from '@/lib/formatters';
 import { HISTORY_DEBUG } from '../../config/debug';
 import {
   useItemForm,
   useItemUI,
+  useItemHistory,
 } from '../../shared/contexts/useItemFormContext';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 import DiffText from '../molecules/DiffText';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface ItemHistoryContentProps {
   itemId: string;
@@ -26,6 +27,11 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   const ui = useItemUI();
   const queryClient = useQueryClient();
 
+  // Get pre-fetched history data from context
+  const historyState = useItemHistory();
+  const history = historyState?.data || null;
+  const isLoading = historyState?.isLoading || false;
+
   // Only log props on mount or when itemId changes
   const prevItemId = useRef(itemId);
   if (HISTORY_DEBUG && prevItemId.current !== itemId) {
@@ -36,10 +42,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     });
     prevItemId.current = itemId;
   }
-  const { history, isLoading, restoreVersion } = useEntityHistory(
-    'items',
-    itemId
-  );
+
   const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
@@ -80,13 +83,38 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   const handleRestore = async (version: number) => {
     if (confirm(`Yakin ingin mengembalikan ${itemName} ke versi ${version}?`)) {
       try {
-        await restoreVersion(version);
+        // Find target version from pre-fetched history data
+        const targetVersion = history?.find(h => h.version_number === version);
+        if (!targetVersion) {
+          throw new Error(`Version ${version} not found`);
+        }
+
+        // Get the entity data from the target version
+        const restoreData = { ...targetVersion.entity_data };
+
+        // Remove metadata fields that shouldn't be restored
+        delete restoreData.id;
+        delete restoreData.created_at;
+        delete restoreData.updated_at;
+
+        // Update the current entity with restored data
+        const { error: updateError } = await supabase
+          .from('items')
+          .update({
+            ...restoreData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', itemId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+
+        // Invalidate caches and go back to form
         try {
           await queryClient.invalidateQueries();
         } catch (e) {
           // Non-fatal: failing to invalidate queries should not break the flow
-          // Log for debugging purposes
-
           console.error('Failed to invalidate queries after restore', e);
         }
         ui.goBackToForm();

@@ -24,6 +24,19 @@ interface UseEntityModalLogicProps {
   entityName: string;
   isLoading?: boolean;
   isDeleting?: boolean;
+  // Pre-fetched history data for seamless UX
+  historyState?: {
+    data: Array<{
+      id: string;
+      version_number: number;
+      action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+      changed_at: string;
+      entity_data: Record<string, unknown>;
+      changed_fields?: Record<string, { from: unknown; to: unknown }>;
+    }> | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 }
 
 export const useEntityModalLogic = ({
@@ -36,6 +49,7 @@ export const useEntityModalLogic = ({
   entityName,
   isLoading = false,
   isDeleting = false,
+  historyState,
 }: UseEntityModalLogicProps) => {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -350,6 +364,10 @@ export const useEntityModalLogic = ({
       entityTable: historyData.entityTable,
       entityId: historyData.entityId,
       selectedVersion: historyData.selectedVersion,
+      // Include pre-fetched history data
+      data: historyState?.data || null,
+      isLoading: historyState?.isLoading || false,
+      error: historyState?.error || null,
     },
     comparison: {
       isOpen: comparisonData.isOpen,

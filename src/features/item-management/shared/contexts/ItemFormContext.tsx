@@ -38,6 +38,22 @@ export const ItemRealtimeStateContext = createContext<
   ItemRealtimeState | undefined
 >(undefined);
 // eslint-disable-next-line react-refresh/only-export-components
+export const ItemHistoryStateContext = createContext<
+  | {
+      data: Array<{
+        id: string;
+        version_number: number;
+        action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+        changed_at: string;
+        entity_data: Record<string, unknown>;
+        changed_fields?: Record<string, { from: unknown; to: unknown }>;
+      }> | null;
+      isLoading: boolean;
+      error: string | null;
+    }
+  | undefined
+>(undefined);
+// eslint-disable-next-line react-refresh/only-export-components
 export const ItemFormActionsContext = createContext<
   ItemFormActions | undefined
 >(undefined);
@@ -69,6 +85,7 @@ export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({
   const memoizedPrice = useMemo(() => value.price, [value.price]);
   const memoizedAction = useMemo(() => value.action, [value.action]);
   const memoizedRealtime = useMemo(() => value.realtime, [value.realtime]);
+  const memoizedHistory = useMemo(() => value.history, [value.history]);
   const memoizedFormActions = useMemo(
     () => value.formActions,
     [value.formActions]
@@ -95,6 +112,7 @@ export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({
     { Context: ItemPriceStateContext, value: memoizedPrice },
     { Context: ItemActionStateContext, value: memoizedAction },
     { Context: ItemRealtimeStateContext, value: memoizedRealtime },
+    { Context: ItemHistoryStateContext, value: memoizedHistory },
     { Context: ItemFormActionsContext, value: memoizedFormActions },
     { Context: ItemUIActionsContext, value: memoizedUIActions },
     { Context: ItemModalActionsContext, value: memoizedModalActions },

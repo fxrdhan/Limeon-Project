@@ -12,6 +12,7 @@ import {
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
 import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
+import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
 
 // Template and Organisms
 import ItemModalTemplate from '../ItemModalTemplate';
@@ -119,6 +120,13 @@ const ItemModal: React.FC<ItemModalProps> = ({
       addManufacturerMutation.isPending ||
       deleteItemMutation.isPending,
   });
+
+  // Pre-fetch history data for seamless UX (no loading spinner when opening history)
+  const {
+    history,
+    isLoading: isHistoryLoading,
+    error: historyError,
+  } = useEntityHistory('items', itemId || '');
 
   // Memoized callbacks for realtime to prevent unnecessary reconnections
   const handleItemUpdated = useCallback((payload: unknown) => {
@@ -265,6 +273,11 @@ const ItemModal: React.FC<ItemModalProps> = ({
       addUnitMutation,
       addDosageMutation,
       addManufacturerMutation,
+    },
+    history: {
+      data: history,
+      isLoading: isHistoryLoading,
+      error: historyError,
     },
 
     // Actions

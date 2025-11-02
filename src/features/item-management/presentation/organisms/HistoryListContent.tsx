@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import toast from 'react-hot-toast';
-import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface HistoryListContentProps {
   compareMode?: boolean;
@@ -13,11 +13,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
   compareMode = false,
 }) => {
   const { history: historyState, uiActions, comparison } = useEntityModal();
-  const { entityTable, entityId } = historyState;
-  const { history, isLoading, restoreVersion } = useEntityHistory(
-    entityTable,
-    entityId
-  );
+  const { entityTable, entityId, data: history, isLoading } = historyState;
   const queryClient = useQueryClient();
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
@@ -56,7 +52,33 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
   const handleRestore = async (version: number) => {
     if (confirm(`Yakin ingin mengembalikan data ke versi ${version}?`)) {
       try {
-        await restoreVersion(version);
+        // Find target version from pre-fetched history data
+        const targetVersion = history?.find(h => h.version_number === version);
+        if (!targetVersion) {
+          throw new Error(`Version ${version} not found`);
+        }
+
+        // Get the entity data from the target version
+        const restoreData = { ...targetVersion.entity_data };
+
+        // Remove metadata fields that shouldn't be restored
+        delete restoreData.id;
+        delete restoreData.created_at;
+        delete restoreData.updated_at;
+
+        // Update the current entity with restored data
+        const { error: updateError } = await supabase
+          .from(entityTable)
+          .update({
+            ...restoreData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', entityId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+
         // Invalidate caches and close history without full reload
         try {
           await queryClient.invalidateQueries();

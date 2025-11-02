@@ -46,8 +46,13 @@ const EntityModal: React.FC<EntityModalProps> = ({
   const entityTable = getTableName(entityName);
   const entityId = initialData?.id || '';
 
-  // Get restore function from useEntityHistory hook
-  const { restoreVersion } = useEntityHistory(entityTable, entityId);
+  // Pre-fetch history data for seamless UX (no loading spinner when opening history)
+  const {
+    history,
+    isLoading: isHistoryLoading,
+    error: historyError,
+    restoreVersion,
+  } = useEntityHistory(entityTable, entityId);
 
   const { contextValue, nameInputRef } = useEntityModalLogic({
     isOpen,
@@ -59,6 +64,12 @@ const EntityModal: React.FC<EntityModalProps> = ({
     entityName,
     isLoading,
     isDeleting,
+    // Pass pre-fetched history data to context
+    historyState: {
+      data: history,
+      isLoading: isHistoryLoading,
+      error: historyError,
+    },
   });
 
   // Wrap restoreVersion to handle post-restore actions

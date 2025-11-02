@@ -162,6 +162,19 @@ export interface ItemManagementContextValue {
   price: ItemPriceState;
   action: ItemActionState;
   realtime?: ItemRealtimeState;
+  history?: {
+    // Pre-fetched history data for seamless UX
+    data: Array<{
+      id: string;
+      version_number: number;
+      action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+      changed_at: string;
+      entity_data: Record<string, unknown>;
+      changed_fields?: Record<string, { from: unknown; to: unknown }>;
+    }> | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 
   // Actions
   formActions: ItemFormActions;
@@ -211,6 +224,17 @@ export interface EntityModalContextValue {
     entityTable: string;
     entityId: string;
     selectedVersion?: VersionData;
+    // Pre-fetched history data for seamless UX
+    data: Array<{
+      id: string;
+      version_number: number;
+      action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+      changed_at: string;
+      entity_data: Record<string, unknown>;
+      changed_fields?: Record<string, { from: unknown; to: unknown }>;
+    }> | null;
+    isLoading: boolean;
+    error: string | null;
   };
   comparison: {
     isOpen: boolean;

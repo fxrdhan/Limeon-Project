@@ -17,7 +17,7 @@ interface EntityHistoryItem {
 
 export const useEntityHistory = (entityTable: string, entityId: string) => {
   const [history, setHistory] = useState<EntityHistoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // ← Changed to true to prevent flash
+  const [isLoading, setIsLoading] = useState(false); // ← Start with false for seamless pre-fetch UX
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
