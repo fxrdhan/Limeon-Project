@@ -5,14 +5,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          'Open Sans',
-          'system-ui',
-          'Avenir',
-          'Helvetica',
-          'Arial',
-          'sans-serif',
-        ],
+        sans: ['General Sans'],
+        mono: ['General Sans'],
+        serif: ['General Sans'],
+        display: ['General Sans'],
       },
       colors: {
         primary: 'oklch(50.8% 0.118 165.612)',

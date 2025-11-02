@@ -5,12 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- General Sans from Fontshare -->
+    <link rel="preconnect" href="https://api.fontshare.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap"
+      href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Force General Sans on ALL elements - No fallback -->
+    <style>
+      * {
+        font-family: 'General Sans' !important;
+      }
+    </style>
 
     <title>PharmaSys</title>
   </head>
