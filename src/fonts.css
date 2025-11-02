@@ -1,6 +1,7 @@
 /**
  * Force General Sans on ALL elements
  * No fallback fonts allowed
+ * EXCEPT AG Grid which uses Quicksand
  */
 
 /* Apply to everything aggressively */
@@ -20,4 +21,81 @@ option {
 /* Override any potential inline styles */
 [style*='font-family'] {
   font-family: 'General Sans' !important;
+}
+
+/* Exception: AG Grid uses Quicksand with customizable weights */
+.ag-theme-quartz,
+.ag-theme-quartz *,
+.ag-root-wrapper,
+.ag-root-wrapper *,
+.ag-root,
+.ag-root * {
+  font-family: 'Quicksand' !important;
+}
+
+/* Cell content (table data) - Medium weight untuk data */
+.ag-cell {
+  font-weight: 500 !important;
+}
+
+/* Header table (column headers) - Semibold */
+.ag-header-cell-text,
+.ag-header-cell-label,
+.ag-header-group-cell-label {
+  font-weight: 600 !important;
+}
+
+/* Menu, filter panels, dan popups - Semibold */
+.ag-menu,
+.ag-popup,
+.ag-filter,
+.ag-menu-option-text,
+.ag-filter-filter,
+.ag-filter-toolpanel-instance,
+.ag-tool-panel-wrapper {
+  font-weight: 600 !important;
+}
+
+/* Pagination controls - Semibold */
+.ag-paging-panel {
+  font-weight: 600 !important;
+}
+
+/* Column menu button text - Semibold */
+.ag-menu-option-text {
+  font-weight: 600 !important;
+}
+
+/* Sidebar (columns panel, filters panel) - Semibold */
+.ag-side-bar,
+.ag-side-bar *,
+.ag-side-button-label,
+.ag-column-select-header,
+.ag-column-select-column-label,
+.ag-filter-toolpanel-header,
+.ag-filter-toolpanel-search,
+.ag-primary-cols-list-panel,
+.ag-tool-panel-wrapper {
+  font-weight: 600 !important;
+}
+
+/* Row Group - Semibold */
+.ag-row-group,
+.ag-row-group-indent,
+.ag-row-group-leaf-indent,
+.ag-group-expanded,
+.ag-group-contracted,
+.ag-group-title,
+.ag-group-value,
+.ag-cell-wrapper.ag-row-group,
+.ag-group-component {
+  font-weight: 600 !important;
+}
+
+/* Row group panel (drag and drop area) */
+.ag-column-drop,
+.ag-column-drop-wrapper,
+.ag-column-drop-cell,
+.ag-column-drop-cell-text {
+  font-weight: 600 !important;
 }
