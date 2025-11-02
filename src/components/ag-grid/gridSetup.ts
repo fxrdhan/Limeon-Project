@@ -75,7 +75,7 @@ export const setupAgGrid = () => {
   );
 };
 
-// Default theme with custom colors
+// Default theme with custom colors and Quicksand font
 export const defaultTheme = themeQuartz.withParams({
   inputFocusBorder: {
     color: 'oklch(59.6% 0.145 163.225)',
@@ -83,6 +83,9 @@ export const defaultTheme = themeQuartz.withParams({
     width: 1,
   },
   accentColor: 'oklch(76.5% 0.177 163.223/0.7)',
+  fontFamily: 'Quicksand',
+  fontSize: 15, // Increased from default 14px
+  // Note: fontWeight is not supported in theme params, use CSS instead
 });
 
 // Default column definition
@@ -117,7 +120,7 @@ export const getDefaultGridConfig = () => ({
   suppressRowTransform: true,
   maintainColumnOrder: true,
   animateRows: true,
-  loadThemeGoogleFonts: true,
+  loadThemeGoogleFonts: false, // Disabled - using Quicksand from Fontshare instead
 });
 
 // Initialize AG Grid setup
