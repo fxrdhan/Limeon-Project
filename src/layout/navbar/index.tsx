@@ -154,7 +154,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         <div className="flex items-center h-8">
           <h1 className="flex items-center" style={{ minHeight: '2em' }}>
             <span
-              className="text-2xl font-semibold text-gray-800"
+              className="text-2xl font-bold text-gray-800"
               style={{
                 display: 'inline-block',
                 verticalAlign: 'top',
@@ -172,7 +172,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="text-2xl font-semibold text-gray-800"
+                  className="text-2xl font-bold text-gray-800"
                   style={{
                     display: 'inline-block',
                     whiteSpace: 'nowrap',
@@ -192,7 +192,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     animate={{ opacity: 1, width: 'auto' }}
                     exit={{ opacity: 0, width: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="text-2xl font-semibold text-gray-800"
+                    className="text-2xl font-bold text-gray-800"
                     style={{
                       display: 'inline-block',
                       whiteSpace: 'nowrap',
@@ -215,7 +215,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2, delay: 0.1 }}
-                  className="text-2xl font-semibold text-gray-800"
+                  className="text-2xl font-bold text-gray-800"
                   style={{
                     display: 'inline-block',
                     whiteSpace: 'nowrap',
