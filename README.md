@@ -75,7 +75,7 @@ This project is built with:
 
 ---
 
-## 🤖 CI/CD Automation
+## CI/CD Automation
 
 <div align="center">
 
