@@ -287,10 +287,16 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
       function showLoadingInTab(tab: Window) {
         try {
+          // Get font from Tailwind @theme CSS variable
+          const fontFamily =
+            getComputedStyle(document.documentElement)
+              .getPropertyValue('--font-sans')
+              .trim() || 'system-ui, sans-serif';
+
           tab.document.write(`
             <html>
               <head><title>Creating Google Sheet...</title></head>
-              <body style="font-family: 'Quicksand'; text-align: center; padding: 50px; background: #f5f5f5;">
+              <body style="font-family: ${fontFamily}; text-align: center; padding: 50px; background: #f5f5f5;">
                 <h2>☁️ Creating your Google Sheet...</h2>
                 <p>Please wait while we prepare your data...</p>
                 <div style="margin: 20px auto; width: 50px; height: 50px; border: 3px solid #e3e3e3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>

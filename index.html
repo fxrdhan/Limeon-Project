@@ -5,20 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Fonts from Fontshare -->
+    <!-- Fonts from Fontshare (Primary) -->
     <link rel="preconnect" href="https://api.fontshare.com" />
     <link
       href="https://api.fontshare.com/v2/css?f[]=quicksand@300,400,500,600,700&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Force Quicksand on ALL elements with minimum weight 500 -->
-    <style>
-      * {
-        font-family: 'Quicksand' !important;
-        font-weight: 500 !important;
-      }
-    </style>
+    <!-- Google Fonts Quicksand (Fallback if Fontshare fails) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <title>PharmaSys</title>
   </head>

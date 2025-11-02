@@ -39,8 +39,14 @@ export const useDropdownPosition = (
     const context = canvas.getContext('2d');
     if (!context) return 200;
 
-    // Use Quicksand font for text measurement
-    context.font = '14px Quicksand';
+    // Use font from Tailwind @theme (defined in App.scss)
+    const fontFamily = getComputedStyle(document.documentElement)
+      .getPropertyValue('--font-sans')
+      .trim();
+    const fontSize = getComputedStyle(document.documentElement)
+      .getPropertyValue('--font-size-base')
+      .trim();
+    context.font = `500 ${fontSize} ${fontFamily}`;
 
     let maxWidth = 0;
     options.forEach(option => {

@@ -4,9 +4,8 @@ const config: Config = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['Quicksand'],
-      },
+      // Font family is now defined in @theme directive in App.scss
+      // No need to duplicate here - Tailwind v4 CSS-first approach!
       fontWeight: {
         normal: '500', // Override normal from 400 to 500
       },
