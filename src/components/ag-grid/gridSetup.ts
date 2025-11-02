@@ -75,7 +75,7 @@ export const setupAgGrid = () => {
   );
 };
 
-// Default theme with custom colors and Quicksand font
+// Default theme - uses CSS variables from @theme (App.scss)
 export const defaultTheme = themeQuartz.withParams({
   inputFocusBorder: {
     color: 'oklch(59.6% 0.145 163.225)',
@@ -83,7 +83,7 @@ export const defaultTheme = themeQuartz.withParams({
     width: 1,
   },
   accentColor: 'oklch(76.5% 0.177 163.223/0.7)',
-  fontFamily: 'Quicksand',
+  fontFamily: 'var(--font-sans)', // Reference CSS variable from @theme
   fontSize: 15, // Increased from default 14px
   // Note: fontWeight is not supported in theme params, use CSS instead
 });

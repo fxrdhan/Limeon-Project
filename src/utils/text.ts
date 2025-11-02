@@ -6,7 +6,14 @@ export const truncateText = (text: string, maxWidth: number): string => {
 
   if (!context) return text;
 
-  context.font = '14px Quicksand';
+  // Use font from Tailwind @theme (defined in App.scss)
+  const fontFamily = getComputedStyle(document.documentElement)
+    .getPropertyValue('--font-sans')
+    .trim();
+  const fontSize = getComputedStyle(document.documentElement)
+    .getPropertyValue('--font-size-base')
+    .trim();
+  context.font = `500 ${fontSize} ${fontFamily}`;
 
   const textWidth = context.measureText(text).width;
 
@@ -31,7 +38,14 @@ export const shouldTruncateText = (text: string, maxWidth: number): boolean => {
 
   if (!context) return false;
 
-  context.font = '14px Quicksand';
+  // Use font from Tailwind @theme (defined in App.scss)
+  const fontFamily = getComputedStyle(document.documentElement)
+    .getPropertyValue('--font-sans')
+    .trim();
+  const fontSize = getComputedStyle(document.documentElement)
+    .getPropertyValue('--font-size-base')
+    .trim();
+  context.font = `500 ${fontSize} ${fontFamily}`;
 
   return context.measureText(text).width > maxWidth;
 };

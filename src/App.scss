@@ -2,6 +2,19 @@
 
 @config '../tailwind.config.ts';
 
+@theme {
+  /* Override default font-sans with Quicksand + fallbacks */
+  --font-sans:
+    Quicksand, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  /* Font size tokens for consistent sizing */
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+}
+
 @layer base {
   :root {
     font-weight: 500;

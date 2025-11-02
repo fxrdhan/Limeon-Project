@@ -175,7 +175,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
       // Create a temporary element to measure text width
       const tempElement = document.createElement('span');
-      tempElement.style.font = '14px Quicksand';
+      // Use font from Tailwind @theme (defined in App.scss)
+      const fontFamily = getComputedStyle(document.documentElement)
+        .getPropertyValue('--font-sans')
+        .trim();
+      const fontSize = getComputedStyle(document.documentElement)
+        .getPropertyValue('--font-size-base')
+        .trim();
+      tempElement.style.font = `500 ${fontSize} ${fontFamily}`;
       tempElement.style.visibility = 'hidden';
       tempElement.style.position = 'absolute';
       tempElement.style.whiteSpace = 'nowrap';
