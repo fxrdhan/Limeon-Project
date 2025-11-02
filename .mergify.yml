@@ -75,6 +75,25 @@ pull_request_rules:
           ✅ Auto-merged by Mergify (automerge label)
           All checks passed. Auto-merging with automerge label.
 
+  # 🚀 Global auto-merge for all approved PRs with passing checks
+  - name: Auto-merge approved PRs with all checks passed
+    conditions:
+      - check-success=TypeScript Check
+      - check-success=Lint Code
+      - check-success=Check Formatting
+      - check-success=Tests & Coverage
+      - check-success=Build Application
+      - '#approved-reviews-by>=1'
+      - -draft
+    actions:
+      merge:
+        method: squash
+      delete_head_branch: {}
+      comment:
+        message: |
+          ✅ Auto-merged by Mergify
+          All checks passed and PR approved. Auto-merging to main.
+
   # 🏷️ Auto-label Dependabot PRs
   - name: Label Dependabot PRs
     conditions:
