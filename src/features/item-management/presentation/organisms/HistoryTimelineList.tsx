@@ -208,18 +208,19 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     return 'hover:bg-gray-50';
   };
 
-  // Show loading state first (prevents flash of empty state)
-  if (isLoading) {
-    return (
-      <div className="p-6 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-        <p className="mt-2 text-gray-500">{loadingMessage}</p>
-      </div>
-    );
-  }
-
-  // Only show empty state when NOT loading and no history exists
+  // Only show empty state when no history exists (not loading)
   if (!history || history.length === 0) {
+    // Show loading spinner only if currently loading AND no data yet
+    if (isLoading) {
+      return (
+        <div className="p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-2 text-gray-500">{loadingMessage}</p>
+        </div>
+      );
+    }
+
+    // Show empty state when no data and not loading
     return (
       <div className="p-6 text-center text-gray-500">
         <FaHistory size={48} className="mx-auto mb-4 opacity-30" />

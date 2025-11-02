@@ -4,6 +4,7 @@ import {
   ItemBusinessActionsContext,
   ItemFormActionsContext,
   ItemFormStateContext,
+  ItemHistoryStateContext,
   ItemModalActionsContext,
   ItemModalStateContext,
   ItemPriceStateContext,
@@ -65,4 +66,8 @@ export const useItemActions = () => {
 
 export const useItemRealtime = () => {
   return useContext(ItemRealtimeStateContext);
+};
+
+export const useItemHistory = () => {
+  return useContext(ItemHistoryStateContext);
 };
