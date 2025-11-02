@@ -1,0 +1,23 @@
+/**
+ * Force General Sans on ALL elements
+ * No fallback fonts allowed
+ */
+
+/* Apply to everything aggressively */
+*,
+*::before,
+*::after,
+html,
+body,
+input,
+textarea,
+button,
+select,
+option {
+  font-family: 'General Sans' !important;
+}
+
+/* Override any potential inline styles */
+[style*='font-family'] {
+  font-family: 'General Sans' !important;
+}
