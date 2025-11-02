@@ -5,10 +5,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['General Sans'],
-        mono: ['General Sans'],
-        serif: ['General Sans'],
-        display: ['General Sans'],
+        sans: ['Quicksand'],
+      },
+      fontWeight: {
+        normal: '500', // Override normal from 400 to 500
       },
       colors: {
         primary: 'oklch(50.8% 0.118 165.612)',

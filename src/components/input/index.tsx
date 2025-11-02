@@ -175,7 +175,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
       // Create a temporary element to measure text width
       const tempElement = document.createElement('span');
-      tempElement.style.font = '14px system-ui, -apple-system, sans-serif'; // text-sm
+      tempElement.style.font = '14px Quicksand';
       tempElement.style.visibility = 'hidden';
       tempElement.style.position = 'absolute';
       tempElement.style.whiteSpace = 'nowrap';
