@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
 import { FaHistory } from 'react-icons/fa';
-import Button from '@/components/button';
+import { IoArrowUndo } from 'react-icons/io5';
 import { formatDateTime } from '@/lib/formatters';
 
 export interface HistoryItem {
@@ -329,32 +329,49 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                          v{item.version_number}
-                        </span>
+                        {/* Version badge that transforms into restore button on hover */}
                         {showRestoreButton &&
-                          item.version_number < latestVersion &&
-                          onRestore && (
-                            <Button
-                              variant="text"
-                              size="sm"
-                              onClick={e =>
-                                handleRestore(e, item.version_number)
-                              }
-                              className="text-orange-600 hover:text-orange-700 p-1"
-                              title="Restore ke versi ini"
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 16 16"
-                                fill="currentColor"
-                              >
-                                <path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z" />
-                                <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z" />
-                              </svg>
-                            </Button>
-                          )}
+                        item.version_number < latestVersion &&
+                        onRestore ? (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation(); // Prevent timeline item click
+                              handleRestore(e, item.version_number);
+                            }}
+                            className="
+                              relative
+                              group
+                              font-mono text-xs px-2 py-1 rounded
+                              flex items-center justify-center
+                              min-w-[2.5rem]
+                              transition-all duration-300 ease-in-out
+                              bg-purple-100 hover:bg-orange-50
+                              text-purple-700 hover:text-orange-600
+                              cursor-pointer
+                            "
+                            title="Restore ke versi ini"
+                          >
+                            {/* Version text - visible by default, fade out on hover */}
+                            <span className="transition-opacity duration-300 ease-in-out group-hover:opacity-0">
+                              v{item.version_number}
+                            </span>
+
+                            {/* Restore icon - hidden by default, fade in on hover */}
+                            <IoArrowUndo
+                              className="
+                                absolute inset-0 m-auto
+                                opacity-0
+                                transition-opacity duration-300 ease-in-out
+                                group-hover:opacity-100
+                              "
+                              size={14}
+                            />
+                          </button>
+                        ) : (
+                          <span className="font-mono text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+                            v{item.version_number}
+                          </span>
+                        )}
                       </div>
                     </div>
 

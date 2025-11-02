@@ -43,8 +43,11 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     prevItemId.current = itemId;
   }
 
-  const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>(
+    []
+  );
 
   // Only log state changes, not every render
   const prevHistoryLength = useRef(history?.length || 0);
@@ -65,19 +68,26 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   }
 
   const handleVersionClick = (item: HistoryItem) => {
-    if (selectedVersions.includes(item.version_number)) {
-      setSelectedVersions(
-        selectedVersions.filter(v => v !== item.version_number)
-      );
+    // Simple single selection for detail view
+    if (selectedVersion === item.version_number) {
       setSelectedVersion(null);
-    } else if (selectedVersions.length < 2) {
-      const newSelected = [...selectedVersions, item.version_number];
-      setSelectedVersions(newSelected);
-      setSelectedVersion(item.version_number);
     } else {
-      setSelectedVersions([selectedVersions[1], item.version_number]);
       setSelectedVersion(item.version_number);
     }
+  };
+
+  const handleCompareSelected = (selectedVersions: HistoryItem[]) => {
+    if (selectedVersions.length === 2) {
+      // Update the selected for compare display
+      setSelectedForCompare(selectedVersions);
+      console.log('🔍 Compare versions:', selectedVersions);
+      // TODO: Implement comparison view/modal for items
+    }
+  };
+
+  const handleSelectionEmpty = () => {
+    // Clear comparison when no versions selected
+    setSelectedForCompare([]);
   };
 
   const handleRestore = async (version: number) => {
@@ -124,7 +134,6 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     }
   };
 
-  const canCompare = selectedVersions.length === 2;
   const selectedVersionData = history?.find(
     h => h.version_number === selectedVersion
   );
@@ -185,17 +194,14 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
         <div className="w-1/4 border-r">
           <div className="flex justify-between items-center p-4 pb-2">
             <h3 className="font-medium">Timeline Versi</h3>
-            {canCompare && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => console.log('Compare clicked')}
-                className="flex items-center gap-1"
-              >
-                <FaEye size={12} />
-                Compare
-              </Button>
-            )}
+            <Button
+              variant="text"
+              size="sm"
+              onClick={() => setCompareMode(!compareMode)}
+              className="text-sm"
+            >
+              {compareMode ? 'Single View' : 'Compare Mode'}
+            </Button>
           </div>
 
           <div className="p-0">
@@ -203,12 +209,16 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
               history={history}
               isLoading={isLoading}
               onVersionClick={handleVersionClick}
-              selectedVersions={selectedVersions}
               selectedVersion={selectedVersion}
+              selectedVersions={selectedVersion ? [selectedVersion] : []}
               showRestoreButton={true}
               onRestore={handleRestore}
               emptyMessage="Tidak ada riwayat perubahan"
               loadingMessage="Loading history..."
+              allowMultiSelect={compareMode}
+              onCompareSelected={handleCompareSelected}
+              maxSelections={2}
+              onSelectionEmpty={handleSelectionEmpty}
             />
           </div>
         </div>
@@ -316,10 +326,13 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
         </div>
       </div>
 
-      {/* Footer info - will be handled by ItemModalTemplate footer */}
-      {selectedVersions.length > 0 && (
+      {/* Footer info - comparison mode indicator */}
+      {selectedForCompare.length > 0 && (
         <div className="mt-4 text-sm text-gray-500">
-          <span>Dipilih: v{selectedVersions.join(', v')}</span>
+          <span>
+            Dipilih untuk compare: v
+            {selectedForCompare.map(v => v.version_number).join(', v')}
+          </span>
         </div>
       )}
     </div>
