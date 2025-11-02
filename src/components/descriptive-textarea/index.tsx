@@ -27,12 +27,6 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
     setShowTextarea(showInitially);
   }, [showInitially]);
 
-  useEffect(() => {
-    if (showInitially && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [showInitially]);
-
   return (
     <div className={classNames('mt-2 pt-2', containerClassName)}>
       <button

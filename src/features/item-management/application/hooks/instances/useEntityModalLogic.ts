@@ -134,6 +134,15 @@ export const useEntityModalLogic = ({
     }
   }, [isOpen, initialData, initialNameFromSearch, resetForm]);
 
+  // Focus on name input when switching from history back to edit/add mode
+  useEffect(() => {
+    if (isOpen && (mode === 'edit' || mode === 'add')) {
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen, mode]);
+
   // Handle closing animation
   useEffect(() => {
     if (isClosing) {
