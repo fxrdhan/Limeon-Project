@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/button';
 import { FaHistory, FaArrowLeft } from 'react-icons/fa';
 import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
@@ -152,6 +153,48 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   const { ui, uiActions } = useEntityModal();
   const { mode } = ui;
   const [compareMode, setCompareMode] = useState(false);
+  const prevModeRef = useRef<string | null>(null);
+  const hasModeChangedRef = useRef(false);
+
+  // Track direction based on mode transition
+  useEffect(() => {
+    if (prevModeRef.current === null) {
+      // First render - initialize without marking as changed
+      prevModeRef.current = mode;
+      return;
+    }
+
+    // Mode has actually changed
+    if (prevModeRef.current !== mode) {
+      hasModeChangedRef.current = true;
+    }
+
+    prevModeRef.current = mode;
+  }, [mode]);
+
+  const isMovingFromHistory =
+    hasModeChangedRef.current &&
+    prevModeRef.current === 'history' &&
+    mode !== 'history';
+
+  const contentVariants = {
+    // Ketika pindah ke history: slide ke kanan
+    historyEntry: {
+      hidden: { opacity: 0, x: 20 },
+      visible: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: 20 },
+    },
+    // Ketika pindah dari history: slide ke kiri
+    historyExit: {
+      hidden: { opacity: 0, x: -20 },
+      visible: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: -20 },
+    },
+  };
+
+  const selectedVariants = isMovingFromHistory
+    ? contentVariants.historyExit
+    : contentVariants.historyEntry;
 
   const handleModeToggle = () => {
     // Close comparison modal when switching modes
@@ -173,17 +216,33 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   // Consistent width for all entity modals
   const modalWidth = 'w-96';
 
+  const hasAnimated = hasModeChangedRef.current;
+
   return (
-    <div
+    <motion.div
       className={`relative bg-white rounded-xl shadow-xl ${modalWidth} mx-4`}
+      layout={hasAnimated}
+      layoutDependency={mode}
+      transition={{ type: 'tween', duration: 0.25, ease: 'easeInOut' }}
     >
       <EntityModalHeader initialData={initialData} />
-      {renderContent()}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={mode}
+          variants={selectedVariants}
+          initial={hasAnimated ? 'hidden' : false}
+          animate="visible"
+          exit={hasAnimated ? 'exit' : undefined}
+          transition={{ duration: 0.2 }}
+        >
+          {renderContent()}
+        </motion.div>
+      </AnimatePresence>
       <EntityModalFooter
         compareMode={compareMode}
         onModeToggle={handleModeToggle}
       />
-    </div>
+    </motion.div>
   );
 };
 
