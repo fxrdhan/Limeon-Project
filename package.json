@@ -38,7 +38,7 @@
     "@tanstack/react-query": "^5.90.6",
     "@tanstack/react-query-devtools": "^5.90.2",
     "ag-grid-enterprise": "34.3.1",
-    "ag-grid-react": "34.2.0",
+    "ag-grid-react": "34.3.1",
     "axios": "^1.13.1",
     "chart.js": "^4.5.1",
     "classnames": "^2.5.1",
