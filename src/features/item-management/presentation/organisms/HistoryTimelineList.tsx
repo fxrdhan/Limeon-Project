@@ -266,8 +266,8 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     const { scrollTop, scrollHeight, clientHeight } =
       scrollContainerRef.current;
 
-    // Use a threshold to account for sub-pixel scrolling and browser rounding
-    const threshold = 2;
+    // Use a threshold of 5px to account for sub-pixel rendering and rounding
+    const threshold = 5;
     const canScrollUp = scrollTop > threshold;
     const canScrollDown = scrollTop < scrollHeight - clientHeight - threshold;
 
@@ -278,8 +278,11 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Check initial scroll position
+    // Check initial scroll position immediately
     checkScrollPosition();
+
+    // Check again after a short delay to ensure animations have completed
+    const timeoutId = setTimeout(checkScrollPosition, 100);
 
     // Handle scrolling state for hover prevention during scroll
     const handleScroll = () => {
@@ -303,10 +306,15 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     container.addEventListener('scroll', handleScroll);
 
     // Check when content changes
-    const resizeObserver = new ResizeObserver(checkScrollPosition);
+    const resizeObserver = new ResizeObserver(() => {
+      checkScrollPosition();
+      // Double-check after resize completes
+      setTimeout(checkScrollPosition, 50);
+    });
     resizeObserver.observe(container);
 
     return () => {
+      clearTimeout(timeoutId);
       container.removeEventListener('scroll', handleScroll);
       resizeObserver.disconnect();
       if (scrollingTimeoutRef.current) {
@@ -346,7 +354,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       }
 
       // Update target scroll position with damping (reduce scroll speed)
-      const scrollSpeed = 0.8; // Lower = slower scrolling
+      const scrollSpeed = 0.5; // Lower = slower, smoother scrolling
       targetScrollRef.current += e.deltaY * scrollSpeed;
 
       // Clamp to valid scroll range
@@ -362,11 +370,11 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
         const target = targetScrollRef.current;
         const diff = target - current;
 
-        // Easing factor (higher = faster easing)
-        const easingFactor = 0.2;
+        // Easing factor (lower = smoother, more buttery)
+        const easingFactor = 0.15;
 
         // If difference is very small, snap to target
-        if (Math.abs(diff) < 0.5) {
+        if (Math.abs(diff) < 0.1) {
           container.scrollTop = target;
           scrollAnimationRef.current = null;
           return;
@@ -526,7 +534,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
         <div
           ref={scrollContainerRef}
-          className="relative space-y-3 max-h-96 overflow-y-auto scrollbar-gutter-stable"
+          className="relative space-y-3 max-h-96 overflow-y-auto history-scrollbar-hidden"
         >
           <AnimatePresence mode="popLayout">
             {history.map((item, index) => {
