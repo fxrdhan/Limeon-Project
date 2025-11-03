@@ -4,6 +4,7 @@ import {
   GridReadyEvent,
   RowClickedEvent,
   ColDef,
+  ColGroupDef,
   IRowNode,
   GetMainMenuItems,
   RowGroupOpenedEvent,
@@ -81,7 +82,7 @@ interface EntityGridProps {
   search: string;
 
   // Grid config
-  itemColumnDefs?: ColDef[];
+  itemColumnDefs?: (ColDef | ColGroupDef)[];
   itemColumnsToAutoSize?: string[];
   isRowGroupingEnabled?: boolean;
   defaultExpanded?: number;
@@ -89,13 +90,17 @@ interface EntityGridProps {
 
   // Entity config
   entityConfig?: EntityConfig | null;
-  entityColumnDefs?: ColDef[];
+  entityColumnDefs?: (ColDef | ColGroupDef)[];
 
   // Handlers
   onRowClick: (data: ItemWithExtendedEntities | EntityData) => void;
-  onGridReady: (params: GridReadyEvent) => void;
+  onGridReady: (
+    params: GridReadyEvent<ItemWithExtendedEntities | EntityData>
+  ) => void;
   isExternalFilterPresent: () => boolean;
-  doesExternalFilterPass: (node: IRowNode) => boolean;
+  doesExternalFilterPass: (
+    node: IRowNode<ItemWithExtendedEntities | EntityData>
+  ) => boolean;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // Pagination (for items)
@@ -162,7 +167,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
     let data: (ItemWithExtendedEntities | EntityData)[] = [];
-    let columns: ColDef[] = [];
+    let columns: (ColDef | ColGroupDef)[] = [];
 
     if (activeTab === 'items') {
       data = itemsForDisplay || [];
@@ -302,7 +307,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle row clicks
   const handleRowClicked = useCallback(
-    (event: RowClickedEvent) => {
+    (event: RowClickedEvent<ItemWithExtendedEntities | EntityData>) => {
       // Check if this is a group row - group rows don't have meaningful data for editing
       if (event.node.group) {
         return; // Don't try to edit group rows
@@ -318,7 +323,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle grid ready - setup and early auto-restore to prevent flicker
   const handleGridReady = useCallback(
-    (params: GridReadyEvent) => {
+    (params: GridReadyEvent<ItemWithExtendedEntities | EntityData>) => {
       setGridApi(params.api);
 
       // Reset restoration flag for new grid instance
@@ -540,7 +545,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
-    (event: RowGroupOpenedEvent) => {
+    (event: RowGroupOpenedEvent<ItemWithExtendedEntities | EntityData>) => {
       // Only for items tab when row grouping is enabled
       if (activeTab !== 'items' || !isRowGroupingEnabled) {
         return;

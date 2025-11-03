@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTrash } from 'react-icons/fa';
+import { ColDef, ColGroupDef } from 'ag-grid-community';
 import Button from '@/components/button';
 import FormSection from '@/components/form-section';
 import { PackageConversionInput } from '../atoms';
@@ -68,48 +69,50 @@ export default function ItemPackageConversionManager({
             <DataGrid
               disableFiltering={true}
               rowData={filteredConversions}
-              columnDefs={[
-                createTextColumn({
-                  field: 'unit.name',
-                  headerName: 'Turunan',
-                  minWidth: 100,
-                  flex: 1,
-                }),
-                createTextColumn({
-                  field: 'conversion_rate',
-                  headerName: 'Konversi',
-                  minWidth: 140,
-                  flex: 2,
-                  cellStyle: { textAlign: 'center' },
-                }),
-                createCurrencyColumn({
-                  field: 'base_price',
-                  headerName: 'H. Pokok',
-                  minWidth: 100,
-                  flex: 1,
-                }),
-                createCurrencyColumn({
-                  field: 'sell_price',
-                  headerName: 'H. Jual',
-                  minWidth: 100,
-                  flex: 1,
-                }),
-                {
-                  field: 'actions',
-                  headerName: '',
-                  minWidth: 80,
-                  maxWidth: 80,
-                  sortable: false,
-                  resizable: false,
-                  cellStyle: { textAlign: 'center' },
-                  cellRenderer: (params: { data?: { id: string } }) =>
-                    params.data ? (
-                      <DeleteButton
-                        onClick={() => onRemoveConversion(params.data!.id)}
-                      />
-                    ) : null,
-                },
-              ]}
+              columnDefs={
+                [
+                  createTextColumn({
+                    field: 'unit.name',
+                    headerName: 'Turunan',
+                    minWidth: 100,
+                    flex: 1,
+                  }),
+                  createTextColumn({
+                    field: 'conversion_rate',
+                    headerName: 'Konversi',
+                    minWidth: 140,
+                    flex: 2,
+                    cellStyle: { textAlign: 'center' },
+                  }),
+                  createCurrencyColumn({
+                    field: 'base_price',
+                    headerName: 'H. Pokok',
+                    minWidth: 100,
+                    flex: 1,
+                  }),
+                  createCurrencyColumn({
+                    field: 'sell_price',
+                    headerName: 'H. Jual',
+                    minWidth: 100,
+                    flex: 1,
+                  }),
+                  {
+                    field: 'actions',
+                    headerName: '',
+                    minWidth: 80,
+                    maxWidth: 80,
+                    sortable: false,
+                    resizable: false,
+                    cellStyle: { textAlign: 'center' },
+                    cellRenderer: (params: { data?: { id: string } }) =>
+                      params.data ? (
+                        <DeleteButton
+                          onClick={() => onRemoveConversion(params.data!.id)}
+                        />
+                      ) : null,
+                  },
+                ] as (ColDef | ColGroupDef)[]
+              }
               domLayout="normal"
               overlayNoRowsTemplate="<span class='text-gray-500'>Belum ada data konversi</span>"
               rowClass=""
