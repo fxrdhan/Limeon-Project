@@ -178,15 +178,15 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   const getContentVariants = (currentMode: string) => {
     if (currentMode === 'history') {
       return {
-        hidden: { opacity: 0, x: 20 },  // History enters from right
+        hidden: { opacity: 0, x: 20 }, // History enters from right
         visible: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: 20 },     // History exits to right
+        exit: { opacity: 0, x: 20 }, // History exits to right
       };
     } else {
       return {
         hidden: { opacity: 0, x: -20 }, // Form enters from left
         visible: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -20 },    // Form exits to left
+        exit: { opacity: 0, x: -20 }, // Form exits to left
       };
     }
   };
