@@ -172,7 +172,10 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     prevModeRef.current = mode;
   }, [mode]);
 
-  const isMovingFromHistory = hasModeChangedRef.current && prevModeRef.current === 'history' && mode !== 'history';
+  const isMovingFromHistory =
+    hasModeChangedRef.current &&
+    prevModeRef.current === 'history' &&
+    mode !== 'history';
 
   const contentVariants = {
     // Ketika pindah ke history: slide ke kanan

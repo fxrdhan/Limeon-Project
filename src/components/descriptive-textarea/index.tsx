@@ -21,6 +21,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
 }) => {
   const [showTextarea, setShowTextarea] = useState(showInitially);
   const [isHovered, setIsHovered] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -38,12 +39,16 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
           'group flex items-center text-primary transition-colors focus:outline-hidden focus:text-primary',
           labelClassName
         )}
-        onClick={() => setShowTextarea(!showTextarea)}
+        onClick={() => {
+          setHasInteracted(true);
+          setShowTextarea(!showTextarea);
+        }}
       >
         <span className="mr-2 text-md text-primary focus:outline-hidden group-focus:text-primary">
           {label}
         </span>
         <motion.div
+          initial={false}
           animate={{
             rotate: expandOnClick
               ? showTextarea
@@ -53,7 +58,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                 ? 180
                 : 0,
           }}
-          transition={{ duration: 0.3 }}
+          transition={hasInteracted ? { duration: 0.3 } : { duration: 0 }}
           className="transform"
         >
           <FaChevronDown size={12} />
@@ -62,7 +67,11 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
       <AnimatePresence>
         {(expandOnClick ? showTextarea : showTextarea || isHovered) && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={
+              showInitially && !hasInteracted
+                ? false
+                : { height: 0, opacity: 0 }
+            }
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
