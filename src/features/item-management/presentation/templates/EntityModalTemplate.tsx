@@ -55,6 +55,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
             animate={isClosing ? 'exit' : 'visible'}
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeOut' }}
+            layout
             onClick={e => e.stopPropagation()}
           >
             {children}
