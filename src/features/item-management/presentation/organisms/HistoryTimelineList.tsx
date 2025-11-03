@@ -248,10 +248,12 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>(
     []
   );
+  const [isScrolling, setIsScrolling] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollAnimationRef = useRef<number | null>(null);
   const targetScrollRef = useRef<number>(0);
+  const scrollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Find the latest version number (current version should not have restore button)
   const latestVersion = history
@@ -282,8 +284,26 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     // Check again after a short delay to ensure animations have completed
     const timeoutId = setTimeout(checkScrollPosition, 100);
 
+    // Handle scrolling state for hover prevention during scroll
+    const handleScroll = () => {
+      setIsScrolling(true);
+
+      // Clear existing timeout
+      if (scrollingTimeoutRef.current) {
+        clearTimeout(scrollingTimeoutRef.current);
+      }
+
+      // Reset scrolling state after 150ms of no scroll
+      scrollingTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+
+      // Also call original check
+      checkScrollPosition();
+    };
+
     // Add scroll listener
-    container.addEventListener('scroll', checkScrollPosition);
+    container.addEventListener('scroll', handleScroll);
 
     // Check when content changes
     const resizeObserver = new ResizeObserver(() => {
@@ -295,8 +315,11 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
     return () => {
       clearTimeout(timeoutId);
-      container.removeEventListener('scroll', checkScrollPosition);
+      container.removeEventListener('scroll', handleScroll);
       resizeObserver.disconnect();
+      if (scrollingTimeoutRef.current) {
+        clearTimeout(scrollingTimeoutRef.current);
+      }
     };
   }, [history]);
 
@@ -516,7 +539,8 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
           <AnimatePresence mode="popLayout">
             {history.map((item, index) => {
               const isSelected = isItemSelected(item);
-              const isExpanded = isSelected || hoveredItem === item.id;
+              const isExpanded =
+                isSelected || (!isScrolling && hoveredItem === item.id);
               const isFirst = index === 0;
               const isLast = index === history.length - 1;
 
