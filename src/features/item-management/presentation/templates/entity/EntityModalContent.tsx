@@ -172,29 +172,26 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     prevModeRef.current = mode;
   }, [mode]);
 
-  const isMovingFromHistory =
-    hasModeChangedRef.current &&
-    prevModeRef.current === 'history' &&
-    mode !== 'history';
-
-  const contentVariants = {
-    // Ketika pindah ke history: slide ke kanan
-    historyEntry: {
-      hidden: { opacity: 0, x: 20 },
-      visible: { opacity: 1, x: 0 },
-      exit: { opacity: 0, x: 20 },
-    },
-    // Ketika pindah dari history: slide ke kiri
-    historyExit: {
-      hidden: { opacity: 0, x: -20 },
-      visible: { opacity: 1, x: 0 },
-      exit: { opacity: 0, x: -20 },
-    },
+  // Determine animation variants based on current mode
+  // History: always slide from/to right
+  // Form (add/edit): always slide from/to left
+  const getContentVariants = (currentMode: string) => {
+    if (currentMode === 'history') {
+      return {
+        hidden: { opacity: 0, x: 20 }, // History enters from right
+        visible: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: 20 }, // History exits to right
+      };
+    } else {
+      return {
+        hidden: { opacity: 0, x: -20 }, // Form enters from left
+        visible: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -20 }, // Form exits to left
+      };
+    }
   };
 
-  const selectedVariants = isMovingFromHistory
-    ? contentVariants.historyExit
-    : contentVariants.historyEntry;
+  const selectedVariants = getContentVariants(mode);
 
   const handleModeToggle = () => {
     // Close comparison modal when switching modes
