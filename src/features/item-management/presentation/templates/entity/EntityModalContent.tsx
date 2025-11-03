@@ -232,7 +232,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
           variants={selectedVariants}
           initial={hasAnimated ? 'hidden' : false}
           animate="visible"
-          exit={hasAnimated ? 'exit' : false}
+          exit={hasAnimated ? 'exit' : undefined}
           transition={{ duration: 0.2 }}
         >
           {renderContent()}
