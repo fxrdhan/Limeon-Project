@@ -9,7 +9,8 @@ import {
 import { getDefaultGridConfig } from './gridSetup';
 
 // Simple interface - extend AgGridReactProps and add commonly used shortcuts
-interface DataGridProps extends AgGridReactProps {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface DataGridProps extends AgGridReactProps<any> {
   className?: string;
   style?: React.CSSProperties;
   autoSizeColumns?: string[];
@@ -64,18 +65,21 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       }),
     };
 
-    const handleFirstDataRendered = useCallback(() => {
-      const gridRef = ref as React.RefObject<AgGridReact>;
-      const api = gridRef?.current?.api;
-      if (api && !api.isDestroyed()) {
-        if (autoSizeColumns?.length) {
-          api.autoSizeColumns(autoSizeColumns);
-        } else if (sizeColumnsToFit) {
-          api.sizeColumnsToFit();
+    const handleFirstDataRendered = useCallback(
+      (event: FirstDataRenderedEvent) => {
+        const gridRef = ref as React.RefObject<AgGridReact>;
+        const api = gridRef?.current?.api;
+        if (api && !api.isDestroyed()) {
+          if (autoSizeColumns?.length) {
+            api.autoSizeColumns(autoSizeColumns);
+          } else if (sizeColumnsToFit) {
+            api.sizeColumnsToFit();
+          }
         }
-      }
-      onFirstDataRendered?.({} as FirstDataRenderedEvent);
-    }, [autoSizeColumns, sizeColumnsToFit, onFirstDataRendered, ref]);
+        onFirstDataRendered?.(event);
+      },
+      [autoSizeColumns, sizeColumnsToFit, onFirstDataRendered, ref]
+    );
 
     return (
       <div className={className} style={style}>
