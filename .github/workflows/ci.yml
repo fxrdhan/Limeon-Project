@@ -266,6 +266,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_AG_GRID_LICENSE_KEY: ${{ secrets.VITE_AG_GRID_LICENSE_KEY }}
 
       - name: Upload build artifacts
         if: steps.check.outputs.needed == 'true'
