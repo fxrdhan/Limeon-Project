@@ -102,6 +102,7 @@ const EntityModal: React.FC<EntityModalProps> = ({
 
       <ComparisonModal
         isOpen={contextValue.comparison.isOpen}
+        isClosing={contextValue.comparison.isClosing}
         onClose={contextValue.uiActions.closeComparison}
         entityName={entityName}
         selectedVersion={contextValue.comparison.selectedVersion}

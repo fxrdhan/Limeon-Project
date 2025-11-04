@@ -57,6 +57,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             layout
             onClick={e => e.stopPropagation()}
+            className="relative z-[52]"
           >
             {children}
           </motion.div>

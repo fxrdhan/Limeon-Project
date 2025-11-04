@@ -64,6 +64,7 @@ export const useEntityModalLogic = ({
   });
   const [comparisonData, setComparisonData] = useState({
     isOpen: false,
+    isClosing: false,
     selectedVersion: undefined as VersionData | undefined,
     isDualMode: false,
     versionA: undefined as VersionData | undefined,
@@ -159,6 +160,7 @@ export const useEntityModalLogic = ({
     if (!isOpen && comparisonData.isOpen) {
       setComparisonData({
         isOpen: false,
+        isClosing: false,
         selectedVersion: undefined,
         isDualMode: false,
         versionA: undefined,
@@ -250,6 +252,7 @@ export const useEntityModalLogic = ({
   const openComparison = useCallback((version: VersionData) => {
     setComparisonData({
       isOpen: true,
+      isClosing: false,
       selectedVersion: version,
       isDualMode: false,
       versionA: undefined,
@@ -262,6 +265,7 @@ export const useEntityModalLogic = ({
     (versionA: VersionData, versionB: VersionData) => {
       setComparisonData({
         isOpen: true,
+        isClosing: false,
         selectedVersion: undefined,
         isDualMode: true,
         versionA,
@@ -280,35 +284,53 @@ export const useEntityModalLogic = ({
   }, []);
 
   const closeComparison = useCallback(() => {
-    setComparisonData({
-      isOpen: false,
-      selectedVersion: undefined,
-      isDualMode: false,
-      versionA: undefined,
-      versionB: undefined,
-      isFlipped: false,
-    });
+    // Start closing animation
+    setComparisonData(prev => ({
+      ...prev,
+      isClosing: true,
+    }));
+
+    // Actually close after animation completes
+    setTimeout(() => {
+      setComparisonData({
+        isOpen: false,
+        isClosing: false,
+        selectedVersion: undefined,
+        isDualMode: false,
+        versionA: undefined,
+        versionB: undefined,
+        isFlipped: false,
+      });
+    }, 250); // Match animation duration
   }, []);
 
   const goBack = useCallback(() => {
-    // Close comparison modal when going back
-    setComparisonData({
-      isOpen: false,
-      selectedVersion: undefined,
-      isDualMode: false,
-      versionA: undefined,
-      versionB: undefined,
-      isFlipped: false,
-    });
+    // Close comparison modal when going back with animation
+    setComparisonData(prev => ({
+      ...prev,
+      isClosing: true,
+    }));
 
-    if (mode === 'history') {
-      setMode(previousMode);
-      setHistoryData({
-        entityTable: '',
-        entityId: '',
+    setTimeout(() => {
+      setComparisonData({
+        isOpen: false,
+        isClosing: false,
         selectedVersion: undefined,
+        isDualMode: false,
+        versionA: undefined,
+        versionB: undefined,
+        isFlipped: false,
       });
-    }
+
+      if (mode === 'history') {
+        setMode(previousMode);
+        setHistoryData({
+          entityTable: '',
+          entityId: '',
+          selectedVersion: undefined,
+        });
+      }
+    }, 250); // Match animation duration
   }, [mode, previousMode]);
 
   // UI actions
@@ -380,6 +402,7 @@ export const useEntityModalLogic = ({
     },
     comparison: {
       isOpen: comparisonData.isOpen,
+      isClosing: comparisonData.isClosing,
       selectedVersion: comparisonData.selectedVersion,
       isDualMode: comparisonData.isDualMode,
       versionA: comparisonData.versionA,
