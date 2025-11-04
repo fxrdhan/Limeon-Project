@@ -97,14 +97,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 </div>
                 <div>
                   <strong>Stack:</strong>
-                  <pre className="whitespace-pre-wrap font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                  <pre className="whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded mt-1">
                     {this.state.error.stack}
                   </pre>
                 </div>
                 {this.state.errorInfo && (
                   <div>
                     <strong>Component Stack:</strong>
-                    <pre className="whitespace-pre-wrap font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+                    <pre className="whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded mt-1">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </div>

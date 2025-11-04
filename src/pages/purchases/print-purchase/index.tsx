@@ -249,7 +249,7 @@ const PrintPurchase = () => {
             <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
               <span className="text-left">Subtotal</span>
               <span className="px-2">:</span>
-              <span className="font-mono text-right">
+              <span className="text-right">
                 {formatCurrency(subtotals.baseTotal)}
               </span>
             </div>
@@ -257,7 +257,7 @@ const PrintPurchase = () => {
             <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
               <span className="text-left">Diskon</span>
               <span className="px-2">:</span>
-              <span className="font-mono text-right">
+              <span className="text-right">
                 {formatCurrency(subtotals.discountTotal, '-')}
               </span>
             </div>
@@ -265,7 +265,7 @@ const PrintPurchase = () => {
             <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
               <span className="text-left">Setelah Diskon</span>
               <span className="px-2">:</span>
-              <span className="font-mono text-right">
+              <span className="text-right">
                 {formatCurrency(subtotals.afterDiscountTotal)}
               </span>
             </div>
@@ -274,7 +274,7 @@ const PrintPurchase = () => {
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                 <span className="text-left">PPN</span>
                 <span className="px-2">:</span>
-                <span className="font-mono text-right">
+                <span className="text-right">
                   {formatCurrency(subtotals.vatTotal, '+')}
                 </span>
               </div>
@@ -283,7 +283,7 @@ const PrintPurchase = () => {
             <div className="border-t pt-2 grid grid-cols-[1fr_auto_1fr] font-bold">
               <span className="text-left">TOTAL</span>
               <span className="px-2">:</span>
-              <span className="font-mono text-right">
+              <span className="text-right">
                 {formatCurrency(subtotals.grandTotal)}
               </span>
             </div>

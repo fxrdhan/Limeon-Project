@@ -60,7 +60,7 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
 
   // Normal diff display
   return (
-    <span className={`font-mono text-sm ${className}`}>
+    <span className={`text-sm ${className}`}>
       {segments.map((segment, index) => {
         const segmentStyle = getSegmentStyle(
           segment.type as 'added' | 'removed' | 'unchanged'

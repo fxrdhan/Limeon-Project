@@ -123,7 +123,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
         <div className="bg-gray-100 p-3 border-b-2 border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold">Data Umum</h2>
-          <div className="text-sm text-gray-600 font-mono bg-white px-2 py-1 rounded">
+          <div className="text-sm text-gray-600 bg-white px-2 py-1 rounded">
             {codeGeneration.generatedCode || formData.code || 'Auto-generated'}
           </div>
         </div>

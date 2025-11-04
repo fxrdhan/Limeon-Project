@@ -32,7 +32,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
             >
               <div className="flex items-center gap-2 mb-1">
                 <span
-                  className={`font-mono px-1.5 py-0.5 rounded text-xs ${
+                  className={`px-1.5 py-0.5 rounded text-xs ${
                     isFlipped
                       ? 'bg-purple-200 text-purple-800'
                       : 'bg-blue-200 text-blue-800'
@@ -68,7 +68,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
             >
               <div className="flex items-center gap-2 mb-1">
                 <span
-                  className={`font-mono px-1.5 py-0.5 rounded text-xs ${
+                  className={`px-1.5 py-0.5 rounded text-xs ${
                     isFlipped
                       ? 'bg-blue-200 text-blue-800'
                       : 'bg-purple-200 text-purple-800'
@@ -109,7 +109,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
                   'id-ID'
                 )}
             </span>
-            <span className="font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
+            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
               v{compData.leftVersion?.version_number}
             </span>
           </div>
