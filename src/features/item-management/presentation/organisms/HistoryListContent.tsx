@@ -104,6 +104,9 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         // Open dual comparison modal
         uiActions.openDualComparison(versionA, versionB);
       }
+    } else if (selectedVersions.length === 1) {
+      // Close comparison modal if only 1 version is selected in compare mode
+      uiActions.closeComparison();
     }
   };
 

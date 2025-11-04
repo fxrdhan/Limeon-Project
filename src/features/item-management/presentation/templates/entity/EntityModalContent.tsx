@@ -70,11 +70,10 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
             onClick={() =>
               uiActions.openHistory(getEntityTable(entityName), initialData.id)
             }
-            className="text-sm text-gray-500 hover:text-primary italic flex items-center transition-colors"
-            title={`Lihat riwayat perubahan ${entityName}`}
+            className="text-gray-500 hover:text-primary flex items-center transition-colors p-2"
+            title={`Lihat riwayat perubahan ${entityName} (Terakhir diubah: ${formattedUpdateAt})`}
           >
-            <FaHistory className="mr-1" size={12} />
-            {formattedUpdateAt}
+            <FaHistory size={16} />
           </Button>
         )}
       </div>
@@ -211,7 +210,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   };
 
   // Consistent width for all entity modals
-  const modalWidth = 'w-96';
+  const modalWidth = 'w-[340px]';
 
   const hasAnimated = hasModeChangedRef.current;
 

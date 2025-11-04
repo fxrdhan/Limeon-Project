@@ -1,7 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
 import type { VersionData } from '../../../shared/types';
 import { useModalAnimation, useComparisonData } from './hooks';
 import {
@@ -25,7 +24,6 @@ interface ComparisonModalProps {
   isDualMode?: boolean;
   versionA?: VersionData;
   versionB?: VersionData;
-  onFlipVersions?: () => void;
   // Restore functionality
   onRestore?: (version: number) => Promise<void>;
 }
@@ -41,9 +39,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   versionB,
   onRestore,
 }) => {
-  const { comparison, uiActions } = useEntityModal();
-  const { isFlipped } = comparison;
-
   // Use custom hooks
   const { isClosing, handleClose } = useModalAnimation({ isOpen, onClose });
 
@@ -53,7 +48,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     currentData,
     versionA,
     versionB,
-    isFlipped,
     entityName,
   });
 
@@ -92,7 +86,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             duration: 0.25,
             ease: [0.25, 0.46, 0.45, 0.94],
           }}
-          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-2 z-[60]"
+          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-0 z-[60]"
           onAnimationComplete={() => {
             // Prevent auto-focus on form elements
             if (document.activeElement) {
@@ -100,25 +94,17 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             }
           }}
         >
-          <div
-            className={`relative bg-white rounded-xl shadow-xl max-w-[90vw] ${isDualMode ? 'w-[600px]' : 'w-[400px]'}`}
-          >
+          <div className="relative bg-white rounded-xl shadow-xl max-w-[90vw] w-[340px]">
             {/* Hidden element to capture initial focus */}
             <div tabIndex={0} className="sr-only" aria-hidden="true"></div>
 
             {/* Header */}
-            <ComparisonHeader
-              isDualMode={isDualMode}
-              isFlipped={isFlipped}
-              compData={compData}
-              onFlipVersions={uiActions.flipVersions}
-            />
+            <ComparisonHeader isDualMode={isDualMode} compData={compData} />
 
             {/* Content */}
             <div className="p-6">
               {isDualMode ? (
                 <DualModeContent
-                  isFlipped={isFlipped}
                   compData={compData}
                   entityName={entityName}
                   originalData={originalData}
