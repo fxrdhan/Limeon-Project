@@ -28,16 +28,13 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
     const changes = diffChars(oldText, newText);
     const segments = convertChangesToSegments(changes);
 
-    const hasRemoved = segments.some(seg => seg.type === 'removed');
-    const hasAdded = segments.some(seg => seg.type === 'added');
+    const hasDifferences = segments.some(
+      seg => seg.type === 'removed' || seg.type === 'added'
+    );
 
-    // If has removals, use red (danger) - priority for deletions
-    if (hasRemoved) {
-      return 'border-red-500 ring-3 ring-red-500/20';
-    }
-    // If only additions, use green (success)
-    if (hasAdded) {
-      return 'border-green-500 ring-3 ring-green-500/20';
+    // If has any differences, use purple
+    if (hasDifferences) {
+      return 'border-purple-500 ring-3 ring-purple-500/20';
     }
     // Default (no difference)
     return 'border-gray-300';

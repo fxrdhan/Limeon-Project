@@ -5,14 +5,12 @@ interface LocalDiffTextProps {
   oldText: string;
   newText: string;
   className?: string;
-  isFlipped?: boolean;
 }
 
 const DiffText: React.FC<LocalDiffTextProps> = ({
   oldText,
   newText,
   className = '',
-  isFlipped = false,
 }) => {
   // Compute character-level diff directly
   const segments = useMemo(() => {
@@ -30,7 +28,7 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
     return <span className={`${className}`}>{newText}</span>;
   }
 
-  // Helper function to get segment styling with flip support
+  // Helper function to get segment styling
   const getSegmentStyle = (type: 'added' | 'removed' | 'unchanged') => {
     if (type === 'unchanged') {
       return {
@@ -40,20 +38,18 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
       };
     }
 
-    const isAddedType = type === 'added';
-    const shouldShowGreen = isFlipped ? !isAddedType : isAddedType;
-
-    if (shouldShowGreen) {
+    // Green for added, red for removed
+    if (type === 'added') {
       return {
         className: 'bg-green-400 text-gray-900 py-0.5 font-medium',
         style: { backgroundColor: '#4ade80' },
-        title: isFlipped ? 'Dihapus' : 'Ditambahkan',
+        title: 'Ditambahkan',
       };
     } else {
       return {
         className: 'bg-red-400 text-gray-900 py-0.5 font-medium',
         style: { backgroundColor: '#f87171' },
-        title: isFlipped ? 'Ditambahkan' : 'Dihapus',
+        title: 'Dihapus',
       };
     }
   };

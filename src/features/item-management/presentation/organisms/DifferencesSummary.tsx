@@ -24,7 +24,6 @@ interface DifferencesSummaryProps {
   } | null;
   isDualMode: boolean;
   entityName: string;
-  isFlipped: boolean;
   kodeRef: React.RefObject<HTMLDivElement | null>;
   nameRef: React.RefObject<HTMLDivElement | null>;
   descriptionRef: React.RefObject<HTMLDivElement | null>;
@@ -35,12 +34,18 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
   originalData,
   isDualMode,
   entityName,
-  isFlipped,
   kodeRef,
   nameRef,
   descriptionRef,
 }) => {
   if (!compData) return null;
+
+  // For dual mode, we need to swap old/new because leftVersion=newer, rightVersion=older
+  // For single mode, leftVersion=older, rightVersion=current(newer), so no swap needed
+  const getOldText = (left: string, right: string) =>
+    isDualMode ? right : left;
+  const getNewText = (left: string, right: string) =>
+    isDualMode ? left : right;
 
   return (
     <AnimatePresence mode="wait">
@@ -86,15 +91,17 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                         className="px-4 py-4 max-h-[80px] overflow-y-auto scrollbar-thin"
                       >
                         <DiffText
-                          oldText={
-                            originalData?.originalLeftKode || compData.leftKode
-                          }
-                          newText={
+                          oldText={getOldText(
+                            originalData?.originalLeftKode || compData.leftKode,
                             originalData?.originalRightKode ||
-                            compData.rightKode
-                          }
+                              compData.rightKode
+                          )}
+                          newText={getNewText(
+                            originalData?.originalLeftKode || compData.leftKode,
+                            originalData?.originalRightKode ||
+                              compData.rightKode
+                          )}
                           className="text-sm"
-                          isFlipped={isFlipped}
                         />
                       </div>
                     </div>
@@ -120,15 +127,17 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                         className="px-4 py-4 max-h-[100px] overflow-y-auto scrollbar-thin"
                       >
                         <DiffText
-                          oldText={
-                            originalData?.originalLeftName || compData.leftName
-                          }
-                          newText={
+                          oldText={getOldText(
+                            originalData?.originalLeftName || compData.leftName,
                             originalData?.originalRightName ||
-                            compData.rightName
-                          }
+                              compData.rightName
+                          )}
+                          newText={getNewText(
+                            originalData?.originalLeftName || compData.leftName,
+                            originalData?.originalRightName ||
+                              compData.rightName
+                          )}
                           className="text-sm"
-                          isFlipped={isFlipped}
                         />
                       </div>
                     </div>
@@ -154,16 +163,19 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                         className="px-4 pb-4 pt-2 max-h-[150px] overflow-y-auto scrollbar-thin"
                       >
                         <DiffText
-                          oldText={
+                          oldText={getOldText(
                             originalData?.originalLeftDescription ||
-                            compData.leftDescription
-                          }
-                          newText={
+                              compData.leftDescription,
                             originalData?.originalRightDescription ||
-                            compData.rightDescription
-                          }
+                              compData.rightDescription
+                          )}
+                          newText={getNewText(
+                            originalData?.originalLeftDescription ||
+                              compData.leftDescription,
+                            originalData?.originalRightDescription ||
+                              compData.rightDescription
+                          )}
                           className="text-sm leading-relaxed"
-                          isFlipped={isFlipped}
                         />
                       </div>
                     </div>

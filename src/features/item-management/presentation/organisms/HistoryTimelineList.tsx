@@ -432,17 +432,19 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
         const newSelection = selectedForCompare.filter(s => s.id !== item.id);
         setSelectedForCompare(newSelection);
 
-        // Auto-close comparison when no versions are selected
+        // Trigger callback for any selection change
         if (newSelection.length === 0 && onSelectionEmpty) {
           onSelectionEmpty();
+        } else if (onCompareSelected) {
+          onCompareSelected(newSelection);
         }
       } else if (selectedForCompare.length < maxSelections) {
         // Add to selection
         const newSelection = [...selectedForCompare, item];
         setSelectedForCompare(newSelection);
 
-        // Auto-trigger comparison when exactly 2 versions are selected
-        if (newSelection.length === 2 && onCompareSelected) {
+        // Trigger callback for any selection change
+        if (onCompareSelected) {
           onCompareSelected(newSelection);
         }
       } else {
@@ -450,8 +452,8 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
         const newSelection = [...selectedForCompare.slice(1), item];
         setSelectedForCompare(newSelection);
 
-        // Auto-trigger comparison when exactly 2 versions are selected
-        if (newSelection.length === 2 && onCompareSelected) {
+        // Trigger callback for any selection change
+        if (onCompareSelected) {
           onCompareSelected(newSelection);
         }
       }
