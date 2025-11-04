@@ -50,9 +50,7 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
     <div className="space-y-4">
       {/* Kode Comparison */}
       <div>
-        <label className="block text-gray-700 mb-2">
-          Kode
-        </label>
+        <label className="block text-gray-700 mb-2">Kode</label>
         <div className="grid grid-cols-2 gap-3">
           <div
             className={`p-2.5 border rounded-lg px-3 text-sm h-[2.5rem] ${
@@ -121,9 +119,7 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
 
       {/* Name Comparison */}
       <div>
-        <label className="block text-gray-700 mb-2">
-          Nama {entityName}
-        </label>
+        <label className="block text-gray-700 mb-2">Nama {entityName}</label>
         <div className="grid grid-cols-2 gap-3">
           <div
             className={`p-2.5 border rounded-lg px-3 text-sm h-[2.5rem] ${

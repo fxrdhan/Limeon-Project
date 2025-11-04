@@ -47,9 +47,7 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
     <div className="space-y-4">
       {/* Kode Field */}
       <div>
-        <label className="block text-gray-700 mb-2">
-          Kode
-        </label>
+        <label className="block text-gray-700 mb-2">Kode</label>
         <div
           className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isKodeDifferent
@@ -64,18 +62,14 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
               className="w-full"
             />
           ) : (
-            <span className="text-gray-800">
-              {compData.leftKode}
-            </span>
+            <span className="text-gray-800">{compData.leftKode}</span>
           )}
         </div>
       </div>
 
       {/* Name Field */}
       <div>
-        <label className="block text-gray-700 mb-2">
-          Nama {entityName}
-        </label>
+        <label className="block text-gray-700 mb-2">Nama {entityName}</label>
         <div
           className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isNameDifferent
@@ -103,7 +97,10 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
         <div
           className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
             compData.isDescriptionDifferent
-              ? getDiffBorderClass(compData.leftDescription, compData.rightDescription)
+              ? getDiffBorderClass(
+                  compData.leftDescription,
+                  compData.rightDescription
+                )
               : 'border-gray-300'
           }`}
         >
