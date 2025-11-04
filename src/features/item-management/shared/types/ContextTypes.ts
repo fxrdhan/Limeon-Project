@@ -238,6 +238,7 @@ export interface EntityModalContextValue {
   };
   comparison: {
     isOpen: boolean;
+    isClosing: boolean;
     selectedVersion?: VersionData;
     // Dual comparison support
     isDualMode: boolean;

@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { VersionData } from '../../../shared/types';
-import { useModalAnimation, useComparisonData } from './hooks';
+import { useComparisonData } from './hooks';
 import {
   ComparisonHeader,
   DualModeContent,
@@ -12,6 +12,7 @@ import { SingleModeContent } from '../../molecules';
 
 interface ComparisonModalProps {
   isOpen: boolean;
+  isClosing?: boolean;
   onClose: () => void;
   entityName: string;
   selectedVersion?: VersionData;
@@ -30,6 +31,7 @@ interface ComparisonModalProps {
 
 const ComparisonModal: React.FC<ComparisonModalProps> = ({
   isOpen,
+  isClosing = false,
   onClose,
   entityName,
   selectedVersion,
@@ -39,9 +41,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   versionB,
   onRestore,
 }) => {
-  // Use custom hooks
-  const { isClosing, handleClose } = useModalAnimation({ isOpen, onClose });
-
   const { compData, originalData } = useComparisonData({
     isDualMode,
     selectedVersion,
@@ -68,14 +67,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   const shouldShowRestore = canRestore && hasDifferences;
 
   const modalVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.95 },
+    hidden: { opacity: 0, x: -50, scale: 0.98 },
+    visible: { opacity: 1, x: 0, scale: 1 },
+    exit: { opacity: 0, x: -50, scale: 0.98 },
   };
 
   return createPortal(
     <AnimatePresence>
-      {isOpen && (
+      {(isOpen || isClosing) && (
         <motion.div
           key="comparison-modal"
           variants={modalVariants}
@@ -86,7 +85,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             duration: 0.25,
             ease: [0.25, 0.46, 0.45, 0.94],
           }}
-          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-0 z-[60]"
+          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-0 z-[51]"
           onAnimationComplete={() => {
             // Prevent auto-focus on form elements
             if (document.activeElement) {
@@ -122,7 +121,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
               shouldShowRestore={shouldShowRestore}
               selectedVersion={selectedVersion}
               onRestore={onRestore}
-              onClose={handleClose}
+              onClose={onClose}
             />
           </div>
         </motion.div>
