@@ -411,15 +411,13 @@ const ViewPurchase = () => {
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                 <span className="text-left">Subtotal</span>
                 <span className="px-2">:</span>
-                <span className="font-mono text-right">
-                  {formatCurrency(baseTotal)}
-                </span>
+                <span className="text-right">{formatCurrency(baseTotal)}</span>
               </div>
 
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                 <span className="text-left">Diskon</span>
                 <span className="px-2">:</span>
-                <span className="font-mono text-right">
+                <span className="text-right">
                   {formatCurrency(discountTotal, '-')}
                 </span>
               </div>
@@ -427,7 +425,7 @@ const ViewPurchase = () => {
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                 <span className="text-left">Setelah Diskon</span>
                 <span className="px-2">:</span>
-                <span className="font-mono text-right">
+                <span className="text-right">
                   {formatCurrency(afterDiscountTotal)}
                 </span>
               </div>
@@ -436,7 +434,7 @@ const ViewPurchase = () => {
                 <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                   <span className="text-left">PPN</span>
                   <span className="px-2">:</span>
-                  <span className="font-mono text-right">
+                  <span className="text-right">
                     {formatCurrency(vatTotal, '+')}
                   </span>
                 </div>
@@ -445,9 +443,7 @@ const ViewPurchase = () => {
               <div className="border-t pt-2 grid grid-cols-[1fr_auto_1fr] font-bold">
                 <span className="text-left">TOTAL</span>
                 <span className="px-2">:</span>
-                <span className="font-mono text-right">
-                  {formatCurrency(grandTotal)}
-                </span>
+                <span className="text-right">{formatCurrency(grandTotal)}</span>
               </div>
             </div>
           </div>

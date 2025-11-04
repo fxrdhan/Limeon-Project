@@ -128,7 +128,7 @@ const DateTimeDisplay = () => {
         onChange={setSelectedDate}
       >
         <div className="inline-flex items-center space-x-3 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
-          <span className="text-sm text-gray-600 tracking-tight font-medium font-mono">
+          <span className="text-sm text-gray-600 tracking-tight font-medium">
             {datePart}
           </span>
           <TbCalendarMonthFilled className="w-5 h-5 text-gray-600" />
@@ -140,7 +140,7 @@ const DateTimeDisplay = () => {
       {/* Time */}
       <div className="inline-flex items-center space-x-2 relative">
         <div
-          className="text-sm text-gray-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors font-mono"
+          className="text-sm text-gray-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -150,7 +150,7 @@ const DateTimeDisplay = () => {
           <span className="mx-0.5">:</span>
           <span>{seconds || '--'}</span>
           {!is24HourFormat && ampm && (
-            <span className="ml-2 text-sm font-medium font-mono">{ampm}</span>
+            <span className="ml-2 text-sm font-medium">{ampm}</span>
           )}
         </div>
 

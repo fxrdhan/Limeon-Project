@@ -93,7 +93,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                             originalData?.originalRightKode ||
                             compData.rightKode
                           }
-                          className="text-sm font-mono"
+                          className="text-sm"
                           isFlipped={isFlipped}
                         />
                       </div>
