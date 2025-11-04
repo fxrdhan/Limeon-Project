@@ -116,7 +116,6 @@ const EntityModal: React.FC<EntityModalProps> = ({
         isDualMode={contextValue.comparison.isDualMode}
         versionA={contextValue.comparison.versionA}
         versionB={contextValue.comparison.versionB}
-        onFlipVersions={contextValue.uiActions.flipVersions}
         onRestore={initialData?.id ? handleRestore : undefined}
       />
     </EntityModalProvider>

@@ -26,7 +26,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
     visible: {
       opacity: 1,
       scale: 1,
-      x: comparison.isOpen ? -200 : 0,
+      x: comparison.isOpen ? -190 : 0,
     },
     exit: { opacity: 0, scale: 0.95 },
   };

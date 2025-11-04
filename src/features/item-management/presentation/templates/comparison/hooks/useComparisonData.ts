@@ -10,7 +10,6 @@ interface UseComparisonDataProps {
   };
   versionA?: VersionData;
   versionB?: VersionData;
-  isFlipped: boolean;
   entityName: string;
 }
 
@@ -20,7 +19,6 @@ export const useComparisonData = ({
   currentData,
   versionA,
   versionB,
-  isFlipped,
   entityName,
 }: UseComparisonDataProps) => {
   // Helper function to get code field from entity data (all tables now use 'code')
@@ -29,10 +27,6 @@ export const useComparisonData = ({
   ) => {
     return String(entityData?.code || '');
   };
-
-  // Helper functions to get effective versions based on flip state
-  const getEffectiveVersionA = () => (isFlipped ? versionB : versionA);
-  const getEffectiveVersionB = () => (isFlipped ? versionA : versionB);
 
   // Get original data for diff computation (never changes, prevents recomputation)
   const getOriginalComparisonData = () => {
@@ -65,10 +59,8 @@ export const useComparisonData = ({
     const isManufacturer = entityName === 'Produsen';
 
     if (isDualMode && versionA && versionB) {
-      const effectiveVersionA = getEffectiveVersionA();
-      const effectiveVersionB = getEffectiveVersionB();
-      const versionAData = effectiveVersionA?.entity_data;
-      const versionBData = effectiveVersionB?.entity_data;
+      const versionAData = versionA.entity_data;
+      const versionBData = versionB.entity_data;
       return {
         leftKode: getCodeField(versionAData),
         leftName: String(versionAData?.name || ''),
@@ -84,8 +76,8 @@ export const useComparisonData = ({
             ? versionBData?.address || ''
             : versionBData?.description || ''
         ),
-        leftVersion: effectiveVersionA,
-        rightVersion: effectiveVersionB,
+        leftVersion: versionA,
+        rightVersion: versionB,
         isKodeDifferent:
           getCodeField(versionA.entity_data) !==
           getCodeField(versionB.entity_data),
