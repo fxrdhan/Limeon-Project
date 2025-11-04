@@ -171,7 +171,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
                 className="
                   relative
                   group
-                  font-mono text-xs px-2 py-1 rounded
+                  text-xs px-2 py-1 rounded
                   flex items-center justify-center
                   min-w-[2.5rem]
                   transition-all duration-300 ease-in-out
@@ -198,7 +198,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
                 />
               </button>
             ) : (
-              <span className="font-mono text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+              <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
                 v{item.version_number}
               </span>
             )}

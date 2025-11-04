@@ -1,13 +1,12 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
 import type { VersionData } from '../../../shared/types';
-import { useModalAnimation, useComparisonData, useAutoScroll } from './hooks';
+import { useModalAnimation, useComparisonData } from './hooks';
 import {
   ComparisonHeader,
   DualModeContent,
-  DifferencesSummary,
   ComparisonFooter,
 } from '../../organisms';
 import { SingleModeContent } from '../../molecules';
@@ -45,11 +44,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   const { comparison, uiActions } = useEntityModal();
   const { isFlipped } = comparison;
 
-  // Refs for checking overflow
-  const kodeRef = useRef<HTMLDivElement>(null);
-  const nameRef = useRef<HTMLDivElement>(null);
-  const descriptionRef = useRef<HTMLDivElement>(null);
-
   // Use custom hooks
   const { isClosing, handleClose } = useModalAnimation({ isOpen, onClose });
 
@@ -61,14 +55,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     versionB,
     isFlipped,
     entityName,
-  });
-
-  useAutoScroll({
-    isOpen,
-    kodeRef,
-    nameRef,
-    descriptionRef,
-    compData,
   });
 
   // Early return for invalid states
@@ -129,12 +115,13 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             />
 
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-6">
               {isDualMode ? (
                 <DualModeContent
                   isFlipped={isFlipped}
                   compData={compData}
                   entityName={entityName}
+                  originalData={originalData}
                 />
               ) : (
                 <SingleModeContent
@@ -142,18 +129,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   entityName={entityName}
                 />
               )}
-
-              {/* Differences Summary */}
-              <DifferencesSummary
-                compData={compData}
-                originalData={originalData}
-                isDualMode={isDualMode}
-                entityName={entityName}
-                isFlipped={isFlipped}
-                kodeRef={kodeRef}
-                nameRef={nameRef}
-                descriptionRef={descriptionRef}
-              />
             </div>
 
             {/* Footer */}

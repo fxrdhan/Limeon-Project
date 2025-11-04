@@ -268,7 +268,7 @@ function BaseSelector<T>({
                                 {config.getItemLabel(item)}
                               </span>
                               {config.getItemSecondaryText && (
-                                <span className="text-xs text-gray-400 font-mono">
+                                <span className="text-xs text-gray-400">
                                   {config.getItemSecondaryText(item)}
                                 </span>
                               )}
