@@ -25,6 +25,7 @@ interface ComparisonModalProps {
   isDualMode?: boolean;
   versionA?: VersionData;
   versionB?: VersionData;
+  isFlipped?: boolean;
   // Restore functionality
   onRestore?: (version: number) => Promise<void>;
 }
@@ -39,6 +40,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   isDualMode = false,
   versionA,
   versionB,
+  isFlipped = false,
   onRestore,
 }) => {
   const { compData, originalData } = useComparisonData({
@@ -107,6 +109,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   compData={compData}
                   entityName={entityName}
                   originalData={originalData}
+                  isFlipped={isFlipped}
                 />
               ) : (
                 <SingleModeContent

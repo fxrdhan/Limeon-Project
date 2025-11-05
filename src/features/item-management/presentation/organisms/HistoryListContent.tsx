@@ -99,8 +99,9 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         throw new Error(`Version ${restoreTargetVersion} not found`);
       }
 
-      // For hard rollback, delete versions first
       if (restoreMode === 'hard') {
+        // Hard rollback: Only delete history versions, do NOT update entity
+        // (updating entity would trigger a new version creation)
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           'hard_rollback_entity',
           {
@@ -117,27 +118,29 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         toast.success(
           `Berhasil menghapus ${rpcData.deleted_count} versi setelah v${restoreTargetVersion}`
         );
-      }
+      } else {
+        // Soft restore: Update entity to create a new version with old data
+        const restoreData = { ...targetVersion.entity_data };
 
-      // Get the entity data from the target version
-      const restoreData = { ...targetVersion.entity_data };
+        // Remove metadata fields that shouldn't be restored
+        delete restoreData.id;
+        delete restoreData.created_at;
+        delete restoreData.updated_at;
 
-      // Remove metadata fields that shouldn't be restored
-      delete restoreData.id;
-      delete restoreData.created_at;
-      delete restoreData.updated_at;
+        // Update the current entity with restored data
+        const { error: updateError } = await supabase
+          .from(entityTable)
+          .update({
+            ...restoreData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', entityId);
 
-      // Update the current entity with restored data
-      const { error: updateError } = await supabase
-        .from(entityTable)
-        .update({
-          ...restoreData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', entityId);
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
 
-      if (updateError) {
-        throw new Error(updateError.message);
+        toast.success(`Berhasil restore ke versi ${restoreTargetVersion}`);
       }
 
       // Invalidate caches and close history without full reload
@@ -148,9 +151,6 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         console.error('Failed to invalidate queries after restore', e);
       }
 
-      toast.success(
-        `Berhasil ${restoreMode === 'hard' ? 'rollback' : 'restore'} ke versi ${restoreTargetVersion}`
-      );
       closeRestoreDialog();
       uiActions.closeHistory();
     } catch (error) {

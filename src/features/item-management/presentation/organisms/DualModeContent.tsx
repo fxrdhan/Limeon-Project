@@ -25,12 +25,14 @@ interface DualModeContentProps {
     originalLeftDescription: string;
     originalRightDescription: string;
   } | null;
+  isFlipped?: boolean;
 }
 
 const DualModeContent: React.FC<DualModeContentProps> = ({
   compData,
   entityName,
   originalData,
+  isFlipped = false,
 }) => {
   if (!compData) return null;
 
@@ -43,6 +45,14 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
     originalData?.originalLeftDescription || compData.leftDescription;
   const rightDescription =
     originalData?.originalRightDescription || compData.rightDescription;
+
+  // When flipped, swap old/new for diff
+  // Normal: left (older/first selected) -> right (newer/second selected)
+  // Flipped: right (now treated as older) -> left (now treated as newer)
+  const getOldText = (left: string, right: string) =>
+    isFlipped ? right : left;
+  const getNewText = (left: string, right: string) =>
+    isFlipped ? left : right;
 
   return (
     <div className="space-y-4">
@@ -58,8 +68,8 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
         >
           {compData.isKodeDifferent ? (
             <DiffText
-              oldText={rightKode}
-              newText={leftKode}
+              oldText={getOldText(leftKode, rightKode)}
+              newText={getNewText(leftKode, rightKode)}
               className="w-full"
             />
           ) : (
@@ -80,8 +90,8 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
         >
           {compData.isNameDifferent ? (
             <DiffText
-              oldText={rightName}
-              newText={leftName}
+              oldText={getOldText(leftName, rightName)}
+              newText={getNewText(leftName, rightName)}
               className="w-full"
             />
           ) : (
@@ -104,8 +114,8 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
         >
           {compData.isDescriptionDifferent ? (
             <DiffText
-              oldText={rightDescription}
-              newText={leftDescription}
+              oldText={getOldText(leftDescription, rightDescription)}
+              newText={getNewText(leftDescription, rightDescription)}
               className="w-full leading-relaxed"
             />
           ) : (
