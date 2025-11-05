@@ -99,22 +99,30 @@ export const SlidingSelector = <T,>({
 }: SlidingSelectorProps<T>) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isMouseOver, setIsMouseOver] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const activeOption = options.find(option => option.key === activeKey);
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
 
-  // Auto-collapse logic
+  // Auto-collapse logic - don't collapse if keyboard navigating
   useEffect(() => {
     if (!collapsible || !expandOnHover) return;
 
-    if (!isMouseOver && isExpanded) {
+    // Check if any button has focus (keyboard navigation)
+    const hasFocus = buttonRefs.current.some(
+      btn => btn && document.activeElement === btn
+    );
+
+    if (!isMouseOver && isExpanded && !hasFocus) {
       mouseLeaveTimeoutRef.current = setTimeout(() => {
         setIsExpanded(false);
+        setFocusedIndex(-1);
       }, autoCollapseDelay);
-    } else if (isMouseOver) {
+    } else if (isMouseOver || hasFocus) {
       if (mouseLeaveTimeoutRef.current) {
         clearTimeout(mouseLeaveTimeoutRef.current);
         mouseLeaveTimeoutRef.current = null;
@@ -127,7 +135,14 @@ export const SlidingSelector = <T,>({
         clearTimeout(mouseLeaveTimeoutRef.current);
       }
     };
-  }, [isMouseOver, isExpanded, collapsible, expandOnHover, autoCollapseDelay]);
+  }, [
+    isMouseOver,
+    isExpanded,
+    collapsible,
+    expandOnHover,
+    autoCollapseDelay,
+    focusedIndex,
+  ]);
 
   const handleMouseEnter = useCallback(() => {
     if (expandOnHover) {
@@ -147,9 +162,96 @@ export const SlidingSelector = <T,>({
     }
   }, [collapsible]);
 
+  // Keyboard navigation handler - Tab/Arrow keys directly change page
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (disabled || !isExpanded) return;
+
+      const enabledOptions = options.filter(opt => !opt.disabled);
+      const currentIndex =
+        focusedIndex >= 0
+          ? focusedIndex
+          : enabledOptions.findIndex(opt => opt.key === activeKey);
+
+      switch (event.key) {
+        case 'Tab':
+          // Prevent default tab behavior to control focus ourselves
+          event.preventDefault();
+          if (event.shiftKey) {
+            // Shift+Tab: Move to previous and change page
+            const prevIndex =
+              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
+            const prevOption = enabledOptions[prevIndex];
+            setFocusedIndex(prevIndex);
+            buttonRefs.current[prevIndex]?.focus();
+            onSelectionChange(prevOption.key, prevOption.value);
+          } else {
+            // Tab: Move to next and change page
+            const nextIndex =
+              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
+            const nextOption = enabledOptions[nextIndex];
+            setFocusedIndex(nextIndex);
+            buttonRefs.current[nextIndex]?.focus();
+            onSelectionChange(nextOption.key, nextOption.value);
+          }
+          break;
+
+        case 'ArrowRight':
+        case 'ArrowDown':
+          event.preventDefault();
+          {
+            const nextIndex =
+              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
+            const nextOption = enabledOptions[nextIndex];
+            setFocusedIndex(nextIndex);
+            buttonRefs.current[nextIndex]?.focus();
+            onSelectionChange(nextOption.key, nextOption.value);
+          }
+          break;
+
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          event.preventDefault();
+          {
+            const prevIndex =
+              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
+            const prevOption = enabledOptions[prevIndex];
+            setFocusedIndex(prevIndex);
+            buttonRefs.current[prevIndex]?.focus();
+            onSelectionChange(prevOption.key, prevOption.value);
+          }
+          break;
+
+        case 'Escape':
+          event.preventDefault();
+          if (collapsible) {
+            setIsExpanded(false);
+            setFocusedIndex(-1);
+          }
+          break;
+      }
+    },
+    [
+      disabled,
+      isExpanded,
+      options,
+      focusedIndex,
+      activeKey,
+      collapsible,
+      onSelectionChange,
+    ]
+  );
+
   const handleOptionClick = useCallback(
     (option: SlidingSelectorOption<T>, event: React.MouseEvent) => {
       if (disabled || option.disabled) return;
+
+      // Blur focus after click to allow auto-collapse to work
+      (event.currentTarget as HTMLButtonElement).blur();
+
+      // Reset focused index to allow fresh keyboard navigation next time
+      setFocusedIndex(-1);
+
       onSelectionChange(option.key, option.value, event);
     },
     [disabled, onSelectionChange]
@@ -169,6 +271,8 @@ export const SlidingSelector = <T,>({
     <LayoutGroup id={layoutId || `sliding-selector-${variant}`}>
       <motion.div
         layout
+        role="tablist"
+        aria-label="Navigation tabs"
         className={classNames(
           'flex items-center bg-zinc-100 shadow-md text-gray-700 overflow-hidden select-none relative w-fit',
           sizeClasses.container,
@@ -183,14 +287,22 @@ export const SlidingSelector = <T,>({
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onKeyDown={handleKeyDown}
       >
         {!collapsible || isExpanded ? (
           // Expanded view - show all options
-          options.map(option => {
+          options.map((option, index) => {
             const isActive = option.key === activeKey;
             return (
               <button
                 key={option.key}
+                ref={el => {
+                  buttonRefs.current[index] = el;
+                }}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`${layoutId || variant}-panel-${option.key}`}
+                tabIndex={isActive ? 0 : -1}
                 className={classNames(
                   'group focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
                   sizeClasses.button,
@@ -238,6 +350,10 @@ export const SlidingSelector = <T,>({
           // Collapsed view - show only active option with expand button
           <div className="flex items-center">
             <button
+              role="tab"
+              aria-selected="true"
+              aria-controls={`${layoutId || variant}-panel-${activeKey}`}
+              tabIndex={0}
               className={classNames(
                 'group focus:outline-hidden select-none relative cursor-pointer z-10',
                 sizeClasses.button,
@@ -272,6 +388,8 @@ export const SlidingSelector = <T,>({
             {collapsible && (
               <button
                 onClick={toggleExpanded}
+                aria-label={isExpanded ? 'Collapse tabs' : 'Expand tabs'}
+                aria-expanded={isExpanded}
                 className={classNames(
                   'ml-1 p-2 hover:bg-emerald-100 transition-colors duration-150 group',
                   shapeClasses.button
