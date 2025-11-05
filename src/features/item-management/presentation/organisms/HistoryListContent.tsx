@@ -77,6 +77,15 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     setShowRestoreDialog(true);
   };
 
+  const closeRestoreDialog = () => {
+    setShowRestoreDialog(false);
+    // Delay resetting state until exit animation completes (200ms + buffer)
+    setTimeout(() => {
+      setRestoreTargetVersion(null);
+      setRestoreMode('soft');
+    }, 250);
+  };
+
   const handleRestoreConfirm = async () => {
     if (!restoreTargetVersion) return;
 
@@ -142,7 +151,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       toast.success(
         `Berhasil ${restoreMode === 'hard' ? 'rollback' : 'restore'} ke versi ${restoreTargetVersion}`
       );
-      setShowRestoreDialog(false);
+      closeRestoreDialog();
       uiActions.closeHistory();
     } catch (error) {
       console.error('Restore error:', error);
@@ -155,9 +164,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
   };
 
   const handleRestoreCancel = () => {
-    setShowRestoreDialog(false);
-    setRestoreTargetVersion(null);
-    setRestoreMode('soft');
+    closeRestoreDialog();
   };
 
   const handleCompareSelected = (selectedVersions: HistoryItem[]) => {
