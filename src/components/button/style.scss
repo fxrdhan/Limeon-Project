@@ -57,17 +57,8 @@
   }
 
   &--danger {
-    @apply hover:text-white outline-hidden;
-    color: var(--color-danger);
-
-    &:hover {
-      background-color: color-mix(
-        in oklch,
-        var(--color-danger) 80%,
-        transparent
-      );
-      opacity: 1 !important;
-    }
+    @apply text-white shadow-md ring-0 outline-hidden flex items-center hover:text-white;
+    background-color: var(--color-danger);
   }
 
   &--text-danger {
