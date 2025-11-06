@@ -21,7 +21,7 @@ const FormAction: React.FC<FormActionProps> = ({
         {isEditMode && onDelete ? (
           <Button
             type="button"
-            variant="danger"
+            variant="text-danger"
             onClick={onDelete}
             isLoading={isDeleting}
             tabIndex={cancelTabIndex}

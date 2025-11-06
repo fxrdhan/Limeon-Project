@@ -16,7 +16,7 @@ import type {
 import type { UnitData } from '@/types/database';
 
 const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
-  <Button variant="danger" size="sm" tabIndex={19} onClick={onClick}>
+  <Button variant="text-danger" size="sm" tabIndex={19} onClick={onClick}>
     <FaTrash />
   </Button>
 ));
