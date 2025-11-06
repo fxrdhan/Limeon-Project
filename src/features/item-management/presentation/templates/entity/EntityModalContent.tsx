@@ -117,7 +117,7 @@ const EntityModalFooter: React.FC<{
         {isEditMode && handleDelete ? (
           <Button
             type="button"
-            variant="danger"
+            variant="text-danger"
             onClick={handleDelete}
             isLoading={isDeleting}
             disabled={isLoading || isDeleting}
