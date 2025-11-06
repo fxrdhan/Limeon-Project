@@ -5,14 +5,14 @@
   @apply cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out;
   @apply disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden;
 
-  &:not(.button--glow) {
-    @apply hover:opacity-80;
+  &:not(.button--glow):not(:disabled):hover {
+    opacity: 0.8;
   }
 }
 
 @mixin button-glow-effect($color-var) {
-  &:hover,
-  &:focus {
+  &:not(:disabled):hover,
+  &:not(:disabled):focus {
     box-shadow:
       0 0 5px var($color-var),
       0 0 15px var($color-var),
@@ -49,23 +49,32 @@
   }
 
   &--text {
-    @apply text-gray-500 hover:text-black;
+    @apply text-gray-500;
 
-    &.button--underline {
-      @apply hover:underline underline-offset-2 decoration-2;
+    &:not(:disabled):hover {
+      @apply text-black;
+    }
+
+    &.button--underline:not(:disabled):hover {
+      @apply underline underline-offset-2 decoration-2;
     }
   }
 
   &--danger {
     @apply text-white shadow-md ring-0 outline-hidden flex items-center hover:text-white;
     background-color: var(--color-danger);
+
+    &:not(:disabled):hover {
+      opacity: 0.5 !important;
+    }
   }
 
   &--text-danger {
-    @apply hover:bg-red-100 outline-hidden;
+    @apply outline-hidden;
     color: var(--color-danger);
 
-    &:hover {
+    &:not(:disabled):hover {
+      @apply bg-red-200;
       opacity: 1 !important;
     }
   }
