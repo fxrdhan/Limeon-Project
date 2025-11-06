@@ -246,6 +246,24 @@ export interface EntityModalContextValue {
     versionB?: VersionData;
     isFlipped: boolean;
   };
+  // Realtime sync state (optional - only present in edit mode)
+  realtime?: {
+    smartFormSync?: {
+      handleRealtimeUpdate: (updates: Record<string, unknown>) => {
+        appliedImmediately: Record<string, unknown>;
+        pendingConflicts: string[];
+      };
+      getFieldHandlers: (fieldName: string) => {
+        onFocus: () => void;
+        onBlur: () => void;
+        onChange: () => void;
+      };
+      hasPendingUpdate: (fieldName: string) => boolean;
+      applyAllPendingUpdates: () => Record<string, unknown>;
+      registerActiveField: (fieldName: string) => void;
+      unregisterActiveField: (fieldName: string) => void;
+    };
+  };
 
   // Actions
   formActions: {
