@@ -7,6 +7,7 @@ import type {
   VersionData,
 } from '../../../shared/contexts/EntityModalContext';
 import type { EntityData } from '../../../shared/types';
+import { useEntityModalRealtime } from '@/hooks/realtime/useEntityModalRealtime';
 
 interface UseEntityModalLogicProps {
   isOpen: boolean;
@@ -76,6 +77,68 @@ export const useEntityModalLogic = ({
 
   const isEditMode = Boolean(initialData);
   const formattedUpdateAt = formatDateTime(initialData?.updated_at);
+
+  // Determine table name based on entity name
+  const getTableName = useCallback((entity: string) => {
+    switch (entity.toLowerCase()) {
+      case 'kategori':
+        return 'item_categories';
+      case 'jenis item':
+        return 'item_types';
+      case 'kemasan':
+        return 'item_packages';
+      case 'sediaan':
+        return 'item_dosages';
+      case 'produsen':
+        return 'item_manufacturers';
+      default:
+        return '';
+    }
+  }, []);
+
+  const entityTable = getTableName(entityName);
+  const entityId = initialData?.id || '';
+
+  // Realtime sync callback - updates form state from realtime changes
+  // ANTI-LOOP: This only updates local state, doesn't trigger save
+  const handleRealtimeUpdate = useCallback(
+    (updates: Record<string, unknown>) => {
+      console.log('🔄 Applying realtime updates to form:', updates);
+
+      // Update state based on changed fields
+      if ('code' in updates && typeof updates.code === 'string') {
+        setCode(updates.code);
+      }
+      if ('name' in updates && typeof updates.name === 'string') {
+        setName(updates.name);
+      }
+      if ('description' in updates && typeof updates.description === 'string') {
+        setDescription(updates.description);
+      }
+      if ('address' in updates && typeof updates.address === 'string') {
+        setAddress(updates.address);
+      }
+    },
+    [] // Empty deps - setters are stable
+  );
+
+  // Setup realtime sync for edit mode only
+  const { smartFormSync } = useEntityModalRealtime({
+    entityTable,
+    entityId,
+    enabled: isEditMode && isOpen, // Only in edit mode when modal is open
+    onSmartUpdate: handleRealtimeUpdate,
+    onEntityDeleted: () => {
+      // Close modal if entity deleted from another source
+      toast.error('Data telah dihapus dari sumber lain', {
+        duration: 3000,
+        icon: '⚠️',
+      });
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    },
+  });
 
   // Check if form is dirty
   const isDirty = useMemo(() => {
@@ -409,6 +472,12 @@ export const useEntityModalLogic = ({
       versionB: comparisonData.versionB,
       isFlipped: comparisonData.isFlipped,
     },
+    // Realtime sync (only in edit mode)
+    realtime: isEditMode
+      ? {
+          smartFormSync,
+        }
+      : undefined,
     formActions: {
       setCode,
       setName,
