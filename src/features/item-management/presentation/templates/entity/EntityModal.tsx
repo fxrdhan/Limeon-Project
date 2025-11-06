@@ -91,6 +91,9 @@ const EntityModal: React.FC<EntityModalProps> = ({
     }
   };
 
+  // Extract form state for live comparison data (includes realtime updates)
+  const { form } = contextValue;
+
   return (
     <EntityModalProvider value={contextValue}>
       <EntityModalTemplate>
@@ -107,12 +110,12 @@ const EntityModal: React.FC<EntityModalProps> = ({
         entityName={entityName}
         selectedVersion={contextValue.comparison.selectedVersion}
         currentData={{
-          code: initialData?.code || '',
-          name: initialData?.name || '',
+          // Use live form state instead of stale initialData
+          // This ensures comparison shows realtime updates correctly
+          code: form.code || '',
+          name: form.name,
           description:
-            entityName === 'Produsen'
-              ? (initialData as { address?: string })?.address || ''
-              : initialData?.description || '',
+            entityName === 'Produsen' ? form.address || '' : form.description,
         }}
         isDualMode={contextValue.comparison.isDualMode}
         versionA={contextValue.comparison.versionA}
