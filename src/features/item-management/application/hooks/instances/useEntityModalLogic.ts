@@ -75,6 +75,20 @@ export const useEntityModalLogic = ({
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
+  // Track last synchronized state from database (for realtime updates)
+  // This represents the "truth" from database, not the stale initialData snapshot
+  const lastSyncedStateRef = useRef<{
+    code: string;
+    name: string;
+    description: string;
+    address: string;
+  }>({
+    code: '',
+    name: '',
+    description: '',
+    address: '',
+  });
+
   const isEditMode = Boolean(initialData);
   const formattedUpdateAt = formatDateTime(initialData?.updated_at);
 
@@ -118,6 +132,20 @@ export const useEntityModalLogic = ({
       if ('address' in updates && typeof updates.address === 'string') {
         setAddress(updates.address);
       }
+
+      // ✨ Update last synced state (database state changed via realtime)
+      // This ensures isDirty compares against latest database state, not stale initialData
+      lastSyncedStateRef.current = {
+        ...lastSyncedStateRef.current,
+        ...(updates as {
+          code?: string;
+          name?: string;
+          description?: string;
+          address?: string;
+        }),
+      };
+
+      console.log('✅ Last synced state updated:', lastSyncedStateRef.current);
     },
     [] // Empty deps - setters are stable
   );
@@ -140,20 +168,21 @@ export const useEntityModalLogic = ({
     },
   });
 
-  // Check if form is dirty
+  // Check if form is dirty (compares current form state vs last synced database state)
+  // This correctly handles realtime updates - when database changes via realtime,
+  // lastSyncedState updates, so isDirty remains FALSE unless USER makes changes
   const isDirty = useMemo(() => {
     if (!isEditMode) return true;
 
-    // All tables now use 'code' field consistently
-    const initialCode = initialData?.code || '';
+    const synced = lastSyncedStateRef.current;
 
     return (
-      code !== initialCode ||
-      name !== (initialData?.name || '') ||
-      description !== (initialData?.description || '') ||
-      address !== (initialData?.address || '')
+      code !== synced.code ||
+      name !== synced.name ||
+      description !== synced.description ||
+      address !== synced.address
     );
-  }, [code, name, description, address, isEditMode, initialData]);
+  }, [code, name, description, address, isEditMode]);
 
   // Check if form is valid
   const isValid = useMemo(() => {
@@ -182,6 +211,14 @@ export const useEntityModalLogic = ({
         setName(initialData.name);
         setDescription(initialData.description || '');
         setAddress(initialData.address || '');
+
+        // Initialize last synced state from initialData (baseline for isDirty)
+        lastSyncedStateRef.current = {
+          code: initialData.code || '',
+          name: initialData.name || '',
+          description: initialData.description || '',
+          address: initialData.address || '',
+        };
       } else if (initialNameFromSearch) {
         setCode('');
         setName(initialNameFromSearch);
