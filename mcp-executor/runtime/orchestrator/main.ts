@@ -6,6 +6,7 @@
 
 import { SandboxExecutor, createExecutor } from '../sandbox/executor.ts';
 import { SkillsManager } from '../skills-manager.ts';
+import { MCPBridge } from '../mcp-bridge.ts';
 import type {
   AgentTask,
   ExecutionResult,
@@ -20,8 +21,12 @@ export class MCPOrchestrator {
   private servers: Map<string, ServerConfig> = new Map();
   private options: OrchestratorOptions;
   private activeTasks: Map<string, AgentTask> = new Map();
+  private mcpBridge?: MCPBridge;
 
-  constructor(options: Partial<OrchestratorOptions> = {}) {
+  constructor(
+    options: Partial<OrchestratorOptions> = {},
+    mcpBridge?: MCPBridge
+  ) {
     this.options = {
       sandboxMode: true,
       maxConcurrentTasks: 5,
@@ -36,6 +41,7 @@ export class MCPOrchestrator {
     });
 
     this.skillsManager = new SkillsManager(this.options.skillsDir);
+    this.mcpBridge = mcpBridge;
   }
 
   /**
@@ -132,8 +138,23 @@ export class MCPOrchestrator {
       // Inject MCP bridge into execution context
       const codeWithBridge = this.injectMCPBridge(task.code);
 
+      // Create sandbox context with MCP bridge
+      const sandboxContext = this.mcpBridge
+        ? {
+            __executeMCPCall: async (
+              toolName: string,
+              params: Record<string, unknown>
+            ) => {
+              return await this.mcpBridge!.call(toolName, params);
+            },
+          }
+        : {};
+
       // Execute in sandbox
-      const result = await this.executor.execute(codeWithBridge);
+      const result = await this.executor.execute(
+        codeWithBridge,
+        sandboxContext
+      );
 
       // Update task status
       task.status = result.success ? 'completed' : 'failed';
@@ -157,26 +178,34 @@ export class MCPOrchestrator {
    * Inject MCP call bridge into execution context
    */
   private injectMCPBridge(code: string): string {
-    return `
-// MCP Bridge - Allows code to call MCP tools
+    const bridgeCode = this.mcpBridge
+      ? `
+// MCP Bridge - Real implementation
 globalThis.__mcpCall = async (toolName, params) => {
   __trackTool(toolName);
 
-  // This would make an actual MCP call
-  // For now, we'll simulate it
-  console.log(\`[MCP Call] \${toolName}\`, params);
+  // Call through the real MCP bridge
+  return await __executeMCPCall(toolName, params);
+};`
+      : `
+// MCP Bridge - Simulation mode (no bridge connected)
+globalThis.__mcpCall = async (toolName, params) => {
+  __trackTool(toolName);
 
-  // In production, this would use the actual MCP client
-  // to make the tool call and return the result
+  console.log(\`[MCP Call - Simulated] \${toolName}\`, params);
+
   return {
     _simulated: true,
     tool: toolName,
     params
   };
-};
+};`;
 
-// Import server APIs
-${this.generateServerImports()}
+    return `
+${bridgeCode}
+
+// Server APIs
+${this.generateServerAPIs()}
 
 // User code
 ${code}
@@ -184,20 +213,53 @@ ${code}
   }
 
   /**
-   * Generate import statements for server APIs
+   * Generate server API objects for sandbox
    */
-  private generateServerImports(): string {
-    const imports: string[] = [];
+  private generateServerAPIs(): string {
+    // Instead of imports, create API objects directly
+    return `
+// Supabase API
+const supabase = {
+  listTables: async (schemas) => await __mcpCall("mcp__supabase__list_tables", { schemas }),
+  executeSQL: async (query) => await __mcpCall("mcp__supabase__execute_sql", { query }),
+  applyMigration: async (name, query) => await __mcpCall("mcp__supabase__apply_migration", { name, query }),
+  listMigrations: async () => await __mcpCall("mcp__supabase__list_migrations", {}),
+  listEdgeFunctions: async () => await __mcpCall("mcp__supabase__list_edge_functions", {}),
+  getEdgeFunction: async (slug) => await __mcpCall("mcp__supabase__get_edge_function", { function_slug: slug }),
+  deployEdgeFunction: async (name, files, entrypoint, importMap) => await __mcpCall("mcp__supabase__deploy_edge_function", { name, files, entrypoint_path: entrypoint, import_map_path: importMap }),
+  getProjectURL: async () => await __mcpCall("mcp__supabase__get_project_url", {}),
+  getPublishableKeys: async () => await __mcpCall("mcp__supabase__get_publishable_keys", {}),
+  generateTypes: async () => await __mcpCall("mcp__supabase__generate_typescript_types", {}),
+  searchDocs: async (query) => await __mcpCall("mcp__supabase__search_docs", { graphql_query: query }),
+  listBranches: async () => await __mcpCall("mcp__supabase__list_branches", {}),
+  createBranch: async (name, confirmCostId) => await __mcpCall("mcp__supabase__create_branch", { name, confirm_cost_id: confirmCostId }),
+  deleteBranch: async (branchId) => await __mcpCall("mcp__supabase__delete_branch", { branch_id: branchId }),
+  mergeBranch: async (branchId) => await __mcpCall("mcp__supabase__merge_branch", { branch_id: branchId }),
+  resetBranch: async (branchId, version) => await __mcpCall("mcp__supabase__reset_branch", { branch_id: branchId, migration_version: version }),
+  rebaseBranch: async (branchId) => await __mcpCall("mcp__supabase__rebase_branch", { branch_id: branchId }),
+  getLogs: async (service) => await __mcpCall("mcp__supabase__get_logs", { service }),
+  getAdvisors: async (type) => await __mcpCall("mcp__supabase__get_advisors", { type }),
+};
 
-    for (const [name, config] of this.servers.entries()) {
-      if (config.enabled) {
-        imports.push(
-          `import * as ${name} from "@mcp/servers/${name}/index.ts";`
-        );
-      }
-    }
+// GitHub API
+const github = {
+  getMe: async () => await __mcpCall("mcp__github__get_me", {}),
+  createRepository: async (name, description, isPrivate, org) => await __mcpCall("mcp__github__create_repository", { name, description, private: isPrivate, organization: org }),
+  listBranches: async (owner, repo) => await __mcpCall("mcp__github__list_branches", { owner, repo }),
+  createBranch: async (owner, repo, branch, from) => await __mcpCall("mcp__github__create_branch", { owner, repo, branch, from_branch: from }),
+  getFileContents: async (owner, repo, path) => await __mcpCall("mcp__github__get_file_contents", { owner, repo, path }),
+  listIssues: async (owner, repo) => await __mcpCall("mcp__github__list_issues", { owner, repo }),
+  createIssue: async (owner, repo, title, body, labels) => await __mcpCall("mcp__github__issue_write", { method: "create", owner, repo, title, body, labels }),
+  listPullRequests: async (owner, repo) => await __mcpCall("mcp__github__list_pull_requests", { owner, repo }),
+  createPullRequest: async (owner, repo, title, head, base, body) => await __mcpCall("mcp__github__create_pull_request", { owner, repo, title, head, base, body }),
+};
 
-    return imports.join('\n');
+// Context7 API
+const context7 = {
+  resolveLibraryId: async (name) => await __mcpCall("mcp__context7__resolve-library-id", { libraryName: name }),
+  getLibraryDocs: async (id, topic, tokens) => await __mcpCall("mcp__context7__get-library-docs", { context7CompatibleLibraryID: id, topic, tokens }),
+};
+`;
   }
 
   /**

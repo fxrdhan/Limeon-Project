@@ -15,7 +15,10 @@ export class SandboxExecutor {
   /**
    * Execute code in a sandboxed environment
    */
-  async execute<T = unknown>(code: string): Promise<ExecutionResult<T>> {
+  async execute<T = unknown>(
+    code: string,
+    additionalContext?: Record<string, unknown>
+  ): Promise<ExecutionResult<T>> {
     const startTime = performance.now();
     const startMemory = this.getMemoryUsage();
     const toolsCalled: string[] = [];
@@ -25,7 +28,10 @@ export class SandboxExecutor {
       this.validateCode(code);
 
       // Create isolated execution environment
-      const sandbox = this.createSandbox(toolsCalled);
+      const sandbox = {
+        ...this.createSandbox(toolsCalled),
+        ...(additionalContext || {}),
+      };
 
       // Set timeout
       const timeoutPromise = new Promise<never>((_, reject) =>

@@ -22,7 +22,13 @@
     "start": "deno run --allow-all runtime/orchestrator/main.ts",
     "dev": "deno run --allow-all --watch runtime/orchestrator/main.ts",
     "test": "deno test --allow-all",
-    "sandbox": "deno run --allow-read --allow-write=./skills --no-prompt runtime/sandbox/executor.ts"
+    "sandbox": "deno run --allow-read --allow-write=./skills --no-prompt runtime/sandbox/executor.ts",
+    "setup": "deno run --allow-all setup.ts",
+    "demo": "deno run --allow-all examples/00-real-mcp-demo.ts",
+    "demo:basic": "deno run --allow-all examples/01-basic-supabase.ts",
+    "demo:tokens": "deno run --allow-all examples/02-token-efficiency.ts",
+    "demo:multi": "deno run --allow-all examples/03-multi-server-workflow.ts",
+    "demo:skills": "deno run --allow-all examples/04-skills-reuse.ts"
   },
   "imports": {
     "@mcp/types": "./runtime/types.ts",
