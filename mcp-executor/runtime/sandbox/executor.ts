@@ -85,17 +85,23 @@ export class SandboxExecutor {
   private validateCode(code: string): void {
     // Block dangerous patterns
     const dangerousPatterns = [
-      /Deno\.(run|spawn|Command)/,
-      /eval\(/,
-      /Function\(/,
-      /import\s*\(/,
-      /__proto__/,
-      /constructor\[/,
+      {
+        pattern: /Deno\.(run|spawn|Command)/,
+        message: 'Deno process execution not allowed',
+      },
+      { pattern: /\beval\s*\(/, message: 'eval() not allowed' },
+      {
+        pattern: /\bnew\s+Function\s*\(|\bFunction\s*\((?![a-zA-Z])/,
+        message: 'Function constructor not allowed',
+      },
+      { pattern: /\bimport\s*\(/, message: 'Dynamic import not allowed' },
+      { pattern: /__proto__/, message: 'Prototype pollution attempt detected' },
+      { pattern: /constructor\[/, message: 'Constructor access not allowed' },
     ];
 
-    for (const pattern of dangerousPatterns) {
+    for (const { pattern, message } of dangerousPatterns) {
       if (pattern.test(code)) {
-        throw new Error(`Dangerous pattern detected: ${pattern.source}`);
+        throw new Error(`Security: ${message}`);
       }
     }
 

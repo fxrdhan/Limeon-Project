@@ -221,6 +221,7 @@ ${code}
 // Supabase API
 const supabase = {
   listTables: async (schemas) => await __mcpCall("mcp__supabase__list_tables", { schemas }),
+  listExtensions: async () => await __mcpCall("mcp__supabase__list_extensions", {}),
   executeSQL: async (query) => await __mcpCall("mcp__supabase__execute_sql", { query }),
   applyMigration: async (name, query) => await __mcpCall("mcp__supabase__apply_migration", { name, query }),
   listMigrations: async () => await __mcpCall("mcp__supabase__list_migrations", {}),
