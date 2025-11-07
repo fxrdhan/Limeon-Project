@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "dom"],
+    "strict": true,
+    "allowJs": true,
+    "checkJs": false
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "tasks": {
+    "start": "deno run --allow-all runtime/orchestrator/main.ts",
+    "dev": "deno run --allow-all --watch runtime/orchestrator/main.ts",
+    "test": "deno test --allow-all",
+    "sandbox": "deno run --allow-read --allow-write=./skills --no-prompt runtime/sandbox/executor.ts"
+  },
+  "imports": {
+    "@mcp/types": "./runtime/types.ts",
+    "@mcp/servers/": "./servers/",
+    "@mcp/skills/": "./skills/"
+  }
+}
