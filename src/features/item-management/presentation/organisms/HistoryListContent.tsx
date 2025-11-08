@@ -47,6 +47,101 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     }
   }, [comparison.isOpen]);
 
+  // Keyboard navigation: Arrow Up/Down to navigate between versions
+  useEffect(() => {
+    // Only enable keyboard navigation in single mode (not compare mode)
+    if (compareMode || !history || history.length === 0) {
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with typing in inputs, textareas, etc.
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+
+        // If no version selected, select the first one
+        if (selectedVersion === null) {
+          const firstVersion = history[0];
+          setSelectedVersion(firstVersion.version_number);
+          uiActions.openComparison(firstVersion);
+          return;
+        }
+
+        // Find current index
+        const currentIndex = history.findIndex(
+          h => h.version_number === selectedVersion
+        );
+
+        if (currentIndex === -1) return;
+
+        let targetIndex: number;
+        if (e.key === 'ArrowDown') {
+          // Move to next version (down in the list)
+          targetIndex = Math.min(currentIndex + 1, history.length - 1);
+        } else {
+          // Move to previous version (up in the list)
+          targetIndex = Math.max(currentIndex - 1, 0);
+        }
+
+        // Update selection if index changed
+        if (targetIndex !== currentIndex) {
+          const targetVersion = history[targetIndex];
+          setSelectedVersion(targetVersion.version_number);
+          uiActions.openComparison(targetVersion);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [compareMode, history, selectedVersion, uiActions]);
+
+  // Auto-scroll to selected version when it changes
+  useEffect(() => {
+    if (!selectedVersion || compareMode) {
+      return;
+    }
+
+    // Use setTimeout to wait for DOM updates and animations
+    const scrollTimeout = setTimeout(() => {
+      const element = document.querySelector(
+        `[data-version-number="${selectedVersion}"]`
+      ) as HTMLElement;
+      const container = element?.closest(
+        '.history-scrollbar-hidden'
+      ) as HTMLElement;
+
+      if (element && container) {
+        // Calculate scroll position to place item at desired position
+        const containerHeight = container.clientHeight;
+        const elementTop = element.offsetTop;
+        const elementHeight = element.offsetHeight;
+
+        // Position item at 50% from top (center)
+        const targetPosition = containerHeight * 0.5;
+        const scrollTo = elementTop - targetPosition + elementHeight / 2;
+
+        container.scrollTo({
+          top: scrollTo,
+          behavior: 'smooth',
+        });
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(scrollTimeout);
+    };
+  }, [selectedVersion, compareMode]);
+
   const handleVersionClick = (item: HistoryItem) => {
     // If clicking the same version that's already selected and comparison modal is open, close it
     if (selectedVersion === item.version_number && comparison.isOpen) {
