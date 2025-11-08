@@ -66,13 +66,15 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         // Now try the actual query with user info
         const { data, error: fetchError } = await supabase
           .from('entity_history')
-          .select(`
+          .select(
+            `
             *,
             users:changed_by (
               name,
               profilephoto
             )
-          `)
+          `
+          )
           .eq('entity_table', entityTable)
           .eq('entity_id', entityId)
           .order('version_number', { ascending: false });
