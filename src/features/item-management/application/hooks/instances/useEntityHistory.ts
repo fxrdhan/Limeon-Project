@@ -376,11 +376,14 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         },
         payload => {
           if (HISTORY_DEBUG) {
-            console.log('🔄 Entity table update detected (potential hard rollback):', {
-              table: entityTable,
-              entityId,
-              payload,
-            });
+            console.log(
+              '🔄 Entity table update detected (potential hard rollback):',
+              {
+                table: entityTable,
+                entityId,
+                payload,
+              }
+            );
           }
 
           // Re-fetch history silently when entity is updated
