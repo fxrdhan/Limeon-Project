@@ -11,6 +11,20 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "your-supabase-access-token"
       }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "your-context7-api-key"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-github-copilot-token"
+      }
     }
   }
 }
