@@ -3,17 +3,12 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { VersionData } from '../../../shared/types';
 import { useComparisonData } from './hooks';
-import {
-  ComparisonHeader,
-  DualModeContent,
-  ComparisonFooter,
-} from '../../organisms';
+import { ComparisonHeader, DualModeContent } from '../../organisms';
 import { SingleModeContent } from '../../molecules';
 
 interface ComparisonModalProps {
   isOpen: boolean;
   isClosing?: boolean;
-  onClose: () => void;
   entityName: string;
   selectedVersion?: VersionData;
   currentData: {
@@ -26,14 +21,11 @@ interface ComparisonModalProps {
   versionA?: VersionData;
   versionB?: VersionData;
   isFlipped?: boolean;
-  // Restore functionality
-  onRestore?: (version: number) => Promise<void>;
 }
 
 const ComparisonModal: React.FC<ComparisonModalProps> = ({
   isOpen,
   isClosing = false,
-  onClose,
   entityName,
   selectedVersion,
   currentData,
@@ -41,7 +33,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   versionA,
   versionB,
   isFlipped = false,
-  onRestore,
 }) => {
   const { compData, originalData } = useComparisonData({
     isDualMode,
@@ -56,17 +47,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   if (!isDualMode && !selectedVersion) return null;
   if (isDualMode && (!versionA || !versionB)) return null;
   if (!compData) return null;
-
-  // Check if restore should be available (only for single mode, not dual mode, and when there are differences)
-  const canRestore = !isDualMode && !!selectedVersion && !!onRestore;
-
-  // Only show restore button if there are actual differences to restore
-  const hasDifferences = compData
-    ? (compData.isKodeDifferent ?? false) ||
-      (compData.isNameDifferent ?? false) ||
-      (compData.isDescriptionDifferent ?? false)
-    : false;
-  const shouldShowRestore = canRestore && hasDifferences;
 
   const modalVariants = {
     hidden: { opacity: 0, x: -50, scale: 0.98 },
@@ -118,14 +98,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 />
               )}
             </div>
-
-            {/* Footer */}
-            <ComparisonFooter
-              shouldShowRestore={shouldShowRestore}
-              selectedVersion={selectedVersion}
-              onRestore={onRestore}
-              onClose={onClose}
-            />
           </div>
         </motion.div>
       )}

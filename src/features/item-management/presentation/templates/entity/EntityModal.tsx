@@ -7,7 +7,6 @@ import EntityModalTemplate from '../EntityModalTemplate';
 import EntityModalContent from './EntityModalContent';
 import { ComparisonModal } from '../comparison';
 import type { AddEditModalProps } from '@/types';
-import { useQueryClient } from '@tanstack/react-query';
 
 type EntityModalProps = AddEditModalProps;
 
@@ -23,7 +22,6 @@ const EntityModal: React.FC<EntityModalProps> = ({
   initialNameFromSearch,
 }) => {
   useConfirmDialog();
-  const queryClient = useQueryClient();
 
   // Determine table name based on entity name
   const getTableName = (entity: string) => {
@@ -51,7 +49,6 @@ const EntityModal: React.FC<EntityModalProps> = ({
     history,
     isLoading: isHistoryLoading,
     error: historyError,
-    restoreVersion,
   } = useEntityHistory(entityTable, entityId);
 
   const { contextValue, nameInputRef } = useEntityModalLogic({
@@ -72,25 +69,6 @@ const EntityModal: React.FC<EntityModalProps> = ({
     },
   });
 
-  // Wrap restoreVersion to handle post-restore actions
-  const handleRestore = async (version: number) => {
-    await restoreVersion(version);
-    // Invalidate cached queries and close comparison modal instead of full reload
-    try {
-      await queryClient.invalidateQueries();
-    } catch (e) {
-      // Non-fatal: failing to invalidate queries should not break the flow
-
-      console.error('Failed to invalidate queries after restore', e);
-    }
-    try {
-      contextValue.uiActions.closeComparison();
-    } catch (e) {
-      // Non-fatal: UI close best-effort
-      console.error('Failed to close comparison modal after restore', e);
-    }
-  };
-
   // Extract form state for live comparison data (includes realtime updates)
   const { form } = contextValue;
 
@@ -106,7 +84,6 @@ const EntityModal: React.FC<EntityModalProps> = ({
       <ComparisonModal
         isOpen={contextValue.comparison.isOpen}
         isClosing={contextValue.comparison.isClosing}
-        onClose={contextValue.uiActions.closeComparison}
         entityName={entityName}
         selectedVersion={contextValue.comparison.selectedVersion}
         currentData={{
@@ -121,7 +98,6 @@ const EntityModal: React.FC<EntityModalProps> = ({
         versionA={contextValue.comparison.versionA}
         versionB={contextValue.comparison.versionB}
         isFlipped={contextValue.comparison.isFlipped}
-        onRestore={initialData?.id ? handleRestore : undefined}
       />
     </EntityModalProvider>
   );
