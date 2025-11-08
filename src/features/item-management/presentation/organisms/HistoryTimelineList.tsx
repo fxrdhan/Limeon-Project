@@ -29,6 +29,8 @@ interface HistoryTimelineListProps {
   maxSelections?: number;
   onSelectionEmpty?: () => void;
   isFlipped?: boolean;
+  // Auto-scroll behavior
+  autoScrollToSelected?: boolean;
 }
 
 interface HistoryItemCardProps {
@@ -240,6 +242,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   maxSelections = 2,
   onSelectionEmpty,
   isFlipped = false,
+  autoScrollToSelected = true,
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [scrollState, setScrollState] = useState({
@@ -337,6 +340,43 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       }
     };
   }, []);
+
+  // Auto-scroll to selected version when it changes
+  useEffect(() => {
+    if (!selectedVersion || !autoScrollToSelected || allowMultiSelect) {
+      return;
+    }
+
+    // Use setTimeout to wait for DOM updates and animations
+    const scrollTimeout = setTimeout(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const element = container.querySelector(
+        `[data-version-number="${selectedVersion}"]`
+      ) as HTMLElement;
+
+      if (element) {
+        // Calculate scroll position to place item at desired position
+        const containerHeight = container.clientHeight;
+        const elementTop = element.offsetTop;
+        const elementHeight = element.offsetHeight;
+
+        // Position item at 50% from top (center)
+        const targetPosition = containerHeight * 0.5;
+        const scrollTo = elementTop - targetPosition + elementHeight / 2;
+
+        container.scrollTo({
+          top: scrollTo,
+          behavior: 'smooth',
+        });
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(scrollTimeout);
+    };
+  }, [selectedVersion, autoScrollToSelected, allowMultiSelect]);
 
   // Custom smooth scrolling effect
   useEffect(() => {
