@@ -34,13 +34,20 @@ export const useEntityModalRealtime = ({
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastUpdateRef = useRef<string>('');
 
-  // Memoize callback to prevent useSmartFormSync from recreating functions
-  const handleDataUpdate = useCallback(
-    (updates: Record<string, unknown>) => {
-      onSmartUpdate?.(updates);
-    },
-    [onSmartUpdate]
-  );
+  // Use refs to store latest callbacks without triggering effect re-runs
+  const onSmartUpdateRef = useRef(onSmartUpdate);
+  const onEntityUpdatedRef = useRef(onEntityUpdated);
+  const onEntityDeletedRef = useRef(onEntityDeleted);
+
+  // Update refs when callbacks change (no effect re-run, just ref update)
+  onSmartUpdateRef.current = onSmartUpdate;
+  onEntityUpdatedRef.current = onEntityUpdated;
+  onEntityDeletedRef.current = onEntityDeleted;
+
+  // Stable callback that uses ref internally - never recreates
+  const handleDataUpdate = useCallback((updates: Record<string, unknown>) => {
+    onSmartUpdateRef.current?.(updates);
+  }, []); // Empty deps - uses ref which always has latest callback
 
   // Smart form sync for handling field conflicts
   const smartFormSync = useSmartFormSync({
@@ -111,8 +118,8 @@ export const useEntityModalRealtime = ({
             queryKey: [entityTable],
           });
 
-          // Call custom handler
-          onEntityUpdated?.(payload);
+          // Call custom handler using ref (always latest callback)
+          onEntityUpdatedRef.current?.(payload);
         }
       )
       .on(
@@ -131,8 +138,8 @@ export const useEntityModalRealtime = ({
             icon: '⚠️',
           });
 
-          // Call custom handler (usually to close modal)
-          onEntityDeleted?.();
+          // Call custom handler using ref (always latest callback)
+          onEntityDeletedRef.current?.();
         }
       )
       .subscribe(status => {
@@ -159,15 +166,13 @@ export const useEntityModalRealtime = ({
         channelRef.current = null;
       }
     };
-  }, [
-    entityId,
-    entityTable,
-    enabled,
-    queryClient,
-    onEntityUpdated,
-    onEntityDeleted,
-    smartFormSync,
-  ]);
+    // Effect only re-runs when these essential properties change:
+    // - entityId, entityTable, enabled: Core subscription parameters
+    // - queryClient: Stable singleton from React Query
+    // Explicitly excluded to prevent reconnection cycles:
+    // - smartFormSync: Stable object (methods are stable via useCallback)
+    // - onEntityUpdated, onEntityDeleted, onSmartUpdate: Handled via refs
+  }, [entityId, entityTable, enabled, queryClient]);
 
   return {
     isConnected: !!channelRef.current,
