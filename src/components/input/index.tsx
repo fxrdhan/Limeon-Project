@@ -223,6 +223,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               'px-3 text-sm',
               'text-ellipsis overflow-hidden whitespace-nowrap',
               'h-[2.5rem]',
+              'placeholder:text-gray-400',
               {
                 'border-danger ring-3 ring-danger/20':
                   error ||
