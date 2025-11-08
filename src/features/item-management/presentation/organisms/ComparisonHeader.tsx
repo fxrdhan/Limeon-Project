@@ -1,5 +1,6 @@
 import React from 'react';
 import type { VersionData } from '../../shared/types/ItemTypes';
+import { UserCircleIcon } from '@heroicons/react/24/solid';
 
 interface ComparisonHeaderProps {
   isDualMode: boolean;
@@ -8,6 +9,35 @@ interface ComparisonHeaderProps {
     rightVersion?: VersionData | null;
   } | null;
 }
+
+const UserInfo: React.FC<{
+  userName?: string | null;
+  userPhoto?: string | null;
+}> = ({ userName, userPhoto }) => {
+  if (!userName) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <span>Unknown</span>
+        <UserCircleIcon className="w-5 h-5" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-700 font-medium">{userName}</span>
+      {userPhoto ? (
+        <img
+          src={userPhoto}
+          alt={userName}
+          className="w-6 h-6 rounded-full object-cover border border-gray-300"
+        />
+      ) : (
+        <UserCircleIcon className="w-6 h-6 text-gray-400" />
+      )}
+    </div>
+  );
+};
 
 const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
   isDualMode,
@@ -21,30 +51,24 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
         /* Dual Mode Header */
         <div className="rounded-lg p-2">
           <div className="flex items-center justify-center gap-3 text-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-1.5">
               <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
                 v{compData.leftVersion?.version_number}
               </span>
-              <span className="text-xs text-gray-600">
-                {compData.leftVersion &&
-                  new Date(compData.leftVersion.changed_at).toLocaleString(
-                    'id-ID',
-                    { dateStyle: 'short', timeStyle: 'short' }
-                  )}
-              </span>
+              <UserInfo
+                userName={compData.leftVersion?.user_name}
+                userPhoto={compData.leftVersion?.user_photo}
+              />
             </div>
-            <span className="text-gray-400">vs</span>
-            <div className="flex items-center gap-2">
+            <span className="text-gray-400 mt-4">vs</span>
+            <div className="flex flex-col items-center gap-1.5">
               <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
                 v{compData.rightVersion?.version_number}
               </span>
-              <span className="text-xs text-gray-600">
-                {compData.rightVersion &&
-                  new Date(compData.rightVersion.changed_at).toLocaleString(
-                    'id-ID',
-                    { dateStyle: 'short', timeStyle: 'short' }
-                  )}
-              </span>
+              <UserInfo
+                userName={compData.rightVersion?.user_name}
+                userPhoto={compData.rightVersion?.user_photo}
+              />
             </div>
           </div>
         </div>
@@ -63,15 +87,15 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
             >
               {compData.leftVersion?.action_type}
             </span>
-            <span className="text-xs text-gray-600">
-              {compData.leftVersion &&
-                new Date(compData.leftVersion.changed_at).toLocaleString(
-                  'id-ID'
-                )}
-            </span>
-            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
-              v{compData.leftVersion?.version_number}
-            </span>
+            <div className="flex items-center gap-2 ml-auto">
+              <UserInfo
+                userName={compData.leftVersion?.user_name}
+                userPhoto={compData.leftVersion?.user_photo}
+              />
+              <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
+                v{compData.leftVersion?.version_number}
+              </span>
+            </div>
           </div>
         </div>
       )}
