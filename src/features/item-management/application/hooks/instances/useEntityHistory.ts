@@ -13,6 +13,12 @@ interface EntityHistoryItem {
   entity_data: Record<string, unknown>;
   changed_fields?: Record<string, { from: unknown; to: unknown }>;
   change_description?: string;
+  users?: {
+    name: string;
+    profilephoto: string | null;
+  } | null;
+  user_name?: string | null;
+  user_photo?: string | null;
 }
 
 export const useEntityHistory = (entityTable: string, entityId: string) => {
@@ -57,10 +63,18 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         if (HISTORY_DEBUG)
           console.log('🔗 Connection test:', { testData, testError });
 
-        // Now try the actual query
+        // Now try the actual query with user info
         const { data, error: fetchError } = await supabase
           .from('entity_history')
-          .select('*')
+          .select(
+            `
+            *,
+            users:changed_by (
+              name,
+              profilephoto
+            )
+          `
+          )
           .eq('entity_table', entityTable)
           .eq('entity_id', entityId)
           .order('version_number', { ascending: false });
@@ -79,9 +93,16 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           throw new Error(fetchError.message);
         }
 
-        setHistory(data || []);
+        // Transform data to flatten user info for easier access
+        const transformedData = (data || []).map(item => ({
+          ...item,
+          user_name: item.users?.name || null,
+          user_photo: item.users?.profilephoto || null,
+        }));
+
+        setHistory(transformedData);
         if (HISTORY_DEBUG) {
-          console.log('✅ History set to:', data);
+          console.log('✅ History set to:', transformedData);
         }
       } catch (err) {
         const errorMessage =
