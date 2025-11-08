@@ -149,7 +149,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   }, []);
 
   return (
-    <nav className="bg-white px-4 py-3 sticky top-0 z-20">
+    <nav className="bg-white px-4 py-3 sticky top-0 z-20 select-none">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
           <h1 className="flex items-center" style={{ minHeight: '2em' }}>
