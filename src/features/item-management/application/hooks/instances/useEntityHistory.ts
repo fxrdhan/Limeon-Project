@@ -26,6 +26,9 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
   const [isLoading, setIsLoading] = useState(false); // ← Start with false for seamless pre-fetch UX
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const entityChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
+    null
+  );
 
   const fetchHistory = useCallback(
     async (silent = false) => {
@@ -283,6 +286,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
               recordEntityId,
               targetEntityId: entityId,
               match: recordEntityId === entityId,
+              payloadNew: payload.new,
+              payloadOld: payload.old,
             });
           }
 
@@ -324,6 +329,97 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+      }
+    };
+  }, [entityTable, entityId, fetchHistory]);
+
+  // 🔥 Additional realtime subscription for entity table updates
+  // This catches hard rollback updates that might not emit proper entity_history events
+  useEffect(() => {
+    // Skip if no entity table/id provided
+    if (!entityTable || !entityId) {
+      return;
+    }
+
+    // Cleanup previous subscription if exists
+    if (entityChannelRef.current) {
+      entityChannelRef.current.unsubscribe();
+      supabase.removeChannel(entityChannelRef.current);
+      entityChannelRef.current = null;
+    }
+
+    // Create unique channel name for entity table subscription
+    const entityChannelName = `entity-table-${entityTable}-${entityId}`;
+
+    if (HISTORY_DEBUG) {
+      console.log(
+        '🔗 Setting up realtime subscription for entity table (hard rollback detection):',
+        {
+          entityTable,
+          entityId,
+          channelName: entityChannelName,
+        }
+      );
+    }
+
+    // Setup realtime subscription for entity table UPDATE events
+    // This catches hard rollback which updates the entity directly via RPC
+    const entityChannel = supabase
+      .channel(entityChannelName)
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: entityTable,
+          event: 'UPDATE',
+          filter: `id=eq.${entityId}`,
+        },
+        payload => {
+          if (HISTORY_DEBUG) {
+            console.log(
+              '🔄 Entity table update detected (potential hard rollback):',
+              {
+                table: entityTable,
+                entityId,
+                payload,
+              }
+            );
+          }
+
+          // Re-fetch history silently when entity is updated
+          // This handles hard rollback case where RPC updates entity directly
+          fetchHistory(true);
+        }
+      )
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          if (HISTORY_DEBUG) {
+            console.log(
+              '✅ Entity table realtime connected:',
+              entityChannelName
+            );
+          }
+        } else if (status === 'CHANNEL_ERROR') {
+          if (HISTORY_DEBUG) {
+            console.log('❌ Entity table realtime error:', entityChannelName);
+          }
+        }
+      });
+
+    entityChannelRef.current = entityChannel;
+
+    // Cleanup on unmount or when entityTable/entityId changes
+    return () => {
+      if (entityChannelRef.current) {
+        if (HISTORY_DEBUG) {
+          console.log(
+            '🔌 Disconnecting entity table realtime:',
+            entityChannelName
+          );
+        }
+        entityChannelRef.current.unsubscribe();
+        supabase.removeChannel(entityChannelRef.current);
+        entityChannelRef.current = null;
       }
     };
   }, [entityTable, entityId, fetchHistory]);
