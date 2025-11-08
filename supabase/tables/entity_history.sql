@@ -11,5 +11,6 @@ CREATE TABLE public.entity_history (
   changed_at timestamp with time zone DEFAULT now(),
   entity_data jsonb NOT NULL,
   changed_fields jsonb,
-  change_description text
+  change_description text,
+  CONSTRAINT entity_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES public.users(id) ON DELETE SET NULL
 );

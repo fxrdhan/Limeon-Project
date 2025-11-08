@@ -14,6 +14,9 @@ export interface VersionData {
   version_number: number;
   action_type: string;
   changed_at: string;
+  changed_by?: string | null;
+  user_name?: string | null;
+  user_photo?: string | null;
   entity_data: Record<string, unknown>;
   changed_fields?: Record<string, { from: unknown; to: unknown }>;
 }
