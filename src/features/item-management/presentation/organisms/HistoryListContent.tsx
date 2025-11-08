@@ -116,7 +116,9 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       const element = document.querySelector(
         `[data-version-number="${selectedVersion}"]`
       ) as HTMLElement;
-      const container = element?.closest('.history-scrollbar-hidden') as HTMLElement;
+      const container = element?.closest(
+        '.history-scrollbar-hidden'
+      ) as HTMLElement;
 
       if (element && container) {
         // Calculate scroll position to place item at desired position
@@ -126,7 +128,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
 
         // Position item at 50% from top (center)
         const targetPosition = containerHeight * 0.5;
-        const scrollTo = elementTop - targetPosition + (elementHeight / 2);
+        const scrollTo = elementTop - targetPosition + elementHeight / 2;
 
         container.scrollTo({
           top: scrollTo,
