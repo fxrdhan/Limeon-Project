@@ -105,6 +105,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
         backfaceVisibility: 'hidden' as const,
       }}
       className={`relative ${isFirst ? 'pt-2' : ''} ${isLast ? 'pb-2' : ''}`}
+      data-version-number={item.version_number}
     >
       {/* Simple bullet - use CSS only, no transform */}
       <span
