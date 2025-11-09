@@ -18,7 +18,8 @@ import { useEntityHistory } from '../../../application/hooks/instances/useEntity
 import ItemModalTemplate from '../ItemModalTemplate';
 import { ItemFormSections } from '../ItemFormSections';
 import ItemModalContainer from '../containers/ItemModalContainer';
-import ItemHistoryContent from '../../organisms/ItemHistoryContent';
+import FloatingHistoryPanel from '../../organisms/FloatingHistoryPanel';
+import ItemHistoryDiffViewer from '../../organisms/ItemHistoryDiffViewer';
 
 const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
@@ -103,10 +104,21 @@ const ItemModal: React.FC<ItemModalProps> = ({
   } = handlers;
 
   // UI mode state (after isEditMode is available)
-  const [mode, setMode] = useState<'add' | 'edit' | 'history'>(
-    isEditMode ? 'edit' : 'add'
-  );
+  const [mode, setMode] = useState<'add' | 'edit'>(isEditMode ? 'edit' : 'add');
   const [resetKey, setResetKey] = useState(0);
+  // History item type with entity_data (from database)
+  type HistoryItemWithData = {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+    changed_fields?: Record<string, { from: unknown; to: unknown }>;
+  };
+
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  const [selectedHistoryVersion, setSelectedHistoryVersion] =
+    useState<HistoryItemWithData | null>(null);
 
   // Form validation
   const { finalDisabledState } = useItemFormValidation({
@@ -176,14 +188,18 @@ const ItemModal: React.FC<ItemModalProps> = ({
     }
   };
 
-  // Mode handlers
-  const handleHistoryClick = () => {
-    setMode('history');
+  // History panel handlers
+  const handleHistoryToggle = () => {
+    setIsHistoryPanelOpen(prev => !prev);
+    // Clear selection when closing
+    if (isHistoryPanelOpen) {
+      setSelectedHistoryVersion(null);
+    }
   };
 
-  const handleGoBackToForm = () => {
-    setMode(isEditMode ? 'edit' : 'add');
-  };
+  const handleVersionSelect = useCallback((item: HistoryItemWithData) => {
+    setSelectedHistoryVersion(item);
+  }, []);
 
   // Keyboard shortcut for Reset All (Ctrl+Shift+R)
   useEffect(() => {
@@ -292,9 +308,17 @@ const ItemModal: React.FC<ItemModalProps> = ({
       handleClose,
       handleReset: !isEditMode ? handleReset : undefined,
       setIsClosing,
-      handleHistoryClick: isEditMode && itemId ? handleHistoryClick : undefined,
-      setMode,
-      goBackToForm: handleGoBackToForm,
+      handleHistoryClick:
+        isEditMode && itemId ? handleHistoryToggle : undefined,
+      setMode: (newMode: 'add' | 'edit' | 'history') => {
+        // Only support 'add' and 'edit' modes for Item modal
+        if (newMode === 'add' || newMode === 'edit') {
+          setMode(newMode);
+        }
+      },
+      goBackToForm: () => {
+        // Item modal doesn't have separate history mode, so this is a no-op
+      },
     },
     modalActions: {
       setIsAddEditModalOpen,
@@ -332,90 +356,107 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   return (
     <ItemManagementProvider value={contextValue}>
-      <ItemManagementContent itemId={itemId} />
+      <ItemManagementContent
+        itemId={itemId}
+        isHistoryPanelOpen={isHistoryPanelOpen}
+        onHistoryToggle={handleHistoryToggle}
+        selectedHistoryVersion={selectedHistoryVersion}
+        onVersionSelect={handleVersionSelect}
+      />
     </ItemManagementProvider>
   );
 };
 
 // Clean content component - only uses context
-const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
+const ItemManagementContent: React.FC<{
+  itemId?: string;
+  isHistoryPanelOpen: boolean;
+  onHistoryToggle: () => void;
+  selectedHistoryVersion: {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+    changed_fields?: Record<string, { from: unknown; to: unknown }>;
+  } | null;
+  onVersionSelect: (item: {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+    changed_fields?: Record<string, { from: unknown; to: unknown }>;
+  }) => void;
+}> = ({
+  itemId,
+  isHistoryPanelOpen,
+  onHistoryToggle,
+  selectedHistoryVersion,
+  onVersionSelect,
+}) => {
   const ui = useItemUI();
   const form = useItemForm();
   const actions = useItemActions();
 
-  // Mode-based content rendering
-  if (ui.mode === 'history') {
-    if (!itemId) {
-      // Handle no itemId case - go back to form immediately
-      ui.goBackToForm();
-      return null;
-    }
-
-    return (
+  return (
+    <>
       <ItemModalTemplate
         isOpen={ui.isOpen}
         isClosing={ui.isClosing}
         onBackdropClick={ui.handleBackdropClick}
-        onSubmit={(e: React.FormEvent) => e.preventDefault()} // Disable form submission in history mode
+        onSubmit={form.handleSubmit}
         children={{
           header: (
             <ItemFormSections.Header
-              onReset={undefined}
+              onReset={ui.handleReset}
               onClose={ui.handleClose}
+              onHistoryClick={onHistoryToggle}
+              isHistoryPanelOpen={isHistoryPanelOpen}
             />
           ),
-          basicInfo: (
-            <ItemHistoryContent
-              itemId={itemId}
-              itemName={form.formData.name || 'Item'}
-            />
-          ),
-          settingsForm: null,
-          pricingForm: null,
-          packageConversionManager: null,
-          modals: null,
+          basicInfo:
+            isHistoryPanelOpen && selectedHistoryVersion ? (
+              <ItemHistoryDiffViewer selectedVersion={selectedHistoryVersion} />
+            ) : (
+              <ItemFormSections.BasicInfo />
+            ),
+          settingsForm:
+            isHistoryPanelOpen && selectedHistoryVersion ? null : (
+              <ItemFormSections.Settings />
+            ),
+          pricingForm:
+            isHistoryPanelOpen && selectedHistoryVersion ? null : (
+              <ItemFormSections.Pricing />
+            ),
+          packageConversionManager:
+            isHistoryPanelOpen && selectedHistoryVersion ? null : (
+              <ItemFormSections.PackageConversion />
+            ),
+          modals: <ItemModalContainer />,
         }}
         formAction={{
-          onCancel: () => ui.goBackToForm(),
-          onDelete: undefined,
-          isSaving: false,
-          isDeleting: false,
-          isEditMode: false,
-          isDisabled: false,
+          onCancel: () => actions.handleCancel(ui.setIsClosing),
+          onDelete: ui.isEditMode ? actions.handleDeleteItem : undefined,
+          isSaving: actions.saving,
+          isDeleting: actions.deleteItemMutation?.isPending || false,
+          isEditMode: ui.isEditMode,
+          isDisabled: actions.finalDisabledState,
         }}
       />
-    );
-  }
 
-  // Default form mode (add/edit)
-  return (
-    <ItemModalTemplate
-      isOpen={ui.isOpen}
-      isClosing={ui.isClosing}
-      onBackdropClick={ui.handleBackdropClick}
-      onSubmit={form.handleSubmit}
-      children={{
-        header: (
-          <ItemFormSections.Header
-            onReset={ui.handleReset}
-            onClose={ui.handleClose}
-          />
-        ),
-        basicInfo: <ItemFormSections.BasicInfo />,
-        settingsForm: <ItemFormSections.Settings />,
-        pricingForm: <ItemFormSections.Pricing />,
-        packageConversionManager: <ItemFormSections.PackageConversion />,
-        modals: <ItemModalContainer />,
-      }}
-      formAction={{
-        onCancel: () => actions.handleCancel(ui.setIsClosing),
-        onDelete: ui.isEditMode ? actions.handleDeleteItem : undefined,
-        isSaving: actions.saving,
-        isDeleting: actions.deleteItemMutation?.isPending || false,
-        isEditMode: ui.isEditMode,
-        isDisabled: actions.finalDisabledState,
-      }}
-    />
+      {/* Floating History Panel */}
+      {ui.isEditMode && itemId && (
+        <FloatingHistoryPanel
+          isOpen={isHistoryPanelOpen}
+          onClose={onHistoryToggle}
+          itemId={itemId}
+          itemName={form.formData.name || 'Item'}
+          onVersionSelect={onVersionSelect}
+          selectedVersion={selectedHistoryVersion?.version_number || null}
+        />
+      )}
+    </>
   );
 };
 

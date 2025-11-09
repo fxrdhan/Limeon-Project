@@ -11,6 +11,8 @@ export { default as ItemPackageConversionForm } from './ItemPackageConversionFor
 export { default as HistoryListContent } from './HistoryListContent';
 export { default as ItemHistoryContent } from './ItemHistoryContent';
 export { default as HistoryTimelineList } from './HistoryTimelineList';
+export { default as FloatingHistoryPanel } from './FloatingHistoryPanel';
+export { default as ItemHistoryDiffViewer } from './ItemHistoryDiffViewer';
 export type { HistoryItem } from './HistoryTimelineList';
 
 // Comparison organisms

@@ -19,21 +19,13 @@ import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm
 
 // Header Section
 // eslint-disable-next-line react-refresh/only-export-components
-const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({
-  onReset,
-  onClose,
-}) => {
-  const {
-    isEditMode,
-    formattedUpdateAt,
-    isClosing,
-    handleHistoryClick,
-    mode,
-    goBackToForm,
-  } = useItemUI();
-  const { formData } = useItemForm();
-
-  const isHistoryMode = mode === 'history';
+const FormHeader: React.FC<{
+  onReset?: () => void;
+  onClose: () => void;
+  onHistoryClick?: () => void;
+  isHistoryPanelOpen?: boolean;
+}> = ({ onReset, onClose, onHistoryClick, isHistoryPanelOpen }) => {
+  const { isEditMode, formattedUpdateAt, isClosing } = useItemUI();
 
   return (
     <ItemFormHeader
@@ -42,10 +34,8 @@ const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({
       isClosing={isClosing}
       onReset={onReset}
       onClose={onClose}
-      onHistoryClick={handleHistoryClick}
-      isHistoryMode={isHistoryMode}
-      onBackToForm={goBackToForm}
-      itemName={formData.name}
+      onHistoryClick={onHistoryClick}
+      isHistoryPanelOpen={isHistoryPanelOpen}
     />
   );
 };
