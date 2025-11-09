@@ -18,11 +18,19 @@ import { useHistorySelection } from '../hooks/useHistoryManagement';
 interface ItemHistoryContentProps {
   itemId: string;
   itemName: string;
+  onVersionSelect?: (version: {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+  }) => void;
 }
 
 const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   itemId,
   itemName,
+  onVersionSelect,
 }) => {
   const form = useItemForm();
   const ui = useItemUI();
@@ -74,8 +82,22 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   } = useHistorySelection({
     history,
     compareMode,
-    onVersionSelect: () => {
-      // Just update selection - no modal for items yet
+    onVersionSelect: item => {
+      // Call parent callback to show version in form layout
+      if (onVersionSelect) {
+        const fullVersionData = history?.find(
+          h => h.version_number === item.version_number
+        );
+        if (fullVersionData) {
+          onVersionSelect({
+            id: fullVersionData.id,
+            version_number: fullVersionData.version_number,
+            action_type: fullVersionData.action_type,
+            changed_at: fullVersionData.changed_at,
+            entity_data: fullVersionData.entity_data,
+          });
+        }
+      }
     },
     onVersionDeselect: () => {
       // Clear selection

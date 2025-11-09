@@ -108,6 +108,15 @@ const ItemModal: React.FC<ItemModalProps> = ({
   );
   const [resetKey, setResetKey] = useState(0);
 
+  // Selected history version for viewing in form layout
+  const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<{
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+  } | null>(null);
+
   // Form validation
   const { finalDisabledState } = useItemFormValidation({
     formData,
@@ -178,11 +187,37 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   // Mode handlers
   const handleHistoryClick = () => {
-    setMode('history');
+    // If viewing a version, go back to timeline; otherwise enter history mode
+    if (selectedHistoryVersion) {
+      setSelectedHistoryVersion(null);
+    } else {
+      setMode('history');
+      setSelectedHistoryVersion(null);
+    }
   };
 
   const handleGoBackToForm = () => {
     setMode(isEditMode ? 'edit' : 'add');
+    setSelectedHistoryVersion(null); // Clear selection when going back to form
+  };
+
+  // History version selection handler
+  const handleVersionSelect = (version: {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+  }) => {
+    // Update form data with version data for viewing
+    updateFormData(version.entity_data);
+    setSelectedHistoryVersion(version);
+  };
+
+  const handleBackToTimeline = () => {
+    setSelectedHistoryVersion(null);
+    // Optionally refetch current data when going back
+    // For now, just keep the data as is
   };
 
   // Keyboard shortcut for Reset All (Ctrl+Shift+R)
@@ -295,6 +330,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
       handleHistoryClick: isEditMode && itemId ? handleHistoryClick : undefined,
       setMode,
       goBackToForm: handleGoBackToForm,
+      handleBackToTimeline:
+        mode === 'history' && selectedHistoryVersion
+          ? handleBackToTimeline
+          : undefined,
     },
     modalActions: {
       setIsAddEditModalOpen,
@@ -332,13 +371,33 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   return (
     <ItemManagementProvider value={contextValue}>
-      <ItemManagementContent itemId={itemId} />
+      <ItemManagementContent
+        itemId={itemId}
+        selectedHistoryVersion={selectedHistoryVersion}
+        onVersionSelect={handleVersionSelect}
+      />
     </ItemManagementProvider>
   );
 };
 
 // Clean content component - only uses context
-const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
+const ItemManagementContent: React.FC<{
+  itemId?: string;
+  selectedHistoryVersion: {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+  } | null;
+  onVersionSelect: (version: {
+    id: string;
+    version_number: number;
+    action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+    changed_at: string;
+    entity_data: Record<string, unknown>;
+  }) => void;
+}> = ({ itemId, selectedHistoryVersion, onVersionSelect }) => {
   const ui = useItemUI();
   const form = useItemForm();
   const actions = useItemActions();
@@ -351,12 +410,46 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
       return null;
     }
 
+    // If a version is selected, show form with version data (read-only)
+    if (selectedHistoryVersion) {
+      return (
+        <ItemModalTemplate
+          isOpen={ui.isOpen}
+          isClosing={ui.isClosing}
+          onBackdropClick={ui.handleBackdropClick}
+          onSubmit={(e: React.FormEvent) => e.preventDefault()}
+          children={{
+            header: (
+              <ItemFormSections.Header
+                onReset={undefined}
+                onClose={ui.handleClose}
+              />
+            ),
+            basicInfo: <ItemFormSections.BasicInfo />,
+            settingsForm: <ItemFormSections.Settings />,
+            pricingForm: <ItemFormSections.Pricing />,
+            packageConversionManager: <ItemFormSections.PackageConversion />,
+            modals: null,
+          }}
+          formAction={{
+            onCancel: () => ui.handleBackToTimeline?.(),
+            onDelete: undefined,
+            isSaving: false,
+            isDeleting: false,
+            isEditMode: false,
+            isDisabled: true, // Disable all form actions
+          }}
+        />
+      );
+    }
+
+    // Show timeline list
     return (
       <ItemModalTemplate
         isOpen={ui.isOpen}
         isClosing={ui.isClosing}
         onBackdropClick={ui.handleBackdropClick}
-        onSubmit={(e: React.FormEvent) => e.preventDefault()} // Disable form submission in history mode
+        onSubmit={(e: React.FormEvent) => e.preventDefault()}
         children={{
           header: (
             <ItemFormSections.Header
@@ -368,6 +461,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
             <ItemHistoryContent
               itemId={itemId}
               itemName={form.formData.name || 'Item'}
+              onVersionSelect={onVersionSelect}
             />
           ),
           settingsForm: null,

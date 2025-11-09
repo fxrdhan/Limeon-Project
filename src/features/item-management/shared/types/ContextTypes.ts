@@ -95,6 +95,7 @@ export interface ItemUIActions {
   handleHistoryClick?: () => void;
   setMode: (mode: 'add' | 'edit' | 'history') => void;
   goBackToForm: () => void;
+  handleBackToTimeline?: () => void;
 }
 
 export interface ItemModalActions {
