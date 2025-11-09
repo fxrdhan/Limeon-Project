@@ -172,6 +172,7 @@ export const useEntityModalRealtime = ({
     // Explicitly excluded to prevent reconnection cycles:
     // - smartFormSync: Stable object (methods are stable via useCallback)
     // - onEntityUpdated, onEntityDeleted, onSmartUpdate: Handled via refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId, entityTable, enabled, queryClient]);
 
   return {

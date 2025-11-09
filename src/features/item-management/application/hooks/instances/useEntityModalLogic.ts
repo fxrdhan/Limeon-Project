@@ -19,7 +19,7 @@ interface UseEntityModalLogicProps {
     description?: string;
     address?: string;
   }) => Promise<void>;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => Promise<void> | void;
   initialData?: EntityData | null;
   initialNameFromSearch?: string;
   entityName: string;
@@ -301,7 +301,14 @@ export const useEntityModalLogic = ({
       submitData.address = address.trim();
     }
 
-    await onSubmit(submitData);
+    try {
+      await onSubmit(submitData);
+      // Only trigger closing animation after successful submit
+      setIsClosing(true);
+    } catch {
+      // If submit fails, don't close the modal - let user retry
+      // Error is already handled by the onSubmit handler
+    }
   }, [
     code,
     name,
@@ -313,9 +320,17 @@ export const useEntityModalLogic = ({
     initialData,
   ]);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     if (initialData?.id && onDelete) {
-      onDelete(initialData.id);
+      try {
+        await onDelete(initialData.id);
+        // Only trigger closing animation after successful delete (user confirmed and delete succeeded)
+        setIsClosing(true);
+      } catch {
+        // If delete fails or user cancelled, don't close the modal
+        // Error is already handled by the onDelete handler (toast shown)
+        // User can retry or close manually
+      }
     }
   }, [initialData, onDelete]);
 

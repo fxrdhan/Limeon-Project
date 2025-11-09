@@ -217,12 +217,20 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   return (
     <motion.div
       className={`relative bg-white rounded-xl shadow-xl ${modalWidth} mx-4`}
-      layout={hasAnimated}
-      layoutDependency={mode}
-      transition={{ type: 'tween', duration: 0.25, ease: 'easeInOut' }}
+      layout
+      transition={{
+        layout: {
+          type: 'spring',
+          stiffness: 300,
+          damping: 25,
+          mass: 0.8,
+        },
+      }}
     >
-      <EntityModalHeader initialData={initialData} />
-      <AnimatePresence mode="wait" initial={false}>
+      <motion.div layout="position">
+        <EntityModalHeader initialData={initialData} />
+      </motion.div>
+      <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
           key={mode}
           variants={selectedVariants}
@@ -230,14 +238,18 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
           animate="visible"
           exit={hasAnimated ? 'exit' : undefined}
           transition={{ duration: 0.2 }}
+          layout
+          style={{ position: 'relative' }}
         >
           {renderContent()}
         </motion.div>
       </AnimatePresence>
-      <EntityModalFooter
-        compareMode={compareMode}
-        onModeToggle={handleModeToggle}
-      />
+      <motion.div layout="position">
+        <EntityModalFooter
+          compareMode={compareMode}
+          onModeToggle={handleModeToggle}
+        />
+      </motion.div>
     </motion.div>
   );
 };
