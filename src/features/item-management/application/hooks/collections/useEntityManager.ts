@@ -234,47 +234,52 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       nci_code?: string;
       abbreviation?: string;
     }) => {
-      try {
-        // Use simplified CRUD operations to handle the submission
-        await crudOperations.handleModalSubmit(formData);
+      // Use simplified CRUD operations to handle the submission
+      // The modal will handle its own closing animation after successful submit
+      // We don't close modals here - let the modal's onClose callback handle cleanup
+      await crudOperations.handleModalSubmit(formData);
 
-        // Close modals after successful submit
-        setIsAddModalOpen(false);
-        setIsEditModalOpen(false);
-        setEditingEntity(null);
+      // Toast sudah ditangani oleh specific mutations (useMasterData, useDosages, useManufacturers)
+      // Tidak perlu duplicate toast di sini
 
-        // Toast sudah ditangani oleh specific mutations (useMasterData, useDosages, useManufacturers)
-        // Tidak perlu duplicate toast di sini
-      } catch {
-        // Error is already handled and displayed by the CRUD operations hook
-        // Just ensure modals stay open for user to retry or cancel
-      }
+      // Note: Modal closing is now handled by the modal itself with animation
+      // The closeAddModal/closeEditModal callbacks will be called by the modal's onClose
     },
     [crudOperations]
   );
 
   // Delete handler
   const handleDelete = useCallback(
-    async (entity: EntityData) => {
-      openConfirmDialog({
-        title: 'Konfirmasi Hapus',
-        message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${entity.name}"?`,
-        variant: 'danger',
-        confirmText: 'Ya, Hapus',
-        onConfirm: async () => {
-          try {
-            // Use simplified CRUD operations to handle the deletion
-            await crudOperations.deleteMutation.mutateAsync(entity.id);
+    async (entity: EntityData): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        openConfirmDialog({
+          title: 'Konfirmasi Hapus',
+          message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${entity.name}"?`,
+          variant: 'danger',
+          confirmText: 'Ya, Hapus',
+          onConfirm: async () => {
+            try {
+              // Use simplified CRUD operations to handle the deletion
+              // The modal will handle its own closing animation after successful delete
+              // We don't close modals here - let the modal's onClose callback handle cleanup
+              await crudOperations.deleteMutation.mutateAsync(entity.id);
 
-            setIsEditModalOpen(false);
-            setEditingEntity(null);
+              // Toast sudah ditangani oleh specific mutations (useMasterData, useDosages, useManufacturers)
+              // Tidak perlu duplicate toast di sini
 
-            // Toast sudah ditangani oleh specific mutations (useMasterData, useDosages, useManufacturers)
-            // Tidak perlu duplicate toast di sini
-          } catch {
-            // Error is already handled and displayed by the CRUD operations hook
-          }
-        },
+              // Note: Modal closing is now handled by the modal itself with animation
+              // The closeEditModal callback will be called by the modal's onClose
+              resolve();
+            } catch (error) {
+              // If delete fails, reject the promise so modal stays open
+              reject(error);
+            }
+          },
+          onCancel: () => {
+            // User cancelled, reject so modal knows not to close
+            reject(new Error('User cancelled'));
+          },
+        });
       });
     },
     [currentConfig.entityName, openConfirmDialog, crudOperations]
