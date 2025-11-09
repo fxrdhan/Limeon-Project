@@ -29,8 +29,9 @@ export interface ItemUIState {
   isClosing: boolean;
   isEditMode: boolean;
   formattedUpdateAt?: string;
-  mode: 'add' | 'edit' | 'history';
   resetKey: number;
+  viewingVersionNumber: number | null;
+  isViewingOldVersion: boolean;
 }
 
 export interface ItemModalState {
@@ -92,9 +93,11 @@ export interface ItemUIActions {
   handleClose: () => void;
   handleReset?: () => void;
   setIsClosing: (value: boolean) => void;
-  handleHistoryClick?: () => void;
-  setMode: (mode: 'add' | 'edit' | 'history') => void;
-  goBackToForm: () => void;
+  handleVersionSelect?: (
+    version: number,
+    entityData: Record<string, unknown>
+  ) => void;
+  handleClearVersionView: () => void;
 }
 
 export interface ItemModalActions {

@@ -1,7 +1,17 @@
-import React from 'react';
-import { FaUndoAlt, FaTimes, FaArrowLeft, FaHistory } from 'react-icons/fa';
+import React, { useRef, useState } from 'react';
+import { FaUndoAlt, FaTimes } from 'react-icons/fa';
 import { CardHeader, CardTitle } from '@/components/card';
 import Button from '@/components/button';
+import ItemHistoryPortal from './ItemHistoryPortal';
+
+interface HistoryItem {
+  id: string;
+  version_number: number;
+  changed_at: string;
+  action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+  entity_data: Record<string, unknown>;
+  user_name?: string | null;
+}
 
 interface LocalItemFormHeaderProps {
   isEditMode: boolean;
@@ -9,10 +19,17 @@ interface LocalItemFormHeaderProps {
   isClosing: boolean;
   onReset?: () => void;
   onClose: () => void;
-  onHistoryClick?: () => void;
-  isHistoryMode?: boolean;
-  onBackToForm?: () => void;
   itemName?: string;
+  // History portal props
+  history?: HistoryItem[] | null;
+  isHistoryLoading?: boolean;
+  selectedVersion?: number | null;
+  currentVersion?: number;
+  onVersionSelect?: (
+    version: number,
+    entityData: Record<string, unknown>
+  ) => void;
+  entityId?: string;
 }
 
 const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
@@ -22,85 +39,91 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
     isClosing,
     onReset,
     onClose,
-    onHistoryClick,
-    isHistoryMode = false,
-    onBackToForm,
-    itemName,
+    history,
+    isHistoryLoading = false,
+    selectedVersion,
+    currentVersion,
+    onVersionSelect,
+    entityId,
   }) => {
-    return (
-      <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
-        {/* Left section */}
-        <div className="flex items-center">
-          {isHistoryMode && onBackToForm && (
-            <Button
-              variant="text"
-              onClick={onBackToForm}
-              className="text-gray-600 hover:text-gray-800 p-1 flex items-center mr-2"
-              title="Kembali ke form"
-            >
-              <FaArrowLeft size={16} />
-            </Button>
-          )}
-        </div>
+    const timestampButtonRef = useRef<HTMLButtonElement>(null);
+    const [isPortalOpen, setIsPortalOpen] = useState(false);
 
-        {/* Center title */}
-        <div className="absolute left-1/2 transform -translate-x-1/2">
-          <CardTitle>
-            {isHistoryMode ? (
-              <div className="flex items-center gap-2">
-                <FaHistory className="text-gray-600" />
-                <span>Riwayat Perubahan {itemName || 'Item'}</span>
-              </div>
-            ) : (
+    const handleTimestampClick = () => {
+      setIsPortalOpen(!isPortalOpen);
+    };
+
+    return (
+      <>
+        <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
+          {/* Left section - empty placeholder for symmetry */}
+          <div className="flex items-center" />
+
+          {/* Center title */}
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            <CardTitle>
               <span>
                 {isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}
               </span>
-            )}
-          </CardTitle>
-        </div>
+            </CardTitle>
+          </div>
 
-        {/* Right section */}
-        <div className="flex items-center space-x-1 shrink-0">
-          {!isHistoryMode &&
-            isEditMode &&
-            formattedUpdateAt &&
-            formattedUpdateAt !== '-' && (
+          {/* Right section */}
+          <div className="flex items-center space-x-1 shrink-0">
+            {isEditMode && formattedUpdateAt && formattedUpdateAt !== '-' && (
               <Button
+                ref={timestampButtonRef}
                 variant="text"
                 size="sm"
-                onClick={onHistoryClick}
+                onClick={handleTimestampClick}
                 className="text-sm text-gray-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors"
                 title="Lihat riwayat perubahan"
               >
                 {formattedUpdateAt}
               </Button>
             )}
-          {!isHistoryMode && !isEditMode && onReset && (
+            {!isEditMode && onReset && (
+              <Button
+                variant="text"
+                size="md"
+                onClick={onReset}
+                className="text-gray-600 hover:text-orange-600 flex items-center"
+                title="Ctrl+Shift+R"
+              >
+                <FaUndoAlt className="mr-1.5" size={12} /> Reset All
+              </Button>
+            )}
             <Button
               variant="text"
-              size="md"
-              onClick={onReset}
-              className="text-gray-600 hover:text-orange-600 flex items-center"
-              title="Ctrl+Shift+R"
+              size="sm"
+              onClick={() => {
+                if (!isClosing) {
+                  onClose();
+                }
+              }}
+              className="p-2"
+              title="Tutup"
             >
-              <FaUndoAlt className="mr-1.5" size={12} /> Reset All
+              <FaTimes size={18} />
             </Button>
-          )}
-          <Button
-            variant="text"
-            size="sm"
-            onClick={() => {
-              if (!isClosing) {
-                onClose();
-              }
-            }}
-            className="p-2"
-            title="Tutup"
-          >
-            <FaTimes size={18} />
-          </Button>
-        </div>
-      </CardHeader>
+          </div>
+        </CardHeader>
+
+        {/* History Portal */}
+        {isEditMode && onVersionSelect && (
+          <ItemHistoryPortal
+            isOpen={isPortalOpen}
+            onClose={() => setIsPortalOpen(false)}
+            history={history || null}
+            isLoading={isHistoryLoading}
+            selectedVersion={selectedVersion || null}
+            currentVersion={currentVersion}
+            onVersionSelect={onVersionSelect}
+            triggerRef={timestampButtonRef as React.RefObject<HTMLElement>}
+            entityId={entityId}
+          />
+        )}
+      </>
     );
   }
 );
