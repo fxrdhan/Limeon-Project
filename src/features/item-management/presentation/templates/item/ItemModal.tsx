@@ -10,6 +10,7 @@ import {
   useItemActions,
   useItemForm,
   useItemUI,
+  useItemHistory,
 } from '../../../shared/contexts/useItemFormContext';
 import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
@@ -18,7 +19,7 @@ import { useEntityHistory } from '../../../application/hooks/instances/useEntity
 import ItemModalTemplate from '../ItemModalTemplate';
 import { ItemFormSections } from '../ItemFormSections';
 import ItemModalContainer from '../containers/ItemModalContainer';
-import ItemHistoryContent from '../../organisms/ItemHistoryContent';
+import { VersionViewingBanner } from '../../molecules';
 
 const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
@@ -102,10 +103,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
     formattedUpdateAt,
   } = handlers;
 
-  // UI mode state (after isEditMode is available)
-  const [mode, setMode] = useState<'add' | 'edit' | 'history'>(
-    isEditMode ? 'edit' : 'add'
-  );
+  // Version viewing state
+  const [viewingVersionNumber, setViewingVersionNumber] = useState<
+    number | null
+  >(null);
   const [resetKey, setResetKey] = useState(0);
 
   // Form validation
@@ -157,6 +158,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
     onSmartUpdate: handleSmartUpdate,
   });
 
+  // Get current version number from history
+  const currentVersionNumber =
+    history && history.length > 0 ? history[0].version_number : undefined;
+
   // UI event handlers
   const handleReset = useCallback(() => {
     resetForm();
@@ -176,14 +181,30 @@ const ItemModal: React.FC<ItemModalProps> = ({
     }
   };
 
-  // Mode handlers
-  const handleHistoryClick = () => {
-    setMode('history');
-  };
+  // Version selection handler
+  const handleVersionSelect = useCallback(
+    (versionNumber: number, entityData: Record<string, unknown>) => {
+      console.log('📌 Viewing version:', versionNumber, entityData);
+      setViewingVersionNumber(versionNumber);
 
-  const handleGoBackToForm = () => {
-    setMode(isEditMode ? 'edit' : 'add');
-  };
+      // Update form data with version data (but don't mark as dirty)
+      updateFormData(entityData);
+    },
+    [updateFormData]
+  );
+
+  // Clear version viewing (back to current)
+  const handleClearVersionView = useCallback(() => {
+    console.log('🔄 Clearing version view, back to current data');
+    setViewingVersionNumber(null);
+
+    // Trigger modal close and reopen to reload current data
+    // This is the simplest approach - user experience is still smooth
+    setIsClosing(true);
+
+    // Alternative: We could refetch item data and update form
+    // But that would require more complex state management
+  }, [setIsClosing]);
 
   // Keyboard shortcut for Reset All (Ctrl+Shift+R)
   useEffect(() => {
@@ -248,8 +269,11 @@ const ItemModal: React.FC<ItemModalProps> = ({
       isClosing,
       isEditMode,
       formattedUpdateAt,
-      mode,
       resetKey,
+      viewingVersionNumber,
+      isViewingOldVersion:
+        viewingVersionNumber !== null &&
+        viewingVersionNumber !== currentVersionNumber,
     },
     modal: {
       isAddEditModalOpen,
@@ -292,9 +316,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
       handleClose,
       handleReset: !isEditMode ? handleReset : undefined,
       setIsClosing,
-      handleHistoryClick: isEditMode && itemId ? handleHistoryClick : undefined,
-      setMode,
-      goBackToForm: handleGoBackToForm,
+      handleVersionSelect:
+        isEditMode && itemId ? handleVersionSelect : undefined,
+      handleClearVersionView,
     },
     modalActions: {
       setIsAddEditModalOpen,
@@ -342,52 +366,16 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   const ui = useItemUI();
   const form = useItemForm();
   const actions = useItemActions();
+  const historyState = useItemHistory();
 
-  // Mode-based content rendering
-  if (ui.mode === 'history') {
-    if (!itemId) {
-      // Handle no itemId case - go back to form immediately
-      ui.goBackToForm();
-      return null;
-    }
+  // Get version data for banner
+  const viewingVersion = ui.viewingVersionNumber
+    ? historyState?.data?.find(
+        h => h.version_number === ui.viewingVersionNumber
+      )
+    : null;
 
-    return (
-      <ItemModalTemplate
-        isOpen={ui.isOpen}
-        isClosing={ui.isClosing}
-        onBackdropClick={ui.handleBackdropClick}
-        onSubmit={(e: React.FormEvent) => e.preventDefault()} // Disable form submission in history mode
-        children={{
-          header: (
-            <ItemFormSections.Header
-              onReset={undefined}
-              onClose={ui.handleClose}
-            />
-          ),
-          basicInfo: (
-            <ItemHistoryContent
-              itemId={itemId}
-              itemName={form.formData.name || 'Item'}
-            />
-          ),
-          settingsForm: null,
-          pricingForm: null,
-          packageConversionManager: null,
-          modals: null,
-        }}
-        formAction={{
-          onCancel: () => ui.goBackToForm(),
-          onDelete: undefined,
-          isSaving: false,
-          isDeleting: false,
-          isEditMode: false,
-          isDisabled: false,
-        }}
-      />
-    );
-  }
-
-  // Default form mode (add/edit)
+  // Single form mode rendering
   return (
     <ItemModalTemplate
       isOpen={ui.isOpen}
@@ -399,8 +387,18 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
           <ItemFormSections.Header
             onReset={ui.handleReset}
             onClose={ui.handleClose}
+            itemId={itemId}
           />
         ),
+        versionBanner:
+          ui.isViewingOldVersion && viewingVersion ? (
+            <VersionViewingBanner
+              versionNumber={viewingVersion.version_number}
+              versionDate={viewingVersion.changed_at}
+              onBackToCurrent={ui.handleClearVersionView}
+              onRestore={undefined} // TODO: Add restore functionality if needed
+            />
+          ) : undefined,
         basicInfo: <ItemFormSections.BasicInfo />,
         settingsForm: <ItemFormSections.Settings />,
         pricingForm: <ItemFormSections.Pricing />,
