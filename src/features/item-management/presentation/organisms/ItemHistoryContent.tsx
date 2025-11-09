@@ -13,6 +13,7 @@ import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 import DiffText from '../molecules/DiffText';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useHistoryKeyboardNavigation } from '../hooks/useHistoryKeyboardNavigation';
 
 interface ItemHistoryContentProps {
   itemId: string;
@@ -45,6 +46,8 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
 
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
   const [compareMode, setCompareMode] = useState(false);
+  // @ts-expect-error - TS6133: Used in compare mode callbacks, keeping for future comparison view
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>(
     []
   );
@@ -66,6 +69,29 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     prevHistoryLength.current = history?.length || 0;
     prevIsLoading.current = isLoading;
   }
+
+  // Keyboard navigation (ArrowUp/ArrowDown)
+  useHistoryKeyboardNavigation({
+    items: history,
+    enabled: !compareMode && !!history && history.length > 0,
+    getCurrentIndex: () => {
+      if (selectedVersion === null) return -1;
+      return (
+        history?.findIndex(h => h.version_number === selectedVersion) ?? -1
+      );
+    },
+    onNavigate: item => {
+      setSelectedVersion(item.version_number);
+    },
+  });
+
+  // Handle compare mode toggle
+  const handleCompareModeToggle = () => {
+    // Clear all selections when switching modes
+    setSelectedVersion(null);
+    setSelectedForCompare([]);
+    setCompareMode(!compareMode);
+  };
 
   const handleVersionClick = (item: HistoryItem) => {
     // Simple single selection for detail view
@@ -197,7 +223,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
             <Button
               variant="text"
               size="sm"
-              onClick={() => setCompareMode(!compareMode)}
+              onClick={handleCompareModeToggle}
               className="text-sm"
             >
               {compareMode ? 'Single View' : 'Compare Mode'}
@@ -325,16 +351,6 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
           )}
         </div>
       </div>
-
-      {/* Footer info - comparison mode indicator */}
-      {selectedForCompare.length > 0 && (
-        <div className="mt-4 text-sm text-gray-500">
-          <span>
-            Dipilih untuk compare: v
-            {selectedForCompare.map(v => v.version_number).join(', v')}
-          </span>
-        </div>
-      )}
     </div>
   );
 };
