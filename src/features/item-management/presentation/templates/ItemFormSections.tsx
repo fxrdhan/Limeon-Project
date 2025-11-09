@@ -5,6 +5,7 @@ import {
   useItemModal,
   useItemPrice,
   useItemUI,
+  useItemHistory,
 } from '../../shared/contexts/useItemFormContext';
 import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
 import { usePackageConversionLogic } from '../../application/hooks/utils/useConversionLogic';
@@ -19,21 +20,25 @@ import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm
 
 // Header Section
 // eslint-disable-next-line react-refresh/only-export-components
-const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({
-  onReset,
-  onClose,
-}) => {
+const FormHeader: React.FC<{
+  onReset?: () => void;
+  onClose: () => void;
+  itemId?: string;
+}> = ({ onReset, onClose, itemId }) => {
   const {
     isEditMode,
     formattedUpdateAt,
     isClosing,
-    handleHistoryClick,
-    mode,
-    goBackToForm,
+    handleVersionSelect,
+    viewingVersionNumber,
   } = useItemUI();
-  const { formData } = useItemForm();
+  const historyState = useItemHistory();
 
-  const isHistoryMode = mode === 'history';
+  // Get current version number (latest version)
+  const currentVersionNumber =
+    historyState?.data && historyState.data.length > 0
+      ? historyState.data[0].version_number
+      : undefined;
 
   return (
     <ItemFormHeader
@@ -42,10 +47,12 @@ const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({
       isClosing={isClosing}
       onReset={onReset}
       onClose={onClose}
-      onHistoryClick={handleHistoryClick}
-      isHistoryMode={isHistoryMode}
-      onBackToForm={goBackToForm}
-      itemName={formData.name}
+      history={historyState?.data || null}
+      isHistoryLoading={historyState?.isLoading || false}
+      selectedVersion={viewingVersionNumber}
+      currentVersion={currentVersionNumber}
+      onVersionSelect={handleVersionSelect}
+      entityId={itemId}
     />
   );
 };
