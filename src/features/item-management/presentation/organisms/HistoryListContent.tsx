@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import toast from 'react-hot-toast';
-import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
+import HistoryTimelineList from './HistoryTimelineList';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Transition, TransitionChild } from '@headlessui/react';
@@ -12,7 +12,7 @@ import {
   ClockIcon,
   ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline';
-import { useHistoryKeyboardNavigation } from '../hooks/useHistoryKeyboardNavigation';
+import { useHistorySelection } from '../hooks/useHistoryManagement';
 
 interface HistoryListContentProps {
   compareMode?: boolean;
@@ -26,7 +26,6 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
   const { history: historyState, uiActions, comparison } = useEntityModal();
   const { entityTable, entityId, data: history, isLoading } = historyState;
   const queryClient = useQueryClient();
-  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [restoreTargetVersion, setRestoreTargetVersion] = useState<
     number | null
@@ -34,53 +33,45 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
   const [restoreMode, setRestoreMode] = useState<RestoreMode>('soft');
   const [isRestoring, setIsRestoring] = useState(false);
 
-  // Sync selection state with comparison modal state
-  useEffect(() => {
-    if (comparison.isOpen && comparison.selectedVersion) {
-      setSelectedVersion(comparison.selectedVersion.version_number);
-    }
-  }, [comparison.isOpen, comparison.selectedVersion]);
-
-  // Clear selection when modal is closed
-  useEffect(() => {
-    if (!comparison.isOpen) {
-      setSelectedVersion(null);
-    }
-  }, [comparison.isOpen]);
-
-  // Keyboard navigation using custom hook
-  useHistoryKeyboardNavigation({
-    items: history,
-    enabled: !compareMode && !!history && history.length > 0,
-    getCurrentIndex: () => {
-      if (selectedVersion === null) return -1;
-      return (
-        history?.findIndex(h => h.version_number === selectedVersion) ?? -1
-      );
+  // Use shared history selection hook
+  const {
+    selectedVersion,
+    handleVersionClick,
+    handleCompareSelected,
+    handleSelectionEmpty,
+  } = useHistorySelection({
+    history,
+    compareMode,
+    onVersionSelect: item => {
+      const versionData = history?.find(h => h.id === item.id);
+      if (versionData) {
+        uiActions.openComparison(versionData);
+      }
     },
-    onNavigate: item => {
-      setSelectedVersion(item.version_number);
-      uiActions.openComparison(item);
+    onVersionDeselect: () => {
+      if (comparison.isOpen) {
+        uiActions.closeComparison();
+      }
+    },
+    onCompareSelect: ([itemA, itemB]) => {
+      const versionA = history?.find(h => h.id === itemA.id);
+      const versionB = history?.find(h => h.id === itemB.id);
+      if (versionA && versionB) {
+        uiActions.openDualComparison(versionA, versionB);
+      }
+    },
+    onSelectionEmpty: () => {
+      uiActions.closeComparison();
     },
   });
 
-  const handleVersionClick = (item: HistoryItem) => {
-    // If clicking the same version that's already selected and comparison modal is open, close it
-    if (selectedVersion === item.version_number && comparison.isOpen) {
-      setSelectedVersion(null);
-      uiActions.closeComparison();
-      return;
+  // Sync selection state with comparison modal state (for external changes)
+  useEffect(() => {
+    if (comparison.isOpen && comparison.selectedVersion) {
+      // External state sync handled by comparison modal
+      // selectedVersion is managed by the hook
     }
-
-    // Update local selection state first
-    setSelectedVersion(item.version_number);
-
-    // Find the full VersionData from history using the item
-    const versionData = history?.find(h => h.id === item.id);
-    if (versionData) {
-      uiActions.openComparison(versionData);
-    }
-  };
+  }, [comparison.isOpen, comparison.selectedVersion]);
 
   const handleRestore = async (version: number) => {
     // Close comparison modal to avoid z-index conflicts and improve focus
@@ -182,27 +173,6 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
 
   const handleRestoreCancel = () => {
     closeRestoreDialog();
-  };
-
-  const handleCompareSelected = (selectedVersions: HistoryItem[]) => {
-    if (selectedVersions.length === 2) {
-      // Find the full VersionData objects
-      const versionA = history?.find(h => h.id === selectedVersions[0].id);
-      const versionB = history?.find(h => h.id === selectedVersions[1].id);
-
-      if (versionA && versionB) {
-        // Open dual comparison modal
-        uiActions.openDualComparison(versionA, versionB);
-      }
-    } else if (selectedVersions.length === 1) {
-      // Close comparison modal if only 1 version is selected in compare mode
-      uiActions.closeComparison();
-    }
-  };
-
-  const handleSelectionEmpty = () => {
-    // Close comparison modal when no versions are selected
-    uiActions.closeComparison();
   };
 
   return (

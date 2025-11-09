@@ -9,11 +9,11 @@ import {
   useItemUI,
   useItemHistory,
 } from '../../shared/contexts/useItemFormContext';
-import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
+import HistoryTimelineList from './HistoryTimelineList';
 import DiffText from '../molecules/DiffText';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useHistoryKeyboardNavigation } from '../hooks/useHistoryKeyboardNavigation';
+import { useHistorySelection } from '../hooks/useHistoryManagement';
 
 interface ItemHistoryContentProps {
   itemId: string;
@@ -44,13 +44,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     prevItemId.current = itemId;
   }
 
-  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
   const [compareMode, setCompareMode] = useState(false);
-  // @ts-expect-error - TS6133: Used in compare mode callbacks, keeping for future comparison view
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>(
-    []
-  );
 
   // Only log state changes, not every render
   const prevHistoryLength = useRef(history?.length || 0);
@@ -70,50 +64,35 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
     prevIsLoading.current = isLoading;
   }
 
-  // Keyboard navigation (ArrowUp/ArrowDown)
-  useHistoryKeyboardNavigation({
-    items: history,
-    enabled: !compareMode && !!history && history.length > 0,
-    getCurrentIndex: () => {
-      if (selectedVersion === null) return -1;
-      return (
-        history?.findIndex(h => h.version_number === selectedVersion) ?? -1
-      );
+  // Use shared history selection hook
+  const {
+    selectedVersion,
+    handleVersionClick,
+    handleCompareSelected,
+    handleSelectionEmpty,
+    clearSelections,
+  } = useHistorySelection({
+    history,
+    compareMode,
+    onVersionSelect: () => {
+      // Just update selection - no modal for items yet
     },
-    onNavigate: item => {
-      setSelectedVersion(item.version_number);
+    onVersionDeselect: () => {
+      // Clear selection
+    },
+    onCompareSelect: ([itemA, itemB]) => {
+      console.log('🔍 Compare versions:', itemA, itemB);
+      // TODO: Implement comparison view/modal for items
+    },
+    onSelectionEmpty: () => {
+      // Clear comparison
     },
   });
 
   // Handle compare mode toggle
   const handleCompareModeToggle = () => {
-    // Clear all selections when switching modes
-    setSelectedVersion(null);
-    setSelectedForCompare([]);
+    clearSelections();
     setCompareMode(!compareMode);
-  };
-
-  const handleVersionClick = (item: HistoryItem) => {
-    // Simple single selection for detail view
-    if (selectedVersion === item.version_number) {
-      setSelectedVersion(null);
-    } else {
-      setSelectedVersion(item.version_number);
-    }
-  };
-
-  const handleCompareSelected = (selectedVersions: HistoryItem[]) => {
-    if (selectedVersions.length === 2) {
-      // Update the selected for compare display
-      setSelectedForCompare(selectedVersions);
-      console.log('🔍 Compare versions:', selectedVersions);
-      // TODO: Implement comparison view/modal for items
-    }
-  };
-
-  const handleSelectionEmpty = () => {
-    // Clear comparison when no versions selected
-    setSelectedForCompare([]);
   };
 
   const handleRestore = async (version: number) => {
