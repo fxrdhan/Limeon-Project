@@ -76,8 +76,9 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 variant="text"
                 size="sm"
                 onClick={handleTimestampClick}
-                className="text-sm text-gray-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors"
+                className="text-sm text-gray-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 title="Lihat riwayat perubahan"
+                tabIndex={-1}
               >
                 {formattedUpdateAt}
               </Button>
