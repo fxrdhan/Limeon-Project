@@ -395,7 +395,6 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
             <VersionViewingBanner
               versionNumber={viewingVersion.version_number}
               versionDate={viewingVersion.changed_at}
-              onBackToCurrent={ui.handleClearVersionView}
               onRestore={undefined} // TODO: Add restore functionality if needed
             />
           ) : undefined,

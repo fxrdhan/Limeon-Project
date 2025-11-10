@@ -6,14 +6,12 @@ import { formatDateTime } from '@/lib/formatters';
 interface VersionViewingBannerProps {
   versionNumber: number;
   versionDate: string;
-  onBackToCurrent: () => void;
   onRestore?: () => void;
 }
 
 const VersionViewingBanner: React.FC<VersionViewingBannerProps> = ({
   versionNumber,
   versionDate,
-  onBackToCurrent,
   onRestore,
 }) => {
   return (
@@ -46,14 +44,6 @@ const VersionViewingBanner: React.FC<VersionViewingBannerProps> = ({
               Restore This Version
             </Button>
           )}
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onBackToCurrent}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Back to Current
-          </Button>
         </div>
       </div>
 
