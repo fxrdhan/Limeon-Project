@@ -55,6 +55,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   const portalRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const [position, setPosition] = React.useState({ top: 0, left: 0 });
+  const [isPositioned, setIsPositioned] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [restoreTargetVersion, setRestoreTargetVersion] = useState<
     number | null
@@ -81,9 +82,12 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.bottom + 8,
-        left: rect.right - 380, // Increased width for timeline
+        top: rect.bottom + 4,
+        left: rect.right - 350, // Align right edge of modal with right edge of button
       });
+      setIsPositioned(true);
+    } else if (!isOpen) {
+      setIsPositioned(false);
     }
   }, [isOpen, triggerRef]);
 
@@ -199,21 +203,21 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
 
   const portalContent = (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && isPositioned && (
         <motion.div
           ref={portalRef}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.15 }}
-          className="fixed z-[60] bg-white rounded-lg shadow-xl border border-gray-200 w-96"
+          className="fixed z-[60] bg-white rounded-xl shadow-xl border border-gray-200 w-[350px] max-h-[600px] flex flex-col"
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,
           }}
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
             <h3 className="font-medium text-sm">Riwayat Perubahan</h3>
             <p className="text-xs text-gray-500 mt-0.5">
               Pilih versi untuk melihat data
@@ -221,7 +225,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
           </div>
 
           {/* Content - Reuse HistoryTimelineList with keyboard navigation */}
-          <div className="max-h-96">
+          <div className="flex-1 overflow-hidden">
             <HistoryTimelineList
               history={history}
               isLoading={isLoading}
@@ -237,18 +241,6 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
               allowMultiSelect={false}
               autoScrollToSelected={true}
             />
-          </div>
-
-          {/* Footer */}
-          <div className="px-4 py-2 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-            <Button
-              variant="text"
-              size="sm"
-              onClick={onClose}
-              className="text-xs text-gray-600 w-full"
-            >
-              Tutup
-            </Button>
           </div>
         </motion.div>
       )}
