@@ -10,7 +10,6 @@ import {
   useItemActions,
   useItemForm,
   useItemUI,
-  useItemHistory,
 } from '../../../shared/contexts/useItemFormContext';
 import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
@@ -19,7 +18,6 @@ import { useEntityHistory } from '../../../application/hooks/instances/useEntity
 import ItemModalTemplate from '../ItemModalTemplate';
 import { ItemFormSections } from '../ItemFormSections';
 import ItemModalContainer from '../containers/ItemModalContainer';
-import { VersionViewingBanner } from '../../molecules';
 
 const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
@@ -366,14 +364,6 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   const ui = useItemUI();
   const form = useItemForm();
   const actions = useItemActions();
-  const historyState = useItemHistory();
-
-  // Get version data for banner
-  const viewingVersion = ui.viewingVersionNumber
-    ? historyState?.data?.find(
-        h => h.version_number === ui.viewingVersionNumber
-      )
-    : null;
 
   // Single form mode rendering
   return (
@@ -390,14 +380,6 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
             itemId={itemId}
           />
         ),
-        versionBanner:
-          ui.isViewingOldVersion && viewingVersion ? (
-            <VersionViewingBanner
-              versionNumber={viewingVersion.version_number}
-              versionDate={viewingVersion.changed_at}
-              onRestore={undefined} // TODO: Add restore functionality if needed
-            />
-          ) : undefined,
         basicInfo: <ItemFormSections.BasicInfo />,
         settingsForm: <ItemFormSections.Settings />,
         pricingForm: <ItemFormSections.Pricing />,

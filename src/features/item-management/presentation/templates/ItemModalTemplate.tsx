@@ -12,7 +12,6 @@ interface ItemModalTemplateProps {
   onSubmit: (e: React.FormEvent) => void;
   children: {
     header: ReactNode;
-    versionBanner?: ReactNode;
     basicInfo: ReactNode;
     categoryForm?: ReactNode;
     settingsForm: ReactNode;
@@ -96,9 +95,6 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                 className="flex-1 flex flex-col min-h-0"
               >
                 <div className="flex-1 overflow-y-auto">
-                  {/* Version Banner */}
-                  {children.versionBanner && children.versionBanner}
-
                   <div className="px-6 py-1">
                     {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
                     {!children.settingsForm &&
