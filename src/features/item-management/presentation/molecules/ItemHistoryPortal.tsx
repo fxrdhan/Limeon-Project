@@ -240,6 +240,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
               loadingMessage="Loading history..."
               allowMultiSelect={false}
               autoScrollToSelected={true}
+              skipEntranceAnimation={hookSelectedVersion !== null}
             />
           </div>
         </motion.div>
