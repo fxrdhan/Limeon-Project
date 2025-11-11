@@ -1,0 +1,29 @@
+{
+  // VS Code Extension Recommendations for PharmaSys
+  // VS Code will prompt users to install these extensions
+
+  "recommendations": [
+    // Essential
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+
+    // TypeScript
+    "yoavbls.pretty-ts-errors",
+
+    // Testing
+    "vitest.explorer",
+
+    // Database
+    "supabase.supabase-vscode",
+
+    // Git
+    "eamodio.gitlens",
+
+    // Utilities
+    "usernamehw.errorlens",
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "dsznajder.es7-react-js-snippets"
+  ]
+}
