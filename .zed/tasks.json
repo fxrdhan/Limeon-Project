@@ -1,0 +1,80 @@
+[
+  {
+    "label": "dev",
+    "command": "yarn dev",
+    "use_new_terminal": true,
+    "tags": ["dev"]
+  },
+  {
+    "label": "dev:vite",
+    "command": "yarn dev:vite",
+    "use_new_terminal": true,
+    "tags": ["dev"]
+  },
+  {
+    "label": "build",
+    "command": "yarn build",
+    "use_new_terminal": false,
+    "tags": ["build"]
+  },
+  {
+    "label": "preview",
+    "command": "yarn preview",
+    "use_new_terminal": true,
+    "tags": ["dev"]
+  },
+  {
+    "label": "test",
+    "command": "yarn test:run",
+    "use_new_terminal": false,
+    "tags": ["test"]
+  },
+  {
+    "label": "test:watch",
+    "command": "yarn test:watch",
+    "use_new_terminal": true,
+    "tags": ["test"]
+  },
+  {
+    "label": "test:ui",
+    "command": "yarn test:ui",
+    "use_new_terminal": true,
+    "tags": ["test"]
+  },
+  {
+    "label": "test:coverage",
+    "command": "yarn test:coverage",
+    "use_new_terminal": false,
+    "tags": ["test"]
+  },
+  {
+    "label": "lint",
+    "command": "yarn lint",
+    "use_new_terminal": false,
+    "tags": ["lint"]
+  },
+  {
+    "label": "format",
+    "command": "yarn format",
+    "use_new_terminal": false,
+    "tags": ["format"]
+  },
+  {
+    "label": "format:check",
+    "command": "yarn format:check",
+    "use_new_terminal": false,
+    "tags": ["format"]
+  },
+  {
+    "label": "tailwind:watch",
+    "command": "yarn tailwind:watch",
+    "use_new_terminal": true,
+    "tags": ["dev"]
+  },
+  {
+    "label": "tailwind:build",
+    "command": "yarn tailwind:build",
+    "use_new_terminal": false,
+    "tags": ["build"]
+  }
+]
