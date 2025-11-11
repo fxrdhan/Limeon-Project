@@ -135,6 +135,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
   const isInitialRestorationDone = useRef<boolean>(false);
 
+  // 🔒 Guard flag to prevent auto-save during state restoration
+  const isRestoringState = useRef<boolean>(false);
+
+  // Debounce timeout ref for auto-save operations
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Initialize auto-size prevention based on saved state during component mount
   const shouldPreventAutoSize = useRef<boolean>(
     hasSavedState(activeTab as TableType)
@@ -228,11 +234,35 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Auto-save helper function for live state persistence
   const autoSaveState = useCallback(() => {
+    // 🔒 Skip auto-save during state restoration to prevent race conditions
+    if (isRestoringState.current) {
+      return;
+    }
+
     if (gridApi && !gridApi.isDestroyed()) {
       const tableType = activeTab as TableType;
       autoSaveGridState(gridApi, tableType);
     }
   }, [gridApi, activeTab]);
+
+  // Debounced auto-save to batch multiple rapid changes
+  const debouncedAutoSave = useCallback(() => {
+    // 🔒 Skip auto-save during state restoration
+    if (isRestoringState.current) {
+      return;
+    }
+
+    // Clear previous timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveState();
+      autoSaveTimeoutRef.current = null;
+    }, 150);
+  }, [autoSaveState]);
 
   // Auto-restore now handled via manual restore function in onFirstDataRendered
 
@@ -253,6 +283,15 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       gridApi &&
       !gridApi.isDestroyed()
     ) {
+      // 🔒 Lock auto-save during restoration
+      isRestoringState.current = true;
+
+      // Clear any pending auto-save timeouts from previous tab
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+
       // Reset restoration flag for new tab
       isInitialRestorationDone.current = false;
 
@@ -267,14 +306,18 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             const restoredPageSize = gridApi.paginationGetPageSize();
             setCurrentPageSize(restoredPageSize);
             isInitialRestorationDone.current = true;
+            // 🔓 Unlock auto-save after restoration complete
+            isRestoringState.current = false;
           }
-        }, 150); // After restoration timeout
+        }, 200); // Increased to 200ms to ensure all events settled
       } else {
         // No saved state, just autosize if not prevented
         if (!shouldPreventAutoSize.current) {
           gridApi.autoSizeAllColumns();
         }
         isInitialRestorationDone.current = true;
+        // 🔓 Unlock auto-save immediately if no restoration needed
+        isRestoringState.current = false;
       }
 
       previousActiveTabRef.current = tableType;
@@ -341,6 +384,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       const hasSaved = hasSavedState(tableType);
 
       if (hasSaved) {
+        // 🔒 Lock auto-save during restoration
+        isRestoringState.current = true;
+
         // Apply immediately - no delay needed since grid is ready but no data rendered yet
         restoreGridState(params.api, tableType);
 
@@ -375,11 +421,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             setCurrentPageSize(restoredPageSize);
             // Mark initial restoration as done
             isInitialRestorationDone.current = true;
+            // 🔓 Unlock auto-save after restoration complete
+            isRestoringState.current = false;
           }
-        }, 150); // After restoration timeout
+        }, 200); // Increased to 200ms to ensure all events settled
       } else {
         // No saved state, mark as done immediately
         isInitialRestorationDone.current = true;
+        isRestoringState.current = false;
       }
 
       // Notify parent about grid API
@@ -466,6 +515,27 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     }
   }, [isLoading, gridApi, activeTab, restoreScrollPosition]);
 
+  // Cleanup pending auto-save timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  // Cleanup pending auto-save timeouts when activeTab changes
+  useEffect(() => {
+    // Clear any pending auto-saves when switching tabs
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+    };
+  }, [activeTab]);
+
   // Note: Autosize handled in onFirstDataRendered for better timing
 
   // Handle column row group changes - autosize when grouping is applied/removed
@@ -501,47 +571,47 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const handlePageSizeChange = useCallback(
     (newPageSize: number) => {
       setCurrentPageSize(newPageSize);
-      // Auto-save pagination state after page size change
-      setTimeout(autoSaveState, 100); // Small delay to ensure page size is applied
+      // Use debounced auto-save to batch changes
+      debouncedAutoSave();
     },
-    [autoSaveState]
+    [debouncedAutoSave]
   );
 
-  // Live save event handlers
+  // Live save event handlers - all use debounced auto-save to prevent race conditions
   const handleColumnResized = useCallback(() => {
-    // Auto-save when columns are resized
-    setTimeout(autoSaveState, 100); // Small delay to ensure resize is complete
-  }, [autoSaveState]);
+    // Use debounced auto-save - batches rapid resize events
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   const handleColumnMoved = useCallback(() => {
-    // Auto-save when columns are moved
-    autoSaveState();
-  }, [autoSaveState]);
+    // Column moves are typically single actions, but still use debounce for consistency
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   const handleColumnPinned = useCallback(() => {
     // Auto-save when columns are pinned/unpinned
-    autoSaveState();
-  }, [autoSaveState]);
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   const handleColumnVisible = useCallback(() => {
     // Auto-save when column visibility changes
-    autoSaveState();
-  }, [autoSaveState]);
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   const handleSortChanged = useCallback(() => {
     // Auto-save when sorting changes
-    autoSaveState();
-  }, [autoSaveState]);
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   const handleFilterChanged = useCallback(() => {
     // Auto-save when filters change
-    autoSaveState();
-  }, [autoSaveState]);
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   const handleDisplayedColumnsChanged = useCallback(() => {
     // Auto-save when displayed columns change (sidebar column panel)
-    autoSaveState();
-  }, [autoSaveState]);
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
