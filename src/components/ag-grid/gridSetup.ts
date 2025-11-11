@@ -89,7 +89,7 @@ export const defaultTheme = themeQuartz.withParams({
   },
   accentColor: 'oklch(76.5% 0.177 163.223/0.7)',
   fontFamily: 'var(--font-sans)', // Reference CSS variable from @theme
-  fontSize: 15, // Increased from default 14px
+  fontSize: 13, // Compact size for better space efficiency
   // Note: fontWeight is not supported in theme params, use CSS instead
 });
 
