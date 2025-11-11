@@ -16,6 +16,11 @@ import { SettingsRoutes } from '@/pages/routes/settings';
 import ErrorBoundary from '@/components/error-boundary';
 import { DashboardLoadingFallback } from '@/components/loading-fallback';
 import ToastTester from '@/components/ToastTester';
+import {
+  cleanupLegacyGridStates,
+  hasLegacyKeys,
+} from '@/features/shared/utils/gridStateManager';
+import { initConsoleAPI } from '@/utils/consoleCommands';
 
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const PrintPurchase = lazy(() => import('@/pages/purchases/print-purchase'));
@@ -26,6 +31,23 @@ function App() {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Initialize console API (development only)
+  useEffect(() => {
+    initConsoleAPI();
+  }, []);
+
+  // Auto-cleanup legacy grid state keys on app mount
+  useEffect(() => {
+    if (hasLegacyKeys()) {
+      const result = cleanupLegacyGridStates();
+      if (result.success && result.removedCount > 0) {
+        console.log(
+          `🧹 Auto-cleanup: Removed ${result.removedCount} legacy grid state keys`
+        );
+      }
+    }
+  }, []);
 
   // Show loading while auth is initializing
   if (loading) {
