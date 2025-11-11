@@ -1,26 +1,117 @@
 {
-  "file_scan_exclusions": ["node_modules/**", "dist/**", "build/**"],
+  // Zed Project Settings
+  // Docs: https://zed.dev/docs/configuring-zed
+
+  // Editor Behavior
+  "project_name": "Limeon-Project",
+  "inlay_hints": {
+    "show_background": true,
+    "enabled": true
+  },
+  "show_whitespaces": "all",
+  "tab_size": 2,
+  "hard_tabs": false,
+  "soft_wrap": "none",
+  "preferred_line_length": 100,
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+
+  // Formatting
+  "format_on_save": "on",
+  "formatter": "prettier",
+  "prettier": {
+    "allowed": true,
+    "plugins": ["prettier-plugin-tailwindcss"]
+  },
+
+  // Autocomplete
+  "completions": {
+    "lsp_insert_mode": "replace_suffix",
+    "lsp": true
+  },
+
+  // Auto-close JSX tags
+  "jsx_tag_auto_close": {
+    "enabled": true
+  },
+  "use_autoclose": true,
+
+  // File Scanning
+  "file_scan_exclusions": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "coverage/**",
+    ".git/**",
+    "yarn.lock"
+  ],
+
+  // Diagnostics - Enable for better DX
   "diagnostics": {
-    "include_warnings": false,
+    "include_warnings": true,
     "inline": {
-      "enabled": false
+      "enabled": true
     }
   },
+
+  // Language-Specific Settings
   "languages": {
-    "JavaScript": {
-      "enable_language_server": false
-    },
     "TypeScript": {
-      "enable_language_server": false
+      "tab_size": 2,
+      "enable_language_server": true,
+      "format_on_save": "on",
+      "formatter": "prettier",
+      "code_actions_on_format": {
+        "source.organizeImports": true
+      }
+    },
+    "TSX": {
+      "tab_size": 2,
+      "enable_language_server": true,
+      "format_on_save": "on",
+      "formatter": "prettier",
+      "code_actions_on_format": {
+        "source.organizeImports": true
+      }
+    },
+    "JavaScript": {
+      "tab_size": 2,
+      "enable_language_server": true,
+      "format_on_save": "on",
+      "formatter": "prettier"
     },
     "JSON": {
-      "enable_language_server": false
+      "tab_size": 2,
+      "enable_language_server": true,
+      "format_on_save": "on"
+    },
+    "CSS": {
+      "tab_size": 2,
+      "enable_language_server": true,
+      "format_on_save": "on"
+    },
+    "SCSS": {
+      "tab_size": 2,
+      "enable_language_server": true,
+      "format_on_save": "on"
     },
     "SQL": {
       "enable_language_server": false
     }
   },
-  "file_types": {
-    "Plain Text": ["supabase/**"]
-  }
+
+  // LSP Configuration
+  "lsp": {
+    "typescript-language-server": {
+      "initialization_options": {
+        "preferences": {
+          "importModuleSpecifierPreference": "relative",
+          "quotePreference": "single"
+        }
+      }
+    }
+  },
+
+  // Private files masking
+  "private_files": ["**/.env", "**/.env.local", "**/.env.*.local"]
 }
