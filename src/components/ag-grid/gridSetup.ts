@@ -18,6 +18,8 @@ import {
   ColumnApiModule,
   ColumnAutoSizeModule,
   CsvExportModule,
+  ValidationModule,
+  RowApiModule,
 } from 'ag-grid-community';
 import {
   LicenseManager,
@@ -54,6 +56,8 @@ export const setupAgGrid = () => {
     ColumnApiModule,
     ColumnAutoSizeModule,
     CsvExportModule,
+    ValidationModule,
+    RowApiModule,
     // Enterprise modules
     RowSelectionModule,
     RowGroupingModule,

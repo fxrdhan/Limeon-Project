@@ -191,40 +191,117 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         return current;
       }
 
-      // Extract data using column valueGetter or nested field access
+      // Extract data using direct row data access
       const processedData: string[][] = [];
-      gridApi.forEachNodeAfterFilterAndSort(node => {
-        if (node.data) {
-          const rowValues = visibleColumns.map(col => {
-            let value: unknown;
 
-            // If column has valueGetter function, use it
-            if (col.valueGetter && typeof col.valueGetter === 'function') {
+      // Alternative approach: Get all row data directly from grid
+      // This is more reliable than iterating nodes which may not be ready
+      const allRowData: unknown[] = [];
+
+      // Try multiple methods to get data (most reliable first)
+      try {
+        // Method 1: Direct iteration (most reliable for client-side model)
+        gridApi.forEachNode(node => {
+          if (node.data && !node.group) {
+            allRowData.push(node.data);
+          }
+        });
+
+        console.log(
+          `🔍 Method 1 (forEachNode): Found ${allRowData.length} rows`
+        );
+
+        // Method 2: If Method 1 fails, try getting from model directly
+        if (allRowData.length === 0) {
+          const rowModel = gridApi.getModel();
+          if (rowModel && 'rowsToDisplay' in rowModel) {
+            const rowsToDisplay = (rowModel as { rowsToDisplay?: unknown[] })
+              .rowsToDisplay;
+            if (rowsToDisplay) {
+              rowsToDisplay.forEach((node: unknown) => {
+                const rowNode = node as { data?: unknown; group?: boolean };
+                if (rowNode.data && !rowNode.group) {
+                  allRowData.push(rowNode.data);
+                }
+              });
+            }
+          }
+          console.log(
+            `🔍 Method 2 (rowsToDisplay): Found ${allRowData.length} rows`
+          );
+        }
+      } catch (error) {
+        console.error('❌ Error getting row data:', error);
+      }
+
+      console.log(`📊 Total data rows found: ${allRowData.length}`);
+
+      // Process each row to extract column values
+      allRowData.forEach((rowData, index) => {
+        const rowValues = visibleColumns.map(col => {
+          let value: unknown;
+
+          // If column has valueGetter function, use it
+          if (col.valueGetter && typeof col.valueGetter === 'function') {
+            // Create a minimal node-like object for valueGetter
+            const fakeNode = {
+              data: rowData,
+              id: String(index),
+              group: false,
+            };
+
+            // Modern AG Grid v30+ approach: Column API merged into Grid API
+            const column =
+              gridApi.getColumn(col.field || '') ||
+              ({
+                getColId: () => col.field || '',
+                getColDef: () => col,
+              } as import('ag-grid-community').Column);
+
+            try {
               value = col.valueGetter({
-                data: node.data,
-                node: node,
+                data: rowData,
+                node: fakeNode as import('ag-grid-community').IRowNode,
                 colDef: col,
                 api: gridApi,
-                columnApi: gridApi,
                 context: undefined,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                column: { getColId: () => col.field || '' } as any,
+                column: column,
                 getValue: (field: string) => {
-                  // Helper function for nested field access
-                  return getNestedValue(node.data, field);
+                  return getNestedValue(
+                    rowData as Record<string, unknown>,
+                    field
+                  );
                 },
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any);
-            } else if (col.field) {
-              // Handle nested field access (e.g., 'category.name')
-              value = getNestedValue(node.data, col.field);
+              });
+            } catch (error) {
+              console.warn(
+                `⚠️ ValueGetter error for column ${col.field}:`,
+                error
+              );
+              // Fallback to direct field access
+              if (col.field) {
+                value = getNestedValue(
+                  rowData as Record<string, unknown>,
+                  col.field
+                );
+              }
             }
+          } else if (col.field) {
+            // Handle nested field access (e.g., 'category.name')
+            value = getNestedValue(
+              rowData as Record<string, unknown>,
+              col.field
+            );
+          }
 
-            return value !== null && value !== undefined ? String(value) : '';
-          });
-          processedData.push(rowValues);
-        }
+          return value !== null && value !== undefined ? String(value) : '';
+        });
+        processedData.push(rowValues);
       });
+
+      console.log(
+        `✅ Processed ${processedData.length} rows with ${headers.length} columns`
+      );
 
       return { processedData, headers };
     }, [gridApi]);
