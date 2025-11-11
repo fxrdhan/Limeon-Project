@@ -88,6 +88,12 @@ jobs:
               - '.mcp.json'
               - '.mcp.json.example'
               - '*.example'
+              - '.vscode/**'
+              - '.zed/**'
+              - '.editorconfig'
+              - '.nvmrc'
+              - '.lintstagedrc*'
+              - 'commitlint.config.*'
 
             # Docs & dev-only changes that need format check only (or skip entirely)
             docs:
