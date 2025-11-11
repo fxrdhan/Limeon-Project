@@ -242,7 +242,18 @@ export const exportGridStates = (): void => {
 
 // Auto-expose to window for easy console access
 if (typeof window !== 'undefined') {
-  (window as Record<string, unknown>).gridDebug = {
+  interface WindowWithGridDebug extends Window {
+    gridDebug?: {
+      enable: typeof enableGridDebug;
+      disable: typeof disableGridDebug;
+      inspect: typeof inspectAllGridStates;
+      compare: typeof compareGridStates;
+      clear: typeof clearAllGridStates;
+      export: typeof exportGridStates;
+    };
+  }
+
+  (window as WindowWithGridDebug).gridDebug = {
     enable: enableGridDebug,
     disable: disableGridDebug,
     inspect: inspectAllGridStates,
