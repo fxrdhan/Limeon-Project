@@ -31,6 +31,8 @@ interface HistoryTimelineListProps {
   isFlipped?: boolean;
   // Auto-scroll behavior
   autoScrollToSelected?: boolean;
+  // Animation control
+  skipEntranceAnimation?: boolean;
 }
 
 interface HistoryItemCardProps {
@@ -47,6 +49,7 @@ interface HistoryItemCardProps {
   showRestoreButton: boolean;
   hoveredItem: string | null;
   bgColor: string;
+  skipEntranceAnimation: boolean;
   onMouseEnter: (itemId: string) => void;
   onMouseLeave: () => void;
   onClick: (item: HistoryItem) => void;
@@ -66,6 +69,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
   latestVersion,
   showRestoreButton,
   bgColor,
+  skipEntranceAnimation,
   onMouseEnter,
   onMouseLeave,
   onClick,
@@ -83,7 +87,9 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: -30 }}
+      initial={
+        skipEntranceAnimation ? { opacity: 1, y: 0 } : { opacity: 0, y: -30 }
+      }
       animate={{
         opacity: 1,
         y: 0,
@@ -91,7 +97,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
           type: 'spring',
           stiffness: 500,
           damping: 30,
-          delay: index * 0.08,
+          delay: skipEntranceAnimation ? 0 : index * 0.08,
         },
       }}
       exit={{
@@ -243,6 +249,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   onSelectionEmpty,
   isFlipped = false,
   autoScrollToSelected = true,
+  skipEntranceAnimation = false,
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [scrollState, setScrollState] = useState({
@@ -347,6 +354,9 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       return;
     }
 
+    // Use shorter delay when skipping animation, longer when animating
+    const scrollDelay = skipEntranceAnimation ? 50 : 100;
+
     // Use setTimeout to wait for DOM updates and animations
     const scrollTimeout = setTimeout(() => {
       const container = scrollContainerRef.current;
@@ -368,15 +378,20 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
         container.scrollTo({
           top: scrollTo,
-          behavior: 'smooth',
+          behavior: skipEntranceAnimation ? 'instant' : 'smooth',
         });
       }
-    }, 100);
+    }, scrollDelay);
 
     return () => {
       clearTimeout(scrollTimeout);
     };
-  }, [selectedVersion, autoScrollToSelected, allowMultiSelect]);
+  }, [
+    selectedVersion,
+    autoScrollToSelected,
+    allowMultiSelect,
+    skipEntranceAnimation,
+  ]);
 
   // Custom smooth scrolling effect
   useEffect(() => {
@@ -603,6 +618,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                   showRestoreButton={showRestoreButton}
                   hoveredItem={hoveredItem}
                   bgColor={getItemBgColor(item)}
+                  skipEntranceAnimation={skipEntranceAnimation}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   onClick={handleItemClick}
