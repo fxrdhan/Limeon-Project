@@ -194,47 +194,26 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       // Extract data using direct row data access
       const processedData: string[][] = [];
 
-      // Alternative approach: Get all row data directly from grid
-      // This is more reliable than iterating nodes which may not be ready
+      // Get all row data directly from grid using forEachNode
+      // This bypasses any filter state and gets complete dataset
       const allRowData: unknown[] = [];
 
-      // Try multiple methods to get data (most reliable first)
       try {
-        // Method 1: Direct iteration (most reliable for client-side model)
+        // Iterate all nodes (requires RowApiModule)
         gridApi.forEachNode(node => {
+          // Skip group nodes, only process data rows
           if (node.data && !node.group) {
             allRowData.push(node.data);
           }
         });
 
-        console.log(
-          `🔍 Method 1 (forEachNode): Found ${allRowData.length} rows`
-        );
-
-        // Method 2: If Method 1 fails, try getting from model directly
-        if (allRowData.length === 0) {
-          const rowModel = gridApi.getModel();
-          if (rowModel && 'rowsToDisplay' in rowModel) {
-            const rowsToDisplay = (rowModel as { rowsToDisplay?: unknown[] })
-              .rowsToDisplay;
-            if (rowsToDisplay) {
-              rowsToDisplay.forEach((node: unknown) => {
-                const rowNode = node as { data?: unknown; group?: boolean };
-                if (rowNode.data && !rowNode.group) {
-                  allRowData.push(rowNode.data);
-                }
-              });
-            }
-          }
-          console.log(
-            `🔍 Method 2 (rowsToDisplay): Found ${allRowData.length} rows`
-          );
-        }
+        console.log(`📊 Found ${allRowData.length} rows for export`);
       } catch (error) {
         console.error('❌ Error getting row data:', error);
+        throw new Error(
+          'Failed to retrieve grid data. Please ensure grid is ready.'
+        );
       }
-
-      console.log(`📊 Total data rows found: ${allRowData.length}`);
 
       // Process each row to extract column values
       allRowData.forEach((rowData, index) => {
