@@ -15,11 +15,19 @@ import type {
 } from '../../shared/types';
 import type { UnitData } from '@/types/database';
 
-const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
-  <Button variant="text-danger" size="sm" tabIndex={19} onClick={onClick}>
-    <FaTrash />
-  </Button>
-));
+const DeleteButton = React.memo(
+  ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
+    <Button
+      variant="text-danger"
+      size="sm"
+      tabIndex={19}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <FaTrash />
+    </Button>
+  )
+);
 
 DeleteButton.displayName = 'DeleteButton';
 
@@ -31,6 +39,7 @@ interface LocalItemPackageConversionManagerProps {
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
   onRemoveConversion: (id: string) => void;
+  disabled?: boolean;
 }
 
 export default function ItemPackageConversionManager({
@@ -41,6 +50,7 @@ export default function ItemPackageConversionManager({
   onFormDataChange,
   onAddConversion,
   onRemoveConversion,
+  disabled = false,
 }: LocalItemPackageConversionManagerProps) {
   const filteredAvailableUnits = availableUnits
     .filter(unit => unit.name !== baseUnit)
@@ -62,6 +72,7 @@ export default function ItemPackageConversionManager({
             onFormDataChange={onFormDataChange}
             onAddConversion={onAddConversion}
             tabIndex={16}
+            disabled={disabled}
           />
         </div>
         <div className="md:w-2/3 lg:w-3/5 flex flex-col">
@@ -108,6 +119,7 @@ export default function ItemPackageConversionManager({
                       params.data ? (
                         <DeleteButton
                           onClick={() => onRemoveConversion(params.data!.id)}
+                          disabled={disabled}
                         />
                       ) : null,
                   },

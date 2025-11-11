@@ -13,6 +13,7 @@ interface LocalPackageConversionInputProps {
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
   tabIndex?: number;
+  disabled?: boolean;
 }
 
 export default function PackageConversionInput({
@@ -22,6 +23,7 @@ export default function PackageConversionInput({
   onFormDataChange,
   onAddConversion,
   tabIndex = 16,
+  disabled = false,
 }: LocalPackageConversionInputProps) {
   const handleUnitChange = (unitId: string) => {
     const selectedUnit = availableUnits.find(u => u.id === unitId);
@@ -49,7 +51,7 @@ export default function PackageConversionInput({
   };
 
   const isAddButtonActive =
-    formData.unit && formData.conversion_rate > 0 && baseUnit;
+    formData.unit && formData.conversion_rate > 0 && baseUnit && !disabled;
 
   return (
     <div>
@@ -74,6 +76,7 @@ export default function PackageConversionInput({
             showValidationOnBlur={true}
             validationAutoHide={true}
             validationAutoHideDelay={3000}
+            disabled={disabled}
           />
         </FormField>
         <FormField
@@ -94,16 +97,21 @@ export default function PackageConversionInput({
               min={formData.unit ? '1' : undefined}
               className="w-full pr-10"
               onKeyDown={handleKeyDown}
+              readOnly={disabled}
             />
             <div
-              className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
+              className={`absolute inset-y-0 right-0 flex items-center pr-3 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
                 isAddButtonActive ? 'text-primary' : 'text-gray-300'
               }`}
               onClick={e => {
                 e.preventDefault();
-                onAddConversion();
+                if (!disabled) {
+                  onAddConversion();
+                }
               }}
-              title="Tekan Enter atau klik untuk menambah"
+              title={
+                disabled ? undefined : 'Tekan Enter atau klik untuk menambah'
+              }
             >
               <PiKeyReturnBold size={24} />
             </div>

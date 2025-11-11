@@ -36,6 +36,7 @@ interface ItemBasicInfoFormProps {
   dosages: DropdownOption[];
   manufacturers: DropdownOption[];
   loading: boolean;
+  disabled?: boolean;
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
@@ -59,6 +60,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       dosages,
       manufacturers,
       loading,
+      disabled = false,
       onChange,
       onFieldChange,
       onDropdownChange,
@@ -147,6 +149,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 validationAutoHide={true}
                 validationAutoHideDelay={3000}
                 required
+                readOnly={disabled}
               />
             </FormField>
 
@@ -158,6 +161,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 onChange={onChange}
                 className="w-full"
                 placeholder="Masukkan barcode item"
+                readOnly={disabled}
               />
             </FormField>
 
@@ -184,6 +188,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 ]}
                 withRadio
                 searchList={false}
+                disabled={disabled}
               />
             </FormField>
 
@@ -198,6 +203,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 placeholder="Masukkan nilai"
                 min="0"
                 step="1"
+                readOnly={disabled}
               />
             </FormField>
 
@@ -215,6 +221,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedUnitDetailFetcher}
+                  disabled={disabled}
                 />
               )}
             </FormField>
@@ -232,10 +239,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   onChange={value => onDropdownChange('manufacturer_id', value)}
                   options={manufacturers}
                   placeholder="Pilih Produsen"
-                  onAddNew={onAddNewManufacturer}
+                  onAddNew={disabled ? undefined : onAddNewManufacturer}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedManufacturerDetailFetcher}
+                  disabled={disabled}
                 />
               )}
             </FormField>
@@ -256,10 +264,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   showValidationOnBlur={true}
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
-                  onAddNew={onAddNewCategory}
+                  onAddNew={disabled ? undefined : onAddNewCategory}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedCategoryDetailFetcher}
+                  disabled={disabled}
                 />
               )}
             </FormField>
@@ -280,10 +289,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   showValidationOnBlur={true}
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
-                  onAddNew={onAddNewType}
+                  onAddNew={disabled ? undefined : onAddNewType}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedTypeDetailFetcher}
+                  disabled={disabled}
                 />
               )}
             </FormField>
@@ -304,10 +314,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   showValidationOnBlur={true}
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
-                  onAddNew={onAddNewUnit}
+                  onAddNew={disabled ? undefined : onAddNewUnit}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedPackageDetailFetcher}
+                  disabled={disabled}
                 />
               )}
             </FormField>
@@ -328,10 +339,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   showValidationOnBlur={true}
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
-                  onAddNew={onAddNewDosage}
+                  onAddNew={disabled ? undefined : onAddNewDosage}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedDosageDetailFetcher}
+                  disabled={disabled}
                 />
               )}
             </FormField>
@@ -346,6 +358,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               onChange={onChange}
               placeholder="Masukkan keterangan atau deskripsi tambahan untuk item ini..."
               expandOnClick={true}
+              readOnly={disabled}
             />
           </div>
         </div>
