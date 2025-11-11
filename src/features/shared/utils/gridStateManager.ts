@@ -288,3 +288,111 @@ export const clearAllGridStates = (): boolean => {
     return false;
   }
 };
+
+// ============================================================================
+// MIGRATION & CLEANUP UTILITIES
+// ============================================================================
+
+// Legacy prefix used in old system
+const LEGACY_PREFIX = 'pharmasys_manual_grid_state_';
+
+/**
+ * Get all legacy keys from localStorage
+ */
+export const getLegacyKeys = (): string[] => {
+  const legacyKeys: string[] = [];
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LEGACY_PREFIX)) {
+        legacyKeys.push(key);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get legacy keys:', error);
+  }
+
+  return legacyKeys;
+};
+
+/**
+ * Clean up legacy grid state keys from localStorage
+ * Safe to run - only removes old pharmasys_manual_grid_state_* keys
+ */
+export const cleanupLegacyGridStates = (): {
+  success: boolean;
+  removedCount: number;
+  keys: string[];
+} => {
+  const legacyKeys = getLegacyKeys();
+  let removedCount = 0;
+
+  try {
+    legacyKeys.forEach(key => {
+      localStorage.removeItem(key);
+      removedCount++;
+    });
+
+    console.log(`✅ Cleanup completed: Removed ${removedCount} legacy keys`);
+
+    return {
+      success: true,
+      removedCount,
+      keys: legacyKeys,
+    };
+  } catch (error) {
+    console.error('Failed to cleanup legacy grid states:', error);
+    return {
+      success: false,
+      removedCount,
+      keys: legacyKeys,
+    };
+  }
+};
+
+/**
+ * Check if there are any legacy keys that need cleanup
+ */
+export const hasLegacyKeys = (): boolean => {
+  return getLegacyKeys().length > 0;
+};
+
+/**
+ * Get storage statistics for debugging
+ */
+export const getStorageStats = (): {
+  currentKeys: string[];
+  legacyKeys: string[];
+  totalKeys: number;
+  storageSize: number;
+} => {
+  const currentKeys: string[] = [];
+  const legacyKeys: string[] = [];
+  let storageSize = 0;
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+
+      const value = localStorage.getItem(key) || '';
+      storageSize += key.length + value.length;
+
+      if (key.startsWith(GRID_STATE_PREFIX)) {
+        currentKeys.push(key);
+      } else if (key.startsWith(LEGACY_PREFIX)) {
+        legacyKeys.push(key);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get storage stats:', error);
+  }
+
+  return {
+    currentKeys,
+    legacyKeys,
+    totalKeys: localStorage.length,
+    storageSize,
+  };
+};
