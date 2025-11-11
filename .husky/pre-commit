@@ -1,15 +1,5 @@
-echo "🔍 Running pre-commit checks..."
+echo "🔍 Running pre-commit checks with lint-staged..."
 
-echo "\n📝 Checking code style..."
-yarn lint
-
-echo "\n🧪 Running tests..."
-yarn test:run
-
-echo "\n🎨 Checking formatting..."
-yarn format:check
-
-echo "\n🏗️  Building application..."
-yarn build
+npx lint-staged
 
 echo "\n✅ All pre-commit checks passed!"
