@@ -14,6 +14,7 @@ interface ButtonProps {
   hasError: boolean;
   name?: string;
   tabIndex?: number;
+  disabled?: boolean;
   onClick: (e: React.MouseEvent) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onMouseEnter: () => void;
@@ -35,6 +36,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       hasError,
       name,
       tabIndex,
+      disabled = false,
       onClick,
       onKeyDown,
       onMouseEnter,
@@ -52,19 +54,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           type="button"
           name={name}
           tabIndex={tabIndex}
-          className={`inline-flex items-center gap-1 min-h-[1.5rem] text-base font-medium text-gray-700 hover:text-gray-800 focus:outline-hidden transition duration-200 ease-in-out cursor-pointer ${
-            isPlaceholder
-              ? 'text-gray-500 hover:text-gray-600'
-              : 'text-gray-700 hover:text-gray-800'
+          disabled={disabled}
+          className={`inline-flex items-center gap-1 min-h-[1.5rem] text-base font-medium transition duration-200 ease-in-out ${
+            disabled
+              ? 'text-gray-400 cursor-not-allowed'
+              : isPlaceholder
+                ? 'text-gray-500 hover:text-gray-600 cursor-pointer'
+                : 'text-gray-700 hover:text-gray-800 cursor-pointer'
           }`}
           aria-haspopup="menu"
           aria-expanded={isOpen || isClosing}
-          onClick={onClick}
-          onKeyDown={onKeyDown}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-          onFocus={onFocus}
-          onBlur={onBlur}
+          onClick={disabled ? undefined : onClick}
+          onKeyDown={disabled ? undefined : onKeyDown}
+          onMouseEnter={disabled ? undefined : onMouseEnter}
+          onMouseLeave={disabled ? undefined : onMouseLeave}
+          onFocus={disabled ? undefined : onFocus}
+          onBlur={disabled ? undefined : onBlur}
           aria-controls={isOpen ? 'dropdown-options-list' : undefined}
         >
           <ButtonText
@@ -85,19 +90,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type="button"
         name={name}
         tabIndex={tabIndex}
-        className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border bg-white text-gray-800 hover:bg-gray-50 focus:outline-hidden focus:ring-3 transition duration-200 ease-in-out ${
+        disabled={disabled}
+        className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border transition duration-200 ease-in-out ${
           isExpanded ? 'items-start' : 'items-center'
         } ${
-          hasError
-            ? 'border-danger ring-3 ring-danger/20 focus:ring-red-200 focus:border-danger'
-            : 'border-gray-300 focus:ring-emerald-200 focus:border-primary'
+          disabled
+            ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300'
+            : hasError
+              ? 'bg-white text-gray-800 hover:bg-gray-50 border-danger ring-3 ring-danger/20 focus:ring-red-200 focus:border-danger focus:outline-hidden focus:ring-3'
+              : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300 focus:ring-emerald-200 focus:border-primary focus:outline-hidden focus:ring-3'
         }`}
         aria-haspopup="menu"
         aria-expanded={isOpen || isClosing}
-        onClick={onClick}
-        onKeyDown={onKeyDown}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onClick={disabled ? undefined : onClick}
+        onKeyDown={disabled ? undefined : onKeyDown}
+        onMouseEnter={disabled ? undefined : onMouseEnter}
+        onMouseLeave={disabled ? undefined : onMouseLeave}
         onFocus={onFocus}
         onBlur={onBlur}
         aria-controls={isOpen ? 'dropdown-options-list' : undefined}

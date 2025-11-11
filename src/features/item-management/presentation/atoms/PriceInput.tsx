@@ -12,6 +12,7 @@ interface PriceInputProps {
   required?: boolean;
   min?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
 export default function PriceInput({
@@ -24,6 +25,7 @@ export default function PriceInput({
   required = false,
   min = '0',
   className = 'w-full',
+  readOnly = false,
 }: PriceInputProps) {
   return (
     <FormField label={label} required={required}>
@@ -41,6 +43,7 @@ export default function PriceInput({
         validationAutoHide={true}
         validationAutoHideDelay={3000}
         required={required}
+        readOnly={readOnly}
       />
     </FormField>
   );

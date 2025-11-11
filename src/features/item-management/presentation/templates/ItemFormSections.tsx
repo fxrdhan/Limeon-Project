@@ -73,7 +73,7 @@ const BasicInfoSection: React.FC = () => {
     updateFormData,
   } = useItemForm();
 
-  const { resetKey } = useItemUI();
+  const { resetKey, isViewingOldVersion } = useItemUI();
   const { packageConversionHook } = useItemPrice();
 
   const {
@@ -190,6 +190,7 @@ const BasicInfoSection: React.FC = () => {
       dosages={transformedDosages}
       manufacturers={transformedManufacturers}
       loading={loading}
+      disabled={isViewingOldVersion}
       onChange={handleChange}
       onFieldChange={handleFieldChange}
       onDropdownChange={handleDropdownChange}
@@ -206,6 +207,7 @@ const BasicInfoSection: React.FC = () => {
 // eslint-disable-next-line react-refresh/only-export-components
 const SettingsSection: React.FC = () => {
   const { formData, updateFormData } = useItemForm();
+  const { isViewingOldVersion } = useItemUI();
 
   const minStockEditor = useInlineEditor({
     initialValue: (formData.min_stock || 0).toString(),
@@ -243,6 +245,7 @@ const SettingsSection: React.FC = () => {
         isEditing: minStockEditor.isEditing,
         value: minStockEditor.value,
       }}
+      disabled={isViewingOldVersion}
       onFieldChange={handleFieldChange}
       onStartEditMinStock={minStockEditor.startEditing}
       onStopEditMinStock={minStockEditor.stopEditing}
@@ -259,7 +262,7 @@ const PricingSection: React.FC = () => {
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
 
-  const { resetKey } = useItemUI();
+  const { resetKey, isViewingOldVersion } = useItemUI();
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: formData.base_price || 0,
@@ -301,6 +304,7 @@ const PricingSection: React.FC = () => {
         percentage: marginEditor.value,
       }}
       calculatedMargin={calcMargin || 0}
+      disabled={isViewingOldVersion}
       onBasePriceChange={handleChange}
       onSellPriceChange={handleSellPriceChange}
       onMarginChange={marginEditor.setValue}
@@ -316,7 +320,7 @@ const PricingSection: React.FC = () => {
 // eslint-disable-next-line react-refresh/only-export-components
 const PackageConversionSection: React.FC = () => {
   const { packageConversionHook } = useItemPrice();
-  const { resetKey } = useItemUI();
+  const { resetKey, isViewingOldVersion } = useItemUI();
 
   const packageConversionLogic = usePackageConversionLogic({
     conversions: packageConversionHook.conversions,
@@ -344,6 +348,7 @@ const PackageConversionSection: React.FC = () => {
       availableUnits={packageConversionHook.availableUnits}
       conversions={packageConversionHook.conversions}
       formData={packageConversionHook.packageConversionFormData}
+      disabled={isViewingOldVersion}
       onFormDataChange={packageConversionHook.setPackageConversionFormData}
       onAddConversion={handleAddConversion}
       onRemoveConversion={packageConversionHook.removePackageConversion}

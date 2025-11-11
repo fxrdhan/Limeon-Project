@@ -27,6 +27,7 @@ interface LocalMarginEditorProps {
   onStopEdit: () => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -44,6 +45,7 @@ export default function MarginEditor({
   onStopEdit,
   onChange,
   onKeyDown,
+  disabled = false,
 }: LocalMarginEditorProps) {
   return (
     <MarginEditInPlace
@@ -55,6 +57,7 @@ export default function MarginEditor({
       onStopEdit={onStopEdit}
       onChange={onChange}
       onKeyDown={onKeyDown}
+      disabled={disabled}
     />
   );
 }
