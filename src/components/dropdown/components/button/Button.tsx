@@ -57,7 +57,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disabled={disabled}
           className={`inline-flex items-center gap-1 min-h-[1.5rem] text-base font-medium transition duration-200 ease-in-out ${
             disabled
-              ? 'text-gray-400 cursor-not-allowed'
+              ? 'cursor-not-allowed'
               : isPlaceholder
                 ? 'text-gray-500 hover:text-gray-600 cursor-pointer'
                 : 'text-gray-700 hover:text-gray-800 cursor-pointer'
@@ -95,7 +95,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           isExpanded ? 'items-start' : 'items-center'
         } ${
           disabled
-            ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300'
+            ? 'bg-gray-100 text-gray-800 cursor-not-allowed border-gray-300'
             : hasError
               ? 'bg-white text-gray-800 hover:bg-gray-50 border-danger ring-3 ring-danger/20 focus:ring-red-200 focus:border-danger focus:outline-hidden focus:ring-3'
               : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300 focus:ring-emerald-200 focus:border-primary focus:outline-hidden focus:ring-3'
