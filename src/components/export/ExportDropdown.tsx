@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GridApi } from 'ag-grid-community';
+import type { GridApi, Column, IRowNode } from 'ag-grid-community';
 import { TbTableExport, TbCsv, TbTableFilled, TbJson } from 'react-icons/tb';
 import { FaGoogle } from 'react-icons/fa';
 import Button from '@/components/button';
@@ -243,29 +243,28 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
           // If column has valueGetter function, use it
           if (col.valueGetter && typeof col.valueGetter === 'function') {
-            // Create a minimal node-like object for valueGetter
-            const fakeNode = {
-              data: rowData,
-              id: String(index),
-              group: false,
-            };
-
             // Modern AG Grid v30+ approach: Column API merged into Grid API
-            const column =
-              gridApi.getColumn(col.field || '') ||
-              ({
-                getColId: () => col.field || '',
-                getColDef: () => col,
-              } as import('ag-grid-community').Column);
+            const column = gridApi.getColumn(col.field || '') || null;
+
+            // Create a minimal fallback column object if needed
+            const fallbackColumn: Partial<Column> = {
+              getColId: () => col.field || '',
+              getColDef: () => col,
+            };
 
             try {
               value = col.valueGetter({
                 data: rowData,
-                node: fakeNode as import('ag-grid-community').IRowNode,
+                // Provide minimal required node properties
+                node: {
+                  data: rowData,
+                  id: String(index),
+                  group: false,
+                } as IRowNode,
                 colDef: col,
                 api: gridApi,
                 context: undefined,
-                column: column,
+                column: (column || fallbackColumn) as Column,
                 getValue: (field: string) => {
                   return getNestedValue(
                     rowData as Record<string, unknown>,
