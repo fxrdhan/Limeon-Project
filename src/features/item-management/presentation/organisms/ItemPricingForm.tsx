@@ -28,6 +28,7 @@ interface ItemPricingFormProps {
   onStopEditMargin: () => void;
   onMarginInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onMarginKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 export default function ItemPricingForm({
@@ -44,6 +45,7 @@ export default function ItemPricingForm({
   onStopEditMargin,
   onMarginInputChange,
   onMarginKeyDown,
+  disabled = false,
 }: ItemPricingFormProps) {
   const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onBasePriceChange(e);
@@ -75,6 +77,7 @@ export default function ItemPricingForm({
             tabIndex={13}
             validationSchema={basePriceSchema}
             required={true}
+            readOnly={disabled}
           />
         </div>
 
@@ -87,6 +90,7 @@ export default function ItemPricingForm({
             onStopEdit={onStopEditMargin}
             onChange={onMarginInputChange}
             onKeyDown={onMarginKeyDown}
+            disabled={disabled}
           />
 
           <PriceInput
@@ -97,6 +101,7 @@ export default function ItemPricingForm({
             tabIndex={15}
             validationSchema={sellPriceComparisonSchema(displayBasePrice)}
             required={true}
+            readOnly={disabled}
           />
         </div>
       </div>

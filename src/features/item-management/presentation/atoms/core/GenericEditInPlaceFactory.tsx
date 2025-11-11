@@ -120,6 +120,9 @@ export interface GenericEditInPlaceProps<T = unknown> {
 
   /** Configuration */
   config: EditInPlaceConfig;
+
+  /** Disabled state */
+  disabled?: boolean;
 }
 
 // ============================================================================
@@ -142,6 +145,7 @@ export function GenericEditInPlace<T = unknown>({
   onChange,
   onKeyDown,
   config,
+  disabled = false,
 }: GenericEditInPlaceProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -188,6 +192,7 @@ export function GenericEditInPlace<T = unknown>({
               onChange={onChange}
               onBlur={onStopEdit}
               onKeyDown={onKeyDown}
+              readOnly={disabled}
               {...config.inputProps}
             />
             {config.inputType === 'number' &&
@@ -197,27 +202,29 @@ export function GenericEditInPlace<T = unknown>({
           </div>
         ) : (
           <div
-            tabIndex={tabIndex}
-            className={`group w-full py-2 cursor-pointer font-semibold flex items-center focus:outline-hidden ${displayStyle.textColor || 'text-gray-900'} ${displayStyle.className || ''} ${config.classes?.display || ''}`}
-            onClick={onStartEdit}
-            title={displayTitle}
+            tabIndex={disabled ? undefined : tabIndex}
+            className={`group w-full py-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-semibold flex items-center focus:outline-hidden ${displayStyle.textColor || 'text-gray-900'} ${displayStyle.className || ''} ${config.classes?.display || ''}`}
+            onClick={disabled ? undefined : onStartEdit}
+            title={disabled ? undefined : displayTitle}
             onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
                 onStartEdit();
               }
             }}
           >
             {finalDisplayValue}
-            <FaPen
-              className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
-              size={14}
-              onClick={e => {
-                e.stopPropagation();
-                onStartEdit();
-              }}
-              title={editTitle}
-            />
+            {!disabled && (
+              <FaPen
+                className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
+                size={14}
+                onClick={e => {
+                  e.stopPropagation();
+                  onStartEdit();
+                }}
+                title={editTitle}
+              />
+            )}
           </div>
         )}
       </div>

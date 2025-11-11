@@ -12,6 +12,7 @@ interface DropdownButtonProps {
   hasError: boolean;
   name?: string;
   tabIndex?: number;
+  disabled?: boolean;
   onClick: (e: React.MouseEvent) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onBlur: () => void;
@@ -28,6 +29,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
       hasError,
       name,
       tabIndex,
+      disabled = false,
       onClick,
       onKeyDown,
       onBlur,
@@ -67,6 +69,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
         hasError={hasError}
         name={name}
         tabIndex={tabIndex}
+        disabled={disabled}
         onClick={onClick}
         onKeyDown={onKeyDown}
         onMouseEnter={() => {}}

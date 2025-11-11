@@ -35,6 +35,7 @@ export interface DropdownProps {
   placeholder?: string;
   name: string;
   required?: boolean;
+  disabled?: boolean;
   onAddNew?: (searchTerm?: string) => void;
   withRadio?: boolean;
   searchList?: boolean;

@@ -31,6 +31,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     searchList = true,
     tabIndex,
     required = false,
+    disabled = false,
     validate = false,
     showValidationOnBlur = true,
     validationAutoHide = true,
@@ -389,6 +390,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
                 hasError={hasError}
                 name={name}
                 tabIndex={tabIndex}
+                disabled={disabled}
                 onClick={toggleDropdown}
                 onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
                 onBlur={handleButtonBlur}

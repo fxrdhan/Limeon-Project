@@ -22,6 +22,7 @@ interface ItemSettingsFormProps {
   onStopEditMinStock: () => void;
   onMinStockChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onMinStockKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
@@ -34,6 +35,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
       onStopEditMinStock,
       onMinStockChange,
       onMinStockKeyDown,
+      disabled = false,
     },
     ref
   ) => {
@@ -54,6 +56,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
               ]}
               withRadio
               searchList={false}
+              disabled={disabled}
             />
           </FormField>
 
@@ -65,6 +68,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
             onStopEdit={onStopEditMinStock}
             onChange={onMinStockChange}
             onKeyDown={onMinStockKeyDown}
+            disabled={disabled}
           />
 
           <div
@@ -78,7 +82,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
               ref={ref}
               label="Memiliki Tanggal Kadaluarsa"
               checked={formData.has_expiry_date}
-              disabled={!formData.is_medicine}
+              disabled={!formData.is_medicine || disabled}
               onChange={isChecked =>
                 onFieldChange('has_expiry_date', isChecked)
               }

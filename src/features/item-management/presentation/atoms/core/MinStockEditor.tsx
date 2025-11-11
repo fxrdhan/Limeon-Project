@@ -27,6 +27,7 @@ interface LocalMinStockEditorProps {
   onStopEdit: () => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -44,6 +45,7 @@ export default function MinStockEditor({
   onStopEdit,
   onChange,
   onKeyDown,
+  disabled = false,
 }: LocalMinStockEditorProps) {
   return (
     <MinStockEditInPlace
@@ -55,6 +57,7 @@ export default function MinStockEditor({
       onStopEdit={onStopEdit}
       onChange={onChange}
       onKeyDown={onKeyDown}
+      disabled={disabled}
     />
   );
 }
