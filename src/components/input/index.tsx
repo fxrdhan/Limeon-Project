@@ -220,7 +220,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onChange={handleChange}
             className={classNames(
               'p-2.5 border rounded-lg',
-              'px-3 text-sm',
+              'px-3 text-sm font-medium text-gray-800',
               'text-ellipsis overflow-hidden whitespace-nowrap',
               'h-[2.5rem]',
               'placeholder:text-gray-400',
@@ -239,7 +239,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                     isFocused),
               },
               'focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200',
-              'disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70',
+              'disabled:bg-gray-100 disabled:cursor-not-allowed read-only:bg-gray-100 read-only:cursor-default',
               'disabled:focus:ring-0 disabled:focus:border-gray-300 read-only:focus:ring-0 read-only:focus:border-gray-300',
               'transition-all duration-200 ease-in-out',
               {
@@ -253,7 +253,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <div
               className={classNames(
                 'absolute bottom-full left-0 right-0 z-10 mb-1',
-                'p-2.5 px-3 text-sm',
+                'p-2.5 px-3 text-sm font-medium text-gray-800',
                 'border rounded-lg bg-white/50 backdrop-blur-md',
                 'shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]',
                 'whitespace-pre-wrap break-words',
