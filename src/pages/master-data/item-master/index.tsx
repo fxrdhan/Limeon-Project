@@ -522,6 +522,47 @@ const ItemMasterNew = memo(() => {
     };
   }, []);
 
+  // Auto-focus searchbar on keyboard input (text only)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is already typing in an input/textarea/select
+      const target = e.target as HTMLElement;
+      const isInputFocused =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable;
+
+      // If already focused on an input, don't interfere
+      if (isInputFocused) return;
+
+      // Check if it's a text character (letters, numbers, space)
+      // Exclude special keys like Ctrl, Alt, Shift, Arrow keys, Escape, etc.
+      const isTextChar =
+        e.key.length === 1 &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !/^F\d+$/.test(e.key); // Exclude function keys
+
+      if (isTextChar && searchInputRef.current) {
+        // Focus the search input
+        searchInputRef.current.focus();
+
+        // The character will be automatically typed into the input
+        // because we're not preventing default behavior
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const handleTabChange = useCallback(
     (_key: string, value: MasterDataType) => {
       if (value !== activeTab) {
@@ -577,6 +618,23 @@ const ItemMasterNew = memo(() => {
       unifiedGridApi,
     ]
   );
+
+  // Tab navigation handlers for keyboard shortcuts
+  const handleTabNext = useCallback(() => {
+    const currentIndex = TAB_OPTIONS.findIndex(opt => opt.value === activeTab);
+    const nextIndex =
+      currentIndex < TAB_OPTIONS.length - 1 ? currentIndex + 1 : 0;
+    const nextTab = TAB_OPTIONS[nextIndex];
+    handleTabChange(nextTab.key, nextTab.value);
+  }, [activeTab, handleTabChange]);
+
+  const handleTabPrevious = useCallback(() => {
+    const currentIndex = TAB_OPTIONS.findIndex(opt => opt.value === activeTab);
+    const prevIndex =
+      currentIndex > 0 ? currentIndex - 1 : TAB_OPTIONS.length - 1;
+    const prevTab = TAB_OPTIONS[prevIndex];
+    handleTabChange(prevTab.key, prevTab.value);
+  }, [activeTab, handleTabChange]);
 
   // Unified handlers for MasterDataGrid
   const unifiedRowClickHandler = useCallback(
@@ -681,6 +739,8 @@ const ItemMasterNew = memo(() => {
                             ? 'produsen-item'
                             : 'satuan-item'
               }
+              onTabNext={handleTabNext}
+              onTabPrevious={handleTabPrevious}
             />
           </div>
         </div>
