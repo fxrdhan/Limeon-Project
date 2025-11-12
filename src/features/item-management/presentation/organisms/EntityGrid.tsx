@@ -141,6 +141,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Debounce timeout ref for auto-save operations
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 🎯 Stability tracking to prevent scroll restoration during realtime sync invalidation
+  const isStableRef = useRef<boolean>(false);
+
+  // 📊 Track previous data length to detect real data changes vs reference changes
+  const previousDataLengthRef = useRef<number>(0);
+
   // Initialize auto-size prevention based on saved state during component mount
   const shouldPreventAutoSize = useRef<boolean>(
     hasSavedState(activeTab as TableType)
@@ -482,38 +488,55 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     }
   }, [gridApi, activeTab, restoreScrollPosition]);
 
-  // Backup scroll restoration when row data updates (double protection)
+  // Smart scroll restoration when row data updates
   const handleRowDataUpdated = useCallback(() => {
     if (gridApi && !gridApi.isDestroyed()) {
       const tableType = activeTab as TableType;
+      const currentDataLength = gridApi.getDisplayedRowCount();
 
-      // Trigger dedicated scroll restoration after data loading completes
-      if (hasSavedState(tableType)) {
+      // 🎯 SMART RESTORATION LOGIC:
+      // Only restore scroll if:
+      // 1. Grid is NOT yet stable (initial load phase), OR
+      // 2. Data length actually changed (real data change, not just realtime sync invalidation)
+      const shouldRestore =
+        !isStableRef.current ||
+        currentDataLength !== previousDataLengthRef.current;
+
+      if (hasSavedState(tableType) && shouldRestore) {
+        // Update previous data length
+        previousDataLengthRef.current = currentDataLength;
+
         // Quick restore since data is cached
         requestAnimationFrame(() => {
           restoreScrollPosition();
         });
+      } else if (!shouldRestore) {
+        // Skip restoration but still update previous length for next comparison
+        previousDataLengthRef.current = currentDataLength;
       }
     }
   }, [gridApi, activeTab, restoreScrollPosition]);
 
-  // Trigger scroll restoration when loading completes
+  // 🎯 Mark grid as stable after initial load + realtime sync setup delay
+  // This prevents scroll restoration during realtime sync query invalidation
   useEffect(() => {
-    if (
-      !isLoading &&
-      gridApi &&
-      !gridApi.isDestroyed() &&
-      isInitialRestorationDone.current
-    ) {
-      const tableType = activeTab as TableType;
-      if (hasSavedState(tableType)) {
-        // Quick final restoration since data is cached
-        requestAnimationFrame(() => {
-          restoreScrollPosition();
-        });
-      }
+    if (!isLoading && isInitialRestorationDone.current) {
+      // Wait for realtime sync to complete its initial setup (3 seconds)
+      // useItemsSync has 2s delay, so 3s ensures we're past that
+      const stabilityTimer = setTimeout(() => {
+        isStableRef.current = true;
+        console.log('✅ Grid marked as stable - scroll restoration optimized');
+      }, 3000);
+
+      return () => clearTimeout(stabilityTimer);
     }
-  }, [isLoading, gridApi, activeTab, restoreScrollPosition]);
+  }, [isLoading]);
+
+  // Reset stability flag when switching tabs
+  useEffect(() => {
+    isStableRef.current = false;
+    previousDataLengthRef.current = 0;
+  }, [activeTab]);
 
   // Cleanup pending auto-save timeouts on unmount
   useEffect(() => {
