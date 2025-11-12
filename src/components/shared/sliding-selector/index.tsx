@@ -229,34 +229,6 @@ export const SlidingSelector = <T,>({
           }
           break;
 
-        case 'ArrowRight':
-        case 'ArrowDown':
-          event.preventDefault();
-          if (canNavigate) {
-            const nextIndex =
-              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
-            const nextOption = enabledOptions[nextIndex];
-            setFocusedIndex(nextIndex);
-            buttonRefs.current[nextIndex]?.focus();
-            onSelectionChange(nextOption.key, nextOption.value);
-            lastNavigationTimeRef.current = now;
-          }
-          break;
-
-        case 'ArrowLeft':
-        case 'ArrowUp':
-          event.preventDefault();
-          if (canNavigate) {
-            const prevIndex =
-              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
-            const prevOption = enabledOptions[prevIndex];
-            setFocusedIndex(prevIndex);
-            buttonRefs.current[prevIndex]?.focus();
-            onSelectionChange(prevOption.key, prevOption.value);
-            lastNavigationTimeRef.current = now;
-          }
-          break;
-
         case 'Escape':
           event.preventDefault();
           if (collapsible) {

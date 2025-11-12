@@ -27,6 +27,9 @@ interface SearchToolbarProps<T = unknown> {
   // Export props
   gridApi?: GridApi | null;
   exportFilename?: string;
+  // Tab navigation callback
+  onTabNext?: () => void;
+  onTabPrevious?: () => void;
 }
 
 const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
@@ -40,8 +43,35 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   onItemSelect,
   gridApi,
   exportFilename = 'data-export',
+  onTabNext,
+  onTabPrevious,
 }: SearchToolbarProps<T>) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle Tab key for direct tab navigation
+    if (e.key === 'Tab') {
+      // Stop event propagation immediately to prevent focus from moving to grid
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Use setTimeout to ensure navigation happens after event is fully handled
+      setTimeout(() => {
+        if (e.shiftKey) {
+          // Shift+Tab: Previous tab
+          onTabPrevious?.();
+        } else {
+          // Tab: Next tab
+          onTabNext?.();
+        }
+
+        // Refocus searchbar after tab change to maintain keyboard control
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 150);
+      }, 0);
+
+      return;
+    }
+
     // Use custom onKeyDown if provided
     if (onKeyDown) {
       onKeyDown(e);
