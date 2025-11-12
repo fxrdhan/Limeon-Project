@@ -104,6 +104,10 @@ interface EntityGridProps {
 
   // Pagination (for items)
   itemsPerPage?: number;
+
+  // 🎨 Grid restoration loading state (from parent)
+  isGridRestoring?: boolean;
+  onRestorationComplete?: () => void;
 }
 
 const EntityGrid = memo<EntityGridProps>(function EntityGrid({
@@ -127,6 +131,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   doesExternalFilterPass,
   onGridApiReady,
   itemsPerPage = 20,
+  isGridRestoring = false,
+  onRestorationComplete,
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -352,9 +358,18 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       setTimeout(() => {
         isRestoringState.current = false;
         console.log('🔓 Auto-save unlocked after tab switch to:', tableType);
+
+        // 🎨 Notify parent that restoration is complete (hides loading overlay)
+        // Add small delay to ensure grid is fully rendered
+        setTimeout(() => {
+          if (onRestorationComplete) {
+            onRestorationComplete();
+            console.log('🎨 Restoration complete - notified parent');
+          }
+        }, 100);
       }, 300);
     }
-  }, [activeTab, gridApi]);
+  }, [activeTab, gridApi, onRestorationComplete]);
 
   // No artificial loading state - rely on data loading state only
 
@@ -764,7 +779,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
           onRowDataUpdated={handleRowDataUpdated}
-          loading={isLoading}
+          loading={isLoading || isGridRestoring}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           autoSizeColumns={
             shouldPreventAutoSize.current

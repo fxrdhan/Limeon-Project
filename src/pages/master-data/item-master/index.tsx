@@ -155,6 +155,9 @@ const ItemMasterNew = memo(() => {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
+  // 🎨 Grid restoration loading state (prevents flash during tab switch to items)
+  const [isGridRestoring, setIsGridRestoring] = useState(false);
+
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
   const showGroupPanel = true;
@@ -522,6 +525,14 @@ const ItemMasterNew = memo(() => {
   const handleTabChange = useCallback(
     (_key: string, value: MasterDataType) => {
       if (value !== activeTab) {
+        // 🎨 Show loading overlay BEFORE navigation (prevents flash)
+        // Only when switching TO items tab (complex state restoration)
+        const isToItemsTab = value === 'items';
+        if (isToItemsTab) {
+          setIsGridRestoring(true);
+          console.log('🎨 Pre-navigation: Grid restoration loading started');
+        }
+
         navigate(`/master-data/item-master/${value}`);
 
         // Save selected tab to session storage for future visits
@@ -719,6 +730,8 @@ const ItemMasterNew = memo(() => {
             }
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
+            isGridRestoring={isGridRestoring}
+            onRestorationComplete={() => setIsGridRestoring(false)}
           />
         </div>
       </Card>
