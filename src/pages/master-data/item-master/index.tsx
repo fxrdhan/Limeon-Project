@@ -165,6 +165,9 @@ const ItemMasterNew = memo(() => {
   // 🎨 Grid restoration loading state (prevents flash during tab switch to items)
   const [isGridRestoring, setIsGridRestoring] = useState(false);
 
+  // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
+  const isTabSwitchingRef = useRef(false);
+
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
   const showGroupPanel = true;
@@ -400,6 +403,13 @@ const ItemMasterNew = memo(() => {
 
   const handleItemFilterSearch = useCallback(
     async (filterSearch: FilterSearch | null) => {
+      // 🔒 Block grid filter changes during tab switching
+      // SearchBar will call this with null when clearing, but we want to preserve grid filters
+      if (isTabSwitchingRef.current) {
+        console.log('🔒 Blocked grid filter change during tab switch');
+        return;
+      }
+
       if (!filterSearch) {
         if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
           unifiedGridApi.setFilterModel(null);
@@ -444,6 +454,7 @@ const ItemMasterNew = memo(() => {
     isExternalFilterPresent: itemIsExternalFilterPresent,
     doesExternalFilterPass: itemDoesExternalFilterPass,
     searchBarProps: itemSearchBarProps,
+    clearSearchUIOnly: clearItemSearchUIOnly,
   } = useUnifiedSearch({
     columns: orderedSearchColumns,
     searchMode: 'hybrid',
@@ -476,6 +487,12 @@ const ItemMasterNew = memo(() => {
   // Entity filter search handler
   const handleEntityFilterSearch = useCallback(
     async (filterSearch: FilterSearch | null) => {
+      // 🔒 Block grid filter changes during tab switching
+      if (isTabSwitchingRef.current) {
+        console.log('🔒 Blocked entity grid filter change during tab switch');
+        return;
+      }
+
       if (!filterSearch) {
         if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
           unifiedGridApi.setFilterModel(null);
@@ -532,6 +549,7 @@ const ItemMasterNew = memo(() => {
     isExternalFilterPresent: entityIsExternalFilterPresent,
     doesExternalFilterPass: entityDoesExternalFilterPass,
     searchBarProps: entitySearchBarProps,
+    clearSearchUIOnly: clearEntitySearchUIOnly,
   } = useUnifiedSearch({
     columns: entitySearchColumns,
     searchMode: 'hybrid',
@@ -614,26 +632,48 @@ const ItemMasterNew = memo(() => {
 
       // Simple client-side grouping - no need to clear on tab switch
 
-      // Clear search UI when switching tabs - ONLY reset DOM value, NOT React state
-      // IMPORTANT: We don't call clearItemSearch/clearEntitySearch here because:
-      // 1. They trigger useSearchState effect which calls onFilterSearch(null)
-      // 2. This would clear grid filters and save empty state to localStorage
-      // 3. Grid filters should be preserved and restored via gridStateManager
+      // 🔒 Block SearchBar from clearing grid filters during tab switch
+      // This prevents the cascade: clearSearch → useSearchState → onFilterSearch(null)
+      isTabSwitchingRef.current = true;
+
+      // Clear search UI when switching tabs - both DOM and React state
+      // Now safe because handleItemFilterSearch/handleEntityFilterSearch check the flag
       if (searchInputRef.current) {
         searchInputRef.current.value = '';
       }
 
+      // Clear React state to prevent field contamination
+      if (activeTab === 'items') {
+        clearItemSearchUIOnly(); // Leaving Items tab
+      } else {
+        clearEntitySearchUIOnly(); // Leaving Entity tab
+      }
+
+      // 🔓 Unlock after navigation and grid restoration completes
+      // Grid restoration happens quickly after tab switch
+      setTimeout(() => {
+        isTabSwitchingRef.current = false;
+        console.log('🔓 Tab switch complete - grid filter protection unlocked');
+      }, 500);
+
       // Note: Grid state restoration will handle filter state correctly:
       // - If saved filter exists → restored automatically (including badge filters)
       // - If no saved filter → empty by default
-      // Badge UI will be recreated from restored grid filter state (if needed in future)
+      // SearchBar UI cleared, grid filters preserved
 
       // Reset item modal state when switching tabs
       if (isAddItemModalOpen) {
         closeAddItemModal();
       }
     },
-    [navigate, isAddItemModalOpen, closeAddItemModal]
+    [
+      navigate,
+      activeTab,
+      isAddItemModalOpen,
+      closeAddItemModal,
+      clearItemSearchUIOnly,
+      clearEntitySearchUIOnly,
+    ]
   );
 
   const handleTabChange = useCallback(
