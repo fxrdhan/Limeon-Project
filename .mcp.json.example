@@ -32,6 +32,10 @@
       "env": {
         "FIRECRAWL_API_KEY": "$API_KEY"
       }
+    },
+        "ag-mcp": {
+      "command": "npx",
+      "args": ["ag-mcp"]
     }
   }
 }
