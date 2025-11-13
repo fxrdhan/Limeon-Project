@@ -44,6 +44,7 @@ export interface UnifiedSearchReturn {
 
   // For external integrations
   clearSearch: () => void;
+  clearSearchUIOnly: () => void; // Clear UI without triggering grid filter changes
 }
 
 /**
@@ -70,6 +71,7 @@ export function useUnifiedSearch({
     handleTargetedSearch: originalHandleTargetedSearch,
     handleGlobalSearch: originalHandleGlobalSearch,
     clearSearch: originalClearSearch,
+    clearSearchUIOnly: originalClearSearchUIOnly,
   } = useEnhancedAgGridSearch({
     columns,
     useFuzzySearch,
@@ -303,5 +305,6 @@ export function useUnifiedSearch({
     handleClearSearch,
     searchBarProps,
     clearSearch: handleClearSearch,
+    clearSearchUIOnly: originalClearSearchUIOnly,
   };
 }

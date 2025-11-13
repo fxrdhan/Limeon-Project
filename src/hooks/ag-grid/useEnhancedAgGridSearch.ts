@@ -38,6 +38,8 @@ interface UseEnhancedAgGridSearchReturn {
   onGridReady: (params: GridReadyEvent) => void;
   /** Clear search and reset grid filter */
   clearSearch: () => void;
+  /** Clear search UI only without triggering grid filter changes */
+  clearSearchUIOnly: () => void;
   /** External filter function for enhanced search */
   isExternalFilterPresent?: () => boolean;
   /** External filter pass function for enhanced search */
@@ -202,6 +204,15 @@ export const useEnhancedAgGridSearch = (
     setSearch,
   ]);
 
+  // Clear search UI only - for tab switching without clearing grid filters
+  const clearSearchUIOnly = useCallback(() => {
+    setSearch('');
+    setGlobalSearch('');
+    setTargetedSearch(null);
+    // Deliberately NOT calling gridRef.onFilterChanged() or onDebouncedSearchChange
+    // This preserves grid filters which are managed separately via localStorage
+  }, [setSearch]);
+
   return {
     search,
     setSearch,
@@ -209,6 +220,7 @@ export const useEnhancedAgGridSearch = (
     handleSearchChange,
     onGridReady,
     clearSearch,
+    clearSearchUIOnly,
     isExternalFilterPresent,
     doesExternalFilterPass,
     targetedSearch,
