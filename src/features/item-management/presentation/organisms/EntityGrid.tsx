@@ -309,25 +309,10 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             requestAnimationFrame(() => {
               if (gridApi.isDestroyed()) return;
 
-              // Use setState for restoration
+              // setState handles full state restoration including column order, sizing, and sort
+              // Per AG Grid v34 docs: setState() includes columnOrder, columnSizing, and sort properties
+              // No need for additional applyColumnState() call which would overwrite sort state
               gridApi.setState(parsedState);
-
-              // Apply additional column order and sizing
-              // This ensures column widths are restored properly
-              if (parsedState.columnOrder?.orderedColIds) {
-                const columnState = parsedState.columnOrder.orderedColIds.map(
-                  (colId: string) => ({
-                    colId,
-                    sort: null,
-                    sortIndex: null,
-                  })
-                );
-
-                gridApi.applyColumnState({
-                  state: columnState,
-                  applyOrder: true,
-                });
-              }
 
               // Only autosize if no column widths were restored
               const hasColumnWidths =
