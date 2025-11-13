@@ -590,15 +590,12 @@ const ItemMasterNew = memo(() => {
         clearItemSearch();
         clearEntitySearch();
 
-        // Clear all filter/badge states
-        handleItemFilterSearch(null);
-        handleEntityFilterSearch(null);
-
-        // Clear AG Grid filter model if available
-        if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-          unifiedGridApi.setFilterModel(null);
-          unifiedGridApi.onFilterChanged();
-        }
+        // Note: Don't call handleItemFilterSearch(null) or handleEntityFilterSearch(null) here
+        // These functions clear ALL filters including saved column filters
+        // Grid state restoration will handle filter state correctly:
+        // - If saved filter exists → restored automatically
+        // - If no saved filter → empty by default
+        // Badge filter state is already cleared by clearItemSearch/clearEntitySearch above
 
         // Reset item modal state when switching tabs
         if (isAddItemModalOpen) {
@@ -613,9 +610,6 @@ const ItemMasterNew = memo(() => {
       closeAddItemModal,
       clearItemSearch,
       clearEntitySearch,
-      handleItemFilterSearch,
-      handleEntityFilterSearch,
-      unifiedGridApi,
     ]
   );
 
