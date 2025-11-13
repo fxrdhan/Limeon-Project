@@ -49,6 +49,13 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Handle Tab key for direct tab navigation
     if (e.key === 'Tab') {
+      // Ignore keyboard auto-repeat to prevent rapid navigation spam
+      if (e.repeat) {
+        console.log('⏸️ Ignoring keyboard auto-repeat in searchbar');
+        e.preventDefault();
+        return;
+      }
+
       // Stop event propagation immediately to prevent focus from moving to grid
       e.preventDefault();
       e.stopPropagation();

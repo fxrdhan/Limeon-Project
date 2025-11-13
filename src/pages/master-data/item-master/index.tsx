@@ -138,6 +138,13 @@ const ItemMasterNew = memo(() => {
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // 🚦 Hybrid tab change protection: immediate first click, debounced rapid clicks
+  // Smart detection: single click = instant navigation, rapid clicks = debounced to final tab
+  const lastNavigationTimeRef = useRef<number>(0);
+  const pendingTabRef = useRef<MasterDataType | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const TAB_CHANGE_COOLDOWN_MS = 250; // Cooldown period to detect rapid clicking
+
   // Unified Grid API reference from MasterDataGrid
   const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
 
@@ -209,6 +216,13 @@ const ItemMasterNew = memo(() => {
   useEffect(() => {
     const newTab = getTabFromPath(location.pathname);
     if (newTab !== activeTab) {
+      // Clear any pending tab change when URL changes externally
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      pendingTabRef.current = null;
+
       setActiveTab(newTab);
       // Save tab to session storage when URL changes (for direct navigation)
       saveLastTabToSession(newTab);
@@ -530,9 +544,15 @@ const ItemMasterNew = memo(() => {
     onFilterSearch: handleEntityFilterSearch,
   });
 
-  // Cleanup grid API reference when component unmounts
+  // Cleanup grid API reference and pending tab changes on unmount
   useEffect(() => {
     return () => {
+      // Clear pending tab change timeout
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      pendingTabRef.current = null;
       setUnifiedGridApi(null);
     };
   }, []);
@@ -578,54 +598,102 @@ const ItemMasterNew = memo(() => {
     };
   }, []);
 
-  const handleTabChange = useCallback(
-    (_key: string, value: MasterDataType) => {
-      if (value !== activeTab) {
-        // 🎨 Show loading overlay BEFORE navigation (prevents flash)
-        // Only when switching TO items tab (complex state restoration)
-        const isToItemsTab = value === 'items';
-        if (isToItemsTab) {
-          setIsGridRestoring(true);
-          console.log('🎨 Pre-navigation: Grid restoration loading started');
-        }
+  // Navigation logic extracted for reuse
+  const performNavigation = useCallback(
+    (targetTab: MasterDataType) => {
+      // 🎨 Show loading overlay BEFORE navigation (prevents flash)
+      // Only when switching TO items tab (complex state restoration)
+      const isToItemsTab = targetTab === 'items';
+      if (isToItemsTab) {
+        setIsGridRestoring(true);
+        console.log('🎨 Pre-navigation: Grid restoration loading started');
+      }
 
-        navigate(`/master-data/item-master/${value}`);
+      navigate(`/master-data/item-master/${targetTab}`);
 
-        // Save selected tab to session storage for future visits
-        saveLastTabToSession(value);
+      // Save selected tab to session storage for future visits
+      saveLastTabToSession(targetTab);
 
-        // Simple client-side grouping - no need to clear on tab switch
+      // Simple client-side grouping - no need to clear on tab switch
 
-        // Clear search when switching tabs - both DOM value and all React states
-        if (searchInputRef.current) {
-          searchInputRef.current.value = '';
-        }
+      // Clear search when switching tabs - both DOM value and all React states
+      if (searchInputRef.current) {
+        searchInputRef.current.value = '';
+      }
 
-        // Clear all search states - useUnifiedSearch clearSearch already calls onClear callbacks
-        clearItemSearch();
-        clearEntitySearch();
+      // Clear all search states - useUnifiedSearch clearSearch already calls onClear callbacks
+      clearItemSearch();
+      clearEntitySearch();
 
-        // Note: Don't call handleItemFilterSearch(null) or handleEntityFilterSearch(null) here
-        // These functions clear ALL filters including saved column filters
-        // Grid state restoration will handle filter state correctly:
-        // - If saved filter exists → restored automatically
-        // - If no saved filter → empty by default
-        // Badge filter state is already cleared by clearItemSearch/clearEntitySearch above
+      // Note: Don't call handleItemFilterSearch(null) or handleEntityFilterSearch(null) here
+      // These functions clear ALL filters including saved column filters
+      // Grid state restoration will handle filter state correctly:
+      // - If saved filter exists → restored automatically
+      // - If no saved filter → empty by default
+      // Badge filter state is already cleared by clearItemSearch/clearEntitySearch above
 
-        // Reset item modal state when switching tabs
-        if (isAddItemModalOpen) {
-          closeAddItemModal();
-        }
+      // Reset item modal state when switching tabs
+      if (isAddItemModalOpen) {
+        closeAddItemModal();
       }
     },
     [
-      activeTab,
       navigate,
       isAddItemModalOpen,
       closeAddItemModal,
       clearItemSearch,
       clearEntitySearch,
     ]
+  );
+
+  const handleTabChange = useCallback(
+    (_key: string, value: MasterDataType) => {
+      // Skip if same tab
+      if (value === activeTab) return;
+
+      const now = Date.now();
+      const timeSinceLastNav = now - lastNavigationTimeRef.current;
+      const isInCooldown = timeSinceLastNav < TAB_CHANGE_COOLDOWN_MS;
+
+      if (!isInCooldown) {
+        // 🚀 First click or after cooldown - navigate IMMEDIATELY (0ms delay)
+        console.log(`✅ Navigating immediately to: ${value}`);
+        performNavigation(value);
+        lastNavigationTimeRef.current = now;
+
+        // Clear any pending debounced navigation
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
+        pendingTabRef.current = null;
+      } else {
+        // ⏸️ Rapid clicking detected - debounce to capture final selection
+        console.log(
+          `⏸️ Rapid clicking detected (${timeSinceLastNav}ms since last nav) - debouncing to final tab`
+        );
+
+        // Clear previous debounce timer
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+
+        // Store pending tab selection
+        pendingTabRef.current = value;
+
+        // Set new debounce timer - navigates to final selection after user settles
+        debounceTimerRef.current = setTimeout(() => {
+          if (pendingTabRef.current) {
+            console.log(`✅ Navigating to final tab: ${pendingTabRef.current}`);
+            performNavigation(pendingTabRef.current);
+            lastNavigationTimeRef.current = Date.now();
+            pendingTabRef.current = null;
+          }
+          debounceTimerRef.current = null;
+        }, TAB_CHANGE_COOLDOWN_MS);
+      }
+    },
+    [activeTab, performNavigation]
   );
 
   // Tab navigation handlers for keyboard shortcuts
