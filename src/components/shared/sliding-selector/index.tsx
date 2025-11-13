@@ -102,8 +102,6 @@ export const SlidingSelector = <T,>({
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const lastNavigationTimeRef = useRef<number>(0);
-  const navigationThrottleMs = 250; // Minimum delay between page changes
 
   const activeOption = options.find(option => option.key === activeKey);
   const animation = ANIMATION_PRESETS[animationPreset];
@@ -186,10 +184,17 @@ export const SlidingSelector = <T,>({
     }
   }, [collapsible]);
 
-  // Keyboard navigation handler - Tab/Arrow keys directly change page with throttle
+  // Keyboard navigation handler - Tab keys directly change page
+  // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (disabled || !isExpanded) return;
+
+      // Ignore keyboard auto-repeat to prevent rapid navigation spam
+      if (event.repeat) {
+        console.log('⏸️ Ignoring keyboard auto-repeat');
+        return;
+      }
 
       const enabledOptions = options.filter(opt => !opt.disabled);
       const currentIndex =
@@ -197,35 +202,26 @@ export const SlidingSelector = <T,>({
           ? focusedIndex
           : enabledOptions.findIndex(opt => opt.key === activeKey);
 
-      // Throttle check for page changes
-      const now = Date.now();
-      const timeSinceLastNav = now - lastNavigationTimeRef.current;
-      const canNavigate = timeSinceLastNav >= navigationThrottleMs;
-
       switch (event.key) {
         case 'Tab':
           // Prevent default tab behavior to control focus ourselves
           event.preventDefault();
-          if (canNavigate) {
-            if (event.shiftKey) {
-              // Shift+Tab: Move to previous and change page
-              const prevIndex =
-                currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
-              const prevOption = enabledOptions[prevIndex];
-              setFocusedIndex(prevIndex);
-              buttonRefs.current[prevIndex]?.focus();
-              onSelectionChange(prevOption.key, prevOption.value);
-              lastNavigationTimeRef.current = now;
-            } else {
-              // Tab: Move to next and change page
-              const nextIndex =
-                currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
-              const nextOption = enabledOptions[nextIndex];
-              setFocusedIndex(nextIndex);
-              buttonRefs.current[nextIndex]?.focus();
-              onSelectionChange(nextOption.key, nextOption.value);
-              lastNavigationTimeRef.current = now;
-            }
+          if (event.shiftKey) {
+            // Shift+Tab: Move to previous and change page
+            const prevIndex =
+              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
+            const prevOption = enabledOptions[prevIndex];
+            setFocusedIndex(prevIndex);
+            buttonRefs.current[prevIndex]?.focus();
+            onSelectionChange(prevOption.key, prevOption.value);
+          } else {
+            // Tab: Move to next and change page
+            const nextIndex =
+              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
+            const nextOption = enabledOptions[nextIndex];
+            setFocusedIndex(nextIndex);
+            buttonRefs.current[nextIndex]?.focus();
+            onSelectionChange(nextOption.key, nextOption.value);
           }
           break;
 
@@ -246,7 +242,6 @@ export const SlidingSelector = <T,>({
       activeKey,
       collapsible,
       onSelectionChange,
-      navigationThrottleMs,
     ]
   );
 
@@ -260,6 +255,7 @@ export const SlidingSelector = <T,>({
       // Reset focused index to allow fresh keyboard navigation next time
       setFocusedIndex(-1);
 
+      // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
       onSelectionChange(option.key, option.value, event);
     },
     [disabled, onSelectionChange]
