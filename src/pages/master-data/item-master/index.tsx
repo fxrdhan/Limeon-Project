@@ -308,6 +308,20 @@ const ItemMasterNew = memo(() => {
           return params.data?.description || '-';
         },
       }),
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: [
+          'contains',
+          'notContains',
+          'equals',
+          'notEqual',
+          'startsWith',
+          'endsWith',
+        ],
+        defaultOption: 'contains',
+        suppressAndOrCondition: false,
+        caseSensitive: false,
+      },
       suppressHeaderFilterButton: true,
     });
 
@@ -459,18 +473,19 @@ const ItemMasterNew = memo(() => {
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
         try {
-          // 🎯 Convert field names to table-specific format
-          const tablePrefix = activeTab as string;
-          const tablePrefixedField = `${tablePrefix}.${filterSearch.field}`;
+          // filterSearch.field is already prefixed (e.g., 'categories.code')
+          // Extract base field name for multi-filter check
+          const fieldParts = filterSearch.field.split('.');
+          const baseFieldName = fieldParts[fieldParts.length - 1]; // Get last part after dot
 
           // Entity columns are simpler - mostly text filters
           // Special handling for 'code' and 'nci_code' which use multi-filter
           const isMultiFilter =
-            filterSearch.field === 'code' || filterSearch.field === 'nci_code';
+            baseFieldName === 'code' || baseFieldName === 'nci_code';
 
           if (isMultiFilter) {
             // For multi-filter columns (code, nci_code)
-            await unifiedGridApi.setColumnFilterModel(tablePrefixedField, {
+            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
               filterType: 'multi',
               filterModels: [
                 {
@@ -482,7 +497,7 @@ const ItemMasterNew = memo(() => {
             });
           } else {
             // For single filter columns (name, description, address)
-            await unifiedGridApi.setColumnFilterModel(tablePrefixedField, {
+            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
               filterType: 'text',
               type: filterSearch.operator,
               filter: filterSearch.value,

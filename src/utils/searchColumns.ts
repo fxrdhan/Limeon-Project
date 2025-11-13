@@ -239,21 +239,21 @@ export const supplierSearchColumns: SearchColumn[] = [
  */
 export const itemCategoriesSearchColumns: SearchColumn[] = [
   {
-    field: 'code',
+    field: 'categories.code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode kategori',
   },
   {
-    field: 'name',
+    field: 'categories.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama kategori',
   },
   {
-    field: 'description',
+    field: 'categories.description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
@@ -266,21 +266,21 @@ export const itemCategoriesSearchColumns: SearchColumn[] = [
  */
 export const itemTypesSearchColumns: SearchColumn[] = [
   {
-    field: 'code',
+    field: 'types.code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode jenis',
   },
   {
-    field: 'name',
+    field: 'types.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama jenis',
   },
   {
-    field: 'description',
+    field: 'types.description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
@@ -293,28 +293,28 @@ export const itemTypesSearchColumns: SearchColumn[] = [
  */
 export const itemPackagesSearchColumns: SearchColumn[] = [
   {
-    field: 'code',
+    field: 'packages.code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode kemasan',
   },
   {
-    field: 'name',
+    field: 'packages.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama kemasan',
   },
   {
-    field: 'description',
+    field: 'packages.description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan deskripsi kemasan',
   },
   {
-    field: 'nci_code',
+    field: 'packages.nci_code',
     headerName: 'Kode NCI',
     searchable: true,
     type: 'text',
@@ -327,28 +327,28 @@ export const itemPackagesSearchColumns: SearchColumn[] = [
  */
 export const itemDosagesSearchColumns: SearchColumn[] = [
   {
-    field: 'code',
+    field: 'dosages.code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode sediaan',
   },
   {
-    field: 'name',
+    field: 'dosages.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama sediaan',
   },
   {
-    field: 'description',
+    field: 'dosages.description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan deskripsi sediaan',
   },
   {
-    field: 'nci_code',
+    field: 'dosages.nci_code',
     headerName: 'Kode NCI',
     searchable: true,
     type: 'text',
@@ -361,21 +361,21 @@ export const itemDosagesSearchColumns: SearchColumn[] = [
  */
 export const itemManufacturersSearchColumns: SearchColumn[] = [
   {
-    field: 'code',
+    field: 'manufacturers.code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode produsen',
   },
   {
-    field: 'name',
+    field: 'manufacturers.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama produsen',
   },
   {
-    field: 'address',
+    field: 'manufacturers.address',
     headerName: 'Alamat',
     searchable: true,
     type: 'text',
@@ -388,21 +388,21 @@ export const itemManufacturersSearchColumns: SearchColumn[] = [
  */
 export const itemUnitsSearchColumns: SearchColumn[] = [
   {
-    field: 'code',
+    field: 'units.code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan kode satuan',
   },
   {
-    field: 'name',
+    field: 'units.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
     description: 'Cari berdasarkan nama satuan',
   },
   {
-    field: 'description',
+    field: 'units.description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
