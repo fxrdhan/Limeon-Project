@@ -25,6 +25,13 @@
       "headers": {
         "Authorization": "Bearer your-github-copilot-token"
       }
+    },
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "$API_KEY"
+      }
     }
   }
 }
