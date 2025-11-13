@@ -117,36 +117,22 @@ export const restoreGridState = (
       return false;
     }
 
-    // Include pagination state for complete state restoration
+    // setState handles full state restoration including column order, sizing, and sort
+    // Per AG Grid v34 docs: setState() includes columnOrder, columnSizing, and sort properties
+    // No need for additional applyColumnState() call which would overwrite sort state
     gridApi.setState(parsedState);
 
-    // Apply additional column order and sizing settings after state restoration
-    setTimeout(() => {
-      if (!gridApi.isDestroyed()) {
-        // Explicitly apply column order for reliability (with maintainColumnOrder=true)
-        if (parsedState.columnOrder?.orderedColIds) {
-          const columnState = parsedState.columnOrder.orderedColIds.map(
-            colId => ({
-              colId,
-              sort: null,
-              sortIndex: null,
-            })
-          );
-
-          gridApi.applyColumnState({
-            state: columnState,
-            applyOrder: true, // Ensure column order is applied
-          });
-        }
-
-        // Only autosize if no column widths were restored (prevent flickering)
-        const hasColumnWidths =
-          (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
-        if (!hasColumnWidths) {
+    // Only autosize if no column widths were restored (prevent flickering)
+    const hasColumnWidths =
+      (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
+    if (!hasColumnWidths) {
+      // Use requestAnimationFrame to ensure grid is ready for autosizing
+      requestAnimationFrame(() => {
+        if (!gridApi.isDestroyed()) {
           gridApi.autoSizeAllColumns();
         }
-      }
-    }, 100);
+      });
+    }
 
     // toast.success('Grid state telah dipulihkan (dengan pagination)');
 
