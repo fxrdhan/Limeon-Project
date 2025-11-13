@@ -18,6 +18,7 @@ export interface UseUnifiedSearchOptions {
 export interface UnifiedSearchReturn {
   // Search state
   search: string;
+  setSearch: (value: string) => void; // Direct search setter for programmatic updates
 
   // AG Grid integration - with automatic empty search handling
   onGridReady: (params: GridReadyEvent) => void;
@@ -64,6 +65,7 @@ export function useUnifiedSearch({
 }: UseUnifiedSearchOptions): UnifiedSearchReturn {
   const {
     search,
+    setSearch,
     handleSearchChange: originalHandleSearchChange,
     onGridReady: originalOnGridReady,
     isExternalFilterPresent: originalIsExternalFilterPresent,
@@ -296,6 +298,7 @@ export function useUnifiedSearch({
 
   return {
     search,
+    setSearch,
     onGridReady: originalOnGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,

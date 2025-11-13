@@ -16,6 +16,8 @@ interface SearchToolbarProps<T = unknown> {
     searchState: 'idle' | 'typing' | 'found' | 'not-found';
     columns: SearchColumn[];
     placeholder?: string;
+    onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+    onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   };
   search?: string;
   placeholder?: string;

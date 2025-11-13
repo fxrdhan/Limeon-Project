@@ -101,6 +101,9 @@ interface EntityGridProps {
     node: IRowNode<ItemWithExtendedEntities | EntityData>
   ) => boolean;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
+  onFilterChanged?: (
+    filterModel: import('ag-grid-community').FilterModel
+  ) => void; // Filter sync callback
 
   // Pagination (for items)
   itemsPerPage?: number;
@@ -130,6 +133,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   isExternalFilterPresent,
   doesExternalFilterPass,
   onGridApiReady,
+  onFilterChanged,
   itemsPerPage = 20,
   isGridRestoring = false,
   onRestorationComplete,
@@ -560,7 +564,13 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const handleFilterChanged = useCallback(() => {
     // Auto-save when filters change
     debouncedAutoSave();
-  }, [debouncedAutoSave]);
+
+    // Notify parent of filter changes for SearchBar sync
+    if (onFilterChanged && gridApi && !gridApi.isDestroyed()) {
+      const filterModel = gridApi.getFilterModel();
+      onFilterChanged(filterModel);
+    }
+  }, [debouncedAutoSave, onFilterChanged, gridApi]);
 
   const handleDisplayedColumnsChanged = useCallback(() => {
     // Auto-save when displayed columns change (sidebar column panel)
