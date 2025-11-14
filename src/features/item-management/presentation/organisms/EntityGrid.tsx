@@ -1,11 +1,13 @@
 import {
   ColDef,
   ColGroupDef,
+  FirstDataRenderedEvent,
   GetMainMenuItems,
   GridApi,
   GridReadyEvent,
   IRowNode,
   RowClickedEvent,
+  RowDataUpdatedEvent,
   RowGroupOpenedEvent,
 } from 'ag-grid-community';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -432,7 +434,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle first data rendered - simple autosize logic
   const handleFirstDataRendered = useCallback(
-    event => {
+    (event: FirstDataRenderedEvent) => {
       // Use API from event to avoid stale closure issue with gridApi state
       const api = event.api;
       if (api && !api.isDestroyed()) {
@@ -449,7 +451,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Track data length for realtime sync detection
   const handleRowDataUpdated = useCallback(
-    event => {
+    (event: RowDataUpdatedEvent) => {
       // Use API from event to avoid stale closure issue with gridApi state
       const api = event?.api || gridApi;
       if (api && !api.isDestroyed()) {
