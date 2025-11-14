@@ -20,6 +20,15 @@ function BaseSelector<T>({
   const [showContent, setShowContent] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Track selected item position for sliding background
+  const [indicatorStyle, setIndicatorStyle] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    height: 0,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -148,13 +157,80 @@ function BaseSelector<T>({
   }, [isOpen, filteredItems, selectedIndex, onSelect, onClose]);
 
   useEffect(() => {
-    if (isOpen && itemRefs.current[selectedIndex]) {
-      itemRefs.current[selectedIndex]?.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth',
-      });
+    if (isOpen && itemRefs.current[selectedIndex] && listContainerRef.current) {
+      const container = listContainerRef.current;
+      const selectedElement = itemRefs.current[selectedIndex];
+
+      if (!selectedElement) return;
+
+      const isLastItem = selectedIndex === filteredItems.length - 1;
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = selectedElement.getBoundingClientRect();
+
+      const itemTop = selectedElement.offsetTop;
+      const itemBottom = itemTop + itemRect.height;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = containerRect.height;
+
+      // Check if item is above visible area
+      if (itemTop < containerScrollTop) {
+        container.scrollTo({
+          top: itemTop,
+          behavior: 'smooth',
+        });
+      }
+      // Check if item is below visible area
+      else if (itemBottom > containerScrollTop + containerHeight) {
+        // If it's the last item, scroll to absolute bottom
+        if (isLastItem) {
+          container.scrollTo({
+            top: container.scrollHeight - containerHeight,
+            behavior: 'smooth',
+          });
+        } else {
+          container.scrollTo({
+            top: itemBottom - containerHeight,
+            behavior: 'smooth',
+          });
+        }
+      }
     }
   }, [selectedIndex, isOpen, filteredItems]);
+
+  // Update sliding background position when selectedIndex changes
+  useEffect(() => {
+    if (
+      itemRefs.current[selectedIndex] &&
+      listContainerRef.current &&
+      filteredItems.length > 0 &&
+      showContent
+    ) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        const selectedElement = itemRefs.current[selectedIndex];
+        const containerElement = listContainerRef.current;
+
+        if (selectedElement && containerElement) {
+          const containerRect = containerElement.getBoundingClientRect();
+          const itemRect = selectedElement.getBoundingClientRect();
+
+          // Shift background slightly upward for better visual alignment
+          const verticalOffset = -4; // Move 4px up
+
+          setIndicatorStyle({
+            top:
+              itemRect.top -
+              containerRect.top +
+              containerElement.scrollTop +
+              verticalOffset,
+            left: itemRect.left - containerRect.left,
+            width: itemRect.width,
+            height: itemRect.height,
+          });
+        }
+      });
+    }
+  }, [selectedIndex, filteredItems, showContent]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -229,35 +305,62 @@ function BaseSelector<T>({
                   ease: 'easeInOut',
                 }}
               >
-                <div className="max-h-65 overflow-y-auto py-1">
+                <div
+                  ref={listContainerRef}
+                  className="max-h-65 overflow-y-auto py-1"
+                >
                   {filteredItems.length === 0 ? (
                     <div className="px-3 py-4 text-sm text-gray-500 text-center">
                       {config.noResultsText.replace('{searchTerm}', searchTerm)}
                     </div>
                   ) : (
-                    <div className="pb-1">
+                    <div className="pb-1 relative">
+                      {/* Sliding Background Indicator */}
+                      <motion.div
+                        className={`absolute rounded-md pointer-events-none ${
+                          config.theme === 'blue'
+                            ? 'bg-blue-100'
+                            : 'bg-purple-100'
+                        }`}
+                        initial={false}
+                        animate={{
+                          top: indicatorStyle.top,
+                          left: indicatorStyle.left,
+                          width: indicatorStyle.width,
+                          height: indicatorStyle.height,
+                        }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 400,
+                          damping: 30,
+                          mass: 0.8,
+                        }}
+                      />
+
+                      {/* Items */}
                       {filteredItems.map((item, index) => (
                         <div
                           key={config.getItemKey(item)}
                           ref={el => {
                             itemRefs.current[index] = el;
                           }}
-                          className={`px-3 py-2 cursor-pointer flex items-start gap-3 mx-1 rounded-md transition-all duration-200 ease-out ${
-                            index === selectedIndex
-                              ? config.theme === 'blue'
-                                ? 'bg-blue-100'
-                                : 'bg-purple-100'
-                              : 'bg-transparent hover:bg-gray-50'
-                          }`}
+                          className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-md relative z-10 hover:bg-gray-50/50 transition-colors duration-150"
                           onClick={() => onSelect(item)}
                         >
-                          <div className="shrink-0 mt-0.5">
+                          <div
+                            className={`shrink-0 transition-colors duration-150 ${
+                              index === selectedIndex
+                                ? config.getItemActiveColor?.(item) ||
+                                  'text-gray-900'
+                                : 'text-gray-400'
+                            }`}
+                          >
                             {config.getItemIcon(item)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`text-sm font-medium ${
+                                className={`text-sm font-medium transition-colors duration-150 ${
                                   index === selectedIndex
                                     ? config.theme === 'blue'
                                       ? 'text-blue-700'

@@ -23,8 +23,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
       getItemKey: operator => operator.value,
       getItemLabel: operator => operator.label,
       getItemIcon: operator => operator.icon,
-      getItemSecondaryText: operator => operator.value,
-      getItemDescription: operator => operator.description,
+      getItemActiveColor: operator => operator.activeColor || 'text-gray-900',
       getSearchFields: operator => [
         { key: 'label', value: operator.label, boost: 1000 },
         { key: 'value', value: operator.value, boost: 500 },

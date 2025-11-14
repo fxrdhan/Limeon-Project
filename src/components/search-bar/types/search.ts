@@ -7,6 +7,7 @@ export interface SearchColumn {
   description?: string;
   searchable: boolean;
   isMultiFilter?: boolean; // Indicates if column uses AG Grid multi-filter
+  activeColor?: string;
 }
 
 export interface FilterSearch {
