@@ -72,25 +72,49 @@ export const useSearchInput = ({
     }
   }, [displayValue]);
 
+  // Use ResizeObserver to track actual badge width (including hover state)
   useEffect(() => {
-    if (showTargetedIndicator) {
-      // Force recalculation every time by using a small delay
-      const timeoutId = setTimeout(() => {
-        if (
-          searchMode.isFilterMode &&
-          searchMode.filterSearch &&
-          badgesContainerRef.current
-        ) {
-          setBadgeWidth(badgesContainerRef.current.offsetWidth);
-        } else if (badgeRef.current) {
-          setBadgeWidth(badgeRef.current.offsetWidth);
-        }
-      }, 10); // Slightly longer delay for DOM updates
-
-      return () => clearTimeout(timeoutId);
-    } else {
+    if (!showTargetedIndicator) {
       setBadgeWidth(0);
+      return;
     }
+
+    const targetElement =
+      searchMode.isFilterMode &&
+      searchMode.filterSearch &&
+      badgesContainerRef.current
+        ? badgesContainerRef.current
+        : badgeRef.current;
+
+    if (!targetElement) return;
+
+    // Measure immediately with double RAF for DOM stabilization
+    const measureWidth = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (targetElement) {
+            setBadgeWidth(targetElement.offsetWidth);
+          }
+        });
+      });
+    };
+
+    // Initial measurement
+    measureWidth();
+
+    // Watch for any size changes (hover, font loading, layout shifts)
+    const resizeObserver = new ResizeObserver(() => {
+      // Update immediately without RAF for instant response
+      if (targetElement) {
+        setBadgeWidth(targetElement.offsetWidth);
+      }
+    });
+
+    resizeObserver.observe(targetElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, [
     showTargetedIndicator,
     searchMode.isFilterMode,
@@ -99,6 +123,11 @@ export const useSearchInput = ({
     searchMode.showColumnSelector,
     searchMode.showOperatorSelector,
   ]);
+
+  // Dummy handler for compatibility (not used anymore, ResizeObserver handles it)
+  const handleHoverChange = useCallback(() => {
+    // ResizeObserver will automatically detect width changes on hover
+  }, []);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +197,7 @@ export const useSearchInput = ({
     badgeWidth,
     operatorSearchTerm,
     handleInputChange,
+    handleHoverChange,
     textMeasureRef,
     badgeRef,
     badgesContainerRef,
