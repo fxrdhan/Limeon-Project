@@ -162,9 +162,6 @@ const ItemMasterNew = memo(() => {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
-  // 🎨 Grid restoration loading state (prevents flash during tab switch to items)
-  const [isGridRestoring, setIsGridRestoring] = useState(false);
-
   // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
   const isTabSwitchingRef = useRef(false);
 
@@ -212,8 +209,7 @@ const ItemMasterNew = memo(() => {
     enabled: true, // Always fetch units data for complete cache
   });
 
-  const { columnDefs: itemColumnDefs, columnsToAutoSize } =
-    useItemGridColumns();
+  const { columnDefs: itemColumnDefs } = useItemGridColumns();
 
   // Update active tab when URL changes
   useEffect(() => {
@@ -617,14 +613,6 @@ const ItemMasterNew = memo(() => {
   // Navigation logic extracted for reuse
   const performNavigation = useCallback(
     (targetTab: MasterDataType) => {
-      // 🎨 Show loading overlay BEFORE navigation (prevents flash)
-      // Only when switching TO items tab (complex state restoration)
-      const isToItemsTab = targetTab === 'items';
-      if (isToItemsTab) {
-        setIsGridRestoring(true);
-        console.log('🎨 Pre-navigation: Grid restoration loading started');
-      }
-
       navigate(`/master-data/item-master/${targetTab}`);
 
       // Save selected tab to session storage for future visits
@@ -875,7 +863,6 @@ const ItemMasterNew = memo(() => {
             }
             search={activeTab === 'items' ? itemSearch : entitySearch}
             itemColumnDefs={itemColumnDefs}
-            itemColumnsToAutoSize={columnsToAutoSize}
             entityConfig={entityCurrentConfig}
             entityColumnDefs={entityColumnDefs}
             onRowClick={unifiedRowClickHandler}
@@ -897,8 +884,6 @@ const ItemMasterNew = memo(() => {
             }
             defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
-            isGridRestoring={isGridRestoring}
-            onRestorationComplete={() => setIsGridRestoring(false)}
           />
         </div>
       </Card>
