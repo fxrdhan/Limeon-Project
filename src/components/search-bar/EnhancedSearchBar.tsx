@@ -313,10 +313,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               style={{
                 paddingLeft: showTargetedIndicator
                   ? `${Math.max(badgeWidth + SEARCH_CONSTANTS.BADGE_MARGIN, SEARCH_CONSTANTS.BADGE_WIDTH_FALLBACK)}px`
-                  : displayValue
+                  : displayValue &&
+                      !displayValue.startsWith('#') &&
+                      !searchMode.showColumnSelector
                     ? '12px'
                     : '40px',
-                transition: 'padding-left 100ms ease-out',
+                transition: 'padding-left 150ms ease-out',
               }}
               value={displayValue}
               onChange={handleInputChange}
