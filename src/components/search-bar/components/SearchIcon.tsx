@@ -16,6 +16,14 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   displayValue,
   showTargetedIndicator,
 }) => {
+  // Don't move icon when:
+  // 1. Column selector is active
+  // 2. Value starts with '#' (hashtag mode - prevents flash during state update)
+  const shouldShowLeftIcon =
+    displayValue &&
+    !displayValue.startsWith('#') &&
+    !searchMode.showColumnSelector;
+
   const getSearchIconColor = () => {
     if (
       searchMode.isFilterMode &&
@@ -68,15 +76,16 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   return (
     <>
       <div
-        className={`transition-all duration-300 ease-in-out ${
-          displayValue
+        className={`transition-all ease-out ${
+          shouldShowLeftIcon
             ? 'opacity-100 transform translate-x-0 scale-150 pl-2'
             : 'opacity-0 transform -translate-x-2 scale-100'
         }`}
         style={{
-          visibility: displayValue ? 'visible' : 'hidden',
-          width: displayValue ? 'auto' : '0',
-          minWidth: displayValue ? '40px' : '0',
+          visibility: shouldShowLeftIcon ? 'visible' : 'hidden',
+          width: shouldShowLeftIcon ? 'auto' : '0',
+          minWidth: shouldShowLeftIcon ? '40px' : '0',
+          transitionDuration: shouldShowLeftIcon ? '150ms' : '200ms',
         }}
       >
         {getSearchIcon()}
@@ -84,13 +93,14 @@ const SearchIcon: React.FC<SearchIconProps> = ({
 
       {!showTargetedIndicator && (
         <div
-          className={`absolute top-3.5 transition-all duration-300 ease-in-out ${
-            displayValue
+          className={`absolute top-3.5 transition-all ease-out ${
+            shouldShowLeftIcon
               ? 'opacity-0 transform translate-x-2 left-3'
               : 'opacity-100 transform translate-x-0 left-3'
           }`}
           style={{
-            visibility: displayValue ? 'hidden' : 'visible',
+            visibility: shouldShowLeftIcon ? 'hidden' : 'visible',
+            transitionDuration: shouldShowLeftIcon ? '200ms' : '150ms',
           }}
         >
           {getSearchIcon()}

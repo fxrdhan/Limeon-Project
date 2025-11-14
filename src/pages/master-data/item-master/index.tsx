@@ -419,19 +419,43 @@ const ItemMasterNew = memo(() => {
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
         try {
-          // Determine filter type: number for numeric columns, text for others
+          // Determine filter type based on column configuration
           const isNumericColumn = [
             'stock',
             'base_price',
             'sell_price',
           ].includes(filterSearch.field);
-          const filterType = isNumericColumn ? 'number' : 'text';
 
-          await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-            filterType,
-            type: filterSearch.operator,
-            filter: filterSearch.value,
-          });
+          // Columns that use agMultiColumnFilter
+          const isMultiFilterColumn = [
+            'manufacturer.name',
+            'category.name',
+            'type.name',
+            'package.name',
+            'dosage.name',
+          ].includes(filterSearch.field);
+
+          if (isMultiFilterColumn) {
+            // For multi-filter columns (manufacturer, category, type, package, dosage)
+            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+              filterType: 'multi',
+              filterModels: [
+                {
+                  filterType: 'text',
+                  type: filterSearch.operator,
+                  filter: filterSearch.value,
+                },
+              ],
+            });
+          } else {
+            // For single filter columns (name, code, barcode, package_conversions, numeric columns)
+            const filterType = isNumericColumn ? 'number' : 'text';
+            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+              filterType,
+              type: filterSearch.operator,
+              filter: filterSearch.value,
+            });
+          }
 
           unifiedGridApi.onFilterChanged();
         } catch (error) {
