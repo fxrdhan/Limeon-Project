@@ -52,9 +52,6 @@ export const useSearchInput = ({
     if (searchMode.selectedColumn && !searchMode.showColumnSelector) {
       return '';
     }
-    if (value.startsWith('#') && !searchMode.isFilterMode) {
-      return value;
-    }
     return value;
   }, [
     value,
@@ -75,6 +72,7 @@ export const useSearchInput = ({
   // Use ResizeObserver to track actual badge width (including hover state)
   useEffect(() => {
     if (!showTargetedIndicator) {
+      // Reset to 0 when badge disappears
       setBadgeWidth(0);
       return;
     }
@@ -86,23 +84,30 @@ export const useSearchInput = ({
         ? badgesContainerRef.current
         : badgeRef.current;
 
-    if (!targetElement) return;
+    if (!targetElement) {
+      // Set initial width immediately to prevent glitch
+      setBadgeWidth(100); // Reasonable initial width
+      return;
+    }
 
-    // Measure immediately with double RAF for DOM stabilization
+    // Measure immediately with triple RAF for complete DOM stabilization + animation start
     const measureWidth = () => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (targetElement) {
-            setBadgeWidth(targetElement.offsetWidth);
-          }
+          requestAnimationFrame(() => {
+            if (targetElement) {
+              setBadgeWidth(targetElement.offsetWidth);
+            }
+          });
         });
       });
     };
 
-    // Initial measurement
+    // Set initial width immediately to prevent glitch, then measure precisely
+    setBadgeWidth(100); // Initial estimate
     measureWidth();
 
-    // Watch for any size changes (hover, font loading, layout shifts)
+    // Watch for any size changes (hover, font loading, layout shifts, animation complete)
     const resizeObserver = new ResizeObserver(() => {
       // Update immediately without RAF for instant response
       if (targetElement) {
