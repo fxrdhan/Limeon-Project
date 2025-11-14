@@ -638,11 +638,19 @@ const ItemMasterNew = memo(() => {
         }, 100);
       } else if (!analysis.isSimple && !analysis.badgePattern) {
         // Complex filter or no filter - clear searchbar badge
+        // Set flag to prevent cascade when clearing SearchBar triggers onFilterSearch(null)
+        isGridFilterSyncingRef.current = true;
+
         if (activeTab === 'items') {
           setItemSearch('');
         } else {
           setEntitySearch('');
         }
+
+        // Unlock after state update completes
+        setTimeout(() => {
+          isGridFilterSyncingRef.current = false;
+        }, 100);
       }
     },
     [setItemSearch, setEntitySearch, activeTab]
