@@ -5,9 +5,9 @@ import {
   GetMainMenuItems,
   GridApi,
   GridReadyEvent,
+  GridState,
   IRowNode,
   RowClickedEvent,
-  RowDataUpdatedEvent,
   RowGroupOpenedEvent,
 } from 'ag-grid-community';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -24,9 +24,8 @@ import { StandardPagination } from '../atoms';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
-// Manual grid state management for auto-restore
+// Simple grid state utilities
 import {
-  autoSaveGridState,
   hasSavedState,
   type TableType,
 } from '@/features/shared/utils/gridStateManager';
@@ -84,7 +83,6 @@ interface EntityGridProps {
 
   // Grid config
   itemColumnDefs?: (ColDef | ColGroupDef)[];
-  itemColumnsToAutoSize?: string[];
   isRowGroupingEnabled?: boolean;
   defaultExpanded?: number;
   showGroupPanel?: boolean;
@@ -109,10 +107,6 @@ interface EntityGridProps {
 
   // Pagination (for items)
   itemsPerPage?: number;
-
-  // 🎨 Grid restoration loading state (from parent)
-  isGridRestoring?: boolean;
-  onRestorationComplete?: () => void;
 }
 
 const EntityGrid = memo<EntityGridProps>(function EntityGrid({
@@ -124,7 +118,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   error,
   search,
   itemColumnDefs = [],
-  itemColumnsToAutoSize = [],
   isRowGroupingEnabled = false,
   defaultExpanded = 1,
   showGroupPanel = true,
@@ -137,34 +130,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   onGridApiReady,
   onFilterChanged,
   itemsPerPage = 20,
-  isGridRestoring = false,
-  onRestorationComplete,
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<DataGridRef>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
-  const isInitialRestorationDone = useRef<boolean>(false);
 
-  // 🔒 Guard flag to prevent auto-save during state restoration
-  const isRestoringState = useRef<boolean>(false);
-
-  // Debounce timeout ref for auto-save operations
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 🎯 Stability tracking to prevent scroll restoration during realtime sync invalidation
-  const isStableRef = useRef<boolean>(false);
-
-  // 📊 Track previous data length to detect real data changes vs reference changes
-  const previousDataLengthRef = useRef<number>(0);
-
-  // Initialize auto-size prevention based on saved state during component mount
-  const shouldPreventAutoSize = useRef<boolean>(
-    hasSavedState(activeTab as TableType)
-  );
-
-  // Load initial grid state for AG Grid's initialState prop
-  // Simple approach: load full state including filters
+  // 🎯 Load initial grid state for AG Grid's initialState prop
+  // AG Grid Best Practice: Use initialState for initial restore
   const initialGridState = useMemo(() => {
     const tableType = activeTab as TableType;
     const savedState = localStorage.getItem(`grid_state_${tableType}`);
@@ -180,13 +153,64 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     return undefined;
   }, [activeTab]);
 
-  // Update auto-size prevention when activeTab changes
+  // 💾 AG Grid Best Practice: Auto-save on state changes
+  // Simple onStateUpdated handler - saves to localStorage automatically
+  const handleStateUpdated = useCallback(
+    (event: { state: GridState }) => {
+      const tableType = activeTab as TableType;
+      try {
+        localStorage.setItem(
+          `grid_state_${tableType}`,
+          JSON.stringify(event.state)
+        );
+        console.log('✅ Grid state auto-saved for:', tableType);
+      } catch (error) {
+        console.error('Failed to save grid state:', error);
+      }
+    },
+    [activeTab]
+  );
+
+  // 🔄 Handle tab switching - restore state when activeTab changes
+  // Note: initialState only works on initial mount, need setState for runtime changes
+  const previousActiveTabRef = useRef<TableType | null>(null);
   useEffect(() => {
     const tableType = activeTab as TableType;
-    shouldPreventAutoSize.current = hasSavedState(tableType);
-  }, [activeTab]);
 
-  // Auto-restore no longer needs loading state - removed for faster UX
+    // Skip initial mount (initialState handles it)
+    if (previousActiveTabRef.current === null) {
+      previousActiveTabRef.current = tableType;
+      return;
+    }
+
+    // Only apply state when tab actually changes
+    if (previousActiveTabRef.current !== tableType && gridApi) {
+      previousActiveTabRef.current = tableType;
+
+      const savedState = localStorage.getItem(`grid_state_${tableType}`);
+      if (savedState) {
+        try {
+          const parsedState = JSON.parse(savedState);
+          // Apply state after a brief delay to ensure columnDefs are applied
+          requestAnimationFrame(() => {
+            if (gridApi && !gridApi.isDestroyed()) {
+              gridApi.setState(parsedState);
+              console.log('✅ Grid state restored for:', tableType);
+            }
+          });
+        } catch (error) {
+          console.error('Failed to restore grid state:', error);
+        }
+      } else {
+        // No saved state, autosize columns for first-time users
+        requestAnimationFrame(() => {
+          if (gridApi && !gridApi.isDestroyed()) {
+            gridApi.autoSizeAllColumns();
+          }
+        });
+      }
+    }
+  }, [activeTab, gridApi]);
 
   // Column display mode for items (reference columns)
   const {
@@ -234,144 +258,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     debug: false,
   });
 
-  // Remove premature autosize - let onFirstDataRendered handle it after data ready
-
-  // Auto-save helper function for live state persistence
-  const autoSaveState = useCallback(() => {
-    // 🔒 Skip auto-save during state restoration to prevent race conditions
-    if (isRestoringState.current) {
-      console.log('⏸️ Auto-save blocked: restoring state');
-      return;
-    }
-
-    if (gridApi && !gridApi.isDestroyed()) {
-      const tableType = activeTab as TableType;
-      console.log('💾 Auto-saving grid state for:', tableType);
-      autoSaveGridState(gridApi, tableType);
-    }
-  }, [gridApi, activeTab]);
-
-  // Debounced auto-save to batch multiple rapid changes
-  const debouncedAutoSave = useCallback(() => {
-    // 🔒 Skip auto-save during state restoration
-    if (isRestoringState.current) {
-      return;
-    }
-
-    // Clear previous timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    // Set new timeout - increased to 500ms to batch more changes during tab switching
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      autoSaveState();
-      autoSaveTimeoutRef.current = null;
-    }, 500);
-  }, [autoSaveState]);
-
-  // Tab switching state restore (for runtime tab changes after initial load)
-  const previousActiveTabRef = useRef<TableType | null>(null);
-  useEffect(() => {
-    const tableType = activeTab as TableType;
-
-    // Skip initial load (handled by initialState)
-    if (previousActiveTabRef.current === null) {
-      previousActiveTabRef.current = tableType;
-      return;
-    }
-
-    // Only handle tab changes after initial load
-    if (
-      previousActiveTabRef.current !== tableType &&
-      gridApi &&
-      !gridApi.isDestroyed()
-    ) {
-      // Update tab reference immediately
-      previousActiveTabRef.current = tableType;
-
-      // 🔒 Lock auto-save during restoration
-      isRestoringState.current = true;
-      console.log('🔒 Auto-save locked for tab switch to:', tableType);
-
-      // Clear any pending auto-save timeouts from previous tab
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-        autoSaveTimeoutRef.current = null;
-      }
-
-      // Reset restoration flag for new tab
-      isInitialRestorationDone.current = false;
-
-      const hasSaved = hasSavedState(tableType);
-
-      if (hasSaved) {
-        // Apply state after AG Grid is ready
-        const savedState = localStorage.getItem(`grid_state_${tableType}`);
-        if (savedState) {
-          try {
-            const parsedState = JSON.parse(savedState);
-
-            // Use requestAnimationFrame to ensure AG Grid is ready
-            requestAnimationFrame(() => {
-              if (gridApi.isDestroyed()) return;
-
-              // Simple approach: restore full state including filters
-              gridApi.setState(parsedState);
-
-              // Only autosize if no column widths were restored
-              const hasColumnWidths =
-                (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
-              if (!hasColumnWidths) {
-                gridApi.autoSizeAllColumns();
-              }
-
-              // Sync page size
-              const restoredPageSize = gridApi.paginationGetPageSize();
-              setCurrentPageSize(restoredPageSize);
-
-              // Restore scroll position after state is applied and data is rendered
-              // Scroll needs data to be present to work properly
-              if (parsedState.scroll) {
-                setTimeout(() => {
-                  if (!gridApi.isDestroyed()) {
-                    gridApi.setState({ scroll: parsedState.scroll });
-                  }
-                }, 100);
-              }
-            });
-          } catch (error) {
-            console.warn('Failed to restore state on tab switch:', error);
-          }
-        }
-      } else {
-        // No saved state, just autosize if not prevented
-        if (!shouldPreventAutoSize.current) {
-          gridApi.autoSizeAllColumns();
-        }
-      }
-
-      // Mark as done but keep lock for a bit longer to batch all AG Grid events
-      isInitialRestorationDone.current = true;
-
-      // Unlock after a delay to batch all restoration events
-      setTimeout(() => {
-        isRestoringState.current = false;
-        console.log('🔓 Auto-save unlocked after tab switch to:', tableType);
-
-        // 🎨 Notify parent that restoration is complete (hides loading overlay)
-        // Add small delay to ensure grid is fully rendered
-        setTimeout(() => {
-          if (onRestorationComplete) {
-            onRestorationComplete();
-            console.log('🎨 Restoration complete - notified parent');
-          }
-        }, 100);
-      }, 300);
-    }
-  }, [activeTab, gridApi, onRestorationComplete]);
-
-  // No artificial loading state - rely on data loading state only
+  // ✅ AG Grid Best Practice: No manual restoration needed!
+  // initialState handles it automatically on mount/tab-switch
 
   // Toggle display mode for items reference columns (items tab only)
   const toggleColumnDisplayMode = useCallback(
@@ -411,7 +299,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [onRowClick]
   );
 
-  // Handle grid ready - simplified since initialState handles restoration
+  // Handle grid ready - simple!
   const handleGridReady = useCallback(
     (params: GridReadyEvent<ItemWithExtendedEntities | EntityData>) => {
       setGridApi(params.api);
@@ -419,18 +307,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       // Sync current page size with grid
       const gridPageSize = params.api.paginationGetPageSize();
       setCurrentPageSize(gridPageSize);
-
-      // 🔒 Lock auto-save briefly during initial render to prevent saving partial state
-      isRestoringState.current = true;
-      console.log('🔒 Auto-save locked on grid ready');
-
-      // 🔓 Unlock after initial state is applied and all events settled
-      // Use setTimeout instead of requestAnimationFrame for longer delay
-      setTimeout(() => {
-        isInitialRestorationDone.current = true;
-        isRestoringState.current = false;
-        console.log('🔓 Auto-save unlocked after initial render');
-      }, 500);
 
       // Notify parent about grid API
       if (onGridApiReady) {
@@ -442,188 +318,39 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [onGridReady, onGridApiReady]
   );
 
-  // Handle first data rendered - simple autosize logic and scroll restoration
+  // Handle first data rendered - simple autosize for new grids
   const handleFirstDataRendered = useCallback(
     (event: FirstDataRenderedEvent) => {
-      // Use API from event to avoid stale closure issue with gridApi state
       const api = event.api;
-      if (api && !api.isDestroyed()) {
-        const tableType = activeTab as TableType;
+      const tableType = activeTab as TableType;
 
-        // Only autosize if no saved state and auto-sizing is not prevented
-        if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
-          api.autoSizeAllColumns();
-        }
-
-        // Restore scroll position after data is rendered
-        // initialState restores scroll but it needs data to be present
-        const savedState = localStorage.getItem(`grid_state_${tableType}`);
-        if (savedState) {
-          try {
-            const parsedState = JSON.parse(savedState);
-            // Only restore scroll property after data is loaded
-            if (parsedState.scroll) {
-              setTimeout(() => {
-                if (!api.isDestroyed()) {
-                  api.setState({ scroll: parsedState.scroll });
-                }
-              }, 50);
-            }
-          } catch (error) {
-            console.warn('Failed to restore scroll position:', error);
-          }
-        }
+      // Only autosize if no saved state (first time user)
+      if (api && !api.isDestroyed() && !hasSavedState(tableType)) {
+        api.autoSizeAllColumns();
       }
     },
     [activeTab]
   );
 
-  // Track data length for realtime sync detection
-  const handleRowDataUpdated = useCallback(
-    (event: RowDataUpdatedEvent) => {
-      // Use API from event to avoid stale closure issue with gridApi state
-      const api = event?.api || gridApi;
-      if (api && !api.isDestroyed()) {
-        const currentDataLength = api.getDisplayedRowCount();
-
-        // Update previous data length for stability tracking
-        previousDataLengthRef.current = currentDataLength;
-      }
-    },
-    [gridApi]
-  );
-
-  // 🎯 Mark grid as stable after initial load + realtime sync setup delay
-  // This prevents scroll restoration during realtime sync query invalidation
-  useEffect(() => {
-    if (!isLoading && isInitialRestorationDone.current) {
-      // Wait for realtime sync to complete its initial setup (3 seconds)
-      // useItemsSync has 2s delay, so 3s ensures we're past that
-      const stabilityTimer = setTimeout(() => {
-        isStableRef.current = true;
-        console.log('✅ Grid marked as stable - scroll restoration optimized');
-      }, 3000);
-
-      return () => clearTimeout(stabilityTimer);
-    }
-  }, [isLoading]);
-
-  // Reset stability flag when switching tabs
-  useEffect(() => {
-    isStableRef.current = false;
-    previousDataLengthRef.current = 0;
-  }, [activeTab]);
-
-  // Cleanup pending auto-save timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-        autoSaveTimeoutRef.current = null;
-      }
-    };
+  // Track row data updates (for future use if needed)
+  const handleRowDataUpdated = useCallback(() => {
+    // Simple tracking - can be extended if needed
   }, []);
 
-  // Cleanup pending auto-save timeouts when activeTab changes
-  useEffect(() => {
-    // Clear any pending auto-saves when switching tabs
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-        autoSaveTimeoutRef.current = null;
-      }
-    };
-  }, [activeTab]);
+  // Handle page size changes
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setCurrentPageSize(newPageSize);
+  }, []);
 
-  // Note: Autosize handled in onFirstDataRendered for better timing
-
-  // Handle column row group changes - autosize when grouping is applied/removed
-  const handleColumnRowGroupChanged = useCallback(() => {
-    // Only for items tab when row grouping is enabled
-    if (activeTab !== 'items' || !isRowGroupingEnabled) {
-      return;
-    }
-
-    if (gridApi && !gridApi.isDestroyed()) {
-      // Only autosize if no saved column widths and auto-sizing is not prevented
-      const tableType = activeTab as TableType;
-      if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
-        gridApi.autoSizeAllColumns();
-      }
-
-      // Auto-save row grouping state
-      autoSaveState();
-    }
-  }, [activeTab, isRowGroupingEnabled, gridApi, autoSaveState]);
-
-  // ✅ PAGINATION STATE CACHING SYSTEM ✅
-  // Auto-saves current page and page size to localStorage for persistence
-  // Restores pagination state when switching tabs or reloading
-
-  // Handle pagination changes - now includes state saving for pagination persistence
-  const handlePaginationChanged = useCallback(() => {
-    // Auto-save pagination state for persistence across sessions and tab switches
-    autoSaveState();
-  }, [autoSaveState]);
-
-  // Handle page size changes - save state when user changes items per page
-  const handlePageSizeChange = useCallback(
-    (newPageSize: number) => {
-      setCurrentPageSize(newPageSize);
-      // Use debounced auto-save to batch changes
-      debouncedAutoSave();
-    },
-    [debouncedAutoSave]
-  );
-
-  // Live save event handlers - all use debounced auto-save to prevent race conditions
-  const handleColumnResized = useCallback(() => {
-    // Use debounced auto-save - batches rapid resize events
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
-  const handleColumnMoved = useCallback(() => {
-    // Column moves are typically single actions, but still use debounce for consistency
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
-  const handleColumnPinned = useCallback(() => {
-    // Auto-save when columns are pinned/unpinned
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
-  const handleColumnVisible = useCallback(() => {
-    // Auto-save when column visibility changes
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
-  const handleSortChanged = useCallback(() => {
-    // Auto-save when sorting changes
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
+  // Handle filter changes - notify parent for SearchBar sync
   const handleFilterChanged = useCallback(() => {
-    // Auto-save when filters change
-    debouncedAutoSave();
-
-    // Notify parent of filter changes for SearchBar sync
     if (onFilterChanged && gridApi && !gridApi.isDestroyed()) {
       const filterModel = gridApi.getFilterModel();
       onFilterChanged(filterModel);
     }
-  }, [debouncedAutoSave, onFilterChanged, gridApi]);
+  }, [onFilterChanged, gridApi]);
 
-  const handleDisplayedColumnsChanged = useCallback(() => {
-    // Auto-save when displayed columns change (sidebar column panel)
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
-  const handleBodyScroll = useCallback(() => {
-    // Auto-save when user scrolls - debounced to avoid excessive saves
-    debouncedAutoSave();
-  }, [debouncedAutoSave]);
-
-  // Handle row group opened/closed - scroll child rows into view + autosize
+  // Handle row group opened/closed - scroll child rows into view
   const handleRowGroupOpened = useCallback(
     (event: RowGroupOpenedEvent<ItemWithExtendedEntities | EntityData>) => {
       // Only for items tab when row grouping is enabled
@@ -645,18 +372,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           // Ensure the expanded group and its children are visible
           gridApi.ensureIndexVisible(newIndex);
         }
-
-        // Autosize after group expansion (only if no saved column widths and auto-sizing is not prevented)
-        const tableType = activeTab as TableType;
-        if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
-          gridApi.autoSizeAllColumns();
-        }
-
-        // Auto-save row group state
-        autoSaveState();
       }
     },
-    [activeTab, isRowGroupingEnabled, gridApi, autoSaveState]
+    [activeTab, isRowGroupingEnabled, gridApi]
   );
 
   // Custom menu items for ALL tabs (items + 6 entities)
@@ -820,15 +538,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
           onRowDataUpdated={handleRowDataUpdated}
-          loading={isLoading || isGridRestoring}
+          loading={isLoading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
-          autoSizeColumns={
-            shouldPreventAutoSize.current
-              ? []
-              : activeTab === 'items'
-                ? itemColumnsToAutoSize
-                : []
-          }
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getMainMenuItems}
@@ -838,17 +549,10 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             checkboxes: false,
             headerCheckbox: false,
           }}
-          // Live save event handlers
-          onColumnResized={handleColumnResized}
-          onColumnMoved={handleColumnMoved}
-          onColumnPinned={handleColumnPinned}
-          onColumnVisible={handleColumnVisible}
-          onSortChanged={handleSortChanged}
+          // 💾 AG Grid Best Practice: Auto-save via onStateUpdated
+          onStateUpdated={handleStateUpdated}
+          // Filter change notification for SearchBar sync
           onFilterChanged={handleFilterChanged}
-          onDisplayedColumnsChanged={handleDisplayedColumnsChanged}
-          onColumnRowGroupChanged={handleColumnRowGroupChanged}
-          onBodyScroll={handleBodyScroll}
-          // Auto-restore now handled via restoreGridState function in onFirstDataRendered
           rowNumbers={true}
           domLayout="normal"
           style={{
@@ -862,7 +566,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           pagination={true}
           paginationPageSize={itemsPerPage}
           suppressPaginationPanel={true}
-          onPaginationChanged={handlePaginationChanged}
           // Row Grouping configuration (only for items tab)
           rowGroupPanelShow={
             activeTab === 'items' && isRowGroupingEnabled && showGroupPanel
