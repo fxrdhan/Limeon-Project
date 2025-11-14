@@ -58,6 +58,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     badgeWidth,
     operatorSearchTerm,
     handleInputChange,
+    handleHoverChange,
     textMeasureRef,
     badgeRef,
     badgesContainerRef,
@@ -295,7 +296,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
-              className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out placeholder-gray-400 ${
+              className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-[border-color,box-shadow] duration-200 ease-in-out placeholder-gray-400 ${
                 searchState === 'not-found'
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
                   : searchMode.isFilterMode &&
@@ -315,6 +316,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   : displayValue
                     ? '12px'
                     : '40px',
+                transition: 'padding-left 100ms ease-out',
               }}
               value={displayValue}
               onChange={handleInputChange}
@@ -329,6 +331,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 badgeRef={badgeRef}
                 badgesContainerRef={badgesContainerRef}
                 onClearTargeted={handleClearTargeted}
+                onHoverChange={handleHoverChange}
               />
             )}
 
@@ -348,13 +351,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             </span>
 
             <PiKeyReturnBold
-              className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-300 ease-in-out ${
+              className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 ${
                 searchState === 'not-found' && displayValue
                   ? 'opacity-100 scale-150 translate-x-0'
                   : 'opacity-0 scale-95 translate-x-2'
               }`}
               style={{
                 left: `${textWidth + (showTargetedIndicator ? Math.max(badgeWidth + SEARCH_CONSTANTS.BADGE_MARGIN, SEARCH_CONSTANTS.BADGE_WIDTH_FALLBACK) : displayValue ? 0 : 10)}px`,
+                transition:
+                  'left 100ms ease-out, opacity 300ms ease-in-out, transform 300ms ease-in-out',
               }}
             />
           </div>

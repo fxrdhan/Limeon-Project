@@ -11,6 +11,7 @@ interface SearchBadgeProps {
   badgeRef: React.RefObject<HTMLDivElement | null>;
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
   onClearTargeted: () => void;
+  onHoverChange?: (isHovered: boolean) => void;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -18,7 +19,16 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   badgeRef,
   badgesContainerRef,
   onClearTargeted,
+  onHoverChange,
 }) => {
+  const handleMouseEnter = () => {
+    onHoverChange?.(true);
+  };
+
+  const handleMouseLeave = () => {
+    onHoverChange?.(false);
+  };
+
   if (
     !searchMode.isFilterMode &&
     !searchMode.showOperatorSelector &&
@@ -31,21 +41,27 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     <div
       ref={badgesContainerRef}
       className="absolute left-1.5 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-1.5"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {searchMode.isFilterMode && searchMode.filterSearch ? (
         searchMode.filterSearch.operator === 'contains' &&
         !searchMode.filterSearch.isExplicitOperator ? (
           <div
             ref={badgeRef}
-            className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-purple-100 text-purple-700 transition-all"
+            className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-purple-100 text-purple-700"
           >
             <span>{searchMode.filterSearch.column.headerName}</span>
             <button
               onClick={onClearTargeted}
-              className="w-0 opacity-0 overflow-hidden group-hover:w-auto group-hover:opacity-100 group-hover:ml-1.5 rounded-sm p-0.5 transition-all hover:bg-purple-200"
+              className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-purple-200 flex-shrink-0"
               type="button"
+              style={{
+                transition:
+                  'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+              }}
             >
-              <LuX className="w-3.5 h-3.5" />
+              <LuX className="w-3.5 h-3.5 flex-shrink-0" />
             </button>
           </div>
         ) : (
@@ -56,7 +72,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
 
             <div
               ref={badgeRef}
-              className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 transition-all"
+              className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700"
             >
               <span>
                 {(() => {
@@ -73,10 +89,14 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               </span>
               <button
                 onClick={onClearTargeted}
-                className="w-0 opacity-0 overflow-hidden group-hover:w-auto group-hover:opacity-100 group-hover:ml-1.5 rounded-sm p-0.5 transition-all hover:bg-blue-200"
+                className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
                 type="button"
+                style={{
+                  transition:
+                    'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+                }}
               >
-                <LuX className="w-3.5 h-3.5" />
+                <LuX className="w-3.5 h-3.5 flex-shrink-0" />
               </button>
             </div>
           </>
@@ -93,15 +113,19 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
         <div
           key="selected-column-badge"
           ref={badgeRef}
-          className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-purple-100 text-purple-700 transition-all"
+          className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-purple-100 text-purple-700"
         >
           <span>{searchMode.selectedColumn.headerName}</span>
           <button
             onClick={onClearTargeted}
-            className="w-0 opacity-0 overflow-hidden group-hover:w-auto group-hover:opacity-100 group-hover:ml-1.5 rounded-sm p-0.5 transition-all hover:bg-purple-200"
+            className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-purple-200 flex-shrink-0"
             type="button"
+            style={{
+              transition:
+                'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+            }}
           >
-            <LuX className="w-3.5 h-3.5" />
+            <LuX className="w-3.5 h-3.5 flex-shrink-0" />
           </button>
         </div>
       ) : null}
