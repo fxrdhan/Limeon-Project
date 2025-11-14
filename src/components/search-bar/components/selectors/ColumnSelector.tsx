@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import { LuHash, LuSearch, LuFilter } from 'react-icons/lu';
+import { LuFilter } from 'react-icons/lu';
+import { TbNumber12Small } from 'react-icons/tb';
+import { IoText } from 'react-icons/io5';
 import BaseSelector from './BaseSelector';
 import {
   SearchColumn,
@@ -19,11 +21,23 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
     switch (column.type) {
       case 'number':
       case 'currency':
-        return <LuHash className="w-3 h-3 text-blue-500" />;
+        return <TbNumber12Small className="w-5 h-5" />;
       case 'date':
-        return <LuFilter className="w-3 h-3 text-purple-500" />;
+        return <LuFilter className="w-4 h-4" />;
       default:
-        return <LuSearch className="w-3 h-3 text-purple-500" />;
+        return <IoText className="w-4 h-4" />;
+    }
+  };
+
+  const getActiveColor = (column: SearchColumn) => {
+    switch (column.type) {
+      case 'number':
+      case 'currency':
+        return 'text-blue-500';
+      case 'date':
+        return 'text-purple-500';
+      default:
+        return 'text-purple-500';
     }
   };
 
@@ -36,8 +50,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       getItemKey: column => column.field,
       getItemLabel: column => column.headerName,
       getItemIcon: getColumnIcon,
-      getItemSecondaryText: column => column.field,
-      getItemDescription: column => column.description || '',
+      getItemActiveColor: getActiveColor,
       getSearchFields: column => [
         { key: 'headerName', value: column.headerName, boost: 1000 },
         { key: 'field', value: column.field, boost: 500 },

@@ -148,6 +148,9 @@ const ItemMasterNew = memo(() => {
   // Unified Grid API reference from MasterDataGrid
   const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
 
+  // Track visible and ordered columns from AG Grid
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemsSync({ enabled: true });
 
@@ -439,10 +442,24 @@ const ItemMasterNew = memo(() => {
     [unifiedGridApi]
   );
 
-  // Get search columns for items (use default ordering since AG Grid sidebar handles column order)
+  // Get search columns for items - filtered and ordered based on AG Grid visibility & ordering
   const orderedSearchColumns = useMemo(() => {
-    return getOrderedSearchColumnsByEntity('items', []);
-  }, []);
+    const allColumns = getOrderedSearchColumnsByEntity('items', []);
+
+    // If no visible columns tracked yet, return all columns
+    if (visibleColumns.length === 0) return allColumns;
+
+    // Filter only visible columns and sort by grid order
+    const visibleSearchColumns = allColumns.filter(col =>
+      visibleColumns.includes(col.field)
+    );
+
+    return visibleSearchColumns.sort((a, b) => {
+      const indexA = visibleColumns.indexOf(a.field);
+      const indexB = visibleColumns.indexOf(b.field);
+      return indexA - indexB;
+    });
+  }, [visibleColumns]);
 
   const {
     search: itemSearch,
@@ -466,6 +483,58 @@ const ItemMasterNew = memo(() => {
     setUnifiedGridApi(api);
   }, []);
 
+  // Update visible columns when grid API or column state changes
+  useEffect(() => {
+    if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
+      return;
+    }
+
+    const updateVisibleColumns = () => {
+      try {
+        // Get all displayed columns in their current order
+        const displayedColumns = unifiedGridApi.getAllDisplayedColumns();
+        if (displayedColumns) {
+          const visibleFields = displayedColumns
+            .map(col => col.getColId())
+            .filter(colId => colId); // Filter out empty IDs
+          setVisibleColumns(visibleFields);
+          console.log('📊 Visible columns updated:', visibleFields);
+        }
+      } catch (error) {
+        console.error('Failed to update visible columns:', error);
+      }
+    };
+
+    // Initial update
+    updateVisibleColumns();
+
+    // Listen to column visibility, move, and state restore events
+    const onColumnVisible = () => updateVisibleColumns();
+    const onColumnMoved = () => updateVisibleColumns();
+    const onFirstDataRendered = () => updateVisibleColumns();
+    const onGridColumnsChanged = () => updateVisibleColumns();
+
+    unifiedGridApi.addEventListener('columnVisible', onColumnVisible);
+    unifiedGridApi.addEventListener('columnMoved', onColumnMoved);
+    unifiedGridApi.addEventListener('firstDataRendered', onFirstDataRendered);
+    unifiedGridApi.addEventListener('gridColumnsChanged', onGridColumnsChanged);
+
+    return () => {
+      if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+        unifiedGridApi.removeEventListener('columnVisible', onColumnVisible);
+        unifiedGridApi.removeEventListener('columnMoved', onColumnMoved);
+        unifiedGridApi.removeEventListener(
+          'firstDataRendered',
+          onFirstDataRendered
+        );
+        unifiedGridApi.removeEventListener(
+          'gridColumnsChanged',
+          onGridColumnsChanged
+        );
+      }
+    };
+  }, [unifiedGridApi]);
+
   // Enhanced onGridReady to capture grid API for items tab
   const enhancedItemOnGridReady = useCallback(
     (params: GridReadyEvent) => {
@@ -474,11 +543,42 @@ const ItemMasterNew = memo(() => {
     [itemOnGridReady]
   );
 
-  // Entity search functionality
+  // Entity search functionality - filtered and ordered based on AG Grid visibility & ordering
   const entitySearchColumns = useMemo(() => {
     if (activeTab === 'items') return [];
-    return getSearchColumnsByEntity(activeTab as EntityType);
-  }, [activeTab]);
+
+    const allColumns = getSearchColumnsByEntity(activeTab as EntityType);
+
+    // If no visible columns tracked yet, return all columns
+    if (visibleColumns.length === 0) return allColumns;
+
+    // Filter only visible columns and sort by grid order
+    const visibleSearchColumns = allColumns.filter(col => {
+      // Entity columns are prefixed (e.g., "categories.code")
+      // Check both the full field and the base field name
+      const baseField = col.field.split('.').pop() || col.field;
+      return (
+        visibleColumns.includes(col.field) ||
+        visibleColumns.some(vc => vc.endsWith(`.${baseField}`))
+      );
+    });
+
+    return visibleSearchColumns.sort((a, b) => {
+      const getIndex = (field: string) => {
+        const baseField = field.split('.').pop() || field;
+        const exactIndex = visibleColumns.indexOf(field);
+        if (exactIndex !== -1) return exactIndex;
+
+        // Find by base field name
+        const matchIndex = visibleColumns.findIndex(vc =>
+          vc.endsWith(`.${baseField}`)
+        );
+        return matchIndex !== -1 ? matchIndex : visibleColumns.length;
+      };
+
+      return getIndex(a.field) - getIndex(b.field);
+    });
+  }, [activeTab, visibleColumns]);
 
   // Entity filter search handler
   const handleEntityFilterSearch = useCallback(
@@ -636,6 +736,9 @@ const ItemMasterNew = memo(() => {
       } else {
         clearEntitySearchUIOnly(); // Leaving Entity tab
       }
+
+      // Reset visible columns to allow new grid to populate
+      setVisibleColumns([]);
 
       // 🔓 Unlock after navigation and grid restoration completes
       // Grid restoration happens quickly after tab switch

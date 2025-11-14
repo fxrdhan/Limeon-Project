@@ -6,6 +6,7 @@ export interface FilterOperator {
   label: string;
   description: string;
   icon: React.ReactNode;
+  activeColor?: string;
 }
 
 export interface BaseSelectorConfig<T> {
@@ -16,6 +17,7 @@ export interface BaseSelectorConfig<T> {
   getItemKey: (item: T) => string;
   getItemLabel: (item: T) => string;
   getItemIcon: (item: T) => React.ReactNode;
+  getItemActiveColor?: (item: T) => string;
   getItemSecondaryText?: (item: T) => string;
   getItemDescription?: (item: T) => string;
   getSearchFields: (
