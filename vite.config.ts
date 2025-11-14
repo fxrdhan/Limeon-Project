@@ -1,10 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
+import viteCompression from 'vite-plugin-compression';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Brotli compression - best compression ratio for modern browsers
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 1024, // Only compress files > 1KB
+    }),
+    // Bundle analyzer - generates stats.html after build
+    visualizer({
+      filename: 'dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -21,81 +38,132 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: id => {
-          // AG-Grid components (very heavy)
-          if (id.includes('ag-grid')) {
-            return 'ag-grid';
+          // AG-Grid - split into community and enterprise
+          if (id.includes('ag-grid-community')) {
+            return 'ag-grid-community';
+          }
+          if (id.includes('ag-grid-enterprise')) {
+            return 'ag-grid-enterprise';
+          }
+          if (id.includes('ag-grid-react')) {
+            return 'ag-grid-react';
           }
 
-          // Charts library - very heavy
+          // Charts library - lazy load separately
           if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
             return 'charts';
           }
 
-          // Animation library
+          // Animation library - used across app
           if (id.includes('framer-motion')) {
             return 'animations';
           }
 
-          // React ecosystem
-          if (
-            id.includes('react') ||
-            id.includes('react-dom') ||
-            id.includes('react-router-dom')
-          ) {
+          // React core - most critical, load first
+          if (id.includes('react/') || id.includes('react-dom/')) {
             return 'react-vendor';
           }
 
-          // Data fetching and state management
-          if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
+          // React Router - separate from React core
+          if (id.includes('react-router')) {
+            return 'router';
+          }
+
+          // React Query + DevTools
+          if (id.includes('@tanstack/react-query-devtools')) {
+            return 'react-query-devtools'; // Only in dev
+          }
+          if (id.includes('@tanstack/react-query')) {
+            return 'data-libs';
+          }
+          if (id.includes('zustand')) {
             return 'data-libs';
           }
 
-          // Backend/API libraries
-          if (id.includes('@supabase/supabase-js') || id.includes('axios')) {
+          // Supabase - split to avoid large chunks
+          if (id.includes('@supabase/realtime-js')) {
+            return 'supabase-realtime';
+          }
+          if (id.includes('@supabase/supabase-js')) {
+            return 'supabase-client';
+          }
+
+          // API utilities
+          if (id.includes('axios')) {
             return 'api-libs';
           }
 
-          // Supabase realtime (large chunk)
-          if (id.includes('@supabase/realtime-js')) {
-            return 'supabaseRealtime';
-          }
-
-          // Items service and related files
-          if (
-            id.includes('items.service') ||
-            id.includes('useItems') ||
-            id.includes('item-management')
-          ) {
-            return 'items-feature';
-          }
-
-          // Other API services
-          if (id.includes('/services/api/') || id.includes('/hooks/queries/')) {
-            return 'api-services';
-          }
-
-          // UI/Utility libraries
+          // UI libraries - can be lazy loaded
           if (
             id.includes('@headlessui/react') ||
-            id.includes('react-icons') ||
-            id.includes('compressorjs') ||
+            id.includes('react-hot-toast') ||
             id.includes('react-spinners')
           ) {
             return 'ui-libs';
           }
 
-          // Node modules vendor chunks
+          // Icons - separate chunk (can be large)
+          if (id.includes('react-icons') || id.includes('@heroicons/react')) {
+            return 'icons';
+          }
+
+          // Image processing - only used in specific features
+          if (id.includes('compressorjs')) {
+            return 'image-libs';
+          }
+
+          // Search utilities
+          if (id.includes('fuzzysort')) {
+            return 'search-libs';
+          }
+
+          // Google APIs - only used in specific features
+          if (id.includes('google-auth-library') || id.includes('googleapis')) {
+            return 'google-apis';
+          }
+
+          // Utility libraries
+          if (
+            id.includes('clsx') ||
+            id.includes('classnames') ||
+            id.includes('tailwind-merge')
+          ) {
+            return 'utils';
+          }
+
+          // Validation libraries
+          if (id.includes('zod')) {
+            return 'validation';
+          }
+
+          // Feature modules - keep together to avoid circular deps
+          if (id.includes('/features/item-management/')) {
+            return 'items-feature';
+          }
+
+          // Shared features
+          if (id.includes('/features/shared/')) {
+            return 'shared-features';
+          }
+
+          // API services and hooks - keep together with related components
+          if (id.includes('/services/api/')) {
+            return 'api-services';
+          }
+
+          // Catch-all for other node_modules
           if (id.includes('node_modules')) {
             return 'vendor';
           }
         },
       },
     },
-    chunkSizeWarningLimit: 500, // Lower limit to catch chunking issues early
+    chunkSizeWarningLimit: 600, // Increased slightly - some chunks need to be larger
 
-    // Optimize for better performance - updated for Vite v7
+    // Optimize for better performance
     target: ['chrome107', 'firefox104', 'safari16', 'edge107'],
     minify: 'esbuild',
-    sourcemap: false, // Disable sourcemaps in production for smaller bundle
+    sourcemap: false, // Disable sourcemaps in production
+    cssCodeSplit: true, // Split CSS by route
   },
 });
