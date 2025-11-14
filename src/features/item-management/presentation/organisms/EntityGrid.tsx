@@ -329,6 +329,16 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
               // Sync page size
               const restoredPageSize = gridApi.paginationGetPageSize();
               setCurrentPageSize(restoredPageSize);
+
+              // Restore scroll position after state is applied and data is rendered
+              // Scroll needs data to be present to work properly
+              if (parsedState.scroll) {
+                setTimeout(() => {
+                  if (!gridApi.isDestroyed()) {
+                    gridApi.setState({ scroll: parsedState.scroll });
+                  }
+                }, 100);
+              }
             });
           } catch (error) {
             console.warn('Failed to restore state on tab switch:', error);
@@ -432,7 +442,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [onGridReady, onGridApiReady]
   );
 
-  // Handle first data rendered - simple autosize logic
+  // Handle first data rendered - simple autosize logic and scroll restoration
   const handleFirstDataRendered = useCallback(
     (event: FirstDataRenderedEvent) => {
       // Use API from event to avoid stale closure issue with gridApi state
@@ -443,6 +453,25 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         // Only autosize if no saved state and auto-sizing is not prevented
         if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
           api.autoSizeAllColumns();
+        }
+
+        // Restore scroll position after data is rendered
+        // initialState restores scroll but it needs data to be present
+        const savedState = localStorage.getItem(`grid_state_${tableType}`);
+        if (savedState) {
+          try {
+            const parsedState = JSON.parse(savedState);
+            // Only restore scroll property after data is loaded
+            if (parsedState.scroll) {
+              setTimeout(() => {
+                if (!api.isDestroyed()) {
+                  api.setState({ scroll: parsedState.scroll });
+                }
+              }, 50);
+            }
+          } catch (error) {
+            console.warn('Failed to restore scroll position:', error);
+          }
         }
       }
     },
