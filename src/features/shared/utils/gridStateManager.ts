@@ -4,6 +4,14 @@ import toast from 'react-hot-toast';
 // Manual grid state management utilities
 const GRID_STATE_PREFIX = 'grid_state_';
 
+// Extended state type that includes scroll position
+export interface ExtendedGridState {
+  agGridState: GridState;
+  scrollPosition?: {
+    firstVisibleRowIndex: number;
+  };
+}
+
 export type TableType =
   | 'items'
   | 'categories'
@@ -18,7 +26,7 @@ const getStorageKey = (tableType: TableType): string => {
   return `${GRID_STATE_PREFIX}${tableType}`;
 };
 
-// Save current grid state to localStorage (including pagination state)
+// Save current grid state to localStorage (including pagination state and scroll position)
 export const saveGridState = (
   gridApi: GridApi,
   tableType: TableType
@@ -29,11 +37,22 @@ export const saveGridState = (
       return false;
     }
 
-    const currentState = gridApi.getState();
+    const agGridState = gridApi.getState();
     const storageKey = getStorageKey(tableType);
 
-    // Include pagination state for complete state persistence
-    localStorage.setItem(storageKey, JSON.stringify(currentState));
+    // Capture scroll position (first visible row index)
+    const firstVisibleRowIndex = gridApi.getFirstDisplayedRowIndex();
+
+    // Create extended state with scroll position
+    const extendedState: ExtendedGridState = {
+      agGridState,
+      scrollPosition: {
+        firstVisibleRowIndex:
+          firstVisibleRowIndex >= 0 ? firstVisibleRowIndex : 0,
+      },
+    };
+
+    localStorage.setItem(storageKey, JSON.stringify(extendedState));
 
     // toast.success(
     //   `Layout grid ${tableType} berhasil disimpan (dengan pagination)`
@@ -57,11 +76,22 @@ export const autoSaveGridState = (
       return false;
     }
 
-    const currentState = gridApi.getState();
+    const agGridState = gridApi.getState();
     const storageKey = getStorageKey(tableType);
 
-    // Include pagination state for complete state persistence
-    localStorage.setItem(storageKey, JSON.stringify(currentState));
+    // Capture scroll position (first visible row index)
+    const firstVisibleRowIndex = gridApi.getFirstDisplayedRowIndex();
+
+    // Create extended state with scroll position
+    const extendedState: ExtendedGridState = {
+      agGridState,
+      scrollPosition: {
+        firstVisibleRowIndex:
+          firstVisibleRowIndex >= 0 ? firstVisibleRowIndex : 0,
+      },
+    };
+
+    localStorage.setItem(storageKey, JSON.stringify(extendedState));
 
     return true;
   } catch (error) {
@@ -70,7 +100,7 @@ export const autoSaveGridState = (
   }
 };
 
-// Restore grid state from localStorage (including pagination state)
+// Restore grid state from localStorage (including pagination state and scroll position)
 export const restoreGridState = (
   gridApi: GridApi,
   tableType: TableType
@@ -100,7 +130,7 @@ export const restoreGridState = (
       return false;
     }
 
-    let parsedState: GridState;
+    let parsedState: ExtendedGridState | GridState;
     try {
       parsedState = JSON.parse(savedState);
     } catch (parseError) {
@@ -117,14 +147,20 @@ export const restoreGridState = (
       return false;
     }
 
+    // Support both old format (GridState) and new format (ExtendedGridState)
+    const agGridState: GridState =
+      'agGridState' in parsedState ? parsedState.agGridState : parsedState;
+    const scrollPosition =
+      'scrollPosition' in parsedState ? parsedState.scrollPosition : undefined;
+
     // setState handles full state restoration including column order, sizing, and sort
     // Per AG Grid v34 docs: setState() includes columnOrder, columnSizing, and sort properties
     // No need for additional applyColumnState() call which would overwrite sort state
-    gridApi.setState(parsedState);
+    gridApi.setState(agGridState);
 
     // Only autosize if no column widths were restored (prevent flickering)
     const hasColumnWidths =
-      (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
+      (agGridState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
     if (!hasColumnWidths) {
       // Use requestAnimationFrame to ensure grid is ready for autosizing
       requestAnimationFrame(() => {
@@ -132,6 +168,19 @@ export const restoreGridState = (
           gridApi.autoSizeAllColumns();
         }
       });
+    }
+
+    // Restore scroll position after grid state is applied
+    if (scrollPosition && scrollPosition.firstVisibleRowIndex >= 0) {
+      // Use setTimeout to ensure grid has finished rendering after setState
+      setTimeout(() => {
+        if (!gridApi.isDestroyed()) {
+          gridApi.ensureIndexVisible(
+            scrollPosition.firstVisibleRowIndex,
+            'top'
+          );
+        }
+      }, 100);
     }
 
     // toast.success('Grid state telah dipulihkan (dengan pagination)');
@@ -171,6 +220,7 @@ export const hasSavedState = (tableType: TableType): boolean => {
 };
 
 // Load saved state for auto-restore on grid initialization
+// Returns only AG Grid state (without scroll position, which is restored separately)
 export const loadSavedStateForInit = (
   tableType: TableType
 ): GridState | undefined => {
@@ -193,7 +243,7 @@ export const loadSavedStateForInit = (
       return undefined;
     }
 
-    let parsedState: GridState;
+    let parsedState: ExtendedGridState | GridState;
     try {
       parsedState = JSON.parse(savedState);
     } catch (parseError) {
@@ -206,14 +256,59 @@ export const loadSavedStateForInit = (
       return undefined;
     }
 
-    // Include pagination state for complete auto-restore
-    return parsedState;
+    // Support both old format (GridState) and new format (ExtendedGridState)
+    // Return only AG Grid state for initialState prop
+    const agGridState: GridState =
+      'agGridState' in parsedState ? parsedState.agGridState : parsedState;
+
+    return agGridState;
   } catch (error) {
     console.error(
       `Failed to load saved state for auto-restore (${tableType}):`,
       error
     );
     return undefined;
+  }
+};
+
+// Restore only scroll position from saved state
+// Call this after grid is fully ready and data is loaded
+export const restoreScrollPosition = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
+  try {
+    if (!gridApi || gridApi.isDestroyed()) {
+      return false;
+    }
+
+    const storageKey = getStorageKey(tableType);
+    const savedState = localStorage.getItem(storageKey);
+
+    if (!savedState) {
+      return false;
+    }
+
+    let parsedState: ExtendedGridState | GridState;
+    try {
+      parsedState = JSON.parse(savedState);
+    } catch {
+      return false;
+    }
+
+    // Check if we have scroll position in extended state format
+    if ('scrollPosition' in parsedState && parsedState.scrollPosition) {
+      const { firstVisibleRowIndex } = parsedState.scrollPosition;
+      if (firstVisibleRowIndex >= 0) {
+        gridApi.ensureIndexVisible(firstVisibleRowIndex, 'top');
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Failed to restore scroll position:', error);
+    return false;
   }
 };
 
