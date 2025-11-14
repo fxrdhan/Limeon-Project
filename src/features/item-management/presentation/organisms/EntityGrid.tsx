@@ -618,6 +618,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     debouncedAutoSave();
   }, [debouncedAutoSave]);
 
+  const handleBodyScroll = useCallback(() => {
+    // Auto-save when user scrolls - debounced to avoid excessive saves
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
+
   // Handle row group opened/closed - scroll child rows into view + autosize
   const handleRowGroupOpened = useCallback(
     (event: RowGroupOpenedEvent<ItemWithExtendedEntities | EntityData>) => {
@@ -842,6 +847,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           onFilterChanged={handleFilterChanged}
           onDisplayedColumnsChanged={handleDisplayedColumnsChanged}
           onColumnRowGroupChanged={handleColumnRowGroupChanged}
+          onBodyScroll={handleBodyScroll}
           // Auto-restore now handled via restoreGridState function in onFirstDataRendered
           rowNumbers={true}
           domLayout="normal"
