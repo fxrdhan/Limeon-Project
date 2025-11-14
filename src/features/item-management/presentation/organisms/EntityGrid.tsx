@@ -162,6 +162,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   );
 
   // Load initial grid state for AG Grid's initialState prop
+  // Simple approach: load full state including filters
   const initialGridState = useMemo(() => {
     const tableType = activeTab as TableType;
     const savedState = localStorage.getItem(`grid_state_${tableType}`);
@@ -313,9 +314,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             requestAnimationFrame(() => {
               if (gridApi.isDestroyed()) return;
 
-              // setState handles full state restoration including column order, sizing, and sort
-              // Per AG Grid v34 docs: setState() includes columnOrder, columnSizing, and sort properties
-              // No need for additional applyColumnState() call which would overwrite sort state
+              // Simple approach: restore full state including filters
               gridApi.setState(parsedState);
 
               // Only autosize if no column widths were restored
@@ -431,26 +430,37 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [onGridReady, onGridApiReady]
   );
 
-  // Handle first data rendered - simplified since initialState handles restoration
-  const handleFirstDataRendered = useCallback(() => {
-    if (gridApi && !gridApi.isDestroyed()) {
-      const tableType = activeTab as TableType;
+  // Handle first data rendered - simple autosize logic
+  const handleFirstDataRendered = useCallback(
+    event => {
+      // Use API from event to avoid stale closure issue with gridApi state
+      const api = event.api;
+      if (api && !api.isDestroyed()) {
+        const tableType = activeTab as TableType;
 
-      // Only autosize if no saved state and auto-sizing is not prevented
-      if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
-        gridApi.autoSizeAllColumns();
+        // Only autosize if no saved state and auto-sizing is not prevented
+        if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
+          api.autoSizeAllColumns();
+        }
       }
-    }
-  }, [gridApi, activeTab]);
+    },
+    [activeTab]
+  );
 
   // Track data length for realtime sync detection
-  const handleRowDataUpdated = useCallback(() => {
-    if (gridApi && !gridApi.isDestroyed()) {
-      const currentDataLength = gridApi.getDisplayedRowCount();
-      // Update previous data length for stability tracking
-      previousDataLengthRef.current = currentDataLength;
-    }
-  }, [gridApi]);
+  const handleRowDataUpdated = useCallback(
+    event => {
+      // Use API from event to avoid stale closure issue with gridApi state
+      const api = event?.api || gridApi;
+      if (api && !api.isDestroyed()) {
+        const currentDataLength = api.getDisplayedRowCount();
+
+        // Update previous data length for stability tracking
+        previousDataLengthRef.current = currentDataLength;
+      }
+    },
+    [gridApi]
+  );
 
   // 🎯 Mark grid as stable after initial load + realtime sync setup delay
   // This prevents scroll restoration during realtime sync query invalidation

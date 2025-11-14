@@ -41,21 +41,11 @@ export const useItemGridColumns = () => {
           headerName: 'Produsen',
           valueGetter: params => params.data?.manufacturer?.name || '-',
         }),
-        filter: 'agSelectableColumnFilter',
+        filter: 'agMultiColumnFilter',
         filterParams: {
           filters: [
-            {
-              filter: 'agTextColumnFilter', // Simple Filter (text filter)
-              name: 'Simple Filter',
-            },
-            {
-              filter: 'agSetColumnFilter', // Selection Filter (set filter)
-              name: 'Selection Filter',
-            },
-            {
-              filter: 'agMultiColumnFilter', // Multi Filter
-              name: 'Multi Filter',
-            },
+            { filter: 'agTextColumnFilter' },
+            { filter: 'agSetColumnFilter' },
           ],
         },
         suppressHeaderFilterButton: true,
@@ -110,21 +100,11 @@ export const useItemGridColumns = () => {
           field: 'category.name',
           headerName: 'Kategori',
         }),
-        filter: 'agSelectableColumnFilter',
+        filter: 'agMultiColumnFilter',
         filterParams: {
           filters: [
-            {
-              filter: 'agTextColumnFilter', // Simple Filter (text filter)
-              name: 'Simple Filter',
-            },
-            {
-              filter: 'agSetColumnFilter', // Selection Filter (set filter)
-              name: 'Selection Filter',
-            },
-            {
-              filter: 'agMultiColumnFilter', // Multi Filter
-              name: 'Multi Filter',
-            },
+            { filter: 'agTextColumnFilter' },
+            { filter: 'agSetColumnFilter' },
           ],
         },
         suppressHeaderFilterButton: true,
@@ -135,21 +115,11 @@ export const useItemGridColumns = () => {
           field: 'type.name',
           headerName: 'Jenis',
         }),
-        filter: 'agSelectableColumnFilter',
+        filter: 'agMultiColumnFilter',
         filterParams: {
           filters: [
-            {
-              filter: 'agTextColumnFilter', // Simple Filter (text filter)
-              name: 'Simple Filter',
-            },
-            {
-              filter: 'agSetColumnFilter', // Selection Filter (set filter)
-              name: 'Selection Filter',
-            },
-            {
-              filter: 'agMultiColumnFilter', // Multi Filter
-              name: 'Multi Filter',
-            },
+            { filter: 'agTextColumnFilter' },
+            { filter: 'agSetColumnFilter' },
           ],
         },
         suppressHeaderFilterButton: true,
@@ -160,21 +130,11 @@ export const useItemGridColumns = () => {
           field: 'package.name',
           headerName: 'Kemasan',
         }),
-        filter: 'agSelectableColumnFilter',
+        filter: 'agMultiColumnFilter',
         filterParams: {
           filters: [
-            {
-              filter: 'agTextColumnFilter', // Simple Filter (text filter)
-              name: 'Simple Filter',
-            },
-            {
-              filter: 'agSetColumnFilter', // Selection Filter (set filter)
-              name: 'Selection Filter',
-            },
-            {
-              filter: 'agMultiColumnFilter', // Multi Filter
-              name: 'Multi Filter',
-            },
+            { filter: 'agTextColumnFilter' },
+            { filter: 'agSetColumnFilter' },
           ],
         },
         suppressHeaderFilterButton: true,
@@ -187,21 +147,11 @@ export const useItemGridColumns = () => {
 
           valueGetter: params => params.data?.dosage?.name || '-',
         }),
-        filter: 'agSelectableColumnFilter',
+        filter: 'agMultiColumnFilter',
         filterParams: {
           filters: [
-            {
-              filter: 'agTextColumnFilter', // Simple Filter (text filter)
-              name: 'Simple Filter',
-            },
-            {
-              filter: 'agSetColumnFilter', // Selection Filter (set filter)
-              name: 'Selection Filter',
-            },
-            {
-              filter: 'agMultiColumnFilter', // Multi Filter
-              name: 'Multi Filter',
-            },
+            { filter: 'agTextColumnFilter' },
+            { filter: 'agSetColumnFilter' },
           ],
         },
         suppressHeaderFilterButton: true,

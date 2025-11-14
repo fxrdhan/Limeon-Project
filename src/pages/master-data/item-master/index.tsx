@@ -26,7 +26,6 @@ import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
-import { analyzeGridFilter } from '@/utils/gridFilterSync';
 
 // Entity management hooks
 import {
@@ -168,10 +167,6 @@ const ItemMasterNew = memo(() => {
 
   // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
   const isTabSwitchingRef = useRef(false);
-
-  // 🔁 Two-way sync: Grid filter → SearchBar
-  const isGridFilterSyncingRef = useRef(false); // Prevent cascade loop
-  const isSearchbarFocusedRef = useRef(false); // Track if user is actively typing
 
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
@@ -415,25 +410,11 @@ const ItemMasterNew = memo(() => {
         return;
       }
 
-      // 🔁 Block cascade during grid-to-searchbar sync
-      if (isGridFilterSyncingRef.current) {
-        console.log(
-          '🔁 Blocked grid filter change during grid-to-searchbar sync'
-        );
-        return;
-      }
-
-      // Set flag to prevent sync back from grid
-      isGridFilterSyncingRef.current = true;
-
       if (!filterSearch) {
         if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
           unifiedGridApi.setFilterModel(null);
           unifiedGridApi.onFilterChanged();
         }
-        setTimeout(() => {
-          isGridFilterSyncingRef.current = false;
-        }, 100);
         return;
       }
 
@@ -458,10 +439,6 @@ const ItemMasterNew = memo(() => {
           console.error('Failed to apply filter:', error);
         }
       }
-
-      setTimeout(() => {
-        isGridFilterSyncingRef.current = false;
-      }, 100);
     },
     [unifiedGridApi]
   );
@@ -473,7 +450,6 @@ const ItemMasterNew = memo(() => {
 
   const {
     search: itemSearch,
-    setSearch: setItemSearch,
     onGridReady: itemOnGridReady,
     isExternalFilterPresent: itemIsExternalFilterPresent,
     doesExternalFilterPass: itemDoesExternalFilterPass,
@@ -517,25 +493,11 @@ const ItemMasterNew = memo(() => {
         return;
       }
 
-      // 🔁 Block cascade during grid-to-searchbar sync
-      if (isGridFilterSyncingRef.current) {
-        console.log(
-          '🔁 Blocked grid filter change during grid-to-searchbar sync'
-        );
-        return;
-      }
-
-      // Set flag to prevent sync back from grid
-      isGridFilterSyncingRef.current = true;
-
       if (!filterSearch) {
         if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
           unifiedGridApi.setFilterModel(null);
           unifiedGridApi.onFilterChanged();
         }
-        setTimeout(() => {
-          isGridFilterSyncingRef.current = false;
-        }, 100);
         return;
       }
 
@@ -577,17 +539,12 @@ const ItemMasterNew = memo(() => {
           console.error('Failed to apply entity filter:', error);
         }
       }
-
-      setTimeout(() => {
-        isGridFilterSyncingRef.current = false;
-      }, 100);
     },
     [unifiedGridApi]
   );
 
   const {
     search: entitySearch,
-    setSearch: setEntitySearch,
     onGridReady: entityOnGridReady,
     isExternalFilterPresent: entityIsExternalFilterPresent,
     doesExternalFilterPass: entityDoesExternalFilterPass,
@@ -602,87 +559,6 @@ const ItemMasterNew = memo(() => {
     onClear: () => entityManager.handleSearch(''),
     onFilterSearch: handleEntityFilterSearch,
   });
-
-  // 🔁 Two-way sync: Handle grid filter changes and sync to SearchBar
-  const handleGridFilterChanged = useCallback(
-    (filterModel: import('ag-grid-community').FilterModel) => {
-      // Skip if we're currently syncing FROM searchbar TO grid (prevent loop)
-      if (isGridFilterSyncingRef.current) {
-        return;
-      }
-
-      // 🔒 Block sync if user is actively typing in searchbar
-      if (isSearchbarFocusedRef.current) {
-        console.log('🔒 Blocked grid→searchbar sync: user is typing');
-        return;
-      }
-
-      // Analyze filter model
-      const analysis = analyzeGridFilter(filterModel);
-
-      // If simple filter, sync badge pattern to SearchBar
-      if (analysis.isSimple && analysis.badgePattern) {
-        // Set flag to prevent cascade
-        isGridFilterSyncingRef.current = true;
-
-        // Update searchbar value based on active tab
-        if (activeTab === 'items') {
-          setItemSearch(analysis.badgePattern);
-        } else {
-          setEntitySearch(analysis.badgePattern);
-        }
-
-        // Unlock after state update completes
-        setTimeout(() => {
-          isGridFilterSyncingRef.current = false;
-        }, 100);
-      } else if (!analysis.isSimple && !analysis.badgePattern) {
-        // Complex filter or no filter - clear searchbar badge
-        // Set flag to prevent cascade when clearing SearchBar triggers onFilterSearch(null)
-        isGridFilterSyncingRef.current = true;
-
-        if (activeTab === 'items') {
-          setItemSearch('');
-        } else {
-          setEntitySearch('');
-        }
-
-        // Unlock after state update completes
-        setTimeout(() => {
-          isGridFilterSyncingRef.current = false;
-        }, 100);
-      }
-    },
-    [setItemSearch, setEntitySearch, activeTab]
-  );
-
-  // Focus/blur handlers for searchbar to track typing state
-  const handleSearchbarFocus = useCallback(() => {
-    isSearchbarFocusedRef.current = true;
-  }, []);
-
-  const handleSearchbarBlur = useCallback(() => {
-    isSearchbarFocusedRef.current = false;
-  }, []);
-
-  // Enhanced searchBarProps with focus/blur handlers
-  const enhancedItemSearchBarProps = useMemo(
-    () => ({
-      ...itemSearchBarProps,
-      onFocus: handleSearchbarFocus,
-      onBlur: handleSearchbarBlur,
-    }),
-    [itemSearchBarProps, handleSearchbarFocus, handleSearchbarBlur]
-  );
-
-  const enhancedEntitySearchBarProps = useMemo(
-    () => ({
-      ...entitySearchBarProps,
-      onFocus: handleSearchbarFocus,
-      onBlur: handleSearchbarBlur,
-    }),
-    [entitySearchBarProps, handleSearchbarFocus, handleSearchbarBlur]
-  );
 
   // Cleanup grid API reference and pending tab changes on unmount
   useEffect(() => {
@@ -930,8 +806,8 @@ const ItemMasterNew = memo(() => {
               }
               searchBarProps={
                 activeTab === 'items'
-                  ? enhancedItemSearchBarProps
-                  : enhancedEntitySearchBarProps
+                  ? itemSearchBarProps
+                  : entitySearchBarProps
               }
               search={activeTab === 'items' ? itemSearch : entitySearch}
               placeholder={
@@ -1015,7 +891,6 @@ const ItemMasterNew = memo(() => {
                 : entityDoesExternalFilterPass
             }
             onGridApiReady={handleUnifiedGridApiReady}
-            onFilterChanged={handleGridFilterChanged}
             itemsPerPage={itemsManagement.itemsPerPage}
             isRowGroupingEnabled={
               activeTab === 'items' ? isRowGroupingEnabled : false
