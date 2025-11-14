@@ -28,6 +28,7 @@ import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 import {
   autoSaveGridState,
   hasSavedState,
+  restoreScrollPosition,
   type TableType,
 } from '@/features/shared/utils/gridStateManager';
 
@@ -316,12 +317,18 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             requestAnimationFrame(() => {
               if (gridApi.isDestroyed()) return;
 
+              // Support both old format (GridState) and new format (ExtendedGridState)
+              const agGridState =
+                'agGridState' in parsedState
+                  ? parsedState.agGridState
+                  : parsedState;
+
               // Simple approach: restore full state including filters
-              gridApi.setState(parsedState);
+              gridApi.setState(agGridState);
 
               // Only autosize if no column widths were restored
               const hasColumnWidths =
-                (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
+                (agGridState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
               if (!hasColumnWidths) {
                 gridApi.autoSizeAllColumns();
               }
@@ -329,6 +336,13 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
               // Sync page size
               const restoredPageSize = gridApi.paginationGetPageSize();
               setCurrentPageSize(restoredPageSize);
+
+              // Restore scroll position after state is applied and grid is ready
+              setTimeout(() => {
+                if (!gridApi.isDestroyed()) {
+                  restoreScrollPosition(gridApi, tableType);
+                }
+              }, 150);
             });
           } catch (error) {
             console.warn('Failed to restore state on tab switch:', error);
@@ -444,6 +458,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         if (!hasSavedState(tableType) && !shouldPreventAutoSize.current) {
           api.autoSizeAllColumns();
         }
+
+        // Restore scroll position after first data render
+        // Use timeout to ensure grid has finished rendering
+        setTimeout(() => {
+          if (!api.isDestroyed()) {
+            restoreScrollPosition(api, tableType);
+          }
+        }, 150);
       }
     },
     [activeTab]
