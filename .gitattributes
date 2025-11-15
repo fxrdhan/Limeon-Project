@@ -29,6 +29,7 @@ README* linguist-documentation
 
 # Config files (exclude from language stats)
 *.config.js linguist-vendored
+*.config.mjs linguist-vendored
 *.config.ts linguist-vendored
 tsconfig*.json linguist-vendored
 package.json linguist-vendored
