@@ -15,7 +15,6 @@ function BaseSelector<T>({
   config,
 }: BaseSelectorProps<T>) {
   // Removed filteredItems state - will derive it with useMemo instead
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [showHeader, setShowHeader] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -29,6 +28,55 @@ function BaseSelector<T>({
     width: 0,
     height: 0,
   });
+
+  const searchFieldsConfig = useMemo(() => {
+    if (items.length === 0) return [];
+    return config.getSearchFields(items[0]);
+  }, [items, config]);
+
+  // Derive filteredItems using useMemo instead of effect + state
+  const filteredItems = useMemo(() => {
+    if (searchTerm && items.length > 0) {
+      const searchTargets = items.map(item => {
+        const searchFields = config.getSearchFields(item);
+        return {
+          item,
+          ...searchFields.reduce(
+            (acc, field) => ({ ...acc, [field.key]: field.value }),
+            {}
+          ),
+        };
+      });
+
+      const allResults = new Map<string, { item: T; score: number }>();
+
+      searchFieldsConfig.forEach(fieldConfig => {
+        const results = fuzzysort.go(searchTerm, searchTargets, {
+          key: fieldConfig.key,
+          threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
+        });
+
+        results.forEach(result => {
+          const itemKey = config.getItemKey(result.obj.item);
+          const boost = fieldConfig.boost || 0;
+          const currentBest = allResults.get(itemKey);
+
+          if (!currentBest || result.score + boost > currentBest.score) {
+            allResults.set(itemKey, {
+              item: result.obj.item,
+              score: result.score + boost,
+            });
+          }
+        });
+      });
+
+      return Array.from(allResults.values())
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.item);
+    } else {
+      return items;
+    }
+  }, [searchTerm, items, searchFieldsConfig, config]);
 
   // Use getDerivedStateFromProps pattern to manage selectedIndex resets
   const [indexState, setIndexState] = useState({
@@ -92,55 +140,6 @@ function BaseSelector<T>({
       }, 200);
     }
   }, [isOpen, showHeader, showContent]);
-
-  const searchFieldsConfig = useMemo(() => {
-    if (items.length === 0) return [];
-    return config.getSearchFields(items[0]);
-  }, [items, config]);
-
-  // Derive filteredItems using useMemo instead of effect + state
-  const filteredItems = useMemo(() => {
-    if (searchTerm && items.length > 0) {
-      const searchTargets = items.map(item => {
-        const searchFields = config.getSearchFields(item);
-        return {
-          item,
-          ...searchFields.reduce(
-            (acc, field) => ({ ...acc, [field.key]: field.value }),
-            {}
-          ),
-        };
-      });
-
-      const allResults = new Map<string, { item: T; score: number }>();
-
-      searchFieldsConfig.forEach(fieldConfig => {
-        const results = fuzzysort.go(searchTerm, searchTargets, {
-          key: fieldConfig.key,
-          threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
-        });
-
-        results.forEach(result => {
-          const itemKey = config.getItemKey(result.obj.item);
-          const boost = fieldConfig.boost || 0;
-          const currentBest = allResults.get(itemKey);
-
-          if (!currentBest || result.score + boost > currentBest.score) {
-            allResults.set(itemKey, {
-              item: result.obj.item,
-              score: result.score + boost,
-            });
-          }
-        });
-      });
-
-      return Array.from(allResults.values())
-        .sort((a, b) => b.score - a.score)
-        .map(item => item.item);
-    } else {
-      return items;
-    }
-  }, [searchTerm, items, searchFieldsConfig, config]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
