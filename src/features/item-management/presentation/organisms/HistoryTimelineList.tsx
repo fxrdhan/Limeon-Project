@@ -256,9 +256,21 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     canScrollUp: false,
     canScrollDown: false,
   });
-  const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>(
-    []
-  );
+  // Use getDerivedStateFromProps to reset selectedForCompare when allowMultiSelect changes
+  const [compareState, setCompareState] = useState<{
+    allowMultiSelect: boolean;
+    selected: HistoryItem[];
+  }>({
+    allowMultiSelect: false,
+    selected: [],
+  });
+  if (allowMultiSelect !== compareState.allowMultiSelect) {
+    setCompareState({ allowMultiSelect, selected: [] });
+  }
+  const selectedForCompare = compareState.selected;
+  const setSelectedForCompare = (items: HistoryItem[]) => {
+    setCompareState(prev => ({ ...prev, selected: items }));
+  };
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -334,10 +346,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     };
   }, [history]);
 
-  // Clear selection state when allowMultiSelect changes
-  useEffect(() => {
-    setSelectedForCompare([]);
-  }, [allowMultiSelect]);
+  // selectedForCompare auto-resets when allowMultiSelect changes (getDerivedStateFromProps pattern)
 
   // Cleanup hover timeout on unmount
   useEffect(() => {

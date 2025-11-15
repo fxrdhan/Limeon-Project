@@ -324,28 +324,31 @@ const Sidebar = ({
   }, []);
 
   useEffect(() => {
-    setManuallyClosedMenus(new Set());
+    // Use setTimeout to avoid synchronous setState in effect
+    setTimeout(() => {
+      setManuallyClosedMenus(new Set());
 
-    if (!collapsed) {
-      setOpenMenus(prev => {
-        const newOpenMenus = { ...prev };
-        let hasChanges = false;
+      if (!collapsed) {
+        setOpenMenus(prev => {
+          const newOpenMenus = { ...prev };
+          let hasChanges = false;
 
-        menuItems.forEach(item => {
-          if (item.children) {
-            const menuKey = item.name.toLowerCase().replace(' ', '');
-            const shouldBeOpen =
-              isActive(item.path) || hasActiveChild(item.children);
-            if (newOpenMenus[menuKey] !== shouldBeOpen) {
-              newOpenMenus[menuKey] = shouldBeOpen;
-              hasChanges = true;
+          menuItems.forEach(item => {
+            if (item.children) {
+              const menuKey = item.name.toLowerCase().replace(' ', '');
+              const shouldBeOpen =
+                isActive(item.path) || hasActiveChild(item.children);
+              if (newOpenMenus[menuKey] !== shouldBeOpen) {
+                newOpenMenus[menuKey] = shouldBeOpen;
+                hasChanges = true;
+              }
             }
-          }
-        });
+          });
 
-        return hasChanges ? newOpenMenus : prev;
-      });
-    }
+          return hasChanges ? newOpenMenus : prev;
+        });
+      }
+    }, 0);
   }, [location.pathname, collapsed, isActive, hasActiveChild, menuItems]);
 
   // Get active submenu item for smooth indicator positioning

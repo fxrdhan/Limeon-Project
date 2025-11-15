@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo } from 'react';
+import { useRef, useCallback, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 interface UseSmartFormSyncProps {
@@ -18,9 +18,11 @@ export const useSmartFormSync = ({
   const onDataUpdateRef = useRef(onDataUpdate);
   const showConflictNotificationRef = useRef(showConflictNotification);
 
-  // Update refs when props change
-  onDataUpdateRef.current = onDataUpdate;
-  showConflictNotificationRef.current = showConflictNotification;
+  // Update refs when props change (in effect to avoid render-time access)
+  useEffect(() => {
+    onDataUpdateRef.current = onDataUpdate;
+    showConflictNotificationRef.current = showConflictNotification;
+  }, [onDataUpdate, showConflictNotification]);
 
   // Track which fields are currently being interacted with
   const activeFieldsRef = useRef<Set<string>>(new Set());

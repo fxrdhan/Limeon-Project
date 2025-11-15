@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { EnhancedSearchState, SearchColumn, FilterSearch } from '../types';
 import { parseSearchValue } from '../utils/searchUtils';
 import { SEARCH_CONSTANTS } from '../constants';
@@ -16,11 +16,10 @@ export const useSearchState = ({
   onGlobalSearch,
   onFilterSearch,
 }: UseSearchStateProps) => {
-  const [searchMode, setSearchMode] = useState<EnhancedSearchState>({
-    showColumnSelector: false,
-    showOperatorSelector: false,
-    isFilterMode: false,
-  });
+  // Derive searchMode from value instead of using state + effect
+  const searchMode = useMemo<EnhancedSearchState>(() => {
+    return parseSearchValue(value, columns);
+  }, [value, columns]);
 
   const prevValueRef = useRef<string>('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,9 +43,6 @@ export const useSearchState = ({
   }, []);
 
   useEffect(() => {
-    const newMode = parseSearchValue(value, columns);
-    setSearchMode(newMode);
-
     if (value === '' || value.trim() === '') {
       onGlobalSearchRef.current?.('');
       onFilterSearchRef.current?.(null);
@@ -58,8 +54,8 @@ export const useSearchState = ({
 
     if (!hasStateChanged) return;
 
-    if (newMode.isFilterMode && newMode.filterSearch) {
-      const filterValue = newMode.filterSearch.value.trim();
+    if (searchMode.isFilterMode && searchMode.filterSearch) {
+      const filterValue = searchMode.filterSearch.value.trim();
 
       if (filterValue === '') {
         if (debounceTimerRef.current) {
@@ -69,25 +65,28 @@ export const useSearchState = ({
         onFilterSearchRef.current?.(null);
         onGlobalSearchRef.current?.('');
       } else {
-        debouncedFilterUpdate(newMode.filterSearch);
+        debouncedFilterUpdate(searchMode.filterSearch);
       }
     } else if (
-      !newMode.showColumnSelector &&
-      !newMode.showOperatorSelector &&
-      !newMode.isFilterMode &&
-      newMode.globalSearch !== undefined &&
-      newMode.globalSearch.trim() !== '' &&
-      !newMode.globalSearch.startsWith('#')
+      !searchMode.showColumnSelector &&
+      !searchMode.showOperatorSelector &&
+      !searchMode.isFilterMode &&
+      searchMode.globalSearch !== undefined &&
+      searchMode.globalSearch.trim() !== '' &&
+      !searchMode.globalSearch.startsWith('#')
     ) {
-      onGlobalSearchRef.current?.(newMode.globalSearch);
+      onGlobalSearchRef.current?.(searchMode.globalSearch);
       onFilterSearchRef.current?.(null);
-    } else if (newMode.showColumnSelector || newMode.showOperatorSelector) {
+    } else if (
+      searchMode.showColumnSelector ||
+      searchMode.showOperatorSelector
+    ) {
       onGlobalSearchRef.current?.('');
       onFilterSearchRef.current?.(null);
     }
 
     prevValueRef.current = value;
-  }, [value, columns, debouncedFilterUpdate]);
+  }, [value, columns, debouncedFilterUpdate, searchMode]);
 
   useEffect(() => {
     return () => {
@@ -99,6 +98,5 @@ export const useSearchState = ({
 
   return {
     searchMode,
-    setSearchMode,
   };
 };

@@ -34,7 +34,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const memoizedColumns = useMemo(() => columns, [columns]);
 
-  const { searchMode, setSearchMode } = useSearchState({
+  const { searchMode } = useSearchState({
     value,
     columns: memoizedColumns,
     onGlobalSearch,
@@ -74,13 +74,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       onChange({
         target: { value: newValue },
       } as React.ChangeEvent<HTMLInputElement>);
-      setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
+      // searchMode will auto-update when value changes
 
       setTimeout(() => {
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
-    [onChange, inputRef, setSearchMode]
+    [onChange, inputRef]
   );
 
   const handleOperatorSelect = useCallback(
@@ -92,19 +92,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
-        setSearchMode(prev => ({ ...prev, showOperatorSelector: false }));
+        // searchMode will auto-update when value changes
 
         setTimeout(() => {
           inputRef?.current?.focus();
         }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
       }
     },
-    [value, onChange, inputRef, setSearchMode]
+    [value, onChange, inputRef]
   );
 
   const handleCloseColumnSelector = useCallback(() => {
-    setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
-
+    // searchMode is derived, so we close by clearing the value
     if (value.startsWith('#') && !searchMode.selectedColumn) {
       const searchTerm = value.substring(1);
       const exactMatch = findColumn(memoizedColumns, searchTerm);
@@ -125,12 +124,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     memoizedColumns,
     onClearSearch,
     onChange,
-    setSearchMode,
   ]);
 
   const handleCloseOperatorSelector = useCallback(() => {
-    setSearchMode(prev => ({ ...prev, showOperatorSelector: false }));
-
+    // searchMode is derived, so we close by modifying the value
     if (searchMode.selectedColumn) {
       const newValue = buildColumnValue(
         searchMode.selectedColumn.field,
@@ -148,7 +145,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
       }
     }
-  }, [searchMode.selectedColumn, onChange, onClearSearch, setSearchMode]);
+  }, [searchMode.selectedColumn, onChange, onClearSearch]);
 
   const handleClearTargeted = useCallback(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {

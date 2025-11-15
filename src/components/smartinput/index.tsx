@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SmartInputProps
@@ -41,14 +41,27 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
-    const [localValue, setLocalValue] = useState(value);
 
-    // Sync local value with prop value when not focused
-    useEffect(() => {
-      if (!isFocused) {
-        setLocalValue(value);
-      }
-    }, [value, isFocused]);
+    // Use getDerivedStateFromProps pattern to sync localValue when not focused
+    const [inputState, setInputState] = useState({
+      isFocused: false,
+      value,
+      localValue: value,
+    });
+    if (
+      isFocused !== inputState.isFocused ||
+      (!isFocused && value !== inputState.value)
+    ) {
+      setInputState({
+        isFocused,
+        value,
+        localValue: isFocused ? inputState.localValue : value,
+      });
+    }
+    const localValue = inputState.localValue;
+    const setLocalValue = (newValue: string) => {
+      setInputState(prev => ({ ...prev, localValue: newValue }));
+    };
 
     // Get field handlers from smart form sync
     const fieldHandlers = smartFormSync?.getFieldHandlers(fieldName);

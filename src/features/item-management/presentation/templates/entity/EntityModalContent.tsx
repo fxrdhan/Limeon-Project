@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/button';
 import { FaHistory, FaArrowLeft } from 'react-icons/fa';
@@ -152,24 +152,21 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   const { ui, uiActions } = useEntityModal();
   const { mode } = ui;
   const [compareMode, setCompareMode] = useState(false);
-  const prevModeRef = useRef<string | null>(null);
-  const hasModeChangedRef = useRef(false);
-
-  // Track direction based on mode transition
-  useEffect(() => {
-    if (prevModeRef.current === null) {
-      // First render - initialize without marking as changed
-      prevModeRef.current = mode;
-      return;
-    }
-
-    // Mode has actually changed
-    if (prevModeRef.current !== mode) {
-      hasModeChangedRef.current = true;
-    }
-
-    prevModeRef.current = mode;
-  }, [mode]);
+  // Use getDerivedStateFromProps to track mode changes
+  const [modeTracker, setModeTracker] = useState<{
+    mode: string;
+    prevMode: string | null;
+    hasChanged: boolean;
+  }>({
+    mode,
+    prevMode: null,
+    hasChanged: false,
+  });
+  if (mode !== modeTracker.mode) {
+    const hasChanged = modeTracker.prevMode !== null;
+    setModeTracker({ mode, prevMode: modeTracker.mode, hasChanged });
+  }
+  const hasModeChanged = modeTracker.hasChanged;
 
   // Determine animation variants based on current mode
   // History: always slide from/to right
@@ -212,7 +209,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   // Consistent width for all entity modals
   const modalWidth = 'w-[340px]';
 
-  const hasAnimated = hasModeChangedRef.current;
+  const hasAnimated = hasModeChanged;
 
   return (
     <motion.div

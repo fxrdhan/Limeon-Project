@@ -28,10 +28,42 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-    const [applyOpenStyles, setApplyOpenStyles] = useState(false);
     const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
     const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
-    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+
+    // Use getDerivedStateFromProps pattern to reset applyOpenStyles when isOpen changes
+    const [openState, setOpenState] = useState({
+      isOpen: false,
+      applyOpenStyles: false,
+    });
+    if (isOpen !== openState.isOpen) {
+      setOpenState({ isOpen, applyOpenStyles: false });
+    }
+    const applyOpenStyles = openState.applyOpenStyles;
+    const setApplyOpenStyles = (value: boolean) => {
+      setOpenState(prev => ({ ...prev, applyOpenStyles: value }));
+    };
+
+    // Use getDerivedStateFromProps to reset highlightedIndex when isOpen or filteredItems changes
+    const [highlightState, setHighlightState] = useState({
+      isOpen: false,
+      filteredLength: 0,
+      highlightedIndex: -1,
+    });
+    if (
+      isOpen !== highlightState.isOpen ||
+      filteredItems.length !== highlightState.filteredLength
+    ) {
+      setHighlightState({
+        isOpen,
+        filteredLength: filteredItems.length,
+        highlightedIndex: isOpen && filteredItems.length > 0 ? 0 : -1,
+      });
+    }
+    const highlightedIndex = highlightState.highlightedIndex;
+    const setHighlightedIndex = (index: number) => {
+      setHighlightState(prev => ({ ...prev, highlightedIndex: index }));
+    };
 
     const searchBarRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -114,9 +146,8 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
             }
           });
         }, 20);
-      } else {
-        setApplyOpenStyles(false);
       }
+      // applyOpenStyles auto-resets when isOpen changes (getDerivedStateFromProps pattern)
       return () => {
         if (openStyleTimerId) clearTimeout(openStyleTimerId);
       };
@@ -163,13 +194,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       };
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
-    useEffect(() => {
-      if (isOpen && filteredItems.length > 0) {
-        setHighlightedIndex(0);
-      } else {
-        setHighlightedIndex(-1);
-      }
-    }, [filteredItems, isOpen]);
+    // highlightedIndex is now derived from isOpen and filteredItems (no effect needed)
 
     const handleItemSelect = (item: Item) => {
       setSelectedItem(item);

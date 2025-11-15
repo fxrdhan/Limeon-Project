@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Badge from '@/components/badge';
@@ -19,18 +19,8 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   position,
   data,
 }) => {
-  // Track when to show content
-  const [showContent, setShowContent] = useState(false);
-
-  useEffect(() => {
-    if (isVisible && data) {
-      // Show content immediately on first portal appearance
-      setShowContent(true);
-    } else {
-      // Hide content immediately when portal hides
-      setShowContent(false);
-    }
-  }, [isVisible, data]); // Re-trigger when data changes
+  // Derive state directly from props - no effect needed!
+  const showContent = isVisible && !!data;
 
   return createPortal(
     <AnimatePresence>

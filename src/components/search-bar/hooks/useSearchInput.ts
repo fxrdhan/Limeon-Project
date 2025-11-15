@@ -18,7 +18,7 @@ export const useSearchInput = ({
   onChange,
 }: UseSearchInputProps) => {
   const [textWidth, setTextWidth] = useState(0);
-  const [badgeWidth, setBadgeWidth] = useState(0);
+
   const textMeasureRef = useRef<HTMLSpanElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const badgesContainerRef = useRef<HTMLDivElement>(null);
@@ -41,6 +41,22 @@ export const useSearchInput = ({
       searchMode.showColumnSelector,
     ]
   );
+
+  // Use getDerivedStateFromProps pattern to reset badgeWidth
+  const [badgeState, setBadgeState] = useState({
+    showIndicator: false,
+    width: 0,
+  });
+  if (showTargetedIndicator !== badgeState.showIndicator) {
+    setBadgeState({
+      showIndicator: showTargetedIndicator,
+      width: showTargetedIndicator ? badgeState.width : 0,
+    });
+  }
+  const badgeWidth = badgeState.width;
+  const setBadgeWidth = (width: number) => {
+    setBadgeState(prev => ({ ...prev, width }));
+  };
 
   const displayValue = useMemo(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {
@@ -70,10 +86,9 @@ export const useSearchInput = ({
   }, [displayValue]);
 
   // Use ResizeObserver to track actual badge width (including hover state)
+  // badgeWidth auto-resets to 0 when showTargetedIndicator becomes false (getDerivedStateFromProps)
   useEffect(() => {
     if (!showTargetedIndicator) {
-      // Reset to 0 when badge disappears
-      setBadgeWidth(0);
       return;
     }
 
@@ -85,8 +100,10 @@ export const useSearchInput = ({
         : badgeRef.current;
 
     if (!targetElement) {
-      // Set initial width immediately to prevent glitch
-      setBadgeWidth(100); // Reasonable initial width
+      // Set initial width asynchronously to avoid setState in effect
+      setTimeout(() => {
+        setBadgeWidth(100); // Reasonable initial width
+      }, 0);
       return;
     }
 
@@ -103,9 +120,11 @@ export const useSearchInput = ({
       });
     };
 
-    // Set initial width immediately to prevent glitch, then measure precisely
-    setBadgeWidth(100); // Initial estimate
-    measureWidth();
+    // Set initial width asynchronously, then measure precisely
+    setTimeout(() => {
+      setBadgeWidth(100); // Initial estimate
+      measureWidth();
+    }, 0);
 
     // Watch for any size changes (hover, font loading, layout shifts, animation complete)
     const resizeObserver = new ResizeObserver(() => {

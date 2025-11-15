@@ -51,7 +51,17 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     imageAspectRatio = 'default',
   } = props;
 
-  const [, setIsClosing] = useState(false);
+  // Use getDerivedStateFromProps to reset isClosing when isOpen changes
+  const [closingState, setClosingState] = useState({
+    isOpen: false,
+    isClosing: false,
+  });
+  if (isOpen !== closingState.isOpen) {
+    setClosingState({ isOpen, isClosing: false });
+  }
+  const setIsClosing = (value: boolean) => {
+    setClosingState(prev => ({ ...prev, isClosing: value }));
+  };
 
   const {
     editMode,
@@ -128,12 +138,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     onClose();
   }, [onClose, setIsClosing]);
 
-  // Reset closing state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setIsClosing(false);
-    }
-  }, [isOpen]);
+  // isClosing auto-resets when isOpen changes (getDerivedStateFromProps pattern)
 
   const formattedUpdateAt = formatDateTime(
     typeof data?.updated_at === 'string' ? data.updated_at : null

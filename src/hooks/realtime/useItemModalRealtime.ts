@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -26,6 +26,7 @@ export const useItemModalRealtime = ({
   const queryClient = useQueryClient();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastUpdateRef = useRef<string>('');
+  const [isConnected, setIsConnected] = useState(false);
 
   // Memoize callback to prevent useSmartFormSync from recreating functions
   const handleDataUpdate = useCallback(
@@ -120,8 +121,10 @@ export const useItemModalRealtime = ({
       .subscribe(status => {
         if (status === 'SUBSCRIBED') {
           console.log(`✅ Item realtime connected for: ${itemId}`);
+          setIsConnected(true);
         } else if (status === 'CHANNEL_ERROR') {
           console.log(`❌ Item realtime error for: ${itemId}`);
+          setIsConnected(false);
         }
       });
 
@@ -133,6 +136,7 @@ export const useItemModalRealtime = ({
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+        setIsConnected(false);
       }
     };
   }, [
@@ -145,7 +149,7 @@ export const useItemModalRealtime = ({
   ]);
 
   return {
-    isConnected: !!channelRef.current,
+    isConnected, // Use state instead of accessing ref during render
     smartFormSync, // Export smart form sync for field handlers
   };
 };

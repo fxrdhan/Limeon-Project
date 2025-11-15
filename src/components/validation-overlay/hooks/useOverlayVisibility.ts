@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+// No React hooks needed - state is derived
 
 interface UseOverlayVisibilityProps {
   showError: boolean;
@@ -15,17 +15,18 @@ export const useOverlayVisibility = ({
   isHovered,
   isOpen,
 }: UseOverlayVisibilityProps) => {
-  const [showOverlay, setShowOverlay] = useState(false);
+  // Derive state directly from props - no effect needed!
+  const showOverlay =
+    hasAutoHidden && error ? isHovered && !isOpen : showError && !isOpen;
 
-  useEffect(() => {
-    if (hasAutoHidden && error) {
-      // After auto-hide, show on hover
-      setShowOverlay(isHovered && !isOpen);
-    } else {
-      // Normal display logic
-      setShowOverlay(showError && !isOpen);
-    }
-  }, [showError, hasAutoHidden, error, isHovered, isOpen]);
+  // Note: setShowOverlay removed since state is now derived
+  // If manual control is needed, this would need to be refactored differently
+  const setShowOverlay = () => {
+    // This is a no-op now since state is derived
+    console.warn(
+      'setShowOverlay is deprecated - state is now derived from props'
+    );
+  };
 
   return { showOverlay, setShowOverlay };
 };

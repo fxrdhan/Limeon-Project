@@ -2,10 +2,20 @@ import { useEffect, useState } from 'react';
 import type { PurchaseData, PurchaseItem, Subtotals } from '@/types';
 
 const PrintPurchase = () => {
-  const [purchase, setPurchase] = useState<PurchaseData | null>(null);
-  const [items, setItems] = useState<PurchaseItem[]>([]);
-  const [subtotals, setSubtotals] = useState<Subtotals | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Use lazy initializers to load from sessionStorage once
+  const [purchase] = useState<PurchaseData | null>(() => {
+    const storedData = sessionStorage.getItem('purchaseData');
+    return storedData ? JSON.parse(storedData).purchase : null;
+  });
+  const [items] = useState<PurchaseItem[]>(() => {
+    const storedData = sessionStorage.getItem('purchaseData');
+    return storedData ? JSON.parse(storedData).items : [];
+  });
+  const [subtotals] = useState<Subtotals | null>(() => {
+    const storedData = sessionStorage.getItem('purchaseData');
+    return storedData ? JSON.parse(storedData).subtotals : null;
+  });
+  const [loading] = useState(false);
 
   const formatCurrency = (value: number | bigint, prefix = '') => {
     const formatter = new Intl.NumberFormat('id-ID', {
@@ -15,16 +25,8 @@ const PrintPurchase = () => {
     return `${prefix}${formatter.format(value)}`;
   };
 
+  // Trigger print after component mounts
   useEffect(() => {
-    const storedData = sessionStorage.getItem('purchaseData');
-    if (storedData) {
-      const data = JSON.parse(storedData);
-      setPurchase(data.purchase);
-      setItems(data.items);
-      setSubtotals(data.subtotals);
-    }
-    setLoading(false);
-
     const timer = setTimeout(() => {
       window.print();
     }, 1000);

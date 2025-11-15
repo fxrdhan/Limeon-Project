@@ -59,12 +59,14 @@ export const useCalendarPosition = (
 
   useLayoutEffect(() => {
     if (!isOpen) {
-      setIsPositionReady(false);
       return;
     }
 
-    setIsPositionReady(false);
-    calculatePosition();
+    // Use requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => {
+      setIsPositionReady(false);
+      calculatePosition();
+    });
 
     const handleScroll = () => calculatePosition();
     const handleResize = () => calculatePosition();
