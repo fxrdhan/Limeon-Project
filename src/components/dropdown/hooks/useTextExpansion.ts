@@ -16,6 +16,7 @@ export const useTextExpansion = ({
   const [isButtonTextExpanded, setIsButtonTextExpanded] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [canExpandState, setCanExpandState] = useState(false);
 
   const canExpand = useCallback((): boolean => {
     if (!selectedOption || !buttonRef.current) return false;
@@ -23,6 +24,11 @@ export const useTextExpansion = ({
     const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
     return shouldTruncateText(selectedOption.name, maxTextWidth);
   }, [selectedOption, buttonRef]);
+
+  // Update canExpand state in effect (avoid ref access during render)
+  useEffect(() => {
+    setCanExpandState(canExpand());
+  }, [canExpand]);
 
   const handleExpansion = useCallback(
     (optionId: string, optionName: string, shouldExpand: boolean) => {
@@ -88,7 +94,7 @@ export const useTextExpansion = ({
     handleButtonExpansion,
     // Added from useButtonExpansion
     isExpanded,
-    canExpand: canExpand(),
+    canExpand: canExpandState, // Use state instead of calling function during render
     handleExpansionChange,
   };
 };

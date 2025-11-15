@@ -63,21 +63,61 @@ export const useEntityModalLogic = ({
     entityId: '',
     selectedVersion: undefined as VersionData | undefined,
   });
-  const [comparisonData, setComparisonData] = useState({
-    isOpen: false,
-    isClosing: false,
-    selectedVersion: undefined as VersionData | undefined,
-    isDualMode: false,
-    versionA: undefined as VersionData | undefined,
-    versionB: undefined as VersionData | undefined,
-    isFlipped: false,
+  // Use getDerivedStateFromProps to reset comparisonData when modal closes
+  const [comparisonState, setComparisonState] = useState<{
+    modalOpen: boolean;
+    data: {
+      isOpen: boolean;
+      isClosing: boolean;
+      selectedVersion: VersionData | undefined;
+      isDualMode: boolean;
+      versionA: VersionData | undefined;
+      versionB: VersionData | undefined;
+      isFlipped: boolean;
+    };
+  }>({
+    modalOpen: false,
+    data: {
+      isOpen: false,
+      isClosing: false,
+      selectedVersion: undefined,
+      isDualMode: false,
+      versionA: undefined,
+      versionB: undefined,
+      isFlipped: false,
+    },
   });
+  if (
+    isOpen !== comparisonState.modalOpen &&
+    !isOpen &&
+    comparisonState.data.isOpen
+  ) {
+    setComparisonState({
+      modalOpen: isOpen,
+      data: {
+        isOpen: false,
+        isClosing: false,
+        selectedVersion: undefined,
+        isDualMode: false,
+        versionA: undefined,
+        versionB: undefined,
+        isFlipped: false,
+      },
+    });
+  } else if (isOpen !== comparisonState.modalOpen) {
+    setComparisonState(prev => ({ ...prev, modalOpen: isOpen }));
+  }
+  const comparisonData = comparisonState.data;
+  const setComparisonData = (data: typeof comparisonState.data) => {
+    setComparisonState(prev => ({ ...prev, data }));
+  };
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Track last synchronized state from database (for realtime updates)
   // This represents the "truth" from database, not the stale initialData snapshot
-  const lastSyncedStateRef = useRef<{
+  // Changed from ref to state to avoid ref access during render
+  const [lastSyncedState, setLastSyncedState] = useState<{
     code: string;
     name: string;
     description: string;
@@ -135,17 +175,17 @@ export const useEntityModalLogic = ({
 
       // ✨ Update last synced state (database state changed via realtime)
       // This ensures isDirty compares against latest database state, not stale initialData
-      lastSyncedStateRef.current = {
-        ...lastSyncedStateRef.current,
+      setLastSyncedState(prev => ({
+        ...prev,
         ...(updates as {
           code?: string;
           name?: string;
           description?: string;
           address?: string;
         }),
-      };
+      }));
 
-      console.log('✅ Last synced state updated:', lastSyncedStateRef.current);
+      console.log('✅ Last synced state updated (via realtime)');
     },
     [] // Empty deps - setters are stable
   );
@@ -174,15 +214,13 @@ export const useEntityModalLogic = ({
   const isDirty = useMemo(() => {
     if (!isEditMode) return true;
 
-    const synced = lastSyncedStateRef.current;
-
     return (
-      code !== synced.code ||
-      name !== synced.name ||
-      description !== synced.description ||
-      address !== synced.address
+      code !== lastSyncedState.code ||
+      name !== lastSyncedState.name ||
+      description !== lastSyncedState.description ||
+      address !== lastSyncedState.address
     );
-  }, [code, name, description, address, isEditMode]);
+  }, [code, name, description, address, isEditMode, lastSyncedState]);
 
   // Check if form is valid
   const isValid = useMemo(() => {
@@ -200,38 +238,41 @@ export const useEntityModalLogic = ({
   // Initialize mode and form data when modal opens
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false); // Reset closing state when opening
-      const newMode = initialData ? 'edit' : 'add';
-      setMode(newMode);
-      setPreviousMode(newMode);
-
-      if (initialData) {
-        // All tables now use 'code' field consistently
-        setCode(initialData.code || '');
-        setName(initialData.name);
-        setDescription(initialData.description || '');
-        setAddress(initialData.address || '');
-
-        // Initialize last synced state from initialData (baseline for isDirty)
-        lastSyncedStateRef.current = {
-          code: initialData.code || '',
-          name: initialData.name || '',
-          description: initialData.description || '',
-          address: initialData.address || '',
-        };
-      } else if (initialNameFromSearch) {
-        setCode('');
-        setName(initialNameFromSearch);
-        setDescription('');
-        setAddress('');
-      } else {
-        resetForm();
-      }
-
-      // Focus on name input after modal opens (only for form modes)
+      // Use setTimeout to avoid synchronous setState in effect
       setTimeout(() => {
-        nameInputRef.current?.focus();
-      }, 100);
+        setIsClosing(false); // Reset closing state when opening
+        const newMode = initialData ? 'edit' : 'add';
+        setMode(newMode);
+        setPreviousMode(newMode);
+
+        if (initialData) {
+          // All tables now use 'code' field consistently
+          setCode(initialData.code || '');
+          setName(initialData.name);
+          setDescription(initialData.description || '');
+          setAddress(initialData.address || '');
+
+          // Initialize last synced state from initialData (baseline for isDirty)
+          setLastSyncedState({
+            code: initialData.code || '',
+            name: initialData.name || '',
+            description: initialData.description || '',
+            address: initialData.address || '',
+          });
+        } else if (initialNameFromSearch) {
+          setCode('');
+          setName(initialNameFromSearch);
+          setDescription('');
+          setAddress('');
+        } else {
+          resetForm();
+        }
+
+        // Focus on name input after modal opens (only for form modes)
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+        }, 100);
+      }, 0);
     }
   }, [isOpen, initialData, initialNameFromSearch, resetForm]);
 
@@ -255,20 +296,7 @@ export const useEntityModalLogic = ({
     }
   }, [isClosing, onClose]);
 
-  // Reset comparison data when modal closes
-  useEffect(() => {
-    if (!isOpen && comparisonData.isOpen) {
-      setComparisonData({
-        isOpen: false,
-        isClosing: false,
-        selectedVersion: undefined,
-        isDualMode: false,
-        versionA: undefined,
-        versionB: undefined,
-        isFlipped: false,
-      });
-    }
-  }, [isOpen, comparisonData.isOpen]);
+  // comparisonData auto-resets when modal closes (getDerivedStateFromProps pattern)
 
   const handleSubmit = useCallback(async () => {
     if (!isValid) {

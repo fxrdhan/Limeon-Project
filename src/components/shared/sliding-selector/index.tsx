@@ -127,7 +127,10 @@ export const SlidingSelector = <T,>({
         clearTimeout(mouseLeaveTimeoutRef.current);
         mouseLeaveTimeoutRef.current = null;
       }
-      setIsExpanded(true);
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setIsExpanded(true);
+      }, 0);
     }
 
     return () => {

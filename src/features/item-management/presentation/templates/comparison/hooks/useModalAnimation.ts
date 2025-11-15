@@ -9,7 +9,18 @@ export const useModalAnimation = ({
   isOpen,
   onClose,
 }: UseModalAnimationProps) => {
-  const [isClosing, setIsClosing] = React.useState(false);
+  // Use getDerivedStateFromProps to reset isClosing when isOpen changes
+  const [closingState, setClosingState] = React.useState({
+    isOpen: false,
+    isClosing: false,
+  });
+  if (isOpen !== closingState.isOpen) {
+    setClosingState({ isOpen, isClosing: false });
+  }
+  const isClosing = closingState.isClosing;
+  const setIsClosing = (value: boolean) => {
+    setClosingState(prev => ({ ...prev, isClosing: value }));
+  };
 
   const handleClose = () => {
     if (!isClosing) {
@@ -28,12 +39,7 @@ export const useModalAnimation = ({
     }
   }, [isClosing, onClose]);
 
-  // Reset closing state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setIsClosing(false);
-    }
-  }, [isOpen]);
+  // isClosing auto-resets when isOpen changes (getDerivedStateFromProps pattern)
 
   return {
     isClosing,

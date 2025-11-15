@@ -18,7 +18,22 @@ export const useSearchInput = ({
   onChange,
 }: UseSearchInputProps) => {
   const [textWidth, setTextWidth] = useState(0);
-  const [badgeWidth, setBadgeWidth] = useState(0);
+
+  // Use getDerivedStateFromProps pattern to reset badgeWidth
+  const [badgeState, setBadgeState] = useState({
+    showIndicator: false,
+    width: 0,
+  });
+  if (showTargetedIndicator !== badgeState.showIndicator) {
+    setBadgeState({
+      showIndicator: showTargetedIndicator,
+      width: showTargetedIndicator ? badgeState.width : 0,
+    });
+  }
+  const badgeWidth = badgeState.width;
+  const setBadgeWidth = (width: number) => {
+    setBadgeState(prev => ({ ...prev, width }));
+  };
   const textMeasureRef = useRef<HTMLSpanElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const badgesContainerRef = useRef<HTMLDivElement>(null);
@@ -70,10 +85,9 @@ export const useSearchInput = ({
   }, [displayValue]);
 
   // Use ResizeObserver to track actual badge width (including hover state)
+  // badgeWidth auto-resets to 0 when showTargetedIndicator becomes false (getDerivedStateFromProps)
   useEffect(() => {
     if (!showTargetedIndicator) {
-      // Reset to 0 when badge disappears
-      setBadgeWidth(0);
       return;
     }
 

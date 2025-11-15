@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { EnhancedSearchState, SearchColumn, FilterSearch } from '../types';
 import { parseSearchValue } from '../utils/searchUtils';
 import { SEARCH_CONSTANTS } from '../constants';
@@ -16,11 +16,10 @@ export const useSearchState = ({
   onGlobalSearch,
   onFilterSearch,
 }: UseSearchStateProps) => {
-  const [searchMode, setSearchMode] = useState<EnhancedSearchState>({
-    showColumnSelector: false,
-    showOperatorSelector: false,
-    isFilterMode: false,
-  });
+  // Derive searchMode from value instead of using state + effect
+  const searchMode = useMemo<EnhancedSearchState>(() => {
+    return parseSearchValue(value, columns);
+  }, [value, columns]);
 
   const prevValueRef = useRef<string>('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,9 +43,6 @@ export const useSearchState = ({
   }, []);
 
   useEffect(() => {
-    const newMode = parseSearchValue(value, columns);
-    setSearchMode(newMode);
-
     if (value === '' || value.trim() === '') {
       onGlobalSearchRef.current?.('');
       onFilterSearchRef.current?.(null);

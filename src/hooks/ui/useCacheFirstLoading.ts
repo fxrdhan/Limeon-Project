@@ -32,7 +32,17 @@ export const useCacheFirstLoading = ({
 }: UseCacheFirstLoadingOptions): UseCacheFirstLoadingReturn => {
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [showBackgroundLoading, setShowBackgroundLoading] = useState(false);
-  const [isFirstLoad, setIsFirstLoad] = useState(isInitialLoad);
+  // Use getDerivedStateFromProps to track hasData and manage isFirstLoad
+  const [firstLoadState, setFirstLoadState] = useState({
+    hasData,
+    isFirstLoad: isInitialLoad,
+  });
+  if (hasData !== firstLoadState.hasData && hasData) {
+    setFirstLoadState({ hasData, isFirstLoad: false });
+  } else if (hasData !== firstLoadState.hasData) {
+    setFirstLoadState(prev => ({ ...prev, hasData }));
+  }
+  const isFirstLoad = firstLoadState.isFirstLoad;
   const [shouldSuppressOverlay, setShouldSuppressOverlay] =
     useState(isInitialLoad);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,8 +55,12 @@ export const useCacheFirstLoading = ({
     if (tabKey && prevTabKeyRef.current && tabKey !== prevTabKeyRef.current) {
       // Tab is changing - suppress skeleton and overlay for realtime data
       isTabChangingRef.current = true;
-      setShowSkeleton(false); // Never show skeleton on tab change for realtime
-      setShouldSuppressOverlay(true);
+
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setShowSkeleton(false); // Never show skeleton on tab change for realtime
+        setShouldSuppressOverlay(true);
+      }, 0);
 
       // Reset tab changing flag after brief delay
       const tabChangeTimer = setTimeout(() => {
@@ -65,11 +79,10 @@ export const useCacheFirstLoading = ({
     }
   }, [tabKey, gracePeriod, hasData]);
 
-  // Track if we've ever had data (for cache detection)
+  // isFirstLoad auto-updates when hasData changes (getDerivedStateFromProps pattern)
   useEffect(() => {
     if (hasData && !hasDataRef.current) {
       hasDataRef.current = true;
-      setIsFirstLoad(false);
     }
   }, [hasData]);
 
@@ -81,22 +94,25 @@ export const useCacheFirstLoading = ({
     }
 
     if (isLoading) {
-      // Always suppress overlay during loading
-      setShouldSuppressOverlay(true);
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        // Always suppress overlay during loading
+        setShouldSuppressOverlay(true);
 
-      // Don't show skeleton if tab is changing (realtime scenario)
-      if (isTabChangingRef.current) {
-        setShowSkeleton(false);
-        setShowBackgroundLoading(true);
-      } else if (isFirstLoad || !hasDataRef.current) {
-        // First load or no cached data - show skeleton
-        setShowSkeleton(true);
-        setShowBackgroundLoading(false);
-      } else {
-        // Subsequent load with cached data - show background loading
-        setShowSkeleton(false);
-        setShowBackgroundLoading(true);
-      }
+        // Don't show skeleton if tab is changing (realtime scenario)
+        if (isTabChangingRef.current) {
+          setShowSkeleton(false);
+          setShowBackgroundLoading(true);
+        } else if (isFirstLoad || !hasDataRef.current) {
+          // First load or no cached data - show skeleton
+          setShowSkeleton(true);
+          setShowBackgroundLoading(false);
+        } else {
+          // Subsequent load with cached data - show background loading
+          setShowSkeleton(false);
+          setShowBackgroundLoading(true);
+        }
+      }, 0);
     } else {
       // Loading finished - use grace period to prevent flash of empty content
       if (showSkeleton) {
@@ -129,21 +145,24 @@ export const useCacheFirstLoading = ({
           }, gracePeriod);
         }
       } else {
-        // Hide background loading immediately
-        setShowBackgroundLoading(false);
-        // For background loading, allow overlay if no data
-        if (!hasData) {
-          // Still suppress overlay briefly to prevent flash
-          timerRef.current = setTimeout(() => {
+        // Use setTimeout to avoid synchronous setState in effect
+        setTimeout(() => {
+          // Hide background loading immediately
+          setShowBackgroundLoading(false);
+          // For background loading, allow overlay if no data
+          if (!hasData) {
+            // Still suppress overlay briefly to prevent flash
+            timerRef.current = setTimeout(() => {
+              if (!isTabChangingRef.current) {
+                setShouldSuppressOverlay(false);
+              }
+            }, gracePeriod);
+          } else {
             if (!isTabChangingRef.current) {
               setShouldSuppressOverlay(false);
             }
-          }, gracePeriod);
-        } else {
-          if (!isTabChangingRef.current) {
-            setShouldSuppressOverlay(false);
           }
-        }
+        }, 0);
       }
     }
 

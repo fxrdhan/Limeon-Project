@@ -14,10 +14,27 @@ export const useScrollPosition = ({
   elementRef,
   isOpen,
 }: UseScrollPositionProps) => {
-  const [scrollPosition, setScrollPosition] = useState<ScrollPosition>({
-    isAtTop: true,
-    isAtBottom: true,
+  // Use getDerivedStateFromProps to reset scroll position when modal closes
+  const [scrollState, setScrollState] = useState<{
+    isOpen: boolean;
+    position: ScrollPosition;
+  }>({
+    isOpen: false,
+    position: { isAtTop: true, isAtBottom: true },
   });
+  if (isOpen !== scrollState.isOpen) {
+    setScrollState({ isOpen, position: { isAtTop: true, isAtBottom: true } });
+  }
+  const scrollPosition = scrollState.position;
+  const setScrollPosition = (
+    updater: ScrollPosition | ((prev: ScrollPosition) => ScrollPosition)
+  ) => {
+    setScrollState(prev => ({
+      ...prev,
+      position:
+        typeof updater === 'function' ? updater(prev.position) : updater,
+    }));
+  };
 
   const rafRef = useRef<number | undefined>(undefined);
 
@@ -51,11 +68,9 @@ export const useScrollPosition = ({
     });
   }, [elementRef]);
 
+  // scrollPosition auto-resets when isOpen changes (getDerivedStateFromProps pattern)
   useEffect(() => {
-    if (!isOpen) {
-      setScrollPosition({ isAtTop: true, isAtBottom: true });
-      return;
-    }
+    if (!isOpen) return;
 
     const element = elementRef.current;
     if (!element) return;

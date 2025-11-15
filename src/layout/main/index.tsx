@@ -6,8 +6,26 @@ import { usePresence } from '@/hooks/presence/usePresence';
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [isLocked, setIsLocked] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(true);
+  // Use getDerivedStateFromProps to reset isLocked when sidebar collapses
+  const [lockState, setLockState] = useState({
+    sidebarCollapsed: true,
+    isLocked: false,
+  });
+  if (sidebarCollapsed !== lockState.sidebarCollapsed) {
+    setLockState({
+      sidebarCollapsed,
+      isLocked: sidebarCollapsed ? false : lockState.isLocked,
+    });
+  }
+  const isLocked = lockState.isLocked;
+  const setIsLocked = (updater: boolean | ((prev: boolean) => boolean)) => {
+    setLockState(prev => ({
+      ...prev,
+      isLocked:
+        typeof updater === 'function' ? updater(prev.isLocked) : updater,
+    }));
+  };
+  const [isAnimating] = useState(false); // Initialize to false - no blocking needed
   usePresence();
   const isLockedRef = useRef(isLocked);
 
@@ -37,16 +55,7 @@ const MainLayout = () => {
     });
   }, [sidebarCollapsed]);
 
-  // Auto unlock when sidebar collapses
-  useEffect(() => {
-    if (sidebarCollapsed) {
-      setIsLocked(false);
-    }
-  }, [sidebarCollapsed]);
-
-  useEffect(() => {
-    setIsAnimating(false); // Enable mouse interactions immediately
-  }, []);
+  // isLocked auto-resets when sidebarCollapsed changes (getDerivedStateFromProps pattern)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

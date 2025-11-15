@@ -133,9 +133,21 @@ const ItemMasterNew = memo(() => {
     return URL_TO_TAB_MAP[lastSegment] || 'items';
   }, []);
 
-  const [activeTab, setActiveTab] = useState<MasterDataType>(() =>
-    getTabFromPath(location.pathname)
-  );
+  // Use getDerivedStateFromProps to sync activeTab with URL changes
+  const [tabState, setTabState] = useState<{
+    pathname: string;
+    activeTab: MasterDataType;
+  }>(() => {
+    const initialTab = getTabFromPath(location.pathname);
+    return { pathname: location.pathname, activeTab: initialTab };
+  });
+  if (location.pathname !== tabState.pathname) {
+    const newTab = getTabFromPath(location.pathname);
+    setTabState({ pathname: location.pathname, activeTab: newTab });
+    // Save tab to session storage when URL changes
+    saveLastTabToSession(newTab);
+  }
+  const activeTab = tabState.activeTab;
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // 🚦 Hybrid tab change protection: immediate first click, debounced rapid clicks
@@ -214,7 +226,8 @@ const ItemMasterNew = memo(() => {
 
   const { columnDefs: itemColumnDefs } = useItemGridColumns();
 
-  // Update active tab when URL changes
+  // activeTab auto-syncs with URL changes via getDerivedStateFromProps pattern
+  // Clear pending tab changes when URL changes externally
   useEffect(() => {
     const newTab = getTabFromPath(location.pathname);
     if (newTab !== activeTab) {
@@ -224,10 +237,6 @@ const ItemMasterNew = memo(() => {
         debounceTimerRef.current = null;
       }
       pendingTabRef.current = null;
-
-      setActiveTab(newTab);
-      // Save tab to session storage when URL changes (for direct navigation)
-      saveLastTabToSession(newTab);
     }
   }, [location.pathname, activeTab, getTabFromPath]);
 
