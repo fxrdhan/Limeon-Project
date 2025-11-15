@@ -18,13 +18,16 @@ const MainLayout = () => {
     });
   }
   const isLocked = lockState.isLocked;
-  const setIsLocked = (updater: boolean | ((prev: boolean) => boolean)) => {
-    setLockState(prev => ({
-      ...prev,
-      isLocked:
-        typeof updater === 'function' ? updater(prev.isLocked) : updater,
-    }));
-  };
+  const setIsLocked = useCallback(
+    (updater: boolean | ((prev: boolean) => boolean)) => {
+      setLockState(prev => ({
+        ...prev,
+        isLocked:
+          typeof updater === 'function' ? updater(prev.isLocked) : updater,
+      }));
+    },
+    []
+  );
   const [isAnimating] = useState(false); // Initialize to false - no blocking needed
   usePresence();
   const isLockedRef = useRef(isLocked);
@@ -53,7 +56,7 @@ const MainLayout = () => {
       }
       return newLockState;
     });
-  }, [sidebarCollapsed]);
+  }, [sidebarCollapsed, setIsLocked]);
 
   // isLocked auto-resets when sidebarCollapsed changes (getDerivedStateFromProps pattern)
 
