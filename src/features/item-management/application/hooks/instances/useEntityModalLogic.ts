@@ -63,18 +63,22 @@ export const useEntityModalLogic = ({
     entityId: '',
     selectedVersion: undefined as VersionData | undefined,
   });
+
+  // Type for comparison data
+  type ComparisonData = {
+    isOpen: boolean;
+    isClosing: boolean;
+    selectedVersion: VersionData | undefined;
+    isDualMode: boolean;
+    versionA: VersionData | undefined;
+    versionB: VersionData | undefined;
+    isFlipped: boolean;
+  };
+
   // Use getDerivedStateFromProps to reset comparisonData when modal closes
   const [comparisonState, setComparisonState] = useState<{
     modalOpen: boolean;
-    data: {
-      isOpen: boolean;
-      isClosing: boolean;
-      selectedVersion: VersionData | undefined;
-      isDualMode: boolean;
-      versionA: VersionData | undefined;
-      versionB: VersionData | undefined;
-      isFlipped: boolean;
-    };
+    data: ComparisonData;
   }>({
     modalOpen: false,
     data: {
@@ -108,16 +112,15 @@ export const useEntityModalLogic = ({
     setComparisonState(prev => ({ ...prev, modalOpen: isOpen }));
   }
   const comparisonData = comparisonState.data;
-  const setComparisonData = (
-    updater:
-      | typeof comparisonState.data
-      | ((prev: typeof comparisonState.data) => typeof comparisonState.data)
-  ) => {
-    setComparisonState(prev => ({
-      ...prev,
-      data: typeof updater === 'function' ? updater(prev.data) : updater,
-    }));
-  };
+  const setComparisonData = useCallback(
+    (updater: ComparisonData | ((prev: ComparisonData) => ComparisonData)) => {
+      setComparisonState(prev => ({
+        ...prev,
+        data: typeof updater === 'function' ? updater(prev.data) : updater,
+      }));
+    },
+    []
+  );
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -399,17 +402,20 @@ export const useEntityModalLogic = ({
     });
   }, [previousMode]);
 
-  const openComparison = useCallback((version: VersionData) => {
-    setComparisonData({
-      isOpen: true,
-      isClosing: false,
-      selectedVersion: version,
-      isDualMode: false,
-      versionA: undefined,
-      versionB: undefined,
-      isFlipped: false,
-    });
-  }, []);
+  const openComparison = useCallback(
+    (version: VersionData) => {
+      setComparisonData({
+        isOpen: true,
+        isClosing: false,
+        selectedVersion: version,
+        isDualMode: false,
+        versionA: undefined,
+        versionB: undefined,
+        isFlipped: false,
+      });
+    },
+    [setComparisonData]
+  );
 
   const openDualComparison = useCallback(
     (versionA: VersionData, versionB: VersionData) => {
@@ -423,7 +429,7 @@ export const useEntityModalLogic = ({
         isFlipped: false,
       });
     },
-    []
+    [setComparisonData]
   );
 
   const flipVersions = useCallback(() => {
@@ -431,7 +437,7 @@ export const useEntityModalLogic = ({
       ...prev,
       isFlipped: !prev.isFlipped,
     }));
-  }, []);
+  }, [setComparisonData]);
 
   const closeComparison = useCallback(() => {
     // Start closing animation
@@ -452,7 +458,7 @@ export const useEntityModalLogic = ({
         isFlipped: false,
       });
     }, 250); // Match animation duration
-  }, []);
+  }, [setComparisonData]);
 
   const goBack = useCallback(() => {
     // Close comparison modal when going back with animation
@@ -481,7 +487,7 @@ export const useEntityModalLogic = ({
         });
       }
     }, 250); // Match animation duration
-  }, [mode, previousMode]);
+  }, [mode, previousMode, setComparisonData]);
 
   // UI actions
   const handleClose = useCallback(() => {
