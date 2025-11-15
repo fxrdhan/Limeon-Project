@@ -29,6 +29,11 @@
     "update-password:help": "tsx scripts/update-user-password.ts --help",
     "export": "tsx scripts/export.ts",
     "loc-stats": "tsx scripts/loc-stats.ts",
+    "gen:schemas": "yarn gen:schemas:db && yarn gen:schemas:forms && yarn gen:schemas:invoice && yarn gen:schemas:purchase",
+    "gen:schemas:db": "ts-to-zod --config=database --skipValidation",
+    "gen:schemas:forms": "ts-to-zod --config=forms --skipValidation",
+    "gen:schemas:invoice": "ts-to-zod --config=invoice --skipValidation",
+    "gen:schemas:purchase": "ts-to-zod --config=purchase --skipValidation",
     "prepare": "husky"
   },
   "dependencies": {
@@ -99,6 +104,7 @@
     "sass": "^1.94.0",
     "supabase": "2.58.5",
     "tailwindcss": "^4.1.17",
+    "ts-to-zod": "^5.0.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
