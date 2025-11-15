@@ -3,7 +3,7 @@ import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
-import { itemNameSchema } from '@/schemas/itemValidation';
+import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { DropdownOption } from '@/types/components';
 import { useItemCodeGenerator } from '../../application/hooks/utils';
 import {
