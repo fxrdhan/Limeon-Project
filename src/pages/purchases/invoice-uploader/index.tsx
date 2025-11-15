@@ -50,6 +50,16 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     return `0 0 ${12 + intensity * 12}px rgba(16, 185, 129, ${baseIntensity}), 0 0 ${25 + intensity * 25}px rgba(16, 185, 129, ${outerIntensity})`;
   };
 
+  // Helper function to safely get blob URL for image src to prevent XSS
+  const getSafeImageUrl = (url: string | null): string | undefined => {
+    if (!url) return undefined;
+    // Only allow blob URLs to prevent XSS
+    if (url.startsWith('blob:')) {
+      return url;
+    }
+    return undefined;
+  };
+
   useEffect(() => {
     if (!file) {
       setPreviewUrl(null);
@@ -695,7 +705,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             {previewUrl ? (
                               <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 shrink-0">
                                 <img
-                                  src={previewUrl}
+                                  src={getSafeImageUrl(previewUrl)}
                                   alt="Thumbnail"
                                   className="h-full w-full object-cover"
                                 />
@@ -862,7 +872,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 onMouseMove={handleMouseMove}
               >
                 <img
-                  src={previewUrl}
+                  src={getSafeImageUrl(previewUrl)}
                   alt="Preview"
                   className="h-auto w-auto object-contain transition-transform duration-100"
                   style={{
