@@ -59,9 +59,9 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
   if (isOpen !== closingState.isOpen) {
     setClosingState({ isOpen, isClosing: false });
   }
-  const setIsClosing = (value: boolean) => {
+  const setIsClosing = useCallback((value: boolean) => {
     setClosingState(prev => ({ ...prev, isClosing: value }));
-  };
+  }, []);
 
   const {
     editMode,
