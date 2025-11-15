@@ -54,8 +54,8 @@ export const useSearchState = ({
 
     if (!hasStateChanged) return;
 
-    if (newMode.isFilterMode && newMode.filterSearch) {
-      const filterValue = newMode.filterSearch.value.trim();
+    if (searchMode.isFilterMode && searchMode.filterSearch) {
+      const filterValue = searchMode.filterSearch.value.trim();
 
       if (filterValue === '') {
         if (debounceTimerRef.current) {
@@ -65,25 +65,28 @@ export const useSearchState = ({
         onFilterSearchRef.current?.(null);
         onGlobalSearchRef.current?.('');
       } else {
-        debouncedFilterUpdate(newMode.filterSearch);
+        debouncedFilterUpdate(searchMode.filterSearch);
       }
     } else if (
-      !newMode.showColumnSelector &&
-      !newMode.showOperatorSelector &&
-      !newMode.isFilterMode &&
-      newMode.globalSearch !== undefined &&
-      newMode.globalSearch.trim() !== '' &&
-      !newMode.globalSearch.startsWith('#')
+      !searchMode.showColumnSelector &&
+      !searchMode.showOperatorSelector &&
+      !searchMode.isFilterMode &&
+      searchMode.globalSearch !== undefined &&
+      searchMode.globalSearch.trim() !== '' &&
+      !searchMode.globalSearch.startsWith('#')
     ) {
-      onGlobalSearchRef.current?.(newMode.globalSearch);
+      onGlobalSearchRef.current?.(searchMode.globalSearch);
       onFilterSearchRef.current?.(null);
-    } else if (newMode.showColumnSelector || newMode.showOperatorSelector) {
+    } else if (
+      searchMode.showColumnSelector ||
+      searchMode.showOperatorSelector
+    ) {
       onGlobalSearchRef.current?.('');
       onFilterSearchRef.current?.(null);
     }
 
     prevValueRef.current = value;
-  }, [value, columns, debouncedFilterUpdate]);
+  }, [value, columns, debouncedFilterUpdate, searchMode]);
 
   useEffect(() => {
     return () => {
@@ -95,6 +98,5 @@ export const useSearchState = ({
 
   return {
     searchMode,
-    setSearchMode,
   };
 };
