@@ -36,6 +36,7 @@ yarn.lock linguist-vendored
 package-lock.json linguist-vendored
 eslint.config.ts linguist-vendored
 postcss.config.js linguist-vendored
+commitlint.config.js linguist-vendored
 tailwind.config.ts linguist-vendored
 vite.config.ts linguist-vendored
 *.toml linguist-vendored
@@ -69,3 +70,4 @@ supabase/** linguist-detectable=false
 
 # Generated files
 dist/** linguist-generated
+coverage/** linguist-generated
