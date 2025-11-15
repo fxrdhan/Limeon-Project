@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { EnhancedSearchState } from '../types';
 import {
   buildFilterValue,
@@ -10,16 +10,15 @@ interface UseSearchInputProps {
   value: string;
   searchMode: EnhancedSearchState;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export const useSearchInput = ({
   value,
   searchMode,
   onChange,
+  inputRef,
 }: UseSearchInputProps) => {
-  const [textWidth, setTextWidth] = useState(0);
-
-  const textMeasureRef = useRef<HTMLSpanElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const badgesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -42,22 +41,6 @@ export const useSearchInput = ({
     ]
   );
 
-  // Use getDerivedStateFromProps pattern to reset badgeWidth
-  const [badgeState, setBadgeState] = useState({
-    showIndicator: false,
-    width: 0,
-  });
-  if (showTargetedIndicator !== badgeState.showIndicator) {
-    setBadgeState({
-      showIndicator: showTargetedIndicator,
-      width: showTargetedIndicator ? badgeState.width : 0,
-    });
-  }
-  const badgeWidth = badgeState.width;
-  const setBadgeWidth = (width: number) => {
-    setBadgeState(prev => ({ ...prev, width }));
-  };
-
   const displayValue = useMemo(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {
       return searchMode.filterSearch.value;
@@ -79,16 +62,14 @@ export const useSearchInput = ({
     operatorSearchTerm,
   ]);
 
+  // Dynamic badge width tracking using CSS variable - no React state updates!
+  // This prevents flickering by updating DOM directly without triggering re-renders
   useEffect(() => {
-    if (textMeasureRef.current && displayValue) {
-      setTextWidth(textMeasureRef.current.offsetWidth);
-    }
-  }, [displayValue]);
-
-  // Use ResizeObserver to track actual badge width (including hover state)
-  // badgeWidth auto-resets to 0 when showTargetedIndicator becomes false (getDerivedStateFromProps)
-  useEffect(() => {
-    if (!showTargetedIndicator) {
+    if (!showTargetedIndicator || !inputRef?.current) {
+      // Reset to default padding when no badge
+      if (inputRef?.current) {
+        inputRef.current.style.removeProperty('--badge-width');
+      }
       return;
     }
 
@@ -99,39 +80,34 @@ export const useSearchInput = ({
         ? badgesContainerRef.current
         : badgeRef.current;
 
-    if (!targetElement) {
-      // Set initial width asynchronously to avoid setState in effect
-      setTimeout(() => {
-        setBadgeWidth(100); // Reasonable initial width
-      }, 0);
+    if (!targetElement || !inputRef.current) {
       return;
     }
 
-    // Measure immediately with triple RAF for complete DOM stabilization + animation start
-    const measureWidth = () => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (targetElement) {
-              setBadgeWidth(targetElement.offsetWidth);
-            }
-          });
-        });
-      });
+    const inputElement = inputRef.current;
+
+    // Update padding immediately with current badge width
+    const updatePadding = () => {
+      if (targetElement && inputElement) {
+        const badgeWidth = targetElement.offsetWidth;
+        // Set CSS variable directly - NO React state, NO re-render!
+        inputElement.style.setProperty('--badge-width', `${badgeWidth + 16}px`);
+      }
     };
 
-    // Set initial width asynchronously, then measure precisely
-    setTimeout(() => {
-      setBadgeWidth(100); // Initial estimate
-      measureWidth();
-    }, 0);
+    // Initial measurement with RAF for DOM stability
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updatePadding();
+      });
+    });
 
-    // Watch for any size changes (hover, font loading, layout shifts, animation complete)
+    // Watch for badge size changes (hover for X button, font loading, etc.)
     const resizeObserver = new ResizeObserver(() => {
-      // Update immediately without RAF for instant response
-      if (targetElement) {
-        setBadgeWidth(targetElement.offsetWidth);
-      }
+      // Direct DOM update - no setState, no re-render, no flicker!
+      requestAnimationFrame(() => {
+        updatePadding();
+      });
     });
 
     resizeObserver.observe(targetElement);
@@ -143,14 +119,11 @@ export const useSearchInput = ({
     showTargetedIndicator,
     searchMode.isFilterMode,
     searchMode.filterSearch,
-    searchMode.selectedColumn,
-    searchMode.showColumnSelector,
-    searchMode.showOperatorSelector,
+    inputRef,
   ]);
 
-  // Dummy handler for compatibility (not used anymore, ResizeObserver handles it)
   const handleHoverChange = useCallback(() => {
-    // ResizeObserver will automatically detect width changes on hover
+    // No-op - kept for compatibility
   }, []);
 
   const handleInputChange = useCallback(
@@ -217,12 +190,9 @@ export const useSearchInput = ({
   return {
     displayValue,
     showTargetedIndicator,
-    textWidth,
-    badgeWidth,
     operatorSearchTerm,
     handleInputChange,
     handleHoverChange,
-    textMeasureRef,
     badgeRef,
     badgesContainerRef,
   };
