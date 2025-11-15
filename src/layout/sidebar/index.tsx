@@ -10,7 +10,7 @@ import {
   FaAngleDown,
 } from 'react-icons/fa';
 import { HiLockClosed, HiLockOpen } from 'react-icons/hi';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo, useCallback, useEffect, useRef, JSX } from 'react';
 
@@ -43,6 +43,7 @@ const Sidebar = ({
   collapseSidebar,
 }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     masterData: false,
     inventory: false,
@@ -578,6 +579,19 @@ const Sidebar = ({
                                     <motion.div variants={submenuItemVariants}>
                                       <Link
                                         to={child.path}
+                                        onClick={e => {
+                                          // Prevent navigation if already within the same section
+                                          // (e.g., clicking "Item Master" when already at /master-data/item-master/items)
+                                          if (
+                                            child.path ===
+                                              '/master-data/item-master' &&
+                                            location.pathname.startsWith(
+                                              '/master-data/item-master/'
+                                            )
+                                          ) {
+                                            e.preventDefault();
+                                          }
+                                        }}
                                         className={`block px-3 py-3 text-sm rounded-md transition-all duration-300 ease-in-out
                                                                 focus-visible:outline-hidden outline-hidden
                                                                 focus:outline-hidden active:outline-hidden
@@ -609,9 +623,7 @@ const Sidebar = ({
                 <button
                   onClick={() => {
                     if (location.pathname !== item.path) {
-                      window.history.pushState({}, '', item.path);
-                      const navEvent = new PopStateEvent('popstate');
-                      window.dispatchEvent(navEvent);
+                      navigate(item.path);
                     }
                   }}
                   className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
