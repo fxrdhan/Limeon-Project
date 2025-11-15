@@ -135,7 +135,6 @@ async function addAdminUser(): Promise<void> {
     console.log('Email:', email);
     console.log('Name:', name);
     console.log('Role:', role);
-    console.log('Password:', password);
     console.log('User ID:', authData.user.id);
   } catch (error: unknown) {
     console.error(
