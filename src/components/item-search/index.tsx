@@ -44,10 +44,25 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       setOpenState(prev => ({ ...prev, applyOpenStyles: value }));
     };
 
-    // Derive highlightedIndex from isOpen and filteredItems
-    const highlightedIndex = isOpen && filteredItems.length > 0 ? 0 : -1;
-    const setHighlightedIndex = () => {
-      // No-op - highlightedIndex is now derived
+    // Use getDerivedStateFromProps to reset highlightedIndex when isOpen or filteredItems changes
+    const [highlightState, setHighlightState] = useState({
+      isOpen: false,
+      filteredLength: 0,
+      highlightedIndex: -1,
+    });
+    if (
+      isOpen !== highlightState.isOpen ||
+      filteredItems.length !== highlightState.filteredLength
+    ) {
+      setHighlightState({
+        isOpen,
+        filteredLength: filteredItems.length,
+        highlightedIndex: isOpen && filteredItems.length > 0 ? 0 : -1,
+      });
+    }
+    const highlightedIndex = highlightState.highlightedIndex;
+    const setHighlightedIndex = (index: number) => {
+      setHighlightState(prev => ({ ...prev, highlightedIndex: index }));
     };
 
     const searchBarRef = useRef<HTMLDivElement>(null);

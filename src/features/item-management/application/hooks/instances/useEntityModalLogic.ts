@@ -108,8 +108,15 @@ export const useEntityModalLogic = ({
     setComparisonState(prev => ({ ...prev, modalOpen: isOpen }));
   }
   const comparisonData = comparisonState.data;
-  const setComparisonData = (data: typeof comparisonState.data) => {
-    setComparisonState(prev => ({ ...prev, data }));
+  const setComparisonData = (
+    updater:
+      | typeof comparisonState.data
+      | ((prev: typeof comparisonState.data) => typeof comparisonState.data)
+  ) => {
+    setComparisonState(prev => ({
+      ...prev,
+      data: typeof updater === 'function' ? updater(prev.data) : updater,
+    }));
   };
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
