@@ -1,6 +1,5 @@
 import React, { useRef, useCallback, useMemo } from 'react';
 import { LuSearch } from 'react-icons/lu';
-import { PiKeyReturnBold } from 'react-icons/pi';
 import fuzzysort from 'fuzzysort';
 import { EnhancedSearchBarProps, SearchColumn, FilterOperator } from './types';
 import { SEARCH_CONSTANTS } from './constants';
@@ -54,18 +53,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const {
     displayValue,
     showTargetedIndicator,
-    textWidth,
-    badgeWidth,
     operatorSearchTerm,
     handleInputChange,
     handleHoverChange,
-    textMeasureRef,
     badgeRef,
     badgesContainerRef,
   } = useSearchInput({
     value,
     searchMode,
     onChange,
+    inputRef,
   });
 
   const handleColumnSelect = useCallback(
@@ -277,6 +274,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     return [...DEFAULT_FILTER_OPERATORS];
   }, [searchMode.selectedColumn?.type]);
 
+  // Calculate base padding (CSS variable will override when badges are present)
+  const getBasePadding = () => {
+    if (
+      displayValue &&
+      !displayValue.startsWith('#') &&
+      !searchMode.showColumnSelector &&
+      !showTargetedIndicator
+    ) {
+      return '12px';
+    }
+    return '40px';
+  };
+
   return (
     <>
       <div ref={containerRef} className={`mb-2 relative ${className}`}>
@@ -308,14 +318,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                         : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
               } focus:outline-none rounded-lg`}
               style={{
+                // Use CSS variable set by ResizeObserver (dynamic), fallback to base padding
                 paddingLeft: showTargetedIndicator
-                  ? `${Math.max(badgeWidth + SEARCH_CONSTANTS.BADGE_MARGIN, SEARCH_CONSTANTS.BADGE_WIDTH_FALLBACK)}px`
-                  : displayValue &&
-                      !displayValue.startsWith('#') &&
-                      !searchMode.showColumnSelector
-                    ? '12px'
-                    : '40px',
-                transition: 'padding-left 150ms ease-out',
+                  ? 'var(--badge-width, 60px)'
+                  : getBasePadding(),
               }}
               value={displayValue}
               onChange={handleInputChange}
@@ -333,34 +339,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onHoverChange={handleHoverChange}
               />
             )}
-
-            <span
-              ref={textMeasureRef}
-              className="absolute invisible whitespace-nowrap text-sm"
-              style={{
-                left: showTargetedIndicator
-                  ? `${Math.max(badgeWidth + SEARCH_CONSTANTS.BADGE_MARGIN, SEARCH_CONSTANTS.BADGE_WIDTH_FALLBACK)}px`
-                  : displayValue
-                    ? '18px'
-                    : '10px',
-                padding: '10px',
-              }}
-            >
-              {displayValue}
-            </span>
-
-            <PiKeyReturnBold
-              className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 ${
-                searchState === 'not-found' && displayValue
-                  ? 'opacity-100 scale-150 translate-x-0'
-                  : 'opacity-0 scale-95 translate-x-2'
-              }`}
-              style={{
-                left: `${textWidth + (showTargetedIndicator ? Math.max(badgeWidth + SEARCH_CONSTANTS.BADGE_MARGIN, SEARCH_CONSTANTS.BADGE_WIDTH_FALLBACK) : displayValue ? 0 : 10)}px`,
-                transition:
-                  'left 100ms ease-out, opacity 300ms ease-in-out, transform 300ms ease-in-out',
-              }}
-            />
           </div>
         </div>
 
