@@ -6,7 +6,7 @@ import { PriceInput, MarginEditor } from '../atoms';
 import {
   basePriceSchema,
   sellPriceComparisonSchema,
-} from '@/schemas/itemValidation';
+} from '@/schemas/manual/itemValidation';
 
 interface ItemPricingFormProps {
   formData: {
