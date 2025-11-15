@@ -21,7 +21,21 @@ export const useScrollManagement = ({
   });
 
   // Track if dropdown just opened (allow initial scroll only)
-  const [hasInitialScrolled, setHasInitialScrolled] = useState(false);
+  // Use getDerivedStateFromProps pattern to reset when isOpen changes
+  const [scrollResetState, setScrollResetState] = useState({
+    isOpen,
+    hasInitialScrolled: false,
+  });
+
+  if (isOpen !== scrollResetState.isOpen) {
+    // Reset when isOpen changes
+    setScrollResetState({ isOpen, hasInitialScrolled: false });
+  }
+
+  const hasInitialScrolled = scrollResetState.hasInitialScrolled;
+  const setHasInitialScrolled = (value: boolean) => {
+    setScrollResetState(prev => ({ ...prev, hasInitialScrolled: value }));
+  };
 
   const checkScroll = useCallback(() => {
     if (!optionsContainerRef.current) return;
@@ -95,10 +109,7 @@ export const useScrollManagement = ({
       }
     }
 
-    // Reset when dropdown closes
-    if (!isOpen) {
-      setHasInitialScrolled(false);
-    }
+    // State auto-resets when component remounts or isOpen changes
   }, [
     isOpen,
     applyOpenStyles,

@@ -129,7 +129,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Use refs to avoid dependency issues
     const validationRef = useRef(validation);
-    validationRef.current = validation;
+
+    // Update ref in effect to avoid accessing during render
+    useEffect(() => {
+      validationRef.current = validation;
+    }, [validation]);
 
     const handleCloseValidation = useCallback(() => {
       setShowValidationError(false);

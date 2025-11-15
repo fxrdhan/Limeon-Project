@@ -235,12 +235,10 @@ export const useDropdownPosition = (
 
   useEffect(() => {
     if (isOpen) {
-      setIsPositionReady(false);
       requestAnimationFrame(() => {
+        setIsPositionReady(false);
         calculateDropdownPosition();
       });
-    } else {
-      setIsPositionReady(false);
     }
   }, [isOpen, calculateDropdownPosition]);
 

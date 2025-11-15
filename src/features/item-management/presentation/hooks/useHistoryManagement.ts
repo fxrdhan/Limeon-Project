@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useHistoryKeyboardNavigation } from './useHistoryKeyboardNavigation';
 import type { HistoryItem } from '../organisms/HistoryTimelineList';
 
@@ -70,7 +70,21 @@ export const useHistorySelection = ({
   onSelectionEmpty,
   enableKeyboardNav = true,
 }: UseHistorySelectionOptions): UseHistorySelectionReturn => {
-  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  // Use getDerivedStateFromProps to reset selectedVersion when compareMode changes
+  const [selectionState, setSelectionState] = useState<{
+    compareMode: boolean;
+    selectedVersion: number | null;
+  }>({
+    compareMode: false,
+    selectedVersion: null,
+  });
+  if (compareMode !== selectionState.compareMode) {
+    setSelectionState({ compareMode, selectedVersion: null });
+  }
+  const selectedVersion = selectionState.selectedVersion;
+  const setSelectedVersion = (version: number | null) => {
+    setSelectionState(prev => ({ ...prev, selectedVersion: version }));
+  };
 
   // Keyboard navigation - only enabled in single mode
   useHistoryKeyboardNavigation({
@@ -89,10 +103,7 @@ export const useHistorySelection = ({
     },
   });
 
-  // Clear selection when compare mode changes
-  useEffect(() => {
-    setSelectedVersion(null);
-  }, [compareMode]);
+  // selectedVersion auto-resets when compareMode changes (getDerivedStateFromProps pattern)
 
   // Clear all selections
   const clearSelections = useCallback(() => {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 // Column display mode type
 export type ColumnDisplayMode = 'name' | 'code';
@@ -42,14 +42,10 @@ const saveDisplayModes = (modes: Record<string, ColumnDisplayMode>) => {
 
 export const useColumnDisplayMode = () => {
   // Client-side state management with localStorage persistence
-  const [displayModeState, setDisplayModeState] =
-    useState<Record<string, ColumnDisplayMode>>(loadDisplayModes);
-
-  // Load from localStorage on mount (in case of external changes)
-  useEffect(() => {
-    const modes = loadDisplayModes();
-    setDisplayModeState(modes);
-  }, []);
+  // Use lazy initializer to load from localStorage once
+  const [displayModeState, setDisplayModeState] = useState<
+    Record<string, ColumnDisplayMode>
+  >(() => loadDisplayModes());
 
   // Helper to check if a column is a reference column
   const isReferenceColumn = useCallback((colId: string) => {

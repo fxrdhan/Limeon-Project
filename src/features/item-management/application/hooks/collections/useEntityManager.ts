@@ -142,32 +142,71 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     onEntityChange,
   } = options || {};
 
-  // State management
-  const [currentEntityType, setCurrentEntityType] =
-    useState<EntityType>(activeEntityType);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingEntity, setEditingEntity] = useState<EntityData | null>(null);
-  const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  // State management - use getDerivedStateFromProps to reset state when activeEntityType changes
+  const [entityState, setEntityState] = useState({
+    activeType: activeEntityType,
+    currentType: activeEntityType,
+    page: 1,
+    searchTerm: '',
+    isAddOpen: false,
+    isEditOpen: false,
+    editing: null as EntityData | null,
+    itemsPerPage: 20,
+  });
+  if (activeEntityType !== entityState.activeType) {
+    setEntityState({
+      activeType: activeEntityType,
+      currentType: activeEntityType,
+      page: 1,
+      searchTerm: '',
+      isAddOpen: false,
+      isEditOpen: false,
+      editing: null,
+      itemsPerPage: entityState.itemsPerPage, // Preserve itemsPerPage
+    });
+  }
 
-  // Sync internal state with prop changes
+  // Clear search input when entity type changes (cannot access ref during render)
   useEffect(() => {
-    if (activeEntityType !== currentEntityType) {
-      setCurrentEntityType(activeEntityType);
-      setCurrentPage(1);
-      setSearch('');
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
-      setEditingEntity(null);
-
-      // Clear search input
-      if (searchInputRef?.current) {
-        searchInputRef.current.value = '';
-      }
+    if (
+      searchInputRef?.current &&
+      activeEntityType !== entityState.activeType
+    ) {
+      searchInputRef.current.value = '';
     }
-  }, [activeEntityType, currentEntityType, searchInputRef]);
+  }, [activeEntityType, entityState.activeType, searchInputRef]);
+
+  // Extract state values
+  const currentEntityType = entityState.currentType;
+  const isAddModalOpen = entityState.isAddOpen;
+  const isEditModalOpen = entityState.isEditOpen;
+  const editingEntity = entityState.editing;
+  const search = entityState.searchTerm;
+  const currentPage = entityState.page;
+  const itemsPerPage = entityState.itemsPerPage;
+
+  // Setter functions
+  const setCurrentEntityType = (type: EntityType) => {
+    setEntityState(prev => ({ ...prev, currentType: type }));
+  };
+  const setIsAddModalOpen = (open: boolean) => {
+    setEntityState(prev => ({ ...prev, isAddOpen: open }));
+  };
+  const setIsEditModalOpen = (open: boolean) => {
+    setEntityState(prev => ({ ...prev, isEditOpen: open }));
+  };
+  const setEditingEntity = (entity: EntityData | null) => {
+    setEntityState(prev => ({ ...prev, editing: entity }));
+  };
+  const setSearch = (searchTerm: string) => {
+    setEntityState(prev => ({ ...prev, searchTerm }));
+  };
+  const setCurrentPage = (page: number) => {
+    setEntityState(prev => ({ ...prev, page }));
+  };
+  const setItemsPerPage = (items: number) => {
+    setEntityState(prev => ({ ...prev, itemsPerPage: items }));
+  };
 
   // Get current configuration
   const currentConfig = useMemo(() => {

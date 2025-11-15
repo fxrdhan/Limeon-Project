@@ -14,8 +14,7 @@ function BaseSelector<T>({
   searchTerm = '',
   config,
 }: BaseSelectorProps<T>) {
-  const [filteredItems, setFilteredItems] = useState<T[]>(items);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  // Removed filteredItems state - will derive it with useMemo instead
   const [showHeader, setShowHeader] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -30,47 +29,13 @@ function BaseSelector<T>({
     height: 0,
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedIndex(0);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (filteredItems.length > 0 && selectedIndex >= filteredItems.length) {
-      setSelectedIndex(Math.max(0, filteredItems.length - 1));
-    } else if (filteredItems.length === 0) {
-      setSelectedIndex(0);
-    }
-  }, [filteredItems.length, selectedIndex]);
-
-  useEffect(() => {
-    if (isOpen && !showHeader) {
-      setShowHeader(true);
-      setTimeout(() => {
-        setShowContent(true);
-      }, 200);
-    } else if (!isOpen && (showHeader || showContent)) {
-      setShowContent(false);
-      setTimeout(() => {
-        setShowHeader(false);
-      }, 200);
-    }
-  }, [isOpen, showHeader, showContent]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setShowHeader(false);
-      setShowContent(false);
-    }
-  }, [isOpen]);
-
   const searchFieldsConfig = useMemo(() => {
     if (items.length === 0) return [];
     return config.getSearchFields(items[0]);
   }, [items, config]);
 
-  useEffect(() => {
+  // Derive filteredItems using useMemo instead of effect + state
+  const filteredItems = useMemo(() => {
     if (searchTerm && items.length > 0) {
       const searchTargets = items.map(item => {
         const searchFields = config.getSearchFields(item);
@@ -105,17 +70,76 @@ function BaseSelector<T>({
         });
       });
 
-      const filtered = Array.from(allResults.values())
+      return Array.from(allResults.values())
         .sort((a, b) => b.score - a.score)
         .map(item => item.item);
-
-      setFilteredItems(filtered);
-      setSelectedIndex(prev => (prev >= filtered.length ? 0 : prev));
     } else {
-      setFilteredItems(items);
-      setSelectedIndex(prev => (prev >= items.length ? 0 : prev));
+      return items;
     }
   }, [searchTerm, items, searchFieldsConfig, config]);
+
+  // Use getDerivedStateFromProps pattern to manage selectedIndex resets
+  const [indexState, setIndexState] = useState({
+    isOpen: false,
+    filteredLength: 0,
+    selectedIndex: 0,
+  });
+
+  if (
+    isOpen !== indexState.isOpen ||
+    filteredItems.length !== indexState.filteredLength
+  ) {
+    let newIndex = indexState.selectedIndex;
+
+    // Reset to 0 when opening
+    if (isOpen && !indexState.isOpen) {
+      newIndex = 0;
+    }
+    // Adjust if out of bounds
+    else if (
+      filteredItems.length > 0 &&
+      indexState.selectedIndex >= filteredItems.length
+    ) {
+      newIndex = Math.max(0, filteredItems.length - 1);
+    } else if (filteredItems.length === 0) {
+      newIndex = 0;
+    }
+
+    setIndexState({
+      isOpen,
+      filteredLength: filteredItems.length,
+      selectedIndex: newIndex,
+    });
+  }
+
+  const selectedIndex = indexState.selectedIndex;
+  const setSelectedIndex = (value: number | ((prev: number) => number)) => {
+    setIndexState(prev => ({
+      ...prev,
+      selectedIndex:
+        typeof value === 'function' ? value(prev.selectedIndex) : value,
+    }));
+  };
+
+  useEffect(() => {
+    if (isOpen && !showHeader) {
+      // Move all setState to async to avoid synchronous setState in effect
+      setTimeout(() => {
+        setShowHeader(true);
+      }, 0);
+      setTimeout(() => {
+        setShowContent(true);
+      }, 200);
+    } else if (!isOpen && (showHeader || showContent)) {
+      // Move all setState to async
+      setTimeout(() => {
+        setShowContent(false);
+      }, 0);
+      setTimeout(() => {
+        setShowHeader(false);
+      }, 200);
+    }
+  }, [isOpen, showHeader, showContent]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
