@@ -75,7 +75,6 @@ async function updateUserPassword(): Promise<void> {
 
     console.log('✅ Password updated successfully!');
     console.log('User ID:', userId);
-    console.log('New Password:', newPassword);
     console.log('User Email:', data.user.email);
 
     // Also check if user exists in users table
