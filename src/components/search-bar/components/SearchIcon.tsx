@@ -16,12 +16,19 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   displayValue,
   showTargetedIndicator,
 }) => {
-  // Don't move icon when:
-  // 1. Column selector is active
-  // 2. Value starts with '#' (hashtag mode - prevents flash during state update)
+  // Show icon on the left when:
+  // 1. There's a display value that doesn't start with '#' (normal typing)
+  // 2. OR when there are blue badges (explicit operators) present
+  const hasExplicitOperator =
+    searchMode.filterSearch?.isExplicitOperator ||
+    searchMode.filterSearch?.isMultiCondition ||
+    searchMode.showOperatorSelector ||
+    searchMode.showJoinOperatorSelector ||
+    searchMode.partialJoin ||
+    searchMode.secondOperator;
+
   const shouldShowLeftIcon =
-    displayValue &&
-    !displayValue.startsWith('#') &&
+    ((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
     !searchMode.showColumnSelector;
 
   const getSearchIconColor = () => {
@@ -48,6 +55,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   };
 
   const getSearchIcon = () => {
+    // Show Hash icon for implicit contains operator (colon pattern)
     if (
       searchMode.isFilterMode &&
       searchMode.filterSearch?.operator === 'contains' &&
@@ -59,13 +67,31 @@ const SearchIcon: React.FC<SearchIconProps> = ({
         />
       );
     }
-    if (searchMode.isFilterMode) {
+
+    // Show Filter icon for any explicit operator usage (blue badges present)
+    // This includes:
+    // - Filter mode with explicit operator
+    // - Multi-condition filters
+    // - Operator selector open
+    // - Join operator selector open
+    // - Building second condition (partialJoin state)
+    // - Second operator selected
+    if (
+      searchMode.isFilterMode ||
+      searchMode.filterSearch?.isExplicitOperator ||
+      searchMode.filterSearch?.isMultiCondition ||
+      (searchMode.showOperatorSelector && searchMode.selectedColumn) ||
+      searchMode.showJoinOperatorSelector ||
+      searchMode.partialJoin ||
+      searchMode.secondOperator
+    ) {
       return (
         <LuFilter
           className={`${getSearchIconColor()} transition-all duration-300`}
         />
       );
     }
+
     return (
       <LuSearch
         className={`${getSearchIconColor()} transition-all duration-300`}

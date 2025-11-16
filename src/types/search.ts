@@ -33,9 +33,13 @@ export interface EnhancedSearchState {
   globalSearch?: string;
   showColumnSelector: boolean;
   showOperatorSelector: boolean;
+  showJoinOperatorSelector?: boolean; // True when join operator selector (AND/OR) is open
   isFilterMode: boolean;
   filterSearch?: FilterSearch;
   selectedColumn?: SearchColumn;
+  isSecondOperator?: boolean; // True when selecting second operator in multi-condition
+  partialJoin?: 'AND' | 'OR'; // Join operator selected, building second condition
+  secondOperator?: string; // Second operator value for multi-condition
 }
 
 export interface ColumnSelectorProps {
