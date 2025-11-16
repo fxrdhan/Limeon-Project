@@ -36,6 +36,10 @@
     "ag-mcp": {
       "command": "npx",
       "args": ["ag-mcp"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
     }
   }
 }
