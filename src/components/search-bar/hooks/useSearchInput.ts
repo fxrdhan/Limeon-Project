@@ -213,9 +213,10 @@ export const useSearchInput = ({
 
       if (searchMode.isFilterMode && searchMode.filterSearch) {
         // SPECIAL CASE: Confirmed filter + user types # for join selector
-        // Don't rebuild the value (which would remove ##), just append # to open join selector
+        // Remove ## marker first, then append # to open join selector
         if (searchMode.filterSearch.isConfirmed && inputValue.trim() === '#') {
-          const newValue = value + ' #';
+          const cleanValue = value.replace(/##\s*$/, '').trim();
+          const newValue = cleanValue + ' #';
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);

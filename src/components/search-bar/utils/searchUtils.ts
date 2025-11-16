@@ -12,8 +12,8 @@ import {
 
 /**
  * Parse multi-condition filter pattern:
- * #field #op1 val1 #and #op2 val2## (with ## confirmation marker)
- * Returns null if not a confirmed multi-condition pattern
+ * #field #op1 val1 #and #op2 val2
+ * Returns null if not a complete multi-condition pattern
  */
 const parseMultiConditionFilter = (
   searchValue: string,
@@ -23,13 +23,17 @@ const parseMultiConditionFilter = (
   const hasJoinOperator = /#(and|or)/i.test(searchValue);
   if (!hasJoinOperator) return null;
 
-  // IMPORTANT: Only parse as verbose multi-condition if confirmed with ## marker
-  // Without marker, let incomplete pattern handlers manage it
+  // IMPORTANT: Only treat as complete multi-condition if BOTH values are confirmed
+  // Check if pattern ends with "##" (Enter confirmation) to ensure user finished typing
+  // Otherwise, user might still be typing the second value
   const hasConfirmationMarker = searchValue.endsWith('##');
-  if (!hasConfirmationMarker) return null;
+  if (!hasConfirmationMarker) {
+    // User is still typing - don't treat as complete multi-condition yet
+    return null;
+  }
 
-  // Strip confirmation marker for parsing
-  const cleanValue = searchValue.slice(0, -2);
+  // Use the full search value for parsing
+  const cleanValue = searchValue;
 
   // Extract conditions and join operators
   // Split pattern: #field #op1 val1 #join #op2 val2
@@ -62,10 +66,12 @@ const parseMultiConditionFilter = (
         );
 
         // Only add condition if operator is valid AND value is not empty
-        if (operatorObj && val.trim()) {
+        // Remove ## confirmation marker from value
+        const cleanVal = val.trim().replace(/##$/, '');
+        if (operatorObj && cleanVal) {
           conditions.push({
             operator: operatorObj.value,
-            value: val.trim(),
+            value: cleanVal,
           });
         }
       }
@@ -134,12 +140,6 @@ export const parseSearchValue = (
             };
           }
 
-          // Check if value has confirmed marker (##)
-          const hasConfirmedMarker = searchTerm.endsWith('##');
-          const cleanValue = hasConfirmedMarker
-            ? searchTerm.slice(0, -2).trim()
-            : searchTerm;
-
           return {
             globalSearch: undefined,
             showColumnSelector: false,
@@ -148,11 +148,10 @@ export const parseSearchValue = (
             isFilterMode: true,
             filterSearch: {
               field: column.field,
-              value: cleanValue,
+              value: searchTerm,
               column,
               operator: 'contains',
               isExplicitOperator: false,
-              isConfirmed: hasConfirmedMarker,
             },
           };
         }
@@ -168,10 +167,6 @@ export const parseSearchValue = (
       const column = findColumn(columns, columnInput);
 
       if (column) {
-        // PRIORITY CHECK: Check for ## marker to avoid false join operator detection
-        // When value is "anti##", we don't want to match join selector pattern
-        const hasTrailingConfirmedMarker = filterValue?.endsWith('##');
-
         // Check for multi-condition pattern first
         const multiCondition = parseMultiConditionFilter(searchValue, column);
         if (multiCondition) {
@@ -271,48 +266,12 @@ export const parseSearchValue = (
           }
         }
 
-        // SPECIAL: Confirmed filter + trailing # for join selector
-        // Pattern: #field #operator value## # (user wants to add second condition)
-        const confirmedPlusHashMatch = searchValue.match(
-          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)##\s+#\s*$/
-        );
-        if (confirmedPlusHashMatch) {
-          const [, , op, val] = confirmedPlusHashMatch;
-          const availableOperators =
-            column.type === 'number'
-              ? NUMBER_FILTER_OPERATORS
-              : DEFAULT_FILTER_OPERATORS;
-          const operatorObj = availableOperators.find(
-            o => o.value.toLowerCase() === op.toLowerCase()
-          );
-
-          if (operatorObj) {
-            return {
-              globalSearch: undefined,
-              showColumnSelector: false,
-              showOperatorSelector: false,
-              showJoinOperatorSelector: true,
-              isFilterMode: false,
-              selectedColumn: column,
-              filterSearch: {
-                field: column.field,
-                value: val.trim(),
-                column,
-                operator: operatorObj.value,
-                isExplicitOperator: true,
-                isConfirmed: true, // Preserve confirmed state
-              },
-            };
-          }
-        }
-
         // Check for join operator selection state
-        // Pattern: #field #operator value# OR #field #operator value #
-        // User can type # directly after value or with space
-        // BUT: Exclude confirmed marker pattern (value##)
-        const joinSelectorMatch = !hasTrailingConfirmedMarker
-          ? searchValue.match(/^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s*#\s*$/)
-          : null;
+        // Pattern: #field #operator value # (MUST have space before final #)
+        // User must explicitly type space + # to open join selector
+        const joinSelectorMatch = searchValue.match(
+          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#\s*$/
+        );
         if (joinSelectorMatch) {
           const [, , op, val] = joinSelectorMatch;
           const availableOperators =
@@ -324,6 +283,9 @@ export const parseSearchValue = (
           );
 
           if (operatorObj) {
+            // Remove ALL trailing # from value (from ## confirmation marker)
+            const cleanValue = val.trim().replace(/#+$/, '');
+
             return {
               globalSearch: undefined,
               showColumnSelector: false,
@@ -333,10 +295,11 @@ export const parseSearchValue = (
               selectedColumn: column,
               filterSearch: {
                 field: column.field,
-                value: val.trim(),
+                value: cleanValue,
                 column,
                 operator: operatorObj.value,
                 isExplicitOperator: true,
+                isConfirmed: true, // Value was confirmed with ## (Enter key)
               },
             };
           }
@@ -428,11 +391,12 @@ export const parseSearchValue = (
           );
 
           if (operator) {
-            // Check if value has confirmed marker (##)
-            const hasConfirmedMarker = filterValue?.endsWith('##');
-            const cleanValue = hasConfirmedMarker
-              ? filterValue!.slice(0, -2).trim()
-              : filterValue || '';
+            // Check if value has ## confirmation marker
+            const rawValue = filterValue || '';
+            const hasConfirmation = rawValue.endsWith('##');
+            const cleanValue = hasConfirmation
+              ? rawValue.slice(0, -2)
+              : rawValue;
 
             return {
               globalSearch: undefined,
@@ -446,7 +410,7 @@ export const parseSearchValue = (
                 column,
                 operator: operator.value,
                 isExplicitOperator: true,
-                isConfirmed: hasConfirmedMarker,
+                isConfirmed: hasConfirmation,
               },
             };
           } else {

@@ -22,6 +22,7 @@ export interface FilterCondition {
 export interface FilterSearch extends TargetedSearch {
   operator: string;
   isExplicitOperator?: boolean; // True if operator was explicitly selected via space pattern
+  isConfirmed?: boolean; // True if value was confirmed with ## (Enter key)
   // Multi-condition support
   conditions?: FilterCondition[]; // Array of conditions for AND/OR
   joinOperator?: 'AND' | 'OR'; // Join operator between conditions
