@@ -124,12 +124,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const handleJoinOperatorSelect = useCallback(
     (joinOp: JoinOperator) => {
       // Remove trailing # from current value (with or without space)
-      let cleanValue = value.replace(/\s*#\s*$/, '').trim();
-
-      // IMPORTANT: Remove confirmed marker (##) before adding join operator
-      // Otherwise it will leak to AG Grid filter
-      // Pattern: #field #operator value## -> #field #operator value
-      cleanValue = cleanValue.replace(/##$/, '');
+      const cleanValue = value.replace(/\s*#\s*$/, '').trim();
 
       // Pattern: #field #operator value -> #field #operator value #and #
       const newValue = `${cleanValue} #${joinOp.value} #`;
@@ -198,30 +193,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [value, onChange]);
 
   const handleClearTargeted = useCallback(() => {
-    // SPECIAL: Multi-condition verbose mode - remove ## to enter edit mode
-    if (
-      searchMode.isFilterMode &&
-      searchMode.filterSearch?.isMultiCondition &&
-      searchMode.filterSearch?.conditions &&
-      searchMode.filterSearch.conditions.length > 1
-    ) {
-      // Remove ## marker to go back to edit mode (allow editing second value)
-      const newValue = value.replace(/##$/, '');
-      onChange({
-        target: { value: newValue },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      setTimeout(() => {
-        if (inputRef?.current) {
-          inputRef.current.focus();
-          // Set cursor position to the end
-          const length = inputRef.current.value.length;
-          inputRef.current.setSelectionRange(length, length);
-        }
-      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-      return;
-    }
-
     if (searchMode.isFilterMode && searchMode.filterSearch) {
       if (
         searchMode.filterSearch.operator === 'contains' &&
@@ -338,10 +309,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [searchableColumns, searchTerm]);
 
   const getPlaceholder = () => {
-    // Hide placeholder when filter is confirmed (locked state)
-    if (searchMode.isFilterMode && searchMode.filterSearch?.isMultiCondition) {
-      return '';
-    }
     if (showTargetedIndicator) {
       return 'Cari...';
     }
@@ -385,10 +352,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
-              readOnly={
-                searchMode.isFilterMode &&
-                searchMode.filterSearch?.isMultiCondition
-              }
               className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-[border-color,box-shadow] duration-200 ease-in-out placeholder-gray-400 ${
                 searchState === 'not-found'
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
@@ -402,11 +365,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                       : searchMode.showColumnSelector
                         ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
                         : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
-              } ${
-                searchMode.isFilterMode &&
-                searchMode.filterSearch?.isMultiCondition
-                  ? 'cursor-default bg-gray-50'
-                  : ''
               } focus:outline-none rounded-lg`}
               style={{
                 // Use CSS variable set by ResizeObserver (dynamic), fallback to base padding
