@@ -10,12 +10,23 @@ export interface SearchColumn {
   activeColor?: string;
 }
 
+export interface FilterCondition {
+  operator: string;
+  value: string;
+}
+
 export interface FilterSearch {
   field: string;
-  value: string;
+  value: string; // For single condition (backward compat)
   column: SearchColumn;
-  operator: string;
+  operator: string; // For single condition (backward compat)
   isExplicitOperator: boolean;
+  // Multi-condition support
+  conditions?: FilterCondition[]; // Array of conditions for AND/OR
+  joinOperator?: 'AND' | 'OR'; // Join operator between conditions
+  isMultiCondition?: boolean; // Flag to indicate multi-condition filter
+  // Confirmed state (user pressed Enter to lock filter value as badge)
+  isConfirmed?: boolean; // Flag to show value as gray badge instead of in input
 }
 
 export interface TableSearchProps {
@@ -41,8 +52,12 @@ export interface EnhancedSearchBarProps extends TableSearchProps {
 export interface EnhancedSearchState {
   showColumnSelector: boolean;
   showOperatorSelector: boolean;
+  showJoinOperatorSelector: boolean; // NEW: for #and/#or selection
   isFilterMode: boolean;
   selectedColumn?: SearchColumn;
   filterSearch?: FilterSearch;
   globalSearch?: string;
+  isSecondOperator?: boolean; // NEW: flag for second+ operator selection
+  partialJoin?: 'AND' | 'OR'; // NEW: selected join operator before next condition
+  secondOperator?: string; // NEW: second operator selected (for displaying blue badge)
 }
