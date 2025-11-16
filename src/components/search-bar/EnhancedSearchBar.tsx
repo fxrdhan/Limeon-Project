@@ -198,6 +198,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [value, onChange]);
 
   const handleClearTargeted = useCallback(() => {
+    // SPECIAL: Multi-condition verbose mode - remove ## to enter edit mode
+    if (
+      searchMode.isFilterMode &&
+      searchMode.filterSearch?.isMultiCondition &&
+      searchMode.filterSearch?.conditions &&
+      searchMode.filterSearch.conditions.length > 1
+    ) {
+      // Remove ## marker to go back to edit mode (allow editing second value)
+      const newValue = value.replace(/##$/, '');
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      return;
+    }
+
     if (searchMode.isFilterMode && searchMode.filterSearch) {
       if (
         searchMode.filterSearch.operator === 'contains' &&
@@ -230,7 +249,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
       }
     }
-  }, [searchMode, onClearSearch, onChange, inputRef]);
+  }, [searchMode, onClearSearch, onChange, inputRef, value]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
