@@ -343,7 +343,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   </AnimatePresence>
 
                   {/* Show JOIN operator badge between conditions (not after last one) */}
-                  {index < searchMode.filterSearch.conditions.length - 1 && (
+                  {index < searchMode.filterSearch!.conditions!.length - 1 && (
                     <AnimatePresence>
                       <motion.div
                         key={`join-${index}`}
