@@ -147,10 +147,12 @@ export const useSearchInput = ({
       (searchMode.isFilterMode ||
         searchMode.showJoinOperatorSelector ||
         (searchMode.showOperatorSelector && isSecondOperator) ||
-        // NEW: Show container for incomplete multi-condition (waiting for second value)
+        // Show container for incomplete multi-condition (waiting for second value)
         (!searchMode.isFilterMode &&
           searchMode.partialJoin &&
-          !!searchMode.filterSearch)) &&
+          !!searchMode.filterSearch) ||
+        // Show container for confirmed multi-condition
+        searchMode.filterSearch?.isMultiCondition) &&
       !!searchMode.filterSearch;
 
     const targetElement =
@@ -164,7 +166,7 @@ export const useSearchInput = ({
 
     const inputElement = inputRef.current;
 
-    // Update padding immediately with current badge width
+    // Update padding instantly with current badge width
     const updatePadding = () => {
       if (targetElement && inputElement) {
         const badgeWidth = targetElement.offsetWidth;
@@ -175,17 +177,12 @@ export const useSearchInput = ({
 
     // Initial measurement with RAF for DOM stability
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        updatePadding();
-      });
+      updatePadding();
     });
 
-    // Watch for badge size changes (hover for X button, font loading, etc.)
+    // Watch for badge size changes - instant updates (no throttling needed without animations)
     const resizeObserver = new ResizeObserver(() => {
-      // Direct DOM update - no setState, no re-render, no flicker!
-      requestAnimationFrame(() => {
-        updatePadding();
-      });
+      updatePadding();
     });
 
     resizeObserver.observe(targetElement);
@@ -199,8 +196,10 @@ export const useSearchInput = ({
     searchMode.showJoinOperatorSelector,
     searchMode.showOperatorSelector,
     searchMode.filterSearch,
+    searchMode.filterSearch?.isMultiCondition,
+    searchMode.partialJoin,
     inputRef,
-    isSecondOperator, // Stable boolean computed outside
+    isSecondOperator,
   ]);
 
   const handleHoverChange = useCallback(() => {
