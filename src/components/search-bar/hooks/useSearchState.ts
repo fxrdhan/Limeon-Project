@@ -78,11 +78,22 @@ export const useSearchState = ({
       onGlobalSearchRef.current?.(searchMode.globalSearch);
       onFilterSearchRef.current?.(null);
     } else if (
-      searchMode.showColumnSelector ||
-      searchMode.showOperatorSelector
+      // 🐛 FIX BUG #1: Don't clear filter when in partial join mode (waiting for second operator/value)
+      // When user selects AND/OR and is selecting second operator, we should MAINTAIN first condition's filter
+      !searchMode.partialJoin && // Don't clear if in partial join state
+      !searchMode.showJoinOperatorSelector && // Don't clear if join selector is open
+      (searchMode.showColumnSelector || searchMode.showOperatorSelector)
     ) {
       onGlobalSearchRef.current?.('');
       onFilterSearchRef.current?.(null);
+    } else if (
+      // NEW: Maintain filter during partial join mode (user is building multi-condition)
+      searchMode.partialJoin &&
+      searchMode.filterSearch &&
+      !searchMode.isFilterMode
+    ) {
+      // Keep the first condition's filter active while user selects second operator/value
+      debouncedFilterUpdate(searchMode.filterSearch);
     }
 
     prevValueRef.current = value;
