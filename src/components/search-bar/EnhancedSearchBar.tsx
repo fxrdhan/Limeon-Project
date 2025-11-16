@@ -192,40 +192,52 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     } as React.ChangeEvent<HTMLInputElement>);
   }, [value, onChange]);
 
-  const handleClearTargeted = useCallback(() => {
-    if (searchMode.isFilterMode && searchMode.filterSearch) {
-      if (
-        searchMode.filterSearch.operator === 'contains' &&
-        !searchMode.filterSearch.isExplicitOperator
-      ) {
-        if (onClearSearch) {
-          onClearSearch();
-        } else {
-          onChange({
-            target: { value: '' },
-          } as React.ChangeEvent<HTMLInputElement>);
-        }
-      } else {
-        const columnName = searchMode.filterSearch.field;
-        const newValue = buildColumnValue(columnName, 'colon');
-        onChange({
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLInputElement>);
-
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-      }
+  // Clear all - used by purple badge (column)
+  const handleClearAll = useCallback(() => {
+    if (onClearSearch) {
+      onClearSearch();
     } else {
-      if (onClearSearch) {
-        onClearSearch();
-      } else {
-        onChange({
-          target: { value: '' },
-        } as React.ChangeEvent<HTMLInputElement>);
-      }
+      onChange({
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLInputElement>);
     }
-  }, [searchMode, onClearSearch, onChange, inputRef, value]);
+  }, [onClearSearch, onChange]);
+
+  // Clear to column only - used by blue badge (operator)
+  const handleClearToColumn = useCallback(() => {
+    if (searchMode.filterSearch) {
+      const columnName = searchMode.filterSearch.field;
+      const newValue = buildColumnValue(columnName, 'colon');
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    } else {
+      handleClearAll();
+    }
+  }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
+
+  // Clear value only - used by gray badge (value)
+  const handleClearValue = useCallback(() => {
+    if (searchMode.filterSearch) {
+      const columnName = searchMode.filterSearch.field;
+      const operator = searchMode.filterSearch.operator;
+      // Keep column and operator, clear value
+      const newValue = `#${columnName} #${operator} `;
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    } else {
+      handleClearAll();
+    }
+  }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
@@ -384,7 +396,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 searchMode={searchMode}
                 badgeRef={badgeRef}
                 badgesContainerRef={badgesContainerRef}
-                onClearTargeted={handleClearTargeted}
+                onClearColumn={handleClearAll}
+                onClearOperator={handleClearToColumn}
+                onClearValue={handleClearValue}
+                onClearAll={handleClearAll}
                 onHoverChange={handleHoverChange}
               />
             )}
