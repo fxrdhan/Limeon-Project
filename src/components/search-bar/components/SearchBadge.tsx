@@ -10,7 +10,10 @@ interface SearchBadgeProps {
   searchMode: EnhancedSearchState;
   badgeRef: React.RefObject<HTMLDivElement | null>;
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
-  onClearTargeted: () => void;
+  onClearColumn: () => void;
+  onClearOperator: () => void;
+  onClearValue: () => void;
+  onClearAll: () => void;
   onHoverChange?: (isHovered: boolean) => void;
 }
 
@@ -18,7 +21,10 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   searchMode,
   badgeRef,
   badgesContainerRef,
-  onClearTargeted,
+  onClearColumn,
+  onClearOperator,
+  onClearValue,
+  onClearAll,
   onHoverChange,
 }) => {
   const handleMouseEnter = () => {
@@ -66,7 +72,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               searchMode.filterSearch.isExplicitOperator)
           ) && (
             <button
-              onClick={onClearTargeted}
+              onClick={onClearColumn}
               className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-purple-200 flex-shrink-0"
               type="button"
               style={{
@@ -113,7 +119,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               })()}
             </span>
             <button
-              onClick={onClearTargeted}
+              onClick={onClearOperator}
               className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
               type="button"
               style={{
@@ -147,7 +153,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 flex-shrink-0">
             <span>{searchMode.filterSearch.value}</span>
             <button
-              onClick={onClearTargeted}
+              onClick={onClearValue}
               className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-gray-200 flex-shrink-0"
               type="button"
               style={{
@@ -165,7 +171,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
         <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-orange-100 text-orange-700 flex-shrink-0">
           <span>{searchMode.partialJoin}</span>
           <button
-            onClick={onClearTargeted}
+            onClick={onClearAll}
             className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-orange-200 flex-shrink-0"
             type="button"
             style={{
@@ -197,7 +203,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
             })()}
           </span>
           <button
-            onClick={onClearTargeted}
+            onClick={onClearAll}
             className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
             type="button"
             style={{
@@ -232,7 +238,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 flex-shrink-0">
                     <span>{operatorLabel}</span>
                     <button
-                      onClick={onClearTargeted}
+                      onClick={onClearAll}
                       className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
                       type="button"
                       style={{
@@ -248,7 +254,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 flex-shrink-0">
                     <span>{condition.value}</span>
                     <button
-                      onClick={onClearTargeted}
+                      onClick={onClearAll}
                       className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-gray-200 flex-shrink-0"
                       type="button"
                       style={{
@@ -265,7 +271,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                     <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-orange-100 text-orange-700 flex-shrink-0">
                       <span>{searchMode.filterSearch!.joinOperator}</span>
                       <button
-                        onClick={onClearTargeted}
+                        onClick={onClearAll}
                         className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-orange-200 flex-shrink-0"
                         type="button"
                         style={{
