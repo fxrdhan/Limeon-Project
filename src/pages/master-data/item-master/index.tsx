@@ -414,7 +414,7 @@ const ItemMasterNew = memo(() => {
       // 🔒 Block grid filter changes during tab switching
       // SearchBar will call this with null when clearing, but we want to preserve grid filters
       if (isTabSwitchingRef.current) {
-        console.log('🔒 Blocked grid filter change during tab switch');
+        // console.log('🔒 Blocked grid filter change during tab switch');
         return;
       }
 
@@ -444,26 +444,60 @@ const ItemMasterNew = memo(() => {
             'dosage.name',
           ].includes(filterSearch.field);
 
-          if (isMultiFilterColumn) {
-            // For multi-filter columns (manufacturer, category, type, package, dosage)
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-              filterType: 'multi',
-              filterModels: [
-                {
-                  filterType: 'text',
-                  type: filterSearch.operator,
-                  filter: filterSearch.value,
-                },
-              ],
-            });
+          // Handle multi-condition filters (AND/OR)
+          if (filterSearch.isMultiCondition && filterSearch.conditions) {
+            const baseFilterType = isNumericColumn ? 'number' : 'text';
+
+            // Build conditions array for AG Grid
+            const agConditions = filterSearch.conditions.map(cond => ({
+              filterType: baseFilterType,
+              type: cond.operator,
+              filter: isNumericColumn ? Number(cond.value) : cond.value,
+            }));
+
+            // Build combined filter model
+            const combinedModel = {
+              filterType: baseFilterType,
+              operator: filterSearch.joinOperator || 'AND',
+              conditions: agConditions,
+            };
+
+            if (isMultiFilterColumn) {
+              // Wrap in multi-filter for columns that use agMultiColumnFilter
+              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                filterType: 'multi',
+                filterModels: [combinedModel],
+              });
+            } else {
+              // Direct combined model for regular columns
+              await unifiedGridApi.setColumnFilterModel(
+                filterSearch.field,
+                combinedModel
+              );
+            }
           } else {
-            // For single filter columns (name, code, barcode, package_conversions, numeric columns)
-            const filterType = isNumericColumn ? 'number' : 'text';
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-              filterType,
-              type: filterSearch.operator,
-              filter: filterSearch.value,
-            });
+            // Single condition filter (existing logic)
+            if (isMultiFilterColumn) {
+              // For multi-filter columns (manufacturer, category, type, package, dosage)
+              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                filterType: 'multi',
+                filterModels: [
+                  {
+                    filterType: 'text',
+                    type: filterSearch.operator,
+                    filter: filterSearch.value,
+                  },
+                ],
+              });
+            } else {
+              // For single filter columns (name, code, barcode, package_conversions, numeric columns)
+              const filterType = isNumericColumn ? 'number' : 'text';
+              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                filterType,
+                type: filterSearch.operator,
+                filter: filterSearch.value,
+              });
+            }
           }
 
           unifiedGridApi.onFilterChanged();
@@ -531,7 +565,7 @@ const ItemMasterNew = memo(() => {
             .map(col => col.getColId())
             .filter(colId => colId); // Filter out empty IDs
           setVisibleColumns(visibleFields);
-          console.log('📊 Visible columns updated:', visibleFields);
+          // console.log('📊 Visible columns updated:', visibleFields);
         }
       } catch (error) {
         console.error('Failed to update visible columns:', error);
@@ -618,7 +652,7 @@ const ItemMasterNew = memo(() => {
     async (filterSearch: FilterSearch | null) => {
       // 🔒 Block grid filter changes during tab switching
       if (isTabSwitchingRef.current) {
-        console.log('🔒 Blocked entity grid filter change during tab switch');
+        // console.log('🔒 Blocked entity grid filter change during tab switch');
         return;
       }
 
@@ -642,25 +676,57 @@ const ItemMasterNew = memo(() => {
           const isMultiFilter =
             baseFieldName === 'code' || baseFieldName === 'nci_code';
 
-          if (isMultiFilter) {
-            // For multi-filter columns (code, nci_code)
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-              filterType: 'multi',
-              filterModels: [
-                {
-                  filterType: 'text',
-                  type: filterSearch.operator,
-                  filter: filterSearch.value,
-                },
-              ],
-            });
-          } else {
-            // For single filter columns (name, description, address)
-            await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+          // Handle multi-condition filters (AND/OR)
+          if (filterSearch.isMultiCondition && filterSearch.conditions) {
+            // Build conditions array for AG Grid
+            const agConditions = filterSearch.conditions.map(cond => ({
               filterType: 'text',
-              type: filterSearch.operator,
-              filter: filterSearch.value,
-            });
+              type: cond.operator,
+              filter: cond.value,
+            }));
+
+            // Build combined filter model
+            const combinedModel = {
+              filterType: 'text',
+              operator: filterSearch.joinOperator || 'AND',
+              conditions: agConditions,
+            };
+
+            if (isMultiFilter) {
+              // Wrap in multi-filter for columns that use agMultiColumnFilter
+              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                filterType: 'multi',
+                filterModels: [combinedModel],
+              });
+            } else {
+              // Direct combined model for regular columns
+              await unifiedGridApi.setColumnFilterModel(
+                filterSearch.field,
+                combinedModel
+              );
+            }
+          } else {
+            // Single condition filter (existing logic)
+            if (isMultiFilter) {
+              // For multi-filter columns (code, nci_code)
+              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                filterType: 'multi',
+                filterModels: [
+                  {
+                    filterType: 'text',
+                    type: filterSearch.operator,
+                    filter: filterSearch.value,
+                  },
+                ],
+              });
+            } else {
+              // For single filter columns (name, description, address)
+              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                filterType: 'text',
+                type: filterSearch.operator,
+                filter: filterSearch.value,
+              });
+            }
           }
 
           unifiedGridApi.onFilterChanged();
@@ -777,7 +843,7 @@ const ItemMasterNew = memo(() => {
       // Grid restoration happens quickly after tab switch
       setTimeout(() => {
         isTabSwitchingRef.current = false;
-        console.log('🔓 Tab switch complete - grid filter protection unlocked');
+        // console.log('🔓 Tab switch complete - grid filter protection unlocked');
       }, 500);
 
       // Note: Grid state restoration will handle filter state correctly:
@@ -811,7 +877,7 @@ const ItemMasterNew = memo(() => {
 
       if (!isInCooldown) {
         // 🚀 First click or after cooldown - navigate IMMEDIATELY (0ms delay)
-        console.log(`✅ Navigating immediately to: ${value}`);
+        // console.log(`✅ Navigating immediately to: ${value}`);
         performNavigation(value);
         lastNavigationTimeRef.current = now;
 
@@ -823,9 +889,9 @@ const ItemMasterNew = memo(() => {
         pendingTabRef.current = null;
       } else {
         // ⏸️ Rapid clicking detected - debounce to capture final selection
-        console.log(
-          `⏸️ Rapid clicking detected (${timeSinceLastNav}ms since last nav) - debouncing to final tab`
-        );
+        // console.log(
+        //   `⏸️ Rapid clicking detected (${timeSinceLastNav}ms since last nav) - debouncing to final tab`
+        // );
 
         // Clear previous debounce timer
         if (debounceTimerRef.current) {
@@ -838,7 +904,7 @@ const ItemMasterNew = memo(() => {
         // Set new debounce timer - navigates to final selection after user settles
         debounceTimerRef.current = setTimeout(() => {
           if (pendingTabRef.current) {
-            console.log(`✅ Navigating to final tab: ${pendingTabRef.current}`);
+            // console.log(`✅ Navigating to final tab: ${pendingTabRef.current}`);
             performNavigation(pendingTabRef.current);
             lastNavigationTimeRef.current = Date.now();
             pendingTabRef.current = null;

@@ -38,10 +38,10 @@ export const initConsoleAPI = () => {
     (window as any).pharmaSys = pharmaSysConsoleAPI;
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('🏥 PharmaSys Console API loaded');
-      console.log(
-        '   Type: window.pharmaSys.storage.listAll() to view localStorage keys'
-      );
+      // console.log('🏥 PharmaSys Console API loaded');
+      // console.log(
+      //   '   Type: window.pharmaSys.storage.listAll() to view localStorage keys'
+      // );
     }
   }
 };

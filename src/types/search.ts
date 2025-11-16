@@ -14,9 +14,18 @@ export interface TargetedSearch {
   operator?: string;
 }
 
+export interface FilterCondition {
+  operator: string;
+  value: string;
+}
+
 export interface FilterSearch extends TargetedSearch {
   operator: string;
   isExplicitOperator?: boolean; // True if operator was explicitly selected via space pattern
+  // Multi-condition support
+  conditions?: FilterCondition[]; // Array of conditions for AND/OR
+  joinOperator?: 'AND' | 'OR'; // Join operator between conditions
+  isMultiCondition?: boolean; // Flag to indicate multi-condition filter
 }
 
 export interface EnhancedSearchState {
