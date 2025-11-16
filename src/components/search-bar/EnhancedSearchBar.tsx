@@ -333,6 +333,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [searchableColumns, searchTerm]);
 
   const getPlaceholder = () => {
+    // Hide placeholder when filter is confirmed (locked state)
+    if (searchMode.isFilterMode && searchMode.filterSearch?.isMultiCondition) {
+      return '';
+    }
     if (showTargetedIndicator) {
       return 'Cari...';
     }
@@ -376,6 +380,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
+              readOnly={
+                searchMode.isFilterMode &&
+                searchMode.filterSearch?.isMultiCondition
+              }
               className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-[border-color,box-shadow] duration-200 ease-in-out placeholder-gray-400 ${
                 searchState === 'not-found'
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
@@ -389,6 +397,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                       : searchMode.showColumnSelector
                         ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
                         : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
+              } ${
+                searchMode.isFilterMode &&
+                searchMode.filterSearch?.isMultiCondition
+                  ? 'cursor-default bg-gray-50'
+                  : ''
               } focus:outline-none rounded-lg`}
               style={{
                 // Use CSS variable set by ResizeObserver (dynamic), fallback to base padding
