@@ -104,3 +104,25 @@ export const NUMBER_FILTER_OPERATORS = [
     activeColor: 'text-purple-500',
   },
 ] as const;
+
+export const JOIN_OPERATORS = [
+  {
+    value: 'and',
+    label: 'AND',
+    description: 'Semua kondisi harus terpenuhi',
+    icon: <span className="text-sm font-bold">∧</span>,
+    activeColor: 'text-blue-600',
+  },
+  {
+    value: 'or',
+    label: 'OR',
+    description: 'Salah satu kondisi harus terpenuhi',
+    icon: <span className="text-sm font-bold">∨</span>,
+    activeColor: 'text-purple-600',
+  },
+] as const;
+
+export type FilterOperator =
+  | (typeof DEFAULT_FILTER_OPERATORS)[number]
+  | (typeof NUMBER_FILTER_OPERATORS)[number];
+export type JoinOperator = (typeof JOIN_OPERATORS)[number];

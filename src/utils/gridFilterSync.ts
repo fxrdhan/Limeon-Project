@@ -81,6 +81,43 @@ function convertToBadgePattern(
 }
 
 /**
+ * Convert combined filter (multiple conditions) to badge pattern
+ * Generates format: #field #op1 val1 #and #op2 val2
+ */
+function convertCombinedToBadgePattern(
+  field: string,
+  model: CombinedFilterModel
+): string | null {
+  if (!model.conditions || model.conditions.length < 2) {
+    return null;
+  }
+
+  // Only convert text filters for now
+  if (model.filterType !== 'text') {
+    return null;
+  }
+
+  const join = model.operator.toLowerCase(); // 'and' or 'or'
+
+  // Build pattern: #field #op1 val1 #join #op2 val2 ...
+  const conditionsStr = model.conditions
+    .map((cond, index) => {
+      if (typeof cond.filter !== 'string') return null;
+      const prefix =
+        index === 0
+          ? `#${cond.type} ${cond.filter}`
+          : `#${join} #${cond.type} ${cond.filter}`;
+      return prefix;
+    })
+    .filter(Boolean)
+    .join(' ');
+
+  if (!conditionsStr) return null;
+
+  return `#${field} ${conditionsStr}`;
+}
+
+/**
  * Analyze grid filter model to determine if it's simple or complex
  * Returns badge pattern for simple filters, or info for complex filters
  */
@@ -114,12 +151,31 @@ export function analyzeGridFilter(
     }
   }
 
+  // Check if it's a combined filter (multiple conditions with AND/OR)
+  if ('operator' in model && 'conditions' in model) {
+    const combinedModel = model as CombinedFilterModel;
+    const badgePattern = convertCombinedToBadgePattern(field, combinedModel);
+    if (badgePattern) {
+      return { isSimple: true, badgePattern };
+    }
+  }
+
   // Check if it's a multi-filter with single simple condition
   if (model.filterType === 'multi') {
     const multiModel = model as MultiFilterModel;
     if (isSimpleMultiFilter(multiModel)) {
       const simpleModel = multiModel.filterModels[0] as SimpleFilterModel;
       const badgePattern = convertToBadgePattern(field, simpleModel);
+      if (badgePattern) {
+        return { isSimple: true, badgePattern };
+      }
+    }
+
+    // Check if it's a multi-filter with combined conditions
+    const firstModel = multiModel.filterModels[0];
+    if (firstModel && 'operator' in firstModel && 'conditions' in firstModel) {
+      const combinedModel = firstModel as CombinedFilterModel;
+      const badgePattern = convertCombinedToBadgePattern(field, combinedModel);
       if (badgePattern) {
         return { isSimple: true, badgePattern };
       }

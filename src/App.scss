@@ -132,3 +132,15 @@ input[type='number'] {
   background-color: oklch(95% 0.052 163.051) !important; /* emerald-100 */
   transition: background-color 0.8s ease-out !important;
 }
+
+/* Utility: Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
