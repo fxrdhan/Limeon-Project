@@ -277,9 +277,20 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   duration: 0.2,
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-orange-100 text-orange-700 flex-shrink-0"
+                className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-orange-100 text-orange-700 flex-shrink-0"
               >
                 <span>{searchMode.partialJoin}</span>
+                <button
+                  onClick={onClearTargeted}
+                  className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-orange-200 flex-shrink-0"
+                  type="button"
+                  style={{
+                    transition:
+                      'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+                  }}
+                >
+                  <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -296,7 +307,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   duration: 0.2,
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
-                className="flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 flex-shrink-0"
+                className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 flex-shrink-0"
               >
                 <span>
                   {(() => {
@@ -313,6 +324,17 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                     );
                   })()}
                 </span>
+                <button
+                  onClick={onClearTargeted}
+                  className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
+                  type="button"
+                  style={{
+                    transition:
+                      'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+                  }}
+                >
+                  <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
