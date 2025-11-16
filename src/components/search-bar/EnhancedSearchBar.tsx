@@ -212,7 +212,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       } as React.ChangeEvent<HTMLInputElement>);
 
       setTimeout(() => {
-        inputRef?.current?.focus();
+        if (inputRef?.current) {
+          inputRef.current.focus();
+          // Set cursor position to the end
+          const length = inputRef.current.value.length;
+          inputRef.current.setSelectionRange(length, length);
+        }
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
       return;
     }
