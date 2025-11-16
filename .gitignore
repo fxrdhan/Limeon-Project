@@ -42,6 +42,9 @@ AGENTS.md
 # MCP configuration (contains sensitive tokens)
 .mcp.json
 
+# Playwright MCP snapshots (auto-generated logs)
+.playwright-mcp/
+
 # others
 image.png
 readme-local.md
