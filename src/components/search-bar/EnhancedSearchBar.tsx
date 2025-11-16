@@ -3,7 +3,12 @@ import { LuSearch } from 'react-icons/lu';
 import fuzzysort from 'fuzzysort';
 import { EnhancedSearchBarProps, SearchColumn, FilterOperator } from './types';
 import { SEARCH_CONSTANTS } from './constants';
-import { DEFAULT_FILTER_OPERATORS, NUMBER_FILTER_OPERATORS } from './operators';
+import {
+  DEFAULT_FILTER_OPERATORS,
+  NUMBER_FILTER_OPERATORS,
+  JOIN_OPERATORS,
+  JoinOperator,
+} from './operators';
 import { buildColumnValue, findColumn } from './utils/searchUtils';
 import { useSearchState } from './hooks/useSearchState';
 import { useSelectorPosition } from './hooks/useSelectorPosition';
@@ -13,6 +18,7 @@ import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
 import ColumnSelector from './components/selectors/ColumnSelector';
 import OperatorSelector from './components/selectors/OperatorSelector';
+import JoinOperatorSelector from './components/selectors/JoinOperatorSelector';
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   value,
@@ -50,6 +56,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     containerRef,
   });
 
+  const joinOperatorSelectorPosition = useSelectorPosition({
+    isOpen: searchMode.showJoinOperatorSelector,
+    containerRef,
+  });
+
   const {
     displayValue,
     showTargetedIndicator,
@@ -82,19 +93,53 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleOperatorSelect = useCallback(
     (operator: FilterOperator) => {
-      const columnMatch = value.match(/^#([^:\s]+)/);
-      if (columnMatch) {
-        const columnName = columnMatch[1];
-        const newValue = `#${columnName} #${operator.value} `;
+      // Check if this is for second+ operator (after join)
+      if (searchMode.isSecondOperator) {
+        // Append operator to existing value
+        // Current: #name #contains paracetamol #and #
+        // Result: #name #contains paracetamol #and #contains
+        const newValue = value.replace(/\s*#\s*$/, '') + ` #${operator.value} `;
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
-        // searchMode will auto-update when value changes
-
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      } else {
+        // First operator - replace everything after column
+        const columnMatch = value.match(/^#([^:\s]+)/);
+        if (columnMatch) {
+          const columnName = columnMatch[1];
+          const newValue = `#${columnName} #${operator.value} `;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
       }
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    },
+    [value, onChange, inputRef, searchMode.isSecondOperator]
+  );
+
+  const handleJoinOperatorSelect = useCallback(
+    (joinOp: JoinOperator) => {
+      // Remove trailing # from current value (with or without space)
+      let cleanValue = value.replace(/\s*#\s*$/, '').trim();
+
+      // IMPORTANT: Remove confirmed marker (##) before adding join operator
+      // Otherwise it will leak to AG Grid filter
+      // Pattern: #field #operator value## -> #field #operator value
+      cleanValue = cleanValue.replace(/##$/, '');
+
+      // Pattern: #field #operator value -> #field #operator value #and #
+      const newValue = `${cleanValue} #${joinOp.value} #`;
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
     [value, onChange, inputRef]
   );
@@ -144,6 +189,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [searchMode.selectedColumn, onChange, onClearSearch]);
 
+  const handleCloseJoinOperatorSelector = useCallback(() => {
+    // Remove trailing "#" when closing join operator selector
+    const trimmedValue = value.replace(/\s+#\s*$/, '');
+    onChange({
+      target: { value: trimmedValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+  }, [value, onChange]);
+
   const handleClearTargeted = useCallback(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {
       if (
@@ -188,6 +241,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onClearSearch,
     handleCloseColumnSelector,
     handleCloseOperatorSelector,
+    handleCloseJoinOperatorSelector,
   });
 
   const searchTerm = useMemo(() => {
@@ -366,6 +420,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onClose={handleCloseOperatorSelector}
         position={operatorSelectorPosition}
         searchTerm={operatorSearchTerm}
+      />
+
+      <JoinOperatorSelector
+        operators={JOIN_OPERATORS}
+        isOpen={searchMode.showJoinOperatorSelector}
+        onSelect={handleJoinOperatorSelect}
+        onClose={handleCloseJoinOperatorSelector}
+        position={joinOperatorSelectorPosition}
       />
     </>
   );

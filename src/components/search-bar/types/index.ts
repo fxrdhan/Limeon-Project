@@ -1,6 +1,7 @@
 export type {
   SearchColumn,
   FilterSearch,
+  FilterCondition,
   TableSearchProps,
   EnhancedSearchBarProps,
   EnhancedSearchState,
