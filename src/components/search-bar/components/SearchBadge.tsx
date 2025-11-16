@@ -60,7 +60,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           searchMode.selectedColumn) && (
           <motion.div
             key="purple-badge"
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={false}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{
@@ -117,7 +117,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               {/* Operator Badge (Blue) */}
               <motion.div
                 key={`operator-${index}`}
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{
@@ -132,7 +132,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               {/* Value Badge (Gray) */}
               <motion.div
                 key={`value-${index}`}
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{
@@ -148,7 +148,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               {index < filter.conditions!.length - 1 && (
                 <motion.div
                   key={`join-${index}`}
-                  initial={{ opacity: 0, scale: 0.5 }}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{
@@ -182,7 +182,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                 <motion.div
                   key="blue-badge"
                   ref={badgeRef}
-                  initial={{ opacity: 0, scale: 0.5 }}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{
@@ -240,7 +240,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               !isMultiConditionVerbose && (
                 <motion.div
                   key="value-badge"
-                  initial={{ opacity: 0, scale: 0.5 }}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{
@@ -270,7 +270,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
             {searchMode.partialJoin && !isMultiConditionVerbose && (
               <motion.div
                 key="join-badge"
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{
@@ -289,7 +289,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
             {searchMode.secondOperator && !isMultiConditionVerbose && (
               <motion.div
                 key="second-operator-badge"
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{
@@ -323,7 +323,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       {isMultiConditionVerbose && (
         <motion.div
           key="multi-clear-badge"
-          initial={{ opacity: 0, scale: 0.5 }}
+          initial={false}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.5 }}
           transition={{
