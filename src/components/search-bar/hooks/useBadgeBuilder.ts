@@ -14,6 +14,9 @@ interface BadgeHandlers {
   onClearSecondOperator: () => void;
   onClearSecondValue: () => void;
   onClearAll: () => void;
+  onEditColumn: () => void;
+  onEditOperator: () => void;
+  onEditJoin: () => void;
 }
 
 export const useBadgeBuilder = (
@@ -63,6 +66,8 @@ export const useBadgeBuilder = (
           '',
         onClear: handlers.onClearColumn,
         canClear: canClearColumn,
+        onEdit: handlers.onEditColumn,
+        canEdit: true, // Column badge is always editable
       });
     }
 
@@ -89,6 +94,8 @@ export const useBadgeBuilder = (
               ? handlers.onClearSecondOperator
               : handlers.onClearAll,
           canClear: true,
+          onEdit: handlers.onEditOperator,
+          canEdit: true, // Operator badges are editable
         });
 
         // Value badge for this condition
@@ -104,6 +111,7 @@ export const useBadgeBuilder = (
                 ? handlers.onClearSecondValue
                 : handlers.onClearAll,
           canClear: true,
+          canEdit: false, // Value badges are NOT editable (per user requirement)
         });
 
         // Join badge between conditions (not after last one)
@@ -114,6 +122,8 @@ export const useBadgeBuilder = (
             label: filter.joinOperator || '',
             onClear: handlers.onClearPartialJoin,
             canClear: true,
+            onEdit: handlers.onEditJoin,
+            canEdit: true, // Join badges are editable
           });
         }
       });
@@ -147,6 +157,8 @@ export const useBadgeBuilder = (
         label: operatorLabel,
         onClear: handlers.onClearOperator,
         canClear: true,
+        onEdit: handlers.onEditOperator,
+        canEdit: true, // Operator badges are editable
       });
     }
 
@@ -180,6 +192,7 @@ export const useBadgeBuilder = (
           ? handlers.onClearSecondValue
           : handlers.onClearValue,
         canClear: true,
+        canEdit: false, // Value badges are NOT editable (per user requirement)
       });
     }
 
@@ -191,6 +204,8 @@ export const useBadgeBuilder = (
         label: searchMode.partialJoin,
         onClear: handlers.onClearPartialJoin,
         canClear: true,
+        onEdit: handlers.onEditJoin,
+        canEdit: true, // Join badges are editable
       });
     }
 
@@ -211,6 +226,8 @@ export const useBadgeBuilder = (
         label: operatorLabel,
         onClear: handlers.onClearSecondOperator,
         canClear: true,
+        onEdit: handlers.onEditOperator,
+        canEdit: true, // Second operator badge is also editable
       });
     }
 
