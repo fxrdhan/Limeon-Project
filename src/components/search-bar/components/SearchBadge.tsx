@@ -15,6 +15,7 @@ interface SearchBadgeProps {
   onClearValue: () => void;
   onClearPartialJoin: () => void;
   onClearSecondOperator: () => void;
+  onClearSecondValue: () => void;
   onClearAll: () => void;
   onHoverChange?: (isHovered: boolean) => void;
 }
@@ -28,6 +29,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onClearValue,
   onClearPartialJoin,
   onClearSecondOperator,
+  onClearSecondValue,
   onClearAll,
   onHoverChange,
 }) => {
@@ -157,7 +159,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 flex-shrink-0">
             <span>{searchMode.filterSearch.value}</span>
             <button
-              onClick={onClearValue}
+              onClick={
+                // Check if we're showing second value: partialJoin exists OR secondOperator exists
+                searchMode.partialJoin || searchMode.secondOperator
+                  ? onClearSecondValue
+                  : onClearValue
+              }
               className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-gray-200 flex-shrink-0"
               type="button"
               style={{
@@ -258,7 +265,15 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-700 flex-shrink-0">
                     <span>{condition.value}</span>
                     <button
-                      onClick={onClearAll}
+                      onClick={
+                        // If this is the last condition and there are only 2 conditions,
+                        // use the second value handler to allow editing
+                        index ===
+                          searchMode.filterSearch!.conditions!.length - 1 &&
+                        searchMode.filterSearch!.conditions!.length === 2
+                          ? onClearSecondValue
+                          : onClearAll
+                      }
                       className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-gray-200 flex-shrink-0"
                       type="button"
                       style={{
@@ -269,7 +284,6 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                       <LuX className="w-3.5 h-3.5 flex-shrink-0" />
                     </button>
                   </div>
-
                   {/* Show JOIN operator badge between conditions (not after last one) */}
                   {index < searchMode.filterSearch!.conditions!.length - 1 && (
                     <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-orange-100 text-orange-700 flex-shrink-0">
