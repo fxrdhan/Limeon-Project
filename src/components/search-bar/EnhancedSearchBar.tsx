@@ -164,6 +164,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   ]);
 
   const handleCloseOperatorSelector = useCallback(() => {
+    // GUARD: Don't interfere if value is already confirmed (has ##) or in partial join state
+    // This prevents this handler from clearing value when other handlers set it correctly
+    if (value.includes('##') || searchMode.partialJoin) {
+      return;
+    }
+
     // searchMode is derived, so we close by modifying the value
     if (searchMode.selectedColumn) {
       const newValue = buildColumnValue(
@@ -182,7 +188,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
       }
     }
-  }, [searchMode.selectedColumn, onChange, onClearSearch]);
+  }, [
+    searchMode.selectedColumn,
+    searchMode.partialJoin,
+    value,
+    onChange,
+    onClearSearch,
+  ]);
 
   const handleCloseJoinOperatorSelector = useCallback(() => {
     // Remove trailing "#" when closing join operator selector
@@ -227,6 +239,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const operator = searchMode.filterSearch.operator;
       // Keep column and operator, clear value
       const newValue = `#${columnName} #${operator} `;
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    } else {
+      handleClearAll();
+    }
+  }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
+
+  // Clear partial join - used by orange badge (AND/OR)
+  const handleClearPartialJoin = useCallback(() => {
+    if (searchMode.filterSearch) {
+      const columnName = searchMode.filterSearch.field;
+      const operator = searchMode.filterSearch.operator;
+      const filterValue = searchMode.filterSearch.value;
+      // Back to confirmed single-condition: #field #operator value##
+      const newValue = `#${columnName} #${operator} ${filterValue}##`;
+
       onChange({
         target: { value: newValue },
       } as React.ChangeEvent<HTMLInputElement>);
@@ -399,6 +432,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onClearColumn={handleClearAll}
                 onClearOperator={handleClearToColumn}
                 onClearValue={handleClearValue}
+                onClearPartialJoin={handleClearPartialJoin}
                 onClearAll={handleClearAll}
                 onHoverChange={handleHoverChange}
               />
