@@ -1,5 +1,6 @@
 import React from 'react';
 import { LuX } from 'react-icons/lu';
+import { FiEdit2 } from 'react-icons/fi';
 import { BadgeConfig, BADGE_COLORS } from '../types/badge';
 
 interface BadgeProps {
@@ -14,6 +15,21 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0`}
     >
       <span>{config.label}</span>
+      {/* Edit button (pena) - shown before X button */}
+      {config.canEdit && config.onEdit && (
+        <button
+          onClick={config.onEdit}
+          className={`max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
+          type="button"
+          style={{
+            transition:
+              'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+          }}
+        >
+          <FiEdit2 className="w-3.5 h-3.5 flex-shrink-0" />
+        </button>
+      )}
+      {/* Clear button (X) */}
       {config.canClear && (
         <button
           onClick={config.onClear}

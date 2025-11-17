@@ -14,6 +14,9 @@ interface SearchBadgeProps {
   onClearSecondOperator: () => void;
   onClearSecondValue: () => void;
   onClearAll: () => void;
+  onEditColumn: () => void;
+  onEditOperator: () => void;
+  onEditJoin: () => void;
   onHoverChange?: (isHovered: boolean) => void;
 }
 
@@ -28,6 +31,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onClearSecondOperator,
   onClearSecondValue,
   onClearAll,
+  onEditColumn,
+  onEditOperator,
+  onEditJoin,
   onHoverChange,
 }) => {
   const badges = useBadgeBuilder(searchMode, {
@@ -38,6 +44,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     onClearSecondOperator,
     onClearSecondValue,
     onClearAll,
+    onEditColumn,
+    onEditOperator,
+    onEditJoin,
   });
 
   const handleMouseEnter = () => {

@@ -45,4 +45,6 @@ export interface BadgeConfig {
   label: string;
   onClear: () => void;
   canClear: boolean; // Whether the X button should be shown
+  onEdit?: () => void; // Optional edit handler
+  canEdit: boolean; // Whether the edit button should be shown
 }
