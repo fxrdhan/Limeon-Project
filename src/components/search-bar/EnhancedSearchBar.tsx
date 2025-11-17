@@ -39,6 +39,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const memoizedColumns = useMemo(() => columns, [columns]);
 
+  // Ref to store preserved filter when editing column
+  const preservedFilterRef = useRef<{
+    operator: string;
+    value: string;
+  } | null>(null);
+
   const { searchMode } = useSearchState({
     value,
     columns: memoizedColumns,
@@ -78,10 +84,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
-      const newValue = buildColumnValue(column.field, 'colon');
-      onChange({
-        target: { value: newValue },
-      } as React.ChangeEvent<HTMLInputElement>);
+      // Check if we have preserved filter from edit column
+      if (preservedFilterRef.current) {
+        const { operator, value } = preservedFilterRef.current;
+        // Restore operator and value with the new column
+        const newValue = `#${column.field} #${operator} ${value}##`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+        // Clear preserved filter
+        preservedFilterRef.current = null;
+      } else {
+        // Normal column selection without preserved filter
+        const newValue = buildColumnValue(column.field, 'colon');
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
       // searchMode will auto-update when value changes
 
       setTimeout(() => {
@@ -439,16 +458,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // ==================== EDIT HANDLERS ====================
 
-  // Edit column - show column selector with partial search
+  // Edit column - show column selector with all columns
+  // Preserve operator and value to restore after column selection
   const handleEditColumn = useCallback(() => {
     if (!searchMode.filterSearch) {
       return;
     }
 
-    const columnName = searchMode.filterSearch.column.headerName;
-    // Set value to # + first few chars of column name to trigger selector with search
-    const partialName = columnName.substring(0, 3);
-    const newValue = `#${partialName}`;
+    const operator = searchMode.filterSearch.operator;
+    const filterValue = searchMode.filterSearch.value;
+    const isConfirmed = searchMode.filterSearch.isConfirmed;
+
+    // Save operator and value to restore after column selection
+    if (isConfirmed && operator && filterValue) {
+      preservedFilterRef.current = {
+        operator,
+        value: filterValue,
+      };
+    } else {
+      preservedFilterRef.current = null;
+    }
+
+    // Set to just # to show all columns in selector
+    const newValue = `#`;
 
     onChange({
       target: { value: newValue },
@@ -467,6 +499,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const columnName = searchMode.filterSearch.field;
     // Set to #column # to trigger operator selector
+    // Note: For now, value will be cleared when editing operator
+    // User can re-enter value after selecting new operator
     const newValue = `#${columnName} #`;
 
     onChange({
