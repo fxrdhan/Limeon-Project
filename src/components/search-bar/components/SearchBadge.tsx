@@ -160,8 +160,10 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
             <span>{searchMode.filterSearch.value}</span>
             <button
               onClick={
-                // Check if we're showing second value: partialJoin exists OR secondOperator exists
-                searchMode.partialJoin || searchMode.secondOperator
+                // Check if we're showing second value: building second condition (after AND/OR selection)
+                searchMode.showOperatorSelector &&
+                searchMode.isSecondOperator &&
+                searchMode.filterSearch
                   ? onClearSecondValue
                   : onClearValue
               }
@@ -274,13 +276,17 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                     <span>{condition.value}</span>
                     <button
                       onClick={
-                        // If this is the last condition and there are only 2 conditions,
-                        // use the second value handler to allow editing
-                        index ===
-                          searchMode.filterSearch!.conditions!.length - 1 &&
-                        searchMode.filterSearch!.conditions!.length === 2
-                          ? onClearSecondValue
-                          : onClearAll
+                        // First condition value - use onClearValue
+                        index === 0
+                          ? onClearValue
+                          : // Last condition value in 2-condition filter - use onClearSecondValue
+                            index ===
+                                searchMode.filterSearch!.conditions!.length -
+                                  1 &&
+                              searchMode.filterSearch!.conditions!.length === 2
+                            ? onClearSecondValue
+                            : // Otherwise clear all
+                              onClearAll
                       }
                       className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-gray-200 flex-shrink-0"
                       type="button"
