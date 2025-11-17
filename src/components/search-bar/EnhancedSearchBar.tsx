@@ -300,6 +300,85 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleClearAll,
   ]);
 
+  // Clear second value - used by gray badge (second value in multi-condition)
+  const handleClearSecondValue = useCallback(() => {
+    if (!searchMode.filterSearch) {
+      handleClearValue();
+      return;
+    }
+
+    // Case 1: Confirmed multi-condition filter (after ENTER)
+    if (
+      searchMode.filterSearch.isMultiCondition &&
+      searchMode.filterSearch.conditions &&
+      searchMode.filterSearch.conditions.length === 2
+    ) {
+      const columnName = searchMode.filterSearch.field;
+      const firstCondition = searchMode.filterSearch.conditions[0];
+      const joinOp =
+        searchMode.filterSearch.joinOperator?.toLowerCase() || 'and';
+
+      // Extract second operator from value pattern
+      const secondOpMatch = value.match(/#(and|or)\s+#([^\s]+)/i);
+      const secondOp = secondOpMatch
+        ? secondOpMatch[2]
+        : searchMode.filterSearch.conditions[1].operator;
+
+      // Back to state with second operator but no value: #field #op1 val1 #join #op2
+      const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp} #${secondOp} `;
+
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+
+      return;
+    }
+
+    // Case 2: Partial multi-condition (building second condition, before ENTER)
+    if (searchMode.partialJoin || searchMode.secondOperator) {
+      // Extract second operator from value pattern if not in searchMode
+      const secondOpMatch = value.match(/#(and|or)\s+#([^\s]+)/i);
+
+      if (secondOpMatch) {
+        const [, joinOpFromValue, secondOpFromValue] = secondOpMatch;
+        const columnName = searchMode.filterSearch.field;
+        const operator = searchMode.filterSearch.operator;
+        const filterValue = searchMode.filterSearch.value;
+        const joinOp = (
+          searchMode.partialJoin || joinOpFromValue
+        ).toLowerCase();
+        const secondOp = searchMode.secondOperator || secondOpFromValue;
+        // Back to state with second operator but no value: #field #op1 val1 #join #op2
+        const newValue = `#${columnName} #${operator} ${filterValue} #${joinOp} #${secondOp} `;
+
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+
+        return;
+      }
+    }
+
+    // Fallback
+    handleClearValue();
+  }, [
+    searchMode.filterSearch,
+    searchMode.partialJoin,
+    searchMode.secondOperator,
+    value,
+    onChange,
+    inputRef,
+    handleClearValue,
+  ]);
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
@@ -462,6 +541,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onClearValue={handleClearValue}
                 onClearPartialJoin={handleClearPartialJoin}
                 onClearSecondOperator={handleClearSecondOperator}
+                onClearSecondValue={handleClearSecondValue}
                 onClearAll={handleClearAll}
                 onHoverChange={handleHoverChange}
               />
