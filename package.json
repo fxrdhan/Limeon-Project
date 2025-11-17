@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "apotek-klinik-app",
+  "name": "pharmasys",
   "private": true,
   "version": "0.0.0",
   "type": "module",
