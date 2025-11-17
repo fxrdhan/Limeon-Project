@@ -14,6 +14,7 @@ interface SearchBadgeProps {
   onClearOperator: () => void;
   onClearValue: () => void;
   onClearPartialJoin: () => void;
+  onClearSecondOperator: () => void;
   onClearAll: () => void;
   onHoverChange?: (isHovered: boolean) => void;
 }
@@ -26,6 +27,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onClearOperator,
   onClearValue,
   onClearPartialJoin,
+  onClearSecondOperator,
   onClearAll,
   onHoverChange,
 }) => {
@@ -205,7 +207,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
             })()}
           </span>
           <button
-            onClick={onClearAll}
+            onClick={onClearSecondOperator}
             className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
             type="button"
             style={{

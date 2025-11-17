@@ -272,6 +272,34 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
 
+  // Clear second operator - used by blue badge (second operator in multi-condition)
+  const handleClearSecondOperator = useCallback(() => {
+    if (searchMode.filterSearch && searchMode.partialJoin) {
+      const columnName = searchMode.filterSearch.field;
+      const operator = searchMode.filterSearch.operator;
+      const filterValue = searchMode.filterSearch.value;
+      const joinOp = searchMode.partialJoin.toLowerCase();
+      // Back to partial join state: #field #operator value #join #
+      const newValue = `#${columnName} #${operator} ${filterValue} #${joinOp} #`;
+
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    } else {
+      handleClearAll();
+    }
+  }, [
+    searchMode.filterSearch,
+    searchMode.partialJoin,
+    onChange,
+    inputRef,
+    handleClearAll,
+  ]);
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
@@ -433,6 +461,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onClearOperator={handleClearToColumn}
                 onClearValue={handleClearValue}
                 onClearPartialJoin={handleClearPartialJoin}
+                onClearSecondOperator={handleClearSecondOperator}
                 onClearAll={handleClearAll}
                 onHoverChange={handleHoverChange}
               />
