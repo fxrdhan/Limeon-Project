@@ -437,6 +437,91 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleClearValue,
   ]);
 
+  // ==================== EDIT HANDLERS ====================
+
+  // Edit column - show column selector with partial search
+  const handleEditColumn = useCallback(() => {
+    if (!searchMode.filterSearch) {
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.column.headerName;
+    // Set value to # + first few chars of column name to trigger selector with search
+    const partialName = columnName.substring(0, 3);
+    const newValue = `#${partialName}`;
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+  }, [searchMode.filterSearch, onChange, inputRef]);
+
+  // Edit operator - show operator selector
+  const handleEditOperator = useCallback(() => {
+    if (!searchMode.filterSearch) {
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.field;
+    // Set to #column # to trigger operator selector
+    const newValue = `#${columnName} #`;
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+  }, [searchMode.filterSearch, onChange, inputRef]);
+
+  // Edit join operator - show join operator selector
+  const handleEditJoin = useCallback(() => {
+    if (!searchMode.filterSearch) {
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.field;
+
+    // For confirmed multi-condition: extract first condition
+    if (
+      searchMode.filterSearch.isMultiCondition &&
+      searchMode.filterSearch.conditions &&
+      searchMode.filterSearch.conditions.length >= 1
+    ) {
+      const firstCondition = searchMode.filterSearch.conditions[0];
+      // Set to #col #op value # to trigger join selector
+      const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #`;
+
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+
+      return;
+    }
+
+    // For partial join state: already has value and operator
+    const operator = searchMode.filterSearch.operator;
+    const filterValue = searchMode.filterSearch.value;
+    // Set to #col #op value # to trigger join selector
+    const newValue = `#${columnName} #${operator} ${filterValue} #`;
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+  }, [searchMode.filterSearch, onChange, inputRef]);
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
@@ -601,6 +686,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onClearSecondOperator={handleClearSecondOperator}
                 onClearSecondValue={handleClearSecondValue}
                 onClearAll={handleClearAll}
+                onEditColumn={handleEditColumn}
+                onEditOperator={handleEditOperator}
+                onEditJoin={handleEditJoin}
                 onHoverChange={handleHoverChange}
               />
             )}
