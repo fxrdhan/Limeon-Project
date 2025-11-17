@@ -249,7 +249,15 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   <div className="group flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-blue-100 text-blue-700 flex-shrink-0">
                     <span>{operatorLabel}</span>
                     <button
-                      onClick={onClearAll}
+                      onClick={
+                        // If this is the last condition and there are only 2 conditions,
+                        // use the second operator handler to allow editing
+                        index ===
+                          searchMode.filterSearch!.conditions!.length - 1 &&
+                        searchMode.filterSearch!.conditions!.length === 2
+                          ? onClearSecondOperator
+                          : onClearAll
+                      }
                       className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 hover:bg-blue-200 flex-shrink-0"
                       type="button"
                       style={{

@@ -274,7 +274,38 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Clear second operator - used by blue badge (second operator in multi-condition)
   const handleClearSecondOperator = useCallback(() => {
-    if (searchMode.filterSearch && searchMode.partialJoin) {
+    if (!searchMode.filterSearch) {
+      handleClearAll();
+      return;
+    }
+
+    // Case 1: Confirmed multi-condition filter (after ENTER)
+    if (
+      searchMode.filterSearch.isMultiCondition &&
+      searchMode.filterSearch.conditions &&
+      searchMode.filterSearch.conditions.length === 2
+    ) {
+      const columnName = searchMode.filterSearch.field;
+      const firstCondition = searchMode.filterSearch.conditions[0];
+      const joinOp =
+        searchMode.filterSearch.joinOperator?.toLowerCase() || 'and';
+
+      // Back to state with join operator but no second operator: #field #op1 val1 #join #
+      const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp} #`;
+
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+
+      return;
+    }
+
+    // Case 2: Partial join (building second condition, before ENTER)
+    if (searchMode.partialJoin) {
       const columnName = searchMode.filterSearch.field;
       const operator = searchMode.filterSearch.operator;
       const filterValue = searchMode.filterSearch.value;
@@ -289,9 +320,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setTimeout(() => {
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-    } else {
-      handleClearAll();
+
+      return;
     }
+
+    // Fallback
+    handleClearAll();
   }, [
     searchMode.filterSearch,
     searchMode.partialJoin,
