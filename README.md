@@ -1,6 +1,8 @@
-# Limeon Project - Welcome to the Agentic Era
+# Limeon Project (aka PharmaSys)
 
-Let the AI Agents work and chill like a panda 🐼.
+**The Next Generation Pharmacy Management App**
+
+Manual pharmacy workflows are dead. PharmaSys eliminates repetitive work through AI-driven automation. No more tedious tasks. Just streamlined operations.
 
 ---
 
