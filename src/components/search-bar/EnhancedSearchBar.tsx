@@ -253,12 +253,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Clear partial join - used by orange badge (AND/OR)
   const handleClearPartialJoin = useCallback(() => {
-    if (searchMode.filterSearch) {
-      const columnName = searchMode.filterSearch.field;
-      const operator = searchMode.filterSearch.operator;
-      const filterValue = searchMode.filterSearch.value;
+    if (!searchMode.filterSearch) {
+      handleClearAll();
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.field;
+
+    // Case 1: Confirmed multi-condition filter (after ENTER)
+    if (
+      searchMode.filterSearch.isMultiCondition &&
+      searchMode.filterSearch.conditions &&
+      searchMode.filterSearch.conditions.length >= 1
+    ) {
+      const firstCondition = searchMode.filterSearch.conditions[0];
       // Back to confirmed single-condition: #field #operator value##
-      const newValue = `#${columnName} #${operator} ${filterValue}##`;
+      const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value}##`;
 
       onChange({
         target: { value: newValue },
@@ -267,9 +277,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setTimeout(() => {
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-    } else {
-      handleClearAll();
+
+      return;
     }
+
+    // Case 2: Partial join state (building second condition, before ENTER)
+    const operator = searchMode.filterSearch.operator;
+    const filterValue = searchMode.filterSearch.value;
+    // Back to confirmed single-condition: #field #operator value##
+    const newValue = `#${columnName} #${operator} ${filterValue}##`;
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
   }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
 
   // Clear second operator - used by blue badge (second operator in multi-condition)
