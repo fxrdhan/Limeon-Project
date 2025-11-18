@@ -94,7 +94,8 @@ export const useBadgeBuilder = (
               ? handlers.onClearSecondOperator
               : handlers.onClearAll,
           canClear: true,
-          onEdit: handlers.onEditOperator,
+          onEdit: () =>
+            handlers.onEditOperator(index > 0 && filter.isMultiCondition),
           canEdit: true, // Operator badges are editable
         });
 
