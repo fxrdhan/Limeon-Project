@@ -40,6 +40,10 @@
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]
+    },
+    "mermaid-mcp": {
+      "url": "https://mcp.mermaidchart.com/mcp",
+      "type": "http"
     }
   }
 }
