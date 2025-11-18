@@ -59,6 +59,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     columns: memoizedColumns,
     onGlobalSearch,
     onFilterSearch,
+    isEditMode: preservedSearchMode !== null, // In edit mode when preserving badges
   });
 
   const columnSelectorPosition = useSelectorPosition({
@@ -698,6 +699,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     return [...DEFAULT_FILTER_OPERATORS];
   }, [searchMode.selectedColumn?.type]);
 
+  // Calculate default selected operator index when in edit mode
+  const defaultOperatorIndex = useMemo(() => {
+    if (preservedSearchMode?.filterSearch?.operator) {
+      const currentOperator = preservedSearchMode.filterSearch.operator;
+      const index = operators.findIndex(op => op.value === currentOperator);
+      return index >= 0 ? index : undefined;
+    }
+    return undefined;
+  }, [preservedSearchMode?.filterSearch?.operator, operators]);
+
   // Calculate base padding (CSS variable will override when badges are present)
   const getBasePadding = () => {
     if (
@@ -800,6 +811,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onClose={handleCloseOperatorSelector}
         position={operatorSelectorPosition}
         searchTerm={operatorSearchTerm}
+        defaultSelectedIndex={defaultOperatorIndex}
       />
 
       <JoinOperatorSelector
