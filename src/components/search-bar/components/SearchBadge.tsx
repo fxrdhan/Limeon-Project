@@ -18,6 +18,7 @@ interface SearchBadgeProps {
   onEditOperator: () => void;
   onEditJoin: () => void;
   onHoverChange?: (isHovered: boolean) => void;
+  preservedSearchMode?: EnhancedSearchState | null;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -35,8 +36,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onEditOperator,
   onEditJoin,
   onHoverChange,
+  preservedSearchMode,
 }) => {
-  const badges = useBadgeBuilder(searchMode, {
+  // Use preserved search mode if available (during edit), otherwise use current
+  const modeToRender = preservedSearchMode || searchMode;
+
+  const badges = useBadgeBuilder(modeToRender, {
     onClearColumn,
     onClearOperator,
     onClearValue,
