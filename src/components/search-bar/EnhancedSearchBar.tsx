@@ -561,7 +561,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       const columnName = searchMode.filterSearch.field;
       const filterValue = searchMode.filterSearch.value;
-      const isConfirmed = searchMode.filterSearch.isConfirmed;
 
       // Save current searchMode to keep value badge visible during edit
       setPreservedSearchMode(searchMode);
@@ -570,49 +569,46 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setIsEditingSecondOperator(isSecond);
 
       // Save value to restore after operator selection
-      if (isConfirmed) {
-        // If editing second operator in multi-condition, preserve all conditions
-        if (
-          isSecond &&
-          searchMode.filterSearch.isMultiCondition &&
-          searchMode.filterSearch.conditions &&
-          searchMode.filterSearch.conditions.length >= 2
-        ) {
-          preservedFilterRef.current = {
-            operator: searchMode.filterSearch.conditions[0].operator,
-            value: searchMode.filterSearch.conditions[0].value,
-            join: searchMode.filterSearch.joinOperator,
-            secondOperator: searchMode.filterSearch.conditions[1].operator,
-            secondValue: searchMode.filterSearch.conditions[1].value,
-          };
-        } else if (filterValue) {
-          preservedFilterRef.current = {
-            operator: '', // Will be replaced by new operator
-            value: filterValue,
-          };
-        } else {
-          preservedFilterRef.current = null;
-        }
+      // If editing second operator in multi-condition, preserve all conditions
+      if (
+        isSecond &&
+        searchMode.filterSearch.isMultiCondition &&
+        searchMode.filterSearch.conditions &&
+        searchMode.filterSearch.conditions.length >= 2
+      ) {
+        preservedFilterRef.current = {
+          operator: searchMode.filterSearch.conditions[0].operator,
+          value: searchMode.filterSearch.conditions[0].value,
+          join: searchMode.filterSearch.joinOperator,
+          secondOperator: searchMode.filterSearch.conditions[1].operator,
+          secondValue: searchMode.filterSearch.conditions[1].value,
+        };
+      }
+      // If editing second operator in partial multi-condition filter
+      else if (
+        isSecond &&
+        searchMode.partialJoin &&
+        searchMode.filterSearch.operator &&
+        filterValue
+      ) {
+        // Editing second operator in partial multi-condition filter
+        // e.g., #Harga Pokok #gt 50000 #and #lt
+        preservedFilterRef.current = {
+          operator: searchMode.filterSearch.operator,
+          value: filterValue,
+          join: searchMode.partialJoin,
+          secondOperator: searchMode.secondOperator || '',
+          secondValue: '', // No second value yet since it's partial
+        };
+      }
+      // If editing first operator and have value
+      else if (filterValue && !isSecond) {
+        preservedFilterRef.current = {
+          operator: '', // Will be replaced by new operator
+          value: filterValue,
+        };
       } else {
-        // Not confirmed yet, but might be partial multi-condition filter
-        if (
-          isSecond &&
-          searchMode.partialJoin &&
-          searchMode.filterSearch.operator &&
-          filterValue
-        ) {
-          // Editing second operator in partial multi-condition filter
-          // e.g., #Harga Pokok #gt 50000 #and #lt
-          preservedFilterRef.current = {
-            operator: searchMode.filterSearch.operator,
-            value: filterValue,
-            join: searchMode.partialJoin,
-            secondOperator: searchMode.secondOperator || '',
-            secondValue: '', // No second value yet since it's partial
-          };
-        } else {
-          preservedFilterRef.current = null;
-        }
+        preservedFilterRef.current = null;
       }
 
       // Set value to trigger operator selector
@@ -784,8 +780,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected operator index when in edit mode
   const defaultOperatorIndex = useMemo(() => {
-    // If editing second operator, use secondOperator from searchMode
-    if (isEditingSecondOperator && preservedSearchMode?.secondOperator) {
+    // If editing second operator in confirmed multi-condition, get from conditions array
+    if (
+      isEditingSecondOperator &&
+      preservedSearchMode?.filterSearch?.isMultiCondition &&
+      preservedSearchMode?.filterSearch?.conditions &&
+      preservedSearchMode.filterSearch.conditions.length >= 2
+    ) {
+      const currentOperator =
+        preservedSearchMode.filterSearch.conditions[1].operator;
+      const index = operators.findIndex(op => op.value === currentOperator);
+      return index >= 0 ? index : undefined;
+    }
+    // If editing second operator in partial multi-condition, use secondOperator
+    else if (isEditingSecondOperator && preservedSearchMode?.secondOperator) {
       const currentOperator = preservedSearchMode.secondOperator;
       const index = operators.findIndex(op => op.value === currentOperator);
       return index >= 0 ? index : undefined;
@@ -801,6 +809,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     isEditingSecondOperator,
     preservedSearchMode?.secondOperator,
     preservedSearchMode?.filterSearch?.operator,
+    preservedSearchMode?.filterSearch?.isMultiCondition,
+    preservedSearchMode?.filterSearch?.conditions,
     operators,
   ]);
 
