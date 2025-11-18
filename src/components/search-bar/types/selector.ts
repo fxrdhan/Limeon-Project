@@ -34,6 +34,7 @@ export interface BaseSelectorProps<T> {
   position: { top: number; left: number };
   searchTerm?: string;
   config: BaseSelectorConfig<T>;
+  defaultSelectedIndex?: number; // Pre-select item at this index when opening
 }
 
 export interface ColumnSelectorProps {
@@ -52,4 +53,5 @@ export interface OperatorSelectorProps {
   onClose: () => void;
   position: { top: number; left: number };
   searchTerm?: string;
+  defaultSelectedIndex?: number; // Pre-select operator at this index when opening
 }

@@ -13,6 +13,7 @@ function BaseSelector<T>({
   position,
   searchTerm = '',
   config,
+  defaultSelectedIndex,
 }: BaseSelectorProps<T>) {
   // Removed filteredItems state - will derive it with useMemo instead
   const [showHeader, setShowHeader] = useState(false);
@@ -91,9 +92,9 @@ function BaseSelector<T>({
   ) {
     let newIndex = indexState.selectedIndex;
 
-    // Reset to 0 when opening
+    // Reset to defaultSelectedIndex (or 0) when opening
     if (isOpen && !indexState.isOpen) {
-      newIndex = 0;
+      newIndex = defaultSelectedIndex ?? 0;
     }
     // Adjust if out of bounds
     else if (
