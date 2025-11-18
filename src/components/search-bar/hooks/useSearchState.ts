@@ -8,6 +8,7 @@ interface UseSearchStateProps {
   columns: SearchColumn[];
   onGlobalSearch?: (term: string) => void;
   onFilterSearch?: (filter: FilterSearch | null) => void;
+  isEditMode?: boolean; // Flag to indicate if in edit mode (preserving filter during column/operator edit)
 }
 
 export const useSearchState = ({
@@ -15,6 +16,7 @@ export const useSearchState = ({
   columns,
   onGlobalSearch,
   onFilterSearch,
+  isEditMode = false,
 }: UseSearchStateProps) => {
   // Derive searchMode from value instead of using state + effect
   const searchMode = useMemo<EnhancedSearchState>(() => {
@@ -80,8 +82,10 @@ export const useSearchState = ({
     } else if (
       // 🐛 FIX BUG #1: Don't clear filter when in partial join mode (waiting for second operator/value)
       // When user selects AND/OR and is selecting second operator, we should MAINTAIN first condition's filter
+      // 🐛 FIX BUG #2: Don't clear filter when in edit mode (preserving filter during column/operator edit)
       !searchMode.partialJoin && // Don't clear if in partial join state
       !searchMode.showJoinOperatorSelector && // Don't clear if join selector is open
+      !isEditMode && // Don't clear if in edit mode (editing column/operator while preserving badges)
       (searchMode.showColumnSelector || searchMode.showOperatorSelector)
     ) {
       onGlobalSearchRef.current?.('');
@@ -97,7 +101,7 @@ export const useSearchState = ({
     }
 
     prevValueRef.current = value;
-  }, [value, columns, debouncedFilterUpdate, searchMode]);
+  }, [value, columns, debouncedFilterUpdate, searchMode, isEditMode]);
 
   useEffect(() => {
     return () => {
