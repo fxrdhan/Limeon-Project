@@ -15,7 +15,7 @@ interface BadgeHandlers {
   onClearSecondValue: () => void;
   onClearAll: () => void;
   onEditColumn: () => void;
-  onEditOperator: () => void;
+  onEditOperator: (isSecond?: boolean) => void; // Updated to accept optional parameter
   onEditJoin: () => void;
 }
 
@@ -157,7 +157,7 @@ export const useBadgeBuilder = (
         label: operatorLabel,
         onClear: handlers.onClearOperator,
         canClear: true,
-        onEdit: handlers.onEditOperator,
+        onEdit: () => handlers.onEditOperator(false), // Edit first operator
         canEdit: true, // Operator badges are editable
       });
     }
@@ -226,7 +226,7 @@ export const useBadgeBuilder = (
         label: operatorLabel,
         onClear: handlers.onClearSecondOperator,
         canClear: true,
-        onEdit: handlers.onEditOperator,
+        onEdit: () => handlers.onEditOperator(true), // Edit second operator
         canEdit: true, // Second operator badge is also editable
       });
     }

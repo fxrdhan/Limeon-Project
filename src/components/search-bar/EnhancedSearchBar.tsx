@@ -44,15 +44,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const memoizedColumns = useMemo(() => columns, [columns]);
 
-  // Ref to store preserved filter when editing column
+  // Ref to store preserved filter when editing column/operator
   const preservedFilterRef = useRef<{
     operator: string;
     value: string;
+    // For multi-condition filters (AND/OR)
+    join?: 'AND' | 'OR';
+    secondOperator?: string;
+    secondValue?: string;
   } | null>(null);
 
   // State to preserve searchMode during edit (to keep badges visible)
   const [preservedSearchMode, setPreservedSearchMode] =
     useState<EnhancedSearchState | null>(null);
+
+  // Track whether we're editing the second operator (after AND/OR join)
+  const [isEditingSecondOperator, setIsEditingSecondOperator] = useState(false);
 
   const { searchMode } = useSearchState({
     value,
@@ -125,8 +132,41 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleOperatorSelect = useCallback(
     (operator: FilterOperator) => {
-      // Check if this is for second+ operator (after join)
-      if (searchMode.isSecondOperator) {
+      const columnMatch = value.match(/^#([^:\s]+)/);
+      if (!columnMatch) return;
+
+      const columnName = columnMatch[1];
+
+      // CASE 1: EDITING second operator (badge already exists or partial)
+      if (isEditingSecondOperator && preservedFilterRef.current?.join) {
+        // If there's a second value (confirmed multi-condition), include it
+        // Otherwise leave it empty (partial multi-condition)
+        const secondValuePart = preservedFilterRef.current.secondValue
+          ? ` ${preservedFilterRef.current.secondValue}##`
+          : ' ';
+        const newValue = `#${columnName} #${preservedFilterRef.current.operator} ${preservedFilterRef.current.value} #${preservedFilterRef.current.join.toLowerCase()} #${operator.value}${secondValuePart}`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+        // Clear preserved filter and searchMode
+        preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
+        setIsEditingSecondOperator(false);
+      }
+      // CASE 2: EDITING first operator (badge already exists)
+      else if (!isEditingSecondOperator && preservedFilterRef.current?.value) {
+        const preservedValue = preservedFilterRef.current.value;
+        // Restore value with the new operator
+        const newValue = `#${columnName} #${operator.value} ${preservedValue}##`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+        // Clear preserved filter and searchMode
+        preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
+      }
+      // CASE 3: SELECTING second operator (creating new multi-condition filter)
+      else if (searchMode.isSecondOperator) {
         // Append operator to existing value
         // Current: #name #contains paracetamol #and #
         // Result: #name #contains paracetamol #and #contains
@@ -134,40 +174,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
-      } else {
-        // First operator - replace everything after column
-        const columnMatch = value.match(/^#([^:\s]+)/);
-        if (columnMatch) {
-          const columnName = columnMatch[1];
-
-          // Check if we have preserved value from edit operator
-          if (preservedFilterRef.current && preservedFilterRef.current.value) {
-            const preservedValue = preservedFilterRef.current.value;
-            // Restore value with the new operator
-            const newValue = `#${columnName} #${operator.value} ${preservedValue}##`;
-            onChange({
-              target: { value: newValue },
-            } as React.ChangeEvent<HTMLInputElement>);
-            // Clear preserved filter and searchMode
-            preservedFilterRef.current = null;
-            setPreservedSearchMode(null);
-          } else {
-            // Normal operator selection without preserved value
-            const newValue = `#${columnName} #${operator.value} `;
-            onChange({
-              target: { value: newValue },
-            } as React.ChangeEvent<HTMLInputElement>);
-            // Clear preserved searchMode if any
-            setPreservedSearchMode(null);
-          }
-        }
+      }
+      // CASE 4: SELECTING first operator (creating new filter)
+      else {
+        const newValue = `#${columnName} #${operator.value} `;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+        // Clear preserved searchMode if any
+        setPreservedSearchMode(null);
       }
 
       setTimeout(() => {
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
-    [value, onChange, inputRef, searchMode.isSecondOperator]
+    [
+      value,
+      onChange,
+      inputRef,
+      searchMode.isSecondOperator,
+      isEditingSecondOperator,
+    ]
   );
 
   const handleJoinOperatorSelect = useCallback(
@@ -525,39 +553,94 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [searchMode, onChange, inputRef]);
 
   // Edit operator - show operator selector
-  const handleEditOperator = useCallback(() => {
-    if (!searchMode.filterSearch) {
-      return;
-    }
+  const handleEditOperator = useCallback(
+    (isSecond: boolean = false) => {
+      if (!searchMode.filterSearch) {
+        return;
+      }
 
-    const columnName = searchMode.filterSearch.field;
-    const filterValue = searchMode.filterSearch.value;
-    const isConfirmed = searchMode.filterSearch.isConfirmed;
+      const columnName = searchMode.filterSearch.field;
+      const filterValue = searchMode.filterSearch.value;
+      const isConfirmed = searchMode.filterSearch.isConfirmed;
 
-    // Save current searchMode to keep value badge visible during edit
-    setPreservedSearchMode(searchMode);
+      // Save current searchMode to keep value badge visible during edit
+      setPreservedSearchMode(searchMode);
 
-    // Save value to restore after operator selection
-    if (isConfirmed && filterValue) {
-      preservedFilterRef.current = {
-        operator: '', // Will be replaced by new operator
-        value: filterValue,
-      };
-    } else {
-      preservedFilterRef.current = null;
-    }
+      // Track if we're editing the second operator
+      setIsEditingSecondOperator(isSecond);
 
-    // Set to #column # to trigger operator selector
-    const newValue = `#${columnName} #`;
+      // Save value to restore after operator selection
+      if (isConfirmed) {
+        // If editing second operator in multi-condition, preserve all conditions
+        if (
+          isSecond &&
+          searchMode.filterSearch.isMultiCondition &&
+          searchMode.filterSearch.conditions &&
+          searchMode.filterSearch.conditions.length >= 2
+        ) {
+          preservedFilterRef.current = {
+            operator: searchMode.filterSearch.conditions[0].operator,
+            value: searchMode.filterSearch.conditions[0].value,
+            join: searchMode.filterSearch.joinOperator,
+            secondOperator: searchMode.filterSearch.conditions[1].operator,
+            secondValue: searchMode.filterSearch.conditions[1].value,
+          };
+        } else if (filterValue) {
+          preservedFilterRef.current = {
+            operator: '', // Will be replaced by new operator
+            value: filterValue,
+          };
+        } else {
+          preservedFilterRef.current = null;
+        }
+      } else {
+        // Not confirmed yet, but might be partial multi-condition filter
+        if (
+          isSecond &&
+          searchMode.partialJoin &&
+          searchMode.filterSearch.operator &&
+          filterValue
+        ) {
+          // Editing second operator in partial multi-condition filter
+          // e.g., #Harga Pokok #gt 50000 #and #lt
+          preservedFilterRef.current = {
+            operator: searchMode.filterSearch.operator,
+            value: filterValue,
+            join: searchMode.partialJoin,
+            secondOperator: searchMode.secondOperator || '',
+            secondValue: '', // No second value yet since it's partial
+          };
+        } else {
+          preservedFilterRef.current = null;
+        }
+      }
 
-    onChange({
-      target: { value: newValue },
-    } as React.ChangeEvent<HTMLInputElement>);
+      // Set value to trigger operator selector
+      let newValue: string;
 
-    setTimeout(() => {
-      inputRef?.current?.focus();
-    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-  }, [searchMode, onChange, inputRef]);
+      if (
+        isSecond &&
+        preservedFilterRef.current?.operator &&
+        preservedFilterRef.current?.value &&
+        preservedFilterRef.current?.join
+      ) {
+        // For second operator edit, preserve first condition: #column #operator1 value1 #join #
+        newValue = `#${columnName} #${preservedFilterRef.current.operator} ${preservedFilterRef.current.value} #${preservedFilterRef.current.join.toLowerCase()} #`;
+      } else {
+        // For first operator edit, just: #column #
+        newValue = `#${columnName} #`;
+      }
+
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    },
+    [searchMode, onChange, inputRef]
+  );
 
   // Edit join operator - show join operator selector
   const handleEditJoin = useCallback(() => {
@@ -701,13 +784,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected operator index when in edit mode
   const defaultOperatorIndex = useMemo(() => {
-    if (preservedSearchMode?.filterSearch?.operator) {
+    // If editing second operator, use secondOperator from searchMode
+    if (isEditingSecondOperator && preservedSearchMode?.secondOperator) {
+      const currentOperator = preservedSearchMode.secondOperator;
+      const index = operators.findIndex(op => op.value === currentOperator);
+      return index >= 0 ? index : undefined;
+    }
+    // Otherwise use first operator from filterSearch
+    else if (preservedSearchMode?.filterSearch?.operator) {
       const currentOperator = preservedSearchMode.filterSearch.operator;
       const index = operators.findIndex(op => op.value === currentOperator);
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode?.filterSearch?.operator, operators]);
+  }, [
+    isEditingSecondOperator,
+    preservedSearchMode?.secondOperator,
+    preservedSearchMode?.filterSearch?.operator,
+    operators,
+  ]);
 
   // Calculate base padding (CSS variable will override when badges are present)
   const getBasePadding = () => {
