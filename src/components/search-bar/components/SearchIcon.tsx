@@ -28,8 +28,10 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     searchMode.secondOperator;
 
   const shouldShowLeftIcon =
-    ((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
-    !searchMode.showColumnSelector;
+    (((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
+      !searchMode.showColumnSelector) ||
+    // Show purple hash icon when column selector is open
+    searchMode.showColumnSelector;
 
   const getSearchIconColor = () => {
     if (
@@ -55,6 +57,11 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   };
 
   const getSearchIcon = () => {
+    // Show Hash icon when column selector is open (user typed #)
+    if (searchMode.showColumnSelector) {
+      return <LuHash className="text-purple-500 transition-all duration-300" />;
+    }
+
     // Show Hash icon for implicit contains operator (colon pattern)
     if (
       searchMode.isFilterMode &&
