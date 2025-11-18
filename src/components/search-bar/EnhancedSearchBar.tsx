@@ -1,7 +1,12 @@
-import React, { useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback, useMemo, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import fuzzysort from 'fuzzysort';
-import { EnhancedSearchBarProps, SearchColumn, FilterOperator } from './types';
+import {
+  EnhancedSearchBarProps,
+  SearchColumn,
+  FilterOperator,
+  EnhancedSearchState,
+} from './types';
 import { SEARCH_CONSTANTS } from './constants';
 import {
   DEFAULT_FILTER_OPERATORS,
@@ -44,6 +49,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     operator: string;
     value: string;
   } | null>(null);
+
+  // State to preserve searchMode during edit (to keep badges visible)
+  const [preservedSearchMode, setPreservedSearchMode] =
+    useState<EnhancedSearchState | null>(null);
 
   const { searchMode } = useSearchState({
     value,
@@ -92,14 +101,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
-        // Clear preserved filter
+        // Clear preserved filter and searchMode
         preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
       } else {
         // Normal column selection without preserved filter
         const newValue = buildColumnValue(column.field, 'colon');
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
+        // Clear preserved searchMode if any
+        setPreservedSearchMode(null);
       }
       // searchMode will auto-update when value changes
 
@@ -469,6 +481,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const filterValue = searchMode.filterSearch.value;
     const isConfirmed = searchMode.filterSearch.isConfirmed;
 
+    // Save current searchMode to keep badges visible during edit
+    setPreservedSearchMode(searchMode);
+
     // Save operator and value to restore after column selection
     if (isConfirmed && operator && filterValue) {
       preservedFilterRef.current = {
@@ -489,7 +504,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setTimeout(() => {
       inputRef?.current?.focus();
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-  }, [searchMode.filterSearch, onChange, inputRef]);
+  }, [searchMode, onChange, inputRef]);
 
   // Edit operator - show operator selector
   const handleEditOperator = useCallback(() => {
@@ -708,7 +723,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onBlur={onBlur}
             />
 
-            {showTargetedIndicator && (
+            {(showTargetedIndicator || preservedSearchMode) && (
               <SearchBadge
                 searchMode={searchMode}
                 badgeRef={badgeRef}
@@ -724,6 +739,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onEditOperator={handleEditOperator}
                 onEditJoin={handleEditJoin}
                 onHoverChange={handleHoverChange}
+                preservedSearchMode={preservedSearchMode}
               />
             )}
           </div>
