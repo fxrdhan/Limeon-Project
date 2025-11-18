@@ -138,10 +138,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const columnMatch = value.match(/^#([^:\s]+)/);
         if (columnMatch) {
           const columnName = columnMatch[1];
-          const newValue = `#${columnName} #${operator.value} `;
-          onChange({
-            target: { value: newValue },
-          } as React.ChangeEvent<HTMLInputElement>);
+
+          // Check if we have preserved value from edit operator
+          if (preservedFilterRef.current && preservedFilterRef.current.value) {
+            const preservedValue = preservedFilterRef.current.value;
+            // Restore value with the new operator
+            const newValue = `#${columnName} #${operator.value} ${preservedValue}##`;
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            // Clear preserved filter and searchMode
+            preservedFilterRef.current = null;
+            setPreservedSearchMode(null);
+          } else {
+            // Normal operator selection without preserved value
+            const newValue = `#${columnName} #${operator.value} `;
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            // Clear preserved searchMode if any
+            setPreservedSearchMode(null);
+          }
         }
       }
 
@@ -513,9 +530,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
 
     const columnName = searchMode.filterSearch.field;
+    const filterValue = searchMode.filterSearch.value;
+    const isConfirmed = searchMode.filterSearch.isConfirmed;
+
+    // Save current searchMode to keep value badge visible during edit
+    setPreservedSearchMode(searchMode);
+
+    // Save value to restore after operator selection
+    if (isConfirmed && filterValue) {
+      preservedFilterRef.current = {
+        operator: '', // Will be replaced by new operator
+        value: filterValue,
+      };
+    } else {
+      preservedFilterRef.current = null;
+    }
+
     // Set to #column # to trigger operator selector
-    // Note: For now, value will be cleared when editing operator
-    // User can re-enter value after selecting new operator
     const newValue = `#${columnName} #`;
 
     onChange({
@@ -525,7 +556,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setTimeout(() => {
       inputRef?.current?.focus();
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-  }, [searchMode.filterSearch, onChange, inputRef]);
+  }, [searchMode, onChange, inputRef]);
 
   // Edit join operator - show join operator selector
   const handleEditJoin = useCallback(() => {
