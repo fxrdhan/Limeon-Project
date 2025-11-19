@@ -43,7 +43,7 @@ async function testSearchBarFilterCase0(page) {
   // Step 5: Take screenshot (BEFORE typing # for operator)
   console.log('📸 Step 5: Taking screenshot...');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const screenshotPath = `.playwright-mcp/searchbar-filter-case-0-${timestamp}.jpeg`;
+  const screenshotPath = `.playwright-mcp/filter-case-0-${timestamp}.jpeg`;
 
   await page.screenshot({
     path: screenshotPath,
