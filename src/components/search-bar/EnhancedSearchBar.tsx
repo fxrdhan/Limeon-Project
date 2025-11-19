@@ -909,6 +909,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     operators,
   ]);
 
+  // Calculate default selected column index when in edit mode
+  const defaultColumnIndex = useMemo(() => {
+    if (preservedSearchMode?.filterSearch?.field) {
+      const currentColumnField = preservedSearchMode.filterSearch.field;
+      const index = sortedColumns.findIndex(
+        col => col.field === currentColumnField
+      );
+      return index >= 0 ? index : undefined;
+    }
+    return undefined;
+  }, [preservedSearchMode, sortedColumns]);
+
   // Calculate base padding (CSS variable will override when badges are present)
   const getBasePadding = () => {
     if (
@@ -1002,6 +1014,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onClose={handleCloseColumnSelector}
         position={columnSelectorPosition}
         searchTerm={searchTerm}
+        defaultSelectedIndex={defaultColumnIndex}
       />
 
       <OperatorSelector
