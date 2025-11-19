@@ -103,7 +103,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     (column: SearchColumn) => {
       // Check if we have preserved filter from edit column
       if (preservedFilterRef.current) {
-        const { operator, value } = preservedFilterRef.current;
+        const { operator, value, join, secondOperator, secondValue } =
+          preservedFilterRef.current;
 
         // Check if operator is compatible with new column type
         const availableOperators =
@@ -116,11 +117,33 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         );
 
         if (isOperatorCompatible) {
-          // Restore operator and value with the new column
-          const newValue = `#${column.field} #${operator} ${value}##`;
-          onChange({
-            target: { value: newValue },
-          } as React.ChangeEvent<HTMLInputElement>);
+          // Check if it's a multi-condition filter
+          if (join && secondOperator && secondValue) {
+            // Check if second operator is also compatible
+            const isSecondOperatorCompatible = availableOperators.some(
+              op => op.value === secondOperator
+            );
+
+            if (isSecondOperatorCompatible) {
+              // Restore full multi-condition filter with the new column
+              const newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${secondOperator} ${secondValue}##`;
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+            } else {
+              // Second operator not compatible, restore only first condition
+              const newValue = `#${column.field} #${operator} ${value}##`;
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+          } else {
+            // Single-condition filter - restore operator and value with the new column
+            const newValue = `#${column.field} #${operator} ${value}##`;
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+          }
         } else {
           // Operator not compatible, just set column without operator/value
           const newValue = buildColumnValue(column.field, 'colon');
@@ -562,16 +585,38 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const operator = searchMode.filterSearch.operator;
     const filterValue = searchMode.filterSearch.value;
     const isConfirmed = searchMode.filterSearch.isConfirmed;
+    const isMultiCondition = searchMode.filterSearch.isMultiCondition;
 
     // Save current searchMode to keep badges visible during edit
     setPreservedSearchMode(searchMode);
 
     // Save operator and value to restore after column selection
-    if (isConfirmed && operator && filterValue) {
-      preservedFilterRef.current = {
-        operator,
-        value: filterValue,
-      };
+    // For multi-condition filters, isConfirmed may not be set, so also check isMultiCondition
+    if ((isConfirmed || isMultiCondition) && operator && filterValue) {
+      // Check if it's a multi-condition filter (with AND/OR join)
+      if (
+        isMultiCondition &&
+        searchMode.filterSearch.conditions &&
+        searchMode.filterSearch.conditions.length >= 2
+      ) {
+        const firstCondition = searchMode.filterSearch.conditions[0];
+        const secondCondition = searchMode.filterSearch.conditions[1];
+
+        // Preserve both conditions and join operator
+        preservedFilterRef.current = {
+          operator: firstCondition.operator,
+          value: firstCondition.value,
+          join: searchMode.filterSearch.joinOperator,
+          secondOperator: secondCondition.operator,
+          secondValue: secondCondition.value,
+        };
+      } else {
+        // Single-condition filter
+        preservedFilterRef.current = {
+          operator,
+          value: filterValue,
+        };
+      }
     } else {
       preservedFilterRef.current = null;
     }
