@@ -134,7 +134,8 @@ export const useSearchKeyboard = ({
               return;
             } else {
               const columnName = searchMode.filterSearch.field;
-              const newValue = buildColumnValue(columnName, 'colon');
+              // Auto-open operator selector when backspacing to column
+              const newValue = `#${columnName} #`;
               onChange({
                 target: { value: newValue },
               } as React.ChangeEvent<HTMLInputElement>);

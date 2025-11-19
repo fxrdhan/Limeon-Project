@@ -4,15 +4,14 @@
  * Test Flow:
  * 1. Navigate to Item Master page
  * 2. Type # to open column selector modal
- * 3. Select "Harga Pokok" column
- * 4. Type # again to open operator selector modal
- * 5. Select "Greater Than" operator
- * 6. Type value: 50000
- * 7. Press Enter to confirm first condition
- * 8. Type # to open join operator selector
- * 9. Select "AND" join operator
- * 10. Operator selector opens automatically, select "Less Than"
- * 11. Take screenshot
+ * 3. Select "Harga Pokok" column (operator selector auto-opens)
+ * 4. Select "Greater Than" operator
+ * 5. Type value: 50000
+ * 6. Press Enter to confirm first condition
+ * 7. Type # to open join operator selector
+ * 8. Select "AND" join operator
+ * 9. Operator selector opens automatically, select "Less Than"
+ * 10. Take screenshot
  *
  * Expected Result:
  * - FIVE badges should be visible: [Harga Pokok][Greater Than][50000][AND][Less Than]
@@ -42,28 +41,25 @@ async function testSearchBarFilterCase3(page) {
   await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
   await page.waitForTimeout(500);
 
-  // Step 4: Select "Harga Pokok" column
-  console.log('✅ Step 4: Selecting "Harga Pokok" column...');
+  // Step 4: Select "Harga Pokok" column (operator selector auto-opens)
+  console.log(
+    '✅ Step 4: Selecting "Harga Pokok" column (operator selector auto-opens)...'
+  );
   await page.getByText('Harga Pokok').first().click();
   await page.waitForTimeout(500);
 
-  // Step 5: Type # again to open operator selector
-  console.log('🔢 Step 5: Opening operator selector with #...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('#');
-  await page.waitForTimeout(500);
-
-  // Step 6: Select "Greater Than" operator
-  console.log('➕ Step 6: Selecting "Greater Than" operator...');
+  // Step 5: Select "Greater Than" operator
+  console.log('➕ Step 5: Selecting "Greater Than" operator...');
   await page.getByText('Greater Than', { exact: true }).click();
   await page.waitForTimeout(500);
 
-  // Step 7: Type the first value 50000
-  console.log('💰 Step 7: Typing first value 50000...');
+  // Step 6: Type the first value 50000
+  console.log('💰 Step 6: Typing first value 50000...');
   await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
   await page.waitForTimeout(500);
 
-  // Step 8: Press Enter to confirm first condition
-  console.log('⏎ Step 8: Pressing Enter to confirm first condition...');
+  // Step 7: Press Enter to confirm first condition
+  console.log('⏎ Step 7: Pressing Enter to confirm first condition...');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(1000);
 
@@ -71,27 +67,27 @@ async function testSearchBarFilterCase3(page) {
     '✅ First condition confirmed: [Harga Pokok][Greater Than][50000]'
   );
 
-  // Step 9: Type # to open join operator selector
-  console.log('🔗 Step 9: Typing # to open join operator selector...');
+  // Step 8: Type # to open join operator selector
+  console.log('🔗 Step 8: Typing # to open join operator selector...');
   await page.getByRole('textbox', { name: 'Cari...' }).fill('50000 #');
   await page.waitForTimeout(500);
 
-  // Step 10: Select "AND" join operator
-  console.log('✅ Step 10: Selecting "AND" join operator...');
+  // Step 9: Select "AND" join operator
+  console.log('✅ Step 9: Selecting "AND" join operator...');
   await page.getByText('AND', { exact: true }).click();
   await page.waitForTimeout(500);
 
   console.log('✅ Join operator added: [AND]');
 
-  // Step 11: Operator selector should open automatically, select "Less Than"
-  console.log('🔢 Step 11: Selecting "Less Than" operator...');
+  // Step 10: Operator selector should open automatically, select "Less Than"
+  console.log('🔢 Step 10: Selecting "Less Than" operator (auto-opened)...');
   await page.getByText('Less Than', { exact: true }).click();
   await page.waitForTimeout(500);
 
   console.log('✅ Second operator added: [Less Than]');
 
-  // Step 12: Take screenshot (BEFORE typing second value)
-  console.log('📸 Step 12: Taking screenshot...');
+  // Step 11: Take screenshot (BEFORE typing second value)
+  console.log('📸 Step 11: Taking screenshot...');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const screenshotPath = `.playwright-mcp/searchbar-filter-case-3-${timestamp}.jpeg`;
 

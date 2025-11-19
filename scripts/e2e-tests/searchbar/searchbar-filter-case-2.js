@@ -4,13 +4,12 @@
  * Test Flow:
  * 1. Navigate to Item Master page
  * 2. Type # to open column selector modal
- * 3. Select "Harga Pokok" column
- * 4. Type # again to open operator selector modal
- * 5. Select "Greater Than" operator
- * 6. Type value: 50000
- * 7. Press Enter to apply filter
- * 8. Verify badges are displayed: [Harga Pokok][Greater Than][50000]
- * 9. Take screenshot
+ * 3. Select "Harga Pokok" column (operator selector auto-opens)
+ * 4. Select "Greater Than" operator
+ * 5. Type value: 50000
+ * 6. Press Enter to apply filter
+ * 7. Verify badges are displayed: [Harga Pokok][Greater Than][50000]
+ * 8. Take screenshot
  *
  * Expected Result:
  * - THREE badges should be visible in the search bar: [Harga Pokok][Greater Than][50000]
@@ -40,33 +39,30 @@ async function testSearchBarFilterCase2(page) {
   await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
   await page.waitForTimeout(500);
 
-  // Step 4: Select "Harga Pokok" column
-  console.log('✅ Step 4: Selecting "Harga Pokok" column...');
+  // Step 4: Select "Harga Pokok" column (operator selector auto-opens)
+  console.log(
+    '✅ Step 4: Selecting "Harga Pokok" column (operator selector auto-opens)...'
+  );
   await page.getByText('Harga Pokok').first().click();
   await page.waitForTimeout(500);
 
-  // Step 5: Type # again to open operator selector
-  console.log('🔢 Step 5: Opening operator selector with #...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('#');
-  await page.waitForTimeout(500);
-
-  // Step 6: Select "Greater Than" operator
-  console.log('➕ Step 6: Selecting "Greater Than" operator...');
+  // Step 5: Select "Greater Than" operator
+  console.log('➕ Step 5: Selecting "Greater Than" operator...');
   await page.getByText('Greater Than', { exact: true }).click();
   await page.waitForTimeout(500);
 
-  // Step 7: Type the value 50000
-  console.log('💰 Step 7: Typing value 50000...');
+  // Step 6: Type the value 50000
+  console.log('💰 Step 6: Typing value 50000...');
   await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
   await page.waitForTimeout(500);
 
-  // Step 8: Press Enter to apply filter
-  console.log('⏎ Step 8: Pressing Enter to apply filter...');
+  // Step 7: Press Enter to apply filter
+  console.log('⏎ Step 7: Pressing Enter to apply filter...');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(1000);
 
-  // Step 9: Take screenshot
-  console.log('📸 Step 9: Taking screenshot...');
+  // Step 8: Take screenshot
+  console.log('📸 Step 8: Taking screenshot...');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const screenshotPath = `.playwright-mcp/searchbar-filter-case-2-${timestamp}.jpeg`;
 

@@ -4,10 +4,9 @@
  * Test Flow:
  * 1. Navigate to Item Master page
  * 2. Type # to open column selector modal
- * 3. Select "Harga Pokok" column
- * 4. Type # again to open operator selector modal
- * 5. Select "Greater Than" operator
- * 6. Take screenshot (WITHOUT entering value)
+ * 3. Select "Harga Pokok" column (operator selector auto-opens)
+ * 4. Select "Greater Than" operator
+ * 5. Take screenshot (WITHOUT entering value)
  *
  * Expected Result:
  * - TWO badges should be visible in the search bar: [Harga Pokok][Greater Than]
@@ -35,23 +34,20 @@ async function testSearchBarFilterCase1(page) {
   await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
   await page.waitForTimeout(500);
 
-  // Step 4: Select "Harga Pokok" column
-  console.log('✅ Step 4: Selecting "Harga Pokok" column...');
+  // Step 4: Select "Harga Pokok" column (operator selector auto-opens)
+  console.log(
+    '✅ Step 4: Selecting "Harga Pokok" column (operator selector auto-opens)...'
+  );
   await page.getByText('Harga Pokok').first().click();
   await page.waitForTimeout(500);
 
-  // Step 5: Type # again to open operator selector
-  console.log('🔢 Step 5: Opening operator selector with #...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('#');
-  await page.waitForTimeout(500);
-
-  // Step 6: Select "Greater Than" operator
-  console.log('➕ Step 6: Selecting "Greater Than" operator...');
+  // Step 5: Select "Greater Than" operator
+  console.log('➕ Step 5: Selecting "Greater Than" operator...');
   await page.getByText('Greater Than', { exact: true }).click();
   await page.waitForTimeout(1000);
 
-  // Step 7: Take screenshot (before entering value)
-  console.log('📸 Step 7: Taking screenshot...');
+  // Step 6: Take screenshot (before entering value)
+  console.log('📸 Step 6: Taking screenshot...');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const screenshotPath = `.playwright-mcp/searchbar-filter-case-1-${timestamp}.jpeg`;
 
