@@ -50,8 +50,6 @@ async function testSearchBarSyncValidation(page) {
   await page.waitForTimeout(500);
   await page.getByText('Harga Pokok').first().click();
   await page.waitForTimeout(500);
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('#');
-  await page.waitForTimeout(500);
   await page.getByText('Greater Than', { exact: true }).click();
   await page.waitForTimeout(500);
   await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
@@ -87,8 +85,6 @@ async function testSearchBarSyncValidation(page) {
   await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
   await page.waitForTimeout(500);
   await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('#');
   await page.waitForTimeout(500);
   await page.getByText('Greater Than', { exact: true }).click();
   await page.waitForTimeout(500);
