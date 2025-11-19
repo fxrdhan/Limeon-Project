@@ -130,7 +130,7 @@ function BaseSelector<T>({
       }, 0);
       setTimeout(() => {
         setShowContent(true);
-      }, 200);
+      }, 50); // Reduced from 200ms to 50ms
     } else if (!isOpen && (showHeader || showContent)) {
       // Move all setState to async
       setTimeout(() => {
@@ -138,7 +138,7 @@ function BaseSelector<T>({
       }, 0);
       setTimeout(() => {
         setShowHeader(false);
-      }, 200);
+      }, 100); // Reduced from 200ms to 100ms
     }
   }, [isOpen, showHeader, showContent]);
 
@@ -267,10 +267,10 @@ function BaseSelector<T>({
           setShowContent(false);
           setTimeout(() => {
             setShowHeader(false);
-          }, 200);
+          }, 100);
           setTimeout(() => {
             onClose();
-          }, 350);
+          }, 200);
         }
       }
     };
@@ -326,8 +326,8 @@ function BaseSelector<T>({
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{
-                  duration: 0.25,
-                  ease: 'easeInOut',
+                  duration: 0.1,
+                  ease: 'easeOut',
                 }}
               >
                 <div

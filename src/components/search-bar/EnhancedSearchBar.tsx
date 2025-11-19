@@ -203,11 +203,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Remove trailing # from current value (with or without space)
       const cleanValue = value.replace(/\s*#\s*$/, '').trim();
 
-      // Pattern: #field #operator value -> #field #operator value #and #
-      const newValue = `${cleanValue} #${joinOp.value} #`;
-      onChange({
-        target: { value: newValue },
-      } as React.ChangeEvent<HTMLInputElement>);
+      // Check if we have preserved second operator/value (editing join in confirmed multi-condition)
+      if (
+        preservedFilterRef.current?.secondOperator &&
+        preservedFilterRef.current?.secondValue
+      ) {
+        // Restore the full multi-condition filter with the new join operator
+        const newValue = `${cleanValue} #${joinOp.value} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Clear preserved filter and searchMode
+        preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
+      } else {
+        // Pattern: #field #operator value -> #field #operator value #and #
+        const newValue = `${cleanValue} #${joinOp.value} #`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
 
       setTimeout(() => {
         inputRef?.current?.focus();
@@ -646,13 +662,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const columnName = searchMode.filterSearch.field;
 
-    // For confirmed multi-condition: extract first condition
+    // Save current searchMode to keep all badges visible during edit
+    setPreservedSearchMode(searchMode);
+
+    // For confirmed multi-condition: extract first condition and preserve second
     if (
       searchMode.filterSearch.isMultiCondition &&
       searchMode.filterSearch.conditions &&
-      searchMode.filterSearch.conditions.length >= 1
+      searchMode.filterSearch.conditions.length >= 2
     ) {
       const firstCondition = searchMode.filterSearch.conditions[0];
+      const secondCondition = searchMode.filterSearch.conditions[1];
+
+      // Preserve both conditions so they can be restored after join selection
+      preservedFilterRef.current = {
+        operator: firstCondition.operator,
+        value: firstCondition.value,
+        join: searchMode.filterSearch.joinOperator,
+        secondOperator: secondCondition.operator,
+        secondValue: secondCondition.value,
+      };
+
       // Set to #col #op value # to trigger join selector
       const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #`;
 
@@ -680,7 +710,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setTimeout(() => {
       inputRef?.current?.focus();
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-  }, [searchMode.filterSearch, onChange, inputRef]);
+  }, [searchMode, onChange, inputRef]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
