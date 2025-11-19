@@ -104,11 +104,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Check if we have preserved filter from edit column
       if (preservedFilterRef.current) {
         const { operator, value } = preservedFilterRef.current;
-        // Restore operator and value with the new column
-        const newValue = `#${column.field} #${operator} ${value}##`;
-        onChange({
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Check if operator is compatible with new column type
+        const availableOperators =
+          column.type === 'number'
+            ? NUMBER_FILTER_OPERATORS
+            : DEFAULT_FILTER_OPERATORS;
+
+        const isOperatorCompatible = availableOperators.some(
+          op => op.value === operator
+        );
+
+        if (isOperatorCompatible) {
+          // Restore operator and value with the new column
+          const newValue = `#${column.field} #${operator} ${value}##`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else {
+          // Operator not compatible, just set column without operator/value
+          const newValue = buildColumnValue(column.field, 'colon');
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
+
         // Clear preserved filter and searchMode
         preservedFilterRef.current = null;
         setPreservedSearchMode(null);
