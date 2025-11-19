@@ -16,6 +16,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   onClose,
   position,
   searchTerm = '',
+  defaultSelectedIndex,
 }) => {
   const getColumnIcon = (column: SearchColumn) => {
     switch (column.type) {
@@ -69,6 +70,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       position={position}
       searchTerm={searchTerm}
       config={config}
+      defaultSelectedIndex={defaultSelectedIndex}
     />
   );
 };

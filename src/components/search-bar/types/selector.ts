@@ -44,6 +44,7 @@ export interface ColumnSelectorProps {
   onClose: () => void;
   position: { top: number; left: number };
   searchTerm?: string;
+  defaultSelectedIndex?: number; // Pre-select column at this index when opening
 }
 
 export interface OperatorSelectorProps {
