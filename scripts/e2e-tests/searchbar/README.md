@@ -6,7 +6,7 @@ This folder contains End-to-End (E2E) testing scripts for SearchBar filter featu
 
 ### Case 0: SearchBar Filter - One Badge (Column Only)
 
-**File:** `searchbar-filter-case-0.js`
+**File:** `filter-case-0.js`
 
 **Test Flow:**
 
@@ -25,7 +25,7 @@ This folder contains End-to-End (E2E) testing scripts for SearchBar filter featu
 
 ### Case 1: SearchBar Filter - Two Badges (Column + Operator)
 
-**File:** `searchbar-filter-case-1.js`
+**File:** `filter-case-1.js`
 
 **Test Flow:**
 
@@ -46,7 +46,7 @@ This folder contains End-to-End (E2E) testing scripts for SearchBar filter featu
 
 ### Case 2: SearchBar Filter - Three Badges (Column + Operator + Value)
 
-**File:** `searchbar-filter-case-2.js`
+**File:** `filter-case-2.js`
 
 **Test Flow:**
 
@@ -69,7 +69,7 @@ This folder contains End-to-End (E2E) testing scripts for SearchBar filter featu
 
 ### Case 3: SearchBar Filter - Five Badges (Multi-Condition Before Second Value)
 
-**File:** `searchbar-filter-case-3.js`
+**File:** `filter-case-3.js`
 
 **Test Flow:**
 
@@ -96,7 +96,7 @@ This folder contains End-to-End (E2E) testing scripts for SearchBar filter featu
 
 ### Case 4: SearchBar Filter - Six Badges (Complete Multi-Condition)
 
-**File:** `searchbar-filter-case-4.js`
+**File:** `filter-case-4.js`
 
 **Test Flow:**
 
@@ -130,7 +130,7 @@ This folder contains End-to-End (E2E) testing scripts for SearchBar filter featu
 ```javascript
 const {
   testSearchBarFilterCase0,
-} = require('./scripts/e2e-tests/searchbar/searchbar-filter-case-0.js');
+} = require('./scripts/e2e-tests/searchbar/filter-case-0.js');
 await testSearchBarFilterCase0(page);
 ```
 
@@ -139,7 +139,7 @@ await testSearchBarFilterCase0(page);
 ```javascript
 const {
   testSearchBarFilterCase1,
-} = require('./scripts/e2e-tests/searchbar/searchbar-filter-case-1.js');
+} = require('./scripts/e2e-tests/searchbar/filter-case-1.js');
 await testSearchBarFilterCase1(page);
 ```
 
@@ -148,7 +148,7 @@ await testSearchBarFilterCase1(page);
 ```javascript
 const {
   testSearchBarFilterCase2,
-} = require('./scripts/e2e-tests/searchbar/searchbar-filter-case-2.js');
+} = require('./scripts/e2e-tests/searchbar/filter-case-2.js');
 await testSearchBarFilterCase2(page);
 ```
 
@@ -157,7 +157,7 @@ await testSearchBarFilterCase2(page);
 ```javascript
 const {
   testSearchBarFilterCase3,
-} = require('./scripts/e2e-tests/searchbar/searchbar-filter-case-3.js');
+} = require('./scripts/e2e-tests/searchbar/filter-case-3.js');
 await testSearchBarFilterCase3(page);
 ```
 
@@ -166,7 +166,7 @@ await testSearchBarFilterCase3(page);
 ```javascript
 const {
   testSearchBarFilterCase4,
-} = require('./scripts/e2e-tests/searchbar/searchbar-filter-case-4.js');
+} = require('./scripts/e2e-tests/searchbar/filter-case-4.js');
 await testSearchBarFilterCase4(page);
 ```
 
@@ -185,11 +185,11 @@ await testSearchBarFilterCase4(page); // Case 4
 
 Test screenshots will be saved to `.playwright-mcp/` folder with format:
 
-- Case 0: `searchbar-filter-case-0-[timestamp].jpeg`
-- Case 1: `searchbar-filter-case-1-[timestamp].jpeg`
-- Case 2: `searchbar-filter-case-2-[timestamp].jpeg`
-- Case 3: `searchbar-filter-case-3-[timestamp].jpeg`
-- Case 4: `searchbar-filter-case-4-[timestamp].jpeg`
+- Case 0: `filter-case-0-[timestamp].jpeg`
+- Case 1: `filter-case-1-[timestamp].jpeg`
+- Case 2: `filter-case-2-[timestamp].jpeg`
+- Case 3: `filter-case-3-[timestamp].jpeg`
+- Case 4: `filter-case-4-[timestamp].jpeg`
 
 **Note:** Screenshots are saved in JPEG format, not PNG.
 
