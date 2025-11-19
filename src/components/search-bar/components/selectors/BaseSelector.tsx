@@ -264,13 +264,8 @@ function BaseSelector<T>({
         !modalRef.current.contains(event.target as Node)
       ) {
         if (isOpen) {
-          setShowContent(false);
-          setTimeout(() => {
-            setShowHeader(false);
-          }, 100);
-          setTimeout(() => {
-            onClose();
-          }, 200);
+          // Just call onClose, let the useEffect handle the animation
+          onClose();
         }
       }
     };
