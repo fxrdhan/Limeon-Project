@@ -180,6 +180,9 @@ const ItemMasterNew = memo(() => {
   // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
   const isTabSwitchingRef = useRef(false);
 
+  // 📌 Track the last applied filter field to clear it when changing columns
+  const lastFilterFieldRef = useRef<string | null>(null);
+
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
   const showGroupPanel = true;
@@ -423,10 +426,27 @@ const ItemMasterNew = memo(() => {
           unifiedGridApi.setFilterModel(null);
           unifiedGridApi.onFilterChanged();
         }
+        // Clear the tracked filter field
+        lastFilterFieldRef.current = null;
         return;
       }
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+        // 🔧 Clear old filter when changing columns (editing column badge)
+        // If the field changed, clear the previous field's filter first
+        if (
+          lastFilterFieldRef.current &&
+          lastFilterFieldRef.current !== filterSearch.field
+        ) {
+          try {
+            await unifiedGridApi.setColumnFilterModel(
+              lastFilterFieldRef.current,
+              null
+            );
+          } catch (error) {
+            console.error('Failed to clear old filter:', error);
+          }
+        }
         try {
           // Determine filter type based on column configuration
           const isNumericColumn = [
@@ -499,6 +519,9 @@ const ItemMasterNew = memo(() => {
               });
             }
           }
+
+          // 📌 Track the current filter field for future column changes
+          lastFilterFieldRef.current = filterSearch.field;
 
           unifiedGridApi.onFilterChanged();
         } catch (error) {
@@ -661,10 +684,27 @@ const ItemMasterNew = memo(() => {
           unifiedGridApi.setFilterModel(null);
           unifiedGridApi.onFilterChanged();
         }
+        // Clear the tracked filter field
+        lastFilterFieldRef.current = null;
         return;
       }
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+        // 🔧 Clear old filter when changing columns (editing column badge)
+        // If the field changed, clear the previous field's filter first
+        if (
+          lastFilterFieldRef.current &&
+          lastFilterFieldRef.current !== filterSearch.field
+        ) {
+          try {
+            await unifiedGridApi.setColumnFilterModel(
+              lastFilterFieldRef.current,
+              null
+            );
+          } catch (error) {
+            console.error('Failed to clear old entity filter:', error);
+          }
+        }
         try {
           // filterSearch.field is already prefixed (e.g., 'categories.code')
           // Extract base field name for multi-filter check
@@ -728,6 +768,9 @@ const ItemMasterNew = memo(() => {
               });
             }
           }
+
+          // 📌 Track the current filter field for future column changes
+          lastFilterFieldRef.current = filterSearch.field;
 
           unifiedGridApi.onFilterChanged();
         } catch (error) {
