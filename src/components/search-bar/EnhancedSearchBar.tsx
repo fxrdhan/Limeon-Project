@@ -145,8 +145,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             } as React.ChangeEvent<HTMLInputElement>);
           }
         } else {
-          // Operator not compatible, just set column without operator/value
-          const newValue = buildColumnValue(column.field, 'colon');
+          // Operator not compatible, auto-open operator selector for new column
+          const newValue = `#${column.field} #`;
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -157,7 +157,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         setPreservedSearchMode(null);
       } else {
         // Normal column selection without preserved filter
-        const newValue = buildColumnValue(column.field, 'colon');
+        // Auto-open operator selector by ending with " #"
+        const newValue = `#${column.field} #`;
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
@@ -355,7 +356,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const handleClearToColumn = useCallback(() => {
     if (searchMode.filterSearch) {
       const columnName = searchMode.filterSearch.field;
-      const newValue = buildColumnValue(columnName, 'colon');
+      // Auto-open operator selector after clearing operator
+      const newValue = `#${columnName} #`;
       onChange({
         target: { value: newValue },
       } as React.ChangeEvent<HTMLInputElement>);
