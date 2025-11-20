@@ -279,6 +279,90 @@
 
 ---
 
+### E2: Edit Second Value Badge (Multi-Condition Filter)
+
+**Setup**: Case 4 (6 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+
+**Steps**:
+
+1. Create complete multi-condition (Case 4)
+2. Hover over "100000" badge (second value)
+3. Badge UI: [100000 (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
+
+**Expected Result**:
+
+- All badges preserved: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]` visible with edit/close icons
+- Input focused with value: "100000"
+- Cursor positioned at end of value
+- Ready for editing
+
+**Continue Editing**:
+
+5. Modify value to "80000"
+6. Press Enter
+
+**Final Expected Result**:
+
+- Badge updated: `[Harga Pokok][Greater Than][50000][AND][Less Than][80000]`
+- Filter panel shows: "> 50000 AND < 80000"
+- Data grid shows items where 50,000 < Harga Pokok < 80,000
+- Edit mode exits, badges return to normal state
+
+**Validates**:
+
+- Second value badge has edit functionality in multi-condition filters
+- Edit preserves all other badges (column, operators, join, first value)
+- Input pre-filled with current value for easy editing
+- Filter updates correctly after edit
+- Data grid re-filters with new range
+- Preserved state properly cleared after multi-condition edit
+
+---
+
+### E3: Edit First Value Badge (Multi-Condition Filter)
+
+**Setup**: Case 4 (6 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+
+**Steps**:
+
+1. Create complete multi-condition (Case 4)
+2. Hover over "50000" badge (first value)
+3. Badge UI: [50000 (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
+
+**Expected Result**:
+
+- All badges preserved: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]` visible with edit/close icons
+- Input focused with value: "50000"
+- Cursor positioned at end of value
+- Ready for editing
+
+**Continue Editing**:
+
+5. Modify value to "60000"
+6. Press Enter
+
+**Final Expected Result**:
+
+- Badge updated: `[Harga Pokok][Greater Than][60000][AND][Less Than][100000]`
+- Filter panel shows: "> 60000 AND < 100000"
+- Data grid shows items where 60,000 < Harga Pokok < 100,000
+- Edit mode exits, badges return to normal state
+
+**Validates**:
+
+- First value badge has edit functionality in multi-condition filters
+- Edit preserves all other badges (column, operator, join, second operator, second value)
+- Input pre-filled with current value for easy editing
+- Filter updates correctly after edit
+- Data grid re-filters with new range
+- Multi-condition filter remains intact after first value edit
+
+---
+
 ## Synchronization Validation
 
 ### Sync Test: Badge ↔ Filter Panel
@@ -346,9 +430,9 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
-- **Edit Tests**: 1 scenario (value badge edit)
+- **Edit Tests**: 3 scenarios (E1: simple filter, E2: multi-condition 2nd value, E3: multi-condition 1st value)
 - **Sync Tests**: 2 scenarios (UI ↔ data validation)
-- **Total**: 13 test scenarios
+- **Total**: 15 test scenarios
 
 ### Key Behaviors Tested:
 

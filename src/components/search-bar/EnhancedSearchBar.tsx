@@ -781,6 +781,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit value - show input with current value pre-filled for editing
   const handleEditValue = useCallback(() => {
+    console.log('🟢 handleEditValue called - Editing FIRST value');
     if (!searchMode.filterSearch) {
       return;
     }
@@ -788,13 +789,39 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const columnName = searchMode.filterSearch.field;
     const operator = searchMode.filterSearch.operator;
     const currentValue = searchMode.filterSearch.value;
+    const isMulti = searchMode.filterSearch.isMultiCondition;
+
+    console.log('🟢 First value:', currentValue);
 
     // Save current searchMode to keep column, operator badges visible during edit
     setPreservedSearchMode(searchMode);
 
-    // Set value with current value pre-filled (without ## confirmation)
-    // This allows user to edit the value in the input
-    const newValue = `#${columnName} #${operator} ${currentValue}`;
+    // Build new value - show ONLY first value for editing
+    let newValue: string;
+
+    if (
+      isMulti &&
+      searchMode.filterSearch.conditions &&
+      searchMode.filterSearch.conditions.length >= 2
+    ) {
+      // Multi-condition: preserve second condition in ref
+      const secondCondition = searchMode.filterSearch.conditions[1];
+      const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+
+      preservedFilterRef.current = {
+        operator: operator,
+        value: currentValue,
+        join: joinOp,
+        secondOperator: secondCondition.operator,
+        secondValue: secondCondition.value,
+      };
+
+      // Show only first value (simpler approach - no full pattern)
+      newValue = `#${columnName} #${operator} ${currentValue}`;
+    } else {
+      // Simple filter: just first condition
+      newValue = `#${columnName} #${operator} ${currentValue}`;
+    }
 
     onChange({
       target: { value: newValue },
@@ -813,6 +840,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit second value in multi-condition filter
   const handleEditSecondValue = useCallback(() => {
+    console.log('🔵 handleEditSecondValue called - Editing SECOND value');
     if (
       !searchMode.filterSearch ||
       !searchMode.filterSearch.isMultiCondition ||
@@ -826,6 +854,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const firstCondition = searchMode.filterSearch.conditions[0];
     const secondCondition = searchMode.filterSearch.conditions[1];
     const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+
+    console.log('🔵 Second value:', secondCondition.value);
 
     // Save current searchMode to keep badges visible during edit
     setPreservedSearchMode(searchMode);
@@ -861,11 +891,48 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedFilterRef.current = null;
   }, []);
 
+  // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
+  const handleOnChangeWithReconstruction = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+
+      // Detect confirmation of first value edit (## marker added)
+      if (
+        inputValue.endsWith('##') &&
+        preservedFilterRef.current?.secondOperator &&
+        preservedFilterRef.current?.secondValue
+      ) {
+        // Remove ## marker
+        const baseValue = inputValue.slice(0, -2);
+
+        // Reconstruct full multi-condition pattern
+        const fullPattern = `${baseValue} #${preservedFilterRef.current.join?.toLowerCase()} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
+
+        console.log('🔧 Reconstructing multi-condition:', {
+          inputValue,
+          baseValue,
+          preservedFilter: preservedFilterRef.current,
+          fullPattern,
+        });
+
+        // Call parent onChange with reconstructed pattern
+        onChange({
+          ...e,
+          target: { ...e.target, value: fullPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        // Normal onChange - pass through
+        onChange(e);
+      }
+    },
+    [onChange]
+  );
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
     operatorSearchTerm,
-    onChange,
+    onChange: handleOnChangeWithReconstruction, // Use wrapped onChange
     onKeyDown,
     onClearSearch,
     handleCloseColumnSelector,
