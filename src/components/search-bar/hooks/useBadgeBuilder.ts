@@ -17,6 +17,8 @@ interface BadgeHandlers {
   onEditColumn: () => void;
   onEditOperator: (isSecond?: boolean) => void; // Updated to accept optional parameter
   onEditJoin: () => void;
+  onEditValue: () => void; // Edit value handler
+  onEditSecondValue?: () => void; // Edit second value handler (optional)
 }
 
 export const useBadgeBuilder = (
@@ -112,7 +114,9 @@ export const useBadgeBuilder = (
                 ? handlers.onClearSecondValue
                 : handlers.onClearAll,
           canClear: true,
-          canEdit: false, // Value badges are NOT editable (per user requirement)
+          onEdit:
+            index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
+          canEdit: true, // Value badges are now editable
         });
 
         // Join badge between conditions (not after last one)
@@ -193,7 +197,10 @@ export const useBadgeBuilder = (
           ? handlers.onClearSecondValue
           : handlers.onClearValue,
         canClear: true,
-        canEdit: false, // Value badges are NOT editable (per user requirement)
+        onEdit: isSecondValue
+          ? handlers.onEditSecondValue
+          : handlers.onEditValue,
+        canEdit: true, // Value badges are now editable
       });
     }
 
