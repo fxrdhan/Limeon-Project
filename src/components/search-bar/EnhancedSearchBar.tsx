@@ -856,6 +856,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
   }, [searchMode, onChange, inputRef]);
 
+  const handleClearPreservedState = useCallback(() => {
+    setPreservedSearchMode(null);
+    preservedFilterRef.current = null;
+  }, []);
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
@@ -866,6 +871,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseColumnSelector,
     handleCloseOperatorSelector,
     handleCloseJoinOperatorSelector,
+    onClearPreservedState: handleClearPreservedState,
   });
 
   const searchTerm = useMemo(() => {
