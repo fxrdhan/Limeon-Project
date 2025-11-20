@@ -69,17 +69,18 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 
 ## 🧪 Tests
 
-| File                                             | Purpose                                         |
-| ------------------------------------------------ | ----------------------------------------------- |
-| `scripts/e2e-tests/searchbar/filter-case-0.js`   | E2E test: One badge (column only)               |
-| `scripts/e2e-tests/searchbar/filter-case-1.js`   | E2E test: Two badges                            |
-| `scripts/e2e-tests/searchbar/filter-case-2.js`   | E2E test: Three badges                          |
-| `scripts/e2e-tests/searchbar/filter-case-3.js`   | E2E test: Five badges (before second value)     |
-| `scripts/e2e-tests/searchbar/filter-case-4.js`   | E2E test: Six badges (complete multi-condition) |
-| `scripts/e2e-tests/searchbar/sync-validation.js` | E2E test: Badge-to-Filter Panel sync validation |
-| `scripts/e2e-tests/searchbar/README.md`          | Test documentation                              |
-| `scripts/e2e-tests/searchbar/ARCHITECTURE.md`    | Architecture deep dive                          |
-| `scripts/e2e-tests/searchbar/FILE_INDEX.md`      | This file                                       |
+| File                                             | Purpose                                                 |
+| ------------------------------------------------ | ------------------------------------------------------- |
+| `scripts/e2e-tests/searchbar/badge-helpers.js`   | **Shared utilities**: Reusable badge creation functions |
+| `scripts/e2e-tests/searchbar/filter-case-0.js`   | E2E test: One badge (column only)                       |
+| `scripts/e2e-tests/searchbar/filter-case-1.js`   | E2E test: Two badges                                    |
+| `scripts/e2e-tests/searchbar/filter-case-2.js`   | E2E test: Three badges                                  |
+| `scripts/e2e-tests/searchbar/filter-case-3.js`   | E2E test: Five badges (before second value)             |
+| `scripts/e2e-tests/searchbar/filter-case-4.js`   | E2E test: Six badges (complete multi-condition)         |
+| `scripts/e2e-tests/searchbar/sync-validation.js` | E2E test: Badge-to-Filter Panel sync validation         |
+| `scripts/e2e-tests/searchbar/README.md`          | Test documentation                                      |
+| `scripts/e2e-tests/searchbar/ARCHITECTURE.md`    | Architecture deep dive                                  |
+| `scripts/e2e-tests/searchbar/FILE_INDEX.md`      | This file                                               |
 
 ## 📊 Dependency Graph
 

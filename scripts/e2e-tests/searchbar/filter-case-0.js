@@ -16,6 +16,11 @@
  * Copy the code from the testSearchBarFilterCase0 function and run it using browser_run_code
  */
 
+const {
+  createColumnBadge,
+  navigateToItemMaster,
+} = require('./badge-helpers.js');
+
 async function testSearchBarFilterCase0(page) {
   console.log(
     '🚀 Starting SearchBar Filter E2E Test - Case 0 (Single Badge - Column Only)...'
@@ -23,41 +28,39 @@ async function testSearchBarFilterCase0(page) {
 
   // Step 1: Navigate to the page
   console.log('📍 Step 1: Navigating to Item Master page...');
-  await page.goto('http://localhost:5173/master-data/item-master/items');
-  await page.waitForTimeout(2000);
+  await navigateToItemMaster(page);
 
-  // Step 2: Click on search bar
-  console.log('🔍 Step 2: Clicking on search bar...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).click();
+  // Step 2-4: Create column badge
+  console.log('📋 Step 2-4: Creating column badge...');
+  await createColumnBadge(page, 'Harga Pokok');
 
-  // Step 3: Type # to open column selector
-  console.log('📋 Step 3: Opening column selector with #...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
-  await page.waitForTimeout(500);
+  // Step 5: Validate DOM - Check badge count
+  console.log('🔍 Step 5: Validating DOM badges...');
+  const badges = await page
+    .locator('[class*="badge"]')
+    .filter({ hasText: /Harga Pokok/i })
+    .all();
+  const badgeCount = badges.length;
 
-  // Step 4: Select "Harga Pokok" column
-  console.log('✅ Step 4: Selecting "Harga Pokok" column...');
-  await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
-
-  // Step 5: Take screenshot (BEFORE typing # for operator)
-  console.log('📸 Step 5: Taking screenshot...');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const screenshotPath = `.playwright-mcp/filter-case-0-${timestamp}.jpeg`;
-
-  await page.screenshot({
-    path: screenshotPath,
-    type: 'jpeg',
-    quality: 90,
-  });
-
-  console.log('✅ Test completed successfully!');
-  console.log(`📸 Screenshot saved to: ${screenshotPath}`);
   console.log('');
-  console.log('Expected badge: [Harga Pokok]');
-  console.log('Note: Only column badge visible (1 badge)');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📊 DOM VALIDATION RESULTS');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`Expected badges: 1`);
+  console.log(`Actual badges: ${badgeCount}`);
+  console.log(`Badge should contain: [Harga Pokok]`);
 
-  return screenshotPath;
+  const passed = badgeCount >= 1;
+
+  if (passed) {
+    console.log('✅ PASS: Column badge rendered correctly in DOM');
+  } else {
+    console.log(`❌ FAIL: Expected at least 1 badge, got ${badgeCount}`);
+  }
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('');
+
+  return { passed, expectedCount: 1, actualCount: badgeCount };
 }
 
 // Export for use in other scripts
