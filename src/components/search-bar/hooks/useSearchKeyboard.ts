@@ -13,6 +13,7 @@ interface UseSearchKeyboardProps {
   handleCloseColumnSelector: () => void;
   handleCloseOperatorSelector: () => void;
   handleCloseJoinOperatorSelector?: () => void;
+  onClearPreservedState?: () => void;
 }
 
 export const useSearchKeyboard = ({
@@ -25,6 +26,7 @@ export const useSearchKeyboard = ({
   handleCloseColumnSelector,
   handleCloseOperatorSelector,
   handleCloseJoinOperatorSelector,
+  onClearPreservedState,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -88,6 +90,9 @@ export const useSearchKeyboard = ({
                 onChange({
                   target: { value: newValue },
                 } as React.ChangeEvent<HTMLInputElement>);
+
+                // Clear preserved state after confirming edit
+                onClearPreservedState?.();
               }
             }
             return;
@@ -204,6 +209,7 @@ export const useSearchKeyboard = ({
       handleCloseColumnSelector,
       handleCloseOperatorSelector,
       handleCloseJoinOperatorSelector,
+      onClearPreservedState,
     ]
   );
 

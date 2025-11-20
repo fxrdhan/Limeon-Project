@@ -183,7 +183,34 @@
 
 ---
 
-### D4: Delete Join Operator
+### D4: Delete Second Operator
+
+**Setup**: Case 4 (6 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+
+**Steps**:
+
+1. Create complete multi-condition (Case 4)
+2. Hover over "Less Than" badge (second operator)
+3. It will be: [Less Than (edit icon)(close icon)]
+4. Click 'x' button
+
+**Expected Result**:
+
+- 4 badges: `[Harga Pokok][Greater Than][50000][AND]`
+- Filter panel shows: "> 50000" (only first condition)
+- Operator selector auto-opens for second condition
+- Data filtered by first condition only
+
+**Validates**:
+
+- Second operator deletion removes second value too (cascading)
+- Join operator remains
+- Operator selector reopens for new second condition
+
+---
+
+### D5: Delete Join Operator
 
 **Setup**: Case 4 (6 badges)
 **Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
@@ -209,30 +236,46 @@
 
 ---
 
-### D5: Delete Second Operator
+## Badge Edit Tests
 
-**Setup**: Case 4 (6 badges)
-**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+### E1: Edit Value Badge (Simple Filter)
+
+**Setup**: Case 2 (3 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000]`
 
 **Steps**:
 
-1. Create complete multi-condition (Case 4)
-2. Hover over "Less Than" badge (second operator)
-3. It will be: [Less Than (edit icon)(close icon)]
-4. Click 'x' button
+1. Create simple filter (Case 2)
+2. Hover over "50000" badge
+3. Badge UI: [50000 (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
 
 **Expected Result**:
 
-- 4 badges: `[Harga Pokok][Greater Than][50000][AND]`
-- Filter panel shows: "> 50000" (only first condition)
-- Operator selector auto-opens for second condition
-- Data filtered by first condition only
+- All badges preserved: `[Harga Pokok][Greater Than][50000]` visible with edit/close icons
+- Input focused with value: "50000"
+- Cursor positioned at end of value
+- Ready for editing
+
+**Continue Editing**:
+
+5. Modify value to "60000"
+6. Press Enter
+
+**Final Expected Result**:
+
+- Badge updated: `[Harga Pokok][Greater Than][60000]`
+- Filter panel shows: "> 60000"
+- Data grid shows items where Harga Pokok > 60,000
+- Edit mode exits, badges return to normal state
 
 **Validates**:
 
-- Second operator deletion removes second value too (cascading)
-- Join operator remains
-- Operator selector reopens for new second condition
+- Value badge has edit functionality
+- Edit preserves all other badges (column, operator)
+- Input pre-filled with current value for easy editing
+- Filter updates correctly after edit
+- Data grid re-filters with new value
 
 ---
 
@@ -303,8 +346,9 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
+- **Edit Tests**: 1 scenario (value badge edit)
 - **Sync Tests**: 2 scenarios (UI ↔ data validation)
-- **Total**: 12 test scenarios
+- **Total**: 13 test scenarios
 
 ### Key Behaviors Tested:
 
@@ -313,6 +357,7 @@
 - State management and transitions
 - Data synchronization
 - Cascading deletions
+- Badge editing (value badges)
 - Auto-opening selectors
 - Filter panel updates
 - Data grid filtering
