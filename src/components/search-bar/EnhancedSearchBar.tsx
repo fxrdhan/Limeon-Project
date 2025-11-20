@@ -779,6 +779,83 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
   }, [searchMode, onChange, inputRef]);
 
+  // Edit value - show input with current value pre-filled for editing
+  const handleEditValue = useCallback(() => {
+    if (!searchMode.filterSearch) {
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.field;
+    const operator = searchMode.filterSearch.operator;
+    const currentValue = searchMode.filterSearch.value;
+
+    // Save current searchMode to keep column, operator badges visible during edit
+    setPreservedSearchMode(searchMode);
+
+    // Set value with current value pre-filled (without ## confirmation)
+    // This allows user to edit the value in the input
+    const newValue = `#${columnName} #${operator} ${currentValue}`;
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    // Focus input with cursor at end of value (for editing)
+    setTimeout(() => {
+      const input = inputRef?.current;
+      if (input) {
+        input.focus();
+        // Position cursor at end of input
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+  }, [searchMode, onChange, inputRef]);
+
+  // Edit second value in multi-condition filter
+  const handleEditSecondValue = useCallback(() => {
+    if (
+      !searchMode.filterSearch ||
+      !searchMode.filterSearch.isMultiCondition ||
+      !searchMode.filterSearch.conditions ||
+      searchMode.filterSearch.conditions.length < 2
+    ) {
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.field;
+    const firstCondition = searchMode.filterSearch.conditions[0];
+    const secondCondition = searchMode.filterSearch.conditions[1];
+    const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+
+    // Save current searchMode to keep badges visible during edit
+    setPreservedSearchMode(searchMode);
+
+    // Preserve first condition while editing second value
+    preservedFilterRef.current = {
+      operator: firstCondition.operator,
+      value: firstCondition.value,
+      join: joinOp,
+      secondOperator: secondCondition.operator,
+      secondValue: secondCondition.value,
+    };
+
+    // Show input with second value pre-filled for editing
+    const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCondition.operator} ${secondCondition.value}`;
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      const input = inputRef?.current;
+      if (input) {
+        input.focus();
+        // Position cursor at end of input
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+  }, [searchMode, onChange, inputRef]);
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
@@ -994,6 +1071,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 onEditColumn={handleEditColumn}
                 onEditOperator={handleEditOperator}
                 onEditJoin={handleEditJoin}
+                onEditValue={handleEditValue}
+                onEditSecondValue={handleEditSecondValue}
                 onHoverChange={handleHoverChange}
                 preservedSearchMode={preservedSearchMode}
               />
