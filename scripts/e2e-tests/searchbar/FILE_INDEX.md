@@ -67,20 +67,23 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 | `src/pages/master-data/patient-list/index.tsx`  | Patient list page example        |
 | `src/pages/master-data/supplier-list/index.tsx` | Supplier list page example       |
 
-## 🧪 Tests
+## 🧪 E2E Tests
 
-| File                                             | Purpose                                                 |
-| ------------------------------------------------ | ------------------------------------------------------- |
-| `scripts/e2e-tests/searchbar/badge-helpers.js`   | **Shared utilities**: Reusable badge creation functions |
-| `scripts/e2e-tests/searchbar/filter-case-0.js`   | E2E test: One badge (column only)                       |
-| `scripts/e2e-tests/searchbar/filter-case-1.js`   | E2E test: Two badges                                    |
-| `scripts/e2e-tests/searchbar/filter-case-2.js`   | E2E test: Three badges                                  |
-| `scripts/e2e-tests/searchbar/filter-case-3.js`   | E2E test: Five badges (before second value)             |
-| `scripts/e2e-tests/searchbar/filter-case-4.js`   | E2E test: Six badges (complete multi-condition)         |
-| `scripts/e2e-tests/searchbar/sync-validation.js` | E2E test: Badge-to-Filter Panel sync validation         |
-| `scripts/e2e-tests/searchbar/README.md`          | Test documentation                                      |
-| `scripts/e2e-tests/searchbar/ARCHITECTURE.md`    | Architecture deep dive                                  |
-| `scripts/e2e-tests/searchbar/FILE_INDEX.md`      | This file                                               |
+| File                                          | Purpose                        |
+| --------------------------------------------- | ------------------------------ |
+| `scripts/e2e-tests/searchbar/TEST-FLOWS.md`   | **All test scenarios & flows** |
+| `scripts/e2e-tests/searchbar/README.md`       | Test overview & usage guide    |
+| `scripts/e2e-tests/searchbar/ARCHITECTURE.md` | Feature architecture deep dive |
+| `scripts/e2e-tests/searchbar/FILE_INDEX.md`   | This file                      |
+
+### Test Coverage:
+
+- **Badge Creation Tests**: 5 scenarios (Case 0-4)
+- **Badge Deletion Tests**: 5 scenarios (Case D1-D5)
+- **Synchronization Tests**: Badge ↔ Filter Panel validation
+- **Total**: 12 comprehensive test scenarios
+
+**Note**: Tests are executed interactively using Claude Code + Playwright MCP. No code files needed - just markdown test flows.
 
 ## 📊 Dependency Graph
 
@@ -138,20 +141,8 @@ cat src/components/search-bar/operators.tsx
 # View search utils
 cat src/components/search-bar/utils/searchUtils.ts
 
-# Run E2E test Case 0
-# (Copy content from searchbar-filter-case-0.js)
-
-# Run E2E test Case 1
-# (Copy content from searchbar-filter-case-1.js)
-
-# Run E2E test Case 2
-# (Copy content from searchbar-filter-case-2.js)
-
-# Run E2E test Case 3
-# (Copy content from searchbar-filter-case-3.js)
-
-# Run E2E test Case 4
-# (Copy content from searchbar-filter-case-4.js)
+# View test flows
+cat scripts/e2e-tests/searchbar/TEST-FLOWS.md
 ```
 
 ## 🎯 Most Important Files (Top 5)
@@ -175,4 +166,12 @@ To understand the feature, read in this order:
 
 ---
 
-**Total Files**: 30+ files involved in the SearchBar filter feature
+**Total Files**: 31 files involved in the SearchBar filter feature
+
+- **Core Components**: 13 files
+- **Hooks**: 5 files
+- **Configuration & Types**: 6 files
+- **Utilities**: 1 file
+- **Integration**: 3 files
+- **Usage Examples**: 4 files
+- **Test Documentation**: 4 markdown files
