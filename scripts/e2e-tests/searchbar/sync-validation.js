@@ -19,6 +19,13 @@
  * Copy the code from the testSearchBarSyncValidation function and run it using browser_run_code
  */
 
+// Import badge creation helpers
+const {
+  createSimpleFilter,
+  createMultiConditionComplete,
+  navigateToItemMaster,
+} = require('./badge-helpers.js');
+
 async function testSearchBarSyncValidation(page) {
   console.log('🚀 Starting SearchBar-AGGrid Sync Validation Test...');
   console.log('');
@@ -42,20 +49,9 @@ async function testSearchBarSyncValidation(page) {
   // === Test Case 2: Simple Filter ===
   console.log('📝 Case 2: Testing Simple Filter (3 badges)...');
 
-  await page.goto('http://localhost:5173/master-data/item-master/items');
-  await page.waitForTimeout(2000);
-
-  await page.getByRole('textbox', { name: 'Cari item...' }).click();
-  await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
-  await page.waitForTimeout(500);
-  await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
-  await page.getByText('Greater Than', { exact: true }).click();
-  await page.waitForTimeout(500);
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(1500);
+  await navigateToItemMaster(page);
+  await createSimpleFilter(page, 'Harga Pokok', 'Greater Than', '50000', true);
+  await page.waitForTimeout(500); // Extra time for filter panel to update
 
   const filterPanel2 = await getFilterPanelText();
   const isSync2 = filterPanel2.includes('> 50000');
@@ -78,30 +74,18 @@ async function testSearchBarSyncValidation(page) {
   // === Test Case 4: Multi-Condition Filter ===
   console.log('📝 Case 4: Testing Multi-Condition Filter (6 badges)...');
 
-  await page.goto('http://localhost:5173/master-data/item-master/items');
-  await page.waitForTimeout(2000);
-
-  await page.getByRole('textbox', { name: 'Cari item...' }).click();
-  await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
-  await page.waitForTimeout(500);
-  await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
-  await page.getByText('Greater Than', { exact: true }).click();
-  await page.waitForTimeout(500);
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(1000);
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('50000 #');
-  await page.waitForTimeout(500);
-  await page.getByText('AND', { exact: true }).click();
-  await page.waitForTimeout(500);
-  await page.getByText('Less Than', { exact: true }).click();
-  await page.waitForTimeout(500);
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('100000');
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(1500);
+  await navigateToItemMaster(page);
+  await createMultiConditionComplete(
+    page,
+    'Harga Pokok',
+    'Greater Than',
+    '50000',
+    'AND',
+    'Less Than',
+    '100000',
+    true
+  );
+  await page.waitForTimeout(500); // Extra time for filter panel to update
 
   const filterPanel4 = await getFilterPanelText();
   const isSync4 = filterPanel4.includes('> 50000 AND < 100000');

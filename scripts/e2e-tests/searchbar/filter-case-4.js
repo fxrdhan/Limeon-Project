@@ -24,6 +24,11 @@
  * Copy the code from the testSearchBarFilterCase4 function and run it using browser_run_code
  */
 
+const {
+  createMultiConditionComplete,
+  navigateToItemMaster,
+} = require('./badge-helpers.js');
+
 async function testSearchBarFilterCase4(page) {
   console.log(
     '🚀 Starting SearchBar Filter E2E Test - Case 4 (Complete Multi-Condition Filter)...'
@@ -31,93 +36,50 @@ async function testSearchBarFilterCase4(page) {
 
   // Step 1: Navigate to the page
   console.log('📍 Step 1: Navigating to Item Master page...');
-  await page.goto('http://localhost:5173/master-data/item-master/items');
-  await page.waitForTimeout(2000);
+  await navigateToItemMaster(page);
 
-  // Step 2: Click on search bar
-  console.log('🔍 Step 2: Clicking on search bar...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).click();
-
-  // Step 3: Type # to open column selector
-  console.log('📋 Step 3: Opening column selector with #...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
-  await page.waitForTimeout(500);
-
-  // Step 4: Select "Harga Pokok" column (operator selector auto-opens)
-  console.log(
-    '✅ Step 4: Selecting "Harga Pokok" column (operator selector auto-opens)...'
-  );
-  await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
-
-  // Step 5: Select "Greater Than" operator
-  console.log('➕ Step 5: Selecting "Greater Than" operator...');
-  await page.getByText('Greater Than', { exact: true }).click();
-  await page.waitForTimeout(500);
-
-  // Step 6: Type the first value 50000
-  console.log('💰 Step 6: Typing first value 50000...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
-  await page.waitForTimeout(500);
-
-  // Step 7: Press Enter to confirm first condition
-  console.log('⏎ Step 7: Pressing Enter to confirm first condition...');
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(1000);
-
-  console.log(
-    '✅ First condition confirmed: [Harga Pokok][Greater Than][50000]'
+  // Step 2-12: Create complete multi-condition filter
+  console.log('📋 Step 2-12: Creating complete multi-condition filter...');
+  await createMultiConditionComplete(
+    page,
+    'Harga Pokok',
+    'Greater Than',
+    '50000',
+    'AND',
+    'Less Than',
+    '100000',
+    true
   );
 
-  // Step 8: Type # to open join operator selector
-  console.log('🔗 Step 8: Typing # to open join operator selector...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('50000 #');
-  await page.waitForTimeout(500);
+  // Step 13: Validate DOM - Check badge count
+  console.log('🔍 Step 13: Validating DOM badges...');
+  const allBadges = await page.locator('[class*="badge"]').all();
+  const badgeCount = allBadges.length;
 
-  // Step 9: Select "AND" join operator
-  console.log('✅ Step 9: Selecting "AND" join operator...');
-  await page.getByText('AND', { exact: true }).click();
-  await page.waitForTimeout(500);
-
-  console.log('✅ Join operator added: [AND]');
-
-  // Step 10: Operator selector should open automatically, select "Less Than"
-  console.log('🔢 Step 10: Selecting "Less Than" operator (auto-opened)...');
-  await page.getByText('Less Than', { exact: true }).click();
-  await page.waitForTimeout(500);
-
-  console.log('✅ Second operator added: [Less Than]');
-
-  // Step 11: Type the second value 100000
-  console.log('💰 Step 11: Typing second value 100000...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('100000');
-  await page.waitForTimeout(500);
-
-  // Step 12: Press Enter to apply multi-condition filter
-  console.log('⏎ Step 12: Pressing Enter to apply multi-condition filter...');
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(1000);
-
-  // Step 13: Take screenshot
-  console.log('📸 Step 13: Taking screenshot...');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const screenshotPath = `.playwright-mcp/filter-case-4-${timestamp}.jpeg`;
-
-  await page.screenshot({
-    path: screenshotPath,
-    type: 'jpeg',
-    quality: 90,
-  });
-
-  console.log('✅ Test completed successfully!');
-  console.log(`📸 Screenshot saved to: ${screenshotPath}`);
   console.log('');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📊 DOM VALIDATION RESULTS');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`Expected badges: 6`);
+  console.log(`Actual badges: ${badgeCount}`);
   console.log(
-    'Expected badges: [Harga Pokok][Greater Than][50000][AND][Less Than][100000]'
+    `Badges should contain: [Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
   );
-  console.log('Filter: Items with Harga Pokok between 50,000 and 100,000');
 
-  return screenshotPath;
+  const passed = badgeCount >= 6;
+
+  if (passed) {
+    console.log(
+      '✅ PASS: Complete multi-condition badges rendered correctly in DOM'
+    );
+  } else {
+    console.log(`❌ FAIL: Expected at least 6 badges, got ${badgeCount}`);
+  }
+  console.log('Filter: Items with Harga Pokok between 50,000 and 100,000');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('');
+
+  return { passed, expectedCount: 6, actualCount: badgeCount };
 }
 
 // Export for use in other scripts

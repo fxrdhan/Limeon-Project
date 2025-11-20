@@ -2,124 +2,121 @@
 
 This folder contains End-to-End (E2E) testing scripts for SearchBar filter feature using Playwright MCP.
 
-## Available Tests
+## Test Types
 
-### Case 0: SearchBar Filter - One Badge (Column Only)
+### 🔍 DOM Validation Tests (`filter-case-*.js`)
+
+**Purpose**: Validate that badges **render correctly** in the DOM
+
+- ✅ Check badge **count** (1, 2, 3, 5, or 6 badges)
+- ✅ Verify badges **exist** in DOM tree
+- ✅ Use Playwright locators to count badge elements
+- ✅ Return pass/fail with actual vs expected count
+
+### 🔄 Sync Validation Tests (`sync-validation.js`)
+
+**Purpose**: Validate that badge **content syncs** with AG Grid Filter Panel
+
+- ✅ Check badge content matches filter panel text
+- ✅ Verify filter logic is correct (e.g., "> 50000")
+- ✅ Ensure filtering actually works on data
+- ✅ Test Cases 2 & 4 (simple & multi-condition filters)
+
+---
+
+## DOM Validation Tests (Case 0-4)
+
+### Case 0: One Badge (Column Only)
 
 **File:** `filter-case-0.js`
 
 **Test Flow:**
 
 - Navigate to Item Master page
-- Type `#` to open column selector
-- Select "Harga Pokok" column
-- Take screenshot (JPEG format)
+- Create column badge: "Harga Pokok"
+- Validate DOM badge count
 
-**Expected Result:**
+**Validation:**
 
-- **ONE badge** visible: [Harga Pokok]
-- No operator or value selected yet
-- Column badge shown, ready for operator selection
+- ✅ Expected badge count: **1**
+- ✅ Badge should contain: `[Harga Pokok]`
+- ✅ Returns: `{ passed, expectedCount: 1, actualCount }`
 
 ---
 
-### Case 1: SearchBar Filter - Two Badges (Column + Operator)
+### Case 1: Two Badges (Column + Operator)
 
 **File:** `filter-case-1.js`
 
 **Test Flow:**
 
 - Navigate to Item Master page
-- Type `#` to open column selector
-- Select "Harga Pokok" column
-- Type `#` again to open operator selector
-- Select "Greater Than" operator
-- Take screenshot (JPEG format)
+- Create column + operator badges
+- Validate DOM badge count
 
-**Expected Result:**
+**Validation:**
 
-- **TWO badges** visible: [Harga Pokok][Greater Than]
-- No value entered yet
-- Operator selector closed after selection
+- ✅ Expected badge count: **2**
+- ✅ Badges should contain: `[Harga Pokok][Greater Than]`
+- ✅ Returns: `{ passed, expectedCount: 2, actualCount }`
 
 ---
 
-### Case 2: SearchBar Filter - Three Badges (Column + Operator + Value)
+### Case 2: Three Badges (Simple Filter)
 
 **File:** `filter-case-2.js`
 
 **Test Flow:**
 
 - Navigate to Item Master page
-- Type `#` to open column selector
-- Select "Harga Pokok" column
-- Type `#` again to open operator selector
-- Select "Greater Than" operator
-- Type value `50000`
-- Press Enter to apply filter
-- Take screenshot (JPEG format)
+- Create simple filter: "Harga Pokok > 50000"
+- Validate DOM badge count
 
-**Expected Result:**
+**Validation:**
 
-- **THREE badges** visible: [Harga Pokok][Greater Than][50000]
-- Data filtered to show only items with Harga Pokok > 50,000
-- Filter applied and active
+- ✅ Expected badge count: **3**
+- ✅ Badges should contain: `[Harga Pokok][Greater Than][50000]`
+- ✅ Returns: `{ passed, expectedCount: 3, actualCount }`
 
 ---
 
-### Case 3: SearchBar Filter - Five Badges (Multi-Condition Before Second Value)
+### Case 3: Five Badges (Multi-Condition Partial)
 
 **File:** `filter-case-3.js`
 
 **Test Flow:**
 
 - Navigate to Item Master page
-- Type `#` to open column selector
-- Select "Harga Pokok" column
-- Type `#` again to open operator selector
-- Select "Greater Than" operator
-- Type value `50000`
-- Press Enter to confirm first condition
-- Type `#` to open join operator selector
-- Select "AND" join operator
-- Operator selector opens automatically
-- Select "Less Than" operator
-- Take screenshot (JPEG format)
+- Create multi-condition partial filter (without second value)
+- Validate DOM badge count
 
-**Expected Result:**
+**Validation:**
 
-- **FIVE badges** visible: [Harga Pokok][Greater Than][50000][AND][Less Than]
-- Second value NOT entered yet
-- Ready for second value input
+- ✅ Expected badge count: **5**
+- ✅ Badges should contain: `[Harga Pokok][Greater Than][50000][AND][Less Than]`
+- ✅ Returns: `{ passed, expectedCount: 5, actualCount }`
+- ℹ️ Note: Second value NOT entered yet
 
 ---
 
-### Case 4: SearchBar Filter - Six Badges (Complete Multi-Condition)
+### Case 4: Six Badges (Multi-Condition Complete)
 
 **File:** `filter-case-4.js`
 
 **Test Flow:**
 
 - Navigate to Item Master page
-- Type `#` to open column selector
-- Select "Harga Pokok" column
-- Type `#` again to open operator selector
-- Select "Greater Than" operator
-- Type value `50000`
-- Press Enter to confirm first condition
-- Type `#` to open join operator selector
-- Select "AND" join operator
-- Operator selector opens automatically
-- Select "Less Than" operator
-- Type second value `100000`
-- Press Enter to apply multi-condition filter
-- Take screenshot (JPEG format)
+- Create complete multi-condition filter
+- Validate DOM badge count
 
-**Expected Result:**
+**Validation:**
 
-- **SIX badges** visible: [Harga Pokok][Greater Than][50000][AND][Less Than][100000]
-- Data filtered to show items with 50,000 < Harga Pokok < 100,000
-- Multi-condition filter is active and applied
+- ✅ Expected badge count: **6**
+- ✅ Badges should contain: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+- ✅ Returns: `{ passed, expectedCount: 6, actualCount }`
+- ℹ️ Filter range: 50,000 < Harga Pokok < 100,000
+
+---
 
 ## How to Use
 

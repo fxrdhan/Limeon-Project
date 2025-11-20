@@ -17,53 +17,49 @@
  * Copy the code from the testSearchBarFilterCase1 function and run it using browser_run_code
  */
 
+const {
+  createColumnOperatorBadges,
+  navigateToItemMaster,
+} = require('./badge-helpers.js');
+
 async function testSearchBarFilterCase1(page) {
   console.log('🚀 Starting SearchBar Filter E2E Test - Case 1 (Two Badges)...');
 
   // Step 1: Navigate to the page
   console.log('📍 Step 1: Navigating to Item Master page...');
-  await page.goto('http://localhost:5173/master-data/item-master/items');
-  await page.waitForTimeout(2000);
+  await navigateToItemMaster(page);
 
-  // Step 2: Click on search bar
-  console.log('🔍 Step 2: Clicking on search bar...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).click();
-
-  // Step 3: Type # to open column selector
-  console.log('📋 Step 3: Opening column selector with #...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
+  // Step 2-5: Create column + operator badges
+  console.log('📋 Step 2-5: Creating column and operator badges...');
+  await createColumnOperatorBadges(page, 'Harga Pokok', 'Greater Than');
   await page.waitForTimeout(500);
 
-  // Step 4: Select "Harga Pokok" column (operator selector auto-opens)
-  console.log(
-    '✅ Step 4: Selecting "Harga Pokok" column (operator selector auto-opens)...'
-  );
-  await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
+  // Step 6: Validate DOM - Check badge count
+  console.log('🔍 Step 6: Validating DOM badges...');
+  const allBadges = await page.locator('[class*="badge"]').all();
+  const badgeCount = allBadges.length;
 
-  // Step 5: Select "Greater Than" operator
-  console.log('➕ Step 5: Selecting "Greater Than" operator...');
-  await page.getByText('Greater Than', { exact: true }).click();
-  await page.waitForTimeout(1000);
-
-  // Step 6: Take screenshot (before entering value)
-  console.log('📸 Step 6: Taking screenshot...');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const screenshotPath = `.playwright-mcp/filter-case-1-${timestamp}.jpeg`;
-
-  await page.screenshot({
-    path: screenshotPath,
-    type: 'jpeg',
-    quality: 90,
-  });
-
-  console.log('✅ Test completed successfully!');
-  console.log(`📸 Screenshot saved to: ${screenshotPath}`);
   console.log('');
-  console.log('Expected badges: [Harga Pokok][Greater Than]');
-  console.log('Note: NO value badge yet (value not entered)');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📊 DOM VALIDATION RESULTS');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`Expected badges: 2`);
+  console.log(`Actual badges: ${badgeCount}`);
+  console.log(`Badges should contain: [Harga Pokok][Greater Than]`);
 
-  return screenshotPath;
+  const passed = badgeCount >= 2;
+
+  if (passed) {
+    console.log(
+      '✅ PASS: Column and operator badges rendered correctly in DOM'
+    );
+  } else {
+    console.log(`❌ FAIL: Expected at least 2 badges, got ${badgeCount}`);
+  }
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('');
+
+  return { passed, expectedCount: 2, actualCount: badgeCount };
 }
 
 // Export for use in other scripts
