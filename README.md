@@ -4,7 +4,9 @@
 
 **The Next Generation Pharmacy Management App**
 
-Manual pharmacy workflows are dead. PharmaSys eliminates repetitive work through AI-driven automation. No more tedious tasks. Just streamlined operations.
+<div align="center">Manual pharmacy workflows are dead. 
+<div align="center">Intelligent agents replace the repetitive work.
+<div align="center">So your team can focus on what matters.
 
 </div>
 
@@ -23,6 +25,7 @@ Manual pharmacy workflows are dead. PharmaSys eliminates repetitive work through
 ![React Query](https://img.shields.io/badge/-React%20Query-FF4154?style=for-the-badge&logo=react%20query&logoColor=white)
 ![Motion](https://img.shields.io/badge/Motion-f1c232?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNCAxMiI+PHBhdGggZD0iTSAxMi44MzggMCBMIDYuMTIgMTEuOTg5IEwgMCAxMS45ODkgTCA1LjI0NSAyLjYyOCBDIDYuMDU5IDEuMTc2IDguMDg4IDAgOS43NzggMCBaIE0gMjcuODQ2IDIuOTk3IEMgMjcuODQ2IDEuMzQyIDI5LjIxNiAwIDMwLjkwNiAwIEMgMzIuNTk2IDAgMzMuOTY2IDEuMzQyIDMzLjk2NiAyLjk5NyBDIDMzLjk2NiA0LjY1MyAzMi41OTYgNS45OTUgMzAuOTA2IDUuOTk1IEMgMjkuMjE2IDUuOTk1IDI3Ljg0NiA0LjY1MyAyNy44NDYgMi45OTcgWiBNIDEzLjk4NSAwIEwgMjAuMTA1IDAgTCAxMy4zODcgMTEuOTg5IEwgNy4yNjcgMTEuOTg5IFogTSAyMS4yMTQgMCBMIDI3LjMzNCAwIEwgMjIuMDg4IDkuMzYyIEMgMjEuMjc1IDEwLjgxMyAxOS4yNDYgMTEuOTg5IDE3LjU1NiAxMS45ODkgTCAxNC40OTYgMTEuOTg5IFoiIGZpbGw9InZhcigtLXRva2VuLTA0ZDkzMjU1LWQ2YWItNGJiYy1hMTk0LTcxZTAwNDIxNGZiMCwgcmdiKDEyLCAxNiwgMTgpKSI+PC9wYXRoPjwvc3ZnPg==)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Playwright](https://img.shields.io/badge/-playwright-%232EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
 ### Development Tools
 
