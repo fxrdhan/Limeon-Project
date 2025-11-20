@@ -20,6 +20,11 @@
  * Copy the code from the testSearchBarFilterCase2 function and run it using browser_run_code
  */
 
+const {
+  createSimpleFilter,
+  navigateToItemMaster,
+} = require('./badge-helpers.js');
+
 async function testSearchBarFilterCase2(page) {
   console.log(
     '🚀 Starting SearchBar Filter E2E Test - Case 2 (Three Badges)...'
@@ -27,57 +32,36 @@ async function testSearchBarFilterCase2(page) {
 
   // Step 1: Navigate to the page
   console.log('📍 Step 1: Navigating to Item Master page...');
-  await page.goto('http://localhost:5173/master-data/item-master/items');
-  await page.waitForTimeout(2000);
+  await navigateToItemMaster(page);
 
-  // Step 2: Click on search bar
-  console.log('🔍 Step 2: Clicking on search bar...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).click();
+  // Step 2-7: Create simple filter
+  console.log('📋 Step 2-7: Creating simple filter...');
+  await createSimpleFilter(page, 'Harga Pokok', 'Greater Than', '50000', true);
 
-  // Step 3: Type # to open column selector
-  console.log('📋 Step 3: Opening column selector with #...');
-  await page.getByRole('textbox', { name: 'Cari item...' }).fill('#');
-  await page.waitForTimeout(500);
+  // Step 8: Validate DOM - Check badge count
+  console.log('🔍 Step 8: Validating DOM badges...');
+  const allBadges = await page.locator('[class*="badge"]').all();
+  const badgeCount = allBadges.length;
 
-  // Step 4: Select "Harga Pokok" column (operator selector auto-opens)
-  console.log(
-    '✅ Step 4: Selecting "Harga Pokok" column (operator selector auto-opens)...'
-  );
-  await page.getByText('Harga Pokok').first().click();
-  await page.waitForTimeout(500);
-
-  // Step 5: Select "Greater Than" operator
-  console.log('➕ Step 5: Selecting "Greater Than" operator...');
-  await page.getByText('Greater Than', { exact: true }).click();
-  await page.waitForTimeout(500);
-
-  // Step 6: Type the value 50000
-  console.log('💰 Step 6: Typing value 50000...');
-  await page.getByRole('textbox', { name: 'Cari...' }).fill('50000');
-  await page.waitForTimeout(500);
-
-  // Step 7: Press Enter to apply filter
-  console.log('⏎ Step 7: Pressing Enter to apply filter...');
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(1000);
-
-  // Step 8: Take screenshot
-  console.log('📸 Step 8: Taking screenshot...');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const screenshotPath = `.playwright-mcp/filter-case-2-${timestamp}.jpeg`;
-
-  await page.screenshot({
-    path: screenshotPath,
-    type: 'jpeg',
-    quality: 90,
-  });
-
-  console.log('✅ Test completed successfully!');
-  console.log(`📸 Screenshot saved to: ${screenshotPath}`);
   console.log('');
-  console.log('Expected badges: [Harga Pokok][Greater Than][50000]');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📊 DOM VALIDATION RESULTS');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`Expected badges: 3`);
+  console.log(`Actual badges: ${badgeCount}`);
+  console.log(`Badges should contain: [Harga Pokok][Greater Than][50000]`);
 
-  return screenshotPath;
+  const passed = badgeCount >= 3;
+
+  if (passed) {
+    console.log('✅ PASS: Simple filter badges rendered correctly in DOM');
+  } else {
+    console.log(`❌ FAIL: Expected at least 3 badges, got ${badgeCount}`);
+  }
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('');
+
+  return { passed, expectedCount: 3, actualCount: badgeCount };
 }
 
 // Export for use in other scripts
