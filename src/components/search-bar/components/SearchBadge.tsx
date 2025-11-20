@@ -17,6 +17,8 @@ interface SearchBadgeProps {
   onEditColumn: () => void;
   onEditOperator: () => void;
   onEditJoin: () => void;
+  onEditValue: () => void;
+  onEditSecondValue?: () => void;
   onHoverChange?: (isHovered: boolean) => void;
   preservedSearchMode?: EnhancedSearchState | null;
 }
@@ -35,6 +37,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onEditColumn,
   onEditOperator,
   onEditJoin,
+  onEditValue,
+  onEditSecondValue,
   onHoverChange,
   preservedSearchMode,
 }) => {
@@ -52,6 +56,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     onEditColumn,
     onEditOperator,
     onEditJoin,
+    onEditValue,
+    onEditSecondValue,
   });
 
   const handleMouseEnter = () => {
