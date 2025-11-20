@@ -65,6 +65,9 @@ export const useSearchKeyboard = ({
               onChange({
                 target: { value: newValue },
               } as React.ChangeEvent<HTMLInputElement>);
+
+              // Clear preserved state after confirming edit
+              onClearPreservedState?.();
             }
             return;
           }
