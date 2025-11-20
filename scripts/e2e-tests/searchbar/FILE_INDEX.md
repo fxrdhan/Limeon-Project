@@ -80,8 +80,9 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 
 - **Badge Creation Tests**: 5 scenarios (Case 0-4)
 - **Badge Deletion Tests**: 5 scenarios (Case D1-D5)
+- **Badge Edit Tests**: 1 scenario (Case E1 - value badge edit)
 - **Synchronization Tests**: Badge ↔ Filter Panel validation
-- **Total**: 12 comprehensive test scenarios
+- **Total**: 13 comprehensive test scenarios
 
 **Note**: Tests are executed interactively using Claude Code + Playwright MCP. No code files needed - just markdown test flows.
 
