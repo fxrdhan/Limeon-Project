@@ -192,7 +192,8 @@
 
 1. Create complete multi-condition (Case 4)
 2. Hover over "AND" badge
-3. Click delete (X) button
+3. It will be: [AND (edit icon)(close icon)]
+4. Click 'x' button
 
 **Expected Result**:
 
@@ -217,7 +218,8 @@
 
 1. Create complete multi-condition (Case 4)
 2. Hover over "Less Than" badge (second operator)
-3. Click delete (X) button
+3. It will be: [Less Than (edit icon)(close icon)]
+4. Click 'x' button
 
 **Expected Result**:
 
