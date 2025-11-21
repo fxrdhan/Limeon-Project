@@ -355,8 +355,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Clear to column only - used by blue badge (operator)
   const handleClearToColumn = useCallback(() => {
     if (searchMode.filterSearch) {
+      // D0 test case: If no value exists, clear everything (column + operator package)
+      if (
+        !searchMode.filterSearch.value ||
+        searchMode.filterSearch.value.trim() === ''
+      ) {
+        handleClearAll();
+        return;
+      }
+
       const columnName = searchMode.filterSearch.field;
-      // Auto-open operator selector after clearing operator
+      // Auto-open operator selector after clearing operator (only if value exists)
       const newValue = `#${columnName} #`;
       onChange({
         target: { value: newValue },
