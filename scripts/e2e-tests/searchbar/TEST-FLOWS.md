@@ -443,6 +443,57 @@
 
 ---
 
+### E5: Edit Join Operator Badge (5 Badges - Partial Multi-Condition)
+
+**Setup**: Case 3 variant (5 badges - partial multi-condition with second operator selected)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than]`
+
+**Steps - Part 1: AND → OR**:
+
+1. Create partial multi-condition (Case 3):
+   - Type "#", select "Harga Pokok"
+   - Select "Greater Than" operator
+   - Type "50000", press Enter
+   - Type "#", select "AND"
+   - Select "Less Than" operator (stop here, don't type second value)
+2. Hover over "AND" badge (join operator)
+3. Click edit button (pena icon)
+4. **PAUSE - Join operator selector modal appears**
+5. **Take snapshot - Verify "AND" option is highlighted** (currently selected)
+6. Select "OR" from join operator selector
+
+**Expected Result Part 1**:
+
+- Badges updated: `[Harga Pokok][Greater Than][50000][OR][Less Than]`
+- All other badges preserved
+
+**Steps - Part 2: OR → AND**:
+
+7. Hover over "OR" badge (join operator)
+8. Click edit button (pena icon)
+9. **PAUSE - Join operator selector modal appears**
+10. **Take snapshot - Verify "OR" option is highlighted** (currently selected)
+11. Select "AND" from join operator selector
+
+**Final Expected Result**:
+
+- Badges updated: `[Harga Pokok][Greater Than][50000][AND][Less Than]`
+- All other badges preserved
+- Filter panel shows: "> 50000" (only first condition, second value missing)
+- Data grid shows items where Harga Pokok > 50,000
+
+**Validates**:
+
+- Join operator badge has edit functionality
+- **Modal correctly highlights currently selected option** (critical validation)
+- Edit preserves all other badges (column, operators, value)
+- Join operator can be changed bidirectionally (AND↔OR)
+- System handles partial multi-condition state properly
+
+**Key Focus**: This test specifically validates that when editing join operator badge, the selector modal correctly shows which option is currently active by highlighting it.
+
+---
+
 ## Synchronization Validation
 
 ### Sync Test: Badge ↔ Filter Panel
@@ -510,9 +561,9 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
-- **Edit Tests**: 5 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition)
+- **Edit Tests**: 6 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges)
 - **Sync Tests**: 2 scenarios (UI ↔ data validation)
-- **Total**: 17 test scenarios
+- **Total**: 18 test scenarios
 
 ### Key Behaviors Tested:
 
@@ -521,8 +572,10 @@
 - State management and transitions
 - Data synchronization
 - Cascading deletions
-- Badge editing (column badge, value badges)
+- Badge editing (column badge, value badges, join operator badge)
 - Operator preservation during column edit
+- Join operator editing with partial multi-condition
 - Auto-opening selectors
 - Filter panel updates
 - Data grid filtering
+- Partial multi-condition state handling

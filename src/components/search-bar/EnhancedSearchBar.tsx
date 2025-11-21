@@ -256,16 +256,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Remove trailing # from current value (with or without space)
       const cleanValue = value.replace(/\s*#\s*$/, '').trim();
 
-      // Check if we have preserved second operator/value (editing join in confirmed multi-condition)
-      if (
-        preservedFilterRef.current?.secondOperator &&
-        preservedFilterRef.current?.secondValue
-      ) {
-        // Restore the full multi-condition filter with the new join operator
-        const newValue = `${cleanValue} #${joinOp.value} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
-        onChange({
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLInputElement>);
+      // Check if we have preserved second operator (with or without value)
+      if (preservedFilterRef.current?.secondOperator) {
+        if (preservedFilterRef.current.secondValue) {
+          // Complete multi-condition: restore everything with ##
+          const newValue = `${cleanValue} #${joinOp.value} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else {
+          // Partial multi-condition: only restore second operator (no ## at end)
+          const newValue = `${cleanValue} #${joinOp.value} #${preservedFilterRef.current.secondOperator} `;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
 
         // Clear preserved filter and searchMode
         preservedFilterRef.current = null;
@@ -784,6 +789,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // For partial join state: already has value and operator
     const operator = searchMode.filterSearch.operator;
     const filterValue = searchMode.filterSearch.value;
+
+    // Check if we have a second operator to preserve (partial multi-condition)
+    if (searchMode.partialJoin) {
+      // Pattern: #field #operator value #joinOp #secondOperator
+      const partialJoinPattern = /\s+#(?:and|or)\s+#(\w+)\s*$/i;
+      const match = value.match(partialJoinPattern);
+
+      if (match) {
+        // We have a second operator to preserve
+        const secondOperator = match[1];
+
+        preservedFilterRef.current = {
+          operator: operator,
+          value: filterValue,
+          join: searchMode.partialJoin,
+          secondOperator: secondOperator,
+          secondValue: undefined, // No second value yet
+        };
+      }
+    }
+
     // Set to #col #op value # to trigger join selector
     const newValue = `#${columnName} #${operator} ${filterValue} #`;
 
@@ -794,7 +820,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setTimeout(() => {
       inputRef?.current?.focus();
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-  }, [searchMode, onChange, inputRef]);
+  }, [searchMode, onChange, inputRef, value]);
 
   // Edit value - show input with current value pre-filled for editing
   const handleEditValue = useCallback(() => {
