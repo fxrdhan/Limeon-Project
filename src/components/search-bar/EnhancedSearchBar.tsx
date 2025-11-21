@@ -896,7 +896,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
 
-      // Detect confirmation of first value edit (## marker added)
+      // Detect confirmation of value edit (## marker added)
       if (
         inputValue.endsWith('##') &&
         preservedFilterRef.current?.secondOperator &&
@@ -905,21 +905,36 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Remove ## marker
         const baseValue = inputValue.slice(0, -2);
 
-        // Reconstruct full multi-condition pattern
-        const fullPattern = `${baseValue} #${preservedFilterRef.current.join?.toLowerCase()} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
+        // Check if baseValue already contains the join operator
+        // If yes → editing second value (full pattern present)
+        // If no  → editing first value (only first condition present)
+        const joinPattern = `#${preservedFilterRef.current.join?.toLowerCase()}`;
+        const hasJoinInBase = baseValue.includes(joinPattern);
 
-        console.log('🔧 Reconstructing multi-condition:', {
-          inputValue,
-          baseValue,
-          preservedFilter: preservedFilterRef.current,
-          fullPattern,
-        });
+        if (hasJoinInBase) {
+          // Editing second value - baseValue already contains the full pattern
+          // Don't reconstruct, just pass through
+          console.log(
+            '🔵 Second value edit detected - skipping reconstruction'
+          );
+          onChange(e);
+        } else {
+          // Editing first value - reconstruct full multi-condition pattern
+          const fullPattern = `${baseValue} ${joinPattern} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
 
-        // Call parent onChange with reconstructed pattern
-        onChange({
-          ...e,
-          target: { ...e.target, value: fullPattern },
-        } as React.ChangeEvent<HTMLInputElement>);
+          console.log('🔧 Reconstructing multi-condition:', {
+            inputValue,
+            baseValue,
+            preservedFilter: preservedFilterRef.current,
+            fullPattern,
+          });
+
+          // Call parent onChange with reconstructed pattern
+          onChange({
+            ...e,
+            target: { ...e.target, value: fullPattern },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
       } else {
         // Normal onChange - pass through
         onChange(e);
