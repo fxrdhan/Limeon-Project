@@ -1245,6 +1245,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onSelect={handleJoinOperatorSelect}
         onClose={handleCloseJoinOperatorSelector}
         position={joinOperatorSelectorPosition}
+        currentValue={
+          searchMode.partialJoin || searchMode.filterSearch?.joinOperator
+        }
       />
     </>
   );
