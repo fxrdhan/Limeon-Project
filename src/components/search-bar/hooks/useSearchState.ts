@@ -20,7 +20,15 @@ export const useSearchState = ({
 }: UseSearchStateProps) => {
   // Derive searchMode from value instead of using state + effect
   const searchMode = useMemo<EnhancedSearchState>(() => {
-    return parseSearchValue(value, columns);
+    const result = parseSearchValue(value, columns);
+    console.log('[useSearchState] Parsed search mode:', {
+      value,
+      isFilterMode: result.isFilterMode,
+      isMultiCondition: result.filterSearch?.isMultiCondition,
+      isConfirmed: result.filterSearch?.isConfirmed,
+      partialJoin: result.partialJoin,
+    });
+    return result;
   }, [value, columns]);
 
   const prevValueRef = useRef<string>('');
@@ -59,6 +67,13 @@ export const useSearchState = ({
     if (searchMode.isFilterMode && searchMode.filterSearch) {
       const filterValue = searchMode.filterSearch.value.trim();
 
+      console.log('[useSearchState] Filter mode branch', {
+        filterValue,
+        isConfirmed: searchMode.filterSearch.isConfirmed,
+        isMultiCondition: searchMode.filterSearch.isMultiCondition,
+        conditions: searchMode.filterSearch.conditions,
+      });
+
       if (filterValue === '') {
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
@@ -68,6 +83,10 @@ export const useSearchState = ({
         onGlobalSearchRef.current?.('');
       } else if (searchMode.filterSearch.isConfirmed) {
         // Only trigger filter update if value is confirmed (user pressed Enter)
+        console.log(
+          '[useSearchState] Calling debouncedFilterUpdate with filter:',
+          searchMode.filterSearch
+        );
         debouncedFilterUpdate(searchMode.filterSearch);
       }
       // If not confirmed yet, don't trigger filter - user is still typing

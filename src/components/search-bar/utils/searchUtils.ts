@@ -29,6 +29,10 @@ const parseMultiConditionFilter = (
   const hasConfirmationMarker = searchValue.endsWith('##');
   if (!hasConfirmationMarker) {
     // User is still typing - don't treat as complete multi-condition yet
+    console.log(
+      '[parseMultiConditionFilter] Missing ## marker. Value:',
+      searchValue
+    );
     return null;
   }
 
@@ -93,18 +97,31 @@ const parseMultiConditionFilter = (
   }
 
   // Must have at least 2 conditions to be valid multi-condition
-  if (conditions.length < 2) return null;
+  if (conditions.length < 2) {
+    console.log(
+      '[parseMultiConditionFilter] Less than 2 conditions. Found:',
+      conditions.length
+    );
+    return null;
+  }
 
-  return {
+  const result = {
     field: column.field,
     value: conditions[0].value, // Backward compat
     operator: conditions[0].operator, // Backward compat
     column,
     isExplicitOperator: true,
+    isConfirmed: true, // Multi-condition filters are always confirmed (they have ##)
     conditions,
     joinOperator,
     isMultiCondition: true,
   };
+
+  console.log(
+    '[parseMultiConditionFilter] SUCCESS! Parsed multi-condition:',
+    result
+  );
+  return result;
 };
 
 export const parseSearchValue = (
@@ -220,6 +237,52 @@ export const parseSearchValue = (
                 isExplicitOperator: true,
               },
             };
+          }
+        }
+
+        // NEW: Check for incomplete multi-condition with second value being typed
+        // Pattern: #field #op1 val1 #and #op2 val2 (without ## confirmation)
+        const incompleteMultiWithValue = searchValue.match(
+          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s]+)\s+(.+)$/i
+        );
+        if (incompleteMultiWithValue) {
+          const [, , op1, val1, join, op2, val2] = incompleteMultiWithValue;
+
+          // Make sure val2 doesn't end with ## (that would be a complete multi-condition)
+          if (!val2.trim().endsWith('##')) {
+            const availableOperators =
+              column.type === 'number'
+                ? NUMBER_FILTER_OPERATORS
+                : DEFAULT_FILTER_OPERATORS;
+
+            const operator1Obj = availableOperators.find(
+              o => o.value.toLowerCase() === op1.toLowerCase()
+            );
+            const operator2Obj = availableOperators.find(
+              o => o.value.toLowerCase() === op2.toLowerCase()
+            );
+
+            if (operator1Obj && operator2Obj) {
+              // User is typing second value - keep in input mode for Enter key to work
+              return {
+                globalSearch: undefined,
+                showColumnSelector: false,
+                showOperatorSelector: false,
+                showJoinOperatorSelector: false,
+                isFilterMode: false, // ← NOT filter mode - allows Enter key to add ##
+                selectedColumn: column,
+                isSecondOperator: false,
+                partialJoin: join.toUpperCase() as 'AND' | 'OR',
+                secondOperator: operator2Obj.value, // Store second operator for badge display
+                filterSearch: {
+                  field: column.field,
+                  value: val1.trim(),
+                  column,
+                  operator: operator1Obj.value,
+                  isExplicitOperator: true,
+                },
+              };
+            }
           }
         }
 
