@@ -74,7 +74,7 @@
 **Steps**:
 
 1. Create simple filter (Case 2)
-2. In search textbox, type "50000 #"
+2. In search textbox, type "#"
 3. Click "AND"
 4. Click "Less Than"
 
