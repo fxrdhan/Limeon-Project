@@ -238,7 +238,87 @@
 
 ## Badge Edit Tests
 
-### E1: Edit Value Badge (Simple Filter)
+### E0: Edit Column Badge (2 Badges - Column + Operator)
+
+**Setup**: Case 1 (2 badges)
+**Initial**: `[Harga Pokok][Greater Than]`
+
+**Steps**:
+
+1. Create Case 1 (2 badges - column + operator)
+2. Hover over "Harga Pokok" badge
+3. Badge UI: [Harga Pokok (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
+
+**Expected Result**:
+
+- Column selector opens with all columns
+- Both badges remain visible: `[Harga Pokok][Greater Than]`
+- Ready to select new column
+
+**Continue Editing**:
+
+5. Select "Harga Jual" from column selector
+
+**Final Expected Result**:
+
+- Badge updated: `[Harga Jual][Greater Than]`
+- Operator badge preserved (not reset)
+- No operator selector popup (operator preserved correctly)
+- Ready for value input
+
+**Validates**:
+
+- Column badge has edit functionality
+- Edit preserves operator badge when no value exists yet
+- Operator compatibility check works correctly
+- No unnecessary operator selector popup after column change
+- Smooth transition from one column to another
+
+---
+
+### E1: Edit Column Badge (3 Badges - Simple Filter with Sync Test)
+
+**Setup**: Case 2 (3 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000]`
+
+**Steps**:
+
+1. Create simple filter (Case 2)
+2. Verify filter panel shows: "Harga Pokok > 50000"
+3. Hover over "Harga Pokok" badge
+4. Badge UI: [Harga Pokok (edit icon)(close icon)]
+5. Click edit button (pena icon, first button)
+
+**Expected Result**:
+
+- Column selector opens with all columns
+- All badges remain visible: `[Harga Pokok][Greater Than][50000]`
+- Ready to select new column
+
+**Continue Editing**:
+
+6. Select "Harga Jual" from column selector
+
+**Final Expected Result**:
+
+- Badges updated: `[Harga Jual][Greater Than][50000]`
+- Operator and value badges preserved
+- Filter panel synchronized: "Harga Jual > 50000"
+- Data grid re-filters to show items where Harga Jual > 50,000
+- Filter confirmation maintained (##)
+
+**Validates**:
+
+- Column badge edit in complete filter preserves operator and value
+- Filter panel synchronization after column change
+- AG Grid filter model updates correctly with new column
+- Data grid re-filters with new column field
+- Confirmed filter state maintained after edit
+
+---
+
+### E2: Edit Value Badge (Simple Filter)
 
 **Setup**: Case 2 (3 badges)
 **Initial**: `[Harga Pokok][Greater Than][50000]`
@@ -279,7 +359,7 @@
 
 ---
 
-### E2: Edit Second Value Badge (Multi-Condition Filter)
+### E3: Edit Second Value Badge (Multi-Condition Filter)
 
 **Setup**: Case 4 (6 badges)
 **Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
@@ -321,7 +401,7 @@
 
 ---
 
-### E3: Edit First Value Badge (Multi-Condition Filter)
+### E4: Edit First Value Badge (Multi-Condition Filter)
 
 **Setup**: Case 4 (6 badges)
 **Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
@@ -430,9 +510,9 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
-- **Edit Tests**: 3 scenarios (E1: simple filter, E2: multi-condition 2nd value, E3: multi-condition 1st value)
+- **Edit Tests**: 5 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition)
 - **Sync Tests**: 2 scenarios (UI ↔ data validation)
-- **Total**: 15 test scenarios
+- **Total**: 17 test scenarios
 
 ### Key Behaviors Tested:
 
@@ -441,7 +521,8 @@
 - State management and transitions
 - Data synchronization
 - Cascading deletions
-- Badge editing (value badges)
+- Badge editing (column badge, value badges)
+- Operator preservation during column edit
 - Auto-opening selectors
 - Filter panel updates
 - Data grid filtering
