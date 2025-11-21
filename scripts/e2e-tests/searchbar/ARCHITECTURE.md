@@ -69,9 +69,11 @@ src/components/search-bar/
 
 **Key State:**
 
-- `preservedFilterRef`: Stores filter data during column/operator editing
-- `preservedSearchMode`: Keeps badges visible during edit mode
-- `isEditingSecondOperator`: Tracks multi-condition editing state
+- `preservedFilterRef`: Stores filter data during column/operator editing (see "Edit Mode" section below)
+- `preservedSearchMode`: Keeps badges visible during edit mode (preserves EnhancedSearchState)
+- `isEditingSecondOperator`: Tracks multi-condition second value editing state (prevents incorrect pattern reconstruction)
+
+These ref/state values enable the **badge editing feature** - allowing users to click edit button on any badge to modify column, operator, join, or value without losing other parts of the filter.
 
 **Value Format Pattern:**
 
@@ -185,27 +187,36 @@ const searchMode = useMemo<EnhancedSearchState>(() => {
 
 **Features:**
 
-- Individual badge rendering
-- Edit and clear actions
+- Individual badge rendering with **edit and clear actions**
+- **Edit button** (pena icon 🖊️) shown on hover before X button
+- **All badges are editable** (`canEdit: true` by default)
 - Color-coded by type:
   - **Purple**: Column badge
-  - **Blue**: Operator badge
+  - **Blue**: Operator badge (includes `secondOperator` type)
   - **Gray**: Value badge
   - **Orange**: Join operator badge (AND/OR)
 
-**Badge States:**
+**Badge Config:**
 
 ```typescript
 {
   id: string;           // Unique identifier
-  type: 'column' | 'operator' | 'value' | 'join';
+  type: 'column' | 'operator' | 'value' | 'join' | 'secondOperator';
   label: string;        // Display text
   onClear: () => void;  // Clear handler
   canClear: boolean;    // Can be cleared?
-  onEdit?: () => void;  // Edit handler
-  canEdit: boolean;     // Can be edited?
+  onEdit?: () => void;  // Edit handler (NEW: all badges support editing)
+  canEdit: boolean;     // Can be edited? (NEW: always true)
 }
 ```
+
+**Edit Handlers:**
+
+- `onEditColumn()` - Edit column selection
+- `onEditOperator(isSecond?)` - Edit operator (first or second)
+- `onEditValue()` - Edit first value
+- `onEditSecondValue()` - Edit second value (multi-condition)
+- `onEditJoin()` - Edit AND/OR join operator
 
 ---
 
@@ -346,12 +357,15 @@ Continuation from Case 1:
 **Key Functions:**
 
 - `parseSearchValue()`: Main parser, converts input string to EnhancedSearchState
-- `findColumn()`: Column lookup by field name
+- `parseMultiConditionFilter()`: Parses multi-condition patterns (#field #op1 val1 #and #op2 val2##)
+- `findColumn()`: Column lookup by field name or headerName
 - `buildColumnValue()`: Builds formatted column selection value
+- `getOperatorSearchTerm()`: Extracts search term for operator selector filtering
 
-**Parse Logic Example:**
+**Parse Logic Examples:**
 
 ```typescript
+// Single Condition
 Input:  "#harga_pokok #greaterThan 50000##"
 Output: {
   isFilterMode: true,
@@ -360,6 +374,42 @@ Output: {
     operator: 'greaterThan',
     value: '50000',
     isConfirmed: true,
+    isExplicitOperator: true,
+    column: { ... }
+  }
+}
+
+// Multi-Condition (parseMultiConditionFilter)
+Input:  "#harga_pokok #greaterThan 50000 #and #lessThan 100000##"
+Output: {
+  isFilterMode: true,
+  filterSearch: {
+    field: 'harga_pokok',
+    operator: 'greaterThan', // First condition (backward compat)
+    value: '50000', // First value (backward compat)
+    isConfirmed: true,
+    isExplicitOperator: true,
+    isMultiCondition: true,
+    joinOperator: 'AND',
+    conditions: [
+      { operator: 'greaterThan', value: '50000' },
+      { operator: 'lessThan', value: '100000' }
+    ],
+    column: { ... }
+  }
+}
+
+// Incomplete Multi-Condition (waiting for second value)
+Input:  "#harga_pokok #greaterThan 50000 #and #lessThan "
+Output: {
+  isFilterMode: false, // Not yet complete!
+  showOperatorSelector: false,
+  partialJoin: 'AND',
+  secondOperator: 'lessThan',
+  filterSearch: {
+    field: 'harga_pokok',
+    operator: 'greaterThan',
+    value: '50000',
     column: { ... }
   }
 }
@@ -386,14 +436,31 @@ export const SEARCH_CONSTANTS = {
 
 ## 🎯 Important Behaviors
 
-### Edit Mode:
+### Edit Mode (Badge Editing):
+
+**All badges are editable** - users can click the edit button (pena icon 🖊️) on any badge.
 
 When user clicks edit button on a badge:
 
-1. `preservedFilterRef` saves current filter state
-2. `preservedSearchMode` keeps badges visible
-3. Input value changes to trigger selector
-4. After selection, preserved values are restored
+1. **`preservedFilterRef`** saves current filter state (operator, value, join, secondOperator, secondValue)
+2. **`preservedSearchMode`** preserves current EnhancedSearchState to keep badges visible during edit
+3. **Input value changes** to trigger appropriate selector (column/operator/join) or focus for value editing
+4. **After selection/confirmation**, preserved values are restored and merged with new selection
+5. **`isEditingSecondOperator`** flag prevents incorrect pattern reconstruction when editing second value in multi-condition
+
+**Edit Use Cases:**
+
+- Edit **column**: Opens column selector, preserves operator + value(s)
+- Edit **operator**: Opens operator selector, preserves column + value(s)
+- Edit **value**: Focuses input with current value pre-filled, preserves column + operator
+- Edit **join operator**: Opens join selector, preserves all conditions
+- Edit **second value** (multi-condition): Focuses input, uses `isEditingSecondOperator` flag
+
+**Critical Bug Fixes:**
+
+- Bug #1: Filter not cleared during partial join mode (useSearchState.ts:86)
+- Bug #2: Filter not cleared during edit mode (useSearchState.ts:88)
+- These fixes ensure first condition remains active while building/editing multi-condition filters
 
 ### Multi-Condition Support:
 
@@ -463,28 +530,44 @@ interface EnhancedSearchState {
   isFilterMode: boolean;
   showColumnSelector: boolean;
   showOperatorSelector: boolean;
-  showJoinOperatorSelector: boolean;
+  showJoinOperatorSelector: boolean; // For AND/OR selection modal
   selectedColumn?: SearchColumn;
   filterSearch?: FilterSearch;
   globalSearch?: string;
-  partialJoin?: 'AND' | 'OR';
-  secondOperator?: string;
-  isSecondOperator?: boolean;
+  partialJoin?: 'AND' | 'OR'; // Selected join operator (before second condition)
+  secondOperator?: string; // Second operator selected (for badge display)
+  isSecondOperator?: boolean; // Flag for second operator selection mode
 }
 
 interface FilterSearch {
   field: string;
+  operator: string; // Backward compat (first operator)
+  value: string; // Backward compat (first value)
+  column: SearchColumn;
+  isConfirmed?: boolean; // User pressed Enter (value locked as badge)
+  isExplicitOperator?: boolean; // User explicitly selected operator (not default 'contains')
+  // Multi-condition support
+  isMultiCondition?: boolean; // Flag for multi-condition filter
+  joinOperator?: 'AND' | 'OR'; // Join operator between conditions
+  conditions?: FilterCondition[]; // Array of conditions for AND/OR
+}
+
+interface FilterCondition {
   operator: string;
   value: string;
-  column: SearchColumn;
-  isConfirmed?: boolean;
-  isExplicitOperator?: boolean;
-  isMultiCondition?: boolean;
-  joinOperator?: 'AND' | 'OR';
-  conditions?: Array<{
-    operator: string;
-    value: string;
-  }>;
+}
+
+// src/components/search-bar/types/badge.ts
+type BadgeType = 'column' | 'operator' | 'value' | 'join' | 'secondOperator'; // NEW: explicit type for second operator badge
+
+interface BadgeConfig {
+  id: string;
+  type: BadgeType;
+  label: string;
+  onClear: () => void;
+  canClear: boolean;
+  onEdit?: () => void; // NEW: all badges support editing
+  canEdit: boolean; // NEW: always true
 }
 ```
 
@@ -507,8 +590,38 @@ The SearchBar filter feature is a sophisticated component built around:
 - **State-driven UI**: Input value determines what's shown
 - **Multi-step flow**: Column → Operator → Value
 - **Visual feedback**: Color-coded badges and border states
-- **Flexible editing**: Edit any part of an existing filter
+- **✨ Badge Editing**: All badges editable with edit button (pena icon 🖊️)
 - **Type-aware**: Different operators for different column types
 - **Keyboard-friendly**: Full keyboard navigation support
+- **Multi-condition support**: AND/OR joins with robust parsing
 
 The architecture follows a **unidirectional data flow** where the input value is the single source of truth, and all UI state is derived from it using the `parseSearchValue()` utility.
+
+---
+
+## 🆕 Recent Changes & Improvements
+
+### Badge Editing Feature (Major)
+
+- All badges now have **edit functionality** (`canEdit: true`, `onEdit` handlers)
+- Edit button (🖊️ pena icon) shown on hover before X button
+- Preserved state management: `preservedFilterRef`, `preservedSearchMode`, `isEditingSecondOperator`
+- Users can modify column, operator, join, or values without losing other parts
+
+### Enhanced Multi-Condition Parsing
+
+- New `parseMultiConditionFilter()` function for robust pattern detection
+- Better handling of incomplete multi-condition states
+- `secondOperator` badge type for clearer multi-condition display
+
+### Critical Bug Fixes
+
+- **Bug #1**: Filter no longer cleared during partial join mode (useSearchState.ts:86)
+- **Bug #2**: Filter no longer cleared during edit mode (useSearchState.ts:88)
+- These ensure first condition stays active while building/editing multi-condition filters
+
+### State Management Improvements
+
+- `isEditMode` flag in `useSearchState` for edit detection
+- Better state preservation during multi-condition editing
+- `isEditingSecondOperator` prevents incorrect pattern reconstruction
