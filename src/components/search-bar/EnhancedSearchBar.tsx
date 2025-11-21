@@ -61,6 +61,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Track whether we're editing the second operator (after AND/OR join)
   const [isEditingSecondOperator, setIsEditingSecondOperator] = useState(false);
 
+  // State to track current join operator value during edit mode
+  const [currentJoinOperator, setCurrentJoinOperator] = useState<
+    'AND' | 'OR' | undefined
+  >(undefined);
+
   const { searchMode } = useSearchState({
     value,
     columns: memoizedColumns,
@@ -275,6 +280,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Clear preserved filter and searchMode
         preservedFilterRef.current = null;
         setPreservedSearchMode(null);
+        setCurrentJoinOperator(undefined);
       } else {
         // Pattern: #field #operator value -> #field #operator value #and #
         const newValue = `${cleanValue} #${joinOp.value} #`;
@@ -772,6 +778,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         secondValue: secondCondition.value,
       };
 
+      // Set current join operator state for selector highlighting
+      setCurrentJoinOperator(searchMode.filterSearch.joinOperator);
+
       // Set to #col #op value # to trigger join selector
       const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #`;
 
@@ -807,6 +816,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           secondOperator: secondOperator,
           secondValue: undefined, // No second value yet
         };
+
+        // Set current join operator state for selector highlighting
+        setCurrentJoinOperator(searchMode.partialJoin);
       }
     }
 
@@ -932,6 +944,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const handleClearPreservedState = useCallback(() => {
     setPreservedSearchMode(null);
     preservedFilterRef.current = null;
+    setCurrentJoinOperator(undefined);
   }, []);
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
@@ -1246,7 +1259,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onClose={handleCloseJoinOperatorSelector}
         position={joinOperatorSelectorPosition}
         currentValue={
-          searchMode.partialJoin || searchMode.filterSearch?.joinOperator
+          currentJoinOperator ||
+          searchMode.partialJoin ||
+          searchMode.filterSearch?.joinOperator
         }
       />
     </>
