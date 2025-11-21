@@ -10,6 +10,7 @@ interface JoinOperatorSelectorProps {
   onClose: () => void;
   position: { top: number; left: number };
   searchTerm?: string;
+  currentValue?: 'AND' | 'OR'; // Current join operator value for edit mode
 }
 
 const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
@@ -19,6 +20,7 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
   onClose,
   position,
   searchTerm = '',
+  currentValue,
 }) => {
   const config = useMemo(
     (): BaseSelectorConfig<JoinOperator> => ({
@@ -40,6 +42,13 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
     []
   );
 
+  // Calculate default selected index based on current value
+  const defaultSelectedIndex = useMemo(() => {
+    if (!currentValue) return 0;
+    const index = operators.findIndex(op => op.label === currentValue);
+    return index >= 0 ? index : 0;
+  }, [currentValue, operators]);
+
   return (
     <BaseSelector
       items={operators as JoinOperator[]}
@@ -49,6 +58,7 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
       position={position}
       searchTerm={searchTerm}
       config={config}
+      defaultSelectedIndex={defaultSelectedIndex}
     />
   );
 };
