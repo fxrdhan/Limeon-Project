@@ -123,6 +123,27 @@ export const useSearchKeyboard = ({
             return;
           }
 
+          // D0 test case: [Column][Operator] with no value -> backspace should clear all
+          // Check this BEFORE the general empty value handler to catch the package deletion case
+          if (
+            searchMode.isFilterMode &&
+            searchMode.filterSearch?.value === '' &&
+            searchMode.filterSearch?.operator &&
+            searchMode.filterSearch.isExplicitOperator && // Only explicit operators (not contains)
+            (e.currentTarget as HTMLInputElement).value === '' // Input is empty
+          ) {
+            e.preventDefault();
+            // Clear everything (column + operator package without value)
+            if (onClearSearch) {
+              onClearSearch();
+            } else {
+              onChange({
+                target: { value: '' },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+            return;
+          }
+
           // Backspace on empty value: Navigate back to operator/column selection
           if (
             searchMode.isFilterMode &&
@@ -160,6 +181,27 @@ export const useSearchKeyboard = ({
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          } else if (
+            // D0 test case: [Column][Operator] with no value -> backspace should clear all
+            searchMode.selectedColumn &&
+            searchMode.filterSearch &&
+            searchMode.filterSearch.operator &&
+            (!searchMode.filterSearch.value ||
+              searchMode.filterSearch.value.trim() === '') &&
+            !searchMode.showColumnSelector &&
+            !searchMode.showOperatorSelector &&
+            (e.currentTarget as HTMLInputElement).value === '' // Input is empty (ready for value)
+          ) {
+            e.preventDefault();
+            // Clear everything (column + operator package without value)
+            if (onClearSearch) {
+              onClearSearch();
+            } else {
+              onChange({
+                target: { value: '' },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
             return;
           } else if (
             searchMode.selectedColumn &&
