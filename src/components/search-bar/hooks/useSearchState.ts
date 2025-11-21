@@ -66,9 +66,11 @@ export const useSearchState = ({
         }
         onFilterSearchRef.current?.(null);
         onGlobalSearchRef.current?.('');
-      } else {
+      } else if (searchMode.filterSearch.isConfirmed) {
+        // Only trigger filter update if value is confirmed (user pressed Enter)
         debouncedFilterUpdate(searchMode.filterSearch);
       }
+      // If not confirmed yet, don't trigger filter - user is still typing
     } else if (
       !searchMode.showColumnSelector &&
       !searchMode.showOperatorSelector &&
