@@ -13,25 +13,25 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 
 ## 🧩 Sub-Components
 
-| File                                                                      | Purpose                    |
-| ------------------------------------------------------------------------- | -------------------------- |
-| `src/components/search-bar/components/Badge.tsx`                          | Individual badge rendering |
-| `src/components/search-bar/components/SearchBadge.tsx`                    | Badge container/manager    |
-| `src/components/search-bar/components/SearchIcon.tsx`                     | Animated search icon       |
-| `src/components/search-bar/components/selectors/BaseSelector.tsx`         | Generic selector base      |
-| `src/components/search-bar/components/selectors/ColumnSelector.tsx`       | Column selection modal     |
-| `src/components/search-bar/components/selectors/OperatorSelector.tsx`     | Operator selection modal   |
-| `src/components/search-bar/components/selectors/JoinOperatorSelector.tsx` | AND/OR selection modal     |
+| File                                                                      | Purpose                                                |
+| ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `src/components/search-bar/components/Badge.tsx`                          | Individual badge rendering **with edit/clear actions** |
+| `src/components/search-bar/components/SearchBadge.tsx`                    | Badge container/manager                                |
+| `src/components/search-bar/components/SearchIcon.tsx`                     | Animated search icon                                   |
+| `src/components/search-bar/components/selectors/BaseSelector.tsx`         | Generic selector base                                  |
+| `src/components/search-bar/components/selectors/ColumnSelector.tsx`       | Column selection modal                                 |
+| `src/components/search-bar/components/selectors/OperatorSelector.tsx`     | Operator selection modal                               |
+| `src/components/search-bar/components/selectors/JoinOperatorSelector.tsx` | AND/OR selection modal                                 |
 
 ## 🪝 Hooks
 
-| File                                                     | Purpose                       | Key Function                           |
-| -------------------------------------------------------- | ----------------------------- | -------------------------------------- |
-| `src/components/search-bar/hooks/useSearchState.ts`      | State machine & value parsing | Derives EnhancedSearchState from input |
-| `src/components/search-bar/hooks/useBadgeBuilder.ts`     | Badge generation logic        | Creates badge configs from state       |
-| `src/components/search-bar/hooks/useSearchInput.ts`      | Input value management        | Handles display value & changes        |
-| `src/components/search-bar/hooks/useSearchKeyboard.ts`   | Keyboard navigation           | Arrow keys, Enter, Escape              |
-| `src/components/search-bar/hooks/useSelectorPosition.ts` | Modal positioning             | Calculates selector position           |
+| File                                                     | Purpose                                 | Key Function                           |
+| -------------------------------------------------------- | --------------------------------------- | -------------------------------------- |
+| `src/components/search-bar/hooks/useSearchState.ts`      | State machine & value parsing           | Derives EnhancedSearchState from input |
+| `src/components/search-bar/hooks/useBadgeBuilder.ts`     | Badge generation **with edit handlers** | Creates badge configs from state       |
+| `src/components/search-bar/hooks/useSearchInput.ts`      | Input value management                  | Handles display value & changes        |
+| `src/components/search-bar/hooks/useSearchKeyboard.ts`   | Keyboard navigation                     | Arrow keys, Enter, Escape              |
+| `src/components/search-bar/hooks/useSelectorPosition.ts` | Modal positioning                       | Calculates selector position           |
 
 ## ⚙️ Configuration & Types
 
@@ -46,9 +46,9 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 
 ## 🛠️ Utilities
 
-| File                                             | Purpose              | Key Functions                                              |
-| ------------------------------------------------ | -------------------- | ---------------------------------------------------------- |
-| `src/components/search-bar/utils/searchUtils.ts` | Search value parsing | `parseSearchValue()`, `findColumn()`, `buildColumnValue()` |
+| File                                             | Purpose                                | Key Functions                                                                                                        |
+| ------------------------------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `src/components/search-bar/utils/searchUtils.ts` | Search value & multi-condition parsing | `parseSearchValue()`, `parseMultiConditionFilter()`, `findColumn()`, `buildColumnValue()`, `getOperatorSearchTerm()` |
 
 ## 🔌 Integration Layer
 
@@ -78,11 +78,22 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 
 ### Test Coverage:
 
-- **Badge Creation Tests**: 5 scenarios (Case 0-4)
-- **Badge Deletion Tests**: 5 scenarios (Case D1-D5)
-- **Badge Edit Tests**: 3 scenarios (E1: simple filter, E2: multi-condition 2nd value, E3: multi-condition 1st value)
-- **Synchronization Tests**: Badge ↔ Filter Panel validation
+- **Badge Creation Tests**: 5 scenarios (Case 0-4) - 1 badge to 6 badges
+- **Badge Deletion Tests**: 5 scenarios (Case D1-D5) - cascading deletion behaviors
+- **Badge Edit Tests**: 3 scenarios ⭐ NEW
+  - E1: Edit value badge (simple filter)
+  - E2: Edit second value badge (multi-condition filter)
+  - E3: Edit first value badge (multi-condition filter)
+- **Synchronization Tests**: 2 scenarios - Badge ↔ Filter Panel validation
 - **Total**: 15 comprehensive test scenarios
+
+**Badge Edit Testing validates:**
+
+- Edit button functionality (🖊️ pena icon)
+- Preserved state during edit (`preservedFilterRef`, `preservedSearchMode`)
+- Input pre-filling with current values
+- Filter update after edit confirmation
+- Multi-condition filter integrity after editing
 
 **Note**: Tests are executed interactively using Claude Code + Playwright MCP. No code files needed - just markdown test flows.
 
@@ -176,3 +187,33 @@ To understand the feature, read in this order:
 - **Integration**: 3 files
 - **Usage Examples**: 4 files
 - **Test Documentation**: 4 markdown files
+
+---
+
+## 🆕 Recent Updates to Codebase
+
+### Badge Editing Feature ⭐ Major Addition
+
+- **Badge.tsx** - Added edit button (FiEdit2 icon) with hover animation
+- **useBadgeBuilder.ts** - All badges now have `canEdit: true` and `onEdit` handlers
+- **EnhancedSearchBar.tsx** - Implemented preserved state logic for editing
+- **types/badge.ts** - Added `onEdit?: () => void` and `canEdit: boolean` to BadgeConfig
+
+### Enhanced Multi-Condition Support
+
+- **searchUtils.ts** - New `parseMultiConditionFilter()` function (line 18-108)
+- **types/badge.ts** - Added `secondOperator` badge type
+- Better pattern detection for incomplete multi-condition states
+
+### Bug Fixes
+
+- **useSearchState.ts:86** - Don't clear filter during partial join mode (Bug #1)
+- **useSearchState.ts:88** - Don't clear filter during edit mode (Bug #2)
+- These ensure first condition stays active during multi-condition building/editing
+
+### State Management
+
+- **EnhancedSearchBar.tsx:47-62** - Added `preservedFilterRef`, `preservedSearchMode`, `isEditingSecondOperator`
+- **useSearchState.ts:19** - Added `isEditMode` prop for edit detection
+
+For detailed architectural changes, see **ARCHITECTURE.md** → "Recent Changes & Improvements" section.
