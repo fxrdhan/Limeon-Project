@@ -466,6 +466,12 @@ const ItemMasterNew = memo(() => {
 
           // Handle multi-condition filters (AND/OR)
           if (filterSearch.isMultiCondition && filterSearch.conditions) {
+            console.log('[handleItemFilterSearch] Multi-condition detected!', {
+              field: filterSearch.field,
+              conditions: filterSearch.conditions,
+              joinOperator: filterSearch.joinOperator,
+            });
+
             const baseFilterType = isNumericColumn ? 'number' : 'text';
 
             // Build conditions array for AG Grid
@@ -475,12 +481,22 @@ const ItemMasterNew = memo(() => {
               filter: isNumericColumn ? Number(cond.value) : cond.value,
             }));
 
+            console.log(
+              '[handleItemFilterSearch] AG Grid conditions:',
+              agConditions
+            );
+
             // Build combined filter model
             const combinedModel = {
               filterType: baseFilterType,
               operator: filterSearch.joinOperator || 'AND',
               conditions: agConditions,
             };
+
+            console.log(
+              '[handleItemFilterSearch] Combined model:',
+              combinedModel
+            );
 
             if (isMultiFilterColumn) {
               // Wrap in multi-filter for columns that use agMultiColumnFilter
@@ -497,6 +513,13 @@ const ItemMasterNew = memo(() => {
             }
           } else {
             // Single condition filter (existing logic)
+            console.log('[handleItemFilterSearch] Single condition filter', {
+              field: filterSearch.field,
+              operator: filterSearch.operator,
+              value: filterSearch.value,
+              isMultiCondition: filterSearch.isMultiCondition,
+            });
+
             if (isMultiFilterColumn) {
               // For multi-filter columns (manufacturer, category, type, package, dosage)
               await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
