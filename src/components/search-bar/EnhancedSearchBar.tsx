@@ -138,11 +138,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               } as React.ChangeEvent<HTMLInputElement>);
             }
           } else {
-            // Single-condition filter - restore operator and value with the new column
-            const newValue = `#${column.field} #${operator} ${value}##`;
-            onChange({
-              target: { value: newValue },
-            } as React.ChangeEvent<HTMLInputElement>);
+            // Single-condition filter - restore operator (and value if it exists) with the new column
+            if (value && value.trim() !== '') {
+              // Has value: restore fully confirmed filter
+              const newValue = `#${column.field} #${operator} ${value}##`;
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+            } else {
+              // No value yet (Case 1: 2 badges - column + operator): restore operator only, ready for value input
+              const newValue = `#${column.field} #${operator} `;
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
           }
         } else {
           // Operator not compatible, auto-open operator selector for new column
@@ -595,15 +604,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const operator = searchMode.filterSearch.operator;
     const filterValue = searchMode.filterSearch.value;
-    const isConfirmed = searchMode.filterSearch.isConfirmed;
     const isMultiCondition = searchMode.filterSearch.isMultiCondition;
 
     // Save current searchMode to keep badges visible during edit
     setPreservedSearchMode(searchMode);
 
     // Save operator and value to restore after column selection
-    // For multi-condition filters, isConfirmed may not be set, so also check isMultiCondition
-    if ((isConfirmed || isMultiCondition) && operator && filterValue) {
+    // Preserve operator even if value is empty (for Case 1: 2 badges - column + operator)
+    if (operator) {
       // Check if it's a multi-condition filter (with AND/OR join)
       if (
         isMultiCondition &&
@@ -622,10 +630,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           secondValue: secondCondition.value,
         };
       } else {
-        // Single-condition filter
+        // Single-condition filter (may or may not have value yet)
         preservedFilterRef.current = {
           operator,
-          value: filterValue,
+          value: filterValue || '', // Empty string if no value yet
         };
       }
     } else {
