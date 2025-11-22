@@ -264,13 +264,6 @@ export const useSearchInput = ({
             // Preserve second operator to maintain partial multi-condition state (5 badges)
             // Step 6 backspace will be handled by useSearchKeyboard.ts to remove operator and open selector
             const newValue = `${basePattern.trim()} #${join} #${op2}`;
-            console.log(
-              '🔧 Input emptied while building second value - preserving second operator for Step 6:',
-              {
-                currentValue,
-                newValue,
-              }
-            );
 
             // Keep preserved state to maintain second operator badge for Step 6
             // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler

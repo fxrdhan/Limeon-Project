@@ -889,7 +889,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit value - show input with current value pre-filled for editing
   const handleEditValue = useCallback(() => {
-    console.log('🟢 handleEditValue called - Editing FIRST value');
     if (!searchMode.filterSearch) {
       return;
     }
@@ -898,8 +897,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const operator = searchMode.filterSearch.operator;
     const currentValue = searchMode.filterSearch.value;
     const isMulti = searchMode.filterSearch.isMultiCondition;
-
-    console.log('🟢 First value:', currentValue);
 
     // Save current searchMode to keep column, operator badges visible during edit
     setPreservedSearchMode(searchMode);
@@ -948,7 +945,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit second value in multi-condition filter
   const handleEditSecondValue = useCallback(() => {
-    console.log('🔵 handleEditSecondValue called - Editing SECOND value');
     if (
       !searchMode.filterSearch ||
       !searchMode.filterSearch.isMultiCondition ||
@@ -962,8 +958,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const firstCondition = searchMode.filterSearch.conditions[0];
     const secondCondition = searchMode.filterSearch.conditions[1];
     const joinOp = searchMode.filterSearch.joinOperator || 'AND';
-
-    console.log('🔵 Second value:', secondCondition.value);
 
     // Create modified searchMode with second value hidden (empty string)
     // This will hide the 2nd value badge during edit
@@ -1036,15 +1030,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Create pattern without second operator but with trailing # for operator selector
         const newValue = `#${columnName} #${operator} ${firstValue} #${joinOp} #`;
 
-        console.log(
-          '🔧 Input emptied while editing second value - removing second operator:',
-          {
-            inputValue,
-            newValue,
-            preservedFilter: preservedFilterRef.current,
-          }
-        );
-
         onChange({
           ...e,
           target: { ...e.target, value: newValue },
@@ -1074,20 +1059,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         if (hasJoinInBase) {
           // Editing second value - baseValue already contains the full pattern
           // Don't reconstruct, just pass through
-          console.log(
-            '🔵 Second value edit detected - skipping reconstruction'
-          );
           onChange(e);
         } else {
           // Editing first value - reconstruct full multi-condition pattern
           const fullPattern = `${baseValue} ${joinPattern} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
-
-          console.log('🔧 Reconstructing multi-condition:', {
-            inputValue,
-            baseValue,
-            preservedFilter: preservedFilterRef.current,
-            fullPattern,
-          });
 
           // Call parent onChange with reconstructed pattern
           onChange({
