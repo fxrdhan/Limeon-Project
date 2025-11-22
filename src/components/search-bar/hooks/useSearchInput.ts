@@ -222,6 +222,33 @@ export const useSearchInput = ({
           return;
         }
 
+        // SPECIAL CASE: User types on confirmed multi-condition - trigger second value edit
+        // This is Case 5 - user types any char on a confirmed 6-badge multi-condition filter
+        // We need to trigger parent's handleEditSecondValue indirectly by setting a flag
+        if (
+          searchMode.filterSearch.isConfirmed &&
+          searchMode.filterSearch.isMultiCondition &&
+          searchMode.filterSearch.conditions &&
+          searchMode.filterSearch.conditions.length >= 2 &&
+          inputValue.trim() !== '' &&
+          inputValue.trim() !== '#'
+        ) {
+          // Signal to parent: user wants to edit second value
+          // We'll add a special marker that parent can detect
+          const columnName = searchMode.filterSearch.field;
+          const firstCondition = searchMode.filterSearch.conditions[0];
+          const secondCondition = searchMode.filterSearch.conditions[1];
+          const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+
+          // Build pattern for editing second value (without ## marker)
+          const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCondition.operator} ${inputValue}`;
+
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+
         const newValue = buildFilterValue(searchMode.filterSearch, inputValue);
         onChange({
           target: { value: newValue },
