@@ -165,22 +165,21 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // D0 test case: [Column][Operator] with no value -> backspace should clear all
-          // Check this BEFORE the general empty value handler to catch the package deletion case
+          // D6 Step 3: Remove trailing join operator from confirmed filter
+          // Pattern: #field #operator value #join # -> #field #operator value##
+          // This handles when user added join operator but wants to remove it and go back to confirmed state
           if (
-            searchMode.isFilterMode &&
-            searchMode.filterSearch?.value === '' &&
-            searchMode.filterSearch?.operator &&
-            searchMode.filterSearch.isExplicitOperator && // Only explicit operators (not contains)
-            (e.currentTarget as HTMLInputElement).value === '' // Input is empty
+            (e.currentTarget as HTMLInputElement).value === '' && // Input is empty
+            value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/)
           ) {
             e.preventDefault();
-            // Clear everything (column + operator package without value)
-            if (onClearSearch) {
-              onClearSearch();
-            } else {
+            // Remove trailing join operator and restore ## marker
+            const match = value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/);
+            if (match) {
+              const baseFilter = match[1];
+              const newValue = `${baseFilter}##`;
               onChange({
-                target: { value: '' },
+                target: { value: newValue },
               } as React.ChangeEvent<HTMLInputElement>);
             }
             return;
@@ -204,6 +203,7 @@ export const useSearchKeyboard = ({
               }
               return;
             } else {
+              e.preventDefault();
               const columnName = searchMode.filterSearch.field;
               // Auto-open operator selector when backspacing to column
               const newValue = `#${columnName} #`;
@@ -223,27 +223,6 @@ export const useSearchKeyboard = ({
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
-            return;
-          } else if (
-            // D0 test case: [Column][Operator] with no value -> backspace should clear all
-            searchMode.selectedColumn &&
-            searchMode.filterSearch &&
-            searchMode.filterSearch.operator &&
-            (!searchMode.filterSearch.value ||
-              searchMode.filterSearch.value.trim() === '') &&
-            !searchMode.showColumnSelector &&
-            !searchMode.showOperatorSelector &&
-            (e.currentTarget as HTMLInputElement).value === '' // Input is empty (ready for value)
-          ) {
-            e.preventDefault();
-            // Clear everything (column + operator package without value)
-            if (onClearSearch) {
-              onClearSearch();
-            } else {
-              onChange({
-                target: { value: '' },
-              } as React.ChangeEvent<HTMLInputElement>);
-            }
             return;
           } else if (
             searchMode.selectedColumn &&
