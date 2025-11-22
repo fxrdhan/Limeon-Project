@@ -941,8 +941,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     console.log('🔵 Second value:', secondCondition.value);
 
-    // Save current searchMode to keep badges visible during edit
-    setPreservedSearchMode(searchMode);
+    // Create modified searchMode with second value hidden (empty string)
+    // This will hide the 2nd value badge during edit
+    const modifiedSearchMode: EnhancedSearchState = {
+      ...searchMode,
+      filterSearch: {
+        ...searchMode.filterSearch,
+        conditions: [
+          firstCondition,
+          {
+            ...secondCondition,
+            value: '', // Empty value will hide the badge
+          },
+        ],
+      },
+    };
+
+    setPreservedSearchMode(modifiedSearchMode);
 
     // Preserve first condition while editing second value
     preservedFilterRef.current = {
@@ -1039,6 +1054,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseOperatorSelector,
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
+    onEditSecondValue: handleEditSecondValue,
   });
 
   const searchTerm = useMemo(() => {
