@@ -300,21 +300,6 @@ export const useSearchInput = ({
           : inputValue;
 
         if (cleanInputValue === '') {
-          // Check if user is backspacing operator when no value exists
-          // If filterSearch has operator but no value, user deleted operator -> clear all
-          if (
-            searchMode.filterSearch &&
-            searchMode.filterSearch.operator &&
-            (!searchMode.filterSearch.value ||
-              searchMode.filterSearch.value.trim() === '')
-          ) {
-            // Clear everything (column + operator package without value)
-            onChange({
-              target: { value: '' },
-            } as React.ChangeEvent<HTMLInputElement>);
-            return;
-          }
-
           const newValue = buildColumnValue(columnName, 'plain');
           onChange({
             target: { value: newValue },
@@ -348,21 +333,6 @@ export const useSearchInput = ({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
         } else {
-          // Check if user backspaced when we have operator but no value
-          // D0 test case: [Column][Operator] + backspace -> clear all
-          if (
-            searchMode.filterSearch &&
-            searchMode.filterSearch.operator &&
-            (!searchMode.filterSearch.value ||
-              searchMode.filterSearch.value.trim() === '')
-          ) {
-            // Clear everything (column + operator package without value)
-            onChange({
-              target: { value: '' },
-            } as React.ChangeEvent<HTMLInputElement>);
-            return;
-          }
-
           const newValue = buildColumnValue(columnName, 'plain');
           onChange({
             target: { value: newValue },
