@@ -139,13 +139,13 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // E9 test case: Backspace on partial multi-condition (5 badges) removes second operator and opens operator selector
-          // Pattern: [Column][Operator][Value][Join][SecondOperator] + backspace -> [Column][Operator][Value][Join] with operator selector open
+          // E9 Step 6: Backspace on empty input in partial multi-condition (5 badges) removes second operator and opens operator selector
+          // Pattern: [Column][Operator][Value][Join][SecondOperator] + backspace on empty input -> [Column][Operator][Value][Join] with operator selector open
+          // This triggers AFTER Step 5 where second value was cleared but second operator was preserved
           if (
             searchMode.partialJoin &&
             searchMode.secondOperator &&
-            searchMode.filterSearch?.value &&
-            searchMode.filterSearch.value.trim() !== '' &&
+            searchMode.filterSearch && // filterSearch exists (value may be empty after Step 5)
             !searchMode.isFilterMode &&
             (e.currentTarget as HTMLInputElement).value === '' // Input is empty
           ) {
@@ -155,9 +155,15 @@ export const useSearchKeyboard = ({
             // Pattern: #field #operator value #join #secondOperator -> #field #operator value #join #
             const columnName = searchMode.filterSearch.field;
             const operator = searchMode.filterSearch.operator;
-            const filterValue = searchMode.filterSearch.value;
+            const filterValue = searchMode.filterSearch.value || ''; // value may be empty
             const joinOp = searchMode.partialJoin.toLowerCase();
-            const newValue = `#${columnName} #${operator} ${filterValue} #${joinOp} #`;
+            const newValue =
+              filterValue.trim() !== ''
+                ? `#${columnName} #${operator} ${filterValue} #${joinOp} #`
+                : `#${columnName} #${operator} #${joinOp} #`; // Handle empty value case
+
+            // Clear preserved state to remove second operator badge from UI
+            onClearPreservedState?.();
 
             onChange({
               target: { value: newValue },
