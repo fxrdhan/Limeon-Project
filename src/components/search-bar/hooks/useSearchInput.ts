@@ -11,7 +11,6 @@ interface UseSearchInputProps {
   searchMode: EnhancedSearchState;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
-  onClearPreservedState?: () => void;
 }
 
 export const useSearchInput = ({
@@ -19,7 +18,6 @@ export const useSearchInput = ({
   searchMode,
   onChange,
   inputRef,
-  onClearPreservedState,
 }: UseSearchInputProps) => {
   const badgeRef = useRef<HTMLDivElement>(null);
   const badgesContainerRef = useRef<HTMLDivElement>(null);
@@ -254,26 +252,28 @@ export const useSearchInput = ({
         if (secondOpMatch) {
           const [, join, op2] = secondOpMatch;
 
-          // SPECIAL CASE: If input becomes empty, remove second operator and add trailing # for operator selector
+          // SPECIAL CASE: If input becomes empty, preserve second operator in partial multi-condition state
           // This handles when user deletes the second value completely
+          // Step 5 of E9: Preserve 5 badges, then Step 6 backspace will trigger operator selector
           if (inputValue.trim() === '') {
             // Remove everything from #join onwards to get base pattern
             const basePattern = currentValue.replace(
               /#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i,
               ''
             );
-            // Add trailing # to open operator selector with fresh state
-            const newValue = `${basePattern.trim()} #${join} #`;
+            // Preserve second operator to maintain partial multi-condition state (5 badges)
+            // Step 6 backspace will be handled by useSearchKeyboard.ts to remove operator and open selector
+            const newValue = `${basePattern.trim()} #${join} #${op2}`;
             console.log(
-              '🔧 Input emptied while building second value - removing second operator:',
+              '🔧 Input emptied while building second value - preserving second operator for Step 6:',
               {
                 currentValue,
                 newValue,
               }
             );
 
-            // Clear preserved state to remove second operator badge
-            onClearPreservedState?.();
+            // Keep preserved state to maintain second operator badge for Step 6
+            // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler
 
             onChange({
               target: { value: newValue },
@@ -342,7 +342,7 @@ export const useSearchInput = ({
         onChange(e);
       }
     },
-    [searchMode, onChange, value, onClearPreservedState]
+    [searchMode, onChange, value]
   );
 
   return {

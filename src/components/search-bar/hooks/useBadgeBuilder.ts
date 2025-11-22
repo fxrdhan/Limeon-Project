@@ -51,14 +51,6 @@ export const useBadgeBuilder = (
       searchMode.showJoinOperatorSelector ||
       searchMode.selectedColumn
     ) {
-      const canClearColumn = !(
-        (searchMode.isFilterMode ||
-          searchMode.showJoinOperatorSelector ||
-          (searchMode.showOperatorSelector && searchMode.isSecondOperator)) &&
-        filter &&
-        (filter.operator !== 'contains' || filter.isExplicitOperator)
-      );
-
       badges.push({
         id: 'column',
         type: 'column',
@@ -67,7 +59,7 @@ export const useBadgeBuilder = (
           searchMode.selectedColumn?.headerName ||
           '',
         onClear: handlers.onClearColumn,
-        canClear: canClearColumn,
+        canClear: true, // Column badge can always be cleared
         onEdit: handlers.onEditColumn,
         canEdit: true, // Column badge is always editable
       });
