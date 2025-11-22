@@ -46,6 +46,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Ref to store preserved filter when editing column/operator
   const preservedFilterRef = useRef<{
+    columnName?: string;
     operator: string;
     value: string;
     // For multi-condition filters (AND/OR)
@@ -1109,7 +1110,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange(e);
       }
     },
-    [onChange, value]
+    [onChange]
   );
 
   const { handleInputKeyDown } = useSearchKeyboard({
