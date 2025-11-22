@@ -1009,6 +1009,62 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
 
+      // CASE 5: User types on confirmed multi-condition filter - enter edit mode for second value
+      // Pattern: #field #op1 val1 #join #op2 val2## → user types → #field #op1 val1 #join #op2 newValue
+      if (
+        searchMode.isFilterMode &&
+        searchMode.filterSearch?.isConfirmed &&
+        searchMode.filterSearch?.isMultiCondition &&
+        searchMode.filterSearch?.conditions &&
+        searchMode.filterSearch.conditions.length >= 2 &&
+        inputValue.trim() !== '' &&
+        inputValue.trim() !== '#' &&
+        !preservedFilterRef.current // Not already in edit mode
+      ) {
+        const columnName = searchMode.filterSearch.field;
+        const firstCondition = searchMode.filterSearch.conditions[0];
+        const secondCondition = searchMode.filterSearch.conditions[1];
+        const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+
+        // Create modified searchMode with second value hidden (empty string)
+        // This will hide the 2nd value badge during edit
+        const modifiedSearchMode: EnhancedSearchState = {
+          ...searchMode,
+          filterSearch: {
+            ...searchMode.filterSearch,
+            conditions: [
+              firstCondition,
+              {
+                ...secondCondition,
+                value: '', // Empty value will hide the badge
+              },
+            ],
+          },
+        };
+
+        setPreservedSearchMode(modifiedSearchMode);
+
+        // Preserve first condition while editing second value
+        preservedFilterRef.current = {
+          columnName,
+          operator: firstCondition.operator,
+          value: firstCondition.value,
+          join: joinOp,
+          secondOperator: secondCondition.operator,
+          secondValue: secondCondition.value,
+        };
+
+        // Build pattern for editing second value
+        // Remove ## marker and replace second value with new input
+        const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCondition.operator} ${inputValue}`;
+
+        onChange({
+          ...e,
+          target: { ...e.target, value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+        return;
+      }
+
       // Detect when input becomes empty while editing second value in partial multi-condition
       // Pattern: #field #op1 val1 #join #op2 val2 (val2 being edited in input)
       // When input is emptied → should become: #field #op1 val1 #join #
@@ -1075,7 +1131,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange(e);
       }
     },
-    [onChange]
+    [onChange, searchMode, setPreservedSearchMode]
   );
 
   const { handleInputKeyDown } = useSearchKeyboard({
