@@ -477,12 +477,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
   }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
 
+  // Clear preserved state - used to reset edit mode and badge visibility
+  const handleClearPreservedState = useCallback(() => {
+    setPreservedSearchMode(null);
+    preservedFilterRef.current = null;
+    setCurrentJoinOperator(undefined);
+    setIsEditingSecondOperator(false);
+  }, []);
+
   // Clear second operator - used by blue badge (second operator in multi-condition)
   const handleClearSecondOperator = useCallback(() => {
     if (!searchMode.filterSearch) {
       handleClearAll();
       return;
     }
+
+    // Clear preserved state to ensure badge disappears and no operator is pre-highlighted
+    handleClearPreservedState();
 
     // Case 1: Confirmed multi-condition filter (after ENTER)
     if (
@@ -537,6 +548,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onChange,
     inputRef,
     handleClearAll,
+    handleClearPreservedState,
   ]);
 
   // Clear second value - used by gray badge (second value in multi-condition)
@@ -984,12 +996,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
   }, [searchMode, onChange, inputRef]);
-
-  const handleClearPreservedState = useCallback(() => {
-    setPreservedSearchMode(null);
-    preservedFilterRef.current = null;
-    setCurrentJoinOperator(undefined);
-  }, []);
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
