@@ -101,23 +101,25 @@ export const useBadgeBuilder = (
           canEdit: true, // Operator badges are editable
         });
 
-        // Value badge for this condition
-        badges.push({
-          id: `multi-value-${index}`,
-          type: 'value',
-          label: condition.value,
-          onClear:
-            index === 0
-              ? handlers.onClearValue
-              : index === filter.conditions!.length - 1 &&
-                  filter.conditions!.length === 2
-                ? handlers.onClearSecondValue
-                : handlers.onClearAll,
-          canClear: true,
-          onEdit:
-            index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-          canEdit: true, // Value badges are now editable
-        });
+        // Value badge for this condition (skip if value is empty)
+        if (condition.value) {
+          badges.push({
+            id: `multi-value-${index}`,
+            type: 'value',
+            label: condition.value,
+            onClear:
+              index === 0
+                ? handlers.onClearValue
+                : index === filter.conditions!.length - 1 &&
+                    filter.conditions!.length === 2
+                  ? handlers.onClearSecondValue
+                  : handlers.onClearAll,
+            canClear: true,
+            onEdit:
+              index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
+            canEdit: true, // Value badges are now editable
+          });
+        }
 
         // Join badge between conditions (not after last one)
         if (index < filter.conditions!.length - 1) {
