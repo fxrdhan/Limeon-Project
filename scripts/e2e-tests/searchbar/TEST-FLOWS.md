@@ -580,31 +580,52 @@
 
 ---
 
-## Synchronization Validation
+### E8: Edit Column Badge (5 Badges - Partial Multi-Condition)
 
-### Sync Test: Badge ↔ Filter Panel
+**Setup**: Case 3 (5 badges - partial multi-condition)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than]`
 
-**Goal**: Validate UI badges match AG Grid Filter Panel state
+**Steps**:
 
-**Test Scenarios**:
+1. Create partial multi-condition (Case 3):
+   - Type "#", select "Harga Pokok"
+   - Select "Greater Than" operator
+   - Type "50000", press Enter
+   - Type "#", select "AND"
+   - Select "Less Than" operator (stop here, don't type second value)
+2. Hover over "Harga Pokok" badge (column)
+3. Badge UI: [Harga Pokok (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
 
-#### Scenario A: Simple Filter Sync
+**Expected Result**:
 
-1. Create Case 2 (3 badges)
-2. Open Filter Panel (right side)
-3. Verify panel shows: "Harga Pokok > 50000"
+- Column selector opens with all columns
+- All 5 badges remain visible: `[Harga Pokok][Greater Than][50000][AND][Less Than]`
+- Ready to select new column
 
-#### Scenario B: Multi-Condition Sync
+**Continue Editing**:
 
-1. Create Case 4 (6 badges)
-2. Open Filter Panel
-3. Verify panel shows: "Harga Pokok > 50000 AND < 100000"
+5. Select "Harga Jual" from column selector
+
+**Final Expected Result**:
+
+- Badges updated: `[Harga Jual][Greater Than][50000][AND][Less Than]`
+- All badges preserved with new column field
+- Filter panel shows: "Harga Jual > 50000" (only first condition, second value missing)
+- Data grid re-filters to show items where Harga Jual > 50,000
+- Partial multi-condition structure maintained (second operator preserved)
 
 **Validates**:
 
-- Badge representation matches filter state
-- AG Grid receives correct filter configuration
-- Filter logic consistency between UI and data layer
+- Column badge edit in partial multi-condition preserves entire filter structure
+- Both first operator and second operator preserved during column change
+- First value preserved, second operator maintained even without second value
+- Join operator (AND/OR) maintained
+- Operator compatibility check works for both operators
+- Filter panel synchronization after column change in partial multi-condition
+- AG Grid filter applies only first condition (second incomplete)
+- Data grid re-filters with new column field
+- Partial multi-condition state maintained after column edit
 
 ---
 
@@ -647,9 +668,8 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
-- **Edit Tests**: 8 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition)
-- **Sync Tests**: 2 scenarios (UI ↔ data validation)
-- **Total**: 20 test scenarios
+- **Edit Tests**: 9 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition, E8: column badge 5-badges partial multi-condition)
+- **Total**: 19 test scenarios
 
 ### Key Behaviors Tested:
 
