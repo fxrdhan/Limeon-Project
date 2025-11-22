@@ -11,6 +11,7 @@ interface UseSearchInputProps {
   searchMode: EnhancedSearchState;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  onClearPreservedState?: () => void;
 }
 
 export const useSearchInput = ({
@@ -18,6 +19,7 @@ export const useSearchInput = ({
   searchMode,
   onChange,
   inputRef,
+  onClearPreservedState,
 }: UseSearchInputProps) => {
   const badgeRef = useRef<HTMLDivElement>(null);
   const badgesContainerRef = useRef<HTMLDivElement>(null);
@@ -251,6 +253,34 @@ export const useSearchInput = ({
 
         if (secondOpMatch) {
           const [, join, op2] = secondOpMatch;
+
+          // SPECIAL CASE: If input becomes empty, remove second operator and add trailing # for operator selector
+          // This handles when user deletes the second value completely
+          if (inputValue.trim() === '') {
+            // Remove everything from #join onwards to get base pattern
+            const basePattern = currentValue.replace(
+              /#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i,
+              ''
+            );
+            // Add trailing # to open operator selector with fresh state
+            const newValue = `${basePattern.trim()} #${join} #`;
+            console.log(
+              '🔧 Input emptied while building second value - removing second operator:',
+              {
+                currentValue,
+                newValue,
+              }
+            );
+
+            // Clear preserved state to remove second operator badge
+            onClearPreservedState?.();
+
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+
           // Build complete multi-condition: #field #op1 val1 #join #op2 val2
           // Remove everything from #join onwards to get base pattern
           const basePattern = currentValue.replace(
@@ -342,7 +372,7 @@ export const useSearchInput = ({
         onChange(e);
       }
     },
-    [searchMode, onChange, value]
+    [searchMode, onChange, value, onClearPreservedState]
   );
 
   return {

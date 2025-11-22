@@ -89,6 +89,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     containerRef,
   });
 
+  // Clear preserved state - used to reset edit mode and badge visibility
+  const handleClearPreservedState = useCallback(() => {
+    setPreservedSearchMode(null);
+    preservedFilterRef.current = null;
+    setCurrentJoinOperator(undefined);
+    setIsEditingSecondOperator(false);
+  }, []);
+
   const {
     displayValue,
     showTargetedIndicator,
@@ -102,6 +110,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode,
     onChange,
     inputRef,
+    onClearPreservedState: handleClearPreservedState,
   });
 
   const handleColumnSelect = useCallback(
@@ -481,14 +490,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       inputRef?.current?.focus();
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
   }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
-
-  // Clear preserved state - used to reset edit mode and badge visibility
-  const handleClearPreservedState = useCallback(() => {
-    setPreservedSearchMode(null);
-    preservedFilterRef.current = null;
-    setCurrentJoinOperator(undefined);
-    setIsEditingSecondOperator(false);
-  }, []);
 
   // Clear second operator - used by blue badge (second operator in multi-condition)
   const handleClearSecondOperator = useCallback(() => {
@@ -993,6 +994,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Preserve first condition while editing second value
     preservedFilterRef.current = {
+      columnName, // Store column name for reconstruction
       operator: firstCondition.operator,
       value: firstCondition.value,
       join: joinOp,
@@ -1021,6 +1023,47 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const handleOnChangeWithReconstruction = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
+
+      // Detect when input becomes empty while editing second value in partial multi-condition
+      // Pattern: #field #op1 val1 #join #op2 val2 (val2 being edited in input)
+      // When input is emptied → should become: #field #op1 val1 #join #
+      if (
+        inputValue.trim() === '' &&
+        preservedFilterRef.current?.columnName &&
+        preservedFilterRef.current?.join &&
+        preservedFilterRef.current?.secondOperator &&
+        preservedFilterRef.current?.value &&
+        preservedFilterRef.current?.value.trim() !== ''
+      ) {
+        // Input is now empty while in partial multi-condition with second operator
+        // Remove second operator and add trailing # to open operator selector
+        const columnName = preservedFilterRef.current.columnName;
+        const operator = preservedFilterRef.current.operator;
+        const firstValue = preservedFilterRef.current.value;
+        const joinOp = preservedFilterRef.current.join.toLowerCase();
+
+        // Create pattern without second operator but with trailing # for operator selector
+        const newValue = `#${columnName} #${operator} ${firstValue} #${joinOp} #`;
+
+        console.log(
+          '🔧 Input emptied while editing second value - removing second operator:',
+          {
+            inputValue,
+            newValue,
+            preservedFilter: preservedFilterRef.current,
+          }
+        );
+
+        onChange({
+          ...e,
+          target: { ...e.target, value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Clear preserved filter after cleanup
+        preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
+        return;
+      }
 
       // Detect confirmation of value edit (## marker added)
       if (
@@ -1066,7 +1109,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange(e);
       }
     },
-    [onChange]
+    [onChange, value]
   );
 
   const { handleInputKeyDown } = useSearchKeyboard({
