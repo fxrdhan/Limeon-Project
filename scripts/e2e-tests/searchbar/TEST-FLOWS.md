@@ -629,6 +629,67 @@
 
 ---
 
+### E9: Delete Second Operator via Backspace (Progressive Deletion from 6 Badges)
+
+**Setup**: Case 4 (6 badges - complete multi-condition)
+**Initial**: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
+
+**Steps - Progressive Deletion**:
+
+1. Create complete multi-condition filter (Case 4):
+   - Type "#", select "Harga Pokok"
+   - Select "Greater Than or Equal" operator
+   - Type "50000", press Enter
+   - Type "#", select "AND"
+   - Select "Less Than" operator
+   - Type "100000", press Enter
+2. **State**: Confirmed multi-condition with 6 badges
+3. **First Backspace**: Remove second value badge
+   - Hit Backspace once
+   - Input shows: `100000` (second value in edit mode)
+4. **Continue Backspacing**: Clear the value completely
+   - Keep hitting Backspace until value is completely deleted
+   - Input becomes empty
+5. **State After Value Cleared**: Partial multi-condition with 5 badges
+   - Badges: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than]`
+   - Second operator badge visible but no second value
+6. **Critical Step - Delete Second Operator**: Hit Backspace again on empty input
+
+**Expected Result After Step 6**:
+
+- Second operator badge removed: `[Harga Pokok][Greater Than or Equal][50000][AND]`
+- **Operator selector modal opens automatically**
+- Modal ready for selecting new second operator
+- Input remains empty and focused
+- Partial join state maintained (AND badge still visible)
+
+**Continue Flow (Optional)**:
+
+7. Select "Less Than or Equal" from operator selector
+8. Type "80000", press Enter
+
+**Final Expected Result**:
+
+- Complete multi-condition: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than or Equal][80000]`
+- Filter panel shows: ">= 50000 AND <= 80000"
+- Data grid shows items where 50,000 <= Harga Pokok <= 80,000
+- Seamless editing experience without needing to click AND badge
+
+**Validates**:
+
+- Progressive deletion flow works correctly from 6 badges → 5 badges → 4 badges with operator selector
+- Backspace on empty input in partial multi-condition (5 badges) removes second operator
+- Operator selector automatically opens after deleting second operator
+- Enables quick operator change without manual badge interaction
+- Partial join state (AND/OR) preserved during second operator deletion
+- Smooth UX: delete → modal opens → select new operator → continue
+- Input focus maintained throughout deletion sequence
+- System correctly handles state transitions: confirmed multi-condition → partial multi-condition → partial join with operator selector
+
+**Key Focus**: This test validates the seamless deletion-to-edit flow where removing the second operator automatically presents the user with operator choices, streamlining the filter editing experience.
+
+---
+
 ## Test Execution Guide
 
 ### Using Claude Code + Playwright MCP:
@@ -668,8 +729,8 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
-- **Edit Tests**: 9 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition, E8: column badge 5-badges partial multi-condition)
-- **Total**: 19 test scenarios
+- **Edit Tests**: 10 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition, E8: column badge 5-badges partial multi-condition, E9: delete 2nd operator via backspace progressive deletion)
+- **Total**: 20 test scenarios
 
 ### Key Behaviors Tested:
 
