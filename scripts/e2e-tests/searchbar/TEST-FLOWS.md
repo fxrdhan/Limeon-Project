@@ -494,6 +494,92 @@
 
 ---
 
+### E6: Edit Column Badge (6 Badges - Multi-Condition Filter)
+
+**Setup**: Case 4 (6 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+
+**Steps**:
+
+1. Create complete multi-condition (Case 4)
+2. Hover over "Harga Pokok" badge (column)
+3. Badge UI: [Harga Pokok (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
+
+**Expected Result**:
+
+- Column selector opens with all columns
+- All 6 badges remain visible: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+- Ready to select new column
+
+**Continue Editing**:
+
+5. Select "Harga Jual" from column selector
+
+**Final Expected Result**:
+
+- Badges updated: `[Harga Jual][Greater Than][50000][AND][Less Than][100000]`
+- All badges preserved with new column field
+- Filter panel synchronized: "Harga Jual > 50000 AND < 100000"
+- Data grid re-filters to show items where 50,000 < Harga Jual < 100,000
+- Multi-condition structure maintained
+
+**Validates**:
+
+- Column badge edit in multi-condition filter preserves entire filter structure
+- Both operators and values preserved during column change
+- Join operator (AND/OR) maintained
+- Operator compatibility check works for both first and second operators
+- Filter panel synchronization after column change in multi-condition
+- AG Grid filter model updates correctly with new column for both conditions
+- Data grid re-filters with new column field for range filter
+- Confirmed multi-condition state maintained after edit
+
+---
+
+### E7: Edit First Operator Badge (6 Badges - Multi-Condition Filter)
+
+**Setup**: Case 4 (6 badges)
+**Initial**: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+
+**Steps**:
+
+1. Create complete multi-condition (Case 4)
+2. Hover over "Greater Than" badge (first operator)
+3. Badge UI: [Greater Than (edit icon)(close icon)]
+4. Click edit button (pena icon, first button)
+
+**Expected Result**:
+
+- Operator selector opens with all number operators
+- All 6 badges remain visible: `[Harga Pokok][Greater Than][50000][AND][Less Than][100000]`
+- Ready to select new operator
+
+**Continue Editing**:
+
+5. Select "Greater Than or Equal" (≥) from operator selector
+
+**Final Expected Result**:
+
+- Badges updated: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
+- First operator changed, all other badges preserved
+- Filter panel synchronized: "Harga Pokok ≥ 50000 AND < 100000"
+- Data grid re-filters to show items where Harga Pokok ≥ 50,000 AND < 100,000
+- Multi-condition structure maintained
+
+**Validates**:
+
+- First operator badge has edit functionality in multi-condition filter
+- Edit preserves all other badges (column, first value, join operator, second operator, second value)
+- Operator selector shows correct operators for column type
+- Filter panel synchronization after first operator change
+- AG Grid filter model updates correctly with new operator for first condition
+- Data grid re-filters with new operator logic
+- Second condition remains intact during first operator edit
+- Confirmed multi-condition state maintained after operator edit
+
+---
+
 ## Synchronization Validation
 
 ### Sync Test: Badge ↔ Filter Panel
@@ -561,9 +647,9 @@
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
 - **Deletion Tests**: 5 scenarios (all deletion behaviors)
-- **Edit Tests**: 6 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges)
+- **Edit Tests**: 8 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition)
 - **Sync Tests**: 2 scenarios (UI ↔ data validation)
-- **Total**: 18 test scenarios
+- **Total**: 20 test scenarios
 
 ### Key Behaviors Tested:
 
@@ -572,8 +658,9 @@
 - State management and transitions
 - Data synchronization
 - Cascading deletions
-- Badge editing (column badge, value badges, join operator badge)
+- Badge editing (column badge, operator badges, value badges, join operator badge)
 - Operator preservation during column edit
+- Operator editing in multi-condition filters
 - Join operator editing with partial multi-condition
 - Auto-opening selectors
 - Filter panel updates
