@@ -14,6 +14,7 @@ interface UseSearchKeyboardProps {
   handleCloseOperatorSelector: () => void;
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
+  onEditSecondValue?: () => void;
 }
 
 export const useSearchKeyboard = ({
@@ -27,6 +28,7 @@ export const useSearchKeyboard = ({
   handleCloseOperatorSelector,
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
+  onEditSecondValue,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -103,6 +105,20 @@ export const useSearchKeyboard = ({
         }
 
         if (e.key === KEY_CODES.BACKSPACE) {
+          // Backspace on confirmed multi-condition filter: Enter edit mode for 2nd value
+          if (
+            searchMode.isFilterMode &&
+            searchMode.filterSearch?.isConfirmed &&
+            searchMode.filterSearch?.isMultiCondition &&
+            (e.currentTarget as HTMLInputElement).value === '' && // Input is empty
+            onEditSecondValue
+          ) {
+            e.preventDefault();
+            // Trigger edit mode for second value badge
+            onEditSecondValue();
+            return;
+          }
+
           // Backspace on confirmed filter: Remove ## marker to enter edit mode
           if (
             searchMode.isFilterMode &&
@@ -255,6 +271,7 @@ export const useSearchKeyboard = ({
       handleCloseOperatorSelector,
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
+      onEditSecondValue,
     ]
   );
 
