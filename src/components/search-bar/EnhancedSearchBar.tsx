@@ -122,16 +122,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         );
 
         if (isOperatorCompatible) {
-          // Check if it's a multi-condition filter
-          if (join && secondOperator && secondValue) {
+          // Check if it's a multi-condition filter (or partial multi-condition)
+          if (join && secondOperator) {
             // Check if second operator is also compatible
             const isSecondOperatorCompatible = availableOperators.some(
               op => op.value === secondOperator
             );
 
             if (isSecondOperatorCompatible) {
-              // Restore full multi-condition filter with the new column
-              const newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${secondOperator} ${secondValue}##`;
+              // Restore multi-condition filter with the new column
+              // Handle both full multi-condition (with secondValue) and partial (without secondValue)
+              const secondValuePart =
+                secondValue && secondValue.trim() !== ''
+                  ? ` ${secondValue}##`
+                  : ' ';
+              const newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${secondOperator}${secondValuePart}`;
               onChange({
                 target: { value: newValue },
               } as React.ChangeEvent<HTMLInputElement>);
@@ -665,6 +670,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           join: searchMode.filterSearch.joinOperator,
           secondOperator: secondCondition.operator,
           secondValue: secondCondition.value,
+        };
+      } else if (
+        searchMode.partialJoin &&
+        searchMode.secondOperator &&
+        filterValue
+      ) {
+        // Partial multi-condition filter (5 badges case)
+        // e.g., #base_price #greaterThan 50000 #and #lessThan
+        // Has first value but no second value yet
+        preservedFilterRef.current = {
+          operator,
+          value: filterValue,
+          join: searchMode.partialJoin,
+          secondOperator: searchMode.secondOperator,
+          secondValue: '', // No second value yet
         };
       } else {
         // Single-condition filter (may or may not have value yet)
