@@ -787,7 +787,7 @@
 - Input remains empty and focused
 - Partial join state maintained (AND badge still visible)
 
-**Continue Flow (Optional)**:
+**Continue Flow**:
 
 7. Select "Less Than or Equal" from operator selector
 8. Type "80000", press Enter

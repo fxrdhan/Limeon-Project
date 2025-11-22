@@ -111,7 +111,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode,
     onChange,
     inputRef,
-    onClearPreservedState: handleClearPreservedState,
   });
 
   const handleColumnSelect = useCallback(
