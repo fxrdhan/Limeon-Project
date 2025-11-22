@@ -139,6 +139,32 @@ export const useSearchKeyboard = ({
             return;
           }
 
+          // E9 test case: Backspace on partial multi-condition (5 badges) removes second operator and opens operator selector
+          // Pattern: [Column][Operator][Value][Join][SecondOperator] + backspace -> [Column][Operator][Value][Join] with operator selector open
+          if (
+            searchMode.partialJoin &&
+            searchMode.secondOperator &&
+            searchMode.filterSearch?.value &&
+            searchMode.filterSearch.value.trim() !== '' &&
+            !searchMode.isFilterMode &&
+            (e.currentTarget as HTMLInputElement).value === '' // Input is empty
+          ) {
+            e.preventDefault();
+
+            // Remove second operator, keep join operator with trailing # to open operator selector
+            // Pattern: #field #operator value #join #secondOperator -> #field #operator value #join #
+            const columnName = searchMode.filterSearch.field;
+            const operator = searchMode.filterSearch.operator;
+            const filterValue = searchMode.filterSearch.value;
+            const joinOp = searchMode.partialJoin.toLowerCase();
+            const newValue = `#${columnName} #${operator} ${filterValue} #${joinOp} #`;
+
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+
           // D0 test case: [Column][Operator] with no value -> backspace should clear all
           // Check this BEFORE the general empty value handler to catch the package deletion case
           if (
