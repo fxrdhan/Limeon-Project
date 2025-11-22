@@ -214,11 +214,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // CASE 2: EDITING first operator (badge already exists)
       else if (!isEditingSecondOperator && preservedFilterRef.current?.value) {
         const preservedValue = preservedFilterRef.current.value;
-        // Restore value with the new operator
-        const newValue = `#${columnName} #${operator.value} ${preservedValue}##`;
-        onChange({
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Check if this is a multi-condition filter with join, secondOperator, secondValue
+        if (
+          preservedFilterRef.current.join &&
+          preservedFilterRef.current.secondOperator &&
+          preservedFilterRef.current.secondValue
+        ) {
+          // Restore full multi-condition with new first operator
+          const newValue = `#${columnName} #${operator.value} ${preservedValue} #${preservedFilterRef.current.join.toLowerCase()} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else {
+          // Single condition: just restore first value with new operator
+          const newValue = `#${columnName} #${operator.value} ${preservedValue}##`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
         // Clear preserved filter and searchMode
         preservedFilterRef.current = null;
         setPreservedSearchMode(null);
@@ -712,7 +726,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           secondValue: '', // No second value yet since it's partial
         };
       }
-      // If editing first operator and have value
+      // If editing first operator in multi-condition filter
+      else if (
+        !isSecond &&
+        searchMode.filterSearch.isMultiCondition &&
+        searchMode.filterSearch.conditions &&
+        searchMode.filterSearch.conditions.length >= 2
+      ) {
+        preservedFilterRef.current = {
+          operator: searchMode.filterSearch.conditions[0].operator,
+          value: searchMode.filterSearch.conditions[0].value,
+          join: searchMode.filterSearch.joinOperator,
+          secondOperator: searchMode.filterSearch.conditions[1].operator,
+          secondValue: searchMode.filterSearch.conditions[1].value,
+        };
+      }
+      // If editing first operator and have value (single condition)
       else if (filterValue && !isSecond) {
         preservedFilterRef.current = {
           operator: '', // Will be replaced by new operator
