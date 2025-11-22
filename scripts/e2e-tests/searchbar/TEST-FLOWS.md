@@ -178,8 +178,8 @@
 **Steps**:
 
 1. Create simple filter (Case 2)
-2. Hover over "Greater Than" badge
-3. Click delete (X) button
+2. Hover over "Greater Than" badge: it become:[Greater Than (edit icon)(close icon)]
+3. Click close/delete (X) button
 
 **Expected Result**:
 
