@@ -106,6 +106,45 @@
 
 ## Badge Deletion Tests
 
+### D0: Delete Operator Badge (2 Badges → 1 Badge)
+
+**Setup**: Case 1 (2 badges - column + operator)
+**Initial**: `[Harga Pokok][Greater Than]`
+
+**Goal**: Validate operator badge deletion via backspace on empty input
+
+**Steps**:
+
+1. Create Case 1 (2 badges):
+   - Navigate to Item Master page
+   - Click search textbox "Cari item..."
+   - Type "#"
+   - Click "Harga Pokok"
+   - Click "Greater Than" from operator selector
+2. **State**: 2 badges: `[Harga Pokok][Greater Than]`
+3. **Input is empty and focused** (ready for value input)
+4. Hit Backspace once
+
+**Expected Result**:
+
+- **1 badge**: `[Harga Pokok]`
+- Operator badge removed
+- Operator selector auto-opens
+- Input remains empty and focused
+- Ready to select new operator
+
+**Validates**:
+
+- Backspace on empty input after operator selection removes the operator badge
+- Column badge is preserved
+- Operator selector automatically reopens for new selection
+- System correctly transitions from 2-badge state back to 1-badge state
+- Enables quick operator change without manual badge interaction
+
+**Key Focus**: This test validates the backspace deletion of operator badge when no value has been entered yet, allowing users to quickly change their operator choice.
+
+---
+
 ### D1: Delete Value Badge
 
 **Setup**: Case 2 (3 badges)
@@ -233,6 +272,91 @@
 - Join operator deletion removes entire second condition
 - Cascading: AND + second operator + second value all removed
 - Reverts to simple filter state
+
+---
+
+### D6: Progressive Deletion to Empty (6 Badges → 0 Badges)
+
+**Setup**: Case 4 (6 badges - complete multi-condition)
+**Initial**: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
+
+**Goal**: Validate progressive deletion via backspace from 6 badges down to completely empty state
+
+**Steps - Progressive Deletion (One-by-One)**:
+
+1. Create complete multi-condition filter (Case 4):
+   - Type "#", select "Harga Pokok"
+   - Select "Greater Than or Equal" operator
+   - Type "50000", press Enter
+   - Type "#", select "AND"
+   - Select "Less Than" operator
+   - Type "100000", press Enter
+2. **State**: 6 badges confirmed: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
+3. **Deletion Step 1 - Enter Edit Mode for Second Value**:
+   - Hit Backspace once
+   - Input shows: `100000` (second value in edit mode)
+   - **Expected**: 6 badges still visible (edit mode active)
+4. **Deletion Step 2 - Clear Second Value**:
+   - Select all (Ctrl+A) and hit Backspace
+   - **Expected State**: 4 badges: `[Harga Pokok][Greater Than or Equal][50000][AND]`
+   - **Expected**: Operator selector auto-opens (fresh state, no highlighting)
+   - **Expected**: Input empty and focused
+   - **Screenshot checkpoint**: Verify 4 badges + operator selector visible
+5. **Deletion Step 3 - Remove AND Badge via Backspace**:
+   - Press Escape to close operator selector
+   - Hit Backspace once
+   - **Expected State**: 3 badges: `[Harga Pokok][Greater Than or Equal][50000]`
+   - **Expected**: Input empty, no selector open
+   - **Screenshot checkpoint**: Verify 3 badges visible
+6. **Deletion Step 4 - Enter Edit Mode for First Value**:
+   - Hit Backspace once
+   - Input shows: `50000` (first value in edit mode)
+   - **Expected**: 3 badges still visible (edit mode active)
+7. **Deletion Step 5 - Clear First Value**:
+   - Select all (Ctrl+A) and hit Backspace
+   - **Expected State**: 2 badges: `[Harga Pokok][Greater Than or Equal]`
+   - **Expected**: Input empty and focused
+   - **Screenshot checkpoint**: Verify 2 badges visible
+8. **Deletion Step 6 - Remove Operator Badge via Backspace**:
+   - Hit Backspace once
+   - **Expected State**: 1 badge: `[Harga Pokok]`
+   - **Expected**: Operator selector auto-opens
+   - **Screenshot checkpoint**: Verify 1 badge + operator selector visible
+9. **Deletion Step 7 - Remove Column Badge via Backspace**:
+   - Press Escape to close operator selector
+   - Hit Backspace once
+   - **Expected State**: 0 badges (completely empty)
+   - **Expected**: Input completely empty, no selectors open
+   - **Expected**: Search bar in initial state
+   - **Screenshot checkpoint**: Verify completely empty state
+
+**Final Expected Result**:
+
+- **Zero badges visible**
+- Input is empty
+- No selector modals open
+- Search bar in pristine initial state (as if never used)
+- All items displayed in data grid (no filter applied)
+- Filter panel shows "Harga Pokok" and "Harga Jual" in default state
+
+**Validates**:
+
+- Complete deletion flow from 6 badges to 0 badges works correctly
+- Each deletion step produces expected badge count
+- Operator selectors auto-open at appropriate steps
+- Backspace behavior correct at each state transition
+- System correctly handles all state transitions:
+  - 6 badges (confirmed multi-condition)
+  - 5 badges (editing second value) → 4 badges (partial join with selector)
+  - 3 badges (simple filter confirmed)
+  - 2 badges (editing first value) → 2 badges (column + operator)
+  - 1 badge (column only with selector)
+  - 0 badges (empty state)
+- Input focus maintained throughout deletion sequence
+- No leftover state or badges after complete deletion
+- System properly resets to initial state
+
+**Key Focus**: This comprehensive test validates the entire deletion lifecycle, ensuring users can completely remove a complex filter step-by-step via backspace, with the system correctly handling each intermediate state.
 
 ---
 
@@ -728,9 +852,9 @@
 ## Coverage Summary
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
-- **Deletion Tests**: 5 scenarios (all deletion behaviors)
+- **Deletion Tests**: 7 scenarios (D0: delete operator badge 2→1 badges, D1-D5: targeted deletions, D6: progressive deletion 6→0 badges)
 - **Edit Tests**: 10 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition, E8: column badge 5-badges partial multi-condition, E9: delete 2nd operator via backspace progressive deletion)
-- **Total**: 20 test scenarios
+- **Total**: 22 test scenarios
 
 ### Key Behaviors Tested:
 
