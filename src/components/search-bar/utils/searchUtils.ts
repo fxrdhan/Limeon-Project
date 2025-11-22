@@ -29,10 +29,6 @@ const parseMultiConditionFilter = (
   const hasConfirmationMarker = searchValue.endsWith('##');
   if (!hasConfirmationMarker) {
     // User is still typing - don't treat as complete multi-condition yet
-    console.log(
-      '[parseMultiConditionFilter] Missing ## marker. Value:',
-      searchValue
-    );
     return null;
   }
 
@@ -88,20 +84,12 @@ const parseMultiConditionFilter = (
         joinOperator = currentJoin;
       } else if (joinOperator !== currentJoin) {
         // Mixed operators - use the first one
-        console.warn(
-          'Mixed AND/OR operators detected, using first operator:',
-          joinOperator
-        );
       }
     }
   }
 
   // Must have at least 2 conditions to be valid multi-condition
   if (conditions.length < 2) {
-    console.log(
-      '[parseMultiConditionFilter] Less than 2 conditions. Found:',
-      conditions.length
-    );
     return null;
   }
 
@@ -117,10 +105,6 @@ const parseMultiConditionFilter = (
     isMultiCondition: true,
   };
 
-  console.log(
-    '[parseMultiConditionFilter] SUCCESS! Parsed multi-condition:',
-    result
-  );
   return result;
 };
 
