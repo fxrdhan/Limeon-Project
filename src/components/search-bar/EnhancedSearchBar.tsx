@@ -225,13 +225,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           preservedFilterRef.current.join === 'OR')
       ) {
         const preserved = preservedFilterRef.current;
+        const joinOp: 'AND' | 'OR' = preserved.join; // Type narrowing
         if (preserved.secondValue) {
           // Full multi-condition with second value
           newValue = PatternBuilder.multiCondition(
             columnName,
             preserved.operator,
             preserved.value,
-            preserved.join,
+            joinOp,
             operator.value,
             preserved.secondValue
           );
@@ -241,7 +242,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             columnName,
             preserved.operator,
             preserved.value,
-            preserved.join,
+            joinOp,
             operator.value
           );
         }
