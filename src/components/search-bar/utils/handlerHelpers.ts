@@ -16,9 +16,11 @@ export interface PreservedFilter {
   columnName?: string;
   operator: string;
   value: string;
+  valueTo?: string; // For Between (inRange) operator - second value
   join?: 'AND' | 'OR';
   secondOperator?: string;
   secondValue?: string;
+  secondValueTo?: string; // For second Between in multi-condition
 }
 
 /**
@@ -91,9 +93,11 @@ export function extractMultiConditionPreservation(
     return {
       operator: firstCondition.operator,
       value: firstCondition.value,
+      valueTo: firstCondition.valueTo, // Preserve valueTo for Between
       join: filter.joinOperator,
       secondOperator: secondCondition.operator,
       secondValue: secondCondition.value,
+      secondValueTo: secondCondition.valueTo, // Preserve second valueTo for Between
     };
   }
 
@@ -102,6 +106,7 @@ export function extractMultiConditionPreservation(
     return {
       operator: filter.operator,
       value: filter.value,
+      valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
       secondOperator: searchMode.secondOperator,
       secondValue: '',
@@ -113,6 +118,7 @@ export function extractMultiConditionPreservation(
     return {
       operator: filter.operator,
       value: filter.value,
+      valueTo: filter.valueTo, // Preserve valueTo for Between
     };
   }
 

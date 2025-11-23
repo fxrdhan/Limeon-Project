@@ -88,6 +88,13 @@ export const useSearchInput = ({
 
     // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
     if (searchMode.isFilterMode && searchMode.filterSearch) {
+      // For inRange (Between) operator, show both values with space separator
+      if (
+        searchMode.filterSearch.operator === 'inRange' &&
+        searchMode.filterSearch.valueTo
+      ) {
+        return `${searchMode.filterSearch.value} ${searchMode.filterSearch.valueTo}`;
+      }
       return searchMode.filterSearch.value;
     }
 
@@ -98,6 +105,13 @@ export const useSearchInput = ({
         return '';
       }
       // If not confirmed, show value for editing
+      // For inRange (Between) operator, show both values with space separator
+      if (
+        searchMode.filterSearch.operator === 'inRange' &&
+        searchMode.filterSearch.valueTo
+      ) {
+        return `${searchMode.filterSearch.value} ${searchMode.filterSearch.valueTo}`;
+      }
       return searchMode.filterSearch.value;
     }
 

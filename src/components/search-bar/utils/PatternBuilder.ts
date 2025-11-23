@@ -174,4 +174,178 @@ export class PatternBuilder {
   ): string {
     return `#${field} #${op1} ${val1} #${join.toLowerCase()} #${op2} ${val2}`;
   }
+
+  // ========================================
+  // Between (inRange) Operator Patterns
+  // ========================================
+
+  /**
+   * Between with first value only: #field #inRange value1
+   *
+   * @param field - Column field name
+   * @param value1 - First value (from)
+   * @returns Pattern ready for second value input
+   */
+  static betweenFirstValue(field: string, value1: string): string {
+    return `#${field} #inRange ${value1} `;
+  }
+
+  /**
+   * Between with both values (unconfirmed): #field #inRange value1 value2
+   *
+   * @param field - Column field name
+   * @param value1 - First value (from)
+   * @param value2 - Second value (to)
+   * @returns Unconfirmed Between pattern
+   */
+  static betweenBothValues(
+    field: string,
+    value1: string,
+    value2: string
+  ): string {
+    return `#${field} #inRange ${value1} ${value2}`;
+  }
+
+  /**
+   * Between confirmed: #field #inRange value1 value2##
+   *
+   * @param field - Column field name
+   * @param value1 - First value (from)
+   * @param value2 - Second value (to)
+   * @returns Confirmed Between pattern
+   */
+  static betweenConfirmed(
+    field: string,
+    value1: string,
+    value2: string
+  ): string {
+    return `#${field} #inRange ${value1} ${value2}##`;
+  }
+
+  /**
+   * Between with join selector: #field #inRange value1 value2 #
+   *
+   * @param field - Column field name
+   * @param value1 - First value (from)
+   * @param value2 - Second value (to)
+   * @returns Pattern with trailing hash for join operator selector
+   */
+  static betweenWithJoinSelector(
+    field: string,
+    value1: string,
+    value2: string
+  ): string {
+    return `#${field} #inRange ${value1} ${value2} #`;
+  }
+
+  /**
+   * Between multi-condition partial: #field #inRange val1 val2 #join #
+   *
+   * @param field - Column field name
+   * @param value1 - First value (from)
+   * @param value2 - Second value (to)
+   * @param join - Join operator ('AND' or 'OR')
+   * @returns Partial multi-condition pattern ready for second operator
+   */
+  static betweenMultiPartial(
+    field: string,
+    value1: string,
+    value2: string,
+    join: 'AND' | 'OR'
+  ): string {
+    return `#${field} #inRange ${value1} ${value2} #${join.toLowerCase()} #`;
+  }
+
+  /**
+   * Between AND Between: #field #inRange v1 v2 #join #inRange v3 v4##
+   *
+   * @param field - Column field name
+   * @param val1 - First Between first value
+   * @param val2 - First Between second value
+   * @param join - Join operator ('AND' or 'OR')
+   * @param val3 - Second Between first value
+   * @param val4 - Second Between second value
+   * @returns Complete Between AND/OR Between pattern
+   */
+  static betweenAndBetween(
+    field: string,
+    val1: string,
+    val2: string,
+    join: 'AND' | 'OR',
+    val3: string,
+    val4: string
+  ): string {
+    return `#${field} #inRange ${val1} ${val2} #${join.toLowerCase()} #inRange ${val3} ${val4}##`;
+  }
+
+  /**
+   * Between AND Normal operator: #field #inRange v1 v2 #join #op2 v3##
+   *
+   * @param field - Column field name
+   * @param val1 - Between first value
+   * @param val2 - Between second value
+   * @param join - Join operator ('AND' or 'OR')
+   * @param op2 - Second operator
+   * @param val3 - Second operator value
+   * @returns Complete Between AND/OR Normal pattern
+   */
+  static betweenAndNormal(
+    field: string,
+    val1: string,
+    val2: string,
+    join: 'AND' | 'OR',
+    op2: string,
+    val3: string
+  ): string {
+    return `#${field} #inRange ${val1} ${val2} #${join.toLowerCase()} #${op2} ${val3}##`;
+  }
+
+  /**
+   * Normal AND Between: #field #op1 v1 #join #inRange v2 v3##
+   *
+   * @param field - Column field name
+   * @param op1 - First operator
+   * @param val1 - First operator value
+   * @param join - Join operator ('AND' or 'OR')
+   * @param val2 - Between first value
+   * @param val3 - Between second value
+   * @returns Complete Normal AND/OR Between pattern
+   */
+  static normalAndBetween(
+    field: string,
+    op1: string,
+    val1: string,
+    join: 'AND' | 'OR',
+    val2: string,
+    val3: string
+  ): string {
+    return `#${field} #${op1} ${val1} #${join.toLowerCase()} #inRange ${val2} ${val3}##`;
+  }
+
+  /**
+   * Edit first value of Between: #field #inRange value1
+   *
+   * @param field - Column field name
+   * @param value1 - First value for editing
+   * @returns Pattern for editing first value
+   */
+  static editBetweenFirstValue(field: string, value1: string): string {
+    return `#${field} #inRange ${value1}`;
+  }
+
+  /**
+   * Edit second value of Between: #field #inRange value1 value2
+   *
+   * @param field - Column field name
+   * @param value1 - First value (preserved)
+   * @param value2 - Second value for editing
+   * @returns Pattern for editing second value
+   */
+  static editBetweenSecondValue(
+    field: string,
+    value1: string,
+    value2: string
+  ): string {
+    return `#${field} #inRange ${value1} ${value2}`;
+  }
 }

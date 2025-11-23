@@ -475,11 +475,27 @@ const ItemMasterNew = memo(() => {
             const baseFilterType = isNumericColumn ? 'number' : 'text';
 
             // Build conditions array for AG Grid
-            const agConditions = filterSearch.conditions.map(cond => ({
-              filterType: baseFilterType,
-              type: cond.operator,
-              filter: isNumericColumn ? Number(cond.value) : cond.value,
-            }));
+            const agConditions = filterSearch.conditions.map(cond => {
+              const baseCondition: {
+                filterType: string;
+                type: string;
+                filter: number | string;
+                filterTo?: number | string;
+              } = {
+                filterType: baseFilterType,
+                type: cond.operator,
+                filter: isNumericColumn ? Number(cond.value) : cond.value,
+              };
+
+              // Add filterTo for inRange (Between) operator
+              if (cond.operator === 'inRange' && cond.valueTo) {
+                baseCondition.filterTo = isNumericColumn
+                  ? Number(cond.valueTo)
+                  : cond.valueTo;
+              }
+
+              return baseCondition;
+            });
 
             console.log(
               '[handleItemFilterSearch] AG Grid conditions:',
@@ -535,11 +551,26 @@ const ItemMasterNew = memo(() => {
             } else {
               // For single filter columns (name, code, barcode, package_conversions, numeric columns)
               const filterType = isNumericColumn ? 'number' : 'text';
-              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+              const filterModel: {
+                filterType: string;
+                type: string;
+                filter: string;
+                filterTo?: string;
+              } = {
                 filterType,
                 type: filterSearch.operator,
                 filter: filterSearch.value,
-              });
+              };
+
+              // Add filterTo for inRange (Between) operator
+              if (filterSearch.operator === 'inRange' && filterSearch.valueTo) {
+                filterModel.filterTo = filterSearch.valueTo;
+              }
+
+              await unifiedGridApi.setColumnFilterModel(
+                filterSearch.field,
+                filterModel
+              );
             }
           }
 
@@ -742,11 +773,25 @@ const ItemMasterNew = memo(() => {
           // Handle multi-condition filters (AND/OR)
           if (filterSearch.isMultiCondition && filterSearch.conditions) {
             // Build conditions array for AG Grid
-            const agConditions = filterSearch.conditions.map(cond => ({
-              filterType: 'text',
-              type: cond.operator,
-              filter: cond.value,
-            }));
+            const agConditions = filterSearch.conditions.map(cond => {
+              const baseCondition: {
+                filterType: string;
+                type: string;
+                filter: string;
+                filterTo?: string;
+              } = {
+                filterType: 'text',
+                type: cond.operator,
+                filter: cond.value,
+              };
+
+              // Add filterTo for inRange (Between) operator
+              if (cond.operator === 'inRange' && cond.valueTo) {
+                baseCondition.filterTo = cond.valueTo;
+              }
+
+              return baseCondition;
+            });
 
             // Build combined filter model
             const combinedModel = {
@@ -784,11 +829,26 @@ const ItemMasterNew = memo(() => {
               });
             } else {
               // For single filter columns (name, description, address)
-              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+              const filterModel: {
+                filterType: string;
+                type: string;
+                filter: string;
+                filterTo?: string;
+              } = {
                 filterType: 'text',
                 type: filterSearch.operator,
                 filter: filterSearch.value,
-              });
+              };
+
+              // Add filterTo for inRange (Between) operator
+              if (filterSearch.operator === 'inRange' && filterSearch.valueTo) {
+                filterModel.filterTo = filterSearch.valueTo;
+              }
+
+              await unifiedGridApi.setColumnFilterModel(
+                filterSearch.field,
+                filterModel
+              );
             }
           }
 
