@@ -277,6 +277,18 @@ export const parseSearchValue = (
             const operator2Obj = findOperatorForColumn(column, op2);
 
             if (operator1Obj && operator2Obj) {
+              // For inRange (Between) operator on first condition, parse val1 into value and valueTo
+              let filterValue = val1.trim();
+              let filterValueTo: string | undefined;
+
+              if (operator1Obj.value === 'inRange') {
+                const inRangeValues = parseInRangeValues(val1);
+                if (inRangeValues) {
+                  filterValue = inRangeValues.value;
+                  filterValueTo = inRangeValues.valueTo;
+                }
+              }
+
               // User is typing second value - keep in input mode for Enter key to work
               return {
                 globalSearch: undefined,
@@ -290,7 +302,8 @@ export const parseSearchValue = (
                 secondOperator: operator2Obj.value, // Store second operator for badge display
                 filterSearch: {
                   field: column.field,
-                  value: val1.trim(),
+                  value: filterValue,
+                  valueTo: filterValueTo,
                   column,
                   operator: operator1Obj.value,
                   isExplicitOperator: true,
