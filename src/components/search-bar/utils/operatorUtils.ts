@@ -17,7 +17,9 @@ import { FilterOperator, SearchColumn } from '../types';
  * @param columnType - Type of column ('number' or other)
  * @returns Array of available operators for the column type
  */
-export function getAvailableOperators(columnType: string): FilterOperator[] {
+export function getAvailableOperators(
+  columnType: string
+): readonly FilterOperator[] {
   return columnType === 'number'
     ? NUMBER_FILTER_OPERATORS
     : DEFAULT_FILTER_OPERATORS;
@@ -29,8 +31,10 @@ export function getAvailableOperators(columnType: string): FilterOperator[] {
  * @param column - The search column
  * @returns Array of available operators for the column
  */
-export function getOperatorsForColumn(column: SearchColumn): FilterOperator[] {
-  return getAvailableOperators(column.type);
+export function getOperatorsForColumn(
+  column: SearchColumn
+): readonly FilterOperator[] {
+  return getAvailableOperators(column.type ?? 'string');
 }
 
 /**
@@ -60,7 +64,7 @@ export function findOperatorForColumn(
   column: SearchColumn,
   operatorValue: string
 ): FilterOperator | undefined {
-  return findOperator(column.type, operatorValue);
+  return findOperator(column.type ?? 'string', operatorValue);
 }
 
 /**
@@ -88,7 +92,7 @@ export function isOperatorCompatibleWithColumn(
   column: SearchColumn,
   operatorValue: string
 ): boolean {
-  return isOperatorCompatible(column.type, operatorValue);
+  return isOperatorCompatible(column.type ?? 'string', operatorValue);
 }
 
 /**
@@ -116,5 +120,5 @@ export function getOperatorLabelForColumn(
   column: SearchColumn,
   operatorValue: string
 ): string {
-  return getOperatorLabel(column.type, operatorValue);
+  return getOperatorLabel(column.type ?? 'string', operatorValue);
 }
