@@ -56,10 +56,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     columnName?: string;
     operator: string;
     value: string;
+    valueTo?: string; // For Between (inRange) operator
     // For multi-condition filters (AND/OR)
     join?: 'AND' | 'OR';
     secondOperator?: string;
     secondValue?: string;
+    secondValueTo?: string; // For Between (inRange) operator in second condition
   } | null>(null);
 
   // State to preserve searchMode during edit (to keep badges visible)
@@ -315,6 +317,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Get preserved filter data
       const preserved = preservedFilterRef.current;
 
+      // Convert join operator to uppercase for PatternBuilder methods
+      const joinOperator = joinOp.value.toUpperCase() as 'AND' | 'OR';
+
       // Get column name from searchMode
       const columnName = searchMode.filterSearch?.field;
       if (!columnName) {
@@ -347,7 +352,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 columnName,
                 preserved.value,
                 preserved.valueTo!,
-                joinOp.value,
+                joinOperator,
                 preserved.secondValue,
                 preserved.secondValueTo!
               );
@@ -357,7 +362,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 columnName,
                 preserved.value,
                 preserved.valueTo!,
-                joinOp.value,
+                joinOperator,
                 preserved.secondOperator,
                 preserved.secondValue
               );
@@ -367,7 +372,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 columnName,
                 preserved.operator,
                 preserved.value,
-                joinOp.value,
+                joinOperator,
                 preserved.secondValue,
                 preserved.secondValueTo!
               );
@@ -377,7 +382,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 columnName,
                 preserved.operator,
                 preserved.value,
-                joinOp.value,
+                joinOperator,
                 preserved.secondOperator,
                 preserved.secondValue
               );
@@ -393,7 +398,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 columnName,
                 preserved.operator,
                 preserved.value,
-                joinOp.value,
+                joinOperator,
                 preserved.secondOperator
               );
             }
