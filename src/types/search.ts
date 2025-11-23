@@ -17,10 +17,12 @@ export interface TargetedSearch {
 export interface FilterCondition {
   operator: string;
   value: string;
+  valueTo?: string; // For inRange operator (Between) - second value
 }
 
 export interface FilterSearch extends TargetedSearch {
   operator: string;
+  valueTo?: string; // For inRange (Between) operator - second value
   isExplicitOperator?: boolean; // True if operator was explicitly selected via space pattern
   isConfirmed?: boolean; // True if value was confirmed with ## (Enter key)
   // Multi-condition support
