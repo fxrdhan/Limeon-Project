@@ -27,7 +27,7 @@ export interface BaseSelectorConfig<T> {
 }
 
 export interface BaseSelectorProps<T> {
-  items: T[];
+  items: readonly T[];
   isOpen: boolean;
   onSelect: (item: T) => void;
   onClose: () => void;
