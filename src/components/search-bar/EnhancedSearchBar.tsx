@@ -8,13 +8,12 @@ import {
   EnhancedSearchState,
 } from './types';
 import { SEARCH_CONSTANTS } from './constants';
-import {
-  DEFAULT_FILTER_OPERATORS,
-  NUMBER_FILTER_OPERATORS,
-  JOIN_OPERATORS,
-  JoinOperator,
-} from './operators';
+import { JOIN_OPERATORS, JoinOperator } from './operators';
 import { buildColumnValue, findColumn } from './utils/searchUtils';
+import {
+  getOperatorsForColumn,
+  isOperatorCompatibleWithColumn,
+} from './utils/operatorUtils';
 import { useSearchState } from './hooks/useSearchState';
 import { useSelectorPosition } from './hooks/useSelectorPosition';
 import { useSearchInput } from './hooks/useSearchInput';
@@ -121,21 +120,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           preservedFilterRef.current;
 
         // Check if operator is compatible with new column type
-        const availableOperators =
-          column.type === 'number'
-            ? NUMBER_FILTER_OPERATORS
-            : DEFAULT_FILTER_OPERATORS;
-
-        const isOperatorCompatible = availableOperators.some(
-          op => op.value === operator
+        const isOperatorCompatible = isOperatorCompatibleWithColumn(
+          column,
+          operator
         );
 
         if (isOperatorCompatible) {
           // Check if it's a multi-condition filter (or partial multi-condition)
           if (join && secondOperator) {
             // Check if second operator is also compatible
-            const isSecondOperatorCompatible = availableOperators.some(
-              op => op.value === secondOperator
+            const isSecondOperatorCompatible = isOperatorCompatibleWithColumn(
+              column,
+              secondOperator
             );
 
             if (isSecondOperatorCompatible) {
@@ -1226,11 +1222,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Determine operators based on column type
   const operators = useMemo(() => {
-    if (searchMode.selectedColumn?.type === 'number') {
-      return [...NUMBER_FILTER_OPERATORS];
+    if (searchMode.selectedColumn) {
+      return getOperatorsForColumn(searchMode.selectedColumn);
     }
-    return [...DEFAULT_FILTER_OPERATORS];
-  }, [searchMode.selectedColumn?.type]);
+    return [];
+  }, [searchMode.selectedColumn]);
 
   // Calculate default selected operator index when in edit mode
   const defaultOperatorIndex = useMemo(() => {
@@ -1259,14 +1255,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [
-    isEditingSecondOperator,
-    preservedSearchMode?.secondOperator,
-    preservedSearchMode?.filterSearch?.operator,
-    preservedSearchMode?.filterSearch?.isMultiCondition,
-    preservedSearchMode?.filterSearch?.conditions,
-    operators,
-  ]);
+  }, [preservedSearchMode, isEditingSecondOperator, operators]);
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {

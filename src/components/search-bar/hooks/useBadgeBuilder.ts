@@ -1,10 +1,7 @@
 import { useMemo } from 'react';
 import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
-import {
-  DEFAULT_FILTER_OPERATORS,
-  NUMBER_FILTER_OPERATORS,
-} from '../operators';
+import { getOperatorLabelForColumn } from '../utils/operatorUtils';
 
 interface BadgeHandlers {
   onClearColumn: () => void;
@@ -68,14 +65,10 @@ export const useBadgeBuilder = (
     // 2. Handle Multi-Condition Badges (when filter is confirmed with multiple conditions)
     if (searchMode.isFilterMode && isMultiCondition && filter.conditions) {
       filter.conditions.forEach((condition, index) => {
-        const availableOperators =
-          filter.column.type === 'number'
-            ? NUMBER_FILTER_OPERATORS
-            : DEFAULT_FILTER_OPERATORS;
-
-        const operatorLabel =
-          availableOperators.find(op => op.value === condition.operator)
-            ?.label || condition.operator;
+        const operatorLabel = getOperatorLabelForColumn(
+          filter.column,
+          condition.operator
+        );
 
         // Operator badge for this condition
         badges.push({
@@ -141,14 +134,10 @@ export const useBadgeBuilder = (
       !filter.isMultiCondition;
 
     if (shouldShowSingleOperator) {
-      const availableOperators =
-        filter.column.type === 'number'
-          ? NUMBER_FILTER_OPERATORS
-          : DEFAULT_FILTER_OPERATORS;
-
-      const operatorLabel =
-        availableOperators.find(op => op.value === filter.operator)?.label ||
-        filter.operator;
+      const operatorLabel = getOperatorLabelForColumn(
+        filter.column,
+        filter.operator
+      );
 
       badges.push({
         id: 'operator',
@@ -213,14 +202,10 @@ export const useBadgeBuilder = (
 
     // 6. Second Operator Badge (Blue)
     if (searchMode.secondOperator && filter) {
-      const availableOperators =
-        filter.column.type === 'number'
-          ? NUMBER_FILTER_OPERATORS
-          : DEFAULT_FILTER_OPERATORS;
-
-      const operatorLabel =
-        availableOperators.find(op => op.value === searchMode.secondOperator)
-          ?.label || searchMode.secondOperator;
+      const operatorLabel = getOperatorLabelForColumn(
+        filter.column,
+        searchMode.secondOperator
+      );
 
       badges.push({
         id: 'second-operator',

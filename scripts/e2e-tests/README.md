@@ -31,7 +31,6 @@ Comprehensive testing for SearchBar filter feature with badge system.
 
 - [TEST-FLOWS.md](./searchbar/TEST-FLOWS.md) - All test scenarios
 - [README.md](./searchbar/README.md) - Test overview
-- [ARCHITECTURE.md](./searchbar/ARCHITECTURE.md) - Feature deep dive
 - [FILE_INDEX.md](./searchbar/FILE_INDEX.md) - File reference
 
 **Quick Start:**

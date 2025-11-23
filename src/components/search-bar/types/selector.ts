@@ -27,7 +27,7 @@ export interface BaseSelectorConfig<T> {
 }
 
 export interface BaseSelectorProps<T> {
-  items: T[];
+  items: readonly T[];
   isOpen: boolean;
   onSelect: (item: T) => void;
   onClose: () => void;
@@ -48,7 +48,7 @@ export interface ColumnSelectorProps {
 }
 
 export interface OperatorSelectorProps {
-  operators: FilterOperator[];
+  operators: readonly FilterOperator[];
   isOpen: boolean;
   onSelect: (operator: FilterOperator) => void;
   onClose: () => void;

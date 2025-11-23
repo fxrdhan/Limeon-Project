@@ -69,31 +69,42 @@ Quick reference guide to all files involved in the SearchBar filter feature.
 
 ## 🧪 E2E Tests
 
-| File                                          | Purpose                        |
-| --------------------------------------------- | ------------------------------ |
-| `scripts/e2e-tests/searchbar/TEST-FLOWS.md`   | **All test scenarios & flows** |
-| `scripts/e2e-tests/searchbar/README.md`       | Test overview & usage guide    |
-| `scripts/e2e-tests/searchbar/ARCHITECTURE.md` | Feature architecture deep dive |
-| `scripts/e2e-tests/searchbar/FILE_INDEX.md`   | This file                      |
+| File                                                   | Purpose                                   |
+| ------------------------------------------------------ | ----------------------------------------- |
+| `scripts/e2e-tests/searchbar/TEST-FLOWS.md`            | **All test scenarios & flows**            |
+| `scripts/e2e-tests/searchbar/README.md`                | Test overview & usage guide               |
+| `scripts/e2e-tests/searchbar/ARCHITECTURE.md`          | Feature architecture deep dive            |
+| `scripts/e2e-tests/searchbar/ARCHITECTURE-ANALYSIS.md` | **Code architecture investigation (NEW)** |
+| `scripts/e2e-tests/searchbar/FILE_INDEX.md`            | This file                                 |
 
 ### Test Coverage:
 
 - **Badge Creation Tests**: 5 scenarios (Case 0-4) - 1 badge to 6 badges
-- **Badge Deletion Tests**: 5 scenarios (Case D1-D5) - cascading deletion behaviors
-- **Badge Edit Tests**: 3 scenarios ⭐ NEW
-  - E1: Edit value badge (simple filter)
-  - E2: Edit second value badge (multi-condition filter)
-  - E3: Edit first value badge (multi-condition filter)
-- **Synchronization Tests**: 2 scenarios - Badge ↔ Filter Panel validation
-- **Total**: 15 comprehensive test scenarios
+- **Badge Deletion Tests**: 7 scenarios (D0-D6) - cascading deletion behaviors
+- **Badge Edit Tests**: 10 scenarios (E0-E9) ⭐ COMPREHENSIVE
+  - E0: Edit column badge (2 badges)
+  - E1: Edit column badge with filter sync (3 badges)
+  - E2: Edit value badge (simple filter)
+  - E3: Edit second value badge (multi-condition)
+  - E4: Edit first value badge (multi-condition)
+  - E5: Edit join operator badge (AND↔OR bidirectional)
+  - E6: Edit column badge (6 badges multi-condition)
+  - E7: Edit first operator badge (6 badges)
+  - E8: Edit column in partial multi-condition (5 badges)
+  - E9: Progressive value deletion with auto operator selector
+- **Total**: 22 comprehensive test scenarios
 
 **Badge Edit Testing validates:**
 
 - Edit button functionality (🖊️ pena icon)
+- Column badge editing preserves operator/value structure
+- Operator badge editing maintains multi-condition integrity
+- Value badge inline editing with re-filtering
+- Join operator bidirectional editing (AND↔OR↔AND)
+- Auto operator selector opening after backspace deletion
 - Preserved state during edit (`preservedFilterRef`, `preservedSearchMode`)
-- Input pre-filling with current values
-- Filter update after edit confirmation
-- Multi-condition filter integrity after editing
+- Filter panel synchronization after edits
+- AG Grid re-filtering after badge modifications
 
 **Note**: Tests are executed interactively using Claude Code + Playwright MCP. No code files needed - just markdown test flows.
 
