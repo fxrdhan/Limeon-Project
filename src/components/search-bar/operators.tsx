@@ -20,6 +20,7 @@ export const DEFAULT_FILTER_OPERATORS = [
     description: 'Kolom mengandung teks yang dicari',
     icon: <LuSearch className="w-4 h-4" />,
     activeColor: 'text-green-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'notContains',
@@ -27,6 +28,7 @@ export const DEFAULT_FILTER_OPERATORS = [
     description: 'Kolom tidak mengandung teks yang dicari',
     icon: <LuSearch className="w-4 h-4" />,
     activeColor: 'text-red-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'equals',
@@ -34,6 +36,7 @@ export const DEFAULT_FILTER_OPERATORS = [
     description: 'Kolom sama persis dengan teks yang dicari',
     icon: <LuCheck className="w-4 h-4" />,
     activeColor: 'text-blue-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'notEqual',
@@ -41,6 +44,7 @@ export const DEFAULT_FILTER_OPERATORS = [
     description: 'Kolom tidak sama dengan teks yang dicari',
     icon: <LuX className="w-4 h-4" />,
     activeColor: 'text-orange-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'startsWith',
@@ -48,6 +52,7 @@ export const DEFAULT_FILTER_OPERATORS = [
     description: 'Kolom dimulai dengan teks yang dicari',
     icon: <LuChevronRight className="w-4 h-4" />,
     activeColor: 'text-purple-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'endsWith',
@@ -55,6 +60,7 @@ export const DEFAULT_FILTER_OPERATORS = [
     description: 'Kolom diakhiri dengan teks yang dicari',
     icon: <LuChevronLeft className="w-4 h-4" />,
     activeColor: 'text-indigo-500',
+    numberOfInputs: 1 as const,
   },
 ] as const;
 
@@ -65,6 +71,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom sama persis dengan angka yang dicari',
     icon: <LuEqual className="w-4 h-4" />,
     activeColor: 'text-blue-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'notEqual',
@@ -72,6 +79,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom tidak sama dengan angka yang dicari',
     icon: <LuX className="w-4 h-4" />,
     activeColor: 'text-orange-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'greaterThan',
@@ -79,6 +87,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom lebih besar dari angka yang dicari',
     icon: <LuChevronRight className="w-4 h-4" />,
     activeColor: 'text-green-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'greaterThanOrEqual',
@@ -86,6 +95,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom lebih besar atau sama dengan angka yang dicari',
     icon: <span className="font-bold text-sm">≥</span>,
     activeColor: 'text-green-600',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'lessThan',
@@ -93,6 +103,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom lebih kecil dari angka yang dicari',
     icon: <LuChevronLeft className="w-4 h-4" />,
     activeColor: 'text-red-500',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'lessThanOrEqual',
@@ -100,6 +111,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom lebih kecil atau sama dengan angka yang dicari',
     icon: <span className="font-bold text-sm">≤</span>,
     activeColor: 'text-red-600',
+    numberOfInputs: 1 as const,
   },
   {
     value: 'inRange',
@@ -107,6 +119,7 @@ export const NUMBER_FILTER_OPERATORS = [
     description: 'Kolom berada dalam rentang angka tertentu',
     icon: <LuMinus className="w-4 h-4" />,
     activeColor: 'text-purple-500',
+    numberOfInputs: 2 as const, // Between operator needs 2 values
   },
 ] as const;
 
