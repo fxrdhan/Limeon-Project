@@ -8,8 +8,36 @@ import { JOIN_OPERATORS } from '../operators';
 import { findOperatorForColumn } from './operatorUtils';
 
 /**
+ * Parse inRange (Between) operator values
+ * Returns { value, valueTo } if successful, null otherwise
+ *
+ * @param valueString - String containing one or two values
+ * @returns Object with value and valueTo, or null if parsing fails
+ */
+const parseInRangeValues = (
+  valueString: string
+): { value: string; valueTo: string } | null => {
+  const trimmed = valueString.trim();
+
+  // Split by whitespace to get two values
+  const parts = trimmed.split(/\s+/);
+
+  if (parts.length >= 2) {
+    return {
+      value: parts[0],
+      valueTo: parts.slice(1).join(' '), // Join remaining parts for valueTo
+    };
+  }
+
+  // Only one value provided - incomplete Between
+  return null;
+};
+
+/**
  * Parse multi-condition filter pattern:
  * #field #op1 val1 #and #op2 val2
+ * #field #inRange val1 val2 #and #op2 val3
+ * #field #inRange val1 val2 #and #inRange val3 val4
  * Returns null if not a complete multi-condition pattern
  */
 const parseMultiConditionFilter = (
@@ -47,7 +75,7 @@ const parseMultiConditionFilter = (
 
   for (let i = 0; i < parts.length; i++) {
     if (i % 2 === 0) {
-      // Condition part: "#operator value"
+      // Condition part: "#operator value" or "#inRange value1 value2"
       const condMatch = parts[i].trim().match(/^#([^\s]+)\s+(.*)$/);
       if (condMatch) {
         const [, op, val] = condMatch;
@@ -59,10 +87,24 @@ const parseMultiConditionFilter = (
         // Remove ## confirmation marker from value
         const cleanVal = val.trim().replace(/##$/, '');
         if (operatorObj && cleanVal) {
-          conditions.push({
-            operator: operatorObj.value,
-            value: cleanVal,
-          });
+          // Check if this is inRange (Between) operator - needs 2 values
+          if (operatorObj.value === 'inRange') {
+            const inRangeValues = parseInRangeValues(cleanVal);
+            if (inRangeValues) {
+              conditions.push({
+                operator: operatorObj.value,
+                value: inRangeValues.value,
+                valueTo: inRangeValues.valueTo,
+              });
+            }
+            // If parsing fails, don't add incomplete Between condition
+          } else {
+            // Normal operator with single value
+            conditions.push({
+              operator: operatorObj.value,
+              value: cleanVal,
+            });
+          }
         }
       }
     } else {
@@ -390,6 +432,32 @@ export const parseSearchValue = (
             const cleanValue = hasConfirmation
               ? rawValue.slice(0, -2)
               : rawValue;
+
+            // Check if this is inRange (Between) operator - needs 2 values
+            if (operator.value === 'inRange' && cleanValue) {
+              const inRangeValues = parseInRangeValues(cleanValue);
+              if (inRangeValues) {
+                // Valid Between with both values
+                return {
+                  globalSearch: undefined,
+                  showColumnSelector: false,
+                  showOperatorSelector: false,
+                  showJoinOperatorSelector: false,
+                  isFilterMode: true,
+                  filterSearch: {
+                    field: column.field,
+                    value: inRangeValues.value,
+                    valueTo: inRangeValues.valueTo,
+                    column,
+                    operator: operator.value,
+                    isExplicitOperator: true,
+                    isConfirmed: hasConfirmation,
+                  },
+                };
+              }
+              // Incomplete Between - only one value provided
+              // Fall through to show as incomplete filter
+            }
 
             return {
               globalSearch: undefined,

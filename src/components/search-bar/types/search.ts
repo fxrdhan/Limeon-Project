@@ -13,11 +13,13 @@ export interface SearchColumn {
 export interface FilterCondition {
   operator: string;
   value: string;
+  valueTo?: string; // For inRange operator (Between) - second value
 }
 
 export interface FilterSearch {
   field: string;
   value: string; // For single condition (backward compat)
+  valueTo?: string; // For inRange (Between) operator - second value
   column: SearchColumn;
   operator: string; // For single condition (backward compat)
   isExplicitOperator: boolean;

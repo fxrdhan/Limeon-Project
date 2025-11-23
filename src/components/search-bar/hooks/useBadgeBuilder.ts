@@ -88,24 +88,74 @@ export const useBadgeBuilder = (
           canEdit: true, // Operator badges are editable
         });
 
-        // Value badge for this condition (skip if value is empty)
+        // Value badge(s) for this condition (skip if value is empty)
         if (condition.value) {
-          badges.push({
-            id: `multi-value-${index}`,
-            type: 'value',
-            label: condition.value,
-            onClear:
-              index === 0
-                ? handlers.onClearValue
-                : index === filter.conditions!.length - 1 &&
-                    filter.conditions!.length === 2
-                  ? handlers.onClearSecondValue
-                  : handlers.onClearAll,
-            canClear: true,
-            onEdit:
-              index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-            canEdit: true, // Value badges are now editable
-          });
+          // Check if this is a Between (inRange) operator - needs 2 value badges + separator
+          if (condition.operator === 'inRange' && condition.valueTo) {
+            // First value badge
+            badges.push({
+              id: `multi-value-${index}-from`,
+              type: 'value',
+              label: condition.value,
+              onClear:
+                index === 0
+                  ? handlers.onClearValue
+                  : index === filter.conditions!.length - 1 &&
+                      filter.conditions!.length === 2
+                    ? handlers.onClearSecondValue
+                    : handlers.onClearAll,
+              canClear: true,
+              onEdit:
+                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
+              canEdit: true,
+            });
+
+            // "to" separator badge
+            badges.push({
+              id: `multi-separator-${index}`,
+              type: 'separator',
+              label: 'to',
+              onClear: () => {}, // Separator cannot be cleared independently
+              canClear: false,
+              canEdit: false,
+            });
+
+            // Second value badge (valueTo)
+            badges.push({
+              id: `multi-value-${index}-to`,
+              type: 'valueSecond',
+              label: condition.valueTo,
+              onClear:
+                index === 0
+                  ? handlers.onClearValue
+                  : index === filter.conditions!.length - 1 &&
+                      filter.conditions!.length === 2
+                    ? handlers.onClearSecondValue
+                    : handlers.onClearAll,
+              canClear: true,
+              onEdit:
+                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
+              canEdit: true,
+            });
+          } else {
+            // Normal operator with single value
+            badges.push({
+              id: `multi-value-${index}`,
+              type: 'value',
+              label: condition.value,
+              onClear:
+                index === 0
+                  ? handlers.onClearValue
+                  : index === filter.conditions!.length - 1 &&
+                      filter.conditions!.length === 2
+                    ? handlers.onClearSecondValue
+                    : handlers.onClearAll,
+              canClear: true,
+              onEdit:
+                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
+              canEdit: true, // Value badges are now editable
+            });
+          }
         }
 
         // Join badge between conditions (not after last one)
@@ -152,7 +202,7 @@ export const useBadgeBuilder = (
       });
     }
 
-    // 4. Single-Condition Value Badge (Gray)
+    // 4. Single-Condition Value Badge(s) (Gray)
     const shouldShowSingleValue =
       (searchMode.showJoinOperatorSelector ||
         (searchMode.showOperatorSelector &&
@@ -174,19 +224,63 @@ export const useBadgeBuilder = (
         searchMode.isSecondOperator &&
         filter;
 
-      badges.push({
-        id: 'value',
-        type: 'value',
-        label: filter.value,
-        onClear: isSecondValue
-          ? handlers.onClearSecondValue
-          : handlers.onClearValue,
-        canClear: true,
-        onEdit: isSecondValue
-          ? handlers.onEditSecondValue
-          : handlers.onEditValue,
-        canEdit: true, // Value badges are now editable
-      });
+      // Check if this is a Between (inRange) operator with valueTo
+      if (filter.operator === 'inRange' && filter.valueTo) {
+        // First value badge
+        badges.push({
+          id: 'value-from',
+          type: 'value',
+          label: filter.value,
+          onClear: isSecondValue
+            ? handlers.onClearSecondValue
+            : handlers.onClearValue,
+          canClear: true,
+          onEdit: isSecondValue
+            ? handlers.onEditSecondValue
+            : handlers.onEditValue,
+          canEdit: true,
+        });
+
+        // "to" separator badge
+        badges.push({
+          id: 'separator',
+          type: 'separator',
+          label: 'to',
+          onClear: () => {}, // Separator cannot be cleared independently
+          canClear: false,
+          canEdit: false,
+        });
+
+        // Second value badge (valueTo)
+        badges.push({
+          id: 'value-to',
+          type: 'valueSecond',
+          label: filter.valueTo,
+          onClear: isSecondValue
+            ? handlers.onClearSecondValue
+            : handlers.onClearValue,
+          canClear: true,
+          onEdit: isSecondValue
+            ? handlers.onEditSecondValue
+            : handlers.onEditValue,
+          canEdit: true,
+        });
+      } else {
+        // Normal operator with single value
+        badges.push({
+          id: 'value',
+          type: 'value',
+          label: filter.value,
+          onClear: isSecondValue
+            ? handlers.onClearSecondValue
+            : handlers.onClearValue,
+          canClear: true,
+          onEdit: isSecondValue
+            ? handlers.onEditSecondValue
+            : handlers.onEditValue,
+          canEdit: true, // Value badges are now editable
+        });
+      }
     }
 
     // 5. Join Badge (Orange) - AND/OR
