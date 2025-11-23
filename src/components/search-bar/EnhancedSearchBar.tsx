@@ -218,7 +218,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       let newValue: string;
 
       // CASE 1: EDITING second operator (badge already exists or partial)
-      if (isEditingSecondOperator && preservedFilterRef.current?.join) {
+      if (
+        isEditingSecondOperator &&
+        preservedFilterRef.current?.join &&
+        (preservedFilterRef.current.join === 'AND' ||
+          preservedFilterRef.current.join === 'OR')
+      ) {
         const preserved = preservedFilterRef.current;
         if (preserved.secondValue) {
           // Full multi-condition with second value
@@ -479,7 +484,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const firstCondition = getFirstCondition(searchMode.filterSearch);
     const joinOp = getJoinOperator(searchMode.filterSearch, searchMode);
 
-    if (joinOp) {
+    if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
       // Back to state with join operator but no second operator: #field #op1 val1 #join #
       const newValue = PatternBuilder.partialMulti(
         columnName,
@@ -517,7 +522,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       value
     );
 
-    if (joinOp && secondOp) {
+    if (joinOp && (joinOp === 'AND' || joinOp === 'OR') && secondOp) {
       // Back to state with second operator but no value: #field #op1 val1 #join #op2
       const newValue = PatternBuilder.partialMultiWithOperator(
         columnName,
@@ -617,7 +622,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedFilterRef.current = extractMultiConditionPreservation(searchMode);
 
     // Set current join operator state for selector highlighting
-    if (joinOp) {
+    if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
       setCurrentJoinOperator(joinOp);
     }
 

@@ -45,7 +45,7 @@ export interface SetValueOptions {
 export function setFilterValue(
   newValue: string,
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-  inputRef: RefObject<HTMLInputElement> | null,
+  inputRef: RefObject<HTMLInputElement | null> | null | undefined,
   options: SetValueOptions = { focus: true, cursorAtEnd: false }
 ): void {
   onChange({
