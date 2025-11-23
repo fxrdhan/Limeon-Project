@@ -225,7 +225,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           preservedFilterRef.current.join === 'OR')
       ) {
         const preserved = preservedFilterRef.current;
-        const joinOp: 'AND' | 'OR' = preserved.join; // Type narrowing
+        const joinOp = preserved.join as 'AND' | 'OR'; // Type assertion (safe due to guard above)
         if (preserved.secondValue) {
           // Full multi-condition with second value
           newValue = PatternBuilder.multiCondition(
