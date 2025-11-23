@@ -196,6 +196,36 @@
 
 ---
 
+### D2a: Delete First Operator Badge (Multi-Condition Filter)
+
+**Setup**: Case 4 (6 badges)
+**Initial**: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
+
+**Steps**:
+
+1. Create complete multi-condition (Case 4)
+2. Hover over "Greater Than or Equal" badge (first operator)
+3. Badge UI: [Greater Than or Equal (edit icon)(close icon)]
+4. Click delete (X) button
+
+**Expected Result**:
+
+- 1 badge: `[Harga Pokok]`
+- Operator selector auto-opens
+- Filter panel shows: "Harga Pokok is (All)"
+- All items displayed (filter cleared)
+- Ready to select new operator
+
+**Validates**:
+
+- First operator deletion in multi-condition removes entire filter (cascading)
+- Removes: first operator + first value + join operator + second operator + second value
+- Column badge remains
+- Operator selector reopens for fresh start
+- System correctly resets from complete multi-condition to column-only state
+
+---
+
 ### D3: Delete Second Value
 
 **Setup**: Case 4 (6 badges)
@@ -852,9 +882,9 @@
 ## Coverage Summary
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
-- **Deletion Tests**: 7 scenarios (D0: delete operator badge 2→1 badges, D1-D5: targeted deletions, D6: progressive deletion 6→0 badges)
+- **Deletion Tests**: 8 scenarios (D0: delete operator badge 2→1 badges, D1-D2: simple filter deletions, D2a: delete 1st operator multi-condition, D3-D5: multi-condition targeted deletions, D6: progressive deletion 6→0 badges)
 - **Edit Tests**: 10 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition, E8: column badge 5-badges partial multi-condition, E9: delete 2nd operator via backspace progressive deletion)
-- **Total**: 22 test scenarios
+- **Total**: 23 test scenarios
 
 ### Key Behaviors Tested:
 

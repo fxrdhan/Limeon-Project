@@ -76,10 +76,12 @@ export const useBadgeBuilder = (
           type: 'operator',
           label: operatorLabel,
           onClear:
-            index === filter.conditions!.length - 1 &&
-            filter.conditions!.length === 2
-              ? handlers.onClearSecondOperator
-              : handlers.onClearAll,
+            index === 0
+              ? handlers.onClearOperator // First operator: clear to column with operator selector
+              : index === filter.conditions!.length - 1 &&
+                  filter.conditions!.length === 2
+                ? handlers.onClearSecondOperator
+                : handlers.onClearAll,
           canClear: true,
           onEdit: () =>
             handlers.onEditOperator(index > 0 && filter.isMultiCondition),
