@@ -8,9 +8,15 @@ All test scenarios are documented in **[TEST-FLOWS.md](./TEST-FLOWS.md)**.
 
 ### Quick Overview:
 
-- **Badge Creation Tests**: 5 scenarios (0-4) - from 1 badge to 6 badges
-- **Badge Deletion Tests**: 5 scenarios (D1-D5) - all deletion behaviors
-- **Synchronization Tests**: Badge ↔ Filter Panel validation
+- **Badge Creation Tests**: 5 scenarios (Case 0-4) - from 1 badge to 6 badges
+- **Badge Deletion Tests**: 7 scenarios (D0-D6) - cascading deletion behaviors
+- **Badge Edit Tests**: 10 scenarios (E0-E9) - comprehensive editing functionality
+  - Column badge editing (2, 3, 5, 6 badge states)
+  - Operator badge editing (first operator, second operator)
+  - Value badge editing (first value, second value)
+  - Join operator bidirectional editing (AND↔OR)
+  - Progressive deletion with auto operator selector
+- **Total**: 22 comprehensive test scenarios
 
 ## 🚀 How to Run Tests
 
@@ -43,7 +49,7 @@ Saved to `.playwright-mcp/` folder (JPEG format)
 ## 📚 Documentation
 
 - **[TEST-FLOWS.md](./TEST-FLOWS.md)** - Complete test scenarios and flows
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Feature architecture deep dive
+- **[ARCHITECTURE-ANALYSIS.md](./ARCHITECTURE-ANALYSIS.md)** - Code architecture investigation (how 22 use cases are handled)
 - **[FILE_INDEX.md](./FILE_INDEX.md)** - File reference guide
 
 ## ✨ Benefits of This Approach
@@ -56,14 +62,21 @@ Saved to `.playwright-mcp/` folder (JPEG format)
 
 ## 🎯 Test Coverage
 
-- UI rendering and badge creation
-- User interactions (click, type, keyboard)
-- State management and transitions
-- Data synchronization (badges ↔ filter panel)
-- Cascading deletions
+- UI rendering and badge creation (5 tests)
+- User interactions (click, type, keyboard, hover)
+- State management and transitions (0→6 badge states)
+- Data synchronization (badges ↔ filter panel ↔ AG Grid)
+- Cascading deletions (7 deletion scenarios)
+- Badge editing functionality (10 comprehensive edit tests)
+  - Column badge editing preserves structure
+  - Operator badge editing maintains integrity
+  - Value badge inline editing with re-filtering
+  - Join operator bidirectional editing (AND↔OR↔AND)
+  - Auto operator selector after backspace deletion
 - Auto-opening selectors
-- Data grid filtering
+- Multi-condition filter management
+- Data grid filtering and re-filtering
 
 ---
 
-**Total Test Scenarios**: 12 comprehensive tests
+**Total Test Scenarios**: 22 comprehensive tests (100% pass rate)

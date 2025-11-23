@@ -4,11 +4,8 @@ import {
   FilterSearch,
   FilterCondition,
 } from '../types';
-import {
-  DEFAULT_FILTER_OPERATORS,
-  NUMBER_FILTER_OPERATORS,
-  JOIN_OPERATORS,
-} from '../operators';
+import { JOIN_OPERATORS } from '../operators';
+import { findOperatorForColumn } from './operatorUtils';
 
 /**
  * Parse multi-condition filter pattern:
@@ -56,14 +53,7 @@ const parseMultiConditionFilter = (
         const [, op, val] = condMatch;
 
         // Validate operator
-        const availableOperators =
-          column.type === 'number'
-            ? NUMBER_FILTER_OPERATORS
-            : DEFAULT_FILTER_OPERATORS;
-
-        const operatorObj = availableOperators.find(
-          o => o.value.toLowerCase() === op.toLowerCase()
-        );
+        const operatorObj = findOperatorForColumn(column, op);
 
         // Only add condition if operator is valid AND value is not empty
         // Remove ## confirmation marker from value
@@ -195,13 +185,7 @@ export const parseSearchValue = (
 
         if (partialJoinMatch) {
           const [, , op, val, join] = partialJoinMatch;
-          const availableOperators =
-            column.type === 'number'
-              ? NUMBER_FILTER_OPERATORS
-              : DEFAULT_FILTER_OPERATORS;
-          const operatorObj = availableOperators.find(
-            o => o.value.toLowerCase() === op.toLowerCase()
-          );
+          const operatorObj = findOperatorForColumn(column, op);
 
           if (operatorObj) {
             return {
@@ -234,17 +218,8 @@ export const parseSearchValue = (
 
           // Make sure val2 doesn't end with ## (that would be a complete multi-condition)
           if (!val2.trim().endsWith('##')) {
-            const availableOperators =
-              column.type === 'number'
-                ? NUMBER_FILTER_OPERATORS
-                : DEFAULT_FILTER_OPERATORS;
-
-            const operator1Obj = availableOperators.find(
-              o => o.value.toLowerCase() === op1.toLowerCase()
-            );
-            const operator2Obj = availableOperators.find(
-              o => o.value.toLowerCase() === op2.toLowerCase()
-            );
+            const operator1Obj = findOperatorForColumn(column, op1);
+            const operator2Obj = findOperatorForColumn(column, op2);
 
             if (operator1Obj && operator2Obj) {
               // User is typing second value - keep in input mode for Enter key to work
@@ -277,17 +252,8 @@ export const parseSearchValue = (
         );
         if (incompleteMultiCondition) {
           const [, , op1, val1, join, op2] = incompleteMultiCondition;
-          const availableOperators =
-            column.type === 'number'
-              ? NUMBER_FILTER_OPERATORS
-              : DEFAULT_FILTER_OPERATORS;
-
-          const operator1Obj = availableOperators.find(
-            o => o.value.toLowerCase() === op1.toLowerCase()
-          );
-          const operator2Obj = availableOperators.find(
-            o => o.value.toLowerCase() === op2.toLowerCase()
-          );
+          const operator1Obj = findOperatorForColumn(column, op1);
+          const operator2Obj = findOperatorForColumn(column, op2);
 
           if (operator1Obj && operator2Obj) {
             // Second operator selected, waiting for value input
@@ -321,13 +287,7 @@ export const parseSearchValue = (
         );
         if (joinSelectorMatch) {
           const [, , op, val] = joinSelectorMatch;
-          const availableOperators =
-            column.type === 'number'
-              ? NUMBER_FILTER_OPERATORS
-              : DEFAULT_FILTER_OPERATORS;
-          const operatorObj = availableOperators.find(
-            o => o.value.toLowerCase() === op.toLowerCase()
-          );
+          const operatorObj = findOperatorForColumn(column, op);
 
           if (operatorObj) {
             // Remove ALL trailing # from value (from ## confirmation marker)
@@ -396,14 +356,7 @@ export const parseSearchValue = (
               .trim();
 
             // Validate second operator
-            const availableOperators =
-              column.type === 'number'
-                ? NUMBER_FILTER_OPERATORS
-                : DEFAULT_FILTER_OPERATORS;
-
-            const operator2Obj = availableOperators.find(
-              o => o.value.toLowerCase() === op2Text.toLowerCase()
-            );
+            const operator2Obj = findOperatorForColumn(column, op2Text);
 
             if (operator2Obj) {
               // This is incomplete multi-condition - waiting for second value input OR typing second value
@@ -428,14 +381,7 @@ export const parseSearchValue = (
           }
 
           // Search in appropriate operators based on column type
-          const availableOperators =
-            column.type === 'number'
-              ? NUMBER_FILTER_OPERATORS
-              : DEFAULT_FILTER_OPERATORS;
-
-          const operator = availableOperators.find(
-            op => op.value.toLowerCase() === operatorInput.toLowerCase()
-          );
+          const operator = findOperatorForColumn(column, operatorInput);
 
           if (operator) {
             // Check if value has ## confirmation marker
