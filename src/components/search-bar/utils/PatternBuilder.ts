@@ -65,13 +65,20 @@ export class PatternBuilder {
    * @param field - Column field name
    * @param operator - Operator value
    * @param value - Filter value
+   * @param valueTo - Optional second value for Between (inRange) operator
    * @returns Pattern with trailing hash for join operator selector
    */
   static withJoinSelector(
     field: string,
     operator: string,
-    value: string
+    value: string,
+    valueTo?: string
   ): string {
+    // For Between (inRange) operator with both values
+    if (operator === 'inRange' && valueTo) {
+      return `#${field} #${operator} ${value} ${valueTo} #`;
+    }
+    // For normal operators or Between with only first value
     return `#${field} #${operator} ${value} #`;
   }
 

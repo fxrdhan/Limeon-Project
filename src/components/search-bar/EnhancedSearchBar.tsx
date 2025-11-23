@@ -312,42 +312,123 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleJoinOperatorSelect = useCallback(
     (joinOp: JoinOperator) => {
-      // Remove trailing # from current value (with or without space)
-      const cleanValue = value.replace(/\s*#\s*$/, '').trim();
+      // Get preserved filter data
+      const preserved = preservedFilterRef.current;
 
-      // Check if we have preserved second operator (with or without value)
-      if (preservedFilterRef.current?.secondOperator) {
-        if (preservedFilterRef.current.secondValue) {
-          // Complete multi-condition: restore everything with ##
-          const newValue = `${cleanValue} #${joinOp.value} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
-          onChange({
-            target: { value: newValue },
-          } as React.ChangeEvent<HTMLInputElement>);
-        } else {
-          // Partial multi-condition: only restore second operator (no ## at end)
-          const newValue = `${cleanValue} #${joinOp.value} #${preservedFilterRef.current.secondOperator} `;
-          onChange({
-            target: { value: newValue },
-          } as React.ChangeEvent<HTMLInputElement>);
-        }
-
-        // Clear preserved filter and searchMode
-        preservedFilterRef.current = null;
-        setPreservedSearchMode(null);
-        setCurrentJoinOperator(undefined);
-      } else {
-        // Pattern: #field #operator value -> #field #operator value #and #
+      // Get column name from searchMode
+      const columnName = searchMode.filterSearch?.field;
+      if (!columnName) {
+        // Fallback: use string manipulation if no column data
+        const cleanValue = value.replace(/\s*#\s*$/, '').trim();
         const newValue = `${cleanValue} #${joinOp.value} #`;
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
+        return;
       }
+
+      let newValue: string;
+
+      if (preserved) {
+        // Use preserved data to rebuild pattern correctly (handles Between operator)
+        if (preserved.secondOperator) {
+          // Determine if first condition is Between
+          const isFirstBetween =
+            preserved.operator === 'inRange' && preserved.valueTo;
+          // Determine if second condition is Between
+          const isSecondBetween =
+            preserved.secondOperator === 'inRange' && preserved.secondValueTo;
+
+          if (preserved.secondValue) {
+            // COMPLETE multi-condition: both conditions have values
+            if (isFirstBetween && isSecondBetween) {
+              // Between AND/OR Between
+              newValue = PatternBuilder.betweenAndBetween(
+                columnName,
+                preserved.value,
+                preserved.valueTo!,
+                joinOp.value,
+                preserved.secondValue,
+                preserved.secondValueTo!
+              );
+            } else if (isFirstBetween && !isSecondBetween) {
+              // Between AND/OR Normal
+              newValue = PatternBuilder.betweenAndNormal(
+                columnName,
+                preserved.value,
+                preserved.valueTo!,
+                joinOp.value,
+                preserved.secondOperator,
+                preserved.secondValue
+              );
+            } else if (!isFirstBetween && isSecondBetween) {
+              // Normal AND/OR Between
+              newValue = PatternBuilder.normalAndBetween(
+                columnName,
+                preserved.operator,
+                preserved.value,
+                joinOp.value,
+                preserved.secondValue,
+                preserved.secondValueTo!
+              );
+            } else {
+              // Normal AND/OR Normal
+              newValue = PatternBuilder.multiCondition(
+                columnName,
+                preserved.operator,
+                preserved.value,
+                joinOp.value,
+                preserved.secondOperator,
+                preserved.secondValue
+              );
+            }
+          } else {
+            // PARTIAL multi-condition: second condition has no value yet
+            if (isFirstBetween) {
+              // Between with join and second operator selected
+              newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOp.value} #${preserved.secondOperator} `;
+            } else {
+              // Normal operator with join and second operator selected
+              newValue = PatternBuilder.partialMultiWithOperator(
+                columnName,
+                preserved.operator,
+                preserved.value,
+                joinOp.value,
+                preserved.secondOperator
+              );
+            }
+          }
+        } else {
+          // NO second condition yet - just first condition + join selector
+          // Pattern: #field #operator value(s) #join #
+          if (preserved.operator === 'inRange' && preserved.valueTo) {
+            // Between with join selector open
+            newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOp.value} #`;
+          } else {
+            // Normal operator with join selector open
+            newValue = `#${columnName} #${preserved.operator} ${preserved.value} #${joinOp.value} #`;
+          }
+        }
+      } else {
+        // No preserved data - fallback to string manipulation
+        const cleanValue = value.replace(/\s*#\s*$/, '').trim();
+        newValue = `${cleanValue} #${joinOp.value} #`;
+      }
+
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      // Clear preserved state after rebuilding
+      preservedFilterRef.current = null;
+      setPreservedSearchMode(null);
+      setCurrentJoinOperator(undefined);
 
       setTimeout(() => {
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
-    [value, onChange, inputRef]
+    [value, searchMode, onChange, inputRef]
   );
 
   const handleCloseColumnSelector = useCallback(() => {
@@ -631,7 +712,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const newValue = PatternBuilder.withJoinSelector(
       columnName,
       firstCondition.operator,
-      firstCondition.value
+      firstCondition.value,
+      firstCondition.valueTo // Pass valueTo for Between operators
     );
 
     setFilterValue(newValue, onChange, inputRef);

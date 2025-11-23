@@ -142,6 +142,7 @@ export function extractMultiConditionPreservation(
 export function getFirstCondition(filter: FilterSearch): {
   operator: string;
   value: string;
+  valueTo?: string;
 } {
   if (filter.isMultiCondition && filter.conditions && filter.conditions[0]) {
     return filter.conditions[0];
@@ -150,6 +151,7 @@ export function getFirstCondition(filter: FilterSearch): {
   return {
     operator: filter.operator,
     value: filter.value,
+    valueTo: filter.valueTo,
   };
 }
 
