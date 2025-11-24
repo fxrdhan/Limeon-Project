@@ -95,9 +95,11 @@ export const useSearchState = ({
       onFilterSearchRef.current?.(null);
     } else if (
       // NEW: Maintain filter during partial join mode (user is building multi-condition)
+      // BUT don't update if in edit mode - keep the original complete filter
       searchMode.partialJoin &&
       searchMode.filterSearch &&
-      !searchMode.isFilterMode
+      !searchMode.isFilterMode &&
+      !isEditMode // Don't update filter when editing - preserve the original complete filter
     ) {
       // Keep the first condition's filter active while user selects second operator/value
       debouncedFilterUpdate(searchMode.filterSearch);
