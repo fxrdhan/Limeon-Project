@@ -637,40 +637,50 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Edit column - show column selector with all columns
   // Preserve operator and value to restore after column selection
   const handleEditColumn = useCallback(() => {
-    if (!searchMode.filterSearch) {
+    // Use preserved state if already in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
+    if (!stateToUse.filterSearch) {
       return;
     }
 
-    // Save current searchMode to keep badges visible during edit
-    setPreservedSearchMode(searchMode);
+    // Save state only if not already preserved (prevent overwriting original state)
+    if (!preservedSearchMode) {
+      setPreservedSearchMode(searchMode);
+    }
 
-    // Extract and preserve filter data
-    preservedFilterRef.current = extractMultiConditionPreservation(searchMode);
+    // Extract and preserve filter data from original state
+    preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
 
     // Set to just # to show all columns in selector
     const newValue = PatternBuilder.column('');
 
     setFilterValue(newValue, onChange, inputRef);
-  }, [searchMode, onChange, inputRef]);
+  }, [searchMode, preservedSearchMode, onChange, inputRef]);
 
   // Edit operator - show operator selector
   const handleEditOperator = useCallback(
     (isSecond: boolean = false) => {
-      if (!searchMode.filterSearch) {
+      // Use preserved state if already in edit mode, otherwise use current state
+      const stateToUse = preservedSearchMode || searchMode;
+
+      if (!stateToUse.filterSearch) {
         return;
       }
 
-      const columnName = searchMode.filterSearch.field;
+      const columnName = stateToUse.filterSearch.field;
 
-      // Save current searchMode to keep value badge visible during edit
-      setPreservedSearchMode(searchMode);
+      // Save state only if not already preserved (prevent overwriting original state)
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
 
       // Track if we're editing the second operator
       setIsEditingSecondOperator(isSecond);
 
-      // Extract and preserve filter data
+      // Extract and preserve filter data from original state
       preservedFilterRef.current =
-        extractMultiConditionPreservation(searchMode);
+        extractMultiConditionPreservation(stateToUse);
 
       // Build pattern for operator selector
       let newValue: string;
@@ -695,24 +705,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       setFilterValue(newValue, onChange, inputRef);
     },
-    [searchMode, onChange, inputRef]
+    [searchMode, preservedSearchMode, onChange, inputRef]
   );
 
   // Edit join operator - show join operator selector
   const handleEditJoin = useCallback(() => {
-    if (!searchMode.filterSearch) {
+    // Use preserved state if already in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
+    if (!stateToUse.filterSearch) {
       return;
     }
 
-    const columnName = searchMode.filterSearch.field;
-    const firstCondition = getFirstCondition(searchMode.filterSearch);
-    const joinOp = getJoinOperator(searchMode.filterSearch, searchMode);
+    const columnName = stateToUse.filterSearch.field;
+    const firstCondition = getFirstCondition(stateToUse.filterSearch);
+    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
 
-    // Save current searchMode to keep all badges visible during edit
-    setPreservedSearchMode(searchMode);
+    // Save state only if not already preserved (prevent overwriting original state)
+    if (!preservedSearchMode) {
+      setPreservedSearchMode(searchMode);
+    }
 
-    // Extract and preserve filter data
-    preservedFilterRef.current = extractMultiConditionPreservation(searchMode);
+    // Extract and preserve filter data from original state
+    preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
 
     // Set current join operator state for selector highlighting
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
@@ -728,7 +743,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     );
 
     setFilterValue(newValue, onChange, inputRef);
-  }, [searchMode, onChange, inputRef]);
+  }, [searchMode, preservedSearchMode, onChange, inputRef]);
 
   // Edit value - INLINE EDITING: Badge itself becomes editable
   const handleEditValue = useCallback(() => {

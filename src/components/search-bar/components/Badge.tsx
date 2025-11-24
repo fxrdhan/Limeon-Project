@@ -87,6 +87,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       ) : (
         <span
           onClick={config.canEdit && config.onEdit ? config.onEdit : undefined}
+          onMouseDown={
+            config.canEdit && config.onEdit
+              ? e => e.stopPropagation()
+              : undefined
+          }
           className={config.canEdit && config.onEdit ? 'cursor-pointer' : ''}
         >
           {config.label}
@@ -98,6 +103,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           onClick={
             isEditing ? () => onEditComplete?.(editingValue) : config.onEdit
           }
+          onMouseDown={e => e.stopPropagation()}
           className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 ${
             isEditing
               ? 'ml-1.5 max-w-[24px] opacity-100'
@@ -120,6 +126,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       {!isEditing && config.canClear && (
         <button
           onClick={config.onClear}
+          onMouseDown={e => e.stopPropagation()}
           className={`max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
           type="button"
           style={{
