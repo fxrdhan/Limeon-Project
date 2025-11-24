@@ -18,9 +18,19 @@ interface BadgeHandlers {
   onEditSecondValue?: () => void; // Edit second value handler (optional)
 }
 
+interface InlineEditingProps {
+  editingBadge: {
+    type: 'firstValue' | 'secondValue' | 'firstValueTo' | 'secondValueTo';
+    value: string;
+  } | null;
+  onInlineValueChange: (value: string) => void;
+  onInlineEditComplete: () => void;
+}
+
 export const useBadgeBuilder = (
   searchMode: EnhancedSearchState,
-  handlers: BadgeHandlers
+  handlers: BadgeHandlers,
+  inlineEditingProps?: InlineEditingProps
 ): BadgeConfig[] => {
   return useMemo(() => {
     const badges: BadgeConfig[] = [];
@@ -92,6 +102,12 @@ export const useBadgeBuilder = (
         if (condition.value) {
           // Check if this is a Between (inRange) operator - needs 2 value badges + separator
           if (condition.operator === 'inRange' && condition.valueTo) {
+            // Determine if this badge is being edited
+            const isFirstValue = index === 0;
+            const isEditingFrom =
+              inlineEditingProps?.editingBadge?.type ===
+              (isFirstValue ? 'firstValue' : 'secondValue');
+
             // First value badge
             badges.push({
               id: `multi-value-${index}-from`,
@@ -108,6 +124,17 @@ export const useBadgeBuilder = (
               onEdit:
                 index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
               canEdit: true,
+              // Inline editing props
+              isEditing: isEditingFrom,
+              editingValue: isEditingFrom
+                ? inlineEditingProps?.editingBadge?.value
+                : undefined,
+              onValueChange: isEditingFrom
+                ? inlineEditingProps?.onInlineValueChange
+                : undefined,
+              onEditComplete: isEditingFrom
+                ? inlineEditingProps?.onInlineEditComplete
+                : undefined,
             });
 
             // "to" separator badge
@@ -119,6 +146,11 @@ export const useBadgeBuilder = (
               canClear: false,
               canEdit: false,
             });
+
+            // Determine if the "to" value badge is being edited
+            const isEditingTo =
+              inlineEditingProps?.editingBadge?.type ===
+              (isFirstValue ? 'firstValueTo' : 'secondValueTo');
 
             // Second value badge (valueTo)
             badges.push({
@@ -136,8 +168,25 @@ export const useBadgeBuilder = (
               onEdit:
                 index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
               canEdit: true,
+              // Inline editing props
+              isEditing: isEditingTo,
+              editingValue: isEditingTo
+                ? inlineEditingProps?.editingBadge?.value
+                : undefined,
+              onValueChange: isEditingTo
+                ? inlineEditingProps?.onInlineValueChange
+                : undefined,
+              onEditComplete: isEditingTo
+                ? inlineEditingProps?.onInlineEditComplete
+                : undefined,
             });
           } else {
+            // Determine if this badge is being edited
+            const isFirstValue = index === 0;
+            const isEditingValue =
+              inlineEditingProps?.editingBadge?.type ===
+              (isFirstValue ? 'firstValue' : 'secondValue');
+
             // Normal operator with single value
             badges.push({
               id: `multi-value-${index}`,
@@ -154,6 +203,17 @@ export const useBadgeBuilder = (
               onEdit:
                 index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
               canEdit: true, // Value badges are now editable
+              // Inline editing props
+              isEditing: isEditingValue,
+              editingValue: isEditingValue
+                ? inlineEditingProps?.editingBadge?.value
+                : undefined,
+              onValueChange: isEditingValue
+                ? inlineEditingProps?.onInlineValueChange
+                : undefined,
+              onEditComplete: isEditingValue
+                ? inlineEditingProps?.onInlineEditComplete
+                : undefined,
             });
           }
         }
@@ -226,6 +286,11 @@ export const useBadgeBuilder = (
 
       // Check if this is a Between (inRange) operator with valueTo
       if (filter.operator === 'inRange' && filter.valueTo) {
+        // Determine if this badge is being edited
+        const editType = isSecondValue ? 'secondValue' : 'firstValue';
+        const isEditingFrom =
+          inlineEditingProps?.editingBadge?.type === editType;
+
         // First value badge
         badges.push({
           id: 'value-from',
@@ -239,6 +304,17 @@ export const useBadgeBuilder = (
             ? handlers.onEditSecondValue
             : handlers.onEditValue,
           canEdit: true,
+          // Inline editing props
+          isEditing: isEditingFrom,
+          editingValue: isEditingFrom
+            ? inlineEditingProps?.editingBadge?.value
+            : undefined,
+          onValueChange: isEditingFrom
+            ? inlineEditingProps?.onInlineValueChange
+            : undefined,
+          onEditComplete: isEditingFrom
+            ? inlineEditingProps?.onInlineEditComplete
+            : undefined,
         });
 
         // "to" separator badge
@@ -250,6 +326,11 @@ export const useBadgeBuilder = (
           canClear: false,
           canEdit: false,
         });
+
+        // Determine if the "to" value badge is being edited
+        const editTypeTo = isSecondValue ? 'secondValueTo' : 'firstValueTo';
+        const isEditingTo =
+          inlineEditingProps?.editingBadge?.type === editTypeTo;
 
         // Second value badge (valueTo)
         badges.push({
@@ -264,8 +345,24 @@ export const useBadgeBuilder = (
             ? handlers.onEditSecondValue
             : handlers.onEditValue,
           canEdit: true,
+          // Inline editing props
+          isEditing: isEditingTo,
+          editingValue: isEditingTo
+            ? inlineEditingProps?.editingBadge?.value
+            : undefined,
+          onValueChange: isEditingTo
+            ? inlineEditingProps?.onInlineValueChange
+            : undefined,
+          onEditComplete: isEditingTo
+            ? inlineEditingProps?.onInlineEditComplete
+            : undefined,
         });
       } else {
+        // Determine if this badge is being edited
+        const editType = isSecondValue ? 'secondValue' : 'firstValue';
+        const isEditingValue =
+          inlineEditingProps?.editingBadge?.type === editType;
+
         // Normal operator with single value
         badges.push({
           id: 'value',
@@ -279,6 +376,17 @@ export const useBadgeBuilder = (
             ? handlers.onEditSecondValue
             : handlers.onEditValue,
           canEdit: true, // Value badges are now editable
+          // Inline editing props
+          isEditing: isEditingValue,
+          editingValue: isEditingValue
+            ? inlineEditingProps?.editingBadge?.value
+            : undefined,
+          onValueChange: isEditingValue
+            ? inlineEditingProps?.onInlineValueChange
+            : undefined,
+          onEditComplete: isEditingValue
+            ? inlineEditingProps?.onInlineEditComplete
+            : undefined,
         });
       }
     }
@@ -315,5 +423,5 @@ export const useBadgeBuilder = (
     }
 
     return badges;
-  }, [searchMode, handlers]);
+  }, [searchMode, handlers, inlineEditingProps]);
 };

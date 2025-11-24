@@ -59,4 +59,9 @@ export interface BadgeConfig {
   canClear: boolean; // Whether the X button should be shown
   onEdit?: () => void; // Optional edit handler
   canEdit: boolean; // Whether the edit button should be shown
+  // Inline editing props
+  isEditing?: boolean;
+  editingValue?: string;
+  onValueChange?: (value: string) => void;
+  onEditComplete?: () => void;
 }

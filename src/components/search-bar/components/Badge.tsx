@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { LuX } from 'react-icons/lu';
 import { FiEdit2 } from 'react-icons/fi';
 import { BadgeConfig, BADGE_COLORS } from '../types/badge';
@@ -9,12 +9,66 @@ interface BadgeProps {
 
 const Badge: React.FC<BadgeProps> = ({ config }) => {
   const colors = BADGE_COLORS[config.type];
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isEditing = config.isEditing || false;
+  const editingValue = config.editingValue || '';
+  const onValueChange = config.onValueChange;
+  const onEditComplete = config.onEditComplete;
+
+  // Auto-focus input when entering editing mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      // Position cursor at end
+      inputRef.current.setSelectionRange(
+        editingValue.length,
+        editingValue.length
+      );
+    }
+  }, [isEditing, editingValue.length]);
+
+  // Handle keyboard events for inline editing
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      onEditComplete?.();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onEditComplete?.();
+    }
+  };
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onValueChange?.(e.target.value);
+  };
+
+  // Handle blur (clicking outside)
+  const handleBlur = () => {
+    onEditComplete?.();
+  };
 
   return (
     <div
       className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0`}
     >
-      <span>{config.label}</span>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editingValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} min-w-[60px] max-w-[200px] p-0`}
+          style={{ width: `${Math.max(editingValue.length * 8 + 10, 60)}px` }}
+        />
+      ) : (
+        <span>{config.label}</span>
+      )}
       {/* Edit button (pena) - shown before X button */}
       {config.canEdit && config.onEdit && (
         <button
