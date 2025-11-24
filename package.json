@@ -41,7 +41,7 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.81.1",
     "@tailwindcss/cli": "^4.1.17",
-    "@tanstack/react-query": "^5.90.9",
+    "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-query-devtools": "^5.90.2",
     "ag-grid-enterprise": "34.2.0",
     "ag-grid-react": "34.2.0",
