@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { LuX } from 'react-icons/lu';
 import { FiEdit2 } from 'react-icons/fi';
+import { PiTrashSimpleBold } from 'react-icons/pi';
 import { BadgeConfig, BADGE_COLORS } from '../types/badge';
 
 interface BadgeProps {
@@ -80,28 +81,38 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} min-w-[60px] max-w-[200px] p-0`}
-          style={{ width: `${Math.max(editingValue.length * 8 + 10, 60)}px` }}
+          className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0`}
+          style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
         />
       ) : (
         <span>{config.label}</span>
       )}
-      {/* Edit button (pena) - shown before X button */}
+      {/* Edit/Cancel button - same position, swaps icon based on mode */}
       {config.canEdit && config.onEdit && (
         <button
-          onClick={config.onEdit}
-          className={`max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
+          onClick={
+            isEditing ? () => onEditComplete?.(editingValue) : config.onEdit
+          }
+          className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 ${
+            isEditing
+              ? 'ml-1.5 max-w-[24px] opacity-100'
+              : 'max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5'
+          }`}
           type="button"
           style={{
             transition:
               'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
           }}
         >
-          <FiEdit2 className="w-3.5 h-3.5 flex-shrink-0" />
+          {isEditing ? (
+            <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+          ) : (
+            <FiEdit2 className="w-3.5 h-3.5 flex-shrink-0" />
+          )}
         </button>
       )}
-      {/* Clear button (X) */}
-      {config.canClear && (
+      {/* Clear/Delete button (Trash) - shown on hover, hidden when editing */}
+      {!isEditing && config.canClear && (
         <button
           onClick={config.onClear}
           className={`max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
@@ -111,7 +122,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
           }}
         >
-          <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+          <PiTrashSimpleBold className="w-3.5 h-3.5 flex-shrink-0" />
         </button>
       )}
     </div>
