@@ -85,7 +85,12 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
         />
       ) : (
-        <span>{config.label}</span>
+        <span
+          onClick={config.canEdit && config.onEdit ? config.onEdit : undefined}
+          className={config.canEdit && config.onEdit ? 'cursor-pointer' : ''}
+        >
+          {config.label}
+        </span>
       )}
       {/* Edit/Cancel button - same position, swaps icon based on mode */}
       {config.canEdit && config.onEdit && (
