@@ -5,7 +5,7 @@
 **The Next Generation Pharmacy Management App**
 
 <div align="center">Manual pharmacy workflows are dead. 
-<div align="center">Intelligent agents replace the repetitive work.
+<div align="center">PharmAgents handles the busywork for you.
 <div align="center">So your team can focus on what matters.
 
 </div>
