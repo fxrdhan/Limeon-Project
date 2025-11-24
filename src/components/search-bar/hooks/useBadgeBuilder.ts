@@ -24,7 +24,7 @@ interface InlineEditingProps {
     value: string;
   } | null;
   onInlineValueChange: (value: string) => void;
-  onInlineEditComplete: () => void;
+  onInlineEditComplete: (finalValue?: string) => void;
 }
 
 export const useBadgeBuilder = (
