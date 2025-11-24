@@ -730,17 +730,57 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
-    // CRITICAL FIX: Use same approach as backspace handler
-    // Just remove ## marker to enter edit mode - simple and reliable!
-    // This makes badge disappear and input auto-focuses with cursor at end
-    const currentValue = value;
-    if (currentValue.endsWith('##')) {
-      const newValue = currentValue.slice(0, -2);
-      onChange({
-        target: { value: newValue },
-      } as React.ChangeEvent<HTMLInputElement>);
+    // CASE 1: Single-condition filter (E2)
+    // Simple approach: Remove ## marker, badge disappears
+    if (!searchMode.filterSearch.isMultiCondition) {
+      const currentValue = value;
+      if (currentValue.endsWith('##')) {
+        const newValue = currentValue.slice(0, -2);
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Focus input and position cursor at end
+        setTimeout(() => {
+          if (inputRef?.current) {
+            inputRef.current.focus();
+            const cursorPosition = newValue.length;
+            inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+          }
+        }, 0);
+      }
+      return;
     }
-  }, [searchMode.filterSearch, value, onChange]);
+
+    // CASE 2: Multi-condition filter (E4 - edit first value)
+    // Complex approach: Preserve badges, build pattern WITHOUT ##
+    const columnName = searchMode.filterSearch.field;
+    const firstCondition = searchMode.filterSearch.conditions![0];
+
+    // Preserve searchMode to keep badges visible
+    setPreservedSearchMode(searchMode);
+    preservedFilterRef.current = extractMultiConditionPreservation(searchMode);
+
+    // Build pattern for editing first value (without ##)
+    const newValue = PatternBuilder.editFirstValue(
+      columnName,
+      firstCondition.operator,
+      firstCondition.value
+    );
+
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    // Focus input and position cursor at end
+    setTimeout(() => {
+      if (inputRef?.current) {
+        inputRef.current.focus();
+        const cursorPosition = newValue.length;
+        inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
+    }, 0);
+  }, [searchMode, value, onChange, inputRef]);
 
   // Edit second value in multi-condition filter
   const handleEditSecondValue = useCallback(() => {
@@ -758,8 +798,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const secondCondition = searchMode.filterSearch.conditions[1];
     const joinOp = searchMode.filterSearch.joinOperator || 'AND';
 
-    // Create modified searchMode with second value hidden (empty string)
-    // This will hide the 2nd value badge during edit
+    // E3: Preserve badges by creating modified searchMode with second value hidden
     const modifiedSearchMode: EnhancedSearchState = {
       ...searchMode,
       filterSearch: {
@@ -768,7 +807,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           firstCondition,
           {
             ...secondCondition,
-            value: '', // Empty value will hide the badge
+            value: '', // Empty value will hide the 2nd value badge during edit
           },
         ],
       },
@@ -778,15 +817,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Preserve first condition while editing second value
     preservedFilterRef.current = {
-      columnName, // Store column name for reconstruction
+      columnName,
       operator: firstCondition.operator,
       value: firstCondition.value,
+      valueTo: firstCondition.valueTo,
       join: joinOp,
       secondOperator: secondCondition.operator,
       secondValue: secondCondition.value,
+      secondValueTo: secondCondition.valueTo,
     };
 
-    // Show input with second value pre-filled for editing
+    // Build pattern for editing second value (without ## marker)
+    // Pattern: #field #op1 val1 #join #op2 val2
     const newValue = PatternBuilder.editSecondValue(
       columnName,
       firstCondition.operator,
@@ -796,7 +838,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       secondCondition.value
     );
 
-    setFilterValue(newValue, onChange, inputRef, { cursorAtEnd: true });
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    // Focus input and position cursor at end after React finishes updating
+    setTimeout(() => {
+      if (inputRef?.current) {
+        inputRef.current.focus();
+        const cursorPosition = newValue.length;
+        inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
+    }, 0);
   }, [searchMode, onChange, inputRef]);
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
