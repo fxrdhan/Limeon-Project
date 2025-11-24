@@ -771,144 +771,163 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, []);
 
   // Handle inline edit complete (Enter/Escape/Blur)
-  const handleInlineEditComplete = useCallback(() => {
-    if (!editingBadge || !searchMode.filterSearch) {
-      setEditingBadge(null);
-      return;
-    }
-
-    // If value is empty, treat it as clear action
-    if (!editingBadge.value || editingBadge.value.trim() === '') {
-      setEditingBadge(null);
-
-      // Clear based on which badge was being edited
-      if (
-        editingBadge.type === 'firstValue' ||
-        editingBadge.type === 'firstValueTo'
-      ) {
-        // Clearing first condition value - clear entire filter
-        handleClearValue();
-      } else if (
-        editingBadge.type === 'secondValue' ||
-        editingBadge.type === 'secondValueTo'
-      ) {
-        // Clearing second condition value - clear second condition only
-        handleClearSecondValue();
+  // finalValue is passed directly from Badge to avoid race condition with state
+  const handleInlineEditComplete = useCallback(
+    (finalValue?: string) => {
+      if (!editingBadge || !searchMode.filterSearch) {
+        setEditingBadge(null);
+        return;
       }
-      return;
-    }
 
-    const columnName = searchMode.filterSearch.field;
-    const operator = searchMode.filterSearch.operator;
+      // Use finalValue if provided, otherwise fallback to state value
+      const valueToUse =
+        finalValue !== undefined ? finalValue : editingBadge.value;
 
-    // CASE 1: Single-condition filter
-    if (!searchMode.filterSearch.isMultiCondition) {
+      // If value is empty, treat it as clear action
+      if (!valueToUse || valueToUse.trim() === '') {
+        setEditingBadge(null);
+
+        // Clear based on which badge was being edited
+        if (
+          editingBadge.type === 'firstValue' ||
+          editingBadge.type === 'firstValueTo'
+        ) {
+          // Clearing first condition value - clear entire filter
+          handleClearValue();
+        } else if (
+          editingBadge.type === 'secondValue' ||
+          editingBadge.type === 'secondValueTo'
+        ) {
+          // Clearing second condition value - clear second condition only
+          handleClearSecondValue();
+        }
+
+        // Ensure focus returns to search input after clearing
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, 50);
+        return;
+      }
+
+      const columnName = searchMode.filterSearch.field;
+      const operator = searchMode.filterSearch.operator;
+
+      // CASE 1: Single-condition filter
+      if (!searchMode.filterSearch.isMultiCondition) {
+        let newPattern: string;
+
+        // Check if this is a Between operator (has valueTo)
+        if (operator === 'inRange' && searchMode.filterSearch.valueTo) {
+          // Editing Between operator
+          if (editingBadge.type === 'firstValue') {
+            // Editing "from" value - preserve "to" value
+            newPattern = `#${columnName} #${operator} ${valueToUse} ${searchMode.filterSearch.valueTo}##`;
+          } else if (editingBadge.type === 'firstValueTo') {
+            // Editing "to" value - preserve "from" value
+            newPattern = `#${columnName} #${operator} ${searchMode.filterSearch.value} ${valueToUse}##`;
+          } else {
+            // Fallback
+            newPattern = `#${columnName} #${operator} ${valueToUse}##`;
+          }
+        } else {
+          // Normal operator with single value
+          newPattern = `#${columnName} #${operator} ${valueToUse}##`;
+        }
+
+        onChange({
+          target: { value: newPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+        setEditingBadge(null);
+        return;
+      }
+
+      // CASE 2: Multi-condition filter
+      const firstCondition = searchMode.filterSearch.conditions![0];
+      const secondCondition = searchMode.filterSearch.conditions![1];
+      const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+
       let newPattern: string;
 
-      // Check if this is a Between operator (has valueTo)
-      if (operator === 'inRange' && searchMode.filterSearch.valueTo) {
-        // Editing Between operator
-        if (editingBadge.type === 'firstValue') {
-          // Editing "from" value - preserve "to" value
-          newPattern = `#${columnName} #${operator} ${editingBadge.value} ${searchMode.filterSearch.valueTo}##`;
-        } else if (editingBadge.type === 'firstValueTo') {
-          // Editing "to" value - preserve "from" value
-          newPattern = `#${columnName} #${operator} ${searchMode.filterSearch.value} ${editingBadge.value}##`;
-        } else {
-          // Fallback
-          newPattern = `#${columnName} #${operator} ${editingBadge.value}##`;
-        }
+      // Handle editing first condition
+      if (editingBadge.type === 'firstValue') {
+        // Editing first condition's "from" value
+        const firstValue = valueToUse;
+        const firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
+
+        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+          columnName,
+          firstCondition.operator,
+          firstValue,
+          firstValueTo,
+          joinOp,
+          secondCondition.operator,
+          secondCondition.value,
+          secondCondition.valueTo
+        );
+      } else if (editingBadge.type === 'firstValueTo') {
+        // Editing first condition's "to" value (Between operator)
+        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value, // Preserve "from" value
+          valueToUse, // Updated "to" value
+          joinOp,
+          secondCondition.operator,
+          secondCondition.value,
+          secondCondition.valueTo
+        );
+      } else if (editingBadge.type === 'secondValue') {
+        // Editing second condition's "from" value
+        const secondValue = valueToUse;
+        const secondValueTo = secondCondition.valueTo; // Preserve "to" if exists
+
+        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value,
+          firstCondition.valueTo,
+          joinOp,
+          secondCondition.operator,
+          secondValue,
+          secondValueTo
+        );
+      } else if (editingBadge.type === 'secondValueTo') {
+        // Editing second condition's "to" value (Between operator)
+        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value,
+          firstCondition.valueTo,
+          joinOp,
+          secondCondition.operator,
+          secondCondition.value, // Preserve "from" value
+          valueToUse // Updated "to" value
+        );
       } else {
-        // Normal operator with single value
-        newPattern = `#${columnName} #${operator} ${editingBadge.value}##`;
+        // Fallback - shouldn't reach here
+        setEditingBadge(null);
+        return;
       }
 
       onChange({
         target: { value: newPattern },
       } as React.ChangeEvent<HTMLInputElement>);
       setEditingBadge(null);
-      return;
-    }
 
-    // CASE 2: Multi-condition filter
-    const firstCondition = searchMode.filterSearch.conditions![0];
-    const secondCondition = searchMode.filterSearch.conditions![1];
-    const joinOp = searchMode.filterSearch.joinOperator || 'AND';
-
-    let newPattern: string;
-
-    // Handle editing first condition
-    if (editingBadge.type === 'firstValue') {
-      // Editing first condition's "from" value
-      const firstValue = editingBadge.value;
-      const firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
-
-      newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-        columnName,
-        firstCondition.operator,
-        firstValue,
-        firstValueTo,
-        joinOp,
-        secondCondition.operator,
-        secondCondition.value,
-        secondCondition.valueTo
-      );
-    } else if (editingBadge.type === 'firstValueTo') {
-      // Editing first condition's "to" value (Between operator)
-      newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value, // Preserve "from" value
-        editingBadge.value, // Updated "to" value
-        joinOp,
-        secondCondition.operator,
-        secondCondition.value,
-        secondCondition.valueTo
-      );
-    } else if (editingBadge.type === 'secondValue') {
-      // Editing second condition's "from" value
-      const secondValue = editingBadge.value;
-      const secondValueTo = secondCondition.valueTo; // Preserve "to" if exists
-
-      newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        firstCondition.valueTo,
-        joinOp,
-        secondCondition.operator,
-        secondValue,
-        secondValueTo
-      );
-    } else if (editingBadge.type === 'secondValueTo') {
-      // Editing second condition's "to" value (Between operator)
-      newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        firstCondition.valueTo,
-        joinOp,
-        secondCondition.operator,
-        secondCondition.value, // Preserve "from" value
-        editingBadge.value // Updated "to" value
-      );
-    } else {
-      // Fallback - shouldn't reach here
-      setEditingBadge(null);
-      return;
-    }
-
-    onChange({
-      target: { value: newPattern },
-    } as React.ChangeEvent<HTMLInputElement>);
-    setEditingBadge(null);
-  }, [
-    editingBadge,
-    searchMode.filterSearch,
-    onChange,
-    handleClearValue,
-    handleClearSecondValue,
-  ]);
+      // Ensure focus returns to search input after edit completes
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, 50);
+    },
+    [
+      editingBadge,
+      searchMode.filterSearch,
+      onChange,
+      handleClearValue,
+      handleClearSecondValue,
+      inputRef,
+    ]
+  );
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(

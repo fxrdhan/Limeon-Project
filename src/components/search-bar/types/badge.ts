@@ -63,5 +63,5 @@ export interface BadgeConfig {
   isEditing?: boolean;
   editingValue?: string;
   onValueChange?: (value: string) => void;
-  onEditComplete?: () => void;
+  onEditComplete?: (finalValue?: string) => void;
 }

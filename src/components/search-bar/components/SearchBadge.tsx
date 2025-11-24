@@ -27,7 +27,7 @@ interface SearchBadgeProps {
     value: string;
   } | null;
   onInlineValueChange?: (value: string) => void;
-  onInlineEditComplete?: () => void;
+  onInlineEditComplete?: (finalValue?: string) => void;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({

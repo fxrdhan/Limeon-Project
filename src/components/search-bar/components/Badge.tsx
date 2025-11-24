@@ -33,22 +33,39 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      onEditComplete?.();
+      // Pass current value directly to avoid race condition
+      onEditComplete?.(editingValue);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      onEditComplete?.();
+      // Pass current value directly to avoid race condition
+      onEditComplete?.(editingValue);
+    } else if (e.key === 'Backspace' && editingValue === '') {
+      // If backspace pressed on empty input, clear the badge
+      e.preventDefault();
+      e.stopPropagation();
+      // Pass empty string to trigger clear
+      onEditComplete?.('');
     }
   };
 
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onValueChange?.(e.target.value);
+    const newValue = e.target.value;
+    onValueChange?.(newValue);
+
+    // If user cleared all text, immediately trigger clear action
+    // Pass the newValue directly to avoid race condition with state update
+    if (newValue.trim() === '') {
+      // No setTimeout needed - pass value directly
+      onEditComplete?.(newValue);
+    }
   };
 
   // Handle blur (clicking outside)
   const handleBlur = () => {
-    onEditComplete?.();
+    // Pass current editingValue directly
+    onEditComplete?.(editingValue);
   };
 
   return (
