@@ -104,6 +104,114 @@
 
 ---
 
+## Between Operator Tests
+
+### B0: Between Operator with Space-Separated Values
+
+**Goal**: Validate Between operator creates 5 badges with space-separated input
+
+**Steps**:
+
+1. Navigate to Item Master page
+2. Click search textbox "Cari item..."
+3. Type "#"
+4. Click "Harga Pokok"
+5. Click "Between" from operator selector
+6. Type "50000 60000" (with space)
+7. Press Enter
+
+**Expected Result**:
+
+- 5 badges: `[Harga Pokok][Between][50000][to][60000]`
+- Badge "to" automatically added as separator between min and max values
+- Filter panel shows: "Harga Pokok Between 50000 and 60000"
+- Two separate spinbuttons in filter panel:
+  - "Filter from value": 50000
+  - "Filter to Value": 60000
+- Console log: `[handleItemFilterSearch] Single condition filter {field: base_price, operator: inRange, value: ...}`
+- Data grid shows only items where 50,000 ≤ Harga Pokok ≤ 60,000
+
+**Validates**:
+
+- Between operator correctly parses space-separated values
+- Badge "to" separator automatically created
+- Operator `inRange` correctly used internally
+- Filter panel synchronization with two value inputs
+- Data grid filtering within range works correctly
+- Single condition filter structure maintained
+
+**Key Technical Details**:
+
+- Input format: `"value1 value2"` (space as delimiter)
+- Badge structure: 5 badges with automatic "to" separator
+- Internal operator: `inRange` (not `between`)
+- Filter type: Single condition (not multi-condition)
+
+---
+
+### B1: Between Operator with Multi-Condition (AND + Less Than)
+
+**Goal**: Validate Between operator can be combined with multi-condition filter
+
+**Steps**:
+
+1. Create Between filter (B0):
+   - Navigate to Item Master page
+   - Click search textbox "Cari item..."
+   - Type "#"
+   - Click "Harga Pokok"
+   - Click "Between" from operator selector
+   - Type "50000 60000" (with space)
+   - Press Enter
+2. **State**: 5 badges: `[Harga Pokok][Between][50000][to][60000]`
+3. Add multi-condition:
+   - Type "#" to open join/column selector
+   - Click "AND" join operator
+   - Click "Less than" operator
+   - Type "70000"
+   - Press Enter
+
+**Expected Result**:
+
+- 8 badges: `[Harga Pokok][Between][50000][to][60000][AND][Less than][70000]`
+- Between operator successfully combined with second condition
+- Badge "to" separator remains between Between values
+- Filter panel shows both conditions:
+  - Between with two spinbuttons: 50000 to 60000
+  - AND radio button checked
+  - Second operator: "Less than"
+  - Second value: 70000
+- Console logs:
+  - `[LOG] Multi-condition detected!`
+  - `[LOG] AG Grid conditions: [Object, Object]`
+  - `[LOG] Combined model: {filterType: number, operator: AND, conditions: Array...}`
+- Data grid shows items where: `(50,000 ≤ Harga Pokok ≤ 60,000) AND (Harga Pokok < 70,000)`
+
+**Validates**:
+
+- Between operator CAN be combined with multi-condition filters
+- System correctly detects as Multi-condition (not Single condition)
+- Badge "to" separator preserved in multi-condition context
+- Both conditions applied with AND join operator
+- Filter panel synchronization for complex multi-condition
+- AG Grid applies combined filter model correctly
+- Between (inRange) works as first condition in multi-condition filter
+
+**Key Technical Details**:
+
+- Badge structure: 8 badges total (5 from Between + 3 from second condition)
+- Filter type: **Multi-condition** (confirmed by console log)
+- First condition: `inRange` operator with two values (50000-60000)
+- Join operator: AND
+- Second condition: `lessThan` operator with single value (70000)
+- AG Grid model: Combined conditions with AND operator
+
+**Important Note**:
+
+This validates that Between operator is not limited to single-condition filters. It can be part of complex multi-condition queries, enabling powerful range-based filtering combined with additional constraints.
+
+---
+
 ## Badge Deletion Tests
 
 ### D0: Delete Operator Badge (2 Badges → 1 Badge)
@@ -882,9 +990,10 @@
 ## Coverage Summary
 
 - **Creation Tests**: 5 scenarios (1-6 badges)
+- **Between Operator Tests**: 2 scenarios (B0: between operator with space-separated values creating 5 badges, B1: between operator with multi-condition AND creating 8 badges)
 - **Deletion Tests**: 8 scenarios (D0: delete operator badge 2→1 badges, D1-D2: simple filter deletions, D2a: delete 1st operator multi-condition, D3-D5: multi-condition targeted deletions, D6: progressive deletion 6→0 badges)
 - **Edit Tests**: 10 scenarios (E0: column badge 2-badges, E1: column badge 3-badges with sync, E2: value badge simple, E3: 2nd value multi-condition, E4: 1st value multi-condition, E5: join operator badge 5-badges, E6: column badge 6-badges multi-condition, E7: 1st operator badge 6-badges multi-condition, E8: column badge 5-badges partial multi-condition, E9: delete 2nd operator via backspace progressive deletion)
-- **Total**: 23 test scenarios
+- **Total**: 25 test scenarios
 
 ### Key Behaviors Tested:
 
@@ -893,6 +1002,8 @@
 - State management and transitions
 - Data synchronization
 - Cascading deletions
+- Between operator with space-separated values (range filtering)
+- Between operator in multi-condition filters (combined with AND/OR)
 - Badge editing (column badge, operator badges, value badges, join operator badge)
 - Operator preservation during column edit
 - Operator editing in multi-condition filters
