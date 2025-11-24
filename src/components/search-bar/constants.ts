@@ -5,7 +5,7 @@ export const SEARCH_CONSTANTS = {
   DEBOUNCE_DELAY: 150,
   FUZZY_SEARCH_THRESHOLD: -1000,
   SELECTOR_MAX_HEIGHT: '320px',
-  INPUT_FOCUS_DELAY: 0,
+  INPUT_FOCUS_DELAY: 50, // Increased from 0 to ensure React DOM updates complete before cursor positioning
   BADGE_WIDTH_FALLBACK: 60,
   BADGE_MARGIN: 16,
 } as const;

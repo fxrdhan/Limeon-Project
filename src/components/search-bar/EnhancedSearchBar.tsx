@@ -730,25 +730,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
-    const columnName = searchMode.filterSearch.field;
-    const operator = searchMode.filterSearch.operator;
-    const currentValue = searchMode.filterSearch.value;
-
-    // Save current searchMode to keep column, operator badges visible during edit
-    setPreservedSearchMode(searchMode);
-
-    // Extract and preserve multi-condition data if needed
-    preservedFilterRef.current = extractMultiConditionPreservation(searchMode);
-
-    // Show only first value for editing (with or without multi-condition)
-    const newValue = PatternBuilder.editFirstValue(
-      columnName,
-      operator,
-      currentValue
-    );
-
-    setFilterValue(newValue, onChange, inputRef, { cursorAtEnd: true });
-  }, [searchMode, onChange, inputRef]);
+    // CRITICAL FIX: Use same approach as backspace handler
+    // Just remove ## marker to enter edit mode - simple and reliable!
+    // This makes badge disappear and input auto-focuses with cursor at end
+    const currentValue = value;
+    if (currentValue.endsWith('##')) {
+      const newValue = currentValue.slice(0, -2);
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+    }
+  }, [searchMode.filterSearch, value, onChange]);
 
   // Edit second value in multi-condition filter
   const handleEditSecondValue = useCallback(() => {
