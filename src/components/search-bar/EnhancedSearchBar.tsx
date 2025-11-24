@@ -777,6 +777,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
+    // If value is empty, treat it as clear action
+    if (!editingBadge.value || editingBadge.value.trim() === '') {
+      setEditingBadge(null);
+
+      // Clear based on which badge was being edited
+      if (
+        editingBadge.type === 'firstValue' ||
+        editingBadge.type === 'firstValueTo'
+      ) {
+        // Clearing first condition value - clear entire filter
+        handleClearValue();
+      } else if (
+        editingBadge.type === 'secondValue' ||
+        editingBadge.type === 'secondValueTo'
+      ) {
+        // Clearing second condition value - clear second condition only
+        handleClearSecondValue();
+      }
+      return;
+    }
+
     const columnName = searchMode.filterSearch.field;
     const operator = searchMode.filterSearch.operator;
 
@@ -881,7 +902,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       target: { value: newPattern },
     } as React.ChangeEvent<HTMLInputElement>);
     setEditingBadge(null);
-  }, [editingBadge, searchMode.filterSearch, onChange]);
+  }, [
+    editingBadge,
+    searchMode.filterSearch,
+    onChange,
+    handleClearValue,
+    handleClearSecondValue,
+  ]);
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
