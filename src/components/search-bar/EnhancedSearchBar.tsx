@@ -391,7 +391,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // PARTIAL multi-condition: second condition has no value yet
             if (isFirstBetween) {
               // Between with join and second operator selected
-              newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOp.value} #${preserved.secondOperator} `;
+              newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOperator.toLowerCase()} #${preserved.secondOperator} `;
             } else {
               // Normal operator with join and second operator selected
               newValue = PatternBuilder.partialMultiWithOperator(
@@ -408,16 +408,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Pattern: #field #operator value(s) #join #
           if (preserved.operator === 'inRange' && preserved.valueTo) {
             // Between with join selector open
-            newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOp.value} #`;
+            newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOperator.toLowerCase()} #`;
           } else {
             // Normal operator with join selector open
-            newValue = `#${columnName} #${preserved.operator} ${preserved.value} #${joinOp.value} #`;
+            newValue = `#${columnName} #${preserved.operator} ${preserved.value} #${joinOperator.toLowerCase()} #`;
           }
         }
       } else {
         // No preserved data - fallback to string manipulation
         const cleanValue = value.replace(/\s*#\s*$/, '').trim();
-        newValue = `${cleanValue} #${joinOp.value} #`;
+        newValue = `${cleanValue} #${joinOperator.toLowerCase()} #`;
       }
 
       onChange({
