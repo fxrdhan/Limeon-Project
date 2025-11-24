@@ -84,17 +84,28 @@ function BaseSelector<T>({
     isOpen: false,
     filteredLength: 0,
     selectedIndex: 0,
+    lastDefaultIndex: defaultSelectedIndex,
   });
 
   if (
     isOpen !== indexState.isOpen ||
-    filteredItems.length !== indexState.filteredLength
+    filteredItems.length !== indexState.filteredLength ||
+    (isOpen && defaultSelectedIndex !== indexState.lastDefaultIndex)
   ) {
     let newIndex = indexState.selectedIndex;
 
     // Reset to defaultSelectedIndex (or 0) when opening
     if (isOpen && !indexState.isOpen) {
       newIndex = defaultSelectedIndex ?? 0;
+    }
+    // Also reset when defaultSelectedIndex changes while modal is open
+    // This handles switching between editing different badges
+    else if (
+      isOpen &&
+      defaultSelectedIndex !== indexState.lastDefaultIndex &&
+      defaultSelectedIndex !== undefined
+    ) {
+      newIndex = defaultSelectedIndex;
     }
     // Adjust if out of bounds
     else if (
@@ -110,6 +121,7 @@ function BaseSelector<T>({
       isOpen,
       filteredLength: filteredItems.length,
       selectedIndex: newIndex,
+      lastDefaultIndex: defaultSelectedIndex,
     });
   }
 
