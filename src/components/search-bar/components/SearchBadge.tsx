@@ -21,6 +21,13 @@ interface SearchBadgeProps {
   onEditSecondValue?: () => void;
   onHoverChange?: (isHovered: boolean) => void;
   preservedSearchMode?: EnhancedSearchState | null;
+  // Inline editing props
+  editingBadge?: {
+    type: 'firstValue' | 'secondValue' | 'firstValueTo' | 'secondValueTo';
+    value: string;
+  } | null;
+  onInlineValueChange?: (value: string) => void;
+  onInlineEditComplete?: () => void;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -41,24 +48,37 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onEditSecondValue,
   onHoverChange,
   preservedSearchMode,
+  editingBadge,
+  onInlineValueChange,
+  onInlineEditComplete,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
   const modeToRender = preservedSearchMode || searchMode;
 
-  const badges = useBadgeBuilder(modeToRender, {
-    onClearColumn,
-    onClearOperator,
-    onClearValue,
-    onClearPartialJoin,
-    onClearSecondOperator,
-    onClearSecondValue,
-    onClearAll,
-    onEditColumn,
-    onEditOperator,
-    onEditJoin,
-    onEditValue,
-    onEditSecondValue,
-  });
+  const badges = useBadgeBuilder(
+    modeToRender,
+    {
+      onClearColumn,
+      onClearOperator,
+      onClearValue,
+      onClearPartialJoin,
+      onClearSecondOperator,
+      onClearSecondValue,
+      onClearAll,
+      onEditColumn,
+      onEditOperator,
+      onEditJoin,
+      onEditValue,
+      onEditSecondValue,
+    },
+    editingBadge && onInlineValueChange && onInlineEditComplete
+      ? {
+          editingBadge,
+          onInlineValueChange,
+          onInlineEditComplete,
+        }
+      : undefined
+  );
 
   const handleMouseEnter = () => {
     onHoverChange?.(true);
