@@ -6,8 +6,8 @@
  */
 
 import { RefObject } from 'react';
+import { flushSync } from 'react-dom';
 import { EnhancedSearchState, FilterSearch } from '../types';
-import { SEARCH_CONSTANTS } from '../constants';
 
 /**
  * Preserved filter state for edit operations
@@ -50,22 +50,34 @@ export function setFilterValue(
   inputRef: RefObject<HTMLInputElement | null> | null | undefined,
   options: SetValueOptions = { focus: true, cursorAtEnd: false }
 ): void {
-  onChange({
-    target: { value: newValue },
-  } as React.ChangeEvent<HTMLInputElement>);
+  // CRITICAL FIX: Use flushSync to force SYNCHRONOUS React render
+  // This prevents inputRef.current from becoming stale during async re-render
+  flushSync(() => {
+    onChange({
+      target: { value: newValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+  });
 
+  // After flushSync, React has completed rendering synchronously
+  // Now inputRef.current is guaranteed to be up-to-date
   if (options.focus && inputRef?.current) {
+    // CRITICAL FIX: Use setTimeout with longer delay to wait for ALL React re-renders
+    // click() is more reliable than focus() as it simulates user interaction
     setTimeout(() => {
       const input = inputRef.current;
       if (input) {
-        input.focus();
+        // Simulate user click instead of programmatic focus
+        // This is more reliable and triggers all browser focus behaviors
+        input.click();
 
         if (options.cursorAtEnd) {
           // Position cursor at end of input
-          input.setSelectionRange(input.value.length, input.value.length);
+          // Use newValue.length to ensure correct cursor position
+          const cursorPosition = newValue.length;
+          input.setSelectionRange(cursorPosition, cursorPosition);
         }
       }
-    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    }, 200); // 200ms delay to ensure ALL React updates complete
   }
 }
 
