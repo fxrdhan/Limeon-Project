@@ -355,4 +355,50 @@ export class PatternBuilder {
   ): string {
     return `#${field} #inRange ${value1} ${value2}`;
   }
+
+  /**
+   * Build multi-condition pattern with optional valueTo for Between operators
+   * Handles all combinations: Normal+Normal, Between+Normal, Normal+Between, Between+Between
+   *
+   * @param field - Column field name
+   * @param op1 - First operator value
+   * @param val1 - First value
+   * @param val1To - First valueTo (for Between operator)
+   * @param join - Join operator ('AND' or 'OR')
+   * @param op2 - Second operator value
+   * @param val2 - Second value
+   * @param val2To - Second valueTo (for Between operator)
+   * @returns Complete multi-condition pattern
+   */
+  static buildMultiConditionWithValueTo(
+    field: string,
+    op1: string,
+    val1: string,
+    val1To: string | undefined,
+    join: 'AND' | 'OR',
+    op2: string,
+    val2: string,
+    val2To: string | undefined
+  ): string {
+    const firstIsBetween = op1 === 'inRange' && val1To;
+    const secondIsBetween = op2 === 'inRange' && val2To;
+
+    // Case 1: Between + Between
+    if (firstIsBetween && secondIsBetween) {
+      return this.betweenAndBetween(field, val1, val1To, join, val2, val2To);
+    }
+
+    // Case 2: Between + Normal
+    if (firstIsBetween && !secondIsBetween) {
+      return this.betweenAndNormal(field, val1, val1To, join, op2, val2);
+    }
+
+    // Case 3: Normal + Between
+    if (!firstIsBetween && secondIsBetween) {
+      return this.normalAndBetween(field, op1, val1, join, val2, val2To);
+    }
+
+    // Case 4: Normal + Normal (default)
+    return this.multiCondition(field, op1, val1, join, op2, val2);
+  }
 }
