@@ -1562,64 +1562,64 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@supabase/auth-js@npm:2.81.1":
-  version: 2.81.1
-  resolution: "@supabase/auth-js@npm:2.81.1"
+"@supabase/auth-js@npm:2.84.0":
+  version: 2.84.0
+  resolution: "@supabase/auth-js@npm:2.84.0"
   dependencies:
     tslib: "npm:2.8.1"
-  checksum: 10c0/61c1096eaeed6d4351899831d1af94a1f76c6b471f514aa1015a4d2a409c95cfedbce293361a6dbe0e9a4a6008fb523b6447e4ed2b6759b74e4706ac5049d5ad
+  checksum: 10c0/6cd9a0c517a7e04b0ca92feaaae142d7627538d0140421eb28ffead4cab079781ac073df4e6a23fb0fe90d351f29027227cdeb66083e85970153025ed3de2854
   languageName: node
   linkType: hard
 
-"@supabase/functions-js@npm:2.81.1":
-  version: 2.81.1
-  resolution: "@supabase/functions-js@npm:2.81.1"
+"@supabase/functions-js@npm:2.84.0":
+  version: 2.84.0
+  resolution: "@supabase/functions-js@npm:2.84.0"
   dependencies:
     tslib: "npm:2.8.1"
-  checksum: 10c0/542cdadd7c1325c71de5c4d397e3461cbcea74d01bb934027dfd354d732a87fa8042293c74b38d54fd152cf37bc94efc6da1540e4a79e57103e166ae3a46c0eb
+  checksum: 10c0/5166f74820919a0dff47d3c709aee001f8c7a99ae4d5ed915cc0ef562ac7fcb545cfb894626fb1e5af3ed12329bd91a0a4153376edb865594db4638c99d5bc20
   languageName: node
   linkType: hard
 
-"@supabase/postgrest-js@npm:2.81.1":
-  version: 2.81.1
-  resolution: "@supabase/postgrest-js@npm:2.81.1"
+"@supabase/postgrest-js@npm:2.84.0":
+  version: 2.84.0
+  resolution: "@supabase/postgrest-js@npm:2.84.0"
   dependencies:
     tslib: "npm:2.8.1"
-  checksum: 10c0/c204fc0f4918d0d228b53bb2d4258cd2001ae1e4a30274fa43c0bbcfc791b01f301e1ee16cfe22dbcca39425de789127b1f6e48a24aa9145b96b133010993729
+  checksum: 10c0/b62f8cf658a55582a73e10813263edf93eef8132b7ac1c020cc937fc1de34d9d626dfe8f30cc5c4aeed6d1a950cbbc1517d9f96bd44684b775b959d677d77afd
   languageName: node
   linkType: hard
 
-"@supabase/realtime-js@npm:2.81.1":
-  version: 2.81.1
-  resolution: "@supabase/realtime-js@npm:2.81.1"
+"@supabase/realtime-js@npm:2.84.0":
+  version: 2.84.0
+  resolution: "@supabase/realtime-js@npm:2.84.0"
   dependencies:
     "@types/phoenix": "npm:^1.6.6"
     "@types/ws": "npm:^8.18.1"
     tslib: "npm:2.8.1"
     ws: "npm:^8.18.2"
-  checksum: 10c0/d659a6f0be6d53bc290a1b836e18553c0c6491fb208683084f3b8b24918bfbbc6b04fe824c98b43c052f3a4f1ae1dcffa6b92c3c8d57e7ec0eeb4e40d59b41c1
+  checksum: 10c0/e66e75fc6cf60522e8ee20fc9ce7f48a5bf587ae0c62395d4ff67174930f01dee513f389a1f0d0e5684b0100b4e7d7855d9b9ae7ed9dacfb2d82f075ff57c865
   languageName: node
   linkType: hard
 
-"@supabase/storage-js@npm:2.81.1":
-  version: 2.81.1
-  resolution: "@supabase/storage-js@npm:2.81.1"
+"@supabase/storage-js@npm:2.84.0":
+  version: 2.84.0
+  resolution: "@supabase/storage-js@npm:2.84.0"
   dependencies:
     tslib: "npm:2.8.1"
-  checksum: 10c0/eeeaad3b9415f01eee23108a09ac5353e4240be3aa672316755d868c0598a8fbe4b228855433f7cd91507b80ef02af620e716fef3075d3117a4c16d5d79d912e
+  checksum: 10c0/24cce030e4595010be36ab7963d9bd680dcf1ce73a86699f8235e1356389251a7c4ca80af15cdb91d0b42e15c991fcedcb3d008e6c867df0d6aab5b60915f599
   languageName: node
   linkType: hard
 
-"@supabase/supabase-js@npm:^2.81.1":
-  version: 2.81.1
-  resolution: "@supabase/supabase-js@npm:2.81.1"
+"@supabase/supabase-js@npm:^2.84.0":
+  version: 2.84.0
+  resolution: "@supabase/supabase-js@npm:2.84.0"
   dependencies:
-    "@supabase/auth-js": "npm:2.81.1"
-    "@supabase/functions-js": "npm:2.81.1"
-    "@supabase/postgrest-js": "npm:2.81.1"
-    "@supabase/realtime-js": "npm:2.81.1"
-    "@supabase/storage-js": "npm:2.81.1"
-  checksum: 10c0/629fecdac8c80722198d1b091270daaaeca03dcd29b4aa67890e1d4c69cb949909dde3fcb0e00a3d852f3bbdeaffbc5ab281f05270756a6db404b17577f5e7fc
+    "@supabase/auth-js": "npm:2.84.0"
+    "@supabase/functions-js": "npm:2.84.0"
+    "@supabase/postgrest-js": "npm:2.84.0"
+    "@supabase/realtime-js": "npm:2.84.0"
+    "@supabase/storage-js": "npm:2.84.0"
+  checksum: 10c0/f0ff5c460e26431c7f64a50a1323871e9c888b1b003358f56331e5aa8e5bcfc1fd6a30561c498c95971c5c048b80ad71081b5e60301e8eddfe054b30b4b106d6
   languageName: node
   linkType: hard
 
@@ -6004,7 +6004,7 @@ __metadata:
     "@eslint/js": "npm:^9.39.1"
     "@headlessui/react": "npm:^2.2.9"
     "@heroicons/react": "npm:^2.2.0"
-    "@supabase/supabase-js": "npm:^2.81.1"
+    "@supabase/supabase-js": "npm:^2.84.0"
     "@tailwindcss/cli": "npm:^4.1.17"
     "@tailwindcss/postcss": "npm:^4.1.17"
     "@tanstack/react-query": "npm:^5.90.9"
