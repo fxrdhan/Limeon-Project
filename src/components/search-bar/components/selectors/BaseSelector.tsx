@@ -1,9 +1,42 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiOutlineSparkles } from 'react-icons/hi2';
+import { LuSearch } from 'react-icons/lu';
 import fuzzysort from 'fuzzysort';
 import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
+
+// Helper to highlight matched characters
+const HighlightedText: React.FC<{
+  text: string;
+  indices: readonly number[] | null;
+  theme?: 'purple' | 'blue' | 'orange';
+}> = ({ text, indices, theme = 'purple' }) => {
+  if (!indices || indices.length === 0) {
+    return <>{text}</>;
+  }
+
+  const themeColor =
+    theme === 'blue'
+      ? 'text-blue-600'
+      : theme === 'orange'
+        ? 'text-orange-600'
+        : 'text-purple-600';
+
+  const indexSet = new Set(indices);
+  return (
+    <>
+      {text.split('').map((char, i) => (
+        <span
+          key={i}
+          className={indexSet.has(i) ? `font-bold ${themeColor}` : ''}
+        >
+          {char}
+        </span>
+      ))}
+    </>
+  );
+};
 
 function BaseSelector<T>({
   items,
@@ -11,16 +44,21 @@ function BaseSelector<T>({
   onSelect,
   onClose,
   position,
-  searchTerm = '',
+  searchTerm: externalSearchTerm = '',
   config,
   defaultSelectedIndex,
 }: BaseSelectorProps<T>) {
-  // Removed filteredItems state - will derive it with useMemo instead
   const [showHeader, setShowHeader] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Internal search term - captured from keystrokes when modal is open
+  const [internalSearchTerm, setInternalSearchTerm] = useState('');
+
+  // Use internal search term (priority) or external search term
+  const searchTerm = internalSearchTerm || externalSearchTerm;
 
   // Track selected item position for sliding background
   const [indicatorStyle, setIndicatorStyle] = useState({
@@ -35,8 +73,8 @@ function BaseSelector<T>({
     return config.getSearchFields(items[0]);
   }, [items, config]);
 
-  // Derive filteredItems using useMemo instead of effect + state
-  const filteredItems = useMemo(() => {
+  // Store fuzzy search results with indices for highlighting
+  const searchResults = useMemo(() => {
     if (searchTerm && items.length > 0) {
       const searchTargets = items.map(item => {
         const searchFields = config.getSearchFields(item);
@@ -49,8 +87,12 @@ function BaseSelector<T>({
         };
       });
 
-      const allResults = new Map<string, { item: T; score: number }>();
+      const allResults = new Map<
+        string,
+        { item: T; score: number; labelIndices: readonly number[] | null }
+      >();
 
+      // First pass: collect all matching items with scores
       searchFieldsConfig.forEach(fieldConfig => {
         const results = fuzzysort.go(searchTerm, searchTargets, {
           key: fieldConfig.key,
@@ -66,18 +108,61 @@ function BaseSelector<T>({
             allResults.set(itemKey, {
               item: result.obj.item,
               score: result.score + boost,
+              labelIndices: null, // Will be computed below
             });
           }
         });
       });
 
-      return Array.from(allResults.values())
-        .sort((a, b) => b.score - a.score)
-        .map(item => item.item);
+      // Second pass: get label-specific indices for highlighting
+      // This ensures we highlight the correct characters in the label text
+      const labelTargets = Array.from(allResults.values()).map(r => ({
+        item: r.item,
+        label: config.getItemLabel(r.item),
+      }));
+
+      const labelResults = fuzzysort.go(searchTerm, labelTargets, {
+        key: 'label',
+        threshold: -Infinity, // Accept any match since item already qualified
+      });
+
+      labelResults.forEach(result => {
+        const itemKey = config.getItemKey(result.obj.item);
+        const existing = allResults.get(itemKey);
+        if (existing) {
+          allResults.set(itemKey, {
+            ...existing,
+            labelIndices: result.indexes,
+          });
+        }
+      });
+
+      return Array.from(allResults.values()).sort((a, b) => b.score - a.score);
     } else {
-      return items;
+      return items.map(item => ({
+        item,
+        score: 0,
+        labelIndices: null as readonly number[] | null,
+      }));
     }
   }, [searchTerm, items, searchFieldsConfig, config]);
+
+  // Derive filteredItems from searchResults
+  const filteredItems = useMemo(
+    () => searchResults.map(r => r.item),
+    [searchResults]
+  );
+
+  // Get highlight indices for an item's label
+  const getHighlightIndices = useCallback(
+    (item: T): readonly number[] | null => {
+      const result = searchResults.find(
+        r => config.getItemKey(r.item) === config.getItemKey(item)
+      );
+      return result?.labelIndices || null;
+    },
+    [searchResults, config]
+  );
 
   // Use getDerivedStateFromProps pattern to manage selectedIndex resets
   const [indexState, setIndexState] = useState({
@@ -132,6 +217,7 @@ function BaseSelector<T>({
     }));
   };
 
+  // Reset internal search term when modal closes
   useEffect(() => {
     if (isOpen && !showHeader) {
       // Move all setState to async to avoid synchronous setState in effect
@@ -148,31 +234,40 @@ function BaseSelector<T>({
       }, 0);
       setTimeout(() => {
         setShowHeader(false);
+        // Reset indicator position so it doesn't animate from old position on next open
+        setIndicatorStyle({ top: 0, left: 0, width: 0, height: 0 });
+        // Reset internal search term
+        setInternalSearchTerm('');
       }, 100); // Reduced from 200ms to 100ms
     }
   }, [isOpen, showHeader, showContent]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen || filteredItems.length === 0) return;
+      if (!isOpen) return;
 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => {
-            const nextIndex = prev + 1;
-            return nextIndex >= filteredItems.length ? 0 : nextIndex;
-          });
+          if (filteredItems.length > 0) {
+            setSelectedIndex(prev => {
+              const nextIndex = prev + 1;
+              return nextIndex >= filteredItems.length ? 0 : nextIndex;
+            });
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => {
-            return prev === 0 ? filteredItems.length - 1 : prev - 1;
-          });
+          if (filteredItems.length > 0) {
+            setSelectedIndex(prev => {
+              return prev === 0 ? filteredItems.length - 1 : prev - 1;
+            });
+          }
           break;
         case 'Enter':
           e.preventDefault();
           if (
+            filteredItems.length > 0 &&
             selectedIndex >= 0 &&
             selectedIndex < filteredItems.length &&
             filteredItems[selectedIndex]
@@ -183,6 +278,21 @@ function BaseSelector<T>({
         case 'Escape':
           e.preventDefault();
           onClose();
+          break;
+        case 'Backspace':
+          e.preventDefault();
+          setInternalSearchTerm(prev => prev.slice(0, -1));
+          // Reset to first item when search changes
+          setSelectedIndex(0);
+          break;
+        default:
+          // Capture alphanumeric and space for search
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            setInternalSearchTerm(prev => prev + e.key);
+            // Reset to first item when search changes
+            setSelectedIndex(0);
+          }
           break;
       }
     };
@@ -301,6 +411,37 @@ function BaseSelector<T>({
     };
   }, [isOpen, onClose]);
 
+  // Determine header content
+  const headerContent = useMemo(() => {
+    if (internalSearchTerm) {
+      return (
+        <div className="flex items-center gap-2 text-xs text-gray-600">
+          <LuSearch className="w-3 h-3" />
+          <span>
+            Searching:{' '}
+            <span
+              className={`font-medium ${
+                config.theme === 'blue'
+                  ? 'text-blue-600'
+                  : config.theme === 'orange'
+                    ? 'text-orange-600'
+                    : 'text-purple-600'
+              }`}
+            >
+              {internalSearchTerm}
+            </span>
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2 text-xs text-gray-600">
+        <HiOutlineSparkles className="w-3 h-3" />
+        <span>{config.headerText}</span>
+      </div>
+    );
+  }, [internalSearchTerm, config.headerText, config.theme]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -326,10 +467,7 @@ function BaseSelector<T>({
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                 >
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <HiOutlineSparkles className="w-3 h-3" />
-                    <span>{config.headerText}</span>
-                  </div>
+                  {headerContent}
                 </motion.div>
               </>
             )}
@@ -353,37 +491,50 @@ function BaseSelector<T>({
                 >
                   {filteredItems.length === 0 ? (
                     <div className="px-3 py-4 text-sm text-gray-500 text-center">
-                      {config.noResultsText.replace('{searchTerm}', searchTerm)}
+                      {internalSearchTerm
+                        ? `No results for "${internalSearchTerm}"`
+                        : config.noResultsText.replace(
+                            '{searchTerm}',
+                            searchTerm
+                          )}
                     </div>
                   ) : (
                     <div className="pb-1 relative">
-                      {/* Sliding Background Indicator */}
-                      <motion.div
-                        className={`absolute rounded-md pointer-events-none ${
-                          config.theme === 'blue'
-                            ? 'bg-blue-100'
-                            : config.theme === 'orange'
-                              ? 'bg-orange-100'
-                              : 'bg-purple-100'
-                        }`}
-                        initial={false}
-                        animate={{
-                          top: indicatorStyle.top,
-                          left: indicatorStyle.left,
-                          width: indicatorStyle.width,
-                          height: indicatorStyle.height,
-                        }}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 400,
-                          damping: 30,
-                          mass: 0.8,
-                        }}
-                      />
+                      {/* Sliding Background Indicator - only render when positioned */}
+                      {indicatorStyle.height > 0 && (
+                        <motion.div
+                          className={`absolute rounded-md pointer-events-none ${
+                            config.theme === 'blue'
+                              ? 'bg-blue-100'
+                              : config.theme === 'orange'
+                                ? 'bg-orange-100'
+                                : 'bg-purple-100'
+                          }`}
+                          initial={{
+                            top: indicatorStyle.top,
+                            left: indicatorStyle.left,
+                            width: indicatorStyle.width,
+                            height: indicatorStyle.height,
+                          }}
+                          animate={{
+                            top: indicatorStyle.top,
+                            left: indicatorStyle.left,
+                            width: indicatorStyle.width,
+                            height: indicatorStyle.height,
+                          }}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 400,
+                            damping: 30,
+                            mass: 0.8,
+                          }}
+                        />
+                      )}
 
                       {/* Items */}
                       {filteredItems.map((item, index) => {
                         const isSelected = index === selectedIndex;
+                        const highlightIndices = getHighlightIndices(item);
                         // Theme-based hover colors
                         const hoverClass =
                           config.theme === 'blue'
@@ -429,7 +580,11 @@ function BaseSelector<T>({
                                       : 'text-gray-700'
                                   }`}
                                 >
-                                  {config.getItemLabel(item)}
+                                  <HighlightedText
+                                    text={config.getItemLabel(item)}
+                                    indices={highlightIndices}
+                                    theme={config.theme}
+                                  />
                                 </span>
                                 {config.getItemSecondaryText && (
                                   <span className="text-xs text-gray-400">
@@ -464,7 +619,9 @@ function BaseSelector<T>({
                 transition={{ duration: 0.15, ease: 'easeOut' }}
               >
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>Enter to select</span>
+                  <span>
+                    {internalSearchTerm ? 'Type to search' : 'Enter to select'}
+                  </span>
                   <span>
                     {filteredItems.length}{' '}
                     {config.footerSingular.charAt(0).toUpperCase() +
