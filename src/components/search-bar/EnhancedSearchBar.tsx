@@ -214,6 +214,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       setFilterValue(newValue, onChange, inputRef);
+
+      // Auto-focus back to input after selection
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
     [onChange, inputRef]
   );
@@ -309,6 +314,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       setFilterValue(newValue, onChange, inputRef);
+
+      // Auto-focus back to input after selection
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
     [
       value,
