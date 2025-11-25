@@ -362,7 +362,9 @@ function BaseSelector<T>({
                         className={`absolute rounded-md pointer-events-none ${
                           config.theme === 'blue'
                             ? 'bg-blue-100'
-                            : 'bg-purple-100'
+                            : config.theme === 'orange'
+                              ? 'bg-orange-100'
+                              : 'bg-purple-100'
                         }`}
                         initial={false}
                         animate={{
@@ -380,53 +382,71 @@ function BaseSelector<T>({
                       />
 
                       {/* Items */}
-                      {filteredItems.map((item, index) => (
-                        <div
-                          key={config.getItemKey(item)}
-                          ref={el => {
-                            itemRefs.current[index] = el;
-                          }}
-                          className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-md relative z-10 hover:bg-gray-50/50 transition-colors duration-150"
-                          onClick={() => onSelect(item)}
-                        >
+                      {filteredItems.map((item, index) => {
+                        const isSelected = index === selectedIndex;
+                        // Theme-based hover colors
+                        const hoverClass =
+                          config.theme === 'blue'
+                            ? 'hover:bg-blue-50'
+                            : config.theme === 'orange'
+                              ? 'hover:bg-orange-50'
+                              : 'hover:bg-purple-50';
+                        // Theme-based text color for selected item
+                        const selectedTextClass =
+                          config.theme === 'blue'
+                            ? 'text-blue-700'
+                            : config.theme === 'orange'
+                              ? 'text-orange-700'
+                              : 'text-purple-700';
+
+                        return (
                           <div
-                            className={`shrink-0 transition-colors duration-150 ${
-                              index === selectedIndex
-                                ? config.getItemActiveColor?.(item) ||
-                                  'text-gray-900'
-                                : 'text-gray-400'
+                            key={config.getItemKey(item)}
+                            ref={el => {
+                              itemRefs.current[index] = el;
+                            }}
+                            className={`px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-md relative z-10 transition-colors duration-150 ${
+                              isSelected ? '' : hoverClass
                             }`}
+                            onClick={() => onSelect(item)}
                           >
-                            {config.getItemIcon(item)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-sm font-medium transition-colors duration-150 ${
-                                  index === selectedIndex
-                                    ? config.theme === 'blue'
-                                      ? 'text-blue-700'
-                                      : 'text-purple-700'
-                                    : 'text-gray-900'
-                                }`}
-                              >
-                                {config.getItemLabel(item)}
-                              </span>
-                              {config.getItemSecondaryText && (
-                                <span className="text-xs text-gray-400">
-                                  {config.getItemSecondaryText(item)}
-                                </span>
-                              )}
+                            <div
+                              className={`shrink-0 transition-colors duration-150 ${
+                                isSelected
+                                  ? config.getItemActiveColor?.(item) ||
+                                    'text-gray-900'
+                                  : 'text-gray-500'
+                              }`}
+                            >
+                              {config.getItemIcon(item)}
                             </div>
-                            {config.getItemDescription &&
-                              config.getItemDescription(item) && (
-                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                                  {config.getItemDescription(item)}
-                                </p>
-                              )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-sm font-medium transition-colors duration-150 ${
+                                    isSelected
+                                      ? selectedTextClass
+                                      : 'text-gray-700'
+                                  }`}
+                                >
+                                  {config.getItemLabel(item)}
+                                </span>
+                                {config.getItemSecondaryText && (
+                                  <span className="text-xs text-gray-400">
+                                    {config.getItemSecondaryText(item)}
+                                  </span>
+                                )}
+                              </div>
+                              {config.getItemDescription &&
+                                config.getItemDescription(item) && (
+                                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                                    {config.getItemDescription(item)}
+                                  </p>
+                                )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
