@@ -48,6 +48,18 @@ export const useSearchInput = ({
   );
 
   const displayValue = useMemo(() => {
+    // PRIORITY 0: When any modal selector is open, hide "#" from input
+    // BaseSelector now handles its own internal search, so we don't need to show "#" trigger
+    if (searchMode.showColumnSelector) {
+      return ''; // Column selector open - hide "#"
+    }
+    if (searchMode.showOperatorSelector) {
+      return ''; // Operator selector open - hide "#"
+    }
+    if (searchMode.showJoinOperatorSelector) {
+      return ''; // Join operator selector open - hide "#"
+    }
+
     // PRIORITY 1: Multi-condition verbose mode - all values shown in badges, input empty
     if (
       searchMode.filterSearch?.isMultiCondition &&
@@ -75,12 +87,7 @@ export const useSearchInput = ({
       searchMode.filterSearch &&
       searchMode.selectedColumn
     ) {
-      // Case 1: Selecting second operator - show operator search term for filtering
-      if (searchMode.showOperatorSelector && isSecondOperator) {
-        // If operatorSearchTerm is empty, show empty string (not "#")
-        return operatorSearchTerm ? `#${operatorSearchTerm}` : '';
-      }
-      // Case 2: Second operator selected, ready for second value input - show the second value being typed
+      // Case: Second operator selected, ready for second value input - show the second value being typed
       // Extract second value from pattern: #field #op1 val1 #join #op2 val2
       const secondValueMatch = value.match(/#(?:and|or)\s+#[^\s]+\s+(.*)$/i);
       return secondValueMatch ? secondValueMatch[1] : '';
@@ -98,34 +105,7 @@ export const useSearchInput = ({
       return searchMode.filterSearch.value;
     }
 
-    // PRIORITY 5: Join operator selector open
-    if (searchMode.showJoinOperatorSelector && searchMode.filterSearch) {
-      // If confirmed, value shown in gray badge, input should be empty
-      if (searchMode.filterSearch.isConfirmed) {
-        return '';
-      }
-      // If not confirmed, show value for editing
-      // For inRange (Between) operator, show both values with space separator
-      if (
-        searchMode.filterSearch.operator === 'inRange' &&
-        searchMode.filterSearch.valueTo
-      ) {
-        return `${searchMode.filterSearch.value} ${searchMode.filterSearch.valueTo}`;
-      }
-      return searchMode.filterSearch.value;
-    }
-
-    // PRIORITY 6: Operator selector open
-    if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
-      // Check if this is second operator (after join) - show operator search term for selector
-      if (isSecondOperator) {
-        // If operatorSearchTerm is empty, show empty string (not "#")
-        return operatorSearchTerm ? `#${operatorSearchTerm}` : '';
-      }
-      return `#${operatorSearchTerm}`;
-    }
-
-    // PRIORITY 7: Column selected, waiting for input
+    // PRIORITY 5: Column selected, waiting for input
     if (searchMode.selectedColumn && !searchMode.showColumnSelector) {
       return '';
     }
@@ -138,11 +118,9 @@ export const useSearchInput = ({
     searchMode.filterSearch,
     searchMode.showOperatorSelector,
     searchMode.showJoinOperatorSelector,
-    searchMode.partialJoin,
-    isSecondOperator,
-    searchMode.selectedColumn,
     searchMode.showColumnSelector,
-    operatorSearchTerm,
+    searchMode.partialJoin,
+    searchMode.selectedColumn,
   ]);
 
   // Dynamic badge width tracking using CSS variable - no React state updates!

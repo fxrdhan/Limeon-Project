@@ -33,6 +33,22 @@ export const useSearchKeyboard = ({
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       try {
+        // PROTECTION: When modal selector is open, prevent character input to searchbar
+        // Let BaseSelector handle all typing for its internal search
+        const isModalOpen =
+          searchMode.showColumnSelector ||
+          searchMode.showOperatorSelector ||
+          searchMode.showJoinOperatorSelector;
+
+        if (isModalOpen) {
+          // Allow navigation keys (Arrow, Enter, Escape) - BaseSelector handles these too
+          // But prevent character keys from going to the input
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            return;
+          }
+        }
+
         if (e.key === KEY_CODES.ESCAPE) {
           if (searchMode.showColumnSelector) {
             handleCloseColumnSelector();
@@ -105,6 +121,12 @@ export const useSearchKeyboard = ({
         }
 
         if (e.key === KEY_CODES.BACKSPACE) {
+          // PROTECTION: Skip all Backspace handling when modal selector is open
+          // Let BaseSelector handle Backspace for its internal search
+          if (isModalOpen) {
+            return;
+          }
+
           // Backspace on confirmed multi-condition filter: Enter edit mode for 2nd value
           if (
             searchMode.isFilterMode &&
