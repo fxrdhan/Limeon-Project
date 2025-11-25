@@ -747,38 +747,118 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit value - INLINE EDITING: Badge itself becomes editable
   const handleEditValue = useCallback(() => {
-    if (!searchMode.filterSearch) {
+    // Use preserved state if in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
+    if (!stateToUse.filterSearch) {
       return;
     }
 
-    const currentValue = searchMode.filterSearch.value;
+    const currentValue = stateToUse.filterSearch.value;
+
+    // If we're in edit mode (modal open), restore the original pattern first
+    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
+      // Rebuild the confirmed pattern to close any open modal
+      const filter = preservedSearchMode.filterSearch;
+      const columnName = filter.field;
+
+      let restoredPattern: string;
+      if (
+        filter.isMultiCondition &&
+        filter.conditions &&
+        filter.conditions.length >= 2
+      ) {
+        // Multi-condition: rebuild full pattern
+        const cond1 = filter.conditions[0];
+        const cond2 = filter.conditions[1];
+        const join = filter.joinOperator || 'AND';
+
+        if (cond1.valueTo) {
+          // Between operator for first condition
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+        } else if (cond2.valueTo) {
+          // Between operator for second condition
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+        }
+      } else {
+        // Single condition
+        if (filter.valueTo) {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
+        }
+      }
+
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setPreservedSearchMode(null);
+    }
 
     // Enter inline editing mode
     setEditingBadge({
       type: 'firstValue',
       value: currentValue,
     });
-  }, [searchMode.filterSearch]);
+  }, [searchMode, preservedSearchMode, onChange]);
 
   // Edit second value in multi-condition filter - INLINE EDITING
   const handleEditSecondValue = useCallback(() => {
+    // Use preserved state if in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
     if (
-      !searchMode.filterSearch ||
-      !searchMode.filterSearch.isMultiCondition ||
-      !searchMode.filterSearch.conditions ||
-      searchMode.filterSearch.conditions.length < 2
+      !stateToUse.filterSearch ||
+      !stateToUse.filterSearch.isMultiCondition ||
+      !stateToUse.filterSearch.conditions ||
+      stateToUse.filterSearch.conditions.length < 2
     ) {
       return;
     }
 
-    const secondCondition = searchMode.filterSearch.conditions[1];
+    const secondCondition = stateToUse.filterSearch.conditions[1];
+
+    // If we're in edit mode (modal open), restore the original pattern first
+    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
+      // Rebuild the confirmed pattern to close any open modal
+      const filter = preservedSearchMode.filterSearch;
+      const columnName = filter.field;
+
+      if (
+        filter.isMultiCondition &&
+        filter.conditions &&
+        filter.conditions.length >= 2
+      ) {
+        const cond1 = filter.conditions[0];
+        const cond2 = filter.conditions[1];
+        const join = filter.joinOperator || 'AND';
+
+        let restoredPattern: string;
+        if (cond1.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+        } else if (cond2.valueTo) {
+          restoredPattern = `#${columnName} #${cond2.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+        }
+
+        onChange({
+          target: { value: restoredPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        setPreservedSearchMode(null);
+      }
+    }
 
     // Enter inline editing mode for second value
     setEditingBadge({
       type: 'secondValue',
       value: secondCondition.value,
     });
-  }, [searchMode.filterSearch]);
+  }, [searchMode, preservedSearchMode, onChange]);
 
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
