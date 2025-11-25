@@ -219,7 +219,7 @@ This validates that Between operator is not limited to single-condition filters.
 **Setup**: Case 1 (2 badges - column + operator)
 **Initial**: `[Harga Pokok][Greater Than]`
 
-**Goal**: Validate operator badge deletion via backspace on empty input
+**Goal**: Validate operator badge deletion via Delete key
 
 **Steps**:
 
@@ -231,7 +231,7 @@ This validates that Between operator is not limited to single-condition filters.
    - Click "Greater Than" from operator selector
 2. **State**: 2 badges: `[Harga Pokok][Greater Than]`
 3. **Input is empty and focused** (ready for value input)
-4. Hit Backspace once
+4. Hit Delete key once
 
 **Expected Result**:
 
@@ -243,13 +243,15 @@ This validates that Between operator is not limited to single-condition filters.
 
 **Validates**:
 
-- Backspace on empty input after operator selection removes the operator badge
+- Delete key removes the operator badge (works even when modal is open)
 - Column badge is preserved
 - Operator selector automatically reopens for new selection
 - System correctly transitions from 2-badge state back to 1-badge state
 - Enables quick operator change without manual badge interaction
 
-**Key Focus**: This test validates the backspace deletion of operator badge when no value has been entered yet, allowing users to quickly change their operator choice.
+**Key Focus**: This test validates the Delete key deletion of operator badge when no value has been entered yet, allowing users to quickly change their operator choice.
+
+**Note**: Delete key is used for badge deletion (separate from Backspace which is used for modal internal search).
 
 ---
 
@@ -418,7 +420,9 @@ This validates that Between operator is not limited to single-condition filters.
 **Setup**: Case 4 (6 badges - complete multi-condition)
 **Initial**: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
 
-**Goal**: Validate progressive deletion via backspace from 6 badges down to completely empty state
+**Goal**: Validate progressive deletion via Delete key from 6 badges down to completely empty state
+
+**Note**: Delete key is used for badge deletion. This works even when modal selectors are open, unlike Backspace which is reserved for modal internal search.
 
 **Steps - Progressive Deletion (One-by-One)**:
 
@@ -431,42 +435,43 @@ This validates that Between operator is not limited to single-condition filters.
    - Type "100000", press Enter
 2. **State**: 6 badges confirmed: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
 3. **Deletion Step 1 - Enter Edit Mode for Second Value**:
-   - Hit Backspace once
+   - Hit Delete key once
    - Input shows: `100000` (second value in edit mode)
    - **Expected**: 6 badges still visible (edit mode active)
 4. **Deletion Step 2 - Clear Second Value**:
-   - Select all (Ctrl+A) and hit Backspace
+   - Select all (Ctrl+A) and hit Delete or Backspace
+   - **Expected State**: 5 badges: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than]`
+   - **Expected**: Input empty and focused
+5. **Deletion Step 3 - Remove Second Operator Badge**:
+   - Hit Delete key once
    - **Expected State**: 4 badges: `[Harga Pokok][Greater Than or Equal][50000][AND]`
    - **Expected**: Operator selector auto-opens (fresh state, no highlighting)
-   - **Expected**: Input empty and focused
    - **Screenshot checkpoint**: Verify 4 badges + operator selector visible
-5. **Deletion Step 3 - Remove AND Badge via Backspace**:
-   - Press Escape to close operator selector
-   - Hit Backspace once
+6. **Deletion Step 4 - Remove AND Badge via Delete**:
+   - Hit Delete key once (works even with modal open!)
    - **Expected State**: 3 badges: `[Harga Pokok][Greater Than or Equal][50000]`
    - **Expected**: Input empty, no selector open
    - **Screenshot checkpoint**: Verify 3 badges visible
-6. **Deletion Step 4 - Enter Edit Mode for First Value**:
-   - Hit Backspace once
+7. **Deletion Step 5 - Enter Edit Mode for First Value**:
+   - Hit Delete key once
    - Input shows: `50000` (first value in edit mode)
    - **Expected**: 3 badges still visible (edit mode active)
-7. **Deletion Step 5 - Clear First Value**:
-   - Select all (Ctrl+A) and hit Backspace
+8. **Deletion Step 6 - Clear First Value**:
+   - Select all (Ctrl+A) and hit Delete or Backspace
    - **Expected State**: 2 badges: `[Harga Pokok][Greater Than or Equal]`
    - **Expected**: Input empty and focused
    - **Screenshot checkpoint**: Verify 2 badges visible
-8. **Deletion Step 6 - Remove Operator Badge via Backspace**:
-   - Hit Backspace once
+9. **Deletion Step 7 - Remove Operator Badge via Delete**:
+   - Hit Delete key once
    - **Expected State**: 1 badge: `[Harga Pokok]`
    - **Expected**: Operator selector auto-opens
    - **Screenshot checkpoint**: Verify 1 badge + operator selector visible
-9. **Deletion Step 7 - Remove Column Badge via Backspace**:
-   - Press Escape to close operator selector
-   - Hit Backspace once
-   - **Expected State**: 0 badges (completely empty)
-   - **Expected**: Input completely empty, no selectors open
-   - **Expected**: Search bar in initial state
-   - **Screenshot checkpoint**: Verify completely empty state
+10. **Deletion Step 8 - Remove Column Badge via Delete**:
+    - Hit Delete key once (works even with modal open!)
+    - **Expected State**: 0 badges (completely empty)
+    - **Expected**: Input completely empty, no selectors open
+    - **Expected**: Search bar in initial state
+    - **Screenshot checkpoint**: Verify completely empty state
 
 **Final Expected Result**:
 
@@ -482,19 +487,21 @@ This validates that Between operator is not limited to single-condition filters.
 - Complete deletion flow from 6 badges to 0 badges works correctly
 - Each deletion step produces expected badge count
 - Operator selectors auto-open at appropriate steps
-- Backspace behavior correct at each state transition
+- Delete key behavior correct at each state transition
+- **Delete key works even when modal selectors are open** (critical for smooth UX)
 - System correctly handles all state transitions:
   - 6 badges (confirmed multi-condition)
-  - 5 badges (editing second value) → 4 badges (partial join with selector)
+  - 5 badges (partial multi-condition, second value cleared)
+  - 4 badges (partial join with operator selector)
   - 3 badges (simple filter confirmed)
-  - 2 badges (editing first value) → 2 badges (column + operator)
+  - 2 badges (column + operator)
   - 1 badge (column only with selector)
   - 0 badges (empty state)
 - Input focus maintained throughout deletion sequence
 - No leftover state or badges after complete deletion
 - System properly resets to initial state
 
-**Key Focus**: This comprehensive test validates the entire deletion lifecycle, ensuring users can completely remove a complex filter step-by-step via backspace, with the system correctly handling each intermediate state.
+**Key Focus**: This comprehensive test validates the entire deletion lifecycle, ensuring users can completely remove a complex filter step-by-step via Delete key, with the system correctly handling each intermediate state. The Delete key works independently of modal state, allowing seamless badge deletion even when selectors are open.
 
 ---
 
@@ -891,10 +898,12 @@ This validates that Between operator is not limited to single-condition filters.
 
 ---
 
-### E9: Delete Second Operator via Backspace (Progressive Deletion from 6 Badges)
+### E9: Delete Second Operator via Delete Key (Progressive Deletion from 6 Badges)
 
 **Setup**: Case 4 (6 badges - complete multi-condition)
 **Initial**: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than][100000]`
+
+**Note**: Delete key is used for badge deletion (works even when modal is open).
 
 **Steps - Progressive Deletion**:
 
@@ -906,16 +915,16 @@ This validates that Between operator is not limited to single-condition filters.
    - Select "Less Than" operator
    - Type "100000", press Enter
 2. **State**: Confirmed multi-condition with 6 badges
-3. **First Backspace**: Remove second value badge
-   - Hit Backspace once
+3. **First Delete**: Enter edit mode for second value
+   - Hit Delete key once
    - Input shows: `100000` (second value in edit mode)
-4. **Continue Backspacing**: Clear the value completely
-   - Keep hitting Backspace until value is completely deleted
+4. **Clear the value**: Clear the value completely
+   - Select all (Ctrl+A) and hit Delete or Backspace
    - Input becomes empty
 5. **State After Value Cleared**: Partial multi-condition with 5 badges
    - Badges: `[Harga Pokok][Greater Than or Equal][50000][AND][Less Than]`
    - Second operator badge visible but no second value
-6. **Critical Step - Delete Second Operator**: Hit Backspace again on empty input
+6. **Critical Step - Delete Second Operator**: Hit Delete key
 
 **Expected Result After Step 6**:
 
@@ -940,7 +949,7 @@ This validates that Between operator is not limited to single-condition filters.
 **Validates**:
 
 - Progressive deletion flow works correctly from 6 badges → 5 badges → 4 badges with operator selector
-- Backspace on empty input in partial multi-condition (5 badges) removes second operator
+- Delete key in partial multi-condition (5 badges) removes second operator
 - Operator selector automatically opens after deleting second operator
 - Enables quick operator change without manual badge interaction
 - Partial join state (AND/OR) preserved during second operator deletion

@@ -31,6 +31,7 @@ export const KEY_CODES = {
   ESCAPE: 'Escape',
   TAB: 'Tab',
   BACKSPACE: 'Backspace',
+  DELETE: 'Delete',
 } as const;
 
 export type SearchState = (typeof SEARCH_STATES)[keyof typeof SEARCH_STATES];
