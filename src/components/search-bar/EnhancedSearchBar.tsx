@@ -1427,6 +1427,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseOperatorSelector,
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
+    onEditValue: handleEditValue,
     onEditSecondValue: handleEditSecondValue,
   });
 

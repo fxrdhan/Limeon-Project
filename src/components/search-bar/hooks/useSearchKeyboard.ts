@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { EnhancedSearchState } from '../types';
-import { buildColumnValue } from '../utils/searchUtils';
 import { KEY_CODES } from '../constants';
 
 interface UseSearchKeyboardProps {
@@ -13,6 +12,7 @@ interface UseSearchKeyboardProps {
   handleCloseOperatorSelector: () => void;
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
+  onEditValue?: () => void;
   onEditSecondValue?: () => void;
 }
 
@@ -26,6 +26,7 @@ export const useSearchKeyboard = ({
   handleCloseOperatorSelector,
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
+  onEditValue,
   onEditSecondValue,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
@@ -134,22 +135,16 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // Delete on confirmed filter: Remove ## marker to enter edit mode
+          // Delete on confirmed single-condition filter: Enter in-badge edit mode
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.isConfirmed &&
-            !searchMode.filterSearch?.isMultiCondition
+            !searchMode.filterSearch?.isMultiCondition &&
+            onEditValue
           ) {
             e.preventDefault();
-
-            // Remove confirmed marker (##) from value
-            const currentValue = value;
-            if (currentValue.endsWith('##')) {
-              const newValue = currentValue.slice(0, -2);
-              onChange({
-                target: { value: newValue },
-              } as React.ChangeEvent<HTMLInputElement>);
-            }
+            // Trigger in-badge edit mode for value (consistent with multi-condition behavior)
+            onEditValue();
             return;
           }
 
@@ -232,11 +227,14 @@ export const useSearchKeyboard = ({
             searchMode.selectedColumn
           ) {
             e.preventDefault();
-            const columnName = searchMode.selectedColumn.field;
-            const newValue = buildColumnValue(columnName, 'plain');
-            onChange({
-              target: { value: newValue },
-            } as React.ChangeEvent<HTMLInputElement>);
+            // Delete on operator selector with only column badge -> clear everything
+            if (onClearSearch) {
+              onClearSearch();
+            } else {
+              onChange({
+                target: { value: '' },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
             return;
           } else if (
             searchMode.selectedColumn &&
@@ -289,6 +287,7 @@ export const useSearchKeyboard = ({
       handleCloseOperatorSelector,
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
+      onEditValue,
       onEditSecondValue,
     ]
   );
