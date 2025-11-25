@@ -6,7 +6,6 @@ import { KEY_CODES } from '../constants';
 interface UseSearchKeyboardProps {
   value: string;
   searchMode: EnhancedSearchState;
-  operatorSearchTerm: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onClearSearch?: () => void;
@@ -20,7 +19,6 @@ interface UseSearchKeyboardProps {
 export const useSearchKeyboard = ({
   value,
   searchMode,
-  operatorSearchTerm,
   onChange,
   onKeyDown,
   onClearSearch,
@@ -120,19 +118,14 @@ export const useSearchKeyboard = ({
           }
         }
 
-        if (e.key === KEY_CODES.BACKSPACE) {
-          // PROTECTION: Skip all Backspace handling when modal selector is open
-          // Let BaseSelector handle Backspace for its internal search
-          if (isModalOpen) {
-            return;
-          }
-
-          // Backspace on confirmed multi-condition filter: Enter edit mode for 2nd value
+        // DELETE key: Used for badge deletion (works even when modal is open)
+        // This is separate from Backspace which is used for modal internal search
+        if (e.key === KEY_CODES.DELETE) {
+          // Delete on confirmed multi-condition filter: Enter edit mode for 2nd value
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.isConfirmed &&
             searchMode.filterSearch?.isMultiCondition &&
-            (e.currentTarget as HTMLInputElement).value === '' && // Input is empty
             onEditSecondValue
           ) {
             e.preventDefault();
@@ -141,12 +134,11 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // Backspace on confirmed filter: Remove ## marker to enter edit mode
+          // Delete on confirmed filter: Remove ## marker to enter edit mode
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.isConfirmed &&
-            !searchMode.filterSearch?.isMultiCondition &&
-            (e.currentTarget as HTMLInputElement).value === '' // Input is empty (value in badge)
+            !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
 
@@ -161,15 +153,13 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // E9 Step 6: Backspace on empty input in partial multi-condition (5 badges) removes second operator and opens operator selector
-          // Pattern: [Column][Operator][Value][Join][SecondOperator] + backspace on empty input -> [Column][Operator][Value][Join] with operator selector open
-          // This triggers AFTER Step 5 where second value was cleared but second operator was preserved
+          // E9 Step 6: Delete on partial multi-condition (5 badges) removes second operator and opens operator selector
+          // Pattern: [Column][Operator][Value][Join][SecondOperator] + Delete -> [Column][Operator][Value][Join] with operator selector open
           if (
             searchMode.partialJoin &&
             searchMode.secondOperator &&
             searchMode.filterSearch && // filterSearch exists (value may be empty after Step 5)
-            !searchMode.isFilterMode &&
-            (e.currentTarget as HTMLInputElement).value === '' // Input is empty
+            !searchMode.isFilterMode
           ) {
             e.preventDefault();
 
@@ -196,10 +186,7 @@ export const useSearchKeyboard = ({
           // D6 Step 3: Remove trailing join operator from confirmed filter
           // Pattern: #field #operator value #join # -> #field #operator value##
           // This handles when user added join operator but wants to remove it and go back to confirmed state
-          if (
-            (e.currentTarget as HTMLInputElement).value === '' && // Input is empty
-            value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/)
-          ) {
+          if (value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/)) {
             e.preventDefault();
             // Remove trailing join operator and restore ## marker
             const match = value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/);
@@ -213,7 +200,7 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // Backspace on empty value: Navigate back to operator/column selection
+          // Delete on empty value: Navigate back to operator/column selection
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.value === ''
@@ -233,7 +220,7 @@ export const useSearchKeyboard = ({
             } else {
               e.preventDefault();
               const columnName = searchMode.filterSearch.field;
-              // Auto-open operator selector when backspacing to column
+              // Auto-open operator selector when deleting to column
               const newValue = `#${columnName} #`;
               onChange({
                 target: { value: newValue },
@@ -242,8 +229,7 @@ export const useSearchKeyboard = ({
             }
           } else if (
             searchMode.showOperatorSelector &&
-            searchMode.selectedColumn &&
-            operatorSearchTerm === ''
+            searchMode.selectedColumn
           ) {
             e.preventDefault();
             const columnName = searchMode.selectedColumn.field;
@@ -299,7 +285,6 @@ export const useSearchKeyboard = ({
       onKeyDown,
       onClearSearch,
       value,
-      operatorSearchTerm,
       handleCloseColumnSelector,
       handleCloseOperatorSelector,
       handleCloseJoinOperatorSelector,

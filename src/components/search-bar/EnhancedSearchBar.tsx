@@ -1420,7 +1420,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
-    operatorSearchTerm,
     onChange: handleOnChangeWithReconstruction, // Use wrapped onChange
     onKeyDown,
     onClearSearch,
