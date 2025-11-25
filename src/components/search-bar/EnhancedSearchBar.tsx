@@ -1642,6 +1642,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 paddingLeft: showTargetedIndicator
                   ? 'var(--badge-width, 60px)'
                   : getBasePadding(),
+                // No transition on padding - prevents placeholder from animating
               }}
               value={displayValue}
               onChange={handleInputChange}
@@ -1650,30 +1651,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onBlur={onBlur}
             />
 
-            {(showTargetedIndicator || preservedSearchMode) && (
-              <SearchBadge
-                searchMode={searchMode}
-                badgeRef={badgeRef}
-                badgesContainerRef={badgesContainerRef}
-                onClearColumn={handleClearAll}
-                onClearOperator={handleClearToColumn}
-                onClearValue={handleClearValue}
-                onClearPartialJoin={handleClearPartialJoin}
-                onClearSecondOperator={handleClearSecondOperator}
-                onClearSecondValue={handleClearSecondValue}
-                onClearAll={handleClearAll}
-                onEditColumn={handleEditColumn}
-                onEditOperator={handleEditOperator}
-                onEditJoin={handleEditJoin}
-                onEditValue={handleEditValue}
-                onEditSecondValue={handleEditSecondValue}
-                onHoverChange={handleHoverChange}
-                preservedSearchMode={preservedSearchMode}
-                editingBadge={editingBadge}
-                onInlineValueChange={handleInlineValueChange}
-                onInlineEditComplete={handleInlineEditComplete}
-              />
-            )}
+            <SearchBadge
+              searchMode={searchMode}
+              badgeRef={badgeRef}
+              badgesContainerRef={badgesContainerRef}
+              onClearColumn={handleClearAll}
+              onClearOperator={handleClearToColumn}
+              onClearValue={handleClearValue}
+              onClearPartialJoin={handleClearPartialJoin}
+              onClearSecondOperator={handleClearSecondOperator}
+              onClearSecondValue={handleClearSecondValue}
+              onClearAll={handleClearAll}
+              onEditColumn={handleEditColumn}
+              onEditOperator={handleEditOperator}
+              onEditJoin={handleEditJoin}
+              onEditValue={handleEditValue}
+              onEditSecondValue={handleEditSecondValue}
+              onHoverChange={handleHoverChange}
+              preservedSearchMode={preservedSearchMode}
+              editingBadge={editingBadge}
+              onInlineValueChange={handleInlineValueChange}
+              onInlineEditComplete={handleInlineEditComplete}
+            />
           </div>
         </div>
 
