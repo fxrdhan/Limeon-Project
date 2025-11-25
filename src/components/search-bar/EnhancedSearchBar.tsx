@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { LuSearch } from 'react-icons/lu';
 import fuzzysort from 'fuzzysort';
 import {
@@ -443,6 +444,45 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   );
 
   const handleCloseColumnSelector = useCallback(() => {
+    // If in edit mode, restore the original pattern instead of clearing
+    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
+      const filter = preservedSearchMode.filterSearch;
+      const columnName = filter.field;
+
+      let restoredPattern: string;
+      if (
+        filter.isMultiCondition &&
+        filter.conditions &&
+        filter.conditions.length >= 2
+      ) {
+        const cond1 = filter.conditions[0];
+        const cond2 = filter.conditions[1];
+        const join = filter.joinOperator || 'AND';
+
+        if (cond1.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+        } else if (cond2.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+        }
+      } else {
+        if (filter.valueTo) {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
+        }
+      }
+
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      preservedFilterRef.current = null;
+      setPreservedSearchMode(null);
+      return;
+    }
+
     // searchMode is derived, so we close by clearing the value
     if (value.startsWith('#') && !searchMode.selectedColumn) {
       const searchTerm = value.substring(1);
@@ -464,9 +504,49 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     memoizedColumns,
     onClearSearch,
     onChange,
+    preservedSearchMode,
   ]);
 
   const handleCloseOperatorSelector = useCallback(() => {
+    // If in edit mode, restore the original pattern instead of clearing
+    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
+      const filter = preservedSearchMode.filterSearch;
+      const columnName = filter.field;
+
+      let restoredPattern: string;
+      if (
+        filter.isMultiCondition &&
+        filter.conditions &&
+        filter.conditions.length >= 2
+      ) {
+        const cond1 = filter.conditions[0];
+        const cond2 = filter.conditions[1];
+        const join = filter.joinOperator || 'AND';
+
+        if (cond1.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+        } else if (cond2.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+        }
+      } else {
+        if (filter.valueTo) {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
+        }
+      }
+
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      preservedFilterRef.current = null;
+      setPreservedSearchMode(null);
+      return;
+    }
+
     // GUARD: Don't interfere if value is already confirmed (has ##) or in partial join state
     // This prevents this handler from clearing value when other handlers set it correctly
     if (value.includes('##') || searchMode.partialJoin) {
@@ -497,18 +577,62 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     value,
     onChange,
     onClearSearch,
+    preservedSearchMode,
   ]);
 
   const handleCloseJoinOperatorSelector = useCallback(() => {
+    // If in edit mode, restore the original pattern instead of clearing
+    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
+      const filter = preservedSearchMode.filterSearch;
+      const columnName = filter.field;
+
+      let restoredPattern: string;
+      if (
+        filter.isMultiCondition &&
+        filter.conditions &&
+        filter.conditions.length >= 2
+      ) {
+        const cond1 = filter.conditions[0];
+        const cond2 = filter.conditions[1];
+        const join = filter.joinOperator || 'AND';
+
+        if (cond1.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+        } else if (cond2.valueTo) {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+        }
+      } else {
+        if (filter.valueTo) {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+        } else {
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
+        }
+      }
+
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      preservedFilterRef.current = null;
+      setPreservedSearchMode(null);
+      setCurrentJoinOperator(undefined);
+      return;
+    }
+
     // Remove trailing "#" when closing join operator selector
     const trimmedValue = value.replace(/\s+#\s*$/, '');
     onChange({
       target: { value: trimmedValue },
     } as React.ChangeEvent<HTMLInputElement>);
-  }, [value, onChange]);
+  }, [value, onChange, preservedSearchMode]);
 
   // Clear all - used by purple badge (column)
   const handleClearAll = useCallback(() => {
+    // Clear preserved state to ensure badges disappear
+    handleClearPreservedState();
+
     if (onClearSearch) {
       onClearSearch();
     } else {
@@ -516,44 +640,87 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         target: { value: '' },
       } as React.ChangeEvent<HTMLInputElement>);
     }
-  }, [onClearSearch, onChange]);
+  }, [onClearSearch, onChange, handleClearPreservedState]);
 
   // Clear to column only - used by blue badge (operator)
   const handleClearToColumn = useCallback(() => {
-    if (searchMode.filterSearch) {
-      const columnName = searchMode.filterSearch.field;
+    // Get state BEFORE clearing preserved state (closure captures current value)
+    const stateToUse = preservedSearchMode || searchMode;
+
+    // Clear preserved state to ensure badges update correctly
+    handleClearPreservedState();
+
+    // Explicitly clear filter since value might not change
+    // (when already in operator selector mode, value stays the same)
+    onFilterSearch?.(null);
+
+    if (stateToUse.filterSearch) {
+      const columnName = stateToUse.filterSearch.field;
       // Auto-open operator selector after clearing operator
       const newValue = PatternBuilder.columnWithOperatorSelector(columnName);
       setFilterValue(newValue, onChange, inputRef);
     } else {
       handleClearAll();
     }
-  }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
+  }, [
+    searchMode,
+    preservedSearchMode,
+    onChange,
+    inputRef,
+    handleClearAll,
+    handleClearPreservedState,
+    onFilterSearch,
+  ]);
 
   // Clear value only - used by gray badge (value)
   const handleClearValue = useCallback(() => {
-    if (searchMode.filterSearch) {
-      const columnName = searchMode.filterSearch.field;
-      const operator = searchMode.filterSearch.operator;
+    // Get state BEFORE clearing preserved state (closure captures current value)
+    const stateToUse = preservedSearchMode || searchMode;
+
+    // Clear preserved state to ensure badges update correctly
+    handleClearPreservedState();
+
+    // Explicitly clear filter since value might not change
+    // (when clearing value, there's nothing to filter on yet)
+    onFilterSearch?.(null);
+
+    if (stateToUse.filterSearch) {
+      const columnName = stateToUse.filterSearch.field;
+      const operator = stateToUse.filterSearch.operator;
       // Keep column and operator, clear value
       const newValue = PatternBuilder.columnOperator(columnName, operator);
       setFilterValue(newValue, onChange, inputRef);
     } else {
       handleClearAll();
     }
-  }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
+  }, [
+    searchMode,
+    preservedSearchMode,
+    onChange,
+    inputRef,
+    handleClearAll,
+    handleClearPreservedState,
+    onFilterSearch,
+  ]);
 
   // Clear partial join - used by orange badge (AND/OR)
   const handleClearPartialJoin = useCallback(() => {
-    if (!searchMode.filterSearch) {
+    // Get state BEFORE clearing preserved state (closure captures current value)
+    const stateToUse = preservedSearchMode || searchMode;
+
+    // Clear preserved state to ensure badges update correctly
+    handleClearPreservedState();
+
+    if (!stateToUse.filterSearch) {
       handleClearAll();
       return;
     }
 
-    const columnName = searchMode.filterSearch.field;
-    const firstCondition = getFirstCondition(searchMode.filterSearch);
+    const columnName = stateToUse.filterSearch.field;
+    const firstCondition = getFirstCondition(stateToUse.filterSearch);
 
     // Back to confirmed single-condition: #field #operator value##
+    // This will trigger useSearchState to apply the first condition filter
     const newValue = PatternBuilder.confirmed(
       columnName,
       firstCondition.operator,
@@ -561,21 +728,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     );
 
     setFilterValue(newValue, onChange, inputRef);
-  }, [searchMode.filterSearch, onChange, inputRef, handleClearAll]);
+  }, [
+    searchMode,
+    preservedSearchMode,
+    onChange,
+    inputRef,
+    handleClearAll,
+    handleClearPreservedState,
+  ]);
 
   // Clear second operator - used by blue badge (second operator in multi-condition)
   const handleClearSecondOperator = useCallback(() => {
-    if (!searchMode.filterSearch) {
-      handleClearAll();
-      return;
-    }
+    // Use preservedSearchMode if available (during edit mode), otherwise use current
+    const stateToUse = preservedSearchMode || searchMode;
 
     // Clear preserved state to ensure badge disappears and no operator is pre-highlighted
     handleClearPreservedState();
 
-    const columnName = searchMode.filterSearch.field;
-    const firstCondition = getFirstCondition(searchMode.filterSearch);
-    const joinOp = getJoinOperator(searchMode.filterSearch, searchMode);
+    if (!stateToUse.filterSearch) {
+      handleClearAll();
+      return;
+    }
+
+    const columnName = stateToUse.filterSearch.field;
+    const firstCondition = getFirstCondition(stateToUse.filterSearch);
+    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
 
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
       // Back to state with join operator but no second operator: #field #op1 val1 #join #
@@ -593,6 +770,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [
     searchMode,
+    preservedSearchMode,
     onChange,
     inputRef,
     handleClearAll,
@@ -601,17 +779,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Clear second value - used by gray badge (second value in multi-condition)
   const handleClearSecondValue = useCallback(() => {
-    if (!searchMode.filterSearch) {
+    // Get state BEFORE clearing preserved state (closure captures current value)
+    const stateToUse = preservedSearchMode || searchMode;
+
+    // Clear preserved state to ensure badges update correctly
+    handleClearPreservedState();
+
+    if (!stateToUse.filterSearch) {
       handleClearValue();
       return;
     }
 
-    const columnName = searchMode.filterSearch.field;
-    const firstCondition = getFirstCondition(searchMode.filterSearch);
-    const joinOp = getJoinOperator(searchMode.filterSearch, searchMode);
+    const columnName = stateToUse.filterSearch.field;
+    const firstCondition = getFirstCondition(stateToUse.filterSearch);
+    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
     const secondOp = getSecondOperatorValue(
-      searchMode.filterSearch,
-      searchMode,
+      stateToUse.filterSearch,
+      stateToUse,
       value
     );
 
@@ -630,7 +814,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Fallback if missing data
       handleClearValue();
     }
-  }, [searchMode, value, onChange, inputRef, handleClearValue]);
+  }, [
+    searchMode,
+    preservedSearchMode,
+    value,
+    onChange,
+    inputRef,
+    handleClearValue,
+    handleClearPreservedState,
+  ]);
 
   // ==================== EDIT HANDLERS ====================
 
@@ -644,10 +836,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
-    // Save state only if not already preserved (prevent overwriting original state)
-    if (!preservedSearchMode) {
-      setPreservedSearchMode(searchMode);
-    }
+    // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
+    // This prevents race condition where useSearchState sees isEditMode: false
+    flushSync(() => {
+      // Save state only if not already preserved (prevent overwriting original state)
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+    });
 
     // Extract and preserve filter data from original state
     preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
@@ -670,10 +866,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       const columnName = stateToUse.filterSearch.field;
 
-      // Save state only if not already preserved (prevent overwriting original state)
-      if (!preservedSearchMode) {
-        setPreservedSearchMode(searchMode);
-      }
+      // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
+      // This prevents race condition where useSearchState sees isEditMode: false
+      flushSync(() => {
+        // Save state only if not already preserved (prevent overwriting original state)
+        if (!preservedSearchMode) {
+          setPreservedSearchMode(searchMode);
+        }
+      });
 
       // Track if we're editing the second operator
       setIsEditingSecondOperator(isSecond);
@@ -721,10 +921,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const firstCondition = getFirstCondition(stateToUse.filterSearch);
     const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
 
-    // Save state only if not already preserved (prevent overwriting original state)
-    if (!preservedSearchMode) {
-      setPreservedSearchMode(searchMode);
-    }
+    // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
+    // This prevents race condition where useSearchState sees isEditMode: false
+    flushSync(() => {
+      // Save state only if not already preserved (prevent overwriting original state)
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+    });
 
     // Extract and preserve filter data from original state
     preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
