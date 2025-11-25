@@ -11,6 +11,8 @@ interface BadgeProps {
 const Badge: React.FC<BadgeProps> = ({ config }) => {
   const colors = BADGE_COLORS[config.type];
   const inputRef = useRef<HTMLInputElement>(null);
+  // Flag to prevent blur handler after intentional clear actions (Delete, Backspace on empty)
+  const isClearing = useRef(false);
 
   const isEditing = config.isEditing || false;
   const editingValue = config.editingValue || '';
@@ -45,12 +47,15 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       // Delete key while editing - immediately clear the badge (double-Delete to delete)
       e.preventDefault();
       e.stopPropagation();
+      // Set flag to prevent blur handler from re-applying old value
+      isClearing.current = true;
       onEditComplete?.('');
     } else if (e.key === 'Backspace' && editingValue === '') {
       // If backspace pressed on empty input, clear the badge
       e.preventDefault();
       e.stopPropagation();
-      // Pass empty string to trigger clear
+      // Set flag to prevent blur handler from re-applying old value
+      isClearing.current = true;
       onEditComplete?.('');
     }
   };
@@ -63,13 +68,20 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     // If user cleared all text, immediately trigger clear action
     // Pass the newValue directly to avoid race condition with state update
     if (newValue.trim() === '') {
-      // No setTimeout needed - pass value directly
+      // Set flag to prevent blur handler from re-applying old value
+      isClearing.current = true;
       onEditComplete?.(newValue);
     }
   };
 
   // Handle blur (clicking outside)
   const handleBlur = () => {
+    // Skip if we're in the middle of a clear operation
+    // This prevents race condition where blur re-applies old value after Delete/clear
+    if (isClearing.current) {
+      isClearing.current = false;
+      return;
+    }
     // Pass current editingValue directly
     onEditComplete?.(editingValue);
   };
