@@ -1580,15 +1580,30 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [preservedSearchMode, sortedColumns]);
 
   // Calculate base padding (CSS variable will override when badges are present)
+  // When left icon is visible (column selector, filter mode, etc.), use smaller padding
+  // since the icon container already provides visual spacing
   const getBasePadding = () => {
-    if (
-      displayValue &&
-      !displayValue.startsWith('#') &&
-      !searchMode.showColumnSelector &&
-      !showTargetedIndicator
-    ) {
+    // Check if left icon is showing (same logic as SearchIcon's shouldShowLeftIcon)
+    const hasExplicitOperator =
+      searchMode.filterSearch?.isExplicitOperator ||
+      searchMode.filterSearch?.isMultiCondition ||
+      searchMode.showOperatorSelector ||
+      searchMode.showJoinOperatorSelector ||
+      searchMode.partialJoin ||
+      searchMode.secondOperator;
+
+    const isLeftIconVisible =
+      (((displayValue && !displayValue.startsWith('#')) ||
+        hasExplicitOperator) &&
+        !searchMode.showColumnSelector) ||
+      searchMode.showColumnSelector;
+
+    // When left icon is visible, use smaller padding (icon provides spacing)
+    if (isLeftIconVisible) {
       return '12px';
     }
+
+    // Default padding when no left icon (search icon is absolute positioned inside input)
     return '40px';
   };
 
