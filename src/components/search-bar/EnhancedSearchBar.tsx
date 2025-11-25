@@ -1210,6 +1210,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           target: { value: newPattern },
         } as React.ChangeEvent<HTMLInputElement>);
         setEditingBadge(null);
+
+        // Ensure focus returns to search input after edit completes
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, 50);
         return;
       }
 
