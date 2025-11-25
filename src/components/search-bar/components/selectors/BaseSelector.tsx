@@ -376,12 +376,17 @@ function BaseSelector<T>({
         });
       };
 
-      // On initial open (indicator not yet positioned), wait for content animation to complete
-      // Content animation duration is 100ms, so we wait 120ms to be safe
+      // On initial open (indicator not yet positioned), calculate position immediately
+      // using double RAF to ensure DOM is ready after content animation starts
       const isInitialPosition = indicatorStyle.height === 0;
       if (isInitialPosition) {
-        const timeoutId = setTimeout(calculatePosition, 120);
-        return () => clearTimeout(timeoutId);
+        // Use double RAF instead of setTimeout for faster, more reliable positioning
+        // First RAF: content starts rendering, Second RAF: layout is calculated
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            calculatePosition();
+          });
+        });
       } else {
         // For subsequent changes (keyboard navigation), calculate immediately
         calculatePosition();
