@@ -23,7 +23,7 @@ export interface BaseSelectorConfig<T> {
   getSearchFields: (
     item: T
   ) => Array<{ key: string; value: string; boost?: number }>;
-  theme?: 'purple' | 'blue';
+  theme?: 'purple' | 'blue' | 'orange';
 }
 
 export interface BaseSelectorProps<T> {

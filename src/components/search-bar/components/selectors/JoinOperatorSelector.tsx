@@ -37,7 +37,7 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
         { key: 'value', value: operator.value, boost: 500 },
         { key: 'description', value: operator.description || '', boost: 0 },
       ],
-      theme: 'purple',
+      theme: 'orange',
     }),
     []
   );
