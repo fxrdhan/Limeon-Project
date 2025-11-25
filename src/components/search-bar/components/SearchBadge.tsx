@@ -32,7 +32,7 @@ const badgeVariants = {
     y: -12,
     transition: {
       duration: 0.2,
-      ease: 'easeOut',
+      ease: 'easeOut' as const,
     },
   },
 };
