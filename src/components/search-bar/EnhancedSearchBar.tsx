@@ -651,11 +651,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
-    // Remove trailing "#" when closing join operator selector
+    // Remove trailing "#" and restore ## marker to confirm the filter
+    // Pattern: #field #operator value # → #field #operator value##
     const trimmedValue = value.replace(/\s+#\s*$/, '');
-    onChange({
-      target: { value: trimmedValue },
-    } as React.ChangeEvent<HTMLInputElement>);
+
+    // Check if this looks like a complete single-condition filter (has field, operator, and value)
+    // If so, add ## to confirm it
+    const singleConditionMatch = trimmedValue.match(/^#\w+\s+#\w+\s+.+$/);
+    if (singleConditionMatch && !trimmedValue.includes('##')) {
+      onChange({
+        target: { value: trimmedValue + '##' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    } else {
+      onChange({
+        target: { value: trimmedValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+    }
   }, [value, onChange, preservedSearchMode]);
 
   // Clear all - used by purple badge (column)
