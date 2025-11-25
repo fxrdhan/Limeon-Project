@@ -4,31 +4,35 @@ import { EnhancedSearchState } from '../types';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import Badge from './Badge';
 
-// Animation config - uses opacity and y position only (no scale to avoid visual "jumping")
-// Scale animation causes visual gaps because layout size stays constant but visual size shrinks
+// Bouncy spring animation config
+// Now works without "jumping" bug thanks to:
+// - Consistent badge IDs (existing badges don't re-animate)
+// - mode="popLayout" (exiting badges immediately leave layout flow)
+// - layout prop (remaining badges smoothly reposition)
 const badgeVariants = {
   initial: {
     opacity: 0,
-    y: -6,
+    scale: 0.5,
+    y: -8,
   },
   animate: {
     opacity: 1,
+    scale: 1,
     y: 0,
     transition: {
       type: 'spring' as const,
-      stiffness: 500,
-      damping: 30,
+      stiffness: 400,
+      damping: 22,
       mass: 0.8,
     },
   },
   exit: {
     opacity: 0,
-    y: -6,
+    scale: 0.3,
+    y: -12,
     transition: {
-      type: 'spring' as const,
-      stiffness: 500,
-      damping: 30,
-      mass: 0.6,
+      duration: 0.2,
+      ease: 'easeOut' as const,
     },
   },
 };
