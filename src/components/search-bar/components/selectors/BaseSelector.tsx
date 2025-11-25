@@ -240,32 +240,44 @@ function BaseSelector<T>({
       filteredItems.length > 0 &&
       showContent
     ) {
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        const selectedElement = itemRefs.current[selectedIndex];
-        const containerElement = listContainerRef.current;
+      const calculatePosition = () => {
+        requestAnimationFrame(() => {
+          const selectedElement = itemRefs.current[selectedIndex];
+          const containerElement = listContainerRef.current;
 
-        if (selectedElement && containerElement) {
-          const containerRect = containerElement.getBoundingClientRect();
-          const itemRect = selectedElement.getBoundingClientRect();
+          if (selectedElement && containerElement) {
+            const containerRect = containerElement.getBoundingClientRect();
+            const itemRect = selectedElement.getBoundingClientRect();
 
-          // Shift background slightly upward for better visual alignment
-          const verticalOffset = -4; // Move 4px up
+            // Shift background slightly upward for better visual alignment
+            const verticalOffset = -4; // Move 4px up
 
-          setIndicatorStyle({
-            top:
-              itemRect.top -
-              containerRect.top +
-              containerElement.scrollTop +
-              verticalOffset,
-            left: itemRect.left - containerRect.left,
-            width: itemRect.width,
-            height: itemRect.height,
-          });
-        }
-      });
+            setIndicatorStyle({
+              top:
+                itemRect.top -
+                containerRect.top +
+                containerElement.scrollTop +
+                verticalOffset,
+              left: itemRect.left - containerRect.left,
+              width: itemRect.width,
+              height: itemRect.height,
+            });
+          }
+        });
+      };
+
+      // On initial open (indicator not yet positioned), wait for content animation to complete
+      // Content animation duration is 100ms, so we wait 120ms to be safe
+      const isInitialPosition = indicatorStyle.height === 0;
+      if (isInitialPosition) {
+        const timeoutId = setTimeout(calculatePosition, 120);
+        return () => clearTimeout(timeoutId);
+      } else {
+        // For subsequent changes (keyboard navigation), calculate immediately
+        calculatePosition();
+      }
     }
-  }, [selectedIndex, filteredItems, showContent]);
+  }, [selectedIndex, filteredItems, showContent, indicatorStyle.height]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
