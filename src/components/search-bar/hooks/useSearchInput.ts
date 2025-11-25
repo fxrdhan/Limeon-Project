@@ -123,14 +123,53 @@ export const useSearchInput = ({
     searchMode.selectedColumn,
   ]);
 
+  // Ref to store last measured width - persists across renders
+  const lastMeasuredWidthRef = useRef<number>(0);
+  // Ref to track badge count for detecting additions/removals
+  const lastBadgeCountRef = useRef<number>(0);
+
+  // Calculate expected badge count based on current state
+  const currentBadgeCount = useMemo(() => {
+    if (!showTargetedIndicator) return 0;
+
+    let count = 0;
+    // Column badge
+    if (searchMode.selectedColumn || searchMode.filterSearch?.field) count++;
+    // Operator badge
+    if (searchMode.filterSearch?.operator) count++;
+    // Value badge
+    if (searchMode.filterSearch?.value) count++;
+    // Join badge
+    if (searchMode.partialJoin || searchMode.filterSearch?.joinOperator)
+      count++;
+    // Second operator badge
+    if (
+      searchMode.secondOperator ||
+      (searchMode.filterSearch?.conditions &&
+        searchMode.filterSearch.conditions.length >= 2)
+    )
+      count++;
+    // Second value badge
+    if (searchMode.filterSearch?.conditions?.[1]?.value) count++;
+
+    return count;
+  }, [
+    showTargetedIndicator,
+    searchMode.selectedColumn,
+    searchMode.filterSearch,
+    searchMode.partialJoin,
+    searchMode.secondOperator,
+  ]);
+
   // Dynamic badge width tracking using CSS variable - no React state updates!
-  // This prevents flickering by updating DOM directly without triggering re-renders
   useEffect(() => {
     if (!showTargetedIndicator || !inputRef?.current) {
       // Reset to default padding when no badge
       if (inputRef?.current) {
         inputRef.current.style.removeProperty('--badge-width');
       }
+      lastMeasuredWidthRef.current = 0;
+      lastBadgeCountRef.current = 0;
       return;
     }
 
@@ -158,29 +197,62 @@ export const useSearchInput = ({
 
     const inputElement = inputRef.current;
 
-    // Update padding instantly with current badge width
+    // Detect badge count changes
+    const badgeAdded = currentBadgeCount > lastBadgeCountRef.current;
+    const badgeRemoved = currentBadgeCount < lastBadgeCountRef.current;
+    lastBadgeCountRef.current = currentBadgeCount;
+
     const updatePadding = () => {
-      if (targetElement && inputElement) {
-        const badgeWidth = targetElement.offsetWidth;
-        // Set CSS variable directly - NO React state, NO re-render!
+      if (!targetElement || !inputElement) return;
+
+      const badgeWidth = targetElement.offsetWidth;
+
+      // Skip if width is 0 (element not rendered yet)
+      if (badgeWidth === 0) return;
+
+      // Only update if width has changed significantly (>2px difference)
+      if (Math.abs(badgeWidth - lastMeasuredWidthRef.current) > 2) {
+        lastMeasuredWidthRef.current = badgeWidth;
         inputElement.style.setProperty('--badge-width', `${badgeWidth + 16}px`);
       }
     };
 
-    // Initial measurement with RAF for DOM stability
-    requestAnimationFrame(() => {
-      updatePadding();
-    });
+    let initialTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // Watch for badge size changes - instant updates (no throttling needed without animations)
-    const resizeObserver = new ResizeObserver(() => {
+    if (badgeAdded) {
+      // Badge ADDED: delay measurement to let animation complete
+      // This prevents the "jump to the right" visual glitch
+      initialTimer = setTimeout(() => {
+        updatePadding();
+      }, 300);
+    } else if (badgeRemoved) {
+      // Badge REMOVED: update immediately so placeholder follows badges
+      // Don't wait for exit animation - user expects immediate feedback
       updatePadding();
+    } else {
+      // No count change, measure on next frame
+      requestAnimationFrame(() => {
+        updatePadding();
+      });
+    }
+
+    // ResizeObserver for subsequent size changes
+    // Use shorter debounce when badges are removed for faster response
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const resizeObserver = new ResizeObserver(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      // Shorter debounce for immediate feel
+      debounceTimer = setTimeout(() => {
+        updatePadding();
+      }, 16); // ~1 frame
     });
 
     resizeObserver.observe(targetElement);
 
     return () => {
       resizeObserver.disconnect();
+      if (initialTimer) clearTimeout(initialTimer);
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, [
     showTargetedIndicator,
@@ -192,6 +264,7 @@ export const useSearchInput = ({
     searchMode.partialJoin,
     inputRef,
     isSecondOperator,
+    currentBadgeCount,
   ]);
 
   const handleHoverChange = useCallback(() => {

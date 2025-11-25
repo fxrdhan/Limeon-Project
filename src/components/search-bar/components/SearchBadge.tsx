@@ -1,7 +1,37 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedSearchState } from '../types';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import Badge from './Badge';
+
+// Animation config - uses opacity and y position only (no scale to avoid visual "jumping")
+// Scale animation causes visual gaps because layout size stays constant but visual size shrinks
+const badgeVariants = {
+  initial: {
+    opacity: 0,
+    y: -6,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 500,
+      damping: 30,
+      mass: 0.8,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 500,
+      damping: 30,
+      mass: 0.6,
+    },
+  },
+};
 
 interface SearchBadgeProps {
   searchMode: EnhancedSearchState;
@@ -88,23 +118,33 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     onHoverChange?.(false);
   };
 
-  // Don't render if no badges
-  if (badges.length === 0) {
-    return null;
-  }
-
+  // Always render container so AnimatePresence can handle exit animations
+  // Use overflow-visible to allow exit animations to be visible (not clipped)
   return (
     <div
       ref={badgesContainerRef}
-      className="absolute left-1.5 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-1.5 max-w-[70%] overflow-x-auto scrollbar-hide"
+      className="absolute left-1.5 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-1.5 max-w-[70%] scrollbar-hide overflow-visible"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      style={{
+        pointerEvents: badges.length === 0 ? 'none' : 'auto',
+      }}
     >
-      {badges.map((badge, index) => (
-        <div key={badge.id} ref={index === 0 ? badgeRef : undefined}>
-          <Badge config={badge} />
-        </div>
-      ))}
+      <AnimatePresence mode="popLayout">
+        {badges.map((badge, index) => (
+          <motion.div
+            key={badge.id}
+            ref={index === 0 ? badgeRef : undefined}
+            layout
+            variants={badgeVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <Badge config={badge} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };

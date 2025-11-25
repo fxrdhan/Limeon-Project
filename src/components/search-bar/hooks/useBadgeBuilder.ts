@@ -81,8 +81,10 @@ export const useBadgeBuilder = (
         );
 
         // Operator badge for this condition
+        // Use consistent IDs: 'operator' for first, 'second-operator' for second
+        // This ensures AnimatePresence doesn't see them as new badges on state transitions
         badges.push({
-          id: `multi-operator-${index}`,
+          id: index === 0 ? 'operator' : 'second-operator',
           type: 'operator',
           label: operatorLabel,
           onClear:
@@ -108,9 +110,9 @@ export const useBadgeBuilder = (
               inlineEditingProps?.editingBadge?.type ===
               (isFirstValue ? 'firstValue' : 'secondValue');
 
-            // First value badge
+            // First value badge - use consistent IDs
             badges.push({
-              id: `multi-value-${index}-from`,
+              id: index === 0 ? 'value-from' : 'second-value-from',
               type: 'value',
               label: condition.value,
               onClear:
@@ -137,9 +139,9 @@ export const useBadgeBuilder = (
                 : undefined,
             });
 
-            // "to" separator badge
+            // "to" separator badge - use consistent IDs
             badges.push({
-              id: `multi-separator-${index}`,
+              id: index === 0 ? 'separator' : 'second-separator',
               type: 'separator',
               label: 'to',
               onClear: () => {}, // Separator cannot be cleared independently
@@ -152,9 +154,9 @@ export const useBadgeBuilder = (
               inlineEditingProps?.editingBadge?.type ===
               (isFirstValue ? 'firstValueTo' : 'secondValueTo');
 
-            // Second value badge (valueTo)
+            // Second value badge (valueTo) - use consistent IDs
             badges.push({
-              id: `multi-value-${index}-to`,
+              id: index === 0 ? 'value-to' : 'second-value-to',
               type: 'valueSecond',
               label: condition.valueTo,
               onClear:
@@ -187,9 +189,9 @@ export const useBadgeBuilder = (
               inlineEditingProps?.editingBadge?.type ===
               (isFirstValue ? 'firstValue' : 'secondValue');
 
-            // Normal operator with single value
+            // Normal operator with single value - use consistent IDs
             badges.push({
-              id: `multi-value-${index}`,
+              id: index === 0 ? 'value' : 'second-value',
               type: 'value',
               label: condition.value,
               onClear:
@@ -218,10 +220,10 @@ export const useBadgeBuilder = (
           }
         }
 
-        // Join badge between conditions (not after last one)
+        // Join badge between conditions (not after last one) - use consistent ID
         if (index < filter.conditions!.length - 1) {
           badges.push({
-            id: `multi-join-${index}`,
+            id: 'join',
             type: 'join',
             label: filter.joinOperator || '',
             onClear: handlers.onClearPartialJoin,
