@@ -100,12 +100,10 @@ function BaseSelector<T>({
     }
     // Also reset when defaultSelectedIndex changes while modal is open
     // This handles switching between editing different badges
-    else if (
-      isOpen &&
-      defaultSelectedIndex !== indexState.lastDefaultIndex &&
-      defaultSelectedIndex !== undefined
-    ) {
-      newIndex = defaultSelectedIndex;
+    // Also handles when defaultSelectedIndex becomes undefined (e.g., after clearing via trash button)
+    else if (isOpen && defaultSelectedIndex !== indexState.lastDefaultIndex) {
+      // Reset to the new defaultSelectedIndex, or 0 if undefined (cleared state)
+      newIndex = defaultSelectedIndex ?? 0;
     }
     // Adjust if out of bounds
     else if (
