@@ -141,9 +141,12 @@ const parseMultiConditionFilter = (
 };
 
 export const parseSearchValue = (
-  searchValue: string,
+  rawSearchValue: string,
   columns: SearchColumn[]
 ): EnhancedSearchState => {
+  // Trim whitespace (handles paste with trailing newlines/spaces)
+  const searchValue = rawSearchValue.trim();
+
   if (searchValue === '#') {
     return {
       globalSearch: undefined,
@@ -592,10 +595,26 @@ export const findColumn = (
   columns: SearchColumn[],
   input: string
 ): SearchColumn | undefined => {
+  const normalizedInput = input.toLowerCase().trim();
+
+  // Exact match first (field or headerName)
+  const exactMatch = columns.find(
+    col =>
+      col.field.toLowerCase() === normalizedInput ||
+      col.headerName.toLowerCase() === normalizedInput
+  );
+  if (exactMatch) return exactMatch;
+
+  // Flexible match: normalize by removing/replacing separators
+  // "harga_pokok" matches "Harga Pokok", "hargaPokok", "harga-pokok"
+  const normalize = (str: string) => str.toLowerCase().replace(/[\s_-]/g, '');
+
+  const normalizedInputClean = normalize(normalizedInput);
+
   return columns.find(
     col =>
-      col.field.toLowerCase() === input.toLowerCase() ||
-      col.headerName.toLowerCase() === input.toLowerCase()
+      normalize(col.field) === normalizedInputClean ||
+      normalize(col.headerName) === normalizedInputClean
   );
 };
 

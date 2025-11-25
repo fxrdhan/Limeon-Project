@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { EnhancedSearchState } from '../types';
 import {
-  buildFilterValue,
   buildColumnValue,
+  buildFilterValue,
   getOperatorSearchTerm,
 } from '../utils/searchUtils';
 
