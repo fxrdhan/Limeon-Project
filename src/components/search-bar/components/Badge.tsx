@@ -41,6 +41,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       e.stopPropagation();
       // Pass current value directly to avoid race condition
       onEditComplete?.(editingValue);
+    } else if (e.key === 'Delete') {
+      // Delete key while editing - immediately clear the badge (double-Delete to delete)
+      e.preventDefault();
+      e.stopPropagation();
+      onEditComplete?.('');
     } else if (e.key === 'Backspace' && editingValue === '') {
       // If backspace pressed on empty input, clear the badge
       e.preventDefault();
