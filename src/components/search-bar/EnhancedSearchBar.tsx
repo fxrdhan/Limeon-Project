@@ -454,7 +454,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   );
 
   const handleCloseColumnSelector = useCallback(() => {
-    // If in edit mode, restore the original pattern instead of clearing
+    // CASE 1: Edit mode with confirmed filter - restore the original pattern
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       const filter = preservedSearchMode.filterSearch;
       const columnName = filter.field;
@@ -493,6 +493,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
+    // CASE 2: Edit mode with column selected but no filter yet (was editing from operator selector)
+    // Restore back to operator selector state
+    if (
+      preservedSearchMode &&
+      !preservedSearchMode.filterSearch &&
+      preservedSearchMode.selectedColumn
+    ) {
+      const columnName = preservedSearchMode.selectedColumn.field;
+      const restoredPattern =
+        PatternBuilder.columnWithOperatorSelector(columnName);
+
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      setPreservedSearchMode(null);
+      return;
+    }
+
+    // CASE 3: Normal close (not in edit mode)
     // searchMode is derived, so we close by clearing the value
     if (value.startsWith('#') && !searchMode.selectedColumn) {
       const searchTerm = value.substring(1);
@@ -842,10 +862,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // Use preserved state if already in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
 
+    // CASE 1: Column selected but no filter yet (operator selector is open)
+    // Preserve the column badge and switch to column selector
+    if (!stateToUse.filterSearch && stateToUse.selectedColumn) {
+      // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
+      flushSync(() => {
+        if (!preservedSearchMode) {
+          setPreservedSearchMode(searchMode);
+        }
+      });
+
+      // No filter data to preserve, just open column selector
+      const newValue = PatternBuilder.column('');
+      setFilterValue(newValue, onChange, inputRef);
+      return;
+    }
+
+    // CASE 2: No filter and no column - nothing to edit
     if (!stateToUse.filterSearch) {
       return;
     }
 
+    // CASE 3: Has filter data - preserve it for restoration after column selection
     // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
     // This prevents race condition where useSearchState sees isEditMode: false
     flushSync(() => {
@@ -1497,8 +1535,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
+    // Check filterSearch.field first (confirmed filter case)
     if (preservedSearchMode?.filterSearch?.field) {
       const currentColumnField = preservedSearchMode.filterSearch.field;
+      const index = sortedColumns.findIndex(
+        col => col.field === currentColumnField
+      );
+      return index >= 0 ? index : undefined;
+    }
+    // Check selectedColumn (no filter yet, editing from operator selector)
+    if (preservedSearchMode?.selectedColumn?.field) {
+      const currentColumnField = preservedSearchMode.selectedColumn.field;
       const index = sortedColumns.findIndex(
         col => col.field === currentColumnField
       );
