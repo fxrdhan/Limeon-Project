@@ -91,29 +91,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     isEditMode: preservedSearchMode !== null, // In edit mode when preserving badges
   });
 
-  const columnSelectorPosition = useSelectorPosition({
-    isOpen: searchMode.showColumnSelector,
-    containerRef,
-  });
-
-  const operatorSelectorPosition = useSelectorPosition({
-    isOpen: searchMode.showOperatorSelector,
-    containerRef,
-  });
-
-  const joinOperatorSelectorPosition = useSelectorPosition({
-    isOpen: searchMode.showJoinOperatorSelector,
-    containerRef,
-  });
-
-  // Clear preserved state - used to reset edit mode and badge visibility
-  const handleClearPreservedState = useCallback(() => {
-    setPreservedSearchMode(null);
-    preservedFilterRef.current = null;
-    setCurrentJoinOperator(undefined);
-    setIsEditingSecondOperator(false);
-  }, []);
-
+  // Badge refs are used for dynamic selector positioning
+  // We need to access them before calling useSelectorPosition
   const {
     displayValue,
     showTargetedIndicator,
@@ -128,6 +107,41 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onChange,
     inputRef,
   });
+
+  // Column selector: appears at container left (no badge yet)
+  const columnSelectorPosition = useSelectorPosition({
+    isOpen: searchMode.showColumnSelector,
+    containerRef,
+  });
+
+  // Operator selector: position depends on context
+  // - First operator: appears after column badge (badgeRef)
+  // - Second operator (isSecondOperator): appears after all badges including join (badgesContainerRef)
+  const operatorAnchorRef = searchMode.isSecondOperator
+    ? badgesContainerRef
+    : badgeRef;
+  const operatorSelectorPosition = useSelectorPosition({
+    isOpen: searchMode.showOperatorSelector,
+    containerRef,
+    anchorRef: operatorAnchorRef,
+    anchorAlign: 'right',
+  });
+
+  // Join operator selector: appears after all badges (right edge of badges container)
+  const joinOperatorSelectorPosition = useSelectorPosition({
+    isOpen: searchMode.showJoinOperatorSelector,
+    containerRef,
+    anchorRef: badgesContainerRef,
+    anchorAlign: 'right',
+  });
+
+  // Clear preserved state - used to reset edit mode and badge visibility
+  const handleClearPreservedState = useCallback(() => {
+    setPreservedSearchMode(null);
+    preservedFilterRef.current = null;
+    setCurrentJoinOperator(undefined);
+    setIsEditingSecondOperator(false);
+  }, []);
 
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
