@@ -63,6 +63,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     secondOperator?: string;
     secondValue?: string;
     secondValueTo?: string; // For Between (inRange) operator in second condition
+    secondColumnField?: string; // For multi-column filters - second column field name
   } | null>(null);
 
   // State to preserve searchMode during edit (to keep badges visible)
@@ -101,6 +102,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleHoverChange,
     badgeRef,
     badgesContainerRef,
+    operatorBadgeRef,
+    joinBadgeRef,
+    secondColumnBadgeRef,
+    secondOperatorBadgeRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -110,36 +115,48 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Column selector: position depends on context
   // - First column: appears at container left (no badge yet)
-  // - Second column (isSecondColumn): appears after all badges including join (badgesContainerRef)
+  // - Second column editing (preservedSearchMode + isSecondColumn): appears below second column badge
+  // - Second column creating (isSecondColumn only): appears after all badges
+  const isEditingSecondColumn =
+    preservedSearchMode !== null && searchMode.isSecondColumn;
   const columnAnchorRef = searchMode.isSecondColumn
-    ? badgesContainerRef
+    ? isEditingSecondColumn
+      ? secondColumnBadgeRef // Edit mode: position below the 2nd column badge
+      : badgesContainerRef // Create mode: position at end of badges
     : undefined;
   const columnSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showColumnSelector,
     containerRef,
     anchorRef: columnAnchorRef,
-    anchorAlign: searchMode.isSecondColumn ? 'right' : 'left',
+    anchorAlign: searchMode.isSecondColumn
+      ? isEditingSecondColumn
+        ? 'left' // Edit mode: left-aligned below 2nd column badge
+        : 'right' // Create mode: right edge of badges
+      : 'left',
   });
 
-  // Operator selector: position depends on context
-  // - First operator: appears after column badge (badgeRef)
-  // - Second operator (isSecondOperator): appears after all badges including join (badgesContainerRef)
-  const operatorAnchorRef = searchMode.isSecondOperator
-    ? badgesContainerRef
-    : badgeRef;
+  // Operator selector: position below the badges
+  // - First operator: anchor to column badge (badgeRef), align right - appears after column
+  // - Second operator editing: anchor to second operator badge, align left - appears below it
+  const isEditingSecondOp =
+    isEditingSecondOperator && searchMode.showOperatorSelector;
+  const operatorAnchorRef = isEditingSecondOp
+    ? secondOperatorBadgeRef // Edit second operator: position below second operator badge
+    : badgeRef; // First operator: position after column badge
   const operatorSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showOperatorSelector,
     containerRef,
     anchorRef: operatorAnchorRef,
-    anchorAlign: 'right',
+    anchorAlign: isEditingSecondOp ? 'left' : 'right',
   });
 
-  // Join operator selector: appears after all badges (right edge of badges container)
+  // Join operator selector: position below the join badge (AND/OR)
+  // Using joinBadgeRef to position directly below the AND/OR badge
   const joinOperatorSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showJoinOperatorSelector,
     containerRef,
-    anchorRef: badgesContainerRef,
-    anchorAlign: 'right',
+    anchorRef: joinBadgeRef,
+    anchorAlign: 'left', // Position directly below the join badge
   });
 
   // Clear preserved state - used to reset edit mode and badge visibility
@@ -165,14 +182,62 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const firstOp = searchMode.filterSearch.operator;
         const firstVal = searchMode.filterSearch.value;
         const firstValTo = searchMode.filterSearch.valueTo;
-        const join = searchMode.partialJoin.toLowerCase();
+        const join = searchMode.partialJoin.toUpperCase() as 'AND' | 'OR';
 
-        // Build pattern with second column and open operator selector for it
-        if (firstValTo) {
-          // First condition is Between operator
-          newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join} #${column.field} #`;
+        // Check if we have preserved second operator/value (from handleEditSecondColumn)
+        if (
+          preservedFilterRef.current?.secondOperator &&
+          preservedFilterRef.current.secondOperator.trim() !== ''
+        ) {
+          const preserved = preservedFilterRef.current;
+          const secondOp = preserved.secondOperator!; // Non-null assertion safe due to if condition
+
+          if (preserved.secondValue && preserved.secondValue.trim() !== '') {
+            // Full multi-column with second value - restore complete pattern
+            const secondVal = preserved.secondValue!;
+            if (firstValTo) {
+              // First condition is Between operator
+              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} ${secondVal}##`;
+            } else {
+              newValue = PatternBuilder.multiColumnComplete(
+                firstCol,
+                firstOp,
+                firstVal,
+                join,
+                column.field,
+                secondOp,
+                secondVal
+              );
+            }
+          } else {
+            // Multi-column with operator but no second value - ready for value input
+            if (firstValTo) {
+              // First condition is Between operator
+              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
+            } else {
+              newValue = PatternBuilder.multiColumnWithOperator(
+                firstCol,
+                firstOp,
+                firstVal,
+                join,
+                column.field,
+                secondOp
+              );
+            }
+          }
+
+          // Clear preserved state after restoration
+          preservedFilterRef.current = null;
+          setPreservedSearchMode(null);
         } else {
-          newValue = `#${firstCol} #${firstOp} ${firstVal} #${join} #${column.field} #`;
+          // No preserved second operator - open operator selector for new column
+          // Build pattern with second column and open operator selector for it
+          if (firstValTo) {
+            // First condition is Between operator
+            newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
+          } else {
+            newValue = `#${firstCol} #${firstOp} ${firstVal} #${join.toLowerCase()} #${column.field} #`;
+          }
         }
 
         setFilterValue(newValue, onChange, inputRef);
@@ -976,10 +1041,41 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit second column - show column selector for second column (multi-column)
   const handleEditSecondColumn = useCallback(() => {
-    // For now, just clear second column to show column selector
-    // Could be enhanced to preserve second operator/value later
-    handleClearSecondColumn();
-  }, [handleClearSecondColumn]);
+    // Use preserved state if already in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
+    if (!stateToUse.filterSearch) {
+      return;
+    }
+
+    const columnName = stateToUse.filterSearch.field;
+    const firstCondition = getFirstCondition(stateToUse.filterSearch);
+    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
+
+    if (!joinOp || (joinOp !== 'AND' && joinOp !== 'OR')) {
+      return;
+    }
+
+    // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
+    flushSync(() => {
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+    });
+
+    // Extract and preserve filter data including second condition (operator, value)
+    preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
+
+    // Build pattern to trigger isSecondColumn: #col1 #op1 val1 #join #
+    const newValue = PatternBuilder.partialMulti(
+      columnName,
+      firstCondition.operator,
+      firstCondition.value,
+      joinOp
+    );
+
+    setFilterValue(newValue, onChange, inputRef);
+  }, [searchMode, preservedSearchMode, onChange, inputRef]);
 
   // ==================== EDIT HANDLERS ====================
 
@@ -1066,12 +1162,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         preservedFilterRef.current?.value &&
         preservedFilterRef.current?.join
       ) {
-        // For second operator edit, preserve first condition: #column #operator1 value1 #join #
-        newValue = PatternBuilder.partialMulti(
+        // For second operator edit, preserve first condition
+        // Always include second column to trigger operator selector (not column selector)
+        const secondColField =
+          preservedFilterRef.current.secondColumnField ||
+          stateToUse.secondColumn?.field ||
+          columnName; // Fallback to first column if same column filter
+
+        // Always use multiColumnPartial to avoid triggering column selector
+        // Pattern: #col1 #op1 val1 #join #col2 #
+        newValue = PatternBuilder.multiColumnPartial(
           columnName,
           preservedFilterRef.current.operator,
           preservedFilterRef.current.value,
-          preservedFilterRef.current.join
+          preservedFilterRef.current.join,
+          secondColField
         );
       } else {
         // For first operator edit, just: #column #
@@ -1770,6 +1875,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               searchMode={searchMode}
               badgeRef={badgeRef}
               badgesContainerRef={badgesContainerRef}
+              operatorBadgeRef={operatorBadgeRef}
+              joinBadgeRef={joinBadgeRef}
+              secondColumnBadgeRef={secondColumnBadgeRef}
+              secondOperatorBadgeRef={secondOperatorBadgeRef}
               onClearColumn={handleClearAll}
               onClearOperator={handleClearToColumn}
               onClearValue={handleClearValue}

@@ -5,8 +5,10 @@ interface UseSelectorPositionProps {
   containerRef: RefObject<HTMLDivElement | null>;
   /** Optional anchor element to position relative to (e.g., badge). Falls back to containerRef. */
   anchorRef?: RefObject<HTMLDivElement | null>;
-  /** Position relative to anchor: 'left' aligns to anchor's left edge, 'right' aligns to anchor's right edge */
-  anchorAlign?: 'left' | 'right';
+  /** Position relative to anchor: 'left', 'right', or 'center' */
+  anchorAlign?: 'left' | 'right' | 'center';
+  /** Optional offset ratio (0-1) from anchor's left edge. Overrides anchorAlign when provided. */
+  anchorOffsetRatio?: number;
 }
 
 export const useSelectorPosition = ({
@@ -14,6 +16,7 @@ export const useSelectorPosition = ({
   containerRef,
   anchorRef,
   anchorAlign = 'left',
+  anchorOffsetRatio,
 }: UseSelectorPositionProps) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
@@ -27,10 +30,23 @@ export const useSelectorPosition = ({
       const anchorElement = anchorRef?.current;
       if (anchorElement) {
         const anchorRect = anchorElement.getBoundingClientRect();
+
+        // Calculate left position based on alignment or offset ratio
+        let left: number;
+        if (anchorOffsetRatio !== undefined) {
+          // Use offset ratio: 0 = left edge, 0.5 = center, 1 = right edge
+          left = anchorRect.left + anchorRect.width * anchorOffsetRatio;
+        } else if (anchorAlign === 'right') {
+          left = anchorRect.right;
+        } else if (anchorAlign === 'center') {
+          left = anchorRect.left + anchorRect.width / 2;
+        } else {
+          left = anchorRect.left;
+        }
+
         setPosition({
           top: containerRect.bottom,
-          // Position based on anchor alignment
-          left: anchorAlign === 'right' ? anchorRect.right : anchorRect.left,
+          left,
         });
       } else {
         setPosition({
@@ -40,6 +56,7 @@ export const useSelectorPosition = ({
       }
     };
 
+    // Initial position calculation
     updatePosition();
 
     if (isOpen) {
@@ -63,6 +80,13 @@ export const useSelectorPosition = ({
         }
       }
 
+      // CRITICAL FIX: Recalculate position after a frame to ensure refs are updated
+      // React batches state updates and refs might not be assigned when effect first runs
+      // Also recalculate after badge animations settle (300ms)
+      const rafId = requestAnimationFrame(updatePosition);
+      const delayedUpdateId = setTimeout(updatePosition, 50);
+      const animationSettleId = setTimeout(updatePosition, 300);
+
       return () => {
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('scroll', handleScroll, true);
@@ -70,9 +94,12 @@ export const useSelectorPosition = ({
         if (resizeObserver) {
           resizeObserver.disconnect();
         }
+        cancelAnimationFrame(rafId);
+        clearTimeout(delayedUpdateId);
+        clearTimeout(animationSettleId);
       };
     }
-  }, [isOpen, containerRef, anchorRef, anchorAlign]);
+  }, [isOpen, containerRef, anchorRef, anchorAlign, anchorOffsetRatio]);
 
   return position;
 };

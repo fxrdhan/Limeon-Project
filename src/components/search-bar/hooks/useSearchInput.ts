@@ -19,8 +19,12 @@ export const useSearchInput = ({
   onChange,
   inputRef,
 }: UseSearchInputProps) => {
-  const badgeRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null); // Column badge (first badge, index 0)
   const badgesContainerRef = useRef<HTMLDivElement>(null);
+  const operatorBadgeRef = useRef<HTMLDivElement>(null); // First operator badge
+  const joinBadgeRef = useRef<HTMLDivElement>(null); // Join badge (AND/OR)
+  const secondColumnBadgeRef = useRef<HTMLDivElement>(null); // Second column badge (multi-column)
+  const secondOperatorBadgeRef = useRef<HTMLDivElement>(null); // Second operator badge
 
   const operatorSearchTerm = useMemo(
     () => getOperatorSearchTerm(value),
@@ -499,5 +503,9 @@ export const useSearchInput = ({
     handleHoverChange,
     badgeRef,
     badgesContainerRef,
+    operatorBadgeRef,
+    joinBadgeRef,
+    secondColumnBadgeRef,
+    secondOperatorBadgeRef,
   };
 };
