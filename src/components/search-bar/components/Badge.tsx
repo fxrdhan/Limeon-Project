@@ -13,6 +13,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   // Flag to prevent blur handler after intentional clear actions (Delete, Backspace on empty)
   const isClearing = useRef(false);
+  // Track cursor position to restore after value changes
+  const cursorPosition = useRef<number | null>(null);
 
   const isEditing = config.isEditing || false;
   const editingValue = config.editingValue || '';
@@ -20,6 +22,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const onEditComplete = config.onEditComplete;
 
   // Auto-focus input when entering editing mode
+  // Only position cursor once when entering edit mode, not on every value change
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -29,7 +32,17 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
         editingValue.length
       );
     }
-  }, [isEditing, editingValue.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]); // Only trigger on edit mode change, not value length change
+
+  // Restore cursor position after value changes (but not when entering edit mode)
+  useEffect(() => {
+    if (isEditing && inputRef.current && cursorPosition.current !== null) {
+      const pos = cursorPosition.current;
+      inputRef.current.setSelectionRange(pos, pos);
+      cursorPosition.current = null;
+    }
+  }, [editingValue, isEditing]);
 
   // Handle keyboard events for inline editing
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -63,6 +76,12 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    // Capture cursor position before value change
+    const cursorPos = e.target.selectionStart;
+    if (cursorPos !== null) {
+      cursorPosition.current = cursorPos;
+    }
+
     onValueChange?.(newValue);
 
     // If user cleared all text, immediately trigger clear action
