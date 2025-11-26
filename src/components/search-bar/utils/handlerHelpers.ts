@@ -21,6 +21,7 @@ export interface PreservedFilter {
   secondOperator?: string;
   secondValue?: string;
   secondValueTo?: string; // For second Between in multi-condition
+  secondColumnField?: string; // For multi-column filters - second column field name
 }
 
 /**
@@ -110,6 +111,7 @@ export function extractMultiConditionPreservation(
       secondOperator: secondCondition.operator,
       secondValue: secondCondition.value,
       secondValueTo: secondCondition.valueTo, // Preserve second valueTo for Between
+      secondColumnField: secondCondition.field, // Preserve second column for multi-column filters
     };
   }
 
@@ -122,6 +124,7 @@ export function extractMultiConditionPreservation(
       join: searchMode.partialJoin,
       secondOperator: searchMode.secondOperator,
       secondValue: '',
+      secondColumnField: searchMode.secondColumn?.field, // Preserve second column for multi-column filters
     };
   }
 
