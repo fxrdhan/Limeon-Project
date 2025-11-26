@@ -362,25 +362,56 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       ) {
         const preserved = preservedFilterRef.current;
         const joinOp = preserved.join as 'AND' | 'OR'; // Type assertion (safe due to guard above)
+        // Check if this is a multi-column filter (second column is different from first)
+        const secondCol = preserved.secondColumnField;
+        const isMultiColumn = secondCol && secondCol !== columnName;
+
         if (preserved.secondValue) {
           // Full multi-condition with second value
-          newValue = PatternBuilder.multiCondition(
-            columnName,
-            preserved.operator,
-            preserved.value,
-            joinOp,
-            operator.value,
-            preserved.secondValue
-          );
+          if (isMultiColumn) {
+            // Multi-column: #col1 #op1 val1 #join #col2 #op2 val2##
+            newValue = PatternBuilder.multiColumnComplete(
+              columnName,
+              preserved.operator,
+              preserved.value,
+              joinOp,
+              secondCol,
+              operator.value,
+              preserved.secondValue
+            );
+          } else {
+            // Same-column: #col #op1 val1 #join #op2 val2##
+            newValue = PatternBuilder.multiCondition(
+              columnName,
+              preserved.operator,
+              preserved.value,
+              joinOp,
+              operator.value,
+              preserved.secondValue
+            );
+          }
         } else {
           // Partial multi-condition (no second value yet)
-          newValue = PatternBuilder.partialMultiWithOperator(
-            columnName,
-            preserved.operator,
-            preserved.value,
-            joinOp,
-            operator.value
-          );
+          if (isMultiColumn) {
+            // Multi-column: #col1 #op1 val1 #join #col2 #op2
+            newValue = PatternBuilder.multiColumnWithOperator(
+              columnName,
+              preserved.operator,
+              preserved.value,
+              joinOp,
+              secondCol,
+              operator.value
+            );
+          } else {
+            // Same-column: #col #op1 val1 #join #op2
+            newValue = PatternBuilder.partialMultiWithOperator(
+              columnName,
+              preserved.operator,
+              preserved.value,
+              joinOp,
+              operator.value
+            );
+          }
         }
         // Clear preserved filter and searchMode
         preservedFilterRef.current = null;
@@ -398,15 +429,32 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           preserved.secondOperator &&
           preserved.secondValue
         ) {
-          // Restore full multi-condition with new first operator
-          newValue = PatternBuilder.multiCondition(
-            columnName,
-            operator.value,
-            preservedValue,
-            preserved.join,
-            preserved.secondOperator,
-            preserved.secondValue
-          );
+          // Check if this is a multi-column filter
+          const secondCol = preserved.secondColumnField;
+          const isMultiColumn = secondCol && secondCol !== columnName;
+
+          if (isMultiColumn) {
+            // Multi-column: #col1 #op1 val1 #join #col2 #op2 val2##
+            newValue = PatternBuilder.multiColumnComplete(
+              columnName,
+              operator.value,
+              preservedValue,
+              preserved.join,
+              secondCol,
+              preserved.secondOperator,
+              preserved.secondValue
+            );
+          } else {
+            // Same-column: #col #op1 val1 #join #op2 val2##
+            newValue = PatternBuilder.multiCondition(
+              columnName,
+              operator.value,
+              preservedValue,
+              preserved.join,
+              preserved.secondOperator,
+              preserved.secondValue
+            );
+          }
         } else {
           // Single condition: just restore first value with new operator
           newValue = PatternBuilder.confirmed(
@@ -1780,6 +1828,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
+    // Check if editing second column - use second column field from conditions or secondColumn state
+    if (isEditingSecondColumn) {
+      // Try to get second column field from multi-condition filter
+      const secondColFromConditions =
+        preservedSearchMode?.filterSearch?.conditions?.[1]?.field;
+      // Or from secondColumn state
+      const secondColFromState = preservedSearchMode?.secondColumn?.field;
+      const secondColumnField = secondColFromConditions || secondColFromState;
+
+      if (secondColumnField) {
+        const index = sortedColumns.findIndex(
+          col => col.field === secondColumnField
+        );
+        return index >= 0 ? index : undefined;
+      }
+    }
     // Check filterSearch.field first (confirmed filter case)
     if (preservedSearchMode?.filterSearch?.field) {
       const currentColumnField = preservedSearchMode.filterSearch.field;
@@ -1797,7 +1861,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, sortedColumns]);
+  }, [preservedSearchMode, sortedColumns, isEditingSecondColumn]);
 
   // Calculate base padding (CSS variable will override when badges are present)
   // When left icon is visible (column selector, filter mode, etc.), use smaller padding
