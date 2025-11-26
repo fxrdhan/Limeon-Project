@@ -108,10 +108,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     inputRef,
   });
 
-  // Column selector: appears at container left (no badge yet)
+  // Column selector: position depends on context
+  // - First column: appears at container left (no badge yet)
+  // - Second column (isSecondColumn): appears after all badges including join (badgesContainerRef)
+  const columnAnchorRef = searchMode.isSecondColumn
+    ? badgesContainerRef
+    : undefined;
   const columnSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showColumnSelector,
     containerRef,
+    anchorRef: columnAnchorRef,
+    anchorAlign: searchMode.isSecondColumn ? 'right' : 'left',
   });
 
   // Operator selector: position depends on context
