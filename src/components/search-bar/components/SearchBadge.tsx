@@ -41,6 +41,10 @@ interface SearchBadgeProps {
   searchMode: EnhancedSearchState;
   badgeRef: React.RefObject<HTMLDivElement | null>;
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
+  operatorBadgeRef: React.RefObject<HTMLDivElement | null>;
+  joinBadgeRef: React.RefObject<HTMLDivElement | null>;
+  secondColumnBadgeRef: React.RefObject<HTMLDivElement | null>;
+  secondOperatorBadgeRef: React.RefObject<HTMLDivElement | null>;
   onClearColumn: () => void;
   onClearOperator: () => void;
   onClearValue: () => void;
@@ -70,6 +74,10 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   searchMode,
   badgeRef,
   badgesContainerRef,
+  operatorBadgeRef,
+  joinBadgeRef,
+  secondColumnBadgeRef,
+  secondOperatorBadgeRef,
   onClearColumn,
   onClearOperator,
   onClearValue,
@@ -141,19 +149,36 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       }}
     >
       <AnimatePresence mode="popLayout">
-        {badges.map((badge, index) => (
-          <motion.div
-            key={badge.id}
-            ref={index === 0 ? badgeRef : undefined}
-            layout
-            variants={badgeVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <Badge config={badge} />
-          </motion.div>
-        ))}
+        {badges.map((badge, index) => {
+          // Determine which ref to use for this badge
+          let refToUse: React.RefObject<HTMLDivElement | null> | undefined =
+            undefined;
+          if (index === 0) {
+            refToUse = badgeRef; // Column badge
+          } else if (badge.id === 'operator') {
+            refToUse = operatorBadgeRef; // First operator badge
+          } else if (badge.id === 'join') {
+            refToUse = joinBadgeRef; // Join badge (AND/OR)
+          } else if (badge.id === 'second-column') {
+            refToUse = secondColumnBadgeRef; // Second column badge (multi-column)
+          } else if (badge.id === 'second-operator') {
+            refToUse = secondOperatorBadgeRef; // Second operator badge
+          }
+
+          return (
+            <motion.div
+              key={badge.id}
+              ref={refToUse}
+              layout
+              variants={badgeVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <Badge config={badge} />
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
     </div>
   );
