@@ -356,6 +356,76 @@ export class PatternBuilder {
     return `#${field} #inRange ${value1} ${value2}`;
   }
 
+  // ========================================
+  // Multi-Column Patterns
+  // ========================================
+
+  /**
+   * Multi-column partial with second column: #col1 #op1 val1 #join #col2 #
+   *
+   * @param col1 - First column field name
+   * @param op1 - First operator value
+   * @param val1 - First value
+   * @param join - Join operator ('AND' or 'OR')
+   * @param col2 - Second column field name
+   * @returns Partial multi-column pattern ready for second operator
+   */
+  static multiColumnPartial(
+    col1: string,
+    op1: string,
+    val1: string,
+    join: 'AND' | 'OR',
+    col2: string
+  ): string {
+    return `#${col1} #${op1} ${val1} #${join.toLowerCase()} #${col2} #`;
+  }
+
+  /**
+   * Multi-column partial with operator: #col1 #op1 val1 #join #col2 #op2
+   *
+   * @param col1 - First column field name
+   * @param op1 - First operator value
+   * @param val1 - First value
+   * @param join - Join operator ('AND' or 'OR')
+   * @param col2 - Second column field name
+   * @param op2 - Second operator value
+   * @returns Partial multi-column with operator, ready for second value
+   */
+  static multiColumnWithOperator(
+    col1: string,
+    op1: string,
+    val1: string,
+    join: 'AND' | 'OR',
+    col2: string,
+    op2: string
+  ): string {
+    return `#${col1} #${op1} ${val1} #${join.toLowerCase()} #${col2} #${op2} `;
+  }
+
+  /**
+   * Complete multi-column: #col1 #op1 val1 #join #col2 #op2 val2##
+   *
+   * @param col1 - First column field name
+   * @param op1 - First operator value
+   * @param val1 - First value
+   * @param join - Join operator ('AND' or 'OR')
+   * @param col2 - Second column field name
+   * @param op2 - Second operator value
+   * @param val2 - Second value
+   * @returns Complete confirmed multi-column pattern
+   */
+  static multiColumnComplete(
+    col1: string,
+    op1: string,
+    val1: string,
+    join: 'AND' | 'OR',
+    col2: string,
+    op2: string,
+    val2: string
+  ): string {
+    return `#${col1} #${op1} ${val1} #${join.toLowerCase()} #${col2} #${op2} ${val2}##`;
+  }
+
   /**
    * Build multi-condition pattern with optional valueTo for Between operators
    * Handles all combinations: Normal+Normal, Between+Normal, Normal+Between, Between+Between
