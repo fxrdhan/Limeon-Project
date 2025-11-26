@@ -470,62 +470,159 @@ const ItemMasterNew = memo(() => {
               field: filterSearch.field,
               conditions: filterSearch.conditions,
               joinOperator: filterSearch.joinOperator,
+              isMultiColumn: filterSearch.isMultiColumn,
             });
 
-            const baseFilterType = isNumericColumn ? 'number' : 'text';
+            // 🆕 MULTI-COLUMN FILTER: Apply each condition to its respective column
+            if (filterSearch.isMultiColumn) {
+              console.log(
+                '[handleItemFilterSearch] Multi-column filter detected!'
+              );
 
-            // Build conditions array for AG Grid
-            const agConditions = filterSearch.conditions.map(cond => {
-              const baseCondition: {
-                filterType: string;
-                type: string;
-                filter: number | string;
-                filterTo?: number | string;
-              } = {
-                filterType: baseFilterType,
-                type: cond.operator,
-                filter: isNumericColumn ? Number(cond.value) : cond.value,
-              };
+              // Group conditions by field
+              const conditionsByField: Record<
+                string,
+                typeof filterSearch.conditions
+              > = {};
 
-              // Add filterTo for inRange (Between) operator
-              if (cond.operator === 'inRange' && cond.valueTo) {
-                baseCondition.filterTo = isNumericColumn
-                  ? Number(cond.valueTo)
-                  : cond.valueTo;
+              for (const cond of filterSearch.conditions) {
+                const field = cond.field || filterSearch.field;
+                if (!conditionsByField[field]) {
+                  conditionsByField[field] = [];
+                }
+                conditionsByField[field].push(cond);
               }
 
-              return baseCondition;
-            });
+              console.log(
+                '[handleItemFilterSearch] Conditions by field:',
+                conditionsByField
+              );
 
-            console.log(
-              '[handleItemFilterSearch] AG Grid conditions:',
-              agConditions
-            );
+              // Apply filter to each column
+              for (const [field, conditions] of Object.entries(
+                conditionsByField
+              )) {
+                const fieldIsNumeric = [
+                  'stock',
+                  'base_price',
+                  'sell_price',
+                ].includes(field);
+                const fieldIsMultiFilter = [
+                  'manufacturer.name',
+                  'category.name',
+                  'type.name',
+                  'package.name',
+                  'dosage.name',
+                ].includes(field);
 
-            // Build combined filter model
-            const combinedModel = {
-              filterType: baseFilterType,
-              operator: filterSearch.joinOperator || 'AND',
-              conditions: agConditions,
-            };
+                const filterType = fieldIsNumeric ? 'number' : 'text';
 
-            console.log(
-              '[handleItemFilterSearch] Combined model:',
-              combinedModel
-            );
+                // Build filter model for this column
+                const agConditions = conditions.map(cond => {
+                  const baseCondition: {
+                    filterType: string;
+                    type: string;
+                    filter: number | string;
+                    filterTo?: number | string;
+                  } = {
+                    filterType,
+                    type: cond.operator,
+                    filter: fieldIsNumeric ? Number(cond.value) : cond.value,
+                  };
 
-            if (isMultiFilterColumn) {
-              // Wrap in multi-filter for columns that use agMultiColumnFilter
-              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-                filterType: 'multi',
-                filterModels: [combinedModel],
-              });
+                  if (cond.operator === 'inRange' && cond.valueTo) {
+                    baseCondition.filterTo = fieldIsNumeric
+                      ? Number(cond.valueTo)
+                      : cond.valueTo;
+                  }
+
+                  return baseCondition;
+                });
+
+                // Single condition or combined model
+                const filterModel =
+                  agConditions.length === 1
+                    ? agConditions[0]
+                    : {
+                        filterType,
+                        operator: filterSearch.joinOperator || 'AND',
+                        conditions: agConditions,
+                      };
+
+                if (fieldIsMultiFilter) {
+                  await unifiedGridApi.setColumnFilterModel(field, {
+                    filterType: 'multi',
+                    filterModels: [filterModel],
+                  });
+                } else {
+                  await unifiedGridApi.setColumnFilterModel(field, filterModel);
+                }
+
+                console.log(
+                  `[handleItemFilterSearch] Applied filter to ${field}:`,
+                  filterModel
+                );
+              }
+
+              // Track all filtered fields
+              lastFilterFieldRef.current = filterSearch.field;
             } else {
-              // Direct combined model for regular columns
-              await unifiedGridApi.setColumnFilterModel(
-                filterSearch.field,
+              // SAME-COLUMN MULTI-CONDITION: existing logic
+              const baseFilterType = isNumericColumn ? 'number' : 'text';
+
+              // Build conditions array for AG Grid
+              const agConditions = filterSearch.conditions.map(cond => {
+                const baseCondition: {
+                  filterType: string;
+                  type: string;
+                  filter: number | string;
+                  filterTo?: number | string;
+                } = {
+                  filterType: baseFilterType,
+                  type: cond.operator,
+                  filter: isNumericColumn ? Number(cond.value) : cond.value,
+                };
+
+                // Add filterTo for inRange (Between) operator
+                if (cond.operator === 'inRange' && cond.valueTo) {
+                  baseCondition.filterTo = isNumericColumn
+                    ? Number(cond.valueTo)
+                    : cond.valueTo;
+                }
+
+                return baseCondition;
+              });
+
+              console.log(
+                '[handleItemFilterSearch] AG Grid conditions:',
+                agConditions
+              );
+
+              // Build combined filter model
+              const combinedModel = {
+                filterType: baseFilterType,
+                operator: filterSearch.joinOperator || 'AND',
+                conditions: agConditions,
+              };
+
+              console.log(
+                '[handleItemFilterSearch] Combined model:',
                 combinedModel
               );
+
+              if (isMultiFilterColumn) {
+                // Wrap in multi-filter for columns that use agMultiColumnFilter
+                await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
+                  filterType: 'multi',
+                  filterModels: [combinedModel],
+                });
+              } else {
+                // Direct combined model for regular columns
+                await unifiedGridApi.setColumnFilterModel(
+                  filterSearch.field,
+                  combinedModel
+                );
+              }
             }
           } else {
             // Single condition filter (existing logic)
