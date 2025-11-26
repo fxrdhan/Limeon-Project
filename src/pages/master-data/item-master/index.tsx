@@ -180,8 +180,8 @@ const ItemMasterNew = memo(() => {
   // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
   const isTabSwitchingRef = useRef(false);
 
-  // 📌 Track the last applied filter field to clear it when changing columns
-  const lastFilterFieldRef = useRef<string | null>(null);
+  // 📌 Track all applied filter fields to clear them when changing filters
+  const lastFilterFieldsRef = useRef<string[]>([]);
 
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
@@ -426,25 +426,46 @@ const ItemMasterNew = memo(() => {
           unifiedGridApi.setFilterModel(null);
           unifiedGridApi.onFilterChanged();
         }
-        // Clear the tracked filter field
-        lastFilterFieldRef.current = null;
+        // Clear the tracked filter fields
+        lastFilterFieldsRef.current = [];
         return;
       }
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        // 🔧 Clear old filter when changing columns (editing column badge)
-        // If the field changed, clear the previous field's filter first
-        if (
-          lastFilterFieldRef.current &&
-          lastFilterFieldRef.current !== filterSearch.field
-        ) {
-          try {
-            await unifiedGridApi.setColumnFilterModel(
-              lastFilterFieldRef.current,
-              null
-            );
-          } catch (error) {
-            console.error('Failed to clear old filter:', error);
+        // 🔧 Collect all fields that will be applied in this filter
+        let newFilteredFields: string[] = [];
+        if (filterSearch.isMultiCondition && filterSearch.conditions) {
+          if (filterSearch.isMultiColumn) {
+            // Multi-column: collect all unique fields from conditions
+            const fieldsSet = new Set<string>();
+            for (const cond of filterSearch.conditions) {
+              fieldsSet.add(cond.field || filterSearch.field);
+            }
+            newFilteredFields = Array.from(fieldsSet);
+          } else {
+            // Same-column: only one field
+            newFilteredFields = [filterSearch.field];
+          }
+        } else {
+          // Single condition: only one field
+          newFilteredFields = [filterSearch.field];
+        }
+
+        // Clear old filters that are not in the new filter
+        const fieldsToKeep = new Set(newFilteredFields);
+        for (const oldField of lastFilterFieldsRef.current) {
+          if (!fieldsToKeep.has(oldField)) {
+            try {
+              await unifiedGridApi.setColumnFilterModel(oldField, null);
+              console.log(
+                `[handleItemFilterSearch] Cleared old filter: ${oldField}`
+              );
+            } catch (error) {
+              console.error(
+                `Failed to clear old filter for ${oldField}:`,
+                error
+              );
+            }
           }
         }
         try {
@@ -563,9 +584,6 @@ const ItemMasterNew = memo(() => {
                   filterModel
                 );
               }
-
-              // Track all filtered fields
-              lastFilterFieldRef.current = filterSearch.field;
             } else {
               // SAME-COLUMN MULTI-CONDITION: existing logic
               const baseFilterType = isNumericColumn ? 'number' : 'text';
@@ -671,8 +689,8 @@ const ItemMasterNew = memo(() => {
             }
           }
 
-          // 📌 Track the current filter field for future column changes
-          lastFilterFieldRef.current = filterSearch.field;
+          // 📌 Track all currently filtered fields for future filter changes
+          lastFilterFieldsRef.current = newFilteredFields;
 
           unifiedGridApi.onFilterChanged();
         } catch (error) {
@@ -835,25 +853,46 @@ const ItemMasterNew = memo(() => {
           unifiedGridApi.setFilterModel(null);
           unifiedGridApi.onFilterChanged();
         }
-        // Clear the tracked filter field
-        lastFilterFieldRef.current = null;
+        // Clear the tracked filter fields
+        lastFilterFieldsRef.current = [];
         return;
       }
 
       if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        // 🔧 Clear old filter when changing columns (editing column badge)
-        // If the field changed, clear the previous field's filter first
-        if (
-          lastFilterFieldRef.current &&
-          lastFilterFieldRef.current !== filterSearch.field
-        ) {
-          try {
-            await unifiedGridApi.setColumnFilterModel(
-              lastFilterFieldRef.current,
-              null
-            );
-          } catch (error) {
-            console.error('Failed to clear old entity filter:', error);
+        // 🔧 Collect all fields that will be applied in this filter
+        let newFilteredFields: string[] = [];
+        if (filterSearch.isMultiCondition && filterSearch.conditions) {
+          if (filterSearch.isMultiColumn) {
+            // Multi-column: collect all unique fields from conditions
+            const fieldsSet = new Set<string>();
+            for (const cond of filterSearch.conditions) {
+              fieldsSet.add(cond.field || filterSearch.field);
+            }
+            newFilteredFields = Array.from(fieldsSet);
+          } else {
+            // Same-column: only one field
+            newFilteredFields = [filterSearch.field];
+          }
+        } else {
+          // Single condition: only one field
+          newFilteredFields = [filterSearch.field];
+        }
+
+        // Clear old filters that are not in the new filter
+        const fieldsToKeep = new Set(newFilteredFields);
+        for (const oldField of lastFilterFieldsRef.current) {
+          if (!fieldsToKeep.has(oldField)) {
+            try {
+              await unifiedGridApi.setColumnFilterModel(oldField, null);
+              console.log(
+                `[handleEntityFilterSearch] Cleared old filter: ${oldField}`
+              );
+            } catch (error) {
+              console.error(
+                `Failed to clear old entity filter for ${oldField}:`,
+                error
+              );
+            }
           }
         }
         try {
@@ -949,8 +988,8 @@ const ItemMasterNew = memo(() => {
             }
           }
 
-          // 📌 Track the current filter field for future column changes
-          lastFilterFieldRef.current = filterSearch.field;
+          // 📌 Track all currently filtered fields for future filter changes
+          lastFilterFieldsRef.current = newFilteredFields;
 
           unifiedGridApi.onFilterChanged();
         } catch (error) {

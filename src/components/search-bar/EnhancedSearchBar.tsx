@@ -251,8 +251,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // Check if we have preserved filter from edit column
       if (preservedFilterRef.current) {
-        const { operator, value, join, secondOperator, secondValue } =
-          preservedFilterRef.current;
+        const {
+          operator,
+          value,
+          join,
+          secondOperator,
+          secondValue,
+          secondColumnField,
+        } = preservedFilterRef.current;
 
         // Check if operator is compatible with new column type
         const isOperatorCompatible = isOperatorCompatibleWithColumn(
@@ -263,41 +269,100 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         if (isOperatorCompatible) {
           // Check if it's a multi-condition filter (or partial multi-condition)
           if (join && secondOperator) {
-            // Check if second operator is also compatible
-            const isSecondOperatorCompatible = isOperatorCompatibleWithColumn(
-              column,
-              secondOperator
-            );
+            // Check if this is a multi-column filter (second column different from first)
+            const isMultiColumn =
+              secondColumnField && secondColumnField !== column.field;
 
-            if (isSecondOperatorCompatible) {
-              // Restore multi-condition filter with the new column
-              if (secondValue && secondValue.trim() !== '') {
-                // Full multi-condition with second value
-                newValue = PatternBuilder.multiCondition(
-                  column.field,
-                  operator,
-                  value,
-                  join,
-                  secondOperator,
-                  secondValue
-                );
+            if (isMultiColumn) {
+              // MULTI-COLUMN FILTER: second condition has different column
+              // Find the second column object for compatibility check
+              const secondColumn = memoizedColumns.find(
+                col => col.field === secondColumnField
+              );
+
+              if (secondColumn) {
+                // Check if second operator is compatible with second column
+                const isSecondOperatorCompatible =
+                  isOperatorCompatibleWithColumn(secondColumn, secondOperator);
+
+                if (isSecondOperatorCompatible) {
+                  // Restore multi-column filter with new first column
+                  if (secondValue && secondValue.trim() !== '') {
+                    // Full multi-column with second value
+                    newValue = PatternBuilder.multiColumnComplete(
+                      column.field,
+                      operator,
+                      value,
+                      join,
+                      secondColumnField,
+                      secondOperator,
+                      secondValue
+                    );
+                  } else {
+                    // Partial multi-column (no second value yet)
+                    newValue = PatternBuilder.multiColumnWithOperator(
+                      column.field,
+                      operator,
+                      value,
+                      join,
+                      secondColumnField,
+                      secondOperator
+                    );
+                  }
+                } else {
+                  // Second operator not compatible with second column, restore only first condition
+                  newValue = PatternBuilder.confirmed(
+                    column.field,
+                    operator,
+                    value
+                  );
+                }
               } else {
-                // Partial multi-condition (no second value yet)
-                newValue = PatternBuilder.partialMultiWithOperator(
+                // Second column not found, fallback to single condition
+                newValue = PatternBuilder.confirmed(
                   column.field,
                   operator,
-                  value,
-                  join,
-                  secondOperator
+                  value
                 );
               }
             } else {
-              // Second operator not compatible, restore only first condition
-              newValue = PatternBuilder.confirmed(
-                column.field,
-                operator,
-                value
+              // SAME-COLUMN FILTER: both conditions on same column
+              // Check if second operator is also compatible with new column
+              const isSecondOperatorCompatible = isOperatorCompatibleWithColumn(
+                column,
+                secondOperator
               );
+
+              if (isSecondOperatorCompatible) {
+                // Restore same-column multi-condition filter with the new column
+                if (secondValue && secondValue.trim() !== '') {
+                  // Full multi-condition with second value
+                  newValue = PatternBuilder.multiCondition(
+                    column.field,
+                    operator,
+                    value,
+                    join,
+                    secondOperator,
+                    secondValue
+                  );
+                } else {
+                  // Partial multi-condition (no second value yet)
+                  newValue = PatternBuilder.partialMultiWithOperator(
+                    column.field,
+                    operator,
+                    value,
+                    join,
+                    secondOperator
+                  );
+                }
+              } else {
+                // Second operator not compatible, restore only first condition
+                newValue = PatternBuilder.confirmed(
+                  column.field,
+                  operator,
+                  value
+                );
+              }
             }
           } else {
             // Single-condition filter - restore operator (and value if it exists)
@@ -342,6 +407,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       searchMode.isSecondColumn,
       searchMode.filterSearch,
       searchMode.partialJoin,
+      memoizedColumns,
     ]
   );
 
@@ -639,12 +705,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const cond2 = filter.conditions[1];
         const join = filter.joinOperator || 'AND';
 
-        if (cond1.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
-        } else if (cond2.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        // Determine column fields for each condition
+        const col1Field = cond1.field || columnName;
+        const col2Field = cond2.field || columnName;
+
+        // Check if this is a multi-column filter (different columns)
+        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
+
+        if (isMultiCol) {
+          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
+          }
         } else {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          }
         }
       } else {
         if (filter.valueTo) {
@@ -723,12 +808,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const cond2 = filter.conditions[1];
         const join = filter.joinOperator || 'AND';
 
-        if (cond1.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
-        } else if (cond2.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        // Determine column fields for each condition
+        const col1Field = cond1.field || columnName;
+        const col2Field = cond2.field || columnName;
+
+        // Check if this is a multi-column filter (different columns)
+        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
+
+        if (isMultiCol) {
+          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
+          }
         } else {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          }
         }
       } else {
         if (filter.valueTo) {
@@ -796,12 +900,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const cond2 = filter.conditions[1];
         const join = filter.joinOperator || 'AND';
 
-        if (cond1.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
-        } else if (cond2.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        // Determine column fields for each condition
+        const col1Field = cond1.field || columnName;
+        const col2Field = cond2.field || columnName;
+
+        // Check if this is a multi-column filter (different columns)
+        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
+
+        if (isMultiCol) {
+          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
+          }
         } else {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          }
         }
       } else {
         if (filter.valueTo) {
@@ -1305,14 +1428,35 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const cond2 = filter.conditions[1];
         const join = filter.joinOperator || 'AND';
 
-        if (cond1.valueTo) {
-          // Between operator for first condition
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
-        } else if (cond2.valueTo) {
-          // Between operator for second condition
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        // Determine column fields for each condition
+        const col1Field = cond1.field || columnName;
+        const col2Field = cond2.field || columnName;
+
+        // Check if this is a multi-column filter (different columns)
+        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
+
+        if (isMultiCol) {
+          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          if (cond1.valueTo) {
+            // Between operator for first condition
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            // Between operator for second condition
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
+          }
         } else {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          if (cond1.valueTo) {
+            // Between operator for first condition
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            // Between operator for second condition
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          }
         }
       } else {
         // Single condition
@@ -1368,13 +1512,32 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const cond2 = filter.conditions[1];
         const join = filter.joinOperator || 'AND';
 
+        // Determine column fields for each condition
+        const col1Field = cond1.field || columnName;
+        const col2Field = cond2.field || columnName;
+
+        // Check if this is a multi-column filter (different columns)
+        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
+
         let restoredPattern: string;
-        if (cond1.valueTo) {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
-        } else if (cond2.valueTo) {
-          restoredPattern = `#${columnName} #${cond2.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+        if (isMultiCol) {
+          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
+          }
         } else {
-          restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          if (cond1.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+          } else if (cond2.valueTo) {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+          } else {
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+          }
         }
 
         onChange({
