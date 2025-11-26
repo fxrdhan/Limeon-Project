@@ -63,6 +63,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     secondOperator?: string;
     secondValue?: string;
     secondValueTo?: string; // For Between (inRange) operator in second condition
+    secondColumnField?: string; // For multi-column filters - second column field name
   } | null>(null);
 
   // State to preserve searchMode during edit (to keep badges visible)
@@ -184,14 +185,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const join = searchMode.partialJoin.toUpperCase() as 'AND' | 'OR';
 
         // Check if we have preserved second operator/value (from handleEditSecondColumn)
-        if (preservedFilterRef.current?.secondOperator) {
+        if (
+          preservedFilterRef.current?.secondOperator &&
+          preservedFilterRef.current.secondOperator.trim() !== ''
+        ) {
           const preserved = preservedFilterRef.current;
+          const secondOp = preserved.secondOperator!; // Non-null assertion safe due to if condition
 
           if (preserved.secondValue && preserved.secondValue.trim() !== '') {
             // Full multi-column with second value - restore complete pattern
+            const secondVal = preserved.secondValue!;
             if (firstValTo) {
               // First condition is Between operator
-              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${preserved.secondOperator} ${preserved.secondValue}##`;
+              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} ${secondVal}##`;
             } else {
               newValue = PatternBuilder.multiColumnComplete(
                 firstCol,
@@ -199,15 +205,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 firstVal,
                 join,
                 column.field,
-                preserved.secondOperator,
-                preserved.secondValue
+                secondOp,
+                secondVal
               );
             }
           } else {
             // Multi-column with operator but no second value - ready for value input
             if (firstValTo) {
               // First condition is Between operator
-              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${preserved.secondOperator} `;
+              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
             } else {
               newValue = PatternBuilder.multiColumnWithOperator(
                 firstCol,
@@ -215,7 +221,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 firstVal,
                 join,
                 column.field,
-                preserved.secondOperator
+                secondOp
               );
             }
           }
