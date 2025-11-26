@@ -1641,6 +1641,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const secondCondition = searchMode.filterSearch.conditions![1];
       const joinOp = searchMode.filterSearch.joinOperator || 'AND';
 
+      // Determine column fields - check if multi-column filter
+      const col1 = firstCondition.field || columnName;
+      const col2 = secondCondition.field || columnName;
+      const isMultiColumn =
+        searchMode.filterSearch.isMultiColumn && col1 !== col2;
+
       let newPattern: string;
 
       // Handle editing first condition
@@ -1649,55 +1655,111 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const firstValue = valueToUse;
         const firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
 
-        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-          columnName,
-          firstCondition.operator,
-          firstValue,
-          firstValueTo,
-          joinOp,
-          secondCondition.operator,
-          secondCondition.value,
-          secondCondition.valueTo
-        );
+        if (isMultiColumn) {
+          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
+            col1,
+            firstCondition.operator,
+            firstValue,
+            firstValueTo,
+            joinOp,
+            col2,
+            secondCondition.operator,
+            secondCondition.value,
+            secondCondition.valueTo
+          );
+        } else {
+          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+            columnName,
+            firstCondition.operator,
+            firstValue,
+            firstValueTo,
+            joinOp,
+            secondCondition.operator,
+            secondCondition.value,
+            secondCondition.valueTo
+          );
+        }
       } else if (editingBadge.type === 'firstValueTo') {
         // Editing first condition's "to" value (Between operator)
-        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value, // Preserve "from" value
-          valueToUse, // Updated "to" value
-          joinOp,
-          secondCondition.operator,
-          secondCondition.value,
-          secondCondition.valueTo
-        );
+        if (isMultiColumn) {
+          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
+            col1,
+            firstCondition.operator,
+            firstCondition.value, // Preserve "from" value
+            valueToUse, // Updated "to" value
+            joinOp,
+            col2,
+            secondCondition.operator,
+            secondCondition.value,
+            secondCondition.valueTo
+          );
+        } else {
+          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+            columnName,
+            firstCondition.operator,
+            firstCondition.value, // Preserve "from" value
+            valueToUse, // Updated "to" value
+            joinOp,
+            secondCondition.operator,
+            secondCondition.value,
+            secondCondition.valueTo
+          );
+        }
       } else if (editingBadge.type === 'secondValue') {
         // Editing second condition's "from" value
         const secondValue = valueToUse;
         const secondValueTo = secondCondition.valueTo; // Preserve "to" if exists
 
-        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value,
-          firstCondition.valueTo,
-          joinOp,
-          secondCondition.operator,
-          secondValue,
-          secondValueTo
-        );
+        if (isMultiColumn) {
+          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
+            col1,
+            firstCondition.operator,
+            firstCondition.value,
+            firstCondition.valueTo,
+            joinOp,
+            col2,
+            secondCondition.operator,
+            secondValue,
+            secondValueTo
+          );
+        } else {
+          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+            columnName,
+            firstCondition.operator,
+            firstCondition.value,
+            firstCondition.valueTo,
+            joinOp,
+            secondCondition.operator,
+            secondValue,
+            secondValueTo
+          );
+        }
       } else if (editingBadge.type === 'secondValueTo') {
         // Editing second condition's "to" value (Between operator)
-        newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value,
-          firstCondition.valueTo,
-          joinOp,
-          secondCondition.operator,
-          secondCondition.value, // Preserve "from" value
-          valueToUse // Updated "to" value
-        );
+        if (isMultiColumn) {
+          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
+            col1,
+            firstCondition.operator,
+            firstCondition.value,
+            firstCondition.valueTo,
+            joinOp,
+            col2,
+            secondCondition.operator,
+            secondCondition.value, // Preserve "from" value
+            valueToUse // Updated "to" value
+          );
+        } else {
+          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
+            columnName,
+            firstCondition.operator,
+            firstCondition.value,
+            firstCondition.valueTo,
+            joinOp,
+            secondCondition.operator,
+            secondCondition.value, // Preserve "from" value
+            valueToUse // Updated "to" value
+          );
+        }
       } else {
         // Fallback - shouldn't reach here
         setEditingBadge(null);

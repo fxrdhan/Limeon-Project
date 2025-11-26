@@ -429,6 +429,7 @@ export class PatternBuilder {
   /**
    * Build multi-condition pattern with optional valueTo for Between operators
    * Handles all combinations: Normal+Normal, Between+Normal, Normal+Between, Between+Between
+   * NOTE: This is for SAME-COLUMN filters only. For multi-column, use buildMultiColumnWithValueTo.
    *
    * @param field - Column field name
    * @param op1 - First operator value
@@ -470,5 +471,47 @@ export class PatternBuilder {
 
     // Case 4: Normal + Normal (default)
     return this.multiCondition(field, op1, val1, join, op2, val2);
+  }
+
+  /**
+   * Build multi-column pattern with optional valueTo for Between operators
+   * Handles all combinations with different columns for each condition
+   *
+   * @param col1 - First column field name
+   * @param op1 - First operator value
+   * @param val1 - First value
+   * @param val1To - First valueTo (for Between operator)
+   * @param join - Join operator ('AND' or 'OR')
+   * @param col2 - Second column field name
+   * @param op2 - Second operator value
+   * @param val2 - Second value
+   * @param val2To - Second valueTo (for Between operator)
+   * @returns Complete multi-column pattern
+   */
+  static buildMultiColumnWithValueTo(
+    col1: string,
+    op1: string,
+    val1: string,
+    val1To: string | undefined,
+    join: 'AND' | 'OR',
+    col2: string,
+    op2: string,
+    val2: string,
+    val2To: string | undefined
+  ): string {
+    const firstIsBetween = op1 === 'inRange' && val1To;
+    const secondIsBetween = op2 === 'inRange' && val2To;
+
+    // Build first condition part
+    const firstPart = firstIsBetween
+      ? `#${col1} #${op1} ${val1} ${val1To}`
+      : `#${col1} #${op1} ${val1}`;
+
+    // Build second condition part
+    const secondPart = secondIsBetween
+      ? `#${col2} #${op2} ${val2} ${val2To}`
+      : `#${col2} #${op2} ${val2}`;
+
+    return `${firstPart} #${join.toLowerCase()} ${secondPart}##`;
   }
 }
