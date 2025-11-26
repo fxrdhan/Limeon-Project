@@ -538,6 +538,46 @@ export const parseSearchValue = (
               };
             }
           }
+          // NEW: Handle partial second column name being typed/deleted (multi-column)
+          // col2 is NOT a valid column (user is typing/deleting column name)
+          else if (column1 && !column2) {
+            const operator1Obj = findOperatorForColumn(column1, op1);
+            // Ensure col2 is also not a valid operator (to avoid collision with same-column patterns)
+            const col2AsOperator = findOperatorForColumn(column1, col2);
+
+            if (operator1Obj && !col2AsOperator) {
+              let filterValue = val1.trim();
+              let filterValueTo: string | undefined;
+
+              if (operator1Obj.value === 'inRange') {
+                const inRangeValues = parseInRangeValues(val1);
+                if (inRangeValues) {
+                  filterValue = inRangeValues.value;
+                  filterValueTo = inRangeValues.valueTo;
+                }
+              }
+
+              // Show column selector with first condition preserved
+              return {
+                globalSearch: undefined,
+                showColumnSelector: true,
+                showOperatorSelector: false,
+                showJoinOperatorSelector: false,
+                isFilterMode: false,
+                selectedColumn: column1,
+                isSecondColumn: true,
+                partialJoin: join.toUpperCase() as 'AND' | 'OR',
+                filterSearch: {
+                  field: column1.field,
+                  value: filterValue,
+                  valueTo: filterValueTo,
+                  column: column1,
+                  operator: operator1Obj.value,
+                  isExplicitOperator: true,
+                },
+              };
+            }
+          }
         }
 
         // ============ SAME-COLUMN PATTERNS (existing) ============
@@ -753,6 +793,60 @@ export const parseSearchValue = (
                 },
               };
             }
+
+            // NEW: Handle partial second column name being typed/deleted (multi-column)
+            // When op2Text is NOT a valid operator, check if it could be a partial column name
+            // Pattern: #col1 #op1 val1 #and #partialColName
+            const partialColumn = findColumn(columns, op2Text);
+            if (!operator2Obj && !partialColumn) {
+              // op2Text is neither a valid operator nor a valid column
+              // User is typing/deleting second column name - show column selector
+              return {
+                globalSearch: undefined,
+                showColumnSelector: true,
+                showOperatorSelector: false,
+                showJoinOperatorSelector: false,
+                isFilterMode: false,
+                selectedColumn: column,
+                isSecondColumn: true, // Flag for second column selection
+                partialJoin: join.toUpperCase() as 'AND' | 'OR',
+                filterSearch: {
+                  field: column.field,
+                  value: beforeJoin,
+                  column,
+                  operator: operatorInput,
+                  isExplicitOperator: true,
+                },
+              };
+            }
+          }
+
+          // NEW: Handle partial join with incomplete second part: #col1 #op val #and # or #col1 #op val #and
+          // This catches the case where join operator is present but nothing/just # after it
+          const partialJoinInValue = filterValue?.match(/#(and|or)\s*#?\s*$/i);
+          if (partialJoinInValue) {
+            const [, join] = partialJoinInValue;
+            const beforeJoin = filterValue!
+              .substring(0, filterValue!.indexOf(`#${join}`))
+              .trim();
+
+            return {
+              globalSearch: undefined,
+              showColumnSelector: true,
+              showOperatorSelector: false,
+              showJoinOperatorSelector: false,
+              isFilterMode: false,
+              selectedColumn: column,
+              isSecondColumn: true,
+              partialJoin: join.toUpperCase() as 'AND' | 'OR',
+              filterSearch: {
+                field: column.field,
+                value: beforeJoin,
+                column,
+                operator: operatorInput,
+                isExplicitOperator: true,
+              },
+            };
           }
 
           // Search in appropriate operators based on column type
