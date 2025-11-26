@@ -160,14 +160,29 @@ export const useSearchKeyboard = ({
 
             // Remove second operator, keep join operator with trailing # to open operator selector
             // Pattern: #field #operator value #join #secondOperator -> #field #operator value #join #
+            // For multi-column: preserve second column -> #col1 #op1 val1 #join #col2 #
             const columnName = searchMode.filterSearch.field;
             const operator = searchMode.filterSearch.operator;
             const filterValue = searchMode.filterSearch.value || ''; // value may be empty
             const joinOp = searchMode.partialJoin.toLowerCase();
-            const newValue =
-              filterValue.trim() !== ''
-                ? `#${columnName} #${operator} ${filterValue} #${joinOp} #`
-                : `#${columnName} #${operator} #${joinOp} #`; // Handle empty value case
+
+            // Check for multi-column: get second column from secondColumn state
+            const secondColumnField = searchMode.secondColumn?.field;
+
+            let newValue: string;
+            if (secondColumnField && secondColumnField !== columnName) {
+              // Multi-column: preserve second column
+              newValue =
+                filterValue.trim() !== ''
+                  ? `#${columnName} #${operator} ${filterValue} #${joinOp} #${secondColumnField} #`
+                  : `#${columnName} #${operator} #${joinOp} #${secondColumnField} #`;
+            } else {
+              // Same-column
+              newValue =
+                filterValue.trim() !== ''
+                  ? `#${columnName} #${operator} ${filterValue} #${joinOp} #`
+                  : `#${columnName} #${operator} #${joinOp} #`;
+            }
 
             // Clear preserved state to remove second operator badge from UI
             onClearPreservedState?.();
