@@ -138,16 +138,34 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Operator selector: position below the badges
   // - First operator: anchor to column badge (badgeRef), align right - appears after column
   // - Second operator editing: anchor to second operator badge, align left - appears below it
+  // - Second operator creating (multi-column): anchor to second column badge, align right - appears after second column
   const isEditingSecondOp =
     isEditingSecondOperator && searchMode.showOperatorSelector;
-  const operatorAnchorRef = isEditingSecondOp
-    ? secondOperatorBadgeRef // Edit second operator: position below second operator badge
-    : badgeRef; // First operator: position after column badge
+  const isCreatingSecondOp =
+    searchMode.isSecondOperator && searchMode.secondColumn;
+
+  let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
+  let operatorAnchorAlign: 'left' | 'right';
+
+  if (isEditingSecondOp) {
+    // Edit second operator: position below second operator badge
+    operatorAnchorRef = secondOperatorBadgeRef;
+    operatorAnchorAlign = 'left';
+  } else if (isCreatingSecondOp) {
+    // Creating second operator in multi-column: position after second column badge
+    operatorAnchorRef = secondColumnBadgeRef;
+    operatorAnchorAlign = 'right';
+  } else {
+    // First operator: position after column badge
+    operatorAnchorRef = badgeRef;
+    operatorAnchorAlign = 'right';
+  }
+
   const operatorSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showOperatorSelector,
     containerRef,
     anchorRef: operatorAnchorRef,
-    anchorAlign: isEditingSecondOp ? 'left' : 'right',
+    anchorAlign: operatorAnchorAlign,
   });
 
   // Join operator selector: position below the join badge (AND/OR)
