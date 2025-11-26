@@ -34,8 +34,6 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
       getItemActiveColor: operator => operator.activeColor || 'text-gray-900',
       getSearchFields: operator => [
         { key: 'label', value: operator.label, boost: 1000 },
-        { key: 'value', value: operator.value, boost: 500 },
-        { key: 'description', value: operator.description || '', boost: 0 },
       ],
       theme: 'orange',
     }),

@@ -54,8 +54,6 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       getItemActiveColor: getActiveColor,
       getSearchFields: column => [
         { key: 'headerName', value: column.headerName, boost: 1000 },
-        { key: 'field', value: column.field, boost: 500 },
-        { key: 'description', value: column.description || '', boost: 0 },
       ],
     }),
     []
