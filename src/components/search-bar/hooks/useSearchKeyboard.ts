@@ -233,6 +233,27 @@ export const useSearchKeyboard = ({
             searchMode.selectedColumn
           ) {
             e.preventDefault();
+
+            // Check if this is second operator selector in multi-column filter
+            if (searchMode.partialJoin && searchMode.filterSearch) {
+              // This is second operator selector - go back to join state with column selector open
+              // Pattern: #col1 #op1 val1 #join #col2 # -> #col1 #op1 val1 #join #
+              const columnName = searchMode.filterSearch.field;
+              const operator = searchMode.filterSearch.operator;
+              const filterValue = searchMode.filterSearch.value || '';
+              const joinOp = searchMode.partialJoin.toLowerCase();
+
+              const newValue =
+                filterValue.trim() !== ''
+                  ? `#${columnName} #${operator} ${filterValue} #${joinOp} #`
+                  : `#${columnName} #${operator} #${joinOp} #`;
+
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+              return;
+            }
+
             // Delete on operator selector with only column badge -> clear everything
             if (onClearSearch) {
               onClearSearch();
