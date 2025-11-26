@@ -858,27 +858,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       stateToUse.secondColumn?.field;
 
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
-      let newValue: string;
-
-      if (secondColumnField && secondColumnField !== columnName) {
-        // Multi-column: preserve second column, open operator selector
-        // Pattern: #col1 #op1 val1 #join #col2 #
-        newValue = PatternBuilder.multiColumnPartial(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value,
-          joinOp,
-          secondColumnField
-        );
-      } else {
-        // Same-column: #field #op1 val1 #join #
-        newValue = PatternBuilder.partialMulti(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value,
-          joinOp
-        );
-      }
+      // Always include second column in pattern (even if same as first)
+      // This ensures the second column badge is shown consistently
+      const col2 = secondColumnField || columnName;
+      const newValue = PatternBuilder.multiColumnPartial(
+        columnName,
+        firstCondition.operator,
+        firstCondition.value,
+        joinOp,
+        col2
+      );
 
       setFilterValue(newValue, onChange, inputRef);
     } else {
@@ -922,29 +911,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       stateToUse.secondColumn?.field;
 
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR') && secondOp) {
-      let newValue: string;
-
-      if (secondColumnField && secondColumnField !== columnName) {
-        // Multi-column: preserve second column
-        // Pattern: #col1 #op1 val1 #join #col2 #op2
-        newValue = PatternBuilder.multiColumnWithOperator(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value,
-          joinOp,
-          secondColumnField,
-          secondOp
-        );
-      } else {
-        // Same-column: #field #op1 val1 #join #op2
-        newValue = PatternBuilder.partialMultiWithOperator(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value,
-          joinOp,
-          secondOp
-        );
-      }
+      // Always include second column in pattern (even if same as first)
+      // This ensures the second column badge is shown consistently
+      const col2 = secondColumnField || columnName;
+      const newValue = PatternBuilder.multiColumnWithOperator(
+        columnName,
+        firstCondition.operator,
+        firstCondition.value,
+        joinOp,
+        col2,
+        secondOp
+      );
 
       setFilterValue(newValue, onChange, inputRef);
     } else {
