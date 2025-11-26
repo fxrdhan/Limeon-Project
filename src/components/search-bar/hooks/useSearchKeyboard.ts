@@ -166,23 +166,14 @@ export const useSearchKeyboard = ({
             const filterValue = searchMode.filterSearch.value || ''; // value may be empty
             const joinOp = searchMode.partialJoin.toLowerCase();
 
-            // Check for multi-column: get second column from secondColumn state
-            const secondColumnField = searchMode.secondColumn?.field;
+            // Always include second column in pattern (even if same as first)
+            // This ensures the second column badge is shown consistently
+            const col2 = searchMode.secondColumn?.field || columnName;
 
-            let newValue: string;
-            if (secondColumnField && secondColumnField !== columnName) {
-              // Multi-column: preserve second column
-              newValue =
-                filterValue.trim() !== ''
-                  ? `#${columnName} #${operator} ${filterValue} #${joinOp} #${secondColumnField} #`
-                  : `#${columnName} #${operator} #${joinOp} #${secondColumnField} #`;
-            } else {
-              // Same-column
-              newValue =
-                filterValue.trim() !== ''
-                  ? `#${columnName} #${operator} ${filterValue} #${joinOp} #`
-                  : `#${columnName} #${operator} #${joinOp} #`;
-            }
+            const newValue =
+              filterValue.trim() !== ''
+                ? `#${columnName} #${operator} ${filterValue} #${joinOp} #${col2} #`
+                : `#${columnName} #${operator} #${joinOp} #${col2} #`;
 
             // Clear preserved state to remove second operator badge from UI
             onClearPreservedState?.();
