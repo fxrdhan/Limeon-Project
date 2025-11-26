@@ -88,9 +88,20 @@ export const useSearchInput = ({
       searchMode.selectedColumn
     ) {
       // Case: Second operator selected, ready for second value input - show the second value being typed
-      // Extract second value from pattern: #field #op1 val1 #join #op2 val2
-      const secondValueMatch = value.match(/#(?:and|or)\s+#[^\s]+\s+(.*)$/i);
-      return secondValueMatch ? secondValueMatch[1] : '';
+      // Multi-column pattern: #col1 #op1 val1 #and #col2 #op2 val2 → extract val2
+      // Same-column pattern:  #col1 #op1 val1 #and #op2 val2 → extract val2
+      // Detect multi-column by checking if secondColumn exists
+      if (searchMode.secondColumn) {
+        // Multi-column: extract value after #col2 #op2
+        const multiColMatch = value.match(
+          /#(?:and|or)\s+#[^\s]+\s+#[^\s]+\s+(.*)$/i
+        );
+        return multiColMatch ? multiColMatch[1] : '';
+      } else {
+        // Same-column: extract value after #op2
+        const sameColMatch = value.match(/#(?:and|or)\s+#[^\s]+\s+(.*)$/i);
+        return sameColMatch ? sameColMatch[1] : '';
+      }
     }
 
     // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
@@ -121,6 +132,7 @@ export const useSearchInput = ({
     searchMode.showColumnSelector,
     searchMode.partialJoin,
     searchMode.selectedColumn,
+    searchMode.secondColumn,
   ]);
 
   // Ref to store last measured width - persists across renders
@@ -329,55 +341,104 @@ export const useSearchInput = ({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
       } else if (
+        searchMode.showColumnSelector &&
+        searchMode.isSecondColumn &&
+        searchMode.partialJoin &&
+        searchMode.filterSearch
+      ) {
+        // MULTI-COLUMN: User is typing to search for second column
+        // Pattern: #col1 #op val #and #searchTerm
+        const filter = searchMode.filterSearch;
+        const join = searchMode.partialJoin.toLowerCase();
+        const firstValTo = filter.valueTo ? ` ${filter.valueTo}` : '';
+        const newValue = `#${filter.field} #${filter.operator} ${filter.value}${firstValTo} #${join} #${inputValue}`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+      } else if (
         !searchMode.isFilterMode &&
         searchMode.partialJoin &&
         searchMode.filterSearch &&
-        searchMode.selectedColumn
+        searchMode.selectedColumn &&
+        !searchMode.showColumnSelector // Exclude when column selector is open
       ) {
         // Handle incomplete multi-condition - user is typing second value
-        // Build pattern: #field #op1 val1 #join #op2 val2
+        // Build pattern: #field #op1 val1 #join #op2 val2 (same-column)
+        // Or: #field #op1 val1 #join #col2 #op2 val2 (multi-column)
         const currentValue = value;
 
-        // Extract the join operator and second operator from current pattern
-        const secondOpMatch = currentValue.match(/#(and|or)\s+#([^\s]+)/i);
+        // MULTI-COLUMN: Check for pattern #col1 #op1 val1 #join #col2 #op2
+        const multiColMatch = currentValue.match(
+          /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)/i
+        );
 
-        if (secondOpMatch) {
-          const [, join, op2] = secondOpMatch;
+        // SAME-COLUMN: Check for pattern #col1 #op1 val1 #join #op2
+        const sameColMatch = currentValue.match(/#(and|or)\s+#([^\s]+)$/i);
 
-          // SPECIAL CASE: If input becomes empty, preserve second operator in partial multi-condition state
-          // This handles when user deletes the second value completely
-          // Step 5 of E9: Preserve 5 badges, then Step 6 backspace will trigger operator selector
-          if (inputValue.trim() === '') {
-            // Remove everything from #join onwards to get base pattern
-            const basePattern = currentValue.replace(
-              /#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i,
-              ''
-            );
-            // Preserve second operator to maintain partial multi-condition state (5 badges)
-            // Step 6 backspace will be handled by useSearchKeyboard.ts to remove operator and open selector
-            const newValue = `${basePattern.trim()} #${join} #${op2}`;
+        // Extract groups based on match type
+        // multiColMatch: [full, join, col2, op2]
+        // sameColMatch: [full, join, op2]
+        const isMultiColumn = searchMode.secondColumn && multiColMatch;
 
-            // Keep preserved state to maintain second operator badge for Step 6
-            // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler
+        let join: string;
+        let col2: string | undefined;
+        let op2: string;
 
-            onChange({
-              target: { value: newValue },
-            } as React.ChangeEvent<HTMLInputElement>);
-            return;
-          }
+        if (isMultiColumn && multiColMatch) {
+          [, join, col2, op2] = multiColMatch;
+        } else if (sameColMatch) {
+          [, join, op2] = sameColMatch;
+        } else {
+          // No match, use original onChange
+          onChange(e);
+          return;
+        }
 
-          // Build complete multi-condition: #field #op1 val1 #join #op2 val2
+        // SPECIAL CASE: If input becomes empty, preserve second operator in partial multi-condition state
+        // This handles when user deletes the second value completely
+        // Step 5 of E9: Preserve 5 badges, then Step 6 backspace will trigger operator selector
+        if (inputValue.trim() === '') {
           // Remove everything from #join onwards to get base pattern
-          const basePattern = currentValue.replace(
-            /#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i,
-            ''
-          );
-          // inputValue now contains the full accumulated second value thanks to displayValue fix
-          const newValue = `${basePattern.trim()} #${join} #${op2} ${inputValue}`;
+          const basePattern = isMultiColumn
+            ? currentValue.replace(
+                /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)(?:\s+.*)?$/i,
+                ''
+              )
+            : currentValue.replace(/#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i, '');
+
+          // Preserve second operator to maintain partial multi-condition state (5 badges)
+          // Step 6 backspace will be handled by useSearchKeyboard.ts to remove operator and open selector
+          const newValue = isMultiColumn
+            ? `${basePattern.trim()} #${join} #${col2} #${op2}`
+            : `${basePattern.trim()} #${join} #${op2}`;
+
+          // Keep preserved state to maintain second operator badge for Step 6
+          // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler
+
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
+          return;
         }
+
+        // Build complete multi-condition pattern
+        // Same-column: #field #op1 val1 #join #op2 val2
+        // Multi-column: #field #op1 val1 #join #col2 #op2 val2
+        const basePattern = isMultiColumn
+          ? currentValue.replace(
+              /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)(?:\s+.*)?$/i,
+              ''
+            )
+          : currentValue.replace(/#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i, '');
+
+        // inputValue now contains the full accumulated second value thanks to displayValue fix
+        const newValue = isMultiColumn
+          ? `${basePattern.trim()} #${join} #${col2} #${op2} ${inputValue}`
+          : `${basePattern.trim()} #${join} #${op2} ${inputValue}`;
+
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
       } else if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
         const columnName = searchMode.selectedColumn.field;
         const cleanInputValue = inputValue.startsWith('#')

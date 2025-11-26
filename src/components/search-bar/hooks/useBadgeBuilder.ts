@@ -8,10 +8,12 @@ interface BadgeHandlers {
   onClearOperator: () => void;
   onClearValue: () => void;
   onClearPartialJoin: () => void;
+  onClearSecondColumn?: () => void; // Clear second column (multi-column filter)
   onClearSecondOperator: () => void;
   onClearSecondValue: () => void;
   onClearAll: () => void;
   onEditColumn: () => void;
+  onEditSecondColumn?: () => void; // Edit second column (multi-column filter)
   onEditOperator: (isSecond?: boolean) => void; // Updated to accept optional parameter
   onEditJoin: () => void;
   onEditValue: () => void; // Edit value handler
@@ -40,7 +42,9 @@ export const useBadgeBuilder = (
       !searchMode.isFilterMode &&
       !searchMode.showOperatorSelector &&
       !searchMode.showJoinOperatorSelector &&
-      !searchMode.selectedColumn
+      !searchMode.showColumnSelector && // Include column selector for second column
+      !searchMode.selectedColumn &&
+      !searchMode.secondColumn // Include second column for multi-column
     ) {
       return badges;
     }
@@ -75,10 +79,29 @@ export const useBadgeBuilder = (
     // 2. Handle Multi-Condition Badges (when filter is confirmed with multiple conditions)
     if (searchMode.isFilterMode && isMultiCondition && filter.conditions) {
       filter.conditions.forEach((condition, index) => {
+        // Use condition's column if available (multi-column), otherwise use filter's column
+        const conditionColumn = condition.column || filter.column;
         const operatorLabel = getOperatorLabelForColumn(
-          filter.column,
+          conditionColumn,
           condition.operator
         );
+
+        // For second condition, always add second column badge BEFORE operator
+        // Show even if same column as first (no simplification)
+        if (index === 1) {
+          const secondColumnLabel =
+            condition.column?.headerName || filter.column.headerName;
+          badges.push({
+            id: 'second-column',
+            type: 'column',
+            label: secondColumnLabel,
+            onClear:
+              handlers.onClearSecondColumn || handlers.onClearSecondOperator,
+            canClear: true,
+            onEdit: handlers.onEditSecondColumn || handlers.onEditColumn,
+            canEdit: true,
+          });
+        }
 
         // Operator badge for this condition
         // Use consistent IDs: 'operator' for first, 'second-operator' for second
@@ -406,10 +429,26 @@ export const useBadgeBuilder = (
       });
     }
 
-    // 6. Second Operator Badge (Blue)
+    // 6. Second Column Badge (Purple) - MULTI-COLUMN SUPPORT
+    // Always show second column badge when it exists (even if same as first column)
+    if (searchMode.secondColumn) {
+      badges.push({
+        id: 'second-column',
+        type: 'column', // Same type as first column badge
+        label: searchMode.secondColumn.headerName,
+        onClear: handlers.onClearSecondColumn || handlers.onClearSecondOperator, // Fallback to clearing second operator
+        canClear: true,
+        onEdit: handlers.onEditSecondColumn || handlers.onEditColumn, // Fallback to first column edit
+        canEdit: true,
+      });
+    }
+
+    // 7. Second Operator Badge (Blue)
     if (searchMode.secondOperator && filter) {
+      // For multi-column, use secondColumn for operator label
+      const columnForLabel = searchMode.secondColumn || filter.column;
       const operatorLabel = getOperatorLabelForColumn(
-        filter.column,
+        columnForLabel,
         searchMode.secondOperator
       );
 

@@ -147,6 +147,36 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     (column: SearchColumn) => {
       let newValue: string;
 
+      // CASE 0: MULTI-COLUMN - selecting second column after join operator
+      // Pattern: #col1 #op val #and # → selecting col2 → #col1 #op val #and #col2 #
+      if (
+        searchMode.isSecondColumn &&
+        searchMode.filterSearch &&
+        searchMode.partialJoin
+      ) {
+        const firstCol = searchMode.filterSearch.field;
+        const firstOp = searchMode.filterSearch.operator;
+        const firstVal = searchMode.filterSearch.value;
+        const firstValTo = searchMode.filterSearch.valueTo;
+        const join = searchMode.partialJoin.toLowerCase();
+
+        // Build pattern with second column and open operator selector for it
+        if (firstValTo) {
+          // First condition is Between operator
+          newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join} #${column.field} #`;
+        } else {
+          newValue = `#${firstCol} #${firstOp} ${firstVal} #${join} #${column.field} #`;
+        }
+
+        setFilterValue(newValue, onChange, inputRef);
+
+        // Auto-focus back to input after selection
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+        return;
+      }
+
       // Check if we have preserved filter from edit column
       if (preservedFilterRef.current) {
         const { operator, value, join, secondOperator, secondValue } =
@@ -234,7 +264,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
-    [onChange, inputRef]
+    [
+      onChange,
+      inputRef,
+      searchMode.isSecondColumn,
+      searchMode.filterSearch,
+      searchMode.partialJoin,
+    ]
   );
 
   const handleOperatorSelect = useCallback(
@@ -879,6 +915,49 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleClearPreservedState,
   ]);
 
+  // Clear second column - goes back to column selector after join (multi-column)
+  const handleClearSecondColumn = useCallback(() => {
+    const stateToUse = preservedSearchMode || searchMode;
+    handleClearPreservedState();
+
+    if (!stateToUse.filterSearch) {
+      handleClearAll();
+      return;
+    }
+
+    const columnName = stateToUse.filterSearch.field;
+    const firstCondition = getFirstCondition(stateToUse.filterSearch);
+    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
+
+    if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
+      // Back to state with join operator, showing column selector: #field #op1 val1 #join #
+      const newValue = PatternBuilder.partialMulti(
+        columnName,
+        firstCondition.operator,
+        firstCondition.value,
+        joinOp
+      );
+
+      setFilterValue(newValue, onChange, inputRef);
+    } else {
+      handleClearAll();
+    }
+  }, [
+    searchMode,
+    preservedSearchMode,
+    onChange,
+    inputRef,
+    handleClearAll,
+    handleClearPreservedState,
+  ]);
+
+  // Edit second column - show column selector for second column (multi-column)
+  const handleEditSecondColumn = useCallback(() => {
+    // For now, just clear second column to show column selector
+    // Could be enhanced to preserve second operator/value later
+    handleClearSecondColumn();
+  }, [handleClearSecondColumn]);
+
   // ==================== EDIT HANDLERS ====================
 
   // Edit column - show column selector with all columns
@@ -1451,12 +1530,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   });
 
   const searchTerm = useMemo(() => {
+    // For second column selection, extract search term after #and/or #
+    if (searchMode.isSecondColumn) {
+      // Pattern: #col1 #op val #and #searchTerm or #col1 #op val #and #
+      const secondColMatch = value.match(/#(?:and|or)\s+#([^\s#]*)$/i);
+      return secondColMatch ? secondColMatch[1] : '';
+    }
+
+    // Normal column selection
     if (value.startsWith('#')) {
       const match = value.match(/^#([^:]*)/);
       return match ? match[1] : '';
     }
     return '';
-  }, [value]);
+  }, [value, searchMode.isSecondColumn]);
 
   const searchableColumns = useMemo(() => {
     return columns.filter(col => col.searchable);
@@ -1664,10 +1751,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onClearOperator={handleClearToColumn}
               onClearValue={handleClearValue}
               onClearPartialJoin={handleClearPartialJoin}
+              onClearSecondColumn={handleClearSecondColumn}
               onClearSecondOperator={handleClearSecondOperator}
               onClearSecondValue={handleClearSecondValue}
               onClearAll={handleClearAll}
               onEditColumn={handleEditColumn}
+              onEditSecondColumn={handleEditSecondColumn}
               onEditOperator={handleEditOperator}
               onEditJoin={handleEditJoin}
               onEditValue={handleEditValue}

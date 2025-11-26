@@ -18,6 +18,9 @@ export interface FilterCondition {
   operator: string;
   value: string;
   valueTo?: string; // For inRange operator (Between) - second value
+  // Multi-column support: each condition can have its own column
+  field?: string; // Column field name for this condition
+  column?: SearchColumn; // Column reference for this condition
 }
 
 export interface FilterSearch extends TargetedSearch {
@@ -29,6 +32,7 @@ export interface FilterSearch extends TargetedSearch {
   conditions?: FilterCondition[]; // Array of conditions for AND/OR
   joinOperator?: 'AND' | 'OR'; // Join operator between conditions
   isMultiCondition?: boolean; // Flag to indicate multi-condition filter
+  isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
 }
 
 export interface EnhancedSearchState {
