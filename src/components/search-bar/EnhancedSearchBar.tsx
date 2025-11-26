@@ -617,8 +617,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
           if (preserved.secondValue) {
             // COMPLETE multi-condition: both conditions have values
-            if (isFirstBetween && isSecondBetween) {
-              // Between AND/OR Between
+            // Check if this is a multi-column filter (second column different from first)
+            const isMultiColumn =
+              preserved.secondColumnField &&
+              preserved.secondColumnField !== columnName;
+
+            if (isMultiColumn && preserved.secondColumnField) {
+              // Multi-column filter: use secondColumnField for second condition
+              newValue = PatternBuilder.multiColumnComplete(
+                columnName,
+                preserved.operator,
+                preserved.value,
+                joinOperator,
+                preserved.secondColumnField,
+                preserved.secondOperator,
+                preserved.secondValue
+              );
+            } else if (isFirstBetween && isSecondBetween) {
+              // Between AND/OR Between (same column)
               newValue = PatternBuilder.betweenAndBetween(
                 columnName,
                 preserved.value,
@@ -628,7 +644,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 preserved.secondValueTo!
               );
             } else if (isFirstBetween && !isSecondBetween) {
-              // Between AND/OR Normal
+              // Between AND/OR Normal (same column)
               newValue = PatternBuilder.betweenAndNormal(
                 columnName,
                 preserved.value,
@@ -638,7 +654,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 preserved.secondValue
               );
             } else if (!isFirstBetween && isSecondBetween) {
-              // Normal AND/OR Between
+              // Normal AND/OR Between (same column)
               newValue = PatternBuilder.normalAndBetween(
                 columnName,
                 preserved.operator,
@@ -648,7 +664,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 preserved.secondValueTo!
               );
             } else {
-              // Normal AND/OR Normal
+              // Normal AND/OR Normal (same column)
               newValue = PatternBuilder.multiCondition(
                 columnName,
                 preserved.operator,
@@ -660,11 +676,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             }
           } else {
             // PARTIAL multi-condition: second condition has no value yet
-            if (isFirstBetween) {
-              // Between with join and second operator selected
+            // Check if this is a multi-column filter
+            const isMultiColumn =
+              preserved.secondColumnField &&
+              preserved.secondColumnField !== columnName;
+
+            if (isMultiColumn && preserved.secondColumnField) {
+              // Multi-column filter: include second column in pattern
+              newValue = PatternBuilder.multiColumnWithOperator(
+                columnName,
+                preserved.operator,
+                preserved.value,
+                joinOperator,
+                preserved.secondColumnField,
+                preserved.secondOperator
+              );
+            } else if (isFirstBetween) {
+              // Between with join and second operator selected (same column)
               newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOperator.toLowerCase()} #${preserved.secondOperator} `;
             } else {
-              // Normal operator with join and second operator selected
+              // Normal operator with join and second operator selected (same column)
               newValue = PatternBuilder.partialMultiWithOperator(
                 columnName,
                 preserved.operator,
@@ -1975,7 +2006,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       column: col,
       headerName: col.headerName,
       field: col.field,
-      description: col.description || '',
     }));
 
     const headerResults = fuzzysort.go(searchTerm, searchTargets, {
@@ -1985,11 +2015,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
       key: 'field',
-      threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
-    });
-
-    const descResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: 'description',
       threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
     });
 
@@ -2007,15 +2032,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
           score: result.score + 500,
-        });
-      }
-    });
-
-    descResults.forEach(result => {
-      if (!combinedResults.has(result.obj.column.field)) {
-        combinedResults.set(result.obj.column.field, {
-          column: result.obj.column,
-          score: result.score,
         });
       }
     });
