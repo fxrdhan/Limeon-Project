@@ -622,7 +622,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               preserved.secondColumnField &&
               preserved.secondColumnField !== columnName;
 
-            if (isMultiColumn) {
+            if (isMultiColumn && preserved.secondColumnField) {
               // Multi-column filter: use secondColumnField for second condition
               newValue = PatternBuilder.multiColumnComplete(
                 columnName,
@@ -681,7 +681,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               preserved.secondColumnField &&
               preserved.secondColumnField !== columnName;
 
-            if (isMultiColumn) {
+            if (isMultiColumn && preserved.secondColumnField) {
               // Multi-column filter: include second column in pattern
               newValue = PatternBuilder.multiColumnWithOperator(
                 columnName,
@@ -2006,7 +2006,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       column: col,
       headerName: col.headerName,
       field: col.field,
-      description: col.description || '',
     }));
 
     const headerResults = fuzzysort.go(searchTerm, searchTargets, {
@@ -2016,11 +2015,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
       key: 'field',
-      threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
-    });
-
-    const descResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: 'description',
       threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
     });
 
@@ -2038,15 +2032,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
           score: result.score + 500,
-        });
-      }
-    });
-
-    descResults.forEach(result => {
-      if (!combinedResults.has(result.obj.column.field)) {
-        combinedResults.set(result.obj.column.field, {
-          column: result.obj.column,
-          score: result.score,
         });
       }
     });
