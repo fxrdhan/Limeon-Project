@@ -852,14 +852,33 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const firstCondition = getFirstCondition(stateToUse.filterSearch);
     const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
 
+    // Check for multi-column: get second column from conditions or secondColumn state
+    const secondColumnField =
+      stateToUse.filterSearch.conditions?.[1]?.field ||
+      stateToUse.secondColumn?.field;
+
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
-      // Back to state with join operator but no second operator: #field #op1 val1 #join #
-      const newValue = PatternBuilder.partialMulti(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        joinOp
-      );
+      let newValue: string;
+
+      if (secondColumnField && secondColumnField !== columnName) {
+        // Multi-column: preserve second column, open operator selector
+        // Pattern: #col1 #op1 val1 #join #col2 #
+        newValue = PatternBuilder.multiColumnPartial(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value,
+          joinOp,
+          secondColumnField
+        );
+      } else {
+        // Same-column: #field #op1 val1 #join #
+        newValue = PatternBuilder.partialMulti(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value,
+          joinOp
+        );
+      }
 
       setFilterValue(newValue, onChange, inputRef);
     } else {
@@ -897,15 +916,35 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       value
     );
 
+    // Check for multi-column: get second column from conditions or secondColumn state
+    const secondColumnField =
+      stateToUse.filterSearch.conditions?.[1]?.field ||
+      stateToUse.secondColumn?.field;
+
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR') && secondOp) {
-      // Back to state with second operator but no value: #field #op1 val1 #join #op2
-      const newValue = PatternBuilder.partialMultiWithOperator(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        joinOp,
-        secondOp
-      );
+      let newValue: string;
+
+      if (secondColumnField && secondColumnField !== columnName) {
+        // Multi-column: preserve second column
+        // Pattern: #col1 #op1 val1 #join #col2 #op2
+        newValue = PatternBuilder.multiColumnWithOperator(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value,
+          joinOp,
+          secondColumnField,
+          secondOp
+        );
+      } else {
+        // Same-column: #field #op1 val1 #join #op2
+        newValue = PatternBuilder.partialMultiWithOperator(
+          columnName,
+          firstCondition.operator,
+          firstCondition.value,
+          joinOp,
+          secondOp
+        );
+      }
 
       setFilterValue(newValue, onChange, inputRef);
     } else {
