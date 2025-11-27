@@ -407,8 +407,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 );
               }
             }
+          } else if (join && secondColumnField) {
+            // Has join and second column but no second operator yet
+            // This happens when operator selector for second column was open
+            // Restore pattern with second column and open operator selector for col2
+            if (preservedFilterRef.current?.valueTo) {
+              // First condition is Between operator
+              newValue = `#${column.field} #${operator} ${value} ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #${secondColumnField} #`;
+            } else {
+              newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${secondColumnField} #`;
+            }
           } else if (join) {
-            // Has join but no second operator/column yet
+            // Has join but no second column yet
             // This happens when column selector for second column was open
             // Restore pattern with join and open column selector for col2
             if (preservedFilterRef.current?.valueTo) {
@@ -599,8 +609,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               preserved.secondOperator
             );
           }
+        } else if (preserved.join && preserved.secondColumnField) {
+          // Has join and second column but no second operator yet
+          // Restore pattern with second column and open operator selector for col2
+          if (preserved.valueTo) {
+            // First condition is Between operator
+            newValue = `#${columnName} #${operator.value} ${preservedValue} ${preserved.valueTo} #${preserved.join.toLowerCase()} #${preserved.secondColumnField} #`;
+          } else {
+            newValue = `#${columnName} #${operator.value} ${preservedValue} #${preserved.join.toLowerCase()} #${preserved.secondColumnField} #`;
+          }
         } else if (preserved.join) {
-          // Has join but no second operator/column yet
+          // Has join but no second column yet
           // Restore pattern with join and open column selector for col2
           if (preserved.valueTo) {
             // First condition is Between operator
