@@ -574,6 +574,40 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               preserved.secondValue
             );
           }
+        } else if (preserved.join && preserved.secondOperator) {
+          // Has join and second operator but no second value yet
+          const secondCol = preserved.secondColumnField;
+          const isMultiColumn = secondCol && secondCol !== columnName;
+
+          if (isMultiColumn) {
+            // Multi-column partial: #col1 #op1 val1 #join #col2 #op2
+            newValue = PatternBuilder.multiColumnWithOperator(
+              columnName,
+              operator.value,
+              preservedValue,
+              preserved.join,
+              secondCol,
+              preserved.secondOperator
+            );
+          } else {
+            // Same-column partial: #col #op1 val1 #join #op2
+            newValue = PatternBuilder.partialMultiWithOperator(
+              columnName,
+              operator.value,
+              preservedValue,
+              preserved.join,
+              preserved.secondOperator
+            );
+          }
+        } else if (preserved.join) {
+          // Has join but no second operator/column yet
+          // Restore pattern with join and open column selector for col2
+          if (preserved.valueTo) {
+            // First condition is Between operator
+            newValue = `#${columnName} #${operator.value} ${preservedValue} ${preserved.valueTo} #${preserved.join.toLowerCase()} #`;
+          } else {
+            newValue = `#${columnName} #${operator.value} ${preservedValue} #${preserved.join.toLowerCase()} #`;
+          }
         } else {
           // Single condition: just restore first value with new operator
           newValue = PatternBuilder.confirmed(
