@@ -848,10 +848,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const col1Field = cond1.field || columnName;
         const col2Field = cond2.field || columnName;
 
-        // Check if this is a multi-column filter (different columns)
-        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
-
-        if (isMultiCol) {
+        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
+        // even when col1 == col2 (preserves the explicit second column badge)
+        if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
           if (cond1.valueTo) {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
@@ -951,10 +950,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const col1Field = cond1.field || columnName;
         const col2Field = cond2.field || columnName;
 
-        // Check if this is a multi-column filter (different columns)
-        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
-
-        if (isMultiCol) {
+        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
+        // even when col1 == col2 (preserves the explicit second column badge)
+        if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
           if (cond1.valueTo) {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
@@ -1043,10 +1041,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const col1Field = cond1.field || columnName;
         const col2Field = cond2.field || columnName;
 
-        // Check if this is a multi-column filter (different columns)
-        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
-
-        if (isMultiCol) {
+        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
+        // even when col1 == col2 (preserves the explicit second column badge)
+        if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
           if (cond1.valueTo) {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
@@ -1636,10 +1633,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const col1Field = cond1.field || columnName;
         const col2Field = cond2.field || columnName;
 
-        // Check if this is a multi-column filter (different columns)
-        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
-
-        if (isMultiCol) {
+        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
+        // even when col1 == col2 (preserves the explicit second column badge)
+        if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
           if (cond1.valueTo) {
             // Between operator for first condition
@@ -1720,11 +1716,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const col1Field = cond1.field || columnName;
         const col2Field = cond2.field || columnName;
 
-        // Check if this is a multi-column filter (different columns)
-        const isMultiCol = filter.isMultiColumn && col1Field !== col2Field;
-
+        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
+        // even when col1 == col2 (preserves the explicit second column badge)
         let restoredPattern: string;
-        if (isMultiCol) {
+        if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
           if (cond1.valueTo) {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
@@ -1909,8 +1904,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Determine column fields - check if multi-column filter
       const col1 = firstCondition.field || columnName;
       const col2 = secondCondition.field || columnName;
-      const isMultiColumn =
-        searchMode.filterSearch.isMultiColumn && col1 !== col2;
+      // Use isMultiColumn directly - it's set true for explicit multi-column patterns
+      // even when col1 == col2 (preserves the explicit second column badge)
+      const isMultiColumn = searchMode.filterSearch.isMultiColumn;
 
       let newPattern: string;
 
