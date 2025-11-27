@@ -87,8 +87,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Ref to store interrupted selector state for restoration after inline edit
   // When user clicks a value badge while selector is open, we save the pattern
   // to restore the selector after inline edit completes
+  // 'partial' type is used when there's partial multi-column state but no selector open
   const interruptedSelectorRef = useRef<{
-    type: 'column' | 'operator' | 'join';
+    type: 'column' | 'operator' | 'join' | 'partial';
     originalPattern: string;
   } | null>(null);
 
@@ -1548,23 +1549,33 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const currentValue = stateToUse.filterSearch.value;
 
-    // NEW: Check if any selector is currently open (interrupt scenario)
-    // When user clicks value badge while selector is open, we need to:
-    // 1. Save the current pattern (to restore selector after edit)
-    // 2. Close the selector by changing to confirmed pattern
+    // NEW: Check if any selector is currently open OR if there's partial multi-column state
+    // When user clicks value badge while selector is open or during multi-column input, we need to:
+    // 1. Save the current pattern (to restore state after edit)
+    // 2. Close the selector / preserve partial state by changing to confirmed pattern
     // 3. Enter inline edit mode
     const isSelectorOpen =
       searchMode.showColumnSelector ||
       searchMode.showOperatorSelector ||
       searchMode.showJoinOperatorSelector;
 
-    if (isSelectorOpen && !preservedSearchMode) {
-      // Determine which selector is open for restoration later
-      const selectorType = searchMode.showColumnSelector
-        ? 'column'
-        : searchMode.showOperatorSelector
-          ? 'operator'
-          : 'join';
+    // Also check for partial multi-column state (no selector open but has partial data)
+    // This happens when user is typing value for second condition
+    const hasPartialMultiColumn =
+      searchMode.partialJoin ||
+      searchMode.secondColumn ||
+      searchMode.secondOperator;
+
+    if ((isSelectorOpen || hasPartialMultiColumn) && !preservedSearchMode) {
+      // Determine which selector is open or if it's partial state for restoration later
+      const selectorType: 'column' | 'operator' | 'join' | 'partial' =
+        searchMode.showColumnSelector
+          ? 'column'
+          : searchMode.showOperatorSelector
+            ? 'operator'
+            : searchMode.showJoinOperatorSelector
+              ? 'join'
+              : 'partial'; // No selector open but has partial multi-column state
 
       // Save current pattern for restoration after inline edit completes
       interruptedSelectorRef.current = {
@@ -1856,6 +1867,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #`;
             }
             // For first operator selector, just use confirmed pattern (already set)
+          } else if (interrupted.type === 'partial') {
+            // Partial multi-column state: no selector open but has partial data
+            // Pattern format: "#col1 #op1 val1 #join #col2 #op2 val2?"
+            // Match the partial state parts from original pattern
+            const partialMatch = interrupted.originalPattern.match(
+              /#(and|or)\s+#([^\s#]+)\s+#([^\s#]+)\s*(.*)$/i
+            );
+            if (partialMatch) {
+              const joinOp = partialMatch[1].toLowerCase();
+              const col2 = partialMatch[2];
+              const op2 = partialMatch[3];
+              const val2Part = partialMatch[4]?.trim() || '';
+              newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #${op2} ${val2Part}`;
+            }
           }
 
           interruptedSelectorRef.current = null;
