@@ -128,7 +128,20 @@ export function extractMultiConditionPreservation(
     };
   }
 
-  // Partial join only (has join but no second column/operator yet)
+  // Partial join with second column but no operator yet
+  // This happens when operator selector for second column is open
+  if (searchMode.partialJoin && searchMode.secondColumn && filter.value) {
+    return {
+      operator: filter.operator,
+      value: filter.value,
+      valueTo: filter.valueTo, // Preserve valueTo for Between
+      join: searchMode.partialJoin,
+      secondColumnField: searchMode.secondColumn.field, // Preserve second column!
+      // No secondOperator/secondValue yet
+    };
+  }
+
+  // Partial join only (has join but no second column yet)
   // This happens when column selector for second column is open
   if (searchMode.partialJoin && filter.value) {
     return {
