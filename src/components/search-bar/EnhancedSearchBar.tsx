@@ -407,6 +407,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 );
               }
             }
+          } else if (join) {
+            // Has join but no second operator/column yet
+            // This happens when column selector for second column was open
+            // Restore pattern with join and open column selector for col2
+            if (preservedFilterRef.current?.valueTo) {
+              // First condition is Between operator
+              newValue = `#${column.field} #${operator} ${value} ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #`;
+            } else {
+              newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #`;
+            }
           } else {
             // Single-condition filter - restore operator (and value if it exists)
             if (value && value.trim() !== '') {
