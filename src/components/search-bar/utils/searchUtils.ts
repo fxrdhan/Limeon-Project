@@ -115,7 +115,10 @@ const parseMultiConditionFilter = (
         }
 
         if (conditions.length >= 2) {
-          const isMultiColumn = column1.field !== column2.field;
+          // Always true for multi-column pattern (matched explicit #col1...#col2 pattern)
+          // Even if col1 == col2, the pattern explicitly specifies two columns
+          // This preserves the multi-column structure/badges
+          const isMultiColumn = true;
 
           return {
             field: column1.field,
