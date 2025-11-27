@@ -64,6 +64,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     secondValue?: string;
     secondValueTo?: string; // For Between (inRange) operator in second condition
     secondColumnField?: string; // For multi-column filters - second column field name
+    wasMultiColumn?: boolean; // Track if original structure had explicit second column badge
   } | null>(null);
 
   // State to preserve searchMode during edit (to keep badges visible)
@@ -302,6 +303,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           secondOperator,
           secondValue,
           secondColumnField,
+          wasMultiColumn,
         } = preservedFilterRef.current;
 
         // Check if operator is compatible with new column type
@@ -313,12 +315,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         if (isOperatorCompatible) {
           // Check if it's a multi-condition filter (or partial multi-condition)
           if (join && secondOperator) {
-            // Check if this is a multi-column filter (second column different from first)
-            const isMultiColumn =
-              secondColumnField && secondColumnField !== column.field;
+            // Use wasMultiColumn flag to preserve multi-column structure
+            // This prevents losing the explicit second column badge when user changes col1
+            const isMultiColumn = wasMultiColumn && !!secondColumnField;
 
             if (isMultiColumn) {
-              // MULTI-COLUMN FILTER: second condition has different column
+              // MULTI-COLUMN FILTER: preserve explicit second column badge
               // Find the second column object for compatibility check
               const secondColumn = memoizedColumns.find(
                 col => col.field === secondColumnField
@@ -706,10 +708,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
           if (preserved.secondValue) {
             // COMPLETE multi-condition: both conditions have values
-            // Check if this is a multi-column filter (second column different from first)
+            // Use wasMultiColumn flag to preserve multi-column structure
             const isMultiColumn =
-              preserved.secondColumnField &&
-              preserved.secondColumnField !== columnName;
+              preserved.wasMultiColumn && preserved.secondColumnField;
 
             if (isMultiColumn && preserved.secondColumnField) {
               // Multi-column filter: use secondColumnField for second condition
@@ -765,10 +766,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             }
           } else {
             // PARTIAL multi-condition: second condition has no value yet
-            // Check if this is a multi-column filter
+            // Use wasMultiColumn flag to preserve multi-column structure
             const isMultiColumn =
-              preserved.secondColumnField &&
-              preserved.secondColumnField !== columnName;
+              preserved.wasMultiColumn && preserved.secondColumnField;
 
             if (isMultiColumn && preserved.secondColumnField) {
               // Multi-column filter: include second column in pattern

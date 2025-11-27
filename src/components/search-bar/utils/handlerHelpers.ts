@@ -22,6 +22,7 @@ export interface PreservedFilter {
   secondValue?: string;
   secondValueTo?: string; // For second Between in multi-condition
   secondColumnField?: string; // For multi-column filters - second column field name
+  wasMultiColumn?: boolean; // Track if original structure had explicit second column badge
 }
 
 /**
@@ -112,6 +113,7 @@ export function extractMultiConditionPreservation(
       secondValue: secondCondition.value,
       secondValueTo: secondCondition.valueTo, // Preserve second valueTo for Between
       secondColumnField: secondCondition.field, // Preserve second column for multi-column filters
+      wasMultiColumn: filter.isMultiColumn, // Track if original had explicit col2 badge
     };
   }
 
@@ -125,6 +127,7 @@ export function extractMultiConditionPreservation(
       secondOperator: searchMode.secondOperator,
       secondValue: '',
       secondColumnField: searchMode.secondColumn?.field, // Preserve second column for multi-column filters
+      wasMultiColumn: !!searchMode.secondColumn, // Has explicit second column = multi-column
     };
   }
 
@@ -137,6 +140,7 @@ export function extractMultiConditionPreservation(
       valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
       secondColumnField: searchMode.secondColumn.field, // Preserve second column!
+      wasMultiColumn: true, // Has explicit second column = multi-column
       // No secondOperator/secondValue yet
     };
   }
