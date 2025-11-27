@@ -1509,6 +1509,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         originalPattern: value,
       };
 
+      // IMPORTANT: Preserve current searchMode BEFORE changing pattern
+      // This keeps all badges visible (including join badge and second column)
+      // while the selector is closed and inline edit is active
+      setPreservedSearchMode(searchMode);
+
       // Build confirmed pattern to close the selector
       const filter = stateToUse.filterSearch;
       const columnName = filter.field;
@@ -1522,6 +1527,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       // Close selector by setting confirmed pattern
+      // Note: Badges are rendered from preservedSearchMode, so they stay visible
       onChange({
         target: { value: confirmedPattern },
       } as React.ChangeEvent<HTMLInputElement>);
@@ -1752,31 +1758,46 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Check if we need to restore a selector that was interrupted
         if (interruptedSelectorRef.current) {
           const interrupted = interruptedSelectorRef.current;
+          const valuePart =
+            operator === 'inRange' && searchMode.filterSearch.valueTo
+              ? `${valueToUse} ${searchMode.filterSearch.valueTo}`
+              : valueToUse;
 
-          // Parse original pattern to extract join operator if present
-          // Pattern formats: "#col #op val #and #" or "#col #op val #or #"
-          const joinMatch =
-            interrupted.originalPattern.match(/#(and|or)\s*#?\s*$/i);
+          // Parse original pattern to extract join operator and second column if present
+          // Pattern formats:
+          // - "#col #op val #and #" (column selector after join)
+          // - "#col #op val #" (join selector)
+          // - "#col1 #op val #and #col2 #" (operator selector for col2)
 
-          if (joinMatch && interrupted.type === 'column') {
-            // Restore column selector after join: #col #op newValue #join #
-            const joinOp = joinMatch[1].toLowerCase();
-            const valuePart =
-              operator === 'inRange' && searchMode.filterSearch.valueTo
-                ? `${valueToUse} ${searchMode.filterSearch.valueTo}`
-                : valueToUse;
-            newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #`;
+          if (interrupted.type === 'column') {
+            // Column selector: pattern ends with "#join #"
+            const joinMatch =
+              interrupted.originalPattern.match(/#(and|or)\s*#\s*$/i);
+            if (joinMatch) {
+              const joinOp = joinMatch[1].toLowerCase();
+              newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #`;
+            }
           } else if (interrupted.type === 'join') {
-            // Restore join selector: #col #op newValue #
-            const valuePart =
-              operator === 'inRange' && searchMode.filterSearch.valueTo
-                ? `${valueToUse} ${searchMode.filterSearch.valueTo}`
-                : valueToUse;
+            // Join selector: pattern ends with "#" (single trailing hash)
             newPattern = `#${columnName} #${operator} ${valuePart} #`;
+          } else if (interrupted.type === 'operator') {
+            // Operator selector: could be for first operator or second operator (multi-column)
+            // Pattern for second operator: "#col1 #op val #and #col2 #"
+            const multiColMatch = interrupted.originalPattern.match(
+              /#(and|or)\s+#([^\s#]+)\s*#\s*$/i
+            );
+            if (multiColMatch) {
+              // Multi-column operator selector: restore with second column
+              const joinOp = multiColMatch[1].toLowerCase();
+              const col2 = multiColMatch[2];
+              newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #`;
+            }
+            // For first operator selector, just use confirmed pattern (already set)
           }
-          // For operator selector, just use the confirmed pattern (newPattern already set)
 
           interruptedSelectorRef.current = null;
+          // Clear preserved state since we're restoring the selector pattern
+          setPreservedSearchMode(null);
         }
 
         onChange({
