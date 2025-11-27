@@ -494,9 +494,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       ) {
         const preserved = preservedFilterRef.current;
         const joinOp = preserved.join as 'AND' | 'OR'; // Type assertion (safe due to guard above)
-        // Check if this is a multi-column filter (second column is different from first)
+        // Use wasMultiColumn flag to preserve multi-column structure
         const secondCol = preserved.secondColumnField;
-        const isMultiColumn = secondCol && secondCol !== columnName;
+        const isMultiColumn = preserved.wasMultiColumn && secondCol;
 
         if (preserved.secondValue) {
           // Full multi-condition with second value
@@ -561,9 +561,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           preserved.secondOperator &&
           preserved.secondValue
         ) {
-          // Check if this is a multi-column filter
+          // Use wasMultiColumn flag to preserve multi-column structure
           const secondCol = preserved.secondColumnField;
-          const isMultiColumn = secondCol && secondCol !== columnName;
+          const isMultiColumn = preserved.wasMultiColumn && secondCol;
 
           if (isMultiColumn) {
             // Multi-column: #col1 #op1 val1 #join #col2 #op2 val2##
@@ -589,8 +589,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           }
         } else if (preserved.join && preserved.secondOperator) {
           // Has join and second operator but no second value yet
+          // Use wasMultiColumn flag to preserve multi-column structure
           const secondCol = preserved.secondColumnField;
-          const isMultiColumn = secondCol && secondCol !== columnName;
+          const isMultiColumn = preserved.wasMultiColumn && secondCol;
 
           if (isMultiColumn) {
             // Multi-column partial: #col1 #op1 val1 #join #col2 #op2
