@@ -304,10 +304,12 @@ export const useBadgeBuilder = (
       !filter?.isMultiCondition;
 
     if (shouldShowSingleValue) {
-      const isSecondValue =
-        searchMode.showOperatorSelector &&
-        searchMode.isSecondOperator &&
-        filter;
+      // NOTE: This section handles Single-Condition Value Badges
+      // The value displayed is always filter.value (first/only condition value)
+      // Even when selecting second operator, this badge is for FIRST condition
+      // So isSecondValue should always be false here
+      // The "second value" only exists in multi-condition filters (handled in section 2)
+      const isSecondValue = false;
 
       // Check if this is a Between (inRange) operator with valueTo
       if (filter.operator === 'inRange' && filter.valueTo) {
