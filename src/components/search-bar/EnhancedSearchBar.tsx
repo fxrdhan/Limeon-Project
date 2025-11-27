@@ -171,15 +171,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Join operator selector: position depends on context
   // - CREATE mode (no join badge yet): Position after all badges (right edge)
   // - EDIT mode (join badge exists): Position below the join badge itself
-  const joinAnchorRef = searchMode.partialJoin
-    ? joinBadgeRef // EDIT: join badge exists, anchor to it
+  //
+  // IMPORTANT: Detect edit mode via multiple signals:
+  // 1. searchMode.partialJoin - exists when typing partial join pattern
+  // 2. preservedSearchMode?.partialJoin - exists when editing from partial multi-column
+  // 3. preservedSearchMode?.filterSearch?.joinOperator - exists when editing complete multi-condition
+  // 4. preservedSearchMode?.filterSearch?.isMultiCondition - alternative signal for edit mode
+  const isEditingJoinOperator =
+    searchMode.partialJoin ||
+    preservedSearchMode?.partialJoin ||
+    preservedSearchMode?.filterSearch?.joinOperator ||
+    preservedSearchMode?.filterSearch?.isMultiCondition;
+
+  const joinAnchorRef = isEditingJoinOperator
+    ? joinBadgeRef // EDIT: join badge exists (from preservedSearchMode), anchor to it
     : badgesContainerRef; // CREATE: no join badge yet, anchor to badges container
 
   const joinOperatorSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showJoinOperatorSelector,
     containerRef,
     anchorRef: joinAnchorRef,
-    anchorAlign: searchMode.partialJoin ? 'left' : 'right', // left for edit, right for create
+    anchorAlign: isEditingJoinOperator ? 'left' : 'right', // left for edit, right for create
   });
 
   // Clear preserved state - used to reset edit mode and badge visibility
