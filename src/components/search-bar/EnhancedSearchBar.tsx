@@ -84,6 +84,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     value: string;
   } | null>(null);
 
+  // Ref to store interrupted selector state for restoration after inline edit
+  // When user clicks a value badge while selector is open, we save the pattern
+  // to restore the selector after inline edit completes
+  const interruptedSelectorRef = useRef<{
+    type: 'column' | 'operator' | 'join';
+    originalPattern: string;
+  } | null>(null);
+
   const { searchMode } = useSearchState({
     value,
     columns: memoizedColumns,
@@ -1477,6 +1485,55 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     const currentValue = stateToUse.filterSearch.value;
 
+    // NEW: Check if any selector is currently open (interrupt scenario)
+    // When user clicks value badge while selector is open, we need to:
+    // 1. Save the current pattern (to restore selector after edit)
+    // 2. Close the selector by changing to confirmed pattern
+    // 3. Enter inline edit mode
+    const isSelectorOpen =
+      searchMode.showColumnSelector ||
+      searchMode.showOperatorSelector ||
+      searchMode.showJoinOperatorSelector;
+
+    if (isSelectorOpen && !preservedSearchMode) {
+      // Determine which selector is open for restoration later
+      const selectorType = searchMode.showColumnSelector
+        ? 'column'
+        : searchMode.showOperatorSelector
+          ? 'operator'
+          : 'join';
+
+      // Save current pattern for restoration after inline edit completes
+      interruptedSelectorRef.current = {
+        type: selectorType,
+        originalPattern: value,
+      };
+
+      // Build confirmed pattern to close the selector
+      const filter = stateToUse.filterSearch;
+      const columnName = filter.field;
+      let confirmedPattern: string;
+
+      if (filter.valueTo) {
+        // Between operator
+        confirmedPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+      } else {
+        confirmedPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
+      }
+
+      // Close selector by setting confirmed pattern
+      onChange({
+        target: { value: confirmedPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      // Enter inline editing mode
+      setEditingBadge({
+        type: 'firstValue',
+        value: currentValue,
+      });
+      return;
+    }
+
     // If we're in edit mode (modal open), restore the original pattern first
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       // Rebuild the confirmed pattern to close any open modal
@@ -1545,7 +1602,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       type: 'firstValue',
       value: currentValue,
     });
-  }, [searchMode, preservedSearchMode, onChange]);
+  }, [searchMode, preservedSearchMode, onChange, value]);
 
   // Edit second value in multi-condition filter - INLINE EDITING
   const handleEditSecondValue = useCallback(() => {
@@ -1642,6 +1699,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // If value is empty, treat it as clear action
       if (!valueToUse || valueToUse.trim() === '') {
         setEditingBadge(null);
+        // Clear interrupted selector ref since we're clearing the value
+        interruptedSelectorRef.current = null;
 
         // Clear based on which badge was being edited
         if (
@@ -1688,6 +1747,36 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } else {
           // Normal operator with single value
           newPattern = `#${columnName} #${operator} ${valueToUse}##`;
+        }
+
+        // Check if we need to restore a selector that was interrupted
+        if (interruptedSelectorRef.current) {
+          const interrupted = interruptedSelectorRef.current;
+
+          // Parse original pattern to extract join operator if present
+          // Pattern formats: "#col #op val #and #" or "#col #op val #or #"
+          const joinMatch =
+            interrupted.originalPattern.match(/#(and|or)\s*#?\s*$/i);
+
+          if (joinMatch && interrupted.type === 'column') {
+            // Restore column selector after join: #col #op newValue #join #
+            const joinOp = joinMatch[1].toLowerCase();
+            const valuePart =
+              operator === 'inRange' && searchMode.filterSearch.valueTo
+                ? `${valueToUse} ${searchMode.filterSearch.valueTo}`
+                : valueToUse;
+            newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #`;
+          } else if (interrupted.type === 'join') {
+            // Restore join selector: #col #op newValue #
+            const valuePart =
+              operator === 'inRange' && searchMode.filterSearch.valueTo
+                ? `${valueToUse} ${searchMode.filterSearch.valueTo}`
+                : valueToUse;
+            newPattern = `#${columnName} #${operator} ${valuePart} #`;
+          }
+          // For operator selector, just use the confirmed pattern (newPattern already set)
+
+          interruptedSelectorRef.current = null;
         }
 
         onChange({
