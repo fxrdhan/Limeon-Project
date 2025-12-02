@@ -44,8 +44,7 @@ jobs:
               - 'scripts/**'
               - 'public/**'
               - 'package.json'
-              - 'yarn.lock'
-              - '.yarnrc.yml'
+              - 'bun.lock'
               - 'tsconfig*.json'
               - 'vite.config.*'
               - 'vitest.config.*'
@@ -61,8 +60,7 @@ jobs:
               - 'src/**/*.{jpg,jpeg,png,gif,svg,webp}'
               - 'public/**'
               - 'package.json'
-              - 'yarn.lock'
-              - '.yarnrc.yml'
+              - 'bun.lock'
               - 'tsconfig*.json'
               - 'vite.config.*'
               - '.swcrc'
@@ -113,20 +111,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Check TypeScript
-        run: yarn tsc -b --noEmit
+        run: bun tsc -b --noEmit
 
   lint:
     name: Lint Code
@@ -139,20 +133,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Lint code
-        run: yarn lint
+        run: bun lint
 
   format:
     name: Check Formatting
@@ -165,20 +155,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Check formatting
-        run: yarn format:check
+        run: bun format:check
 
   # 🧪 Tests with coverage - runs after quick checks pass
   test:
@@ -197,20 +183,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Run tests with coverage
-        run: yarn test:coverage
+        run: bun test:coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -261,24 +243,19 @@ jobs:
         if: steps.check.outputs.needed == 'true'
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
+      - name: Setup Bun
         if: steps.check.outputs.needed == 'true'
-        run: corepack enable
-
-      - name: Setup Node.js
-        if: steps.check.outputs.needed == 'true'
-        uses: actions/setup-node@v6
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
         if: steps.check.outputs.needed == 'true'
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Build application
         if: steps.check.outputs.needed == 'true'
-        run: yarn build
+        run: bun run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -305,20 +282,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Check formatting
-        run: yarn format:check
+        run: bun format:check
 
       - name: Success message
         run: |
@@ -338,22 +311,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'yarn'
+          bun-version: latest
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Lint and format check
         run: |
-          yarn lint
-          yarn format:check
+          bun lint
+          bun format:check
 
       - name: Success message
         run: |
