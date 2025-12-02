@@ -104,8 +104,8 @@ export const useEnhancedAgGridSearch = (
         const currentTargetedSearch = targetedSearchRef.current;
         return Boolean(
           (currentGlobalSearch && currentGlobalSearch.trim().length > 0) ||
-            (currentTargetedSearch &&
-              currentTargetedSearch.value.trim().length > 0)
+          (currentTargetedSearch &&
+            currentTargetedSearch.value.trim().length > 0)
         );
       }
     : undefined;
