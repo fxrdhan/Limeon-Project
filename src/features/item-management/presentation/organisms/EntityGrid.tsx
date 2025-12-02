@@ -47,7 +47,8 @@ type EntityWithCode = {
 // Extend Record<string, unknown> to satisfy generic constraints where a
 // Record<string, unknown> is required by transformation utilities.
 interface ItemWithExtendedEntities
-  extends Record<string, unknown>,
+  extends
+    Record<string, unknown>,
     Omit<Item, 'category' | 'type' | 'package' | 'dosage' | 'manufacturer'> {
   category?: EntityWithCode;
   type?: EntityWithCode;
