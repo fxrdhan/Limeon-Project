@@ -6,9 +6,9 @@
   "type": "module",
   "license": "AGPL-3.0",
   "scripts": {
-    "dev": "concurrently \"yarn tailwind:watch\" \"vite\" --names \"tailwind,vite\" --prefix-colors \"blue,green\"",
+    "dev": "concurrently \"bun tailwind:watch\" \"vite\" --names \"tailwind,vite\" --prefix-colors \"blue,green\"",
     "dev:vite": "vite",
-    "build": "yarn tailwind:build && tsc -b && vite build",
+    "build": "bun tailwind:build && tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -16,24 +16,24 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:open": "yarn test:coverage && open coverage/index.html",
+    "test:coverage:open": "bun test:coverage && open coverage/index.html",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "test:changed": "vitest --changed",
     "test:related": "vitest --related",
-    "tailwind:watch": "NODE_NO_WARNINGS=1 npx tailwindcss -i ./src/App.scss -o ./src/output.css --watch",
-    "tailwind:build": "NODE_NO_WARNINGS=1 npx tailwindcss -i ./src/App.scss -o ./src/output.css",
-    "add-admin": "tsx scripts/add-admin-user.ts",
-    "add-admin:help": "tsx scripts/add-admin-user.ts --help",
-    "update-password": "tsx scripts/update-user-password.ts",
-    "update-password:help": "tsx scripts/update-user-password.ts --help",
-    "export": "tsx scripts/export.ts",
-    "loc-stats": "tsx scripts/loc-stats.ts",
-    "gen:schemas": "yarn gen:schemas:db && yarn gen:schemas:forms && yarn gen:schemas:invoice && yarn gen:schemas:purchase",
-    "gen:schemas:db": "ts-to-zod --config=database --skipValidation",
-    "gen:schemas:forms": "ts-to-zod --config=forms --skipValidation",
-    "gen:schemas:invoice": "ts-to-zod --config=invoice --skipValidation",
-    "gen:schemas:purchase": "ts-to-zod --config=purchase --skipValidation",
+    "tailwind:watch": "bunx tailwindcss -i ./src/App.scss -o ./src/output.css --watch",
+    "tailwind:build": "bunx tailwindcss -i ./src/App.scss -o ./src/output.css",
+    "add-admin": "bun scripts/add-admin-user.ts",
+    "add-admin:help": "bun scripts/add-admin-user.ts --help",
+    "update-password": "bun scripts/update-user-password.ts",
+    "update-password:help": "bun scripts/update-user-password.ts --help",
+    "export": "bun scripts/export.ts",
+    "loc-stats": "bun scripts/loc-stats.ts",
+    "gen:schemas": "bun gen:schemas:db && bun gen:schemas:forms && bun gen:schemas:invoice && bun gen:schemas:purchase",
+    "gen:schemas:db": "bunx ts-to-zod --config=database --skipValidation",
+    "gen:schemas:forms": "bunx ts-to-zod --config=forms --skipValidation",
+    "gen:schemas:invoice": "bunx ts-to-zod --config=invoice --skipValidation",
+    "gen:schemas:purchase": "bunx ts-to-zod --config=purchase --skipValidation",
     "prepare": "husky"
   },
   "dependencies": {
@@ -65,7 +65,7 @@
     "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },
-  "resolutions": {
+  "overrides": {
     "tar": "^7.5.2",
     "js-yaml": "^4.1.1",
     "glob": "^11.1.0"
@@ -106,12 +106,10 @@
     "supabase": "2.63.1",
     "tailwindcss": "^4.1.17",
     "ts-to-zod": "^5.1.0",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.2.4",
     "vite-plugin-compression": "^0.5.1",
     "vitest": "^4.0.14"
-  },
-  "packageManager": "yarn@4.10.3"
+  }
 }

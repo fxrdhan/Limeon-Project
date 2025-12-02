@@ -1,5 +1,5 @@
 echo "🔍 Running pre-commit checks with lint-staged..."
 
-npx lint-staged
+bunx lint-staged
 
 echo "\n✅ All pre-commit checks passed!"
