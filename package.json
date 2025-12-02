@@ -41,8 +41,8 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.84.0",
     "@tailwindcss/cli": "^4.1.17",
-    "@tanstack/react-query": "^5.90.10",
-    "@tanstack/react-query-devtools": "^5.91.0",
+    "@tanstack/react-query": "^5.90.11",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "ag-grid-enterprise": "34.2.0",
     "ag-grid-react": "34.2.0",
     "axios": "^1.13.2",
@@ -63,7 +63,7 @@
     "react-spinners": "^0.17.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.1.13",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.9"
   },
   "resolutions": {
     "tar": "^7.5.2",
