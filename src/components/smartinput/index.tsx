@@ -1,8 +1,10 @@
 import React, { forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-interface SmartInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+interface SmartInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'onChange'
+> {
   fieldName: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

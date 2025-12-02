@@ -57,8 +57,10 @@ export interface DropdownProps {
 }
 
 // Extended dropdown props for checkbox mode (multiple selection)
-export interface CheckboxDropdownProps
-  extends Omit<DropdownProps, 'value' | 'onChange' | 'withRadio'> {
+export interface CheckboxDropdownProps extends Omit<
+  DropdownProps,
+  'value' | 'onChange' | 'withRadio'
+> {
   value: string[];
   onChange: (value: string[]) => void;
   withCheckbox: true;
@@ -93,8 +95,7 @@ export type ButtonVariant =
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 // Extended button props with all available features
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Button visual variant */
   variant?: ButtonVariant;
   /** Button size */
@@ -125,8 +126,7 @@ export interface CardProps {
   className?: string;
 }
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   fullWidth?: boolean;
@@ -178,15 +178,13 @@ export interface TableProps {
   stickyHeader?: boolean;
 }
 
-export interface TableCellProps
-  extends React.TdHTMLAttributes<HTMLTableCellElement> {
+export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
   colSpan?: number;
   rowSpan?: number;
   align?: 'left' | 'center' | 'right';
 }
 
-export interface TableRowProps
-  extends React.HTMLAttributes<HTMLTableRowElement> {
+export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   children: React.ReactNode;
   className?: string;
 }
@@ -206,8 +204,7 @@ export interface ImageUploaderProps {
   shape?: 'rounded' | 'rounded-sm' | 'square' | 'full';
 }
 
-export interface DescriptiveTextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface DescriptiveTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   value: string;
   onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
