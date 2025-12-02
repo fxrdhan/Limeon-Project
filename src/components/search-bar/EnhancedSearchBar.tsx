@@ -237,43 +237,71 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           const preserved = preservedFilterRef.current;
           const secondOp = preserved.secondOperator!; // Non-null assertion safe due to if condition
 
-          if (preserved.secondValue && preserved.secondValue.trim() !== '') {
-            // Full multi-column with second value - restore complete pattern
-            const secondVal = preserved.secondValue!;
-            if (firstValTo) {
-              // First condition is Between operator
-              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} ${secondVal}##`;
-            } else {
-              newValue = PatternBuilder.multiColumnComplete(
-                firstCol,
-                firstOp,
-                firstVal,
-                join,
-                column.field,
-                secondOp,
-                secondVal
-              );
-            }
-          } else {
-            // Multi-column with operator but no second value - ready for value input
-            if (firstValTo) {
-              // First condition is Between operator
-              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
-            } else {
-              newValue = PatternBuilder.multiColumnWithOperator(
-                firstCol,
-                firstOp,
-                firstVal,
-                join,
-                column.field,
-                secondOp
-              );
-            }
-          }
+          // Check if preserved operator is compatible with new column type
+          const isSecondOpCompatible = isOperatorCompatibleWithColumn(
+            column,
+            secondOp
+          );
 
-          // Clear preserved state after restoration
-          preservedFilterRef.current = null;
-          setPreservedSearchMode(null);
+          if (isSecondOpCompatible) {
+            // Operator is compatible - restore pattern with preserved operator
+            if (preserved.secondValue && preserved.secondValue.trim() !== '') {
+              // Full multi-column with second value - restore complete pattern
+              const secondVal = preserved.secondValue!;
+              if (firstValTo) {
+                // First condition is Between operator
+                newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} ${secondVal}##`;
+              } else {
+                newValue = PatternBuilder.multiColumnComplete(
+                  firstCol,
+                  firstOp,
+                  firstVal,
+                  join,
+                  column.field,
+                  secondOp,
+                  secondVal
+                );
+              }
+            } else {
+              // Multi-column with operator but no second value - ready for value input
+              if (firstValTo) {
+                // First condition is Between operator
+                newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
+              } else {
+                newValue = PatternBuilder.multiColumnWithOperator(
+                  firstCol,
+                  firstOp,
+                  firstVal,
+                  join,
+                  column.field,
+                  secondOp
+                );
+              }
+            }
+
+            // Clear preserved state after restoration
+            preservedFilterRef.current = null;
+            setPreservedSearchMode(null);
+          } else {
+            // Operator NOT compatible with new column type
+            // Open operator selector for the new column to let user choose compatible operator
+            if (firstValTo) {
+              // First condition is Between operator
+              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
+            } else {
+              newValue = PatternBuilder.multiColumnPartial(
+                firstCol,
+                firstOp,
+                firstVal,
+                join,
+                column.field
+              );
+            }
+
+            // Clear preserved state since operator is incompatible
+            preservedFilterRef.current = null;
+            setPreservedSearchMode(null);
+          }
         } else {
           // No preserved second operator - open operator selector for new column
           // Build pattern with second column and open operator selector for it
