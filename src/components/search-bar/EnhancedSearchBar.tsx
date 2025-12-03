@@ -1875,18 +1875,63 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Clear interrupted selector ref since we're clearing the value
         interruptedSelectorRef.current = null;
 
+        const columnName = searchMode.filterSearch.field;
+        const operator = searchMode.filterSearch.operator;
+
         // Clear based on which badge was being edited
-        if (
-          editingBadge.type === 'firstValue' ||
-          editingBadge.type === 'firstValueTo'
-        ) {
-          // Clearing first condition value - clear entire filter
+        if (editingBadge.type === 'firstValue') {
+          // Clearing first condition "from" value - clear entire filter
           handleClearValue();
-        } else if (
-          editingBadge.type === 'secondValue' ||
-          editingBadge.type === 'secondValueTo'
-        ) {
-          // Clearing second condition value - clear second condition only
+        } else if (editingBadge.type === 'firstValueTo') {
+          // Clearing "to" value in Between - keep "from" value, go back to input mode
+          // Pattern: #column #inRange fromValue (ready for typing new toValue)
+          const fromValue = searchMode.filterSearch.value;
+          const newPattern = `#${columnName} #${operator} ${fromValue} `;
+          onChange({
+            target: { value: newPattern },
+          } as React.ChangeEvent<HTMLInputElement>);
+          // Ensure focus returns to search input
+          setTimeout(() => {
+            inputRef?.current?.focus();
+          }, 50);
+          return;
+        } else if (editingBadge.type === 'secondValue') {
+          // Clearing second condition "from" value - clear second condition only
+          handleClearSecondValue();
+        } else if (editingBadge.type === 'secondValueTo') {
+          // Clearing second condition "to" value in Between - keep "from" value
+          // This needs to rebuild pattern with second condition's from value only
+          if (
+            searchMode.filterSearch.isMultiCondition &&
+            searchMode.filterSearch.conditions?.length === 2
+          ) {
+            const cond1 = searchMode.filterSearch.conditions[0];
+            const cond2 = searchMode.filterSearch.conditions[1];
+            const join = searchMode.filterSearch.joinOperator || 'AND';
+            const col1 = cond1.field || columnName;
+            const col2 = cond2.field || columnName;
+            const isMultiColumn = searchMode.filterSearch.isMultiColumn;
+
+            // Rebuild pattern with second condition's from value only (no toValue)
+            let newPattern: string;
+            const firstPart = cond1.valueTo
+              ? `#${col1} #${cond1.operator} ${cond1.value} ${cond1.valueTo}`
+              : `#${col1} #${cond1.operator} ${cond1.value}`;
+
+            if (isMultiColumn) {
+              newPattern = `${firstPart} #${join.toLowerCase()} #${col2} #${cond2.operator} ${cond2.value} `;
+            } else {
+              newPattern = `${firstPart} #${join.toLowerCase()} #${cond2.operator} ${cond2.value} `;
+            }
+
+            onChange({
+              target: { value: newPattern },
+            } as React.ChangeEvent<HTMLInputElement>);
+            setTimeout(() => {
+              inputRef?.current?.focus();
+            }, 50);
+            return;
+          }
           handleClearSecondValue();
         }
 
