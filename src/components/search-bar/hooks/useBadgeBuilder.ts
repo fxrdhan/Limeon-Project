@@ -16,8 +16,10 @@ interface BadgeHandlers {
   onEditSecondColumn?: () => void; // Edit second column (multi-column filter)
   onEditOperator: (isSecond?: boolean) => void; // Updated to accept optional parameter
   onEditJoin: () => void;
-  onEditValue: () => void; // Edit value handler
-  onEditSecondValue?: () => void; // Edit second value handler (optional)
+  onEditValue: () => void; // Edit first value (or "from" value in Between)
+  onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
+  onEditSecondValue?: () => void; // Edit second condition value
+  onEditSecondValueTo?: () => void; // Edit "to" value in Between operator (second condition)
 }
 
 interface InlineEditingProps {
@@ -191,8 +193,13 @@ export const useBadgeBuilder = (
                     : handlers.onClearAll,
               canClear: true,
               onEdit:
-                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-              canEdit: true,
+                index === 0
+                  ? handlers.onEditValueTo
+                  : handlers.onEditSecondValueTo,
+              // Only show edit if handler exists
+              canEdit: !!(index === 0
+                ? handlers.onEditValueTo
+                : handlers.onEditSecondValueTo),
               // Inline editing props
               isEditing: isEditingTo,
               editingValue: isEditingTo
@@ -369,9 +376,12 @@ export const useBadgeBuilder = (
             : handlers.onClearValue,
           canClear: true,
           onEdit: isSecondValue
-            ? handlers.onEditSecondValue
-            : handlers.onEditValue,
-          canEdit: true,
+            ? handlers.onEditSecondValueTo
+            : handlers.onEditValueTo,
+          // Only show edit if handler exists
+          canEdit: !!(isSecondValue
+            ? handlers.onEditSecondValueTo
+            : handlers.onEditValueTo),
           // Inline editing props
           isEditing: isEditingTo,
           editingValue: isEditingTo

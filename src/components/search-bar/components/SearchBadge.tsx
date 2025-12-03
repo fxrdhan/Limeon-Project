@@ -58,7 +58,9 @@ interface SearchBadgeProps {
   onEditOperator: () => void;
   onEditJoin: () => void;
   onEditValue: () => void;
+  onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
   onEditSecondValue?: () => void;
+  onEditSecondValueTo?: () => void; // Edit "to" value in Between operator (second condition)
   onHoverChange?: (isHovered: boolean) => void;
   preservedSearchMode?: EnhancedSearchState | null;
   // Inline editing props
@@ -91,7 +93,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onEditOperator,
   onEditJoin,
   onEditValue,
+  onEditValueTo,
   onEditSecondValue,
+  onEditSecondValueTo,
   onHoverChange,
   preservedSearchMode,
   editingBadge,
@@ -117,7 +121,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       onEditOperator,
       onEditJoin,
       onEditValue,
+      onEditValueTo,
       onEditSecondValue,
+      onEditSecondValueTo,
     },
     editingBadge && onInlineValueChange && onInlineEditComplete
       ? {
