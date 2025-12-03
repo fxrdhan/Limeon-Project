@@ -38,18 +38,26 @@ export function getOperatorsForColumn(
 }
 
 /**
- * Find operator by value (case-insensitive)
+ * Find operator by value or label (case-insensitive)
+ *
+ * Matches against both internal value (e.g., "inRange") and
+ * display label (e.g., "Between") for user-friendly patterns.
+ * Label matching ignores spaces for flexibility (e.g., "greaterthan" matches "Greater than").
  *
  * @param columnType - Type of column
- * @param operatorValue - The operator value to find
+ * @param operatorInput - The operator value or label to find
  * @returns The operator object if found, undefined otherwise
  */
 export function findOperator(
   columnType: string,
-  operatorValue: string
+  operatorInput: string
 ): FilterOperator | undefined {
+  const normalizedInput = operatorInput.toLowerCase().replace(/\s+/g, '');
+
   return getAvailableOperators(columnType).find(
-    op => op.value.toLowerCase() === operatorValue.toLowerCase()
+    op =>
+      op.value.toLowerCase() === normalizedInput ||
+      op.label.toLowerCase().replace(/\s+/g, '') === normalizedInput
   );
 }
 
