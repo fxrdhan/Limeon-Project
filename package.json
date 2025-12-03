@@ -21,7 +21,7 @@
     "test:watch": "vitest --watch",
     "test:changed": "vitest --changed",
     "test:related": "vitest --related",
-    "tailwind:watch": "bunx --bun tailwindcss -i ./src/App.scss -o ./src/output.css --watch",
+    "tailwind:watch": "bunx --bun tailwindcss -i ./src/App.scss -o ./src/output.css --watch 2>&1 | grep -v 'watchman: not found'",
     "tailwind:build": "bunx --bun tailwindcss -i ./src/App.scss -o ./src/output.css",
     "add-admin": "bun scripts/add-admin-user.ts",
     "add-admin:help": "bun scripts/add-admin-user.ts --help",
