@@ -7,10 +7,12 @@ interface BadgeHandlers {
   onClearColumn: () => void;
   onClearOperator: () => void;
   onClearValue: () => void;
+  onClearValueTo?: () => void; // Clear "to" value in Between operator (first condition)
   onClearPartialJoin: () => void;
   onClearSecondColumn?: () => void; // Clear second column (multi-column filter)
   onClearSecondOperator: () => void;
   onClearSecondValue: () => void;
+  onClearSecondValueTo?: () => void; // Clear "to" value in Between operator (second condition)
   onClearAll: () => void;
   onEditColumn: () => void;
   onEditSecondColumn?: () => void; // Edit second column (multi-column filter)
@@ -184,13 +186,12 @@ export const useBadgeBuilder = (
               id: index === 0 ? 'value-to' : 'second-value-to',
               type: 'valueSecond',
               label: condition.valueTo,
+              // Use specific handler to clear only the "to" value, keeping "from" value
               onClear:
                 index === 0
-                  ? handlers.onClearValue
-                  : index === filter.conditions!.length - 1 &&
-                      filter.conditions!.length === 2
-                    ? handlers.onClearSecondValue
-                    : handlers.onClearAll,
+                  ? (handlers.onClearValueTo ?? handlers.onClearValue)
+                  : (handlers.onClearSecondValueTo ??
+                    handlers.onClearSecondValue),
               canClear: true,
               onEdit:
                 index === 0
@@ -371,9 +372,10 @@ export const useBadgeBuilder = (
           id: 'value-to',
           type: 'valueSecond',
           label: filter.valueTo,
+          // Use specific handler to clear only the "to" value, keeping "from" value
           onClear: isSecondValue
-            ? handlers.onClearSecondValue
-            : handlers.onClearValue,
+            ? (handlers.onClearSecondValueTo ?? handlers.onClearSecondValue)
+            : (handlers.onClearValueTo ?? handlers.onClearValue),
           canClear: true,
           onEdit: isSecondValue
             ? handlers.onEditSecondValueTo
