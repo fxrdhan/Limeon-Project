@@ -208,6 +208,8 @@ export const parseSearchValue = (
   rawSearchValue: string,
   columns: SearchColumn[]
 ): EnhancedSearchState => {
+  // Store original for trailing space detection (needed for Between operator)
+  const originalValue = rawSearchValue;
   // Trim whitespace (handles paste with trailing newlines/spaces)
   const searchValue = rawSearchValue.trim();
 
@@ -886,7 +888,29 @@ export const parseSearchValue = (
                 };
               }
               // Incomplete Between - only one value provided
-              // Fall through to show as incomplete filter
+              // Preserve trailing space if user is typing second value
+              // This allows "5000 " to stay as "5000 " so user can type "5000 6000"
+              const hadTrailingSpace =
+                originalValue.endsWith(' ') && !hasConfirmation;
+              const valueToUse = hadTrailingSpace
+                ? cleanValue + ' '
+                : cleanValue;
+
+              return {
+                globalSearch: undefined,
+                showColumnSelector: false,
+                showOperatorSelector: false,
+                showJoinOperatorSelector: false,
+                isFilterMode: true,
+                filterSearch: {
+                  field: column.field,
+                  value: valueToUse,
+                  column,
+                  operator: operator.value,
+                  isExplicitOperator: true,
+                  isConfirmed: hasConfirmation,
+                },
+              };
             }
 
             return {
