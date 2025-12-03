@@ -1802,6 +1802,55 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     });
   }, [searchMode, preservedSearchMode, onChange]);
 
+  // Edit "to" value in Between operator (first condition) - INLINE EDITING
+  const handleEditValueTo = useCallback(() => {
+    // Use preserved state if in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
+    if (!stateToUse.filterSearch) {
+      return;
+    }
+
+    // For multi-condition, get valueTo from first condition
+    // For single-condition, get valueTo directly from filterSearch
+    const valueTo = stateToUse.filterSearch.isMultiCondition
+      ? stateToUse.filterSearch.conditions?.[0]?.valueTo
+      : stateToUse.filterSearch.valueTo;
+
+    if (!valueTo) return;
+
+    // Enter inline editing mode for "to" value
+    setEditingBadge({
+      type: 'firstValueTo',
+      value: valueTo,
+    });
+  }, [searchMode, preservedSearchMode]);
+
+  // Edit "to" value in Between operator (second condition) - INLINE EDITING
+  const handleEditSecondValueTo = useCallback(() => {
+    // Use preserved state if in edit mode, otherwise use current state
+    const stateToUse = preservedSearchMode || searchMode;
+
+    if (
+      !stateToUse.filterSearch ||
+      !stateToUse.filterSearch.isMultiCondition ||
+      !stateToUse.filterSearch.conditions ||
+      stateToUse.filterSearch.conditions.length < 2
+    ) {
+      return;
+    }
+
+    const secondCondition = stateToUse.filterSearch.conditions[1];
+
+    if (!secondCondition.valueTo) return;
+
+    // Enter inline editing mode for second condition's "to" value
+    setEditingBadge({
+      type: 'secondValueTo',
+      value: secondCondition.valueTo,
+    });
+  }, [searchMode, preservedSearchMode]);
+
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
     setEditingBadge(prev => (prev ? { ...prev, value: newValue } : null));
@@ -2475,7 +2524,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onEditOperator={handleEditOperator}
               onEditJoin={handleEditJoin}
               onEditValue={handleEditValue}
+              onEditValueTo={handleEditValueTo}
               onEditSecondValue={handleEditSecondValue}
+              onEditSecondValueTo={handleEditSecondValueTo}
               onHoverChange={handleHoverChange}
               preservedSearchMode={preservedSearchMode}
               editingBadge={editingBadge}
