@@ -48,10 +48,12 @@ interface SearchBadgeProps {
   onClearColumn: () => void;
   onClearOperator: () => void;
   onClearValue: () => void;
+  onClearValueTo?: () => void; // Clear "to" value in Between (first condition)
   onClearPartialJoin: () => void;
   onClearSecondColumn?: () => void; // Multi-column support
   onClearSecondOperator: () => void;
   onClearSecondValue: () => void;
+  onClearSecondValueTo?: () => void; // Clear "to" value in Between (second condition)
   onClearAll: () => void;
   onEditColumn: () => void;
   onEditSecondColumn?: () => void; // Multi-column support
@@ -83,10 +85,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onClearColumn,
   onClearOperator,
   onClearValue,
+  onClearValueTo,
   onClearPartialJoin,
   onClearSecondColumn,
   onClearSecondOperator,
   onClearSecondValue,
+  onClearSecondValueTo,
   onClearAll,
   onEditColumn,
   onEditSecondColumn,
@@ -111,10 +115,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       onClearColumn,
       onClearOperator,
       onClearValue,
+      onClearValueTo,
       onClearPartialJoin,
       onClearSecondColumn,
       onClearSecondOperator,
       onClearSecondValue,
+      onClearSecondValueTo,
       onClearAll,
       onEditColumn,
       onEditSecondColumn,

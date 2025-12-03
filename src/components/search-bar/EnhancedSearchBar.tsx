@@ -1851,6 +1851,81 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     });
   }, [searchMode, preservedSearchMode]);
 
+  // Clear "to" value in Between operator (first condition) - keep "from" value
+  const handleClearValueTo = useCallback(() => {
+    if (!searchMode.filterSearch) return;
+
+    const columnName = searchMode.filterSearch.field;
+    const operator = searchMode.filterSearch.operator;
+
+    // For multi-condition, get the from value from first condition
+    const fromValue = searchMode.filterSearch.isMultiCondition
+      ? searchMode.filterSearch.conditions?.[0]?.value
+      : searchMode.filterSearch.value;
+
+    if (!fromValue) return;
+
+    // Build pattern with just the from value, ready for new to value input
+    const newPattern = `#${columnName} #${operator} ${fromValue} `;
+    onChange({
+      target: { value: newPattern },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      if (inputRef?.current) {
+        inputRef.current.focus();
+        // Set cursor to end of input
+        const len = newPattern.length;
+        inputRef.current.setSelectionRange(len, len);
+      }
+    }, 50);
+  }, [searchMode, onChange, inputRef]);
+
+  // Clear "to" value in Between operator (second condition) - keep "from" value
+  const handleClearSecondValueTo = useCallback(() => {
+    if (
+      !searchMode.filterSearch ||
+      !searchMode.filterSearch.isMultiCondition ||
+      !searchMode.filterSearch.conditions ||
+      searchMode.filterSearch.conditions.length < 2
+    ) {
+      return;
+    }
+
+    const columnName = searchMode.filterSearch.field;
+    const cond1 = searchMode.filterSearch.conditions[0];
+    const cond2 = searchMode.filterSearch.conditions[1];
+    const join = searchMode.filterSearch.joinOperator || 'AND';
+    const col1 = cond1.field || columnName;
+    const col2 = cond2.field || columnName;
+    const isMultiColumn = searchMode.filterSearch.isMultiColumn;
+
+    // Build pattern with second condition's from value only
+    const firstPart = cond1.valueTo
+      ? `#${col1} #${cond1.operator} ${cond1.value} ${cond1.valueTo}`
+      : `#${col1} #${cond1.operator} ${cond1.value}`;
+
+    let newPattern: string;
+    if (isMultiColumn) {
+      newPattern = `${firstPart} #${join.toLowerCase()} #${col2} #${cond2.operator} ${cond2.value} `;
+    } else {
+      newPattern = `${firstPart} #${join.toLowerCase()} #${cond2.operator} ${cond2.value} `;
+    }
+
+    onChange({
+      target: { value: newPattern },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    setTimeout(() => {
+      if (inputRef?.current) {
+        inputRef.current.focus();
+        // Set cursor to end of input
+        const len = newPattern.length;
+        inputRef.current.setSelectionRange(len, len);
+      }
+    }, 50);
+  }, [searchMode, onChange, inputRef]);
+
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
     setEditingBadge(prev => (prev ? { ...prev, value: newValue } : null));
@@ -1890,9 +1965,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           onChange({
             target: { value: newPattern },
           } as React.ChangeEvent<HTMLInputElement>);
-          // Ensure focus returns to search input
+          // Ensure focus returns to search input with cursor at end
           setTimeout(() => {
-            inputRef?.current?.focus();
+            if (inputRef?.current) {
+              inputRef.current.focus();
+              const len = newPattern.length;
+              inputRef.current.setSelectionRange(len, len);
+            }
           }, 50);
           return;
         } else if (editingBadge.type === 'secondValue') {
@@ -1928,7 +2007,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               target: { value: newPattern },
             } as React.ChangeEvent<HTMLInputElement>);
             setTimeout(() => {
-              inputRef?.current?.focus();
+              if (inputRef?.current) {
+                inputRef.current.focus();
+                const len = newPattern.length;
+                inputRef.current.setSelectionRange(len, len);
+              }
             }, 50);
             return;
           }
@@ -2559,10 +2642,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onClearColumn={handleClearAll}
               onClearOperator={handleClearToColumn}
               onClearValue={handleClearValue}
+              onClearValueTo={handleClearValueTo}
               onClearPartialJoin={handleClearPartialJoin}
               onClearSecondColumn={handleClearSecondColumn}
               onClearSecondOperator={handleClearSecondOperator}
               onClearSecondValue={handleClearSecondValue}
+              onClearSecondValueTo={handleClearSecondValueTo}
               onClearAll={handleClearAll}
               onEditColumn={handleEditColumn}
               onEditSecondColumn={handleEditSecondColumn}
