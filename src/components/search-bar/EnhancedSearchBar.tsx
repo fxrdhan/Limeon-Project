@@ -583,6 +583,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const preserved = preservedFilterRef.current;
         const preservedValue = preserved.value;
 
+        // Special handling: changing TO Between (inRange) operator
+        // Between requires 2 values (value and valueTo), but if previous operator wasn't Between,
+        // valueTo doesn't exist. In this case, we need to clear multi-condition and wait for valueTo input.
+        if (operator.value === 'inRange' && !preserved.valueTo) {
+          // Clear multi-condition, set pattern to wait for second value input
+          newValue = PatternBuilder.betweenFirstValue(
+            columnName,
+            preservedValue
+          );
+          // Clear preserved filter and searchMode
+          preservedFilterRef.current = null;
+          setPreservedSearchMode(null);
+          setFilterValue(newValue, onChange, inputRef);
+          // Auto-focus back to input after selection
+          setTimeout(() => {
+            inputRef?.current?.focus();
+          }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+          return; // Early return - don't proceed with multi-condition restoration
+        }
+
         // Check if this is a multi-condition filter
         if (
           preserved.join &&
