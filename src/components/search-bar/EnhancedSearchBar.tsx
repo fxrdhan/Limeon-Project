@@ -526,25 +526,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         if (preserved.secondValue) {
           // Full multi-condition with second value
           if (isMultiColumn) {
-            // Multi-column: #col1 #op1 val1 #join #col2 #op2 val2##
-            newValue = PatternBuilder.multiColumnComplete(
+            // Multi-column: #col1 #op1 val1 [val1To] #join #col2 #op2 val2 [val2To]##
+            newValue = PatternBuilder.buildMultiColumnWithValueTo(
               columnName,
               preserved.operator,
               preserved.value,
+              preserved.valueTo,
               joinOp,
               secondCol,
               operator.value,
-              preserved.secondValue
+              preserved.secondValue,
+              preserved.secondValueTo
             );
           } else {
-            // Same-column: #col #op1 val1 #join #op2 val2##
-            newValue = PatternBuilder.multiCondition(
+            // Same-column: #col #op1 val1 [val1To] #join #op2 val2 [val2To]##
+            newValue = PatternBuilder.buildMultiConditionWithValueTo(
               columnName,
               preserved.operator,
               preserved.value,
+              preserved.valueTo,
               joinOp,
               operator.value,
-              preserved.secondValue
+              preserved.secondValue,
+              preserved.secondValueTo
             );
           }
         } else {
@@ -610,26 +614,36 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           const secondCol = preserved.secondColumnField;
           const isMultiColumn = preserved.wasMultiColumn && secondCol;
 
+          // Determine valueTo for first condition:
+          // - If changing TO Between (inRange): use preserved.valueTo if exists
+          // - If changing FROM Between to another op: don't use valueTo
+          const firstValueTo =
+            operator.value === 'inRange' ? preserved.valueTo : undefined;
+
           if (isMultiColumn) {
-            // Multi-column: #col1 #op1 val1 #join #col2 #op2 val2##
-            newValue = PatternBuilder.multiColumnComplete(
+            // Multi-column: #col1 #op1 val1 [val1To] #join #col2 #op2 val2 [val2To]##
+            newValue = PatternBuilder.buildMultiColumnWithValueTo(
               columnName,
               operator.value,
               preservedValue,
+              firstValueTo,
               preserved.join,
               secondCol,
               preserved.secondOperator,
-              preserved.secondValue
+              preserved.secondValue,
+              preserved.secondValueTo
             );
           } else {
-            // Same-column: #col #op1 val1 #join #op2 val2##
-            newValue = PatternBuilder.multiCondition(
+            // Same-column: #col #op1 val1 [val1To] #join #op2 val2 [val2To]##
+            newValue = PatternBuilder.buildMultiConditionWithValueTo(
               columnName,
               operator.value,
               preservedValue,
+              firstValueTo,
               preserved.join,
               preserved.secondOperator,
-              preserved.secondValue
+              preserved.secondValue,
+              preserved.secondValueTo
             );
           }
         } else if (preserved.join && preserved.secondOperator) {
@@ -1538,15 +1552,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           stateToUse.secondColumn?.field ||
           columnName; // Fallback to first column if same column filter
 
-        // Always use multiColumnPartial to avoid triggering column selector
-        // Pattern: #col1 #op1 val1 #join #col2 #
-        newValue = PatternBuilder.multiColumnPartial(
-          columnName,
-          preservedFilterRef.current.operator,
-          preservedFilterRef.current.value,
-          preservedFilterRef.current.join,
-          secondColField
-        );
+        // Build pattern for operator selector, including valueTo if first condition is Between
+        // Pattern: #col1 #op1 val1 [val1To] #join #col2 #
+        const firstOp = preservedFilterRef.current.operator;
+        const firstVal = preservedFilterRef.current.value;
+        const firstValTo = preservedFilterRef.current.valueTo;
+        const join = preservedFilterRef.current.join;
+
+        if (firstOp === 'inRange' && firstValTo) {
+          // First condition is Between - include valueTo
+          newValue = `#${columnName} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${secondColField} #`;
+        } else {
+          newValue = PatternBuilder.multiColumnPartial(
+            columnName,
+            firstOp,
+            firstVal,
+            join,
+            secondColField
+          );
+        }
       } else {
         // For first operator edit, just: #column #
         newValue = PatternBuilder.columnWithOperatorSelector(columnName);
