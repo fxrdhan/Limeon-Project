@@ -523,8 +523,46 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const secondCol = preserved.secondColumnField;
         const isMultiColumn = preserved.wasMultiColumn && secondCol;
 
+        // Special handling: changing second operator TO Between (inRange) when no secondValueTo exists
+        // Between requires 2 values. If previous operator wasn't Between, secondValueTo doesn't exist.
+        // Set pattern to wait for user to input the "to" value.
+        if (
+          operator.value === 'inRange' &&
+          preserved.secondValue &&
+          !preserved.secondValueTo
+        ) {
+          // Build pattern waiting for second value's "to" input
+          // Pattern: #col1 #op1 val1 [val1To] #join #col2 #inRange secondValue (waiting for valueTo)
+          const firstPart =
+            preserved.operator === 'inRange' && preserved.valueTo
+              ? `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo}`
+              : `#${columnName} #${preserved.operator} ${preserved.value}`;
+
+          if (isMultiColumn) {
+            newValue = `${firstPart} #${joinOp.toLowerCase()} #${secondCol} #${operator.value} ${preserved.secondValue} `;
+          } else {
+            newValue = `${firstPart} #${joinOp.toLowerCase()} #${operator.value} ${preserved.secondValue} `;
+          }
+
+          // Clear preserved filter and searchMode
+          preservedFilterRef.current = null;
+          setPreservedSearchMode(null);
+          setIsEditingSecondOperator(false);
+
+          setFilterValue(newValue, onChange, inputRef);
+          // Auto-focus back to input after selection
+          setTimeout(() => {
+            inputRef?.current?.focus();
+          }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+          return; // Early return - don't proceed with confirmation
+        }
+
         if (preserved.secondValue) {
           // Full multi-condition with second value
+          // Determine secondValueTo: only use if new operator is Between
+          const secondValTo =
+            operator.value === 'inRange' ? preserved.secondValueTo : undefined;
+
           if (isMultiColumn) {
             // Multi-column: #col1 #op1 val1 [val1To] #join #col2 #op2 val2 [val2To]##
             newValue = PatternBuilder.buildMultiColumnWithValueTo(
@@ -536,7 +574,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               secondCol,
               operator.value,
               preserved.secondValue,
-              preserved.secondValueTo
+              secondValTo
             );
           } else {
             // Same-column: #col #op1 val1 [val1To] #join #op2 val2 [val2To]##
@@ -548,7 +586,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               joinOp,
               operator.value,
               preserved.secondValue,
-              preserved.secondValueTo
+              secondValTo
             );
           }
         } else {
