@@ -219,9 +219,15 @@ export const useSearchKeyboard = ({
             // This ensures the second column badge is shown consistently
             const col2 = searchMode.secondColumn?.field || columnName;
 
+            // For Between (inRange) operator, include valueTo if it exists
+            const valueToPart =
+              operator === 'inRange' && searchMode.filterSearch.valueTo
+                ? ` #to ${searchMode.filterSearch.valueTo}`
+                : '';
+
             const newValue =
               filterValue.trim() !== ''
-                ? `#${columnName} #${operator} ${filterValue} #${joinOp} #${col2} #`
+                ? `#${columnName} #${operator} ${filterValue}${valueToPart} #${joinOp} #${col2} #`
                 : `#${columnName} #${operator} #${joinOp} #${col2} #`;
 
             // Clear preserved state to remove second operator badge from UI
