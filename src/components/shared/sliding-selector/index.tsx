@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, LayoutGroup } from 'framer-motion';
+import { motion, LayoutGroup } from 'motion/react';
 import classNames from 'classnames';
 
 export interface SlidingSelectorOption<T = unknown> {

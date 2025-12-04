@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa';
 import { HiLockClosed, HiLockOpen } from 'react-icons/hi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo, useCallback, useEffect, useRef, JSX } from 'react';
 
 interface MenuItem {

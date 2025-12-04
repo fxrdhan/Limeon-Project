@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ImageUploader from '@/components/image-manager';
 import { useAuthStore } from '@/store/authStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog } from 'react-icons/fa';
 
 const Profile = () => {

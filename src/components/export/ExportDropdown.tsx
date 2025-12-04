@@ -7,7 +7,7 @@ import React, {
   CSSProperties,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import type { GridApi, Column, IRowNode } from 'ag-grid-community';
 import { TbTableExport, TbCsv, TbTableFilled, TbJson } from 'react-icons/tb';
 import { FaGoogle } from 'react-icons/fa';

@@ -161,7 +161,13 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       {/* Clear/Delete button (Trash) - shown on hover, hidden when editing */}
       {!isEditing && config.canClear && (
         <button
-          onClick={config.onClear}
+          onClick={e => {
+            e.stopPropagation();
+            // Blur the button to release focus before clearing
+            // This allows the parent handler to focus the input
+            e.currentTarget.blur();
+            config.onClear?.();
+          }}
           onMouseDown={e => e.stopPropagation()}
           className={`max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
           type="button"

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import FormAction from '@/components/form-action';
 import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemModal';
 import { CardContent, CardFooter } from '@/components/card';

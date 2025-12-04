@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { PAGINATION_CONSTANTS } from '../constants';
 import type { FloatingWrapperProps } from '../types';
 
