@@ -263,7 +263,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               // Multi-column with operator but no second value - ready for value input
               if (firstValTo) {
                 // First condition is Between operator
-                newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
+                // Use #to marker to ensure correct badge display
+                newValue = `#${firstCol} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
               } else {
                 newValue = PatternBuilder.multiColumnWithOperator(
                   firstCol,
@@ -284,7 +285,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // Open operator selector for the new column to let user choose compatible operator
             if (firstValTo) {
               // First condition is Between operator
-              newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
+              // Use #to marker to ensure correct badge display
+              newValue = `#${firstCol} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
             } else {
               newValue = PatternBuilder.multiColumnPartial(
                 firstCol,
@@ -304,7 +306,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Build pattern with second column and open operator selector for it
           if (firstValTo) {
             // First condition is Between operator
-            newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
+            // Use #to marker to ensure correct badge display
+            newValue = `#${firstCol} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
           } else {
             newValue = `#${firstCol} #${firstOp} ${firstVal} #${join.toLowerCase()} #${column.field} #`;
           }
@@ -441,7 +444,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // Restore pattern with second column and open operator selector for col2
             if (preservedFilterRef.current?.valueTo) {
               // First condition is Between operator
-              newValue = `#${column.field} #${operator} ${value} ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #${secondColumnField} #`;
+              // Use #to marker to ensure correct badge display
+              newValue = `#${column.field} #${operator} ${value} #to ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #${secondColumnField} #`;
             } else {
               newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${secondColumnField} #`;
             }
@@ -451,7 +455,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // Restore pattern with join and open column selector for col2
             if (preservedFilterRef.current?.valueTo) {
               // First condition is Between operator
-              newValue = `#${column.field} #${operator} ${value} ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #`;
+              // Use #to marker to ensure correct badge display
+              newValue = `#${column.field} #${operator} ${value} #to ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #`;
             } else {
               newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #`;
             }
@@ -535,7 +540,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Pattern: #col1 #op1 val1 [val1To] #join #col2 #inRange secondValue (waiting for valueTo)
           const firstPart =
             preserved.operator === 'inRange' && preserved.valueTo
-              ? `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo}`
+              ? `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo}`
               : `#${columnName} #${preserved.operator} ${preserved.value}`;
 
           if (isMultiColumn) {
@@ -715,7 +720,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Restore pattern with second column and open operator selector for col2
           if (preserved.valueTo) {
             // First condition is Between operator
-            newValue = `#${columnName} #${operator.value} ${preservedValue} ${preserved.valueTo} #${preserved.join.toLowerCase()} #${preserved.secondColumnField} #`;
+            // Use #to marker to ensure correct badge display
+            newValue = `#${columnName} #${operator.value} ${preservedValue} #to ${preserved.valueTo} #${preserved.join.toLowerCase()} #${preserved.secondColumnField} #`;
           } else {
             newValue = `#${columnName} #${operator.value} ${preservedValue} #${preserved.join.toLowerCase()} #${preserved.secondColumnField} #`;
           }
@@ -724,7 +730,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Restore pattern with join and open column selector for col2
           if (preserved.valueTo) {
             // First condition is Between operator
-            newValue = `#${columnName} #${operator.value} ${preservedValue} ${preserved.valueTo} #${preserved.join.toLowerCase()} #`;
+            // Use #to marker to ensure correct badge display
+            newValue = `#${columnName} #${operator.value} ${preservedValue} #to ${preserved.valueTo} #${preserved.join.toLowerCase()} #`;
           } else {
             newValue = `#${columnName} #${operator.value} ${preservedValue} #${preserved.join.toLowerCase()} #`;
           }
@@ -882,7 +889,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               );
             } else if (isFirstBetween) {
               // Between with join and second operator selected (same column)
-              newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOperator.toLowerCase()} #${preserved.secondOperator} `;
+              // Use #to marker to ensure correct badge display
+              newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOperator.toLowerCase()} #${preserved.secondOperator} `;
             } else {
               // Normal operator with join and second operator selected (same column)
               newValue = PatternBuilder.partialMultiWithOperator(
@@ -899,16 +907,30 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Pattern: #field #operator value(s) #join #
           if (preserved.operator === 'inRange' && preserved.valueTo) {
             // Between with join selector open
-            newValue = `#${columnName} #${preserved.operator} ${preserved.value} ${preserved.valueTo} #${joinOperator.toLowerCase()} #`;
+            // Use #to marker to ensure correct badge display
+            newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOperator.toLowerCase()} #`;
           } else {
             // Normal operator with join selector open
             newValue = `#${columnName} #${preserved.operator} ${preserved.value} #${joinOperator.toLowerCase()} #`;
           }
         }
       } else {
-        // No preserved data - fallback to string manipulation
-        const cleanValue = value.replace(/\s*#\s*$/, '').trim();
-        newValue = `${cleanValue} #${joinOperator.toLowerCase()} #`;
+        // No preserved data - use searchMode.filterSearch if available
+        if (
+          searchMode.filterSearch?.operator === 'inRange' &&
+          searchMode.filterSearch?.valueTo
+        ) {
+          // Between operator with both values from searchMode
+          // Use #to marker to ensure correct badge display
+          newValue = `#${columnName} #${searchMode.filterSearch.operator} ${searchMode.filterSearch.value} #to ${searchMode.filterSearch.valueTo} #${joinOperator.toLowerCase()} #`;
+        } else if (searchMode.filterSearch) {
+          // Normal operator from searchMode
+          newValue = `#${columnName} #${searchMode.filterSearch.operator} ${searchMode.filterSearch.value} #${joinOperator.toLowerCase()} #`;
+        } else {
+          // Ultimate fallback - string manipulation
+          const cleanValue = value.replace(/\s*#\s*$/, '').trim();
+          newValue = `${cleanValue} #${joinOperator.toLowerCase()} #`;
+        }
       }
 
       onChange({
@@ -951,26 +973,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // even when col1 == col2 (preserves the explicit second column badge)
         if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
           }
         } else {
           // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
           }
         }
       } else {
         if (filter.valueTo) {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+          // Use #to marker for Between operator
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
         } else {
           restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
         }
@@ -1053,26 +1078,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // even when col1 == col2 (preserves the explicit second column badge)
         if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
           }
         } else {
           // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
           }
         }
       } else {
         if (filter.valueTo) {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+          // Use #to marker for Between operator
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
         } else {
           restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
         }
@@ -1144,26 +1172,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // even when col1 == col2 (preserves the explicit second column badge)
         if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
           }
         } else {
           // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
           }
         }
       } else {
         if (filter.valueTo) {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+          // Use #to marker for Between operator
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
         } else {
           restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
         }
@@ -1600,7 +1631,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         if (firstOp === 'inRange' && firstValTo) {
           // First condition is Between - include valueTo
-          newValue = `#${columnName} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${secondColField} #`;
+          // Use #to marker to ensure correct badge display
+          newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${secondColField} #`;
         } else {
           newValue = PatternBuilder.multiColumnPartial(
             columnName,
@@ -1718,7 +1750,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       if (filter.valueTo) {
         // Between operator
-        confirmedPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+        // Use #to marker to ensure correct badge display
+        confirmedPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
       } else {
         confirmedPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
       }
@@ -1762,23 +1795,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // even when col1 == col2 (preserves the explicit second column badge)
         if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
             // Between operator for first condition
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
             // Between operator for second condition
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
           }
         } else {
           // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
             // Between operator for first condition
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
             // Between operator for second condition
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
           }
@@ -1786,7 +1821,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       } else {
         // Single condition
         if (filter.valueTo) {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} ${filter.valueTo}##`;
+          // Use #to marker for Between operator
+          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
         } else {
           restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
         }
@@ -1846,19 +1882,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         let restoredPattern: string;
         if (filter.isMultiColumn) {
           // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
           }
         } else {
           // Same-column pattern: #col #op1 val1 #join #op2 val2##
+          // Use #to marker for Between operators
           if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} ${cond2.valueTo}` : cond2.value}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
           } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} ${cond2.valueTo}##`;
+            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
           } else {
             restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
           }
@@ -1978,8 +2016,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const isMultiColumn = searchMode.filterSearch.isMultiColumn;
 
     // Build pattern with second condition's from value only
+    // Use #to marker for Between operators
     const firstPart = cond1.valueTo
-      ? `#${col1} #${cond1.operator} ${cond1.value} ${cond1.valueTo}`
+      ? `#${col1} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo}`
       : `#${col1} #${cond1.operator} ${cond1.value}`;
 
     let newPattern: string;
@@ -2069,9 +2108,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             const isMultiColumn = searchMode.filterSearch.isMultiColumn;
 
             // Rebuild pattern with second condition's from value only (no toValue)
+            // Use #to marker for Between operators
             let newPattern: string;
             const firstPart = cond1.valueTo
-              ? `#${col1} #${cond1.operator} ${cond1.value} ${cond1.valueTo}`
+              ? `#${col1} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo}`
               : `#${col1} #${cond1.operator} ${cond1.value}`;
 
             if (isMultiColumn) {

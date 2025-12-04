@@ -75,8 +75,9 @@ export class PatternBuilder {
     valueTo?: string
   ): string {
     // For Between (inRange) operator with both values
+    // Use #to marker to ensure correct badge display
     if (operator === 'inRange' && valueTo) {
-      return `#${field} #${operator} ${value} ${valueTo} #`;
+      return `#${field} #${operator} ${value} #to ${valueTo} #`;
     }
     // For normal operators or Between with only first value
     return `#${field} #${operator} ${value} #`;
@@ -120,7 +121,7 @@ export class PatternBuilder {
   ): string {
     const isBetween = operator === 'inRange' && valueTo;
     const firstPart = isBetween
-      ? `#${field} #${operator} ${value} ${valueTo}`
+      ? `#${field} #${operator} ${value} #to ${valueTo}`
       : `#${field} #${operator} ${value}`;
     return `${firstPart} #${join.toLowerCase()} #`;
   }
@@ -267,7 +268,7 @@ export class PatternBuilder {
     value1: string,
     value2: string
   ): string {
-    return `#${field} #inRange ${value1} ${value2} #`;
+    return `#${field} #inRange ${value1} #to ${value2} #`;
   }
 
   /**
@@ -285,7 +286,7 @@ export class PatternBuilder {
     value2: string,
     join: 'AND' | 'OR'
   ): string {
-    return `#${field} #inRange ${value1} ${value2} #${join.toLowerCase()} #`;
+    return `#${field} #inRange ${value1} #to ${value2} #${join.toLowerCase()} #`;
   }
 
   /**
@@ -307,7 +308,7 @@ export class PatternBuilder {
     val3: string,
     val4: string
   ): string {
-    return `#${field} #inRange ${val1} ${val2} #${join.toLowerCase()} #inRange ${val3} ${val4}##`;
+    return `#${field} #inRange ${val1} #to ${val2} #${join.toLowerCase()} #inRange ${val3} #to ${val4}##`;
   }
 
   /**
@@ -329,7 +330,7 @@ export class PatternBuilder {
     op2: string,
     val3: string
   ): string {
-    return `#${field} #inRange ${val1} ${val2} #${join.toLowerCase()} #${op2} ${val3}##`;
+    return `#${field} #inRange ${val1} #to ${val2} #${join.toLowerCase()} #${op2} ${val3}##`;
   }
 
   /**
@@ -351,7 +352,7 @@ export class PatternBuilder {
     val2: string,
     val3: string
   ): string {
-    return `#${field} #${op1} ${val1} #${join.toLowerCase()} #inRange ${val2} ${val3}##`;
+    return `#${field} #${op1} ${val1} #${join.toLowerCase()} #inRange ${val2} #to ${val3}##`;
   }
 
   /**
@@ -535,13 +536,15 @@ export class PatternBuilder {
     const secondIsBetween = op2 === 'inRange' && val2To;
 
     // Build first condition part
+    // Use #to marker for Between operators to ensure correct badge display
     const firstPart = firstIsBetween
-      ? `#${col1} #${op1} ${val1} ${val1To}`
+      ? `#${col1} #${op1} ${val1} #to ${val1To}`
       : `#${col1} #${op1} ${val1}`;
 
     // Build second condition part
+    // Use #to marker for Between operators to ensure correct badge display
     const secondPart = secondIsBetween
-      ? `#${col2} #${op2} ${val2} ${val2To}`
+      ? `#${col2} #${op2} ${val2} #to ${val2To}`
       : `#${col2} #${op2} ${val2}`;
 
     return `${firstPart} #${join.toLowerCase()} ${secondPart}##`;
