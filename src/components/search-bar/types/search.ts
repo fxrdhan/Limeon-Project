@@ -33,6 +33,8 @@ export interface FilterSearch {
   isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
   // Confirmed state (user pressed Enter to lock filter value as badge)
   isConfirmed?: boolean; // Flag to show value as gray badge instead of in input
+  // Between operator waiting state (first value entered, waiting for second)
+  waitingForValueTo?: boolean;
 }
 
 export interface TableSearchProps {
