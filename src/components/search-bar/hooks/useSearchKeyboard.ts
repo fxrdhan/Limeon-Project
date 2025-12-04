@@ -128,6 +128,31 @@ export const useSearchKeyboard = ({
                   return;
                 }
 
+                // IMPORTANT: Check if value contains dash-separated format (e.g., "500-600")
+                // If it does, confirm with ## instead of adding #to marker
+                // Extract the value part from pattern: "#col #inRange 500-600"
+                // Use [^\s#]+ to match field names with dashes, dots, etc. (any char except space and hash)
+                const valueMatch = value.match(/#[^\s#]+\s+#inRange\s+(.+)$/i);
+                if (valueMatch) {
+                  const typedValue = valueMatch[1].trim();
+                  // Check if it's a dash-separated format: "500-600"
+                  // Simple regex: starts with non-dash chars, has a dash, ends with non-dash chars
+                  const dashMatch = typedValue.match(/^(.+?)-(.+)$/);
+                  if (dashMatch) {
+                    const [, firstVal, secondVal] = dashMatch;
+                    // Ensure both parts are non-empty
+                    if (firstVal.trim() && secondVal.trim()) {
+                      // Has both values in dash format - confirm with ##
+                      const currentValue = value.trim();
+                      const newValue = currentValue + '##';
+                      onChange({
+                        target: { value: newValue },
+                      } as React.ChangeEvent<HTMLInputElement>);
+                      return;
+                    }
+                  }
+                }
+
                 // Add #to marker to transition to "waiting for valueTo" state
                 // Pattern: #col #inRange 500 → #col #inRange 500 #to
                 // This makes the input area empty after badges, ready for second value
@@ -298,9 +323,15 @@ export const useSearchKeyboard = ({
               const filterValue = searchMode.filterSearch.value || '';
               const joinOp = searchMode.partialJoin.toLowerCase();
 
+              // For Between (inRange) operator, include valueTo if it exists
+              const valueToPart =
+                operator === 'inRange' && searchMode.filterSearch.valueTo
+                  ? ` #to ${searchMode.filterSearch.valueTo}`
+                  : '';
+
               const newValue =
                 filterValue.trim() !== ''
-                  ? `#${columnName} #${operator} ${filterValue} #${joinOp} #`
+                  ? `#${columnName} #${operator} ${filterValue}${valueToPart} #${joinOp} #`
                   : `#${columnName} #${operator} #${joinOp} #`;
 
               onChange({
