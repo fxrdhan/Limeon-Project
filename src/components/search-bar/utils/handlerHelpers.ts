@@ -6,7 +6,6 @@
  */
 
 import { RefObject } from 'react';
-import { flushSync } from 'react-dom';
 import { EnhancedSearchState, FilterSearch } from '../types';
 
 /**
@@ -52,34 +51,29 @@ export function setFilterValue(
   inputRef: RefObject<HTMLInputElement | null> | null | undefined,
   options: SetValueOptions = { focus: true, cursorAtEnd: false }
 ): void {
-  // CRITICAL FIX: Use flushSync to force SYNCHRONOUS React render
-  // This prevents inputRef.current from becoming stale during async re-render
-  flushSync(() => {
-    onChange({
-      target: { value: newValue },
-    } as React.ChangeEvent<HTMLInputElement>);
-  });
+  // Trigger the onChange to update React state
+  onChange({
+    target: { value: newValue },
+  } as React.ChangeEvent<HTMLInputElement>);
 
-  // After flushSync, React has completed rendering synchronously
-  // Now inputRef.current is guaranteed to be up-to-date
-  if (options.focus && inputRef?.current) {
-    // CRITICAL FIX: Use setTimeout with longer delay to wait for ALL React re-renders
-    // click() is more reliable than focus() as it simulates user interaction
-    setTimeout(() => {
-      const input = inputRef.current;
-      if (input) {
-        // Simulate user click instead of programmatic focus
-        // This is more reliable and triggers all browser focus behaviors
-        input.click();
+  // Use double requestAnimationFrame to ensure DOM is fully ready after React render and browser paint
+  if (options.focus && inputRef) {
+    // First RAF: schedule after current frame (allows React to process state update)
+    requestAnimationFrame(() => {
+      // Second RAF: schedule after browser paint (ensures DOM is fully updated)
+      requestAnimationFrame(() => {
+        const input = inputRef.current;
+        if (input) {
+          input.focus();
 
-        if (options.cursorAtEnd) {
-          // Position cursor at end of input
-          // Use newValue.length to ensure correct cursor position
-          const cursorPosition = newValue.length;
-          input.setSelectionRange(cursorPosition, cursorPosition);
+          if (options.cursorAtEnd) {
+            // Position cursor at end of input
+            const cursorPosition = newValue.length;
+            input.setSelectionRange(cursorPosition, cursorPosition);
+          }
         }
-      }
-    }, 200); // 200ms delay to ensure ALL React updates complete
+      });
+    });
   }
 }
 

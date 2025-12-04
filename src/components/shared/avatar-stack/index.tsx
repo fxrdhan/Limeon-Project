@@ -1,5 +1,5 @@
 import { memo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useAuthStore } from '@/store/authStore';
 import type { OnlineUser } from '@/types';
 

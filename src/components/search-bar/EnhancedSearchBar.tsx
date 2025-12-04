@@ -1190,24 +1190,37 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   ]);
 
   // Clear value only - used by gray badge (value)
+  // For Between operator, this clears BOTH values (value and valueTo)
   const handleClearValue = useCallback(() => {
     // Get state BEFORE clearing preserved state (closure captures current value)
     const stateToUse = preservedSearchMode || searchMode;
 
-    // Clear preserved state to ensure badges update correctly
-    handleClearPreservedState();
-
-    // Explicitly clear filter since value might not change
-    // (when clearing value, there's nothing to filter on yet)
-    onFilterSearch?.(null);
-
     if (stateToUse.filterSearch) {
+      // Get operator from correct location (multi-condition uses conditions array)
+      const operator = stateToUse.filterSearch.isMultiCondition
+        ? stateToUse.filterSearch.conditions?.[0]?.operator
+        : stateToUse.filterSearch.operator;
+
+      // Clear preserved state to ensure badges update correctly
+      handleClearPreservedState();
+
+      // Explicitly clear filter since value might not change
+      // (when clearing value, there's nothing to filter on yet)
+      onFilterSearch?.(null);
+
+      // Keep column and operator, clear value (and valueTo for Between)
       const columnName = stateToUse.filterSearch.field;
-      const operator = stateToUse.filterSearch.operator;
-      // Keep column and operator, clear value
-      const newValue = PatternBuilder.columnOperator(columnName, operator);
-      setFilterValue(newValue, onChange, inputRef);
+      const newValue = PatternBuilder.columnOperator(
+        columnName,
+        operator || ''
+      );
+      setFilterValue(newValue, onChange, inputRef, {
+        focus: true,
+        cursorAtEnd: true,
+      });
     } else {
+      handleClearPreservedState();
+      onFilterSearch?.(null);
       handleClearAll();
     }
   }, [
@@ -2414,6 +2427,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
     onEditValue: handleEditValue,
+    onEditValueTo: handleEditValueTo,
     onEditSecondValue: handleEditSecondValue,
   });
 

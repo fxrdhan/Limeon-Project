@@ -1,5 +1,5 @@
 import { useState, memo, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { RiSendPlaneFill } from 'react-icons/ri';
 import { PiArrowCircleDownFill } from 'react-icons/pi';
 import { useAuthStore } from '@/store/authStore';

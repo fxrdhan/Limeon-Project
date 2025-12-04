@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useIsPresent } from 'framer-motion';
+import { motion, AnimatePresence, useIsPresent } from 'motion/react';
 import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
 import { FaHistory } from 'react-icons/fa';
 import { IoArrowUndo } from 'react-icons/io5';

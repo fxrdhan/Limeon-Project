@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { EnhancedSearchState } from '../types';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import Badge from './Badge';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import classNames from 'classnames';
 import { DAY_LABELS } from '../constants';
 import { useCalendarContext } from '../hooks';

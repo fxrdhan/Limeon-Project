@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import type { ReactNode } from 'react';
 

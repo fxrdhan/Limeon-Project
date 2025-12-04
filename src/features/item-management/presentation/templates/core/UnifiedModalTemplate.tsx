@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { CardFooter } from '@/components/card';
 import FormAction from '@/components/form-action';
 import type { ReactNode } from 'react';

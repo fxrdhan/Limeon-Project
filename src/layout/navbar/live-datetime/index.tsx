@@ -4,7 +4,7 @@ import {
   TbMoonFilled,
   TbCalendarMonthFilled,
 } from 'react-icons/tb';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import Calendar from '@/components/calendar';
 
 const DateTimeDisplay = () => {

@@ -8,6 +8,22 @@ import { configurePersistence } from './lib/queryPersistence';
 import './fonts.css'; // AG Grid font weight customization
 import './output.css';
 
+// Suppress React 19 ref warning from framer-motion/motion library
+// This is a known issue: https://github.com/motiondivision/motion/issues/2668
+// The warning doesn't affect functionality, only appears in dev mode
+if (import.meta.env.DEV) {
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Accessing element.ref was removed in React 19')
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}
+
 // Create QueryClient with optimized pharmacy data caching
 const queryClient = new QueryClient({
   defaultOptions: {

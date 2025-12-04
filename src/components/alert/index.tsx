@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   FaCheckCircle,
   FaExclamationCircle,

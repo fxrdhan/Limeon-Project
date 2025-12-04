@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import type { VersionData } from '../../../shared/types';
 import { useComparisonData } from './hooks';
 import { ComparisonHeader, DualModeContent } from '../../organisms';
