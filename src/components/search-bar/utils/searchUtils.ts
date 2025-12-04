@@ -9,7 +9,9 @@ import { findOperatorForColumn } from './operatorUtils';
 
 /**
  * Parse inRange (Between) operator values
- * Returns { value, valueTo } if successful, null otherwise
+ * Supports two formats:
+ * - Space separated: "500 700"
+ * - Dash separated: "500-700"
  *
  * @param valueString - String containing one or two values
  * @returns Object with value and valueTo, or null if parsing fails
@@ -19,14 +21,27 @@ const parseInRangeValues = (
 ): { value: string; valueTo: string } | null => {
   const trimmed = valueString.trim();
 
-  // Split by whitespace to get two values
-  const parts = trimmed.split(/\s+/);
-
-  if (parts.length >= 2) {
+  // First, try to split by whitespace
+  const spaceParts = trimmed.split(/\s+/);
+  if (spaceParts.length >= 2) {
     return {
-      value: parts[0],
-      valueTo: parts.slice(1).join(' '), // Join remaining parts for valueTo
+      value: spaceParts[0],
+      valueTo: spaceParts.slice(1).join(' '),
     };
+  }
+
+  // If only one part, try dash separator (e.g., "500-700")
+  // Use regex to handle the dash between two numbers/values
+  const dashMatch = trimmed.match(/^(.+?)-(.+)$/);
+  if (dashMatch) {
+    const [, firstVal, secondVal] = dashMatch;
+    // Ensure both parts are non-empty after trim
+    if (firstVal.trim() && secondVal.trim()) {
+      return {
+        value: firstVal.trim(),
+        valueTo: secondVal.trim(),
+      };
+    }
   }
 
   // Only one value provided - incomplete Between
