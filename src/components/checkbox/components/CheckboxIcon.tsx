@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { FaCheck } from 'react-icons/fa';
 import classNames from 'classnames';
 import type { CheckboxIconProps } from '../types';

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { IoChatbubblesSharp } from 'react-icons/io5';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';

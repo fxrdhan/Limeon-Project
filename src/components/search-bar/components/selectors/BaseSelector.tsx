@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 import { LuSearch } from 'react-icons/lu';
 import fuzzysort from 'fuzzysort';

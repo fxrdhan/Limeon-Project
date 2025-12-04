@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { CardFooter } from '@/components/card';
 import FormAction from '@/components/form-action';
 import type { ReactNode } from 'react';

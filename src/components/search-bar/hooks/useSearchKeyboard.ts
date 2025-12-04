@@ -13,6 +13,7 @@ interface UseSearchKeyboardProps {
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
   onEditValue?: () => void;
+  onEditValueTo?: () => void; // Edit "to" value in Between operator
   onEditSecondValue?: () => void;
 }
 
@@ -27,6 +28,7 @@ export const useSearchKeyboard = ({
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
   onEditValue,
+  onEditValueTo,
   onEditSecondValue,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
@@ -139,12 +141,23 @@ export const useSearchKeyboard = ({
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.isConfirmed &&
-            !searchMode.filterSearch?.isMultiCondition &&
-            onEditValue
+            !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            // Trigger in-badge edit mode for value (consistent with multi-condition behavior)
-            onEditValue();
+            // For Between (inRange) operator with valueTo, edit the second value (valueTo)
+            // This is more intuitive: DELETE removes the last value entered
+            if (
+              searchMode.filterSearch.operator === 'inRange' &&
+              searchMode.filterSearch.valueTo &&
+              onEditValueTo
+            ) {
+              onEditValueTo();
+              return;
+            }
+            // For other operators, edit the first/only value
+            if (onEditValue) {
+              onEditValue();
+            }
             return;
           }
 
@@ -315,6 +328,7 @@ export const useSearchKeyboard = ({
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
       onEditValue,
+      onEditValueTo,
       onEditSecondValue,
     ]
   );

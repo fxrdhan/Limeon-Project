@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fa';
 import { uploadAndExtractInvoice } from '@/services/invoiceExtractor';
 import { useInvoiceUploadStore } from '@/store/invoiceUploadStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface UploadInvoicePortalProps {
   isOpen: boolean;

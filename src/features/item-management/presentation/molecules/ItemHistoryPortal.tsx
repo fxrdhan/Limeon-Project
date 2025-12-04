@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, Fragment } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { Transition, TransitionChild } from '@headlessui/react';
 import toast from 'react-hot-toast';
