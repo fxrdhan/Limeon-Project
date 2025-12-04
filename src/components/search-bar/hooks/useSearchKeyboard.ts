@@ -79,7 +79,20 @@ export const useSearchKeyboard = ({
 
             // Add ## marker to confirm multi-condition pattern
             const currentValue = value.trim();
-            if (!currentValue.endsWith('#') && !currentValue.endsWith('##')) {
+
+            // Check if second value exists (not just operator with no value)
+            // Pattern: #col #op val #join #col2 #op2 secondValue
+            // If pattern ends with #operator (no value after), don't confirm
+            const secondOpPattern = new RegExp(
+              `#${searchMode.secondOperator}\\s*$`
+            );
+            const hasSecondValue = !secondOpPattern.test(currentValue);
+
+            if (
+              hasSecondValue &&
+              !currentValue.endsWith('#') &&
+              !currentValue.endsWith('##')
+            ) {
               const newValue = currentValue + '##';
               onChange({
                 target: { value: newValue },
