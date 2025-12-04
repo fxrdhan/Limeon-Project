@@ -110,12 +110,29 @@ export const useSearchInput = ({
 
     // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
     if (searchMode.isFilterMode && searchMode.filterSearch) {
-      // For inRange (Between) operator, show both values with space separator
+      // For inRange (Between) operator waiting for second value - show empty input
       if (
         searchMode.filterSearch.operator === 'inRange' &&
-        searchMode.filterSearch.valueTo
+        searchMode.filterSearch.waitingForValueTo
       ) {
-        return `${searchMode.filterSearch.value} ${searchMode.filterSearch.valueTo}`;
+        return ''; // Empty input, user types second value fresh
+      }
+      // For inRange (Between) operator with valueTo being typed - show only valueTo
+      // The first value is already shown in badge, user is typing second value
+      if (
+        searchMode.filterSearch.operator === 'inRange' &&
+        searchMode.filterSearch.valueTo &&
+        !searchMode.filterSearch.isConfirmed
+      ) {
+        return searchMode.filterSearch.valueTo; // Show only second value being typed
+      }
+      // For confirmed inRange, show both values (for editing)
+      if (
+        searchMode.filterSearch.operator === 'inRange' &&
+        searchMode.filterSearch.valueTo &&
+        searchMode.filterSearch.isConfirmed
+      ) {
+        return ''; // Confirmed - values shown in badges, input empty
       }
       return searchMode.filterSearch.value;
     }
@@ -324,6 +341,25 @@ export const useSearchInput = ({
           // Build pattern for editing second value (without ## marker)
           const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCondition.operator} ${inputValue}`;
 
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+
+        // SPECIAL CASE: Between operator waiting for second value OR typing second value
+        // Append typed value to the #to marker pattern
+        if (
+          searchMode.filterSearch.operator === 'inRange' &&
+          (searchMode.filterSearch.waitingForValueTo ||
+            (searchMode.filterSearch.valueTo &&
+              !searchMode.filterSearch.isConfirmed))
+        ) {
+          // Pattern: #col #inRange 500 #to → #col #inRange 500 #to 700
+          const columnName = searchMode.filterSearch.field;
+          const operator = searchMode.filterSearch.operator;
+          const firstValue = searchMode.filterSearch.value;
+          const newValue = `#${columnName} #${operator} ${firstValue} #to ${inputValue}`;
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);

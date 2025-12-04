@@ -296,6 +296,19 @@ export const useBadgeBuilder = (
     }
 
     // 4. Single-Condition Value Badge(s) (Gray)
+    // Special case: Between operator waiting for valueTo (using waitingForValueTo flag)
+    const isWaitingForBetweenValueTo =
+      searchMode.isFilterMode &&
+      filter?.operator === 'inRange' &&
+      filter?.waitingForValueTo === true;
+
+    // Special case: Between operator with valueTo being typed (not confirmed yet)
+    const isBetweenTypingValueTo =
+      searchMode.isFilterMode &&
+      filter?.operator === 'inRange' &&
+      filter?.valueTo &&
+      !filter?.isConfirmed;
+
     const shouldShowSingleValue =
       (searchMode.showJoinOperatorSelector ||
         (searchMode.showOperatorSelector &&
@@ -307,7 +320,9 @@ export const useBadgeBuilder = (
           filter) ||
         (searchMode.isFilterMode &&
           filter?.isConfirmed &&
-          !filter?.isMultiCondition)) &&
+          !filter?.isMultiCondition) ||
+        isWaitingForBetweenValueTo ||
+        isBetweenTypingValueTo) &&
       filter?.value &&
       !filter?.isMultiCondition;
 
@@ -319,18 +334,29 @@ export const useBadgeBuilder = (
       // The "second value" only exists in multi-condition filters (handled in section 2)
       const isSecondValue = false;
 
-      // Check if this is a Between (inRange) operator with valueTo
-      if (filter.operator === 'inRange' && filter.valueTo) {
+      // Check if this is a Between (inRange) operator
+      // Handle both complete (with valueTo) and waiting state (waitingForValueTo flag)
+      const isWaitingForValueTo =
+        filter.operator === 'inRange' &&
+        !filter.valueTo &&
+        filter.waitingForValueTo === true;
+
+      if (
+        filter.operator === 'inRange' &&
+        (filter.valueTo || isWaitingForValueTo)
+      ) {
         // Determine if this badge is being edited
         const editType = isSecondValue ? 'secondValue' : 'firstValue';
         const isEditingFrom =
           inlineEditingProps?.editingBadge?.type === editType;
 
-        // First value badge
+        // Display value (already trimmed by parser)
+        const displayValue = filter.value;
+
         badges.push({
           id: 'value-from',
           type: 'value',
-          label: filter.value,
+          label: displayValue,
           onClear: isSecondValue
             ? handlers.onClearSecondValue
             : handlers.onClearValue,
@@ -362,40 +388,45 @@ export const useBadgeBuilder = (
           canEdit: false,
         });
 
-        // Determine if the "to" value badge is being edited
-        const editTypeTo = isSecondValue ? 'secondValueTo' : 'firstValueTo';
-        const isEditingTo =
-          inlineEditingProps?.editingBadge?.type === editTypeTo;
+        // Only add valueTo badge if we have the value AND it's confirmed (or in partialJoin state)
+        // When typing (not confirmed), valueTo is shown in input, not as badge
+        // Exception: When partialJoin is set, the filter WAS confirmed before user opened join selector
+        if (filter.valueTo && (filter.isConfirmed || searchMode.partialJoin)) {
+          // Determine if the "to" value badge is being edited
+          const editTypeTo = isSecondValue ? 'secondValueTo' : 'firstValueTo';
+          const isEditingTo =
+            inlineEditingProps?.editingBadge?.type === editTypeTo;
 
-        // Second value badge (valueTo)
-        badges.push({
-          id: 'value-to',
-          type: 'valueSecond',
-          label: filter.valueTo,
-          // Use specific handler to clear only the "to" value, keeping "from" value
-          onClear: isSecondValue
-            ? (handlers.onClearSecondValueTo ?? handlers.onClearSecondValue)
-            : (handlers.onClearValueTo ?? handlers.onClearValue),
-          canClear: true,
-          onEdit: isSecondValue
-            ? handlers.onEditSecondValueTo
-            : handlers.onEditValueTo,
-          // Only show edit if handler exists
-          canEdit: !!(isSecondValue
-            ? handlers.onEditSecondValueTo
-            : handlers.onEditValueTo),
-          // Inline editing props
-          isEditing: isEditingTo,
-          editingValue: isEditingTo
-            ? inlineEditingProps?.editingBadge?.value
-            : undefined,
-          onValueChange: isEditingTo
-            ? inlineEditingProps?.onInlineValueChange
-            : undefined,
-          onEditComplete: isEditingTo
-            ? inlineEditingProps?.onInlineEditComplete
-            : undefined,
-        });
+          // Second value badge (valueTo)
+          badges.push({
+            id: 'value-to',
+            type: 'valueSecond',
+            label: filter.valueTo,
+            // Use specific handler to clear only the "to" value, keeping "from" value
+            onClear: isSecondValue
+              ? (handlers.onClearSecondValueTo ?? handlers.onClearSecondValue)
+              : (handlers.onClearValueTo ?? handlers.onClearValue),
+            canClear: true,
+            onEdit: isSecondValue
+              ? handlers.onEditSecondValueTo
+              : handlers.onEditValueTo,
+            // Only show edit if handler exists
+            canEdit: !!(isSecondValue
+              ? handlers.onEditSecondValueTo
+              : handlers.onEditValueTo),
+            // Inline editing props
+            isEditing: isEditingTo,
+            editingValue: isEditingTo
+              ? inlineEditingProps?.editingBadge?.value
+              : undefined,
+            onValueChange: isEditingTo
+              ? inlineEditingProps?.onInlineValueChange
+              : undefined,
+            onEditComplete: isEditingTo
+              ? inlineEditingProps?.onInlineEditComplete
+              : undefined,
+          });
+        }
       } else {
         // Determine if this badge is being edited
         const editType = isSecondValue ? 'secondValue' : 'firstValue';
