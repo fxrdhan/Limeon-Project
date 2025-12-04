@@ -709,6 +709,24 @@ export const parseSearchValue = (
               if (inRangeValues) {
                 filterValue = inRangeValues.value;
                 filterValueTo = inRangeValues.valueTo;
+              } else {
+                // Between operator requires 2 values - don't show join selector
+                // Keep in filter mode to let user complete the second value
+                return {
+                  globalSearch: undefined,
+                  showColumnSelector: false,
+                  showOperatorSelector: false,
+                  showJoinOperatorSelector: false,
+                  isFilterMode: true,
+                  filterSearch: {
+                    field: column.field,
+                    value: cleanValue, // Still only first value
+                    column,
+                    operator: operatorObj.value,
+                    isExplicitOperator: true,
+                    isConfirmed: false, // Not confirmed - incomplete Between
+                  },
+                };
               }
             }
 
