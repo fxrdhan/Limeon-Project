@@ -762,15 +762,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               preserved.wasMultiColumn && preserved.secondColumnField;
 
             if (isMultiColumn && preserved.secondColumnField) {
-              // Multi-column filter: use secondColumnField for second condition
-              newValue = PatternBuilder.multiColumnComplete(
+              // Multi-column filter: use buildMultiColumnWithValueTo to handle Between operators
+              newValue = PatternBuilder.buildMultiColumnWithValueTo(
                 columnName,
                 preserved.operator,
                 preserved.value,
+                preserved.valueTo, // Pass valueTo for Between operator
                 joinOperator,
                 preserved.secondColumnField,
                 preserved.secondOperator,
-                preserved.secondValue
+                preserved.secondValue,
+                preserved.secondValueTo // Pass secondValueTo for Between operator
               );
             } else if (isFirstBetween && isSecondBetween) {
               // Between AND/OR Between (same column)
