@@ -116,6 +116,16 @@ export const useSearchKeyboard = ({
               !searchMode.filterSearch.isMultiCondition &&
               searchMode.filterSearch.value.trim() !== ''
             ) {
+              // Special check for Between (inRange) operator: requires both values
+              // Don't confirm if valueTo is missing
+              if (
+                searchMode.filterSearch.operator === 'inRange' &&
+                !searchMode.filterSearch.valueTo
+              ) {
+                // Between operator needs 2 values - don't confirm yet
+                return;
+              }
+
               // Build new value with ## marker
               const currentValue = value.trim(); // Trim to avoid trailing spaces
 
