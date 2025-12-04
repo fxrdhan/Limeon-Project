@@ -11,13 +11,15 @@ import { findOperatorForColumn } from './operatorUtils';
  * Parse inRange (Between) operator values
  * Supports two formats:
  * - Space separated: "500 700"
- * - Dash separated: "500-700"
+ * - Dash separated: "500-700" (only for confirmed values)
  *
  * @param valueString - String containing one or two values
+ * @param isConfirmed - Whether this is a confirmed value (has ## or #to marker)
  * @returns Object with value and valueTo, or null if parsing fails
  */
 const parseInRangeValues = (
-  valueString: string
+  valueString: string,
+  isConfirmed: boolean = false
 ): { value: string; valueTo: string } | null => {
   const trimmed = valueString.trim();
 
@@ -56,17 +58,20 @@ const parseInRangeValues = (
     };
   }
 
-  // If only one part, try dash separator (e.g., "500-700")
-  // Use regex to handle the dash between two numbers/values
-  const dashMatch = trimmed.match(/^(.+?)-(.+)$/);
-  if (dashMatch) {
-    const [, firstVal, secondVal] = dashMatch;
-    // Ensure both parts are non-empty after trim
-    if (firstVal.trim() && secondVal.trim()) {
-      return {
-        value: firstVal.trim(),
-        valueTo: secondVal.trim(),
-      };
+  // Dash separator (e.g., "500-700")
+  // IMPORTANT: Only parse dash format for confirmed values to prevent premature badge creation
+  // When user types "500-6", we should NOT create badges until they press Enter
+  if (isConfirmed) {
+    const dashMatch = trimmed.match(/^(.+?)-(.+)$/);
+    if (dashMatch) {
+      const [, firstVal, secondVal] = dashMatch;
+      // Ensure both parts are non-empty after trim
+      if (firstVal.trim() && secondVal.trim()) {
+        return {
+          value: firstVal.trim(),
+          valueTo: secondVal.trim(),
+        };
+      }
     }
   }
 
@@ -115,7 +120,7 @@ const parseMultiConditionFilter = (
 
         // First condition
         if (operator1Obj.value === 'inRange') {
-          const inRangeValues = parseInRangeValues(val1.trim());
+          const inRangeValues = parseInRangeValues(val1.trim(), true); // Confirmed pattern
           if (inRangeValues) {
             conditions.push({
               operator: operator1Obj.value,
@@ -136,7 +141,7 @@ const parseMultiConditionFilter = (
 
         // Second condition
         if (operator2Obj.value === 'inRange') {
-          const inRangeValues = parseInRangeValues(val2.trim());
+          const inRangeValues = parseInRangeValues(val2.trim(), true); // Confirmed pattern
           if (inRangeValues) {
             conditions.push({
               operator: operator2Obj.value,
@@ -199,7 +204,7 @@ const parseMultiConditionFilter = (
 
         if (operatorObj && cleanVal) {
           if (operatorObj.value === 'inRange') {
-            const inRangeValues = parseInRangeValues(cleanVal);
+            const inRangeValues = parseInRangeValues(cleanVal, true); // Confirmed with ##
             if (inRangeValues) {
               conditions.push({
                 operator: operatorObj.value,
@@ -744,7 +749,7 @@ export const parseSearchValue = (
             let filterValueTo: string | undefined;
 
             if (operatorObj.value === 'inRange') {
-              const inRangeValues = parseInRangeValues(cleanValue);
+              const inRangeValues = parseInRangeValues(cleanValue, true); // Confirmed with ##
               if (inRangeValues) {
                 filterValue = inRangeValues.value;
                 filterValueTo = inRangeValues.valueTo;
@@ -980,7 +985,10 @@ export const parseSearchValue = (
                 }
               }
 
-              const inRangeValues = parseInRangeValues(cleanValue);
+              const inRangeValues = parseInRangeValues(
+                cleanValue,
+                hasConfirmation
+              );
               if (inRangeValues) {
                 // Valid Between with both values (space-separated or dash-separated)
                 return {
