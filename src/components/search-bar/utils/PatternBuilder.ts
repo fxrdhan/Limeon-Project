@@ -406,7 +406,7 @@ export class PatternBuilder {
   }
 
   /**
-   * Multi-column partial with operator: #col1 #op1 val1 #join #col2 #op2
+   * Multi-column partial with operator: #col1 #op1 val1 [val1To] #join #col2 #op2
    *
    * @param col1 - First column field name
    * @param op1 - First operator value
@@ -414,6 +414,7 @@ export class PatternBuilder {
    * @param join - Join operator ('AND' or 'OR')
    * @param col2 - Second column field name
    * @param op2 - Second operator value
+   * @param val1To - Optional second value for Between (inRange) operator
    * @returns Partial multi-column with operator, ready for second value
    */
   static multiColumnWithOperator(
@@ -422,9 +423,15 @@ export class PatternBuilder {
     val1: string,
     join: 'AND' | 'OR',
     col2: string,
-    op2: string
+    op2: string,
+    val1To?: string
   ): string {
-    return `#${col1} #${op1} ${val1} #${join.toLowerCase()} #${col2} #${op2} `;
+    // For Between (inRange) operator with both values
+    const firstPart =
+      op1 === 'inRange' && val1To
+        ? `#${col1} #${op1} ${val1} #to ${val1To}`
+        : `#${col1} #${op1} ${val1}`;
+    return `${firstPart} #${join.toLowerCase()} #${col2} #${op2} `;
   }
 
   /**

@@ -1369,7 +1369,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Clear second value - used by gray badge (second value in multi-condition)
   const handleClearSecondValue = useCallback(() => {
-    // Get state BEFORE clearing preserved state (closure captures current value)
+    // Use preserved state if available, otherwise current searchMode
     const stateToUse = preservedSearchMode || searchMode;
 
     // Clear preserved state to ensure badges update correctly
@@ -1404,7 +1404,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         firstCondition.value,
         joinOp,
         col2,
-        secondOp
+        secondOp,
+        firstCondition.valueTo // Pass valueTo for Between operator
       );
 
       setFilterValue(newValue, onChange, inputRef);
