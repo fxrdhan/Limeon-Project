@@ -21,9 +21,35 @@ const parseInRangeValues = (
 ): { value: string; valueTo: string } | null => {
   const trimmed = valueString.trim();
 
-  // First, try to split by whitespace
+  // First, check for #to marker pattern: "500 #to 700"
+  // This is used when Between operator transitions from typing to confirmed state
+  const toMarkerMatch = trimmed.match(/^(.+?)\s+#to\s+(.+)$/i);
+  if (toMarkerMatch) {
+    const [, firstVal, secondVal] = toMarkerMatch;
+    if (firstVal.trim() && secondVal.trim()) {
+      return {
+        value: firstVal.trim(),
+        valueTo: secondVal.trim(),
+      };
+    }
+  }
+
+  // Then try to split by whitespace (e.g., "500 700")
   const spaceParts = trimmed.split(/\s+/);
   if (spaceParts.length >= 2) {
+    // Check if parts contain #to marker (fallback case)
+    // Input like "500 #to 600" that wasn't caught by regex above
+    const toIndex = spaceParts.findIndex(part => part.toLowerCase() === '#to');
+    if (toIndex > 0 && toIndex < spaceParts.length - 1) {
+      // Found #to marker - split around it
+      const firstParts = spaceParts.slice(0, toIndex);
+      const secondParts = spaceParts.slice(toIndex + 1);
+      return {
+        value: firstParts.join(' '),
+        valueTo: secondParts.join(' '),
+      };
+    }
+    // Normal space-separated values (e.g., "500 700")
     return {
       value: spaceParts[0],
       valueTo: spaceParts.slice(1).join(' '),
@@ -223,8 +249,6 @@ export const parseSearchValue = (
   rawSearchValue: string,
   columns: SearchColumn[]
 ): EnhancedSearchState => {
-  // Store original for trailing space detection (needed for Between operator)
-  const originalValue = rawSearchValue;
   // Trim whitespace (handles paste with trailing newlines/spaces)
   const searchValue = rawSearchValue.trim();
 
@@ -900,9 +924,65 @@ export const parseSearchValue = (
 
             // Check if this is inRange (Between) operator - needs 2 values
             if (operator.value === 'inRange' && cleanValue) {
+              // Check for #to marker pattern: "500 #to" or "500 #to 700"
+              const toMarkerMatch = cleanValue.match(
+                /^(.+?)\s+#to(?:\s+(.*))?$/i
+              );
+              if (toMarkerMatch) {
+                const [, firstValue, secondValue] = toMarkerMatch;
+                // Clean second value: remove trailing ## (confirmation) and trailing # (join selector)
+                // Pattern "500 #to 600## #" should extract "600" not "600## #"
+                const cleanedSecond = secondValue
+                  ?.trim()
+                  .replace(/#+\s*#?\s*$/, '') // Remove trailing ## or ## # patterns
+                  .trim();
+
+                if (cleanedSecond) {
+                  // Has both values: "500 #to 700"
+                  // Check if original had ## confirmation marker (before join selector #)
+                  const hasValueConfirmation =
+                    hasConfirmation || /##\s*#?\s*$/.test(secondValue || '');
+                  return {
+                    globalSearch: undefined,
+                    showColumnSelector: false,
+                    showOperatorSelector: false,
+                    showJoinOperatorSelector: false,
+                    isFilterMode: true,
+                    filterSearch: {
+                      field: column.field,
+                      value: firstValue.trim(),
+                      valueTo: cleanedSecond,
+                      column,
+                      operator: operator.value,
+                      isExplicitOperator: true,
+                      isConfirmed: hasValueConfirmation,
+                      waitingForValueTo: false,
+                    },
+                  };
+                } else {
+                  // Waiting for second value: "500 #to" or "500 #to "
+                  return {
+                    globalSearch: undefined,
+                    showColumnSelector: false,
+                    showOperatorSelector: false,
+                    showJoinOperatorSelector: false,
+                    isFilterMode: true,
+                    filterSearch: {
+                      field: column.field,
+                      value: firstValue.trim(),
+                      column,
+                      operator: operator.value,
+                      isExplicitOperator: true,
+                      isConfirmed: false,
+                      waitingForValueTo: true,
+                    },
+                  };
+                }
+              }
+
               const inRangeValues = parseInRangeValues(cleanValue);
               if (inRangeValues) {
-                // Valid Between with both values
+                // Valid Between with both values (space-separated or dash-separated)
                 return {
                   globalSearch: undefined,
                   showColumnSelector: false,
@@ -921,14 +1001,7 @@ export const parseSearchValue = (
                 };
               }
               // Incomplete Between - only one value provided
-              // Preserve trailing space if user is typing second value
-              // This allows "5000 " to stay as "5000 " so user can type "5000 6000"
-              const hadTrailingSpace =
-                originalValue.endsWith(' ') && !hasConfirmation;
-              const valueToUse = hadTrailingSpace
-                ? cleanValue + ' '
-                : cleanValue;
-
+              // User is still typing first value or hasn't pressed Enter yet
               return {
                 globalSearch: undefined,
                 showColumnSelector: false,
@@ -937,7 +1010,7 @@ export const parseSearchValue = (
                 isFilterMode: true,
                 filterSearch: {
                   field: column.field,
-                  value: valueToUse,
+                  value: cleanValue,
                   column,
                   operator: operator.value,
                   isExplicitOperator: true,

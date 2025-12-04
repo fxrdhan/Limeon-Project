@@ -116,13 +116,26 @@ export const useSearchKeyboard = ({
               !searchMode.filterSearch.isMultiCondition &&
               searchMode.filterSearch.value.trim() !== ''
             ) {
-              // Special check for Between (inRange) operator: requires both values
-              // Don't confirm if valueTo is missing
+              // Special handling for Between (inRange) operator: requires both values
+              // When only first value exists, transition to "waiting for valueTo" state
               if (
                 searchMode.filterSearch.operator === 'inRange' &&
                 !searchMode.filterSearch.valueTo
               ) {
-                // Between operator needs 2 values - don't confirm yet
+                // Check if we're already waiting for valueTo (pattern contains #to marker)
+                if (value.includes('#to')) {
+                  // Already waiting for second value - don't confirm yet
+                  return;
+                }
+
+                // Add #to marker to transition to "waiting for valueTo" state
+                // Pattern: #col #inRange 500 → #col #inRange 500 #to
+                // This makes the input area empty after badges, ready for second value
+                const currentValue = value.trim();
+                const newValue = currentValue + ' #to ';
+                onChange({
+                  target: { value: newValue },
+                } as React.ChangeEvent<HTMLInputElement>);
                 return;
               }
 
