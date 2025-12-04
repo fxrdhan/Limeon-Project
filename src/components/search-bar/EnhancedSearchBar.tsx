@@ -247,21 +247,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // Operator is compatible - restore pattern with preserved operator
             if (preserved.secondValue && preserved.secondValue.trim() !== '') {
               // Full multi-column with second value - restore complete pattern
-              const secondVal = preserved.secondValue!;
-              if (firstValTo) {
-                // First condition is Between operator
-                newValue = `#${firstCol} #${firstOp} ${firstVal} ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} ${secondVal}##`;
-              } else {
-                newValue = PatternBuilder.multiColumnComplete(
-                  firstCol,
-                  firstOp,
-                  firstVal,
-                  join,
-                  column.field,
-                  secondOp,
-                  secondVal
-                );
-              }
+              // Use buildMultiColumnWithValueTo to handle Between operators on both conditions
+              newValue = PatternBuilder.buildMultiColumnWithValueTo(
+                firstCol,
+                firstOp,
+                firstVal,
+                firstValTo,
+                join,
+                column.field,
+                secondOp,
+                preserved.secondValue,
+                preserved.secondValueTo
+              );
             } else {
               // Multi-column with operator but no second value - ready for value input
               if (firstValTo) {
@@ -1423,11 +1420,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // Extract and preserve filter data including second condition (operator, value)
     preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
 
-    // Build pattern to trigger isSecondColumn: #col1 #op1 val1 #join #
-    const newValue = PatternBuilder.partialMulti(
+    // Build pattern to trigger isSecondColumn: #col1 #op1 val1 [val1To] #join #
+    // Use partialMultiColumnWithValueTo to handle Between operators with valueTo
+    const newValue = PatternBuilder.partialMultiColumnWithValueTo(
       columnName,
       firstCondition.operator,
       firstCondition.value,
+      firstCondition.valueTo,
       joinOp
     );
 

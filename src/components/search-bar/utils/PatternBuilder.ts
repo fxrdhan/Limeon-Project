@@ -101,6 +101,31 @@ export class PatternBuilder {
   }
 
   /**
+   * Partial multi-column with valueTo support: #field #op val valTo #join #
+   * For Between operator, includes both values.
+   *
+   * @param field - Column field name
+   * @param operator - First operator value
+   * @param value - First value
+   * @param valueTo - Second value for Between operator (optional)
+   * @param join - Join operator ('AND' or 'OR')
+   * @returns Partial multi-column pattern ready for second column selection
+   */
+  static partialMultiColumnWithValueTo(
+    field: string,
+    operator: string,
+    value: string,
+    valueTo: string | undefined,
+    join: 'AND' | 'OR'
+  ): string {
+    const isBetween = operator === 'inRange' && valueTo;
+    const firstPart = isBetween
+      ? `#${field} #${operator} ${value} ${valueTo}`
+      : `#${field} #${operator} ${value}`;
+    return `${firstPart} #${join.toLowerCase()} #`;
+  }
+
+  /**
    * Partial multi with second operator: #field #op1 val1 #join #op2
    *
    * @param field - Column field name
