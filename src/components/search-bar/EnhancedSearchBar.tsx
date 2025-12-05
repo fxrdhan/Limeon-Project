@@ -85,6 +85,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     value: string;
   } | null>(null);
 
+  // State for keyboard-based badge selection (Ctrl+Arrow navigation)
+  const [selectedBadgeIndex, setSelectedBadgeIndex] = useState<number | null>(
+    null
+  );
+
+  // Badge count for keyboard navigation bounds (use state for reliable updates)
+  const [badgeCount, setBadgeCount] = useState<number>(0);
+
   // Ref to store interrupted selector state for restoration after inline edit
   // When user clicks a value badge while selector is open, we save the pattern
   // to restore the selector after inline edit completes
@@ -211,6 +219,59 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setCurrentJoinOperator(undefined);
     setIsEditingSecondOperator(false);
   }, []);
+
+  // Handler for badge count changes from SearchBadge
+  const handleBadgeCountChange = useCallback(
+    (count: number) => {
+      setBadgeCount(count);
+      // Reset selection if it's out of bounds
+      if (selectedBadgeIndex !== null && selectedBadgeIndex >= count) {
+        setSelectedBadgeIndex(count > 0 ? count - 1 : null);
+      }
+    },
+    [selectedBadgeIndex]
+  );
+
+  // Handler for Ctrl+Arrow keyboard navigation
+  const handleBadgeNavigation = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Only handle Ctrl+Arrow Left/Right
+      if (!e.ctrlKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) {
+        return false;
+      }
+
+      if (badgeCount === 0) return false;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.key === 'ArrowLeft') {
+        // Navigate left (to previous badge, or to last badge if none selected)
+        setSelectedBadgeIndex(prev => {
+          if (prev === null) return badgeCount - 1; // Start from last badge
+          if (prev <= 0) return null; // Deselect if at first badge
+          return prev - 1;
+        });
+      } else if (e.key === 'ArrowRight') {
+        // Navigate right (to next badge, or to first badge if none selected)
+        setSelectedBadgeIndex(prev => {
+          if (prev === null) return 0; // Start from first badge
+          if (prev >= badgeCount - 1) return null; // Deselect if at last badge
+          return prev + 1;
+        });
+      }
+
+      return true;
+    },
+    [badgeCount]
+  );
+
+  // Clear badge selection when user types or performs other actions
+  const clearBadgeSelection = useCallback(() => {
+    if (selectedBadgeIndex !== null) {
+      setSelectedBadgeIndex(null);
+    }
+  }, [selectedBadgeIndex]);
 
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
@@ -2646,6 +2707,30 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onEditSecondValueTo: handleEditSecondValueTo,
   });
 
+  // Wrap keyboard handler to include badge navigation
+  const wrappedKeyDownHandler = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // First, check for badge navigation (Ctrl+Arrow)
+      if (handleBadgeNavigation(e)) {
+        return;
+      }
+      // Otherwise, delegate to normal keyboard handler
+      handleInputKeyDown(e);
+    },
+    [handleBadgeNavigation, handleInputKeyDown]
+  );
+
+  // Wrap input change handler to clear badge selection when user types
+  const wrappedInputChangeHandler = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Clear badge selection when user starts typing
+      clearBadgeSelection();
+      // Delegate to original handler
+      handleInputChange(e);
+    },
+    [clearBadgeSelection, handleInputChange]
+  );
+
   const searchTerm = useMemo(() => {
     // For second column selection, extract search term after #and/or #
     if (searchMode.isSecondColumn) {
@@ -2855,8 +2940,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 // No transition on padding - prevents placeholder from animating
               }}
               value={displayValue}
-              onChange={handleInputChange}
-              onKeyDown={handleInputKeyDown}
+              onChange={wrappedInputChangeHandler}
+              onKeyDown={wrappedKeyDownHandler}
               onFocus={onFocus}
               onBlur={onBlur}
             />
@@ -2892,6 +2977,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               editingBadge={editingBadge}
               onInlineValueChange={handleInlineValueChange}
               onInlineEditComplete={handleInlineEditComplete}
+              selectedBadgeIndex={selectedBadgeIndex}
+              onBadgeCountChange={handleBadgeCountChange}
             />
           </div>
         </div>

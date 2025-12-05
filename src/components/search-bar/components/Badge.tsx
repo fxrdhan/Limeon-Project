@@ -20,6 +20,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const editingValue = config.editingValue || '';
   const onValueChange = config.onValueChange;
   const onEditComplete = config.onEditComplete;
+  const isSelected = config.isSelected || false;
 
   // Auto-focus input when entering editing mode
   // Only position cursor once when entering edit mode, not on every value change
@@ -105,9 +106,13 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     onEditComplete?.(editingValue);
   };
 
+  // When isSelected, apply the same visual effect as hover
+  const selectedClass = isSelected ? 'ring-2 ring-offset-1 ring-blue-400' : '';
+
   return (
     <div
-      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0`}
+      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 ${selectedClass}`}
+      data-selected={isSelected}
     >
       {isEditing ? (
         <input
@@ -141,7 +146,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           }
           onMouseDown={e => e.stopPropagation()}
           className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 ${
-            isEditing
+            isEditing || isSelected
               ? 'ml-1.5 max-w-[24px] opacity-100'
               : 'max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5'
           }`}
@@ -158,7 +163,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           )}
         </button>
       )}
-      {/* Clear/Delete button (Trash) - shown on hover, hidden when editing */}
+      {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
       {!isEditing && config.canClear && (
         <button
           onClick={e => {
@@ -169,7 +174,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
             config.onClear?.();
           }}
           onMouseDown={e => e.stopPropagation()}
-          className={`max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5 rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
+          className={`${
+            isSelected
+              ? 'ml-1.5 max-w-[24px] opacity-100'
+              : 'max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5'
+          } rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
           type="button"
           style={{
             transition:

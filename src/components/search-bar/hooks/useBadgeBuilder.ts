@@ -36,7 +36,8 @@ interface InlineEditingProps {
 export const useBadgeBuilder = (
   searchMode: EnhancedSearchState,
   handlers: BadgeHandlers,
-  inlineEditingProps?: InlineEditingProps
+  inlineEditingProps?: InlineEditingProps,
+  selectedBadgeIndex?: number | null
 ): BadgeConfig[] => {
   return useMemo(() => {
     const badges: BadgeConfig[] = [];
@@ -265,6 +266,13 @@ export const useBadgeBuilder = (
         }
       });
 
+      // Apply isSelected for multi-condition case before returning
+      if (selectedBadgeIndex !== null && selectedBadgeIndex !== undefined) {
+        return badges.map((badge, index) => ({
+          ...badge,
+          isSelected: index === selectedBadgeIndex,
+        }));
+      }
       return badges; // Return early for multi-condition case
     }
 
@@ -540,6 +548,14 @@ export const useBadgeBuilder = (
       // It will show as part of confirmed multi-condition badges (section 2)
     }
 
+    // Apply isSelected to badge at selectedBadgeIndex
+    if (selectedBadgeIndex !== null && selectedBadgeIndex !== undefined) {
+      return badges.map((badge, index) => ({
+        ...badge,
+        isSelected: index === selectedBadgeIndex,
+      }));
+    }
+
     return badges;
-  }, [searchMode, handlers, inlineEditingProps]);
+  }, [searchMode, handlers, inlineEditingProps, selectedBadgeIndex]);
 };
