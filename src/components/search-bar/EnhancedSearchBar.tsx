@@ -251,15 +251,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         return false;
       }
 
+      // Prevent browser's default Ctrl+E behavior (address bar focus)
+      e.preventDefault();
+      e.stopPropagation();
+
       // Must have a selected badge
-      if (selectedBadgeIndex === null) return false;
+      if (selectedBadgeIndex === null) return true;
 
       // Get the badge at selected index
       const badge = badgesRef.current[selectedBadgeIndex];
-      if (!badge || !badge.canEdit || !badge.onEdit) return false;
-
-      e.preventDefault();
-      e.stopPropagation();
+      if (!badge || !badge.canEdit || !badge.onEdit) return true;
 
       // Clear selection and trigger edit
       setSelectedBadgeIndex(null);
