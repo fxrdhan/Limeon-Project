@@ -91,6 +91,16 @@ export const useSearchInput = ({
       searchMode.filterSearch &&
       searchMode.selectedColumn
     ) {
+      // Special case: Second Between operator waiting for valueTo - badge shows [value][to], input empty
+      if (searchMode.waitingForSecondValueTo && searchMode.secondValue) {
+        return ''; // Value already shown in badge, input empty for typing second value
+      }
+
+      // Special case: Second Between operator with valueTo being typed - show only valueTo
+      if (searchMode.secondValueTo) {
+        return searchMode.secondValueTo; // Show only valueTo being typed
+      }
+
       // Case: Second operator selected, ready for second value input - show the second value being typed
       // Multi-column pattern: #col1 #op1 val1 #and #col2 #op2 val2 → extract val2
       // Same-column pattern:  #col1 #op1 val1 #and #op2 val2 → extract val2
@@ -154,6 +164,9 @@ export const useSearchInput = ({
     searchMode.partialJoin,
     searchMode.selectedColumn,
     searchMode.secondColumn,
+    searchMode.waitingForSecondValueTo,
+    searchMode.secondValue,
+    searchMode.secondValueTo,
   ]);
 
   // Ref to store last measured width - persists across renders
@@ -454,6 +467,53 @@ export const useSearchInput = ({
 
           // Keep preserved state to maintain second operator badge for Step 6
           // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler
+
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+
+        // SPECIAL CASE: Second Between operator - preserve first value and #to marker
+        // When waitingForSecondValueTo is true, append typed value after #to
+        if (
+          searchMode.waitingForSecondValueTo &&
+          searchMode.secondValue &&
+          searchMode.secondOperator === 'inRange'
+        ) {
+          // Pattern: #col1 #op1 val1 #and #col2 #inRange secondVal #to → append typed value
+          const basePattern = isMultiColumn
+            ? currentValue.replace(
+                /#(and|or)\s+#([^\s#]+)\s+#inRange\s+.+$/i,
+                ''
+              )
+            : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
+
+          const newValue = isMultiColumn
+            ? `${basePattern.trim()} #${join} #${col2} #inRange ${searchMode.secondValue} #to ${inputValue}`
+            : `${basePattern.trim()} #${join} #inRange ${searchMode.secondValue} #to ${inputValue}`;
+
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+
+        // SPECIAL CASE: Second Between operator typing valueTo - preserve first value and #to marker
+        if (
+          searchMode.secondValueTo &&
+          searchMode.secondOperator === 'inRange'
+        ) {
+          const basePattern = isMultiColumn
+            ? currentValue.replace(
+                /#(and|or)\s+#([^\s#]+)\s+#inRange\s+.+$/i,
+                ''
+              )
+            : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
+
+          const newValue = isMultiColumn
+            ? `${basePattern.trim()} #${join} #${col2} #inRange ${searchMode.secondValue} #to ${inputValue}`
+            : `${basePattern.trim()} #${join} #inRange ${searchMode.secondValue} #to ${inputValue}`;
 
           onChange({
             target: { value: newValue },

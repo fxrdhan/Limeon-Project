@@ -93,6 +93,29 @@ export const useSearchKeyboard = ({
               !currentValue.endsWith('#') &&
               !currentValue.endsWith('##')
             ) {
+              // Special handling for Between (inRange) operator on second condition
+              // If second operator is inRange and doesn't have #to marker yet, add it
+              if (searchMode.secondOperator === 'inRange') {
+                // Check if pattern already has #to marker for second condition
+                // Pattern with #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2 #to"
+                // Pattern without #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2"
+                // Need to check if there's #to AFTER the second #inRange
+                const secondInRangeMatch = currentValue.match(
+                  /#(and|or)\s+(?:#[^\s#]+\s+)?#inRange\s+(.*)$/i
+                );
+                if (secondInRangeMatch) {
+                  const afterSecondInRange = secondInRangeMatch[2];
+                  // If there's no #to after the second inRange value, add it
+                  if (!afterSecondInRange.includes('#to')) {
+                    const newValue = currentValue + ' #to ';
+                    onChange({
+                      target: { value: newValue },
+                    } as React.ChangeEvent<HTMLInputElement>);
+                    return;
+                  }
+                }
+              }
+
               const newValue = currentValue + '##';
               onChange({
                 target: { value: newValue },
