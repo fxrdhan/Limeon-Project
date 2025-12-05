@@ -346,20 +346,54 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
+      // Helper to check if a badge is selectable (not a separator)
+      const isSelectable = (index: number): boolean => {
+        const badge = badgesRef.current[index];
+        // Skip separator badges - they should not be selectable
+        return badge?.type !== 'separator';
+      };
+
+      // Helper to find next selectable badge in direction
+      const findNextSelectable = (
+        startIndex: number | null,
+        direction: 'left' | 'right'
+      ): number | null => {
+        if (startIndex === null) {
+          // Start from edge based on direction
+          const edgeIndex = direction === 'left' ? badgeCount - 1 : 0;
+          if (isSelectable(edgeIndex)) return edgeIndex;
+          // Edge not selectable, find next
+          startIndex = edgeIndex;
+        }
+
+        let currentIndex = startIndex;
+        let attempts = 0;
+
+        while (attempts < badgeCount) {
+          // Move in direction
+          if (direction === 'left') {
+            currentIndex--;
+            if (currentIndex < 0) return null; // Reached start, deselect
+          } else {
+            currentIndex++;
+            if (currentIndex >= badgeCount) return null; // Reached end, deselect
+          }
+
+          if (isSelectable(currentIndex)) {
+            return currentIndex;
+          }
+          attempts++;
+        }
+
+        return null; // No selectable badge found
+      };
+
       if (e.key === 'ArrowLeft') {
-        // Navigate left (to previous badge, or to last badge if none selected)
-        setSelectedBadgeIndex(prev => {
-          if (prev === null) return badgeCount - 1; // Start from last badge
-          if (prev <= 0) return null; // Deselect if at first badge
-          return prev - 1;
-        });
+        // Navigate left (to previous selectable badge)
+        setSelectedBadgeIndex(prev => findNextSelectable(prev, 'left'));
       } else if (e.key === 'ArrowRight') {
-        // Navigate right (to next badge, or to first badge if none selected)
-        setSelectedBadgeIndex(prev => {
-          if (prev === null) return 0; // Start from first badge
-          if (prev >= badgeCount - 1) return null; // Deselect if at last badge
-          return prev + 1;
-        });
+        // Navigate right (to next selectable badge)
+        setSelectedBadgeIndex(prev => findNextSelectable(prev, 'right'));
       }
 
       return true;
