@@ -1934,6 +1934,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     if (!valueTo) return;
 
+    // IMPORTANT: Preserve current state BEFORE entering inline edit mode
+    // This ensures handleInlineEditComplete has access to original state
+    if (!preservedSearchMode) {
+      setPreservedSearchMode(stateToUse);
+    }
+
     // Enter inline editing mode for "to" value
     setEditingBadge({
       type: 'firstValueTo',
@@ -1958,6 +1964,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const secondCondition = stateToUse.filterSearch.conditions[1];
 
     if (!secondCondition.valueTo) return;
+
+    // IMPORTANT: Preserve current state BEFORE entering inline edit mode
+    // This ensures handleInlineEditComplete has access to original state
+    if (!preservedSearchMode) {
+      setPreservedSearchMode(stateToUse);
+    }
 
     // Enter inline editing mode for second condition's "to" value
     setEditingBadge({
@@ -2051,7 +2063,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // finalValue is passed directly from Badge to avoid race condition with state
   const handleInlineEditComplete = useCallback(
     (finalValue?: string) => {
-      if (!editingBadge || !searchMode.filterSearch) {
+      // Use preservedSearchMode for reliable state during inline editing
+      // During inline edit, searchMode may change as user types, but preservedSearchMode keeps original state
+      const stateToUse = preservedSearchMode || searchMode;
+
+      if (!editingBadge || !stateToUse.filterSearch) {
         setEditingBadge(null);
         return;
       }
@@ -2066,8 +2082,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Clear interrupted selector ref since we're clearing the value
         interruptedSelectorRef.current = null;
 
-        const columnName = searchMode.filterSearch.field;
-        const operator = searchMode.filterSearch.operator;
+        const columnName = stateToUse.filterSearch.field;
+        const operator = stateToUse.filterSearch.operator;
 
         // Clear based on which badge was being edited
         if (editingBadge.type === 'firstValue') {
@@ -2076,7 +2092,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } else if (editingBadge.type === 'firstValueTo') {
           // Clearing "to" value in Between - transition to inline editing mode for first value badge
           // User expectation: DELETE on valueTo badge -> edit first value badge [col][Between][value|]
-          const fromValue = searchMode.filterSearch.value;
+          const fromValue = stateToUse.filterSearch.value;
           if (fromValue) {
             // Build confirmed pattern with just the first value (no valueTo)
             // This will show [col][Between][value] badge
@@ -2084,6 +2100,42 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             onChange({
               target: { value: newPattern },
             } as React.ChangeEvent<HTMLInputElement>);
+
+            // Update preservedSearchMode to remove valueTo
+            // This ensures the [to][xxx] badge is not rendered during firstValue edit
+            if (preservedSearchMode?.filterSearch) {
+              if (
+                preservedSearchMode.filterSearch.isMultiCondition &&
+                preservedSearchMode.filterSearch.conditions
+              ) {
+                // Multi-condition: update first condition's valueTo
+                const updatedConditions = [
+                  ...preservedSearchMode.filterSearch.conditions,
+                ];
+                updatedConditions[0] = {
+                  ...updatedConditions[0],
+                  valueTo: undefined,
+                };
+                setPreservedSearchMode({
+                  ...preservedSearchMode,
+                  filterSearch: {
+                    ...preservedSearchMode.filterSearch,
+                    valueTo: undefined,
+                    conditions: updatedConditions,
+                  },
+                });
+              } else {
+                // Single-condition: update valueTo directly
+                setPreservedSearchMode({
+                  ...preservedSearchMode,
+                  filterSearch: {
+                    ...preservedSearchMode.filterSearch,
+                    valueTo: undefined,
+                  },
+                });
+              }
+            }
+
             // Transition to inline editing mode for first value badge
             // Use setTimeout to ensure pattern is applied before setting edit mode
             setTimeout(() => {
@@ -2099,43 +2151,66 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Clearing second condition "from" value - clear second condition only
           handleClearSecondValue();
         } else if (editingBadge.type === 'secondValueTo') {
-          // Clearing second condition "to" value in Between - keep "from" value
-          // This needs to rebuild pattern with second condition's from value only
+          // Clearing second condition "to" value in Between - transition to edit second value
+          // Similar to firstValueTo handling: DELETE on valueTo → edit value badge
           if (
-            searchMode.filterSearch.isMultiCondition &&
-            searchMode.filterSearch.conditions?.length === 2
+            stateToUse.filterSearch.isMultiCondition &&
+            stateToUse.filterSearch.conditions?.length === 2
           ) {
-            const cond1 = searchMode.filterSearch.conditions[0];
-            const cond2 = searchMode.filterSearch.conditions[1];
-            const join = searchMode.filterSearch.joinOperator || 'AND';
+            const cond1 = stateToUse.filterSearch.conditions[0];
+            const cond2 = stateToUse.filterSearch.conditions[1];
+            const join = stateToUse.filterSearch.joinOperator || 'AND';
             const col1 = cond1.field || columnName;
             const col2 = cond2.field || columnName;
-            const isMultiColumn = searchMode.filterSearch.isMultiColumn;
+            const isMultiColumn = stateToUse.filterSearch.isMultiColumn;
+            const secondValue = cond2.value;
 
-            // Rebuild pattern with second condition's from value only (no toValue)
-            // Use #to marker for Between operators
-            let newPattern: string;
-            const firstPart = cond1.valueTo
-              ? `#${col1} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo}`
-              : `#${col1} #${cond1.operator} ${cond1.value}`;
+            if (secondValue) {
+              // Build confirmed pattern with second condition's value only (no valueTo)
+              // Use #to marker for first condition if it has valueTo
+              let newPattern: string;
+              const firstPart = cond1.valueTo
+                ? `#${col1} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo}`
+                : `#${col1} #${cond1.operator} ${cond1.value}`;
 
-            if (isMultiColumn) {
-              newPattern = `${firstPart} #${join.toLowerCase()} #${col2} #${cond2.operator} ${cond2.value} `;
-            } else {
-              newPattern = `${firstPart} #${join.toLowerCase()} #${cond2.operator} ${cond2.value} `;
-            }
-
-            onChange({
-              target: { value: newPattern },
-            } as React.ChangeEvent<HTMLInputElement>);
-            setTimeout(() => {
-              if (inputRef?.current) {
-                inputRef.current.focus();
-                const len = newPattern.length;
-                inputRef.current.setSelectionRange(len, len);
+              if (isMultiColumn) {
+                newPattern = `${firstPart} #${join.toLowerCase()} #${col2} #${cond2.operator} ${secondValue}##`;
+              } else {
+                newPattern = `${firstPart} #${join.toLowerCase()} #${cond2.operator} ${secondValue}##`;
               }
-            }, 50);
-            return;
+
+              onChange({
+                target: { value: newPattern },
+              } as React.ChangeEvent<HTMLInputElement>);
+
+              // Update preservedSearchMode to remove valueTo from second condition
+              // This ensures the [to][700] badge is not rendered during secondValue edit
+              if (preservedSearchMode?.filterSearch?.conditions) {
+                const updatedConditions = [
+                  ...preservedSearchMode.filterSearch.conditions,
+                ];
+                updatedConditions[1] = {
+                  ...updatedConditions[1],
+                  valueTo: undefined,
+                };
+                setPreservedSearchMode({
+                  ...preservedSearchMode,
+                  filterSearch: {
+                    ...preservedSearchMode.filterSearch,
+                    conditions: updatedConditions,
+                  },
+                });
+              }
+
+              // Transition to inline editing mode for second condition's value badge
+              setTimeout(() => {
+                setEditingBadge({
+                  type: 'secondValue',
+                  value: secondValue,
+                });
+              }, 10);
+              return;
+            }
           }
           handleClearSecondValue();
         }
@@ -2147,23 +2222,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         return;
       }
 
-      const columnName = searchMode.filterSearch.field;
-      const operator = searchMode.filterSearch.operator;
+      const columnName = stateToUse.filterSearch.field;
+      const operator = stateToUse.filterSearch.operator;
 
       // CASE 1: Single-condition filter
-      if (!searchMode.filterSearch.isMultiCondition) {
+      if (!stateToUse.filterSearch.isMultiCondition) {
         let newPattern: string;
 
         // Check if this is a Between operator
         if (operator === 'inRange') {
-          if (searchMode.filterSearch.valueTo) {
+          if (stateToUse.filterSearch.valueTo) {
             // Editing Between operator that has both values
             if (editingBadge.type === 'firstValue') {
               // Editing "from" value - preserve "to" value
-              newPattern = `#${columnName} #${operator} ${valueToUse} #to ${searchMode.filterSearch.valueTo}##`;
+              newPattern = `#${columnName} #${operator} ${valueToUse} #to ${stateToUse.filterSearch.valueTo}##`;
             } else if (editingBadge.type === 'firstValueTo') {
               // Editing "to" value - preserve "from" value
-              newPattern = `#${columnName} #${operator} ${searchMode.filterSearch.value} #to ${valueToUse}##`;
+              newPattern = `#${columnName} #${operator} ${stateToUse.filterSearch.value} #to ${valueToUse}##`;
             } else {
               // Fallback
               newPattern = `#${columnName} #${operator} ${valueToUse}##`;
@@ -2200,8 +2275,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           const interrupted = interruptedSelectorRef.current;
           // Use #to marker for Between operator to ensure correct badge display
           const valuePart =
-            operator === 'inRange' && searchMode.filterSearch.valueTo
-              ? `${valueToUse} #to ${searchMode.filterSearch.valueTo}`
+            operator === 'inRange' && stateToUse.filterSearch.valueTo
+              ? `${valueToUse} #to ${stateToUse.filterSearch.valueTo}`
               : valueToUse;
 
           // Parse original pattern to extract join operator and second column if present
@@ -2260,6 +2335,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
         setEditingBadge(null);
 
+        // Clear preserved state after inline edit completes (if not already cleared)
+        setPreservedSearchMode(null);
+
         // Ensure focus returns to search input after edit completes
         setTimeout(() => {
           inputRef?.current?.focus();
@@ -2268,16 +2346,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       // CASE 2: Multi-condition filter
-      const firstCondition = searchMode.filterSearch.conditions![0];
-      const secondCondition = searchMode.filterSearch.conditions![1];
-      const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+      const firstCondition = stateToUse.filterSearch.conditions![0];
+      const secondCondition = stateToUse.filterSearch.conditions![1];
+      const joinOp = stateToUse.filterSearch.joinOperator || 'AND';
 
       // Determine column fields - check if multi-column filter
       const col1 = firstCondition.field || columnName;
       const col2 = secondCondition.field || columnName;
       // Use isMultiColumn directly - it's set true for explicit multi-column patterns
       // even when col1 == col2 (preserves the explicit second column badge)
-      const isMultiColumn = searchMode.filterSearch.isMultiColumn;
+      const isMultiColumn = stateToUse.filterSearch.isMultiColumn;
 
       let newPattern: string;
 
@@ -2403,6 +2481,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       } as React.ChangeEvent<HTMLInputElement>);
       setEditingBadge(null);
 
+      // Clear preserved state after inline edit completes successfully
+      setPreservedSearchMode(null);
+
       // Ensure focus returns to search input after edit completes
       setTimeout(() => {
         inputRef?.current?.focus();
@@ -2410,7 +2491,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     },
     [
       editingBadge,
-      searchMode.filterSearch,
+      searchMode,
+      preservedSearchMode,
       onChange,
       handleClearValue,
       handleClearSecondValue,
@@ -2561,6 +2643,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onEditValue: handleEditValue,
     onEditValueTo: handleEditValueTo,
     onEditSecondValue: handleEditSecondValue,
+    onEditSecondValueTo: handleEditSecondValueTo,
   });
 
   const searchTerm = useMemo(() => {

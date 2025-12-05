@@ -13,8 +13,9 @@ interface UseSearchKeyboardProps {
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
   onEditValue?: () => void;
-  onEditValueTo?: () => void; // Edit "to" value in Between operator
+  onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
   onEditSecondValue?: () => void;
+  onEditSecondValueTo?: () => void; // Edit "to" value in Between operator (second condition)
 }
 
 export const useSearchKeyboard = ({
@@ -30,6 +31,7 @@ export const useSearchKeyboard = ({
   onEditValue,
   onEditValueTo,
   onEditSecondValue,
+  onEditSecondValueTo,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -104,9 +106,25 @@ export const useSearchKeyboard = ({
                   /#(and|or)\s+(?:#[^\s#]+\s+)?#inRange\s+(.*)$/i
                 );
                 if (secondInRangeMatch) {
-                  const afterSecondInRange = secondInRangeMatch[2];
-                  // If there's no #to after the second inRange value, add it
+                  const afterSecondInRange = secondInRangeMatch[2].trim();
+                  // If there's no #to after the second inRange value
                   if (!afterSecondInRange.includes('#to')) {
+                    // IMPORTANT: Check for dash-separated format first (e.g., "700-900")
+                    // If dash format, confirm with ## instead of adding #to
+                    const dashMatch = afterSecondInRange.match(/^(.+?)-(.+)$/);
+                    if (dashMatch) {
+                      const [, firstVal, secondVal] = dashMatch;
+                      if (firstVal.trim() && secondVal.trim()) {
+                        // Has both values in dash format - confirm with ##
+                        const newValue = currentValue.trim() + '##';
+                        onChange({
+                          target: { value: newValue },
+                        } as React.ChangeEvent<HTMLInputElement>);
+                        onClearPreservedState?.();
+                        return;
+                      }
+                    }
+                    // No dash format - add #to marker for entering second value
                     const newValue = currentValue + ' #to ';
                     onChange({
                       target: { value: newValue },
@@ -208,17 +226,29 @@ export const useSearchKeyboard = ({
         // DELETE key: Used for badge deletion (works even when modal is open)
         // This is separate from Backspace which is used for modal internal search
         if (e.key === KEY_CODES.DELETE) {
-          // Delete on confirmed multi-condition filter: Enter edit mode for 2nd value
+          // Delete on confirmed multi-condition filter: Enter edit mode for 2nd condition's valueTo first
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.isConfirmed &&
-            searchMode.filterSearch?.isMultiCondition &&
-            onEditSecondValue
+            searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            // Trigger edit mode for second value badge
-            onEditSecondValue();
-            return;
+            // Get second condition
+            const secondCondition = searchMode.filterSearch.conditions?.[1];
+            // For Between operator with valueTo on second condition, edit valueTo first
+            if (
+              secondCondition?.operator === 'inRange' &&
+              secondCondition?.valueTo &&
+              onEditSecondValueTo
+            ) {
+              onEditSecondValueTo();
+              return;
+            }
+            // Otherwise edit second condition's value
+            if (onEditSecondValue) {
+              onEditSecondValue();
+              return;
+            }
           }
 
           // Delete on confirmed single-condition filter: Enter in-badge edit mode
@@ -426,6 +456,7 @@ export const useSearchKeyboard = ({
       onEditValue,
       onEditValueTo,
       onEditSecondValue,
+      onEditSecondValueTo,
     ]
   );
 
