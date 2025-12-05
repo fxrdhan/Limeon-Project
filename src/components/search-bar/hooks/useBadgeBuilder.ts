@@ -508,6 +508,38 @@ export const useBadgeBuilder = (
       });
     }
 
+    // 8. Second Value Badge(s) (Gray) - Show [value][to] after user presses Enter (adds #to marker)
+    // Show when waitingForSecondValueTo OR secondValueTo exists (user is typing second value)
+    // But DON'T show secondValueTo as badge - it stays in input until final confirmation
+    if (
+      searchMode.secondOperator &&
+      searchMode.secondValue &&
+      searchMode.secondOperator === 'inRange' &&
+      (searchMode.waitingForSecondValueTo || searchMode.secondValueTo)
+    ) {
+      // Between operator with #to marker - show [value][to] only
+      badges.push({
+        id: 'second-value-from',
+        type: 'value',
+        label: searchMode.secondValue,
+        onClear: handlers.onClearSecondValue,
+        canClear: true,
+        canEdit: false, // Not editable while typing
+      });
+
+      // "to" separator badge
+      badges.push({
+        id: 'second-separator',
+        type: 'separator',
+        label: 'to',
+        onClear: () => {},
+        canClear: false,
+        canEdit: false,
+      });
+      // Note: secondValueTo badge is NOT shown here - user is still typing it in input
+      // It will show as part of confirmed multi-condition badges (section 2)
+    }
+
     return badges;
   }, [searchMode, handlers, inlineEditingProps]);
 };
