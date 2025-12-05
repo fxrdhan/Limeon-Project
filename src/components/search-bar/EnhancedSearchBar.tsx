@@ -93,6 +93,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Badge count for keyboard navigation bounds (use state for reliable updates)
   const [badgeCount, setBadgeCount] = useState<number>(0);
 
+  // Ref to store current badges for Ctrl+E edit action
+  const badgesRef = useRef<import('./types/badge').BadgeConfig[]>([]);
+
   // Ref to store interrupted selector state for restoration after inline edit
   // When user clicks a value badge while selector is open, we save the pattern
   // to restore the selector after inline edit completes
@@ -228,6 +231,41 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (selectedBadgeIndex !== null && selectedBadgeIndex >= count) {
         setSelectedBadgeIndex(count > 0 ? count - 1 : null);
       }
+    },
+    [selectedBadgeIndex]
+  );
+
+  // Handler for badges array changes from SearchBadge
+  const handleBadgesChange = useCallback(
+    (badges: import('./types/badge').BadgeConfig[]) => {
+      badgesRef.current = badges;
+    },
+    []
+  );
+
+  // Handler for Ctrl+E to edit selected badge
+  const handleBadgeEdit = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Only handle Ctrl+E
+      if (!e.ctrlKey || e.key.toLowerCase() !== 'e') {
+        return false;
+      }
+
+      // Must have a selected badge
+      if (selectedBadgeIndex === null) return false;
+
+      // Get the badge at selected index
+      const badge = badgesRef.current[selectedBadgeIndex];
+      if (!badge || !badge.canEdit || !badge.onEdit) return false;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Clear selection and trigger edit
+      setSelectedBadgeIndex(null);
+      badge.onEdit();
+
+      return true;
     },
     [selectedBadgeIndex]
   );
@@ -2710,14 +2748,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Wrap keyboard handler to include badge navigation
   const wrappedKeyDownHandler = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // First, check for badge navigation (Ctrl+Arrow)
+      // First, check for badge edit (Ctrl+E)
+      if (handleBadgeEdit(e)) {
+        return;
+      }
+      // Then, check for badge navigation (Ctrl+Arrow)
       if (handleBadgeNavigation(e)) {
         return;
       }
       // Otherwise, delegate to normal keyboard handler
       handleInputKeyDown(e);
     },
-    [handleBadgeNavigation, handleInputKeyDown]
+    [handleBadgeEdit, handleBadgeNavigation, handleInputKeyDown]
   );
 
   // Wrap input change handler to clear badge selection when user types
@@ -2979,6 +3021,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onInlineEditComplete={handleInlineEditComplete}
               selectedBadgeIndex={selectedBadgeIndex}
               onBadgeCountChange={handleBadgeCountChange}
+              onBadgesChange={handleBadgesChange}
             />
           </div>
         </div>
