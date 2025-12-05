@@ -47,6 +47,17 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   // Handle keyboard events for inline editing
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle Ctrl+E to navigate to next badge (left)
+    if (e.ctrlKey && e.key.toLowerCase() === 'e') {
+      e.preventDefault();
+      e.stopPropagation();
+      // Set flag to prevent blur handler
+      isClearing.current = true;
+      // Call navigate handler which will complete edit and move to next badge
+      config.onNavigateEdit?.();
+      return;
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();

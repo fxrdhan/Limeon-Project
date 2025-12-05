@@ -72,6 +72,8 @@ export interface BadgeConfig {
   editingValue?: string;
   onValueChange?: (value: string) => void;
   onEditComplete?: (finalValue?: string) => void;
+  // Keyboard navigation - called when Ctrl+E pressed during inline edit to move to next badge
+  onNavigateEdit?: () => void;
   // Keyboard navigation selection
   isSelected?: boolean; // Whether badge is selected via keyboard navigation
 }

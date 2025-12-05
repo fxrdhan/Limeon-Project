@@ -243,7 +243,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     []
   );
 
-  // Handler for Ctrl+E to edit selected badge
+  // Handler for Ctrl+E to edit badge (auto-select from right if none selected)
   const handleBadgeEdit = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Only handle Ctrl+E
@@ -255,20 +255,46 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
-      // Must have a selected badge
-      if (selectedBadgeIndex === null) return true;
+      // No badges available
+      if (badgeCount === 0) return true;
 
-      // Get the badge at selected index
-      const badge = badgesRef.current[selectedBadgeIndex];
-      if (!badge || !badge.canEdit || !badge.onEdit) return true;
+      // Determine which badge to edit
+      let targetIndex: number;
 
-      // Keep selection active while editing (don't clear selectedBadgeIndex)
-      // The badge will remain selected (with glow) during inline edit
-      badge.onEdit();
+      if (selectedBadgeIndex === null) {
+        // No badge selected - start from rightmost badge
+        targetIndex = badgeCount - 1;
+      } else {
+        // Badge already selected - move to left
+        targetIndex = selectedBadgeIndex - 1;
+        // If already at leftmost, wrap to rightmost
+        if (targetIndex < 0) {
+          targetIndex = badgeCount - 1;
+        }
+      }
 
+      // Find an editable badge starting from targetIndex going left
+      let attempts = 0;
+      while (attempts < badgeCount) {
+        const badge = badgesRef.current[targetIndex];
+        if (badge?.canEdit && badge?.onEdit) {
+          // Found editable badge - select and edit it
+          setSelectedBadgeIndex(targetIndex);
+          badge.onEdit();
+          return true;
+        }
+        // Not editable, try next badge to the left
+        targetIndex--;
+        if (targetIndex < 0) {
+          targetIndex = badgeCount - 1;
+        }
+        attempts++;
+      }
+
+      // No editable badge found
       return true;
     },
-    [selectedBadgeIndex]
+    [selectedBadgeIndex, badgeCount]
   );
 
   // Handler for Ctrl+D to delete selected badge
@@ -2628,6 +2654,54 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     ]
   );
 
+  // Handle Ctrl+E navigation during inline edit - save current value and move to next badge
+  const handleNavigateEdit = useCallback(() => {
+    // Get current value from editingBadge state
+    const currentValue = editingBadge?.value;
+
+    // Complete the current inline edit first
+    if (editingBadge) {
+      handleInlineEditComplete(currentValue);
+    }
+
+    // After a short delay to let state settle, trigger next badge edit
+    setTimeout(() => {
+      if (badgeCount === 0) return;
+
+      let targetIndex: number;
+
+      if (selectedBadgeIndex === null) {
+        // No badge selected - start from rightmost badge
+        targetIndex = badgeCount - 1;
+      } else {
+        // Badge already selected - move to left
+        targetIndex = selectedBadgeIndex - 1;
+        // If already at leftmost, wrap to rightmost
+        if (targetIndex < 0) {
+          targetIndex = badgeCount - 1;
+        }
+      }
+
+      // Find an editable badge starting from targetIndex going left
+      let attempts = 0;
+      while (attempts < badgeCount) {
+        const badge = badgesRef.current[targetIndex];
+        if (badge?.canEdit && badge?.onEdit) {
+          // Found editable badge - select and edit it
+          setSelectedBadgeIndex(targetIndex);
+          badge.onEdit();
+          return;
+        }
+        // Not editable, try next badge to the left
+        targetIndex--;
+        if (targetIndex < 0) {
+          targetIndex = badgeCount - 1;
+        }
+        attempts++;
+      }
+    }, 50);
+  }, [editingBadge, handleInlineEditComplete, selectedBadgeIndex, badgeCount]);
+
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3172,6 +3246,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               editingBadge={editingBadge}
               onInlineValueChange={handleInlineValueChange}
               onInlineEditComplete={handleInlineEditComplete}
+              onNavigateEdit={handleNavigateEdit}
               selectedBadgeIndex={selectedBadgeIndex}
               onBadgeCountChange={handleBadgeCountChange}
               onBadgesChange={handleBadgesChange}
