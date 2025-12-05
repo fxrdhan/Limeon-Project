@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EnhancedSearchState } from '../types';
+import { BadgeConfig } from '../types/badge';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import Badge from './Badge';
 
@@ -75,6 +76,7 @@ interface SearchBadgeProps {
   // Keyboard navigation props
   selectedBadgeIndex?: number | null;
   onBadgeCountChange?: (count: number) => void;
+  onBadgesChange?: (badges: BadgeConfig[]) => void;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -110,6 +112,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onInlineEditComplete,
   selectedBadgeIndex,
   onBadgeCountChange,
+  onBadgesChange,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
   const modeToRender = preservedSearchMode || searchMode;
@@ -150,6 +153,11 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   useEffect(() => {
     onBadgeCountChange?.(badges.length);
   }, [badges.length, onBadgeCountChange]);
+
+  // Notify parent of badges array changes for Ctrl+E edit
+  useEffect(() => {
+    onBadgesChange?.(badges);
+  }, [badges, onBadgesChange]);
 
   const handleMouseEnter = () => {
     onHoverChange?.(true);
