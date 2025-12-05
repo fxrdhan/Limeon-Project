@@ -59,6 +59,17 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       return;
     }
 
+    // Handle Ctrl+I to exit edit mode and focus main input
+    if (e.ctrlKey && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      e.stopPropagation();
+      // Set flag to prevent blur handler
+      isClearing.current = true;
+      // Call focus input handler
+      config.onFocusInput?.();
+      return;
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();

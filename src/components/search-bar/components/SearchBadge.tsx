@@ -74,6 +74,7 @@ interface SearchBadgeProps {
   onInlineValueChange?: (value: string) => void;
   onInlineEditComplete?: (finalValue?: string) => void;
   onNavigateEdit?: (direction: 'left' | 'right') => void; // Ctrl+E (left) or Ctrl+Shift+E (right)
+  onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
   // Keyboard navigation props
   selectedBadgeIndex?: number | null;
   onBadgeCountChange?: (count: number) => void;
@@ -112,6 +113,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onInlineValueChange,
   onInlineEditComplete,
   onNavigateEdit,
+  onFocusInput,
   selectedBadgeIndex,
   onBadgeCountChange,
   onBadgesChange,
@@ -147,6 +149,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           onInlineValueChange,
           onInlineEditComplete,
           onNavigateEdit,
+          onFocusInput,
         }
       : undefined,
     selectedBadgeIndex
