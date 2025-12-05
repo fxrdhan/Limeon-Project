@@ -415,6 +415,34 @@ export const parseSearchValue = (
                   }
                 }
 
+                // Parse second value - check for Between operator with #to marker
+                let secondValue: string | undefined;
+                let secondValueTo: string | undefined;
+                let waitingForSecondValueTo = false;
+
+                if (operator2Obj.value === 'inRange') {
+                  // Check for #to marker: "700 #to" or "700 #to 800"
+                  const toMarkerMatch = val2.match(
+                    /^(.+?)\s+#to(?:\s+(.*))?$/i
+                  );
+                  if (toMarkerMatch) {
+                    secondValue = toMarkerMatch[1].trim();
+                    const afterTo = toMarkerMatch[2]?.trim();
+                    if (afterTo) {
+                      secondValueTo = afterTo;
+                    } else {
+                      // Has #to but no value after - waiting for valueTo
+                      waitingForSecondValueTo = true;
+                    }
+                  } else {
+                    // No #to marker yet - just the first value
+                    secondValue = val2.trim();
+                  }
+                } else {
+                  // Not a Between operator - just store the value
+                  secondValue = val2.trim();
+                }
+
                 // User is typing second value in multi-column filter
                 return {
                   globalSearch: undefined,
@@ -426,6 +454,9 @@ export const parseSearchValue = (
                   secondColumn: column2, // Track second column
                   partialJoin: join.toUpperCase() as 'AND' | 'OR',
                   secondOperator: operator2Obj.value,
+                  secondValue,
+                  secondValueTo,
+                  waitingForSecondValueTo,
                   filterSearch: {
                     field: column1.field,
                     value: filterValue,
@@ -659,6 +690,32 @@ export const parseSearchValue = (
                 }
               }
 
+              // Parse second value - check for Between operator with #to marker
+              let secondValue: string | undefined;
+              let secondValueTo: string | undefined;
+              let waitingForSecondValueTo = false;
+
+              if (operator2Obj.value === 'inRange') {
+                // Check for #to marker: "700 #to" or "700 #to 800"
+                const toMarkerMatch = val2.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
+                if (toMarkerMatch) {
+                  secondValue = toMarkerMatch[1].trim();
+                  const afterTo = toMarkerMatch[2]?.trim();
+                  if (afterTo) {
+                    secondValueTo = afterTo;
+                  } else {
+                    // Has #to but no value after - waiting for valueTo
+                    waitingForSecondValueTo = true;
+                  }
+                } else {
+                  // No #to marker yet - just the first value
+                  secondValue = val2.trim();
+                }
+              } else {
+                // Not a Between operator - just store the value
+                secondValue = val2.trim();
+              }
+
               // User is typing second value - keep in input mode for Enter key to work
               return {
                 globalSearch: undefined,
@@ -670,6 +727,9 @@ export const parseSearchValue = (
                 isSecondOperator: false,
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 secondOperator: operator2Obj.value, // Store second operator for badge display
+                secondValue,
+                secondValueTo,
+                waitingForSecondValueTo,
                 filterSearch: {
                   field: column.field,
                   value: filterValue,

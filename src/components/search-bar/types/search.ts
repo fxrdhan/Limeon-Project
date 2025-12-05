@@ -68,6 +68,9 @@ export interface EnhancedSearchState {
   isSecondOperator?: boolean; // NEW: flag for second+ operator selection
   partialJoin?: 'AND' | 'OR'; // NEW: selected join operator before next condition
   secondOperator?: string; // NEW: second operator selected (for displaying blue badge)
+  secondValue?: string; // NEW: second condition value being typed
+  secondValueTo?: string; // NEW: second condition valueTo (for Between operator)
+  waitingForSecondValueTo?: boolean; // NEW: flag when second Between has value, waiting for valueTo
   // Multi-column support
   isSecondColumn?: boolean; // Flag: selecting second column after join operator
   secondColumn?: SearchColumn; // The second column selected (for multi-column filtering)
