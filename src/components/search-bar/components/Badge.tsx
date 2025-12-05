@@ -106,12 +106,12 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     onEditComplete?.(editingValue);
   };
 
-  // When isSelected, apply the same visual effect as hover
-  const selectedClass = isSelected ? 'ring-2 ring-offset-1 ring-blue-400' : '';
+  // Glow effect for selected badge (color based on badge type)
+  const selectedClass = isSelected ? colors.glow : '';
 
   return (
     <div
-      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 ${selectedClass}`}
+      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-shadow duration-200 ease-out ${selectedClass}`}
       data-selected={isSelected}
     >
       {isEditing ? (
