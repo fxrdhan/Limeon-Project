@@ -64,4 +64,6 @@ export interface BadgeConfig {
   editingValue?: string;
   onValueChange?: (value: string) => void;
   onEditComplete?: (finalValue?: string) => void;
+  // Keyboard navigation selection
+  isSelected?: boolean; // Whether badge is selected via keyboard navigation
 }
