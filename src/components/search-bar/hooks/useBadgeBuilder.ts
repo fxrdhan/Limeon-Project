@@ -32,6 +32,7 @@ interface InlineEditingProps {
   onInlineValueChange: (value: string) => void;
   onInlineEditComplete: (finalValue?: string) => void;
   onNavigateEdit?: (direction: 'left' | 'right') => void; // Ctrl+E (left) or Ctrl+Shift+E (right)
+  onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
 }
 
 export const useBadgeBuilder = (
@@ -169,6 +170,9 @@ export const useBadgeBuilder = (
               onNavigateEdit: isEditingFrom
                 ? inlineEditingProps?.onNavigateEdit
                 : undefined,
+              onFocusInput: isEditingFrom
+                ? inlineEditingProps?.onFocusInput
+                : undefined,
             });
 
             // "to" separator badge - use consistent IDs
@@ -220,6 +224,9 @@ export const useBadgeBuilder = (
               onNavigateEdit: isEditingTo
                 ? inlineEditingProps?.onNavigateEdit
                 : undefined,
+              onFocusInput: isEditingTo
+                ? inlineEditingProps?.onFocusInput
+                : undefined,
             });
           } else {
             // Determine if this badge is being edited
@@ -257,6 +264,9 @@ export const useBadgeBuilder = (
                 : undefined,
               onNavigateEdit: isEditingValue
                 ? inlineEditingProps?.onNavigateEdit
+                : undefined,
+              onFocusInput: isEditingValue
+                ? inlineEditingProps?.onFocusInput
                 : undefined,
             });
           }
@@ -397,6 +407,9 @@ export const useBadgeBuilder = (
           onNavigateEdit: isEditingFrom
             ? inlineEditingProps?.onNavigateEdit
             : undefined,
+          onFocusInput: isEditingFrom
+            ? inlineEditingProps?.onFocusInput
+            : undefined,
         });
 
         // "to" separator badge
@@ -449,6 +462,9 @@ export const useBadgeBuilder = (
             onNavigateEdit: isEditingTo
               ? inlineEditingProps?.onNavigateEdit
               : undefined,
+            onFocusInput: isEditingTo
+              ? inlineEditingProps?.onFocusInput
+              : undefined,
           });
         }
       } else {
@@ -483,6 +499,9 @@ export const useBadgeBuilder = (
             : undefined,
           onNavigateEdit: isEditingValue
             ? inlineEditingProps?.onNavigateEdit
+            : undefined,
+          onFocusInput: isEditingValue
+            ? inlineEditingProps?.onFocusInput
             : undefined,
         });
       }

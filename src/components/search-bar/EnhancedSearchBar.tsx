@@ -2719,6 +2719,113 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     [editingBadge, handleInlineEditComplete, selectedBadgeIndex, badgeCount]
   );
 
+  // Handle Ctrl+I from Badge component during inline edit - exit edit and focus main input
+  const handleFocusInputFromBadge = useCallback(() => {
+    // Get current value from editingBadge state and complete the edit
+    const currentValue = editingBadge?.value;
+    if (editingBadge) {
+      handleInlineEditComplete(currentValue);
+    }
+
+    // Clear badge selection
+    if (selectedBadgeIndex !== null) {
+      setSelectedBadgeIndex(null);
+    }
+
+    // After a short delay to let state settle, restore pattern and focus input
+    setTimeout(() => {
+      // If in edit mode (preservedSearchMode exists), restore the original pattern
+      if (preservedSearchMode?.filterSearch) {
+        const filter = preservedSearchMode.filterSearch;
+        const columnName = filter.field;
+
+        let restoredPattern: string;
+
+        if (filter.isConfirmed) {
+          // Confirmed filter (has value) - restore full pattern with ##
+          if (
+            filter.isMultiCondition &&
+            filter.conditions &&
+            filter.conditions.length >= 2
+          ) {
+            const cond1 = filter.conditions[0];
+            const cond2 = filter.conditions[1];
+            const join = filter.joinOperator || 'AND';
+            const col1Field = cond1.field || columnName;
+            const col2Field = cond2.field || columnName;
+
+            if (filter.isMultiColumn) {
+              if (cond1.valueTo) {
+                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
+              } else if (cond2.valueTo) {
+                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
+              } else {
+                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
+              }
+            } else {
+              if (cond1.valueTo) {
+                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
+              } else if (cond2.valueTo) {
+                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
+              } else {
+                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
+              }
+            }
+          } else {
+            if (filter.valueTo) {
+              restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
+            } else {
+              restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
+            }
+          }
+        } else {
+          // Unconfirmed filter (no value yet) - restore pattern without ##
+          if (filter.operator && filter.isExplicitOperator) {
+            restoredPattern = `#${columnName} #${filter.operator} `;
+          } else if (filter.operator) {
+            restoredPattern = `#${columnName} #${filter.operator} `;
+          } else {
+            restoredPattern = `#${columnName} `;
+          }
+        }
+
+        onChange({
+          target: { value: restoredPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        setPreservedSearchMode(null);
+        preservedFilterRef.current = null;
+      } else {
+        // No preserved mode - just close selectors normally
+        if (searchMode.showColumnSelector) {
+          handleCloseColumnSelector();
+        }
+        if (searchMode.showOperatorSelector) {
+          handleCloseOperatorSelector();
+        }
+        if (searchMode.showJoinOperatorSelector) {
+          handleCloseJoinOperatorSelector();
+        }
+      }
+
+      // Focus input
+      inputRef?.current?.focus();
+    }, 50);
+  }, [
+    editingBadge,
+    handleInlineEditComplete,
+    selectedBadgeIndex,
+    preservedSearchMode,
+    onChange,
+    searchMode.showColumnSelector,
+    searchMode.showOperatorSelector,
+    searchMode.showJoinOperatorSelector,
+    handleCloseColumnSelector,
+    handleCloseOperatorSelector,
+    handleCloseJoinOperatorSelector,
+    inputRef,
+  ]);
+
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3264,6 +3371,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onInlineValueChange={handleInlineValueChange}
               onInlineEditComplete={handleInlineEditComplete}
               onNavigateEdit={handleNavigateEdit}
+              onFocusInput={handleFocusInputFromBadge}
               selectedBadgeIndex={selectedBadgeIndex}
               onBadgeCountChange={handleBadgeCountChange}
               onBadgesChange={handleBadgesChange}
