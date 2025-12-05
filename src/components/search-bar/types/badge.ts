@@ -75,6 +75,8 @@ export interface BadgeConfig {
   // Keyboard navigation - called when Ctrl+E/Ctrl+Shift+E pressed during inline edit
   // direction: 'left' for Ctrl+E, 'right' for Ctrl+Shift+E
   onNavigateEdit?: (direction: 'left' | 'right') => void;
+  // Called when Ctrl+I pressed during inline edit to focus main input
+  onFocusInput?: () => void;
   // Keyboard navigation selection
   isSelected?: boolean; // Whether badge is selected via keyboard navigation
 }
