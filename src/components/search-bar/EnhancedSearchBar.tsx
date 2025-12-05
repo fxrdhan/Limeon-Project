@@ -271,6 +271,34 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     [selectedBadgeIndex]
   );
 
+  // Handler for Ctrl+D to delete selected badge
+  const handleBadgeDelete = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Only handle Ctrl+D
+      if (!e.ctrlKey || e.key.toLowerCase() !== 'd') {
+        return false;
+      }
+
+      // Prevent browser's default Ctrl+D behavior (bookmark page)
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Must have a selected badge
+      if (selectedBadgeIndex === null) return true;
+
+      // Get the badge at selected index
+      const badge = badgesRef.current[selectedBadgeIndex];
+      if (!badge || !badge.canClear || !badge.onClear) return true;
+
+      // Clear selection and trigger delete
+      setSelectedBadgeIndex(null);
+      badge.onClear();
+
+      return true;
+    },
+    [selectedBadgeIndex]
+  );
+
   // Handler for Ctrl+Arrow keyboard navigation
   const handleBadgeNavigation = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -2753,6 +2781,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (handleBadgeEdit(e)) {
         return;
       }
+      // Check for badge delete (Ctrl+D)
+      if (handleBadgeDelete(e)) {
+        return;
+      }
       // Then, check for badge navigation (Ctrl+Arrow)
       if (handleBadgeNavigation(e)) {
         return;
@@ -2760,7 +2792,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Otherwise, delegate to normal keyboard handler
       handleInputKeyDown(e);
     },
-    [handleBadgeEdit, handleBadgeNavigation, handleInputKeyDown]
+    [
+      handleBadgeEdit,
+      handleBadgeDelete,
+      handleBadgeNavigation,
+      handleInputKeyDown,
+    ]
   );
 
   // Wrap input change handler to clear badge selection when user types
