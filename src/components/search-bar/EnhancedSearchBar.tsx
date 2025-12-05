@@ -243,10 +243,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     []
   );
 
-  // Handler for Ctrl+E to edit badge (auto-select from right if none selected)
+  // Handler for Ctrl+E (left) and Ctrl+Shift+E (right) to edit badge
   const handleBadgeEdit = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Only handle Ctrl+E
+      // Only handle Ctrl+E (with or without Shift)
       if (!e.ctrlKey || e.key.toLowerCase() !== 'e') {
         return false;
       }
@@ -258,22 +258,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // No badges available
       if (badgeCount === 0) return true;
 
+      // Direction: Shift = right, no Shift = left
+      const direction = e.shiftKey ? 'right' : 'left';
+
       // Determine which badge to edit
       let targetIndex: number;
 
       if (selectedBadgeIndex === null) {
-        // No badge selected - start from rightmost badge
-        targetIndex = badgeCount - 1;
+        // No badge selected - start from edge based on direction
+        targetIndex = direction === 'left' ? badgeCount - 1 : 0;
       } else {
-        // Badge already selected - move to left
-        targetIndex = selectedBadgeIndex - 1;
-        // If already at leftmost, wrap to rightmost
-        if (targetIndex < 0) {
-          targetIndex = badgeCount - 1;
+        // Badge already selected - move in direction
+        if (direction === 'left') {
+          targetIndex = selectedBadgeIndex - 1;
+          if (targetIndex < 0) targetIndex = badgeCount - 1; // Wrap to rightmost
+        } else {
+          targetIndex = selectedBadgeIndex + 1;
+          if (targetIndex >= badgeCount) targetIndex = 0; // Wrap to leftmost
         }
       }
 
-      // Find an editable badge starting from targetIndex going left
+      // Find an editable badge starting from targetIndex going in direction
       let attempts = 0;
       while (attempts < badgeCount) {
         const badge = badgesRef.current[targetIndex];
@@ -283,10 +288,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           badge.onEdit();
           return true;
         }
-        // Not editable, try next badge to the left
-        targetIndex--;
-        if (targetIndex < 0) {
-          targetIndex = badgeCount - 1;
+        // Not editable, try next badge in direction
+        if (direction === 'left') {
+          targetIndex--;
+          if (targetIndex < 0) targetIndex = badgeCount - 1;
+        } else {
+          targetIndex++;
+          if (targetIndex >= badgeCount) targetIndex = 0;
         }
         attempts++;
       }
@@ -2654,53 +2662,62 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     ]
   );
 
-  // Handle Ctrl+E navigation during inline edit - save current value and move to next badge
-  const handleNavigateEdit = useCallback(() => {
-    // Get current value from editingBadge state
-    const currentValue = editingBadge?.value;
+  // Handle Ctrl+E/Ctrl+Shift+E navigation during inline edit - save current value and move to next badge
+  // direction: 'left' for Ctrl+E, 'right' for Ctrl+Shift+E
+  const handleNavigateEdit = useCallback(
+    (direction: 'left' | 'right') => {
+      // Get current value from editingBadge state
+      const currentValue = editingBadge?.value;
 
-    // Complete the current inline edit first
-    if (editingBadge) {
-      handleInlineEditComplete(currentValue);
-    }
-
-    // After a short delay to let state settle, trigger next badge edit
-    setTimeout(() => {
-      if (badgeCount === 0) return;
-
-      let targetIndex: number;
-
-      if (selectedBadgeIndex === null) {
-        // No badge selected - start from rightmost badge
-        targetIndex = badgeCount - 1;
-      } else {
-        // Badge already selected - move to left
-        targetIndex = selectedBadgeIndex - 1;
-        // If already at leftmost, wrap to rightmost
-        if (targetIndex < 0) {
-          targetIndex = badgeCount - 1;
-        }
+      // Complete the current inline edit first
+      if (editingBadge) {
+        handleInlineEditComplete(currentValue);
       }
 
-      // Find an editable badge starting from targetIndex going left
-      let attempts = 0;
-      while (attempts < badgeCount) {
-        const badge = badgesRef.current[targetIndex];
-        if (badge?.canEdit && badge?.onEdit) {
-          // Found editable badge - select and edit it
-          setSelectedBadgeIndex(targetIndex);
-          badge.onEdit();
-          return;
+      // After a short delay to let state settle, trigger next badge edit
+      setTimeout(() => {
+        if (badgeCount === 0) return;
+
+        let targetIndex: number;
+
+        if (selectedBadgeIndex === null) {
+          // No badge selected - start from edge based on direction
+          targetIndex = direction === 'left' ? badgeCount - 1 : 0;
+        } else {
+          // Badge already selected - move in specified direction
+          if (direction === 'left') {
+            targetIndex = selectedBadgeIndex - 1;
+            if (targetIndex < 0) targetIndex = badgeCount - 1; // Wrap to rightmost
+          } else {
+            targetIndex = selectedBadgeIndex + 1;
+            if (targetIndex >= badgeCount) targetIndex = 0; // Wrap to leftmost
+          }
         }
-        // Not editable, try next badge to the left
-        targetIndex--;
-        if (targetIndex < 0) {
-          targetIndex = badgeCount - 1;
+
+        // Find an editable badge starting from targetIndex going in direction
+        let attempts = 0;
+        while (attempts < badgeCount) {
+          const badge = badgesRef.current[targetIndex];
+          if (badge?.canEdit && badge?.onEdit) {
+            // Found editable badge - select and edit it
+            setSelectedBadgeIndex(targetIndex);
+            badge.onEdit();
+            return;
+          }
+          // Not editable, try next badge in direction
+          if (direction === 'left') {
+            targetIndex--;
+            if (targetIndex < 0) targetIndex = badgeCount - 1;
+          } else {
+            targetIndex++;
+            if (targetIndex >= badgeCount) targetIndex = 0;
+          }
+          attempts++;
         }
-        attempts++;
-      }
-    }, 50);
-  }, [editingBadge, handleInlineEditComplete, selectedBadgeIndex, badgeCount]);
+      }, 50);
+    },
+    [editingBadge, handleInlineEditComplete, selectedBadgeIndex, badgeCount]
+  );
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
