@@ -2074,22 +2074,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Clearing first condition "from" value - clear entire filter
           handleClearValue();
         } else if (editingBadge.type === 'firstValueTo') {
-          // Clearing "to" value in Between - keep "from" value, go back to input mode
-          // Pattern: #column #inRange fromValue (ready for typing new toValue)
+          // Clearing "to" value in Between - transition to inline editing mode for first value badge
+          // User expectation: DELETE on valueTo badge -> edit first value badge [col][Between][value|]
           const fromValue = searchMode.filterSearch.value;
-          const newPattern = `#${columnName} #${operator} ${fromValue} `;
-          onChange({
-            target: { value: newPattern },
-          } as React.ChangeEvent<HTMLInputElement>);
-          // Ensure focus returns to search input with cursor at end
-          setTimeout(() => {
-            if (inputRef?.current) {
-              inputRef.current.focus();
-              const len = newPattern.length;
-              inputRef.current.setSelectionRange(len, len);
-            }
-          }, 50);
-          return;
+          if (fromValue) {
+            // Build confirmed pattern with just the first value (no valueTo)
+            // This will show [col][Between][value] badge
+            const newPattern = `#${columnName} #${operator} ${fromValue}##`;
+            onChange({
+              target: { value: newPattern },
+            } as React.ChangeEvent<HTMLInputElement>);
+            // Transition to inline editing mode for first value badge
+            // Use setTimeout to ensure pattern is applied before setting edit mode
+            setTimeout(() => {
+              setEditingBadge({
+                type: 'firstValue',
+                value: fromValue,
+              });
+            }, 10);
+            return;
+          }
+          // If no fromValue, fall through to handleClearValue
         } else if (editingBadge.type === 'secondValue') {
           // Clearing second condition "from" value - clear second condition only
           handleClearSecondValue();
@@ -2149,17 +2154,40 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (!searchMode.filterSearch.isMultiCondition) {
         let newPattern: string;
 
-        // Check if this is a Between operator (has valueTo)
-        if (operator === 'inRange' && searchMode.filterSearch.valueTo) {
-          // Editing Between operator
-          if (editingBadge.type === 'firstValue') {
-            // Editing "from" value - preserve "to" value
-            newPattern = `#${columnName} #${operator} ${valueToUse} ${searchMode.filterSearch.valueTo}##`;
-          } else if (editingBadge.type === 'firstValueTo') {
-            // Editing "to" value - preserve "from" value
-            newPattern = `#${columnName} #${operator} ${searchMode.filterSearch.value} ${valueToUse}##`;
+        // Check if this is a Between operator
+        if (operator === 'inRange') {
+          if (searchMode.filterSearch.valueTo) {
+            // Editing Between operator that has both values
+            if (editingBadge.type === 'firstValue') {
+              // Editing "from" value - preserve "to" value
+              newPattern = `#${columnName} #${operator} ${valueToUse} #to ${searchMode.filterSearch.valueTo}##`;
+            } else if (editingBadge.type === 'firstValueTo') {
+              // Editing "to" value - preserve "from" value
+              newPattern = `#${columnName} #${operator} ${searchMode.filterSearch.value} #to ${valueToUse}##`;
+            } else {
+              // Fallback
+              newPattern = `#${columnName} #${operator} ${valueToUse}##`;
+            }
+          } else if (editingBadge.type === 'firstValue') {
+            // Between operator without valueTo (cleared or never set)
+            // When editing first value and pressing ENTER: create [value][to] badge, wait for second value
+            // Pattern: #col #inRange value #to (no ##, ready for second value input)
+            newPattern = `#${columnName} #${operator} ${valueToUse} #to `;
+            onChange({
+              target: { value: newPattern },
+            } as React.ChangeEvent<HTMLInputElement>);
+            setEditingBadge(null);
+            // Focus input at end to wait for second value input
+            setTimeout(() => {
+              if (inputRef?.current) {
+                inputRef.current.focus();
+                const len = newPattern.length;
+                inputRef.current.setSelectionRange(len, len);
+              }
+            }, 50);
+            return;
           } else {
-            // Fallback
+            // Fallback for Between without valueTo
             newPattern = `#${columnName} #${operator} ${valueToUse}##`;
           }
         } else {
@@ -2170,9 +2198,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Check if we need to restore a selector that was interrupted
         if (interruptedSelectorRef.current) {
           const interrupted = interruptedSelectorRef.current;
+          // Use #to marker for Between operator to ensure correct badge display
           const valuePart =
             operator === 'inRange' && searchMode.filterSearch.valueTo
-              ? `${valueToUse} ${searchMode.filterSearch.valueTo}`
+              ? `${valueToUse} #to ${searchMode.filterSearch.valueTo}`
               : valueToUse;
 
           // Parse original pattern to extract join operator and second column if present
