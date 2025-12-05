@@ -1495,12 +1495,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const firstCondition = getFirstCondition(stateToUse.filterSearch);
 
     // Back to confirmed single-condition: #field #operator value##
+    // For Between operator with valueTo, use betweenConfirmed to preserve both values
     // This will trigger useSearchState to apply the first condition filter
-    const newValue = PatternBuilder.confirmed(
-      columnName,
-      firstCondition.operator,
-      firstCondition.value
-    );
+    let newValue: string;
+    if (firstCondition.operator === 'inRange' && firstCondition.valueTo) {
+      // Between operator with valueTo - use betweenConfirmed
+      newValue = PatternBuilder.betweenConfirmed(
+        columnName,
+        firstCondition.value,
+        firstCondition.valueTo
+      );
+    } else {
+      // Normal operator or Between without valueTo
+      newValue = PatternBuilder.confirmed(
+        columnName,
+        firstCondition.operator,
+        firstCondition.value
+      );
+    }
 
     setFilterValue(newValue, onChange, inputRef);
   }, [
