@@ -73,7 +73,7 @@ interface SearchBadgeProps {
   } | null;
   onInlineValueChange?: (value: string) => void;
   onInlineEditComplete?: (finalValue?: string) => void;
-  onNavigateEdit?: () => void; // Called when Ctrl+E pressed during inline edit
+  onNavigateEdit?: (direction: 'left' | 'right') => void; // Ctrl+E (left) or Ctrl+Shift+E (right)
   // Keyboard navigation props
   selectedBadgeIndex?: number | null;
   onBadgeCountChange?: (count: number) => void;
