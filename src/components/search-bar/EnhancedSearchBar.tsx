@@ -493,9 +493,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               );
             }
 
-            // Clear preserved state since operator is incompatible
-            preservedFilterRef.current = null;
-            setPreservedSearchMode(null);
+            // Update preservedSearchMode with new second column for immediate badge display
+            // Keep preserved data since we still need second value after operator is selected
+            if (preservedFilterRef.current) {
+              preservedFilterRef.current = {
+                ...preservedFilterRef.current,
+                secondColumnField: column.field,
+              };
+            }
+            if (preservedSearchMode?.filterSearch?.conditions) {
+              const updatedConditions =
+                preservedSearchMode.filterSearch.conditions.map((cond, idx) =>
+                  idx === 1 ? { ...cond, field: column.field } : cond
+                );
+              setPreservedSearchMode({
+                ...preservedSearchMode,
+                filterSearch: {
+                  ...preservedSearchMode.filterSearch,
+                  conditions: updatedConditions,
+                },
+                showOperatorSelector: true,
+              });
+            }
           }
         } else {
           // No preserved second operator - open operator selector for new column
@@ -506,6 +525,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             newValue = `#${firstCol} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${column.field} #`;
           } else {
             newValue = `#${firstCol} #${firstOp} ${firstVal} #${join.toLowerCase()} #${column.field} #`;
+          }
+
+          // Update preservedSearchMode with new second column for immediate badge display
+          if (preservedSearchMode?.filterSearch?.conditions) {
+            const updatedConditions =
+              preservedSearchMode.filterSearch.conditions.map((cond, idx) =>
+                idx === 1 ? { ...cond, field: column.field } : cond
+              );
+            setPreservedSearchMode({
+              ...preservedSearchMode,
+              filterSearch: {
+                ...preservedSearchMode.filterSearch,
+                conditions: updatedConditions,
+              },
+              showOperatorSelector: true,
+            });
           }
         }
 
@@ -729,14 +764,51 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               newValue = PatternBuilder.columnOperator(column.field, operator);
             }
           }
+
+          // Clear preserved state since pattern is fully rebuilt
+          preservedFilterRef.current = null;
+          setPreservedSearchMode(null);
         } else {
           // Operator not compatible, auto-open operator selector for new column
           newValue = PatternBuilder.columnWithOperatorSelector(column.field);
-        }
 
-        // Clear preserved filter and searchMode
-        preservedFilterRef.current = null;
-        setPreservedSearchMode(null);
+          // DON'T clear preserved state if this is multi-condition
+          // We need to keep second condition badges visible during operator selection
+          if (
+            preservedFilterRef.current?.join &&
+            preservedFilterRef.current?.secondOperator
+          ) {
+            // Update preservedFilterRef with new column but keep second condition
+            preservedFilterRef.current = {
+              ...preservedFilterRef.current,
+              columnName: column.field,
+              operator: '', // Will be selected next
+            };
+            // Update preservedSearchMode to show new column immediately
+            // Must update filterSearch.column (for badge label), field, AND conditions[0].field
+            if (preservedSearchMode?.filterSearch) {
+              const updatedConditions =
+                preservedSearchMode.filterSearch.conditions?.map((cond, idx) =>
+                  idx === 0 ? { ...cond, field: column.field, column } : cond
+                );
+
+              setPreservedSearchMode({
+                ...preservedSearchMode,
+                filterSearch: {
+                  ...preservedSearchMode.filterSearch,
+                  field: column.field,
+                  column, // Update column object for badge headerName display
+                  conditions: updatedConditions,
+                },
+                showOperatorSelector: true,
+              });
+            }
+          } else {
+            // Single condition - clear preserved state
+            preservedFilterRef.current = null;
+            setPreservedSearchMode(null);
+          }
+        }
       } else {
         // Normal column selection without preserved filter
         // Auto-open operator selector by ending with " #"
@@ -759,6 +831,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       searchMode.filterSearch,
       searchMode.partialJoin,
       memoizedColumns,
+      preservedSearchMode,
     ]
   );
 
