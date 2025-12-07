@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { LuX } from 'react-icons/lu';
 import { FiEdit2 } from 'react-icons/fi';
 import { PiTrashSimpleBold } from 'react-icons/pi';
@@ -15,12 +15,20 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const isClearing = useRef(false);
   // Track cursor position to restore after value changes
   const cursorPosition = useRef<number | null>(null);
+  // Shake animation state for validation feedback
+  const [isShaking, setIsShaking] = useState(false);
 
   const isEditing = config.isEditing || false;
   const editingValue = config.editingValue || '';
   const onValueChange = config.onValueChange;
   const onEditComplete = config.onEditComplete;
   const isSelected = config.isSelected || false;
+
+  // Trigger shake animation for validation error
+  const triggerShake = () => {
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 400);
+  };
 
   // Auto-focus input when entering editing mode
   // Only position cursor once when entering edit mode, not on every value change
@@ -73,6 +81,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
+      // Validate: don't allow empty value on Enter
+      if (editingValue.trim() === '') {
+        triggerShake();
+        return;
+      }
       // Pass current value directly to avoid race condition
       onEditComplete?.(editingValue);
     } else if (e.key === 'Escape') {
@@ -114,6 +127,13 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       isClearing.current = false;
       return;
     }
+    // Validate: don't allow empty value on blur
+    if (editingValue.trim() === '') {
+      triggerShake();
+      // Re-focus input after shake
+      setTimeout(() => inputRef.current?.focus(), 10);
+      return;
+    }
     // Pass current editingValue directly
     onEditComplete?.(editingValue);
   };
@@ -121,10 +141,21 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Glow effect for selected badge (color based on badge type)
   const selectedClass = isSelected ? colors.glow : '';
 
+  // Shake animation styles
+  const shakeStyle: React.CSSProperties = isShaking
+    ? {
+        animation: 'badge-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97)',
+      }
+    : {};
+
+  // Error state styles (solid rose background during shake)
+  const errorClass = isShaking ? '!bg-rose-200 !text-rose-800' : '';
+
   return (
     <div
-      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-shadow duration-200 ease-out ${selectedClass}`}
+      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-all duration-300 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
+      style={shakeStyle}
     >
       {isEditing ? (
         <input
