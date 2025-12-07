@@ -160,16 +160,29 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // - First operator: anchor to column badge (badgeRef), align right - appears after column
   // - Second operator editing: anchor to second operator badge, align left - appears below it
   // - Second operator creating (multi-column): anchor to second column badge, align right - appears after second column
+  // - Second column edited, selecting NEW operator: anchor to second column badge, align right
   const isEditingSecondOp =
     isEditingSecondOperator && searchMode.showOperatorSelector;
   const isCreatingSecondOp =
     searchMode.isSecondOperator && searchMode.secondColumn;
+  // Check if we're selecting NEW operator for second column (after editing column)
+  // When editing column, the preservedSearchMode has the old operator, but searchMode.secondOperator is empty
+  // because we're waiting for user to select a new operator
+  const isSelectingNewOperatorForSecondColumn =
+    isEditingSecondOperator &&
+    searchMode.showOperatorSelector &&
+    searchMode.secondColumn &&
+    !searchMode.secondOperator; // No current second operator = selecting new one
 
   let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
-  if (isEditingSecondOp) {
-    // Edit second operator: position below second operator badge
+  if (isSelectingNewOperatorForSecondColumn) {
+    // Selecting NEW operator for second column (after column edit): position after second column badge
+    operatorAnchorRef = secondColumnBadgeRef;
+    operatorAnchorAlign = 'right';
+  } else if (isEditingSecondOp) {
+    // Edit existing second operator: position below second operator badge
     operatorAnchorRef = secondOperatorBadgeRef;
     operatorAnchorAlign = 'left';
   } else if (isCreatingSecondOp) {
@@ -504,7 +517,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             if (preservedSearchMode?.filterSearch?.conditions) {
               const updatedConditions =
                 preservedSearchMode.filterSearch.conditions.map((cond, idx) =>
-                  idx === 1 ? { ...cond, field: column.field } : cond
+                  idx === 1 ? { ...cond, field: column.field, column } : cond
                 );
               setPreservedSearchMode({
                 ...preservedSearchMode,
@@ -515,6 +528,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 showOperatorSelector: true,
               });
             }
+            // Mark that we're editing second operator so handleOperatorSelect uses correct CASE
+            setIsEditingSecondOperator(true);
           }
         } else {
           // No preserved second operator - open operator selector for new column
@@ -531,7 +546,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           if (preservedSearchMode?.filterSearch?.conditions) {
             const updatedConditions =
               preservedSearchMode.filterSearch.conditions.map((cond, idx) =>
-                idx === 1 ? { ...cond, field: column.field } : cond
+                idx === 1 ? { ...cond, field: column.field, column } : cond
               );
             setPreservedSearchMode({
               ...preservedSearchMode,
@@ -542,6 +557,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               showOperatorSelector: true,
             });
           }
+          // Mark that we're editing second operator so handleOperatorSelect uses correct CASE
+          setIsEditingSecondOperator(true);
         }
 
         setFilterValue(newValue, onChange, inputRef);
@@ -845,6 +862,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Flag to track if we should enter inline edit mode for first value after operator selection
       let shouldEnterFirstValueEdit = false;
       let firstValueForEdit = '';
+      // Flag to track if we should enter inline edit mode for second value after operator selection
+      let shouldEnterSecondValueEdit = false;
+      let secondValueForEdit = '';
 
       // CASE 1: EDITING second operator (badge already exists or partial)
       if (
@@ -949,6 +969,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               secondValTo
             );
           }
+          // Enter inline edit mode for second value after operator selection
+          shouldEnterSecondValueEdit = true;
+          secondValueForEdit = preserved.secondValue;
         } else {
           // Partial multi-condition (no second value yet)
           if (isMultiColumn) {
@@ -1161,13 +1184,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       setFilterValue(newValue, onChange, inputRef);
 
-      // Check if we should enter inline edit mode for first value
+      // Check if we should enter inline edit mode for first or second value
       if (shouldEnterFirstValueEdit && firstValueForEdit) {
         // Enter inline edit mode for first value after operator selection
         setTimeout(() => {
           setEditingBadge({
             type: 'firstValue',
             value: firstValueForEdit,
+          });
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      } else if (shouldEnterSecondValueEdit && secondValueForEdit) {
+        // Enter inline edit mode for second value after operator selection
+        setTimeout(() => {
+          setEditingBadge({
+            type: 'secondValue',
+            value: secondValueForEdit,
           });
         }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
       } else {
