@@ -106,15 +106,31 @@ export function isOperatorCompatibleWithColumn(
 /**
  * Get operator label for display
  *
+ * Falls back to searching ALL operator types if not found in the specified column type.
+ * This handles edge cases like displaying operator labels during column editing
+ * when the operator might not be compatible with the new column type yet.
+ *
  * @param columnType - Type of column
  * @param operatorValue - The operator value
- * @returns The operator label, or the value itself if not found
+ * @returns The operator label, or the value itself if not found in any operator list
  */
 export function getOperatorLabel(
   columnType: string,
   operatorValue: string
 ): string {
-  return findOperator(columnType, operatorValue)?.label || operatorValue;
+  // First try to find in the column's operator list
+  const operator = findOperator(columnType, operatorValue);
+  if (operator) {
+    return operator.label;
+  }
+
+  // Fallback: search in ALL operator types to get the label
+  // This handles cases where column type changed but operator hasn't been updated yet
+  const fallbackOperator =
+    DEFAULT_FILTER_OPERATORS.find(op => op.value === operatorValue) ||
+    NUMBER_FILTER_OPERATORS.find(op => op.value === operatorValue);
+
+  return fallbackOperator?.label || operatorValue;
 }
 
 /**
