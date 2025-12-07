@@ -2498,6 +2498,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Check if this is a Between operator
         if (operator === 'inRange') {
+          // Check if valueToUse contains a dash pattern like "500-600"
+          // This allows user to type both values in one badge
+          const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
+
+          if (dashMatch && editingBadge.type === 'firstValue') {
+            // User typed "500-600" format - split into fromVal and toVal
+            const [, fromVal, toVal] = dashMatch;
+            const trimmedFrom = fromVal.trim();
+            const trimmedTo = toVal.trim();
+
+            if (trimmedFrom && trimmedTo) {
+              // Both values provided - confirm the filter
+              newPattern = `#${columnName} #${operator} ${trimmedFrom} #to ${trimmedTo}##`;
+              onChange({
+                target: { value: newPattern },
+              } as React.ChangeEvent<HTMLInputElement>);
+              setEditingBadge(null);
+              setPreservedSearchMode(null);
+              setTimeout(() => {
+                inputRef?.current?.focus();
+              }, 50);
+              return;
+            }
+          }
+
           if (stateToUse.filterSearch.valueTo) {
             // Editing Between operator that has both values
             if (editingBadge.type === 'firstValue') {
@@ -2629,8 +2654,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Handle editing first condition
       if (editingBadge.type === 'firstValue') {
         // Editing first condition's "from" value
-        const firstValue = valueToUse;
-        const firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
+        let firstValue = valueToUse;
+        let firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
+
+        // Check for dash pattern in Between operator (e.g., "500-600")
+        if (firstCondition.operator === 'inRange') {
+          const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
+          if (dashMatch) {
+            const [, fromVal, toVal] = dashMatch;
+            const trimmedFrom = fromVal.trim();
+            const trimmedTo = toVal.trim();
+            if (trimmedFrom && trimmedTo) {
+              firstValue = trimmedFrom;
+              firstValueTo = trimmedTo;
+            }
+          }
+        }
 
         if (isMultiColumn) {
           newPattern = PatternBuilder.buildMultiColumnWithValueTo(
@@ -2684,8 +2723,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         }
       } else if (editingBadge.type === 'secondValue') {
         // Editing second condition's "from" value
-        const secondValue = valueToUse;
-        const secondValueTo = secondCondition.valueTo; // Preserve "to" if exists
+        let secondValue = valueToUse;
+        let secondValueTo = secondCondition.valueTo; // Preserve "to" if exists
+
+        // Check for dash pattern in Between operator (e.g., "500-600")
+        if (secondCondition.operator === 'inRange') {
+          const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
+          if (dashMatch) {
+            const [, fromVal, toVal] = dashMatch;
+            const trimmedFrom = fromVal.trim();
+            const trimmedTo = toVal.trim();
+            if (trimmedFrom && trimmedTo) {
+              secondValue = trimmedFrom;
+              secondValueTo = trimmedTo;
+            }
+          }
+        }
 
         if (isMultiColumn) {
           newPattern = PatternBuilder.buildMultiColumnWithValueTo(
