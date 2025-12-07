@@ -351,8 +351,22 @@ export const useSearchInput = ({
           const secondCondition = searchMode.filterSearch.conditions[1];
           const joinOp = searchMode.filterSearch.joinOperator || 'AND';
 
+          // Check if this is multi-COLUMN (second condition has different column)
+          const secondColumnField = secondCondition.column?.field;
+          const isMultiColumn =
+            secondColumnField && secondColumnField !== columnName;
+
+          // Handle Between operator valueTo for first condition
+          const firstValueTo = firstCondition.valueTo
+            ? ` #to ${firstCondition.valueTo}`
+            : '';
+
           // Build pattern for editing second value (without ## marker)
-          const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCondition.operator} ${inputValue}`;
+          // Multi-column: #col1 #op1 val1 [#to val1To] #join #col2 #op2 inputValue
+          // Same-column: #col1 #op1 val1 [#to val1To] #join #op2 inputValue
+          const newValue = isMultiColumn
+            ? `#${columnName} #${firstCondition.operator} ${firstCondition.value}${firstValueTo} #${joinOp.toLowerCase()} #${secondColumnField} #${secondCondition.operator} ${inputValue}`
+            : `#${columnName} #${firstCondition.operator} ${firstCondition.value}${firstValueTo} #${joinOp.toLowerCase()} #${secondCondition.operator} ${inputValue}`;
 
           onChange({
             target: { value: newValue },
