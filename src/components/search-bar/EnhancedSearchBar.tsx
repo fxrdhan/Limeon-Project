@@ -785,23 +785,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Special handling: changing second operator TO Between (inRange) when no secondValueTo exists
         // Between requires 2 values. If previous operator wasn't Between, secondValueTo doesn't exist.
-        // Set pattern to wait for user to input the "to" value.
+        // Enter inline edit mode for second value with dash to prompt for valueTo.
         if (
           operator.value === 'inRange' &&
           preserved.secondValue &&
           !preserved.secondValueTo
         ) {
-          // Build pattern waiting for second value's "to" input
-          // Pattern: #col1 #op1 val1 [val1To] #join #col2 #inRange secondValue (waiting for valueTo)
+          // Build confirmed pattern with second value (no valueTo yet)
           const firstPart =
             preserved.operator === 'inRange' && preserved.valueTo
               ? `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo}`
               : `#${columnName} #${preserved.operator} ${preserved.value}`;
 
           if (isMultiColumn) {
-            newValue = `${firstPart} #${joinOp.toLowerCase()} #${secondCol} #${operator.value} ${preserved.secondValue} `;
+            newValue = `${firstPart} #${joinOp.toLowerCase()} #${secondCol} #${operator.value} ${preserved.secondValue}##`;
           } else {
-            newValue = `${firstPart} #${joinOp.toLowerCase()} #${operator.value} ${preserved.secondValue} `;
+            newValue = `${firstPart} #${joinOp.toLowerCase()} #${operator.value} ${preserved.secondValue}##`;
           }
 
           // Clear preserved filter and searchMode
@@ -810,10 +809,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           setIsEditingSecondOperator(false);
 
           setFilterValue(newValue, onChange, inputRef);
-          // Auto-focus back to input after selection
+
+          // Enter inline edit mode with dash appended: [secondValue-|]
+          // User types valueTo, presses Enter, dash pattern detection splits it
           setTimeout(() => {
-            inputRef?.current?.focus();
+            setEditingBadge({
+              type: 'secondValue',
+              value: `${preserved.secondValue}-`, // Add dash to signal user to type second value
+            });
           }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+
           return; // Early return - don't proceed with confirmation
         }
 
@@ -884,7 +889,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Special handling: changing TO Between (inRange) operator
         // Between requires 2 values (value and valueTo), but if previous operator wasn't Between,
-        // valueTo doesn't exist. Need to wait for valueTo input.
+        // valueTo doesn't exist. Enter inline edit mode with dash to prompt for second value.
         if (operator.value === 'inRange' && !preserved.valueTo) {
           // Check if this is a multi-condition filter - preserve second condition for later restoration
           if (
@@ -892,39 +897,52 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             preserved.secondOperator &&
             preserved.secondValue
           ) {
-            // Multi-condition: preserve second condition data, wait for valueTo
+            // Multi-condition: preserve second condition data
             // Update preservedFilterRef with new operator (inRange) but keep second condition
             preservedFilterRef.current = {
               ...preserved,
               operator: 'inRange', // Updated operator
               // Keep join, secondOperator, secondValue, secondColumnField, etc.
             };
-            // DON'T clear preservedSearchMode - we need it for badge display
 
-            // Create pattern waiting for valueTo
-            newValue = `#${columnName} #inRange ${preservedValue} #to `;
-            setFilterValue(newValue, onChange, inputRef);
-            // Auto-focus back to input after selection
-            setTimeout(() => {
-              inputRef?.current?.focus();
-            }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-            return; // Early return - don't clear preserved data yet
-          } else {
-            // Single condition - just wait for valueTo
-            newValue = PatternBuilder.betweenFirstValue(
-              columnName,
-              preservedValue
-            );
-            // Clear preserved filter and searchMode
+            // Update preservedSearchMode with new operator for correct badge display
+            // Must update both filterSearch.operator AND conditions[0].operator for multi-condition
+            if (preservedSearchMode?.filterSearch) {
+              const updatedConditions =
+                preservedSearchMode.filterSearch.conditions?.map((cond, idx) =>
+                  idx === 0 ? { ...cond, operator: 'inRange' } : cond
+                );
+
+              setPreservedSearchMode({
+                ...preservedSearchMode,
+                filterSearch: {
+                  ...preservedSearchMode.filterSearch,
+                  operator: 'inRange',
+                  conditions: updatedConditions,
+                },
+              });
+            }
+          }
+
+          // Create confirmed pattern with single value (will show [value] badge)
+          newValue = `#${columnName} #inRange ${preservedValue}##`;
+          setFilterValue(newValue, onChange, inputRef);
+
+          // Enter inline edit mode with dash appended: [500-|]
+          // User types second value, presses Enter, dash pattern detection splits it
+          setTimeout(() => {
+            setEditingBadge({
+              type: 'firstValue',
+              value: `${preservedValue}-`, // Add dash to signal user to type second value
+            });
+          }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+
+          // Don't clear preserved data if multi-condition - needed for reconstruction
+          if (!preserved.join) {
             preservedFilterRef.current = null;
             setPreservedSearchMode(null);
-            setFilterValue(newValue, onChange, inputRef);
-            // Auto-focus back to input after selection
-            setTimeout(() => {
-              inputRef?.current?.focus();
-            }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-            return; // Early return - don't proceed with multi-condition restoration
           }
+          return; // Early return
         }
 
         // Check if this is a multi-condition filter
@@ -1056,6 +1074,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       inputRef,
       searchMode.isSecondOperator,
       isEditingSecondOperator,
+      preservedSearchMode,
     ]
   );
 
