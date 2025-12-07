@@ -842,6 +842,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       const columnName = columnMatch[1];
       let newValue: string;
+      // Flag to track if we should enter inline edit mode for first value after operator selection
+      let shouldEnterFirstValueEdit = false;
+      let firstValueForEdit = '';
 
       // CASE 1: EDITING second operator (badge already exists or partial)
       if (
@@ -1079,6 +1082,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               preserved.secondValueTo
             );
           }
+          // Enter inline edit mode for first value after operator selection
+          shouldEnterFirstValueEdit = true;
+          firstValueForEdit = preservedValue;
         } else if (preserved.join && preserved.secondOperator) {
           // Has join and second operator but no second value yet
           // Use wasMultiColumn flag to preserve multi-column structure
@@ -1155,10 +1161,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       setFilterValue(newValue, onChange, inputRef);
 
-      // Auto-focus back to input after selection
-      setTimeout(() => {
-        inputRef?.current?.focus();
-      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      // Check if we should enter inline edit mode for first value
+      if (shouldEnterFirstValueEdit && firstValueForEdit) {
+        // Enter inline edit mode for first value after operator selection
+        setTimeout(() => {
+          setEditingBadge({
+            type: 'firstValue',
+            value: firstValueForEdit,
+          });
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      } else {
+        // Auto-focus back to input after selection
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      }
     },
     [
       value,
