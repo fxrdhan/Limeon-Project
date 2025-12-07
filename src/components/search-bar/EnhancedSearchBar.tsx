@@ -557,16 +557,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
                 if (isSecondOperatorCompatible) {
                   // Restore multi-column filter with new first column
+                  // Get valueTo values for Between operators
+                  const valueTo = preservedFilterRef.current?.valueTo;
+                  const secondValueTo =
+                    preservedFilterRef.current?.secondValueTo;
+
                   if (secondValue && secondValue.trim() !== '') {
                     // Full multi-column with second value
-                    newValue = PatternBuilder.multiColumnComplete(
+                    // Use buildMultiColumnWithValueTo to handle Between operators
+                    newValue = PatternBuilder.buildMultiColumnWithValueTo(
                       column.field,
                       operator,
                       value,
+                      valueTo,
                       join,
                       secondColumnField,
                       secondOperator,
-                      secondValue
+                      secondValue,
+                      secondValueTo
                     );
                   } else {
                     // Partial multi-column (no second value yet)
@@ -576,24 +584,43 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                       value,
                       join,
                       secondColumnField,
-                      secondOperator
+                      secondOperator,
+                      valueTo // Include valueTo for first condition
                     );
                   }
                 } else {
                   // Second operator not compatible with second column, restore only first condition
+                  const valueTo = preservedFilterRef.current?.valueTo;
+                  if (operator === 'inRange' && valueTo) {
+                    newValue = PatternBuilder.betweenConfirmed(
+                      column.field,
+                      value,
+                      valueTo
+                    );
+                  } else {
+                    newValue = PatternBuilder.confirmed(
+                      column.field,
+                      operator,
+                      value
+                    );
+                  }
+                }
+              } else {
+                // Second column not found, fallback to single condition
+                const valueTo = preservedFilterRef.current?.valueTo;
+                if (operator === 'inRange' && valueTo) {
+                  newValue = PatternBuilder.betweenConfirmed(
+                    column.field,
+                    value,
+                    valueTo
+                  );
+                } else {
                   newValue = PatternBuilder.confirmed(
                     column.field,
                     operator,
                     value
                   );
                 }
-              } else {
-                // Second column not found, fallback to single condition
-                newValue = PatternBuilder.confirmed(
-                  column.field,
-                  operator,
-                  value
-                );
               }
             } else {
               // SAME-COLUMN FILTER: both conditions on same column
@@ -604,34 +631,55 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               );
 
               if (isSecondOperatorCompatible) {
+                // Get valueTo values for Between operators
+                const valueTo = preservedFilterRef.current?.valueTo;
+                const secondValueTo = preservedFilterRef.current?.secondValueTo;
+
                 // Restore same-column multi-condition filter with the new column
                 if (secondValue && secondValue.trim() !== '') {
                   // Full multi-condition with second value
-                  newValue = PatternBuilder.multiCondition(
+                  // Use buildMultiConditionWithValueTo to handle Between operators
+                  newValue = PatternBuilder.buildMultiConditionWithValueTo(
                     column.field,
                     operator,
                     value,
+                    valueTo,
                     join,
                     secondOperator,
-                    secondValue
+                    secondValue,
+                    secondValueTo
                   );
                 } else {
                   // Partial multi-condition (no second value yet)
-                  newValue = PatternBuilder.partialMultiWithOperator(
-                    column.field,
-                    operator,
-                    value,
-                    join,
-                    secondOperator
-                  );
+                  if (valueTo) {
+                    // First condition is Between - include valueTo
+                    newValue = `#${column.field} #${operator} ${value} #to ${valueTo} #${join.toLowerCase()} #${secondOperator} `;
+                  } else {
+                    newValue = PatternBuilder.partialMultiWithOperator(
+                      column.field,
+                      operator,
+                      value,
+                      join,
+                      secondOperator
+                    );
+                  }
                 }
               } else {
                 // Second operator not compatible, restore only first condition
-                newValue = PatternBuilder.confirmed(
-                  column.field,
-                  operator,
-                  value
-                );
+                const valueTo = preservedFilterRef.current?.valueTo;
+                if (operator === 'inRange' && valueTo) {
+                  newValue = PatternBuilder.betweenConfirmed(
+                    column.field,
+                    value,
+                    valueTo
+                  );
+                } else {
+                  newValue = PatternBuilder.confirmed(
+                    column.field,
+                    operator,
+                    value
+                  );
+                }
               }
             }
           } else if (join && secondColumnField) {
@@ -660,11 +708,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // Single-condition filter - restore operator (and value if it exists)
             if (value && value.trim() !== '') {
               // Has value: restore fully confirmed filter
-              newValue = PatternBuilder.confirmed(
-                column.field,
-                operator,
-                value
-              );
+              // Check for Between operator with valueTo
+              const valueTo = preservedFilterRef.current?.valueTo;
+              if (operator === 'inRange' && valueTo) {
+                // Between operator - use betweenConfirmed to preserve both values
+                newValue = PatternBuilder.betweenConfirmed(
+                  column.field,
+                  value,
+                  valueTo
+                );
+              } else {
+                newValue = PatternBuilder.confirmed(
+                  column.field,
+                  operator,
+                  value
+                );
+              }
             } else {
               // No value yet (Case 1: 2 badges - column + operator)
               newValue = PatternBuilder.columnOperator(column.field, operator);
