@@ -81,20 +81,15 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       // Pass current value directly to avoid race condition
       onEditComplete?.(editingValue);
     } else if (e.key === 'Delete') {
-      // Delete key while editing - immediately clear the badge (double-Delete to delete)
-      e.preventDefault();
-      e.stopPropagation();
-      // Set flag to prevent blur handler from re-applying old value
-      isClearing.current = true;
-      onEditComplete?.('');
-    } else if (e.key === 'Backspace' && editingValue === '') {
-      // If backspace pressed on empty input, clear the badge
+      // Delete key while editing - clear the badge
       e.preventDefault();
       e.stopPropagation();
       // Set flag to prevent blur handler from re-applying old value
       isClearing.current = true;
       onEditComplete?.('');
     }
+    // Backspace on empty input: do nothing (don't delete badge)
+    // User can use DELETE key to explicitly delete the badge
   };
 
   // Handle input change
@@ -107,14 +102,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     }
 
     onValueChange?.(newValue);
-
-    // If user cleared all text, immediately trigger clear action
-    // Pass the newValue directly to avoid race condition with state update
-    if (newValue.trim() === '') {
-      // Set flag to prevent blur handler from re-applying old value
-      isClearing.current = true;
-      onEditComplete?.(newValue);
-    }
+    // Don't auto-clear when value becomes empty - let user continue typing
+    // Clear only happens on: Enter, Escape, Blur, or Backspace when already empty
   };
 
   // Handle blur (clicking outside)
