@@ -35,6 +35,7 @@ export interface BaseSelectorProps<T> {
   searchTerm?: string;
   config: BaseSelectorConfig<T>;
   defaultSelectedIndex?: number; // Pre-select item at this index when opening
+  onHighlightChange?: (item: T | null) => void; // Called when highlighted item changes (for live preview)
 }
 
 export interface ColumnSelectorProps {
@@ -45,6 +46,7 @@ export interface ColumnSelectorProps {
   position: { top: number; left: number };
   searchTerm?: string;
   defaultSelectedIndex?: number; // Pre-select column at this index when opening
+  onHighlightChange?: (column: SearchColumn | null) => void; // Called when highlighted column changes
 }
 
 export interface OperatorSelectorProps {
@@ -55,4 +57,5 @@ export interface OperatorSelectorProps {
   position: { top: number; left: number };
   searchTerm?: string;
   defaultSelectedIndex?: number; // Pre-select operator at this index when opening
+  onHighlightChange?: (operator: FilterOperator | null) => void; // Called when highlighted operator changes
 }

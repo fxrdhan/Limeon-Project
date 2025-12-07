@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
@@ -79,6 +79,11 @@ interface SearchBadgeProps {
   selectedBadgeIndex?: number | null;
   onBadgeCountChange?: (count: number) => void;
   onBadgesChange?: (badges: BadgeConfig[]) => void;
+  // Live preview props - show highlighted selector item in badge
+  previewColumn?: { headerName: string; field: string } | null;
+  previewOperator?: { label: string; value: string } | null;
+  // Explicit flag for which column is being edited (for preview)
+  isEditingSecondColumn?: boolean;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -117,11 +122,14 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   selectedBadgeIndex,
   onBadgeCountChange,
   onBadgesChange,
+  previewColumn,
+  previewOperator,
+  isEditingSecondColumn,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
   const modeToRender = preservedSearchMode || searchMode;
 
-  const badges = useBadgeBuilder(
+  const rawBadges = useBadgeBuilder(
     modeToRender,
     {
       onClearColumn,
@@ -154,6 +162,59 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       : undefined,
     selectedBadgeIndex
   );
+
+  // Apply preview values to badges for live preview during selector navigation
+  // isEditingSecondColumn is passed as prop from EnhancedSearchBar
+  // isEditingSecondOperator is derived from searchMode
+  const isEditingSecondOperator = searchMode.isSecondOperator;
+
+  const badges = useMemo(() => {
+    if (!previewColumn && !previewOperator) {
+      return rawBadges;
+    }
+
+    return rawBadges.map(badge => {
+      // Preview column - apply to the correct column badge
+      if (previewColumn) {
+        // If editing second column, apply to second-column badge
+        if (isEditingSecondColumn && badge.id === 'second-column') {
+          return { ...badge, label: previewColumn.headerName };
+        }
+        // If editing first column (not second), apply to first column badge
+        if (
+          !isEditingSecondColumn &&
+          badge.id === 'column' &&
+          badge.type === 'column'
+        ) {
+          return { ...badge, label: previewColumn.headerName };
+        }
+      }
+
+      // Preview operator - apply to the correct operator badge
+      if (previewOperator) {
+        // If editing second operator, apply to second-operator badge
+        if (isEditingSecondOperator && badge.id === 'second-operator') {
+          return { ...badge, label: previewOperator.label };
+        }
+        // If editing first operator (not second), apply to first operator badge
+        if (
+          !isEditingSecondOperator &&
+          badge.id === 'operator' &&
+          badge.type === 'operator'
+        ) {
+          return { ...badge, label: previewOperator.label };
+        }
+      }
+
+      return badge;
+    });
+  }, [
+    rawBadges,
+    previewColumn,
+    previewOperator,
+    isEditingSecondColumn,
+    isEditingSecondOperator,
+  ]);
 
   // Notify parent of badge count changes for keyboard navigation
   useEffect(() => {
