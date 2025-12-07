@@ -884,22 +884,47 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Special handling: changing TO Between (inRange) operator
         // Between requires 2 values (value and valueTo), but if previous operator wasn't Between,
-        // valueTo doesn't exist. In this case, we need to clear multi-condition and wait for valueTo input.
+        // valueTo doesn't exist. Need to wait for valueTo input.
         if (operator.value === 'inRange' && !preserved.valueTo) {
-          // Clear multi-condition, set pattern to wait for second value input
-          newValue = PatternBuilder.betweenFirstValue(
-            columnName,
-            preservedValue
-          );
-          // Clear preserved filter and searchMode
-          preservedFilterRef.current = null;
-          setPreservedSearchMode(null);
-          setFilterValue(newValue, onChange, inputRef);
-          // Auto-focus back to input after selection
-          setTimeout(() => {
-            inputRef?.current?.focus();
-          }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
-          return; // Early return - don't proceed with multi-condition restoration
+          // Check if this is a multi-condition filter - preserve second condition for later restoration
+          if (
+            preserved.join &&
+            preserved.secondOperator &&
+            preserved.secondValue
+          ) {
+            // Multi-condition: preserve second condition data, wait for valueTo
+            // Update preservedFilterRef with new operator (inRange) but keep second condition
+            preservedFilterRef.current = {
+              ...preserved,
+              operator: 'inRange', // Updated operator
+              // Keep join, secondOperator, secondValue, secondColumnField, etc.
+            };
+            // DON'T clear preservedSearchMode - we need it for badge display
+
+            // Create pattern waiting for valueTo
+            newValue = `#${columnName} #inRange ${preservedValue} #to `;
+            setFilterValue(newValue, onChange, inputRef);
+            // Auto-focus back to input after selection
+            setTimeout(() => {
+              inputRef?.current?.focus();
+            }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+            return; // Early return - don't clear preserved data yet
+          } else {
+            // Single condition - just wait for valueTo
+            newValue = PatternBuilder.betweenFirstValue(
+              columnName,
+              preservedValue
+            );
+            // Clear preserved filter and searchMode
+            preservedFilterRef.current = null;
+            setPreservedSearchMode(null);
+            setFilterValue(newValue, onChange, inputRef);
+            // Auto-focus back to input after selection
+            setTimeout(() => {
+              inputRef?.current?.focus();
+            }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+            return; // Early return - don't proceed with multi-condition restoration
+          }
         }
 
         // Check if this is a multi-condition filter
@@ -3098,7 +3123,32 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           onChange(e);
         } else {
           // Editing first value - reconstruct full multi-condition pattern
-          const fullPattern = `${baseValue} ${joinPattern} #${preservedFilterRef.current.secondOperator} ${preservedFilterRef.current.secondValue}##`;
+          // Check for multi-column filter
+          const secondCol = preservedFilterRef.current.secondColumnField;
+          const isMultiColumn =
+            preservedFilterRef.current.wasMultiColumn && secondCol;
+
+          // Build second condition part, handling Between (inRange) with valueTo
+          const secondOp = preservedFilterRef.current.secondOperator!;
+          const secondVal = preservedFilterRef.current.secondValue!;
+          const secondValTo = preservedFilterRef.current.secondValueTo;
+
+          let secondConditionPart: string;
+          if (secondOp === 'inRange' && secondValTo) {
+            // Second condition is Between with valueTo
+            secondConditionPart = `#${secondOp} ${secondVal} #to ${secondValTo}`;
+          } else {
+            secondConditionPart = `#${secondOp} ${secondVal}`;
+          }
+
+          let fullPattern: string;
+          if (isMultiColumn) {
+            // Multi-column: include second column field
+            fullPattern = `${baseValue} ${joinPattern} #${secondCol} ${secondConditionPart}##`;
+          } else {
+            // Same-column: no second column field
+            fullPattern = `${baseValue} ${joinPattern} ${secondConditionPart}##`;
+          }
 
           // Call parent onChange with reconstructed pattern
           onChange({
