@@ -803,11 +803,30 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             newValue = `${firstPart} #${joinOp.toLowerCase()} #${operator.value} ${preserved.secondValue}##`;
           }
 
-          // Clear preserved filter and searchMode
-          preservedFilterRef.current = null;
-          setPreservedSearchMode(null);
-          setIsEditingSecondOperator(false);
+          // Update preservedFilterRef with new second operator
+          preservedFilterRef.current = {
+            ...preserved,
+            secondOperator: 'inRange',
+          };
 
+          // Update preservedSearchMode with new second operator for correct badge display
+          // Must update conditions[1].operator for multi-condition
+          if (preservedSearchMode?.filterSearch) {
+            const updatedConditions =
+              preservedSearchMode.filterSearch.conditions?.map((cond, idx) =>
+                idx === 1 ? { ...cond, operator: 'inRange' } : cond
+              );
+
+            setPreservedSearchMode({
+              ...preservedSearchMode,
+              filterSearch: {
+                ...preservedSearchMode.filterSearch,
+                conditions: updatedConditions,
+              },
+            });
+          }
+
+          setIsEditingSecondOperator(false);
           setFilterValue(newValue, onChange, inputRef);
 
           // Enter inline edit mode with dash appended: [secondValue-|]
