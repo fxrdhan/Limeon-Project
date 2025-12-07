@@ -168,6 +168,10 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   // isEditingSecondOperator is derived from searchMode
   const isEditingSecondOperator = searchMode.isSecondOperator;
 
+  // Check if we're in edit mode (preservedSearchMode exists)
+  // Preview should only apply when EDITING existing badges, not when CREATING new ones
+  const isInEditMode = preservedSearchMode !== null;
+
   const badges = useMemo(() => {
     if (!previewColumn && !previewOperator) {
       return rawBadges;
@@ -175,7 +179,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
 
     return rawBadges.map(badge => {
       // Preview column - apply to the correct column badge
-      if (previewColumn) {
+      // Only apply when in edit mode (not when creating new second column)
+      if (previewColumn && isInEditMode) {
         // If editing second column, apply to second-column badge
         if (isEditingSecondColumn && badge.id === 'second-column') {
           return { ...badge, label: previewColumn.headerName };
@@ -191,7 +196,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       }
 
       // Preview operator - apply to the correct operator badge
-      if (previewOperator) {
+      // Only apply when in edit mode (not when creating new operator)
+      if (previewOperator && isInEditMode) {
         // If editing second operator, apply to second-operator badge
         if (isEditingSecondOperator && badge.id === 'second-operator') {
           return { ...badge, label: previewOperator.label };
@@ -212,6 +218,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     rawBadges,
     previewColumn,
     previewOperator,
+    isInEditMode,
     isEditingSecondColumn,
     isEditingSecondOperator,
   ]);
