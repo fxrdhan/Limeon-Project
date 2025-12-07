@@ -47,6 +47,7 @@ function BaseSelector<T>({
   searchTerm: externalSearchTerm = '',
   config,
   defaultSelectedIndex,
+  onHighlightChange,
 }: BaseSelectorProps<T>) {
   const [showHeader, setShowHeader] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -393,6 +394,24 @@ function BaseSelector<T>({
       }
     }
   }, [selectedIndex, filteredItems, showContent, indicatorStyle.height]);
+
+  // Notify parent of highlighted item changes for live preview
+  useEffect(() => {
+    if (isOpen && onHighlightChange) {
+      const highlightedItem =
+        filteredItems.length > 0 && selectedIndex < filteredItems.length
+          ? filteredItems[selectedIndex]
+          : null;
+      onHighlightChange(highlightedItem);
+    }
+  }, [isOpen, selectedIndex, filteredItems, onHighlightChange]);
+
+  // Clear highlight when modal closes
+  useEffect(() => {
+    if (!isOpen && onHighlightChange) {
+      onHighlightChange(null);
+    }
+  }, [isOpen, onHighlightChange]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

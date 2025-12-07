@@ -74,6 +74,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Track whether we're editing the second operator (after AND/OR join)
   const [isEditingSecondOperator, setIsEditingSecondOperator] = useState(false);
 
+  // Track whether we're editing the second column (for live preview)
+  const [isEditingSecondColumnState, setIsEditingSecondColumnState] =
+    useState(false);
+
   // State to track current join operator value during edit mode
   const [currentJoinOperator, setCurrentJoinOperator] = useState<
     'AND' | 'OR' | undefined
@@ -92,6 +96,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Badge count for keyboard navigation bounds (use state for reliable updates)
   const [badgeCount, setBadgeCount] = useState<number>(0);
+
+  // Preview state for live badge updates when hovering/navigating selectors
+  const [previewColumn, setPreviewColumn] = useState<SearchColumn | null>(null);
+  const [previewOperator, setPreviewOperator] = useState<
+    import('./types').FilterOperator | null
+  >(null);
 
   // Ref to store current badges for Ctrl+E edit action
   const badgesRef = useRef<import('./types/badge').BadgeConfig[]>([]);
@@ -234,6 +244,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedFilterRef.current = null;
     setCurrentJoinOperator(undefined);
     setIsEditingSecondOperator(false);
+    setIsEditingSecondColumnState(false);
   }, []);
 
   // Handler for badge count changes from SearchBadge
@@ -1943,6 +1954,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Edit second column - show column selector for second column (multi-column)
   const handleEditSecondColumn = useCallback(() => {
+    // Mark that we're editing SECOND column for preview
+    setIsEditingSecondColumnState(true);
+
     // Use preserved state if already in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
 
@@ -1986,6 +2000,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Edit column - show column selector with all columns
   // Preserve operator and value to restore after column selection
   const handleEditColumn = useCallback(() => {
+    // Mark that we're editing FIRST column (not second) for preview
+    setIsEditingSecondColumnState(false);
+
     // Use preserved state if already in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
 
@@ -3742,6 +3759,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               selectedBadgeIndex={selectedBadgeIndex}
               onBadgeCountChange={handleBadgeCountChange}
               onBadgesChange={handleBadgesChange}
+              previewColumn={previewColumn}
+              previewOperator={previewOperator}
+              isEditingSecondColumn={isEditingSecondColumnState}
             />
           </div>
         </div>
@@ -3762,6 +3782,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         position={columnSelectorPosition}
         searchTerm={searchTerm}
         defaultSelectedIndex={defaultColumnIndex}
+        onHighlightChange={setPreviewColumn}
       />
 
       <OperatorSelector
@@ -3772,6 +3793,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         position={operatorSelectorPosition}
         searchTerm={operatorSearchTerm}
         defaultSelectedIndex={defaultOperatorIndex}
+        onHighlightChange={setPreviewOperator}
       />
 
       <JoinOperatorSelector

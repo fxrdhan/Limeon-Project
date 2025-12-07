@@ -14,6 +14,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
   position,
   searchTerm = '',
   defaultSelectedIndex,
+  onHighlightChange,
 }) => {
   const config = useMemo(
     (): BaseSelectorConfig<FilterOperator> => ({
@@ -43,6 +44,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
       searchTerm={searchTerm}
       config={config}
       defaultSelectedIndex={defaultSelectedIndex}
+      onHighlightChange={onHighlightChange}
     />
   );
 };
