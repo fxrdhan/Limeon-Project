@@ -88,6 +88,7 @@ export const useBadgeBuilder = (
       filter.conditions.forEach((condition, index) => {
         // Use condition's column if available (multi-column), otherwise use filter's column
         const conditionColumn = condition.column || filter.column;
+        const conditionColumnType = conditionColumn.type;
         const operatorLabel = getOperatorLabelForColumn(
           conditionColumn,
           condition.operator
@@ -173,6 +174,7 @@ export const useBadgeBuilder = (
               onFocusInput: isEditingFrom
                 ? inlineEditingProps?.onFocusInput
                 : undefined,
+              columnType: conditionColumnType,
             });
 
             // "to" separator badge - use consistent IDs
@@ -227,6 +229,7 @@ export const useBadgeBuilder = (
               onFocusInput: isEditingTo
                 ? inlineEditingProps?.onFocusInput
                 : undefined,
+              columnType: conditionColumnType,
             });
           } else {
             // Determine if this badge is being edited
@@ -268,6 +271,7 @@ export const useBadgeBuilder = (
               onFocusInput: isEditingValue
                 ? inlineEditingProps?.onFocusInput
                 : undefined,
+              columnType: conditionColumnType,
             });
           }
         }
@@ -361,6 +365,7 @@ export const useBadgeBuilder = (
       // So isSecondValue should always be false here
       // The "second value" only exists in multi-condition filters (handled in section 2)
       const isSecondValue = false;
+      const filterColumnType = filter.column.type;
 
       // Check if this is a Between (inRange) operator
       // Handle both complete (with valueTo) and waiting state (waitingForValueTo flag)
@@ -410,6 +415,7 @@ export const useBadgeBuilder = (
           onFocusInput: isEditingFrom
             ? inlineEditingProps?.onFocusInput
             : undefined,
+          columnType: filterColumnType,
         });
 
         // "to" separator badge
@@ -465,6 +471,7 @@ export const useBadgeBuilder = (
             onFocusInput: isEditingTo
               ? inlineEditingProps?.onFocusInput
               : undefined,
+            columnType: filterColumnType,
           });
         }
       } else {
@@ -503,6 +510,7 @@ export const useBadgeBuilder = (
           onFocusInput: isEditingValue
             ? inlineEditingProps?.onFocusInput
             : undefined,
+          columnType: filterColumnType,
         });
       }
     }
@@ -563,6 +571,11 @@ export const useBadgeBuilder = (
       searchMode.secondOperator === 'inRange' &&
       (searchMode.waitingForSecondValueTo || searchMode.secondValueTo)
     ) {
+      // Get column type for second condition (use secondColumn if available, otherwise filter's column)
+      const secondConditionColumnType = (
+        searchMode.secondColumn || filter?.column
+      )?.type;
+
       // Between operator with #to marker - show [value][to] only
       badges.push({
         id: 'second-value-from',
@@ -571,6 +584,7 @@ export const useBadgeBuilder = (
         onClear: handlers.onClearSecondValue,
         canClear: true,
         canEdit: false, // Not editable while typing
+        columnType: secondConditionColumnType,
       });
 
       // "to" separator badge

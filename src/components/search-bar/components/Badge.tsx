@@ -23,11 +23,33 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const onValueChange = config.onValueChange;
   const onEditComplete = config.onEditComplete;
   const isSelected = config.isSelected || false;
+  const columnType = config.columnType;
 
   // Trigger shake animation for validation error
   const triggerShake = () => {
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 400);
+  };
+
+  // Validate value based on column type
+  const validateValue = (value: string): boolean => {
+    const trimmedValue = value.trim();
+
+    // Empty value is invalid
+    if (trimmedValue === '') {
+      return false;
+    }
+
+    // For numeric columns (number, currency), only allow numeric values
+    if (columnType === 'number' || columnType === 'currency') {
+      // Allow numbers with optional decimal point and negative sign
+      // Also allow comma as decimal separator (for Indonesian locale)
+      const numericPattern = /^-?\d+([.,]\d+)?$/;
+      return numericPattern.test(trimmedValue);
+    }
+
+    // Text and date columns allow any value
+    return true;
   };
 
   // Auto-focus input when entering editing mode
@@ -81,8 +103,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      // Validate: don't allow empty value on Enter
-      if (editingValue.trim() === '') {
+      // Validate value (empty check + type-specific validation)
+      if (!validateValue(editingValue)) {
         triggerShake();
         return;
       }
@@ -127,8 +149,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       isClearing.current = false;
       return;
     }
-    // Validate: don't allow empty value on blur
-    if (editingValue.trim() === '') {
+    // Validate value (empty check + type-specific validation)
+    if (!validateValue(editingValue)) {
       triggerShake();
       // Re-focus input after shake
       setTimeout(() => inputRef.current?.focus(), 10);
