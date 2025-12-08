@@ -79,6 +79,37 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]); // Only trigger on edit mode change, not value length change
 
+  // Auto-enter edit mode if badge value is invalid (for value badges only)
+  // Track if we've already triggered auto-edit for this label to prevent infinite loop
+  const hasAutoEditTriggered = useRef(false);
+  useEffect(() => {
+    // Only for value badges (type 'value' or 'valueSecond') that can be edited
+    const isValueBadge =
+      config.type === 'value' || config.type === 'valueSecond';
+    if (
+      isValueBadge &&
+      !isEditing &&
+      config.canEdit &&
+      config.onEdit &&
+      !hasAutoEditTriggered.current
+    ) {
+      const isInvalid = !validateValue(config.label);
+      if (isInvalid) {
+        hasAutoEditTriggered.current = true;
+        // Shake first, then enter edit mode
+        triggerShake();
+        setTimeout(() => {
+          config.onEdit?.();
+        }, 100);
+      }
+    }
+    // Reset flag when label changes (new value submitted)
+    if (hasAutoEditTriggered.current && validateValue(config.label)) {
+      hasAutoEditTriggered.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.label, config.type, config.canEdit, config.onEdit, isEditing]);
+
   // Restore cursor position after value changes (but not when entering edit mode)
   useEffect(() => {
     if (isEditing && inputRef.current && cursorPosition.current !== null) {
