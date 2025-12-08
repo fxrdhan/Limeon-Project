@@ -79,4 +79,6 @@ export interface BadgeConfig {
   onFocusInput?: () => void;
   // Keyboard navigation selection
   isSelected?: boolean; // Whether badge is selected via keyboard navigation
+  // Column type for value validation (only for value badges)
+  columnType?: 'text' | 'number' | 'date' | 'currency';
 }
