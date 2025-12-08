@@ -322,9 +322,17 @@ export const useSearchInput = ({
       const inputValue = e.target.value;
 
       if (searchMode.isFilterMode && searchMode.filterSearch) {
-        // SPECIAL CASE: Confirmed filter + user types # for join selector
+        // SPECIAL CASE: Confirmed filter + user types # or SPACE for join selector
         // Remove ## marker first, then append # to open join selector
-        if (searchMode.filterSearch.isConfirmed && inputValue.trim() === '#') {
+        // SPACE only works for single-condition (not multi-condition)
+        const isHashTrigger = inputValue.trim() === '#';
+        const isSpaceTrigger =
+          inputValue === ' ' && !searchMode.filterSearch.isMultiCondition;
+
+        if (
+          searchMode.filterSearch.isConfirmed &&
+          (isHashTrigger || isSpaceTrigger)
+        ) {
           const cleanValue = value.replace(/##\s*$/, '').trim();
           const newValue = cleanValue + ' #';
           onChange({
@@ -599,6 +607,14 @@ export const useSearchInput = ({
           } as React.ChangeEvent<HTMLInputElement>);
         }
       } else {
+        // SPECIAL CASE: First SPACE on empty input triggers column selector (like #)
+        // This makes it easier to enter filter mode without typing #
+        if (inputValue === ' ' && value.trim() === '') {
+          onChange({
+            target: { value: '#' },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
         onChange(e);
       }
     },

@@ -290,6 +290,10 @@ function BaseSelector<T>({
           // Capture alphanumeric and space for search
           if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
+            // Skip space if search term is empty (prevents accidental search when SPACE opens selector)
+            if (e.key === ' ' && internalSearchTerm === '') {
+              return;
+            }
             setInternalSearchTerm(prev => prev + e.key);
             // Reset to first item when search changes
             setSelectedIndex(0);
@@ -300,7 +304,14 @@ function BaseSelector<T>({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredItems, selectedIndex, onSelect, onClose]);
+  }, [
+    isOpen,
+    filteredItems,
+    selectedIndex,
+    onSelect,
+    onClose,
+    internalSearchTerm,
+  ]);
 
   useEffect(() => {
     if (isOpen && itemRefs.current[selectedIndex] && listContainerRef.current) {

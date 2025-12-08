@@ -10,8 +10,11 @@ import { findOperatorForColumn } from './operatorUtils';
 /**
  * Parse inRange (Between) operator values
  * Supports two formats:
- * - Space separated: "500 700"
+ * - #to marker: "500 #to 700"
  * - Dash separated: "500-700" (only for confirmed values)
+ *
+ * Note: Space-separated format ("500 700") is NOT supported to allow
+ * spaces in filter values (e.g., "para 129" for Contains operator)
  *
  * @param valueString - String containing one or two values
  * @param isConfirmed - Whether this is a confirmed value (has ## or #to marker)
@@ -23,7 +26,7 @@ const parseInRangeValues = (
 ): { value: string; valueTo: string } | null => {
   const trimmed = valueString.trim();
 
-  // First, check for #to marker pattern: "500 #to 700"
+  // Check for #to marker pattern: "500 #to 700"
   // This is used when Between operator transitions from typing to confirmed state
   const toMarkerMatch = trimmed.match(/^(.+?)\s+#to\s+(.+)$/i);
   if (toMarkerMatch) {
@@ -34,28 +37,6 @@ const parseInRangeValues = (
         valueTo: secondVal.trim(),
       };
     }
-  }
-
-  // Then try to split by whitespace (e.g., "500 700")
-  const spaceParts = trimmed.split(/\s+/);
-  if (spaceParts.length >= 2) {
-    // Check if parts contain #to marker (fallback case)
-    // Input like "500 #to 600" that wasn't caught by regex above
-    const toIndex = spaceParts.findIndex(part => part.toLowerCase() === '#to');
-    if (toIndex > 0 && toIndex < spaceParts.length - 1) {
-      // Found #to marker - split around it
-      const firstParts = spaceParts.slice(0, toIndex);
-      const secondParts = spaceParts.slice(toIndex + 1);
-      return {
-        value: firstParts.join(' '),
-        valueTo: secondParts.join(' '),
-      };
-    }
-    // Normal space-separated values (e.g., "500 700")
-    return {
-      value: spaceParts[0],
-      valueTo: spaceParts.slice(1).join(' '),
-    };
   }
 
   // Dash separator (e.g., "500-700")
@@ -254,8 +235,9 @@ export const parseSearchValue = (
   rawSearchValue: string,
   columns: SearchColumn[]
 ): EnhancedSearchState => {
-  // Trim whitespace (handles paste with trailing newlines/spaces)
-  const searchValue = rawSearchValue.trim();
+  // Remove newlines (from paste) and trim only leading whitespace
+  // Preserve trailing spaces so user can type "para 129" with space in value
+  const searchValue = rawSearchValue.replace(/[\r\n]+/g, '').trimStart();
 
   if (searchValue === '#') {
     return {
