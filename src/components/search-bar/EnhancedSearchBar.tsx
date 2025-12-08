@@ -3762,6 +3762,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               previewColumn={previewColumn}
               previewOperator={previewOperator}
               isEditingSecondColumn={isEditingSecondColumnState}
+              isEditingSecondOperator={isEditingSecondOperator}
             />
           </div>
         </div>

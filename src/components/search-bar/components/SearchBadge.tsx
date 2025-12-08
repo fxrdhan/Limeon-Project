@@ -82,8 +82,9 @@ interface SearchBadgeProps {
   // Live preview props - show highlighted selector item in badge
   previewColumn?: { headerName: string; field: string } | null;
   previewOperator?: { label: string; value: string } | null;
-  // Explicit flag for which column is being edited (for preview)
+  // Explicit flags for which column/operator is being edited (for preview and glow)
   isEditingSecondColumn?: boolean;
+  isEditingSecondOperator?: boolean;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -125,6 +126,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   previewColumn,
   previewOperator,
   isEditingSecondColumn,
+  isEditingSecondOperator,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
   const modeToRender = preservedSearchMode || searchMode;
@@ -164,9 +166,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   );
 
   // Apply preview values to badges for live preview during selector navigation
-  // isEditingSecondColumn is passed as prop from EnhancedSearchBar
-  // isEditingSecondOperator is derived from searchMode
-  const isEditingSecondOperator = searchMode.isSecondOperator;
+  // isEditingSecondColumn and isEditingSecondOperator are passed as props from EnhancedSearchBar
 
   // Check if we're in edit mode (preservedSearchMode exists)
   // Preview should only apply when EDITING existing badges, not when CREATING new ones
@@ -241,6 +241,32 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     onHoverChange?.(false);
   };
 
+  // Determine which badge should have glow effect when selector is open
+  // This makes it visually clear which badge is being edited
+  const getBadgeGlowState = (badgeId: string): boolean => {
+    // Only show glow when in edit mode (preservedSearchMode exists)
+    if (!isInEditMode) return false;
+
+    // Column selector open
+    if (searchMode.showColumnSelector) {
+      if (isEditingSecondColumn && badgeId === 'second-column') return true;
+      if (!isEditingSecondColumn && badgeId === 'column') return true;
+    }
+
+    // Operator selector open
+    if (searchMode.showOperatorSelector) {
+      if (isEditingSecondOperator && badgeId === 'second-operator') return true;
+      if (!isEditingSecondOperator && badgeId === 'operator') return true;
+    }
+
+    // Join operator selector open
+    if (searchMode.showJoinOperatorSelector && badgeId === 'join') {
+      return true;
+    }
+
+    return false;
+  };
+
   // Always render container so AnimatePresence can handle exit animations
   // Use overflow-visible to allow exit animations to be visible (not clipped)
   return (
@@ -270,6 +296,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
             refToUse = secondOperatorBadgeRef; // Second operator badge
           }
 
+          // Add glow state based on selector being open
+          const shouldGlow = getBadgeGlowState(badge.id);
+          const badgeWithGlow = shouldGlow
+            ? { ...badge, isSelected: true }
+            : badge;
+
           return (
             <motion.div
               key={badge.id}
@@ -280,7 +312,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               animate="animate"
               exit="exit"
             >
-              <Badge config={badge} />
+              <Badge config={badgeWithGlow} />
             </motion.div>
           );
         })}

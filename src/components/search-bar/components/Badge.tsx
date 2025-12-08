@@ -138,8 +138,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     onEditComplete?.(editingValue);
   };
 
-  // Glow effect for selected badge (color based on badge type)
-  const selectedClass = isSelected ? colors.glow : '';
+  // Glow effect for selected badge OR editing badge (color based on badge type)
+  const selectedClass = isSelected || isEditing ? colors.glow : '';
 
   // Shake animation styles
   const shakeStyle: React.CSSProperties = isShaking
