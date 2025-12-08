@@ -40,12 +40,26 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       return false;
     }
 
-    // For numeric columns (number, currency), only allow numeric values
+    // For numeric columns (number, currency), validate numeric content
     if (columnType === 'number' || columnType === 'currency') {
-      // Allow numbers with optional decimal point and negative sign
-      // Also allow comma as decimal separator (for Indonesian locale)
-      const numericPattern = /^-?\d+([.,]\d+)?$/;
-      return numericPattern.test(trimmedValue);
+      // Must contain at least one digit
+      if (!/\d/.test(trimmedValue)) {
+        return false;
+      }
+
+      // Remove known currency symbols/prefixes for validation
+      const withoutCurrency = trimmedValue.replace(
+        /^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i,
+        ''
+      );
+
+      // After removing currency, should only contain: digits, +, -, ., ,, spaces
+      const hasInvalidChars = /[^\d+\-.,\s]/.test(withoutCurrency);
+      if (hasInvalidChars) {
+        return false;
+      }
+
+      return true;
     }
 
     // Text and date columns allow any value
