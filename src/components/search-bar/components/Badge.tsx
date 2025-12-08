@@ -80,32 +80,29 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   }, [isEditing]); // Only trigger on edit mode change, not value length change
 
   // Auto-enter edit mode if badge value is invalid (for value badges only)
-  // Track if we've already triggered auto-edit for this label to prevent infinite loop
-  const hasAutoEditTriggered = useRef(false);
+  // Track if we've already triggered for this label to prevent infinite loop
+  const hasAutoTriggered = useRef(false);
   useEffect(() => {
-    // Only for value badges (type 'value' or 'valueSecond') that can be edited
-    const isValueBadge =
+    // Only for value badges (type 'value' or 'valueSecond')
+    const isValueBadgeType =
       config.type === 'value' || config.type === 'valueSecond';
-    if (
-      isValueBadge &&
-      !isEditing &&
-      config.canEdit &&
-      config.onEdit &&
-      !hasAutoEditTriggered.current
-    ) {
+    if (isValueBadgeType && !isEditing && !hasAutoTriggered.current) {
       const isInvalid = !validateValue(config.label);
       if (isInvalid) {
-        hasAutoEditTriggered.current = true;
-        // Shake first, then enter edit mode
+        hasAutoTriggered.current = true;
+        // Shake to indicate error
         triggerShake();
-        setTimeout(() => {
-          config.onEdit?.();
-        }, 100);
+        // If editable, auto-enter edit mode after shake
+        if (config.canEdit && config.onEdit) {
+          setTimeout(() => {
+            config.onEdit?.();
+          }, 100);
+        }
       }
     }
-    // Reset flag when label changes (new value submitted)
-    if (hasAutoEditTriggered.current && validateValue(config.label)) {
-      hasAutoEditTriggered.current = false;
+    // Reset flag when label changes to a valid value
+    if (hasAutoTriggered.current && validateValue(config.label)) {
+      hasAutoTriggered.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.label, config.type, config.canEdit, config.onEdit, isEditing]);
@@ -207,6 +204,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Glow effect for selected badge OR editing badge (color based on badge type)
   const selectedClass = isSelected || isEditing ? colors.glow : '';
 
+  // Check if badge value is invalid (for value badges only, when not editing)
+  const isValueBadge = config.type === 'value' || config.type === 'valueSecond';
+  const hasInvalidValue =
+    isValueBadge && !isEditing && !validateValue(config.label);
+
   // Shake animation styles
   const shakeStyle: React.CSSProperties = isShaking
     ? {
@@ -214,8 +216,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       }
     : {};
 
-  // Error state styles (solid rose background during shake)
-  const errorClass = isShaking ? '!bg-rose-200 !text-rose-800' : '';
+  // Error state styles - persistent for invalid values, temporary during shake
+  const errorClass =
+    isShaking || hasInvalidValue ? '!bg-rose-200 !text-rose-800' : '';
 
   return (
     <div
