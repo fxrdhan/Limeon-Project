@@ -48,13 +48,12 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       }
 
       // Remove known currency symbols/prefixes for validation
-      const withoutCurrency = trimmedValue.replace(
-        /^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i,
-        ''
-      );
+      const withoutCurrency = trimmedValue
+        .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, '')
+        .trim();
 
-      // After removing currency, should only contain: digits, +, -, ., ,, spaces
-      const hasInvalidChars = /[^\d+\-.,\s]/.test(withoutCurrency);
+      // After removing currency, should only contain: digits, +, -, ., , (no spaces)
+      const hasInvalidChars = /[^\d+\-.,]/.test(withoutCurrency);
       if (hasInvalidChars) {
         return false;
       }
