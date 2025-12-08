@@ -187,7 +187,13 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           onClick={
             isEditing ? () => onEditComplete?.(editingValue) : config.onEdit
           }
-          onMouseDown={e => e.stopPropagation()}
+          onMouseDown={e => {
+            e.stopPropagation();
+            // Set flag to prevent blur validation when clicking X to cancel edit
+            if (isEditing) {
+              isClearing.current = true;
+            }
+          }}
           className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 ${
             isEditing || isSelected
               ? 'ml-1.5 max-w-[24px] opacity-100'
