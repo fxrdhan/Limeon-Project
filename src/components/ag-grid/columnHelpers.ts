@@ -102,6 +102,8 @@ export const formatBaseCurrency = (value: number): string => {
     value?.toLocaleString('id-ID', {
       style: 'currency',
       currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }) || ''
   );
 };
