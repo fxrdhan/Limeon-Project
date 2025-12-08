@@ -275,6 +275,22 @@ export const useSearchKeyboard = ({
             return;
           }
 
+          // Delete on Between operator waiting for valueTo: Enter edit mode for first value
+          // This handles the case when user has [Column][Between][Value][to] and presses Delete
+          if (
+            searchMode.isFilterMode &&
+            searchMode.filterSearch?.operator === 'inRange' &&
+            searchMode.filterSearch?.waitingForValueTo &&
+            searchMode.filterSearch?.value &&
+            !searchMode.filterSearch?.isMultiCondition
+          ) {
+            e.preventDefault();
+            if (onEditValue) {
+              onEditValue();
+            }
+            return;
+          }
+
           // E9 Step 6: Delete on partial multi-condition (5 badges) removes second operator and opens operator selector
           // Pattern: [Column][Operator][Value][Join][SecondOperator] + Delete -> [Column][Operator][Value][Join] with operator selector open
           if (
