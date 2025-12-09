@@ -201,13 +201,20 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     onEditComplete?.(editingValue);
   };
 
-  // Glow effect for selected badge OR editing badge (color based on badge type)
-  const selectedClass = isSelected || isEditing ? colors.glow : '';
-
   // Check if badge value is invalid (for value badges only, when not editing)
   const isValueBadge = config.type === 'value' || config.type === 'valueSecond';
   const hasInvalidValue =
     isValueBadge && !isEditing && !validateValue(config.label);
+
+  // Glow effect - red for invalid/shaking, otherwise badge type color
+  const errorGlow =
+    'shadow-[0_0_12px_rgba(244,63,94,0.5),0_0_24px_rgba(244,63,94,0.3)]';
+  const selectedClass =
+    isShaking || hasInvalidValue
+      ? errorGlow
+      : isSelected || isEditing
+        ? colors.glow
+        : '';
 
   // Shake animation styles
   const shakeStyle: React.CSSProperties = isShaking

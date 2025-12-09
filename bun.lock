@@ -5,6 +5,7 @@
     "": {
       "name": "pharmasys",
       "dependencies": {
+        "@ag-grid-community/locale": "^34.3.1",
         "@headlessui/react": "^2.2.9",
         "@heroicons/react": "^2.2.0",
         "@supabase/supabase-js": "^2.86.0",
@@ -87,6 +88,8 @@
     "@acemir/cssom": ["@acemir/cssom@0.9.24", "", {}, "sha512-5YjgMmAiT2rjJZU7XK1SNI7iqTy92DpaYVgG6x63FxkJ11UpYfLndHJATtinWJClAXiOlW9XWaUyAQf8pMrQPg=="],
 
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
+
+    "@ag-grid-community/locale": ["@ag-grid-community/locale@34.3.1", "", {}, "sha512-fAHvOZ6p6nURaUsm4S0KTOc5vuhDWzsEimljbpAVkVQspvuDvRAYW/cZnTl+KSUEp8QhfZ6JRrwuVitbdpgihg=="],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
