@@ -1,8 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { LuX } from 'react-icons/lu';
 import { FiEdit2 } from 'react-icons/fi';
 import { PiTrashSimpleBold } from 'react-icons/pi';
 import { BadgeConfig, BADGE_COLORS } from '../types/badge';
+
+// Format currency value for display (e.g., "500" -> "Rp 500")
+const formatCurrencyDisplay = (value: string): string => {
+  // Extract numeric value, handling existing currency symbols and formatting
+  const cleanValue = value
+    .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, '')
+    .replace(/[.,]/g, '') // Remove thousand separators
+    .trim();
+
+  const numericValue = parseInt(cleanValue, 10);
+
+  if (isNaN(numericValue)) {
+    return value; // Return original if can't parse
+  }
+
+  // Format with thousand separators (Indonesian style: 1.000.000)
+  const formatted = numericValue.toLocaleString('id-ID');
+  return `Rp ${formatted}`;
+};
 
 interface BadgeProps {
   config: BadgeConfig;
@@ -24,6 +43,16 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const onEditComplete = config.onEditComplete;
   const isSelected = config.isSelected || false;
   const columnType = config.columnType;
+
+  // Format display label for currency columns (only for value badges)
+  const displayLabel = useMemo(() => {
+    const isValueBadge =
+      config.type === 'value' || config.type === 'valueSecond';
+    if (isValueBadge && columnType === 'currency' && config.label) {
+      return formatCurrencyDisplay(config.label);
+    }
+    return config.label;
+  }, [config.type, config.label, columnType]);
 
   // Trigger shake animation for validation error
   const triggerShake = () => {
@@ -254,7 +283,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           }
           className={config.canEdit && config.onEdit ? 'cursor-pointer' : ''}
         >
-          {config.label}
+          {displayLabel}
         </span>
       )}
       {/* Edit/Cancel button - same position, swaps icon based on mode */}
