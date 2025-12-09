@@ -26,6 +26,7 @@ import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
+import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 
 // Entity management hooks
 import {
@@ -179,9 +180,6 @@ const ItemMasterNew = memo(() => {
 
   // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
   const isTabSwitchingRef = useRef(false);
-
-  // 📌 Track all applied filter fields to clear them when changing filters
-  const lastFilterFieldsRef = useRef<string[]>([]);
 
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
@@ -413,290 +411,28 @@ const ItemMasterNew = memo(() => {
   }, [itemsManagement]);
 
   const handleItemFilterSearch = useCallback(
-    async (filterSearch: FilterSearch | null) => {
+    (filterSearch: FilterSearch | null) => {
       // 🔒 Block grid filter changes during tab switching
       // SearchBar will call this with null when clearing, but we want to preserve grid filters
       if (isTabSwitchingRef.current) {
-        // console.log('🔒 Blocked grid filter change during tab switch');
         return;
       }
 
-      if (!filterSearch) {
-        if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-          unifiedGridApi.setFilterModel(null);
-          unifiedGridApi.onFilterChanged();
-        }
-        // Clear the tracked filter fields
-        lastFilterFieldsRef.current = [];
+      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
         return;
       }
 
-      if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        // 🔧 Collect all fields that will be applied in this filter
-        let newFilteredFields: string[] = [];
-        if (filterSearch.isMultiCondition && filterSearch.conditions) {
-          if (filterSearch.isMultiColumn) {
-            // Multi-column: collect all unique fields from conditions
-            const fieldsSet = new Set<string>();
-            for (const cond of filterSearch.conditions) {
-              fieldsSet.add(cond.field || filterSearch.field);
-            }
-            newFilteredFields = Array.from(fieldsSet);
-          } else {
-            // Same-column: only one field
-            newFilteredFields = [filterSearch.field];
-          }
-        } else {
-          // Single condition: only one field
-          newFilteredFields = [filterSearch.field];
-        }
+      // Build Advanced Filter model from FilterSearch
+      // Advanced Filter API supports OR across different columns natively
+      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
 
-        // Clear old filters that are not in the new filter
-        const fieldsToKeep = new Set(newFilteredFields);
-        for (const oldField of lastFilterFieldsRef.current) {
-          if (!fieldsToKeep.has(oldField)) {
-            try {
-              await unifiedGridApi.setColumnFilterModel(oldField, null);
-              console.log(
-                `[handleItemFilterSearch] Cleared old filter: ${oldField}`
-              );
-            } catch (error) {
-              console.error(
-                `Failed to clear old filter for ${oldField}:`,
-                error
-              );
-            }
-          }
-        }
-        try {
-          // Determine filter type based on column configuration
-          const isNumericColumn = [
-            'stock',
-            'base_price',
-            'sell_price',
-          ].includes(filterSearch.field);
+      console.log(
+        '[handleItemFilterSearch] Applying Advanced Filter:',
+        advancedFilterModel
+      );
 
-          // Columns that use agMultiColumnFilter
-          const isMultiFilterColumn = [
-            'manufacturer.name',
-            'category.name',
-            'type.name',
-            'package.name',
-            'dosage.name',
-          ].includes(filterSearch.field);
-
-          // Handle multi-condition filters (AND/OR)
-          if (filterSearch.isMultiCondition && filterSearch.conditions) {
-            console.log('[handleItemFilterSearch] Multi-condition detected!', {
-              field: filterSearch.field,
-              conditions: filterSearch.conditions,
-              joinOperator: filterSearch.joinOperator,
-              isMultiColumn: filterSearch.isMultiColumn,
-            });
-
-            // 🆕 MULTI-COLUMN FILTER: Apply each condition to its respective column
-            if (filterSearch.isMultiColumn) {
-              console.log(
-                '[handleItemFilterSearch] Multi-column filter detected!'
-              );
-
-              // Group conditions by field
-              const conditionsByField: Record<
-                string,
-                typeof filterSearch.conditions
-              > = {};
-
-              for (const cond of filterSearch.conditions) {
-                const field = cond.field || filterSearch.field;
-                if (!conditionsByField[field]) {
-                  conditionsByField[field] = [];
-                }
-                conditionsByField[field].push(cond);
-              }
-
-              console.log(
-                '[handleItemFilterSearch] Conditions by field:',
-                conditionsByField
-              );
-
-              // Apply filter to each column
-              for (const [field, conditions] of Object.entries(
-                conditionsByField
-              )) {
-                const fieldIsNumeric = [
-                  'stock',
-                  'base_price',
-                  'sell_price',
-                ].includes(field);
-                const fieldIsMultiFilter = [
-                  'manufacturer.name',
-                  'category.name',
-                  'type.name',
-                  'package.name',
-                  'dosage.name',
-                ].includes(field);
-
-                const filterType = fieldIsNumeric ? 'number' : 'text';
-
-                // Build filter model for this column
-                const agConditions = conditions.map(cond => {
-                  const baseCondition: {
-                    filterType: string;
-                    type: string;
-                    filter: number | string;
-                    filterTo?: number | string;
-                  } = {
-                    filterType,
-                    type: cond.operator,
-                    filter: fieldIsNumeric ? Number(cond.value) : cond.value,
-                  };
-
-                  if (cond.operator === 'inRange' && cond.valueTo) {
-                    baseCondition.filterTo = fieldIsNumeric
-                      ? Number(cond.valueTo)
-                      : cond.valueTo;
-                  }
-
-                  return baseCondition;
-                });
-
-                // Single condition or combined model
-                const filterModel =
-                  agConditions.length === 1
-                    ? agConditions[0]
-                    : {
-                        filterType,
-                        operator: filterSearch.joinOperator || 'AND',
-                        conditions: agConditions,
-                      };
-
-                if (fieldIsMultiFilter) {
-                  await unifiedGridApi.setColumnFilterModel(field, {
-                    filterType: 'multi',
-                    filterModels: [filterModel],
-                  });
-                } else {
-                  await unifiedGridApi.setColumnFilterModel(field, filterModel);
-                }
-
-                console.log(
-                  `[handleItemFilterSearch] Applied filter to ${field}:`,
-                  filterModel
-                );
-              }
-            } else {
-              // SAME-COLUMN MULTI-CONDITION: existing logic
-              const baseFilterType = isNumericColumn ? 'number' : 'text';
-
-              // Build conditions array for AG Grid
-              const agConditions = filterSearch.conditions.map(cond => {
-                const baseCondition: {
-                  filterType: string;
-                  type: string;
-                  filter: number | string;
-                  filterTo?: number | string;
-                } = {
-                  filterType: baseFilterType,
-                  type: cond.operator,
-                  filter: isNumericColumn ? Number(cond.value) : cond.value,
-                };
-
-                // Add filterTo for inRange (Between) operator
-                if (cond.operator === 'inRange' && cond.valueTo) {
-                  baseCondition.filterTo = isNumericColumn
-                    ? Number(cond.valueTo)
-                    : cond.valueTo;
-                }
-
-                return baseCondition;
-              });
-
-              console.log(
-                '[handleItemFilterSearch] AG Grid conditions:',
-                agConditions
-              );
-
-              // Build combined filter model
-              const combinedModel = {
-                filterType: baseFilterType,
-                operator: filterSearch.joinOperator || 'AND',
-                conditions: agConditions,
-              };
-
-              console.log(
-                '[handleItemFilterSearch] Combined model:',
-                combinedModel
-              );
-
-              if (isMultiFilterColumn) {
-                // Wrap in multi-filter for columns that use agMultiColumnFilter
-                await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-                  filterType: 'multi',
-                  filterModels: [combinedModel],
-                });
-              } else {
-                // Direct combined model for regular columns
-                await unifiedGridApi.setColumnFilterModel(
-                  filterSearch.field,
-                  combinedModel
-                );
-              }
-            }
-          } else {
-            // Single condition filter (existing logic)
-            console.log('[handleItemFilterSearch] Single condition filter', {
-              field: filterSearch.field,
-              operator: filterSearch.operator,
-              value: filterSearch.value,
-              isMultiCondition: filterSearch.isMultiCondition,
-            });
-
-            if (isMultiFilterColumn) {
-              // For multi-filter columns (manufacturer, category, type, package, dosage)
-              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-                filterType: 'multi',
-                filterModels: [
-                  {
-                    filterType: 'text',
-                    type: filterSearch.operator,
-                    filter: filterSearch.value,
-                  },
-                ],
-              });
-            } else {
-              // For single filter columns (name, code, barcode, package_conversions, numeric columns)
-              const filterType = isNumericColumn ? 'number' : 'text';
-              const filterModel: {
-                filterType: string;
-                type: string;
-                filter: string;
-                filterTo?: string;
-              } = {
-                filterType,
-                type: filterSearch.operator,
-                filter: filterSearch.value,
-              };
-
-              // Add filterTo for inRange (Between) operator
-              if (filterSearch.operator === 'inRange' && filterSearch.valueTo) {
-                filterModel.filterTo = filterSearch.valueTo;
-              }
-
-              await unifiedGridApi.setColumnFilterModel(
-                filterSearch.field,
-                filterModel
-              );
-            }
-          }
-
-          // 📌 Track all currently filtered fields for future filter changes
-          lastFilterFieldsRef.current = newFilteredFields;
-
-          unifiedGridApi.onFilterChanged();
-        } catch (error) {
-          console.error('Failed to apply filter:', error);
-        }
-      }
+      // Apply the Advanced Filter model
+      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
     },
     [unifiedGridApi]
   );
@@ -841,161 +577,27 @@ const ItemMasterNew = memo(() => {
 
   // Entity filter search handler
   const handleEntityFilterSearch = useCallback(
-    async (filterSearch: FilterSearch | null) => {
+    (filterSearch: FilterSearch | null) => {
       // 🔒 Block grid filter changes during tab switching
       if (isTabSwitchingRef.current) {
-        // console.log('🔒 Blocked entity grid filter change during tab switch');
         return;
       }
 
-      if (!filterSearch) {
-        if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-          unifiedGridApi.setFilterModel(null);
-          unifiedGridApi.onFilterChanged();
-        }
-        // Clear the tracked filter fields
-        lastFilterFieldsRef.current = [];
+      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
         return;
       }
 
-      if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        // 🔧 Collect all fields that will be applied in this filter
-        let newFilteredFields: string[] = [];
-        if (filterSearch.isMultiCondition && filterSearch.conditions) {
-          if (filterSearch.isMultiColumn) {
-            // Multi-column: collect all unique fields from conditions
-            const fieldsSet = new Set<string>();
-            for (const cond of filterSearch.conditions) {
-              fieldsSet.add(cond.field || filterSearch.field);
-            }
-            newFilteredFields = Array.from(fieldsSet);
-          } else {
-            // Same-column: only one field
-            newFilteredFields = [filterSearch.field];
-          }
-        } else {
-          // Single condition: only one field
-          newFilteredFields = [filterSearch.field];
-        }
+      // Build Advanced Filter model from FilterSearch
+      // Advanced Filter API supports OR across different columns natively
+      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
 
-        // Clear old filters that are not in the new filter
-        const fieldsToKeep = new Set(newFilteredFields);
-        for (const oldField of lastFilterFieldsRef.current) {
-          if (!fieldsToKeep.has(oldField)) {
-            try {
-              await unifiedGridApi.setColumnFilterModel(oldField, null);
-              console.log(
-                `[handleEntityFilterSearch] Cleared old filter: ${oldField}`
-              );
-            } catch (error) {
-              console.error(
-                `Failed to clear old entity filter for ${oldField}:`,
-                error
-              );
-            }
-          }
-        }
-        try {
-          // filterSearch.field is already prefixed (e.g., 'categories.code')
-          // Extract base field name for multi-filter check
-          const fieldParts = filterSearch.field.split('.');
-          const baseFieldName = fieldParts[fieldParts.length - 1]; // Get last part after dot
+      console.log(
+        '[handleEntityFilterSearch] Applying Advanced Filter:',
+        advancedFilterModel
+      );
 
-          // Entity columns are simpler - mostly text filters
-          // Special handling for 'code' and 'nci_code' which use multi-filter
-          const isMultiFilter =
-            baseFieldName === 'code' || baseFieldName === 'nci_code';
-
-          // Handle multi-condition filters (AND/OR)
-          if (filterSearch.isMultiCondition && filterSearch.conditions) {
-            // Build conditions array for AG Grid
-            const agConditions = filterSearch.conditions.map(cond => {
-              const baseCondition: {
-                filterType: string;
-                type: string;
-                filter: string;
-                filterTo?: string;
-              } = {
-                filterType: 'text',
-                type: cond.operator,
-                filter: cond.value,
-              };
-
-              // Add filterTo for inRange (Between) operator
-              if (cond.operator === 'inRange' && cond.valueTo) {
-                baseCondition.filterTo = cond.valueTo;
-              }
-
-              return baseCondition;
-            });
-
-            // Build combined filter model
-            const combinedModel = {
-              filterType: 'text',
-              operator: filterSearch.joinOperator || 'AND',
-              conditions: agConditions,
-            };
-
-            if (isMultiFilter) {
-              // Wrap in multi-filter for columns that use agMultiColumnFilter
-              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-                filterType: 'multi',
-                filterModels: [combinedModel],
-              });
-            } else {
-              // Direct combined model for regular columns
-              await unifiedGridApi.setColumnFilterModel(
-                filterSearch.field,
-                combinedModel
-              );
-            }
-          } else {
-            // Single condition filter (existing logic)
-            if (isMultiFilter) {
-              // For multi-filter columns (code, nci_code)
-              await unifiedGridApi.setColumnFilterModel(filterSearch.field, {
-                filterType: 'multi',
-                filterModels: [
-                  {
-                    filterType: 'text',
-                    type: filterSearch.operator,
-                    filter: filterSearch.value,
-                  },
-                ],
-              });
-            } else {
-              // For single filter columns (name, description, address)
-              const filterModel: {
-                filterType: string;
-                type: string;
-                filter: string;
-                filterTo?: string;
-              } = {
-                filterType: 'text',
-                type: filterSearch.operator,
-                filter: filterSearch.value,
-              };
-
-              // Add filterTo for inRange (Between) operator
-              if (filterSearch.operator === 'inRange' && filterSearch.valueTo) {
-                filterModel.filterTo = filterSearch.valueTo;
-              }
-
-              await unifiedGridApi.setColumnFilterModel(
-                filterSearch.field,
-                filterModel
-              );
-            }
-          }
-
-          // 📌 Track all currently filtered fields for future filter changes
-          lastFilterFieldsRef.current = newFilteredFields;
-
-          unifiedGridApi.onFilterChanged();
-        } catch (error) {
-          console.error('Failed to apply entity filter:', error);
-        }
-      }
+      // Apply the Advanced Filter model
+      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
     },
     [unifiedGridApi]
   );

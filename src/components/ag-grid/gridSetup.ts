@@ -20,7 +20,9 @@ import {
   CsvExportModule,
   ValidationModule,
   RowApiModule,
+  LocaleModule,
 } from 'ag-grid-community';
+import { AG_GRID_LOCALE_EN } from '@ag-grid-community/locale';
 import {
   LicenseManager,
   RowSelectionModule,
@@ -35,6 +37,7 @@ import {
   RowGroupingPanelModule,
   MultiFilterModule,
   ExcelExportModule,
+  AdvancedFilterModule,
 } from 'ag-grid-enterprise';
 
 // Setup AG Grid once
@@ -58,6 +61,7 @@ export const setupAgGrid = () => {
     CsvExportModule,
     ValidationModule,
     RowApiModule,
+    LocaleModule,
     // Enterprise modules
     RowSelectionModule,
     RowGroupingModule,
@@ -71,6 +75,7 @@ export const setupAgGrid = () => {
     RowGroupingPanelModule,
     MultiFilterModule,
     ExcelExportModule,
+    AdvancedFilterModule,
   ]);
 
   // Configure license from environment variable
@@ -99,7 +104,9 @@ export const defaultTheme = themeQuartz.withParams({
 
 // Default column definition
 export const defaultColDef: ColDef = {
-  cellDataType: false,
+  // Note: cellDataType removed to allow Advanced Filter to detect column types properly
+  // When cellDataType: false, AG Grid's type system is disabled and Advanced Filter cannot
+  // determine numeric/date columns. Individual columns can still set cellDataType explicitly.
   enableCellChangeFlash: true,
   sortable: true, // Enable sorting by default
   resizable: true, // Enable column resizing by default
@@ -117,12 +124,34 @@ export const getContextMenuItems: GetContextMenuItems = () => {
   return ['copy', 'copyWithHeaders', 'copyWithGroupHeaders'];
 };
 
+// Custom locale text with readable Advanced Filter operators
+export const localeText = {
+  ...AG_GRID_LOCALE_EN,
+  // Override Advanced Filter numeric operators with readable text
+  advancedFilterEquals: 'Equals',
+  advancedFilterNotEqual: 'Not equal',
+  advancedFilterGreaterThan: 'Greater than',
+  advancedFilterGreaterThanOrEqual: 'Greater than or equal',
+  advancedFilterLessThan: 'Less than',
+  advancedFilterLessThanOrEqual: 'Less than or equal',
+  // Keep text filter operators readable
+  advancedFilterTextEquals: 'Equals',
+  advancedFilterTextNotEqual: 'Not equal',
+  advancedFilterContains: 'Contains',
+  advancedFilterNotContains: 'Not contains',
+  advancedFilterStartsWith: 'Starts with',
+  advancedFilterEndsWith: 'Ends with',
+  advancedFilterBlank: 'Is blank',
+  advancedFilterNotBlank: 'Is not blank',
+};
+
 // Base grid configuration with sensible defaults
 export const getDefaultGridConfig = () => ({
   theme: defaultTheme,
   defaultColDef,
   getRowId,
   getContextMenuItems,
+  localeText, // Include locale text for proper operator display in Advanced Filter
   domLayout: 'autoHeight' as const,
   rowClass: 'cursor-pointer',
   suppressScrollOnNewData: true,

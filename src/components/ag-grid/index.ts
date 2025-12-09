@@ -8,6 +8,7 @@ export {
   defaultColDef,
   getRowId,
   getContextMenuItems,
+  localeText,
 } from './gridSetup';
 
 // Column helpers
