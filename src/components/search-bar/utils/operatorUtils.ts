@@ -14,13 +14,13 @@ import { FilterOperator, SearchColumn } from '../types';
 /**
  * Get available operators for column type
  *
- * @param columnType - Type of column ('number' or other)
+ * @param columnType - Type of column ('number', 'currency' or other)
  * @returns Array of available operators for the column type
  */
 export function getAvailableOperators(
   columnType: string
 ): readonly FilterOperator[] {
-  return columnType === 'number'
+  return columnType === 'number' || columnType === 'currency'
     ? NUMBER_FILTER_OPERATORS
     : DEFAULT_FILTER_OPERATORS;
 }
