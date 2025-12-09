@@ -488,7 +488,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             suppressValues: true, // Remove Values (aggregate) section
           },
         },
-        'filters-new', // Shortcut untuk New Filters Tool Panel
+        // Note: 'filters-new' removed because Advanced Filter is enabled
+        // Column Filters are disabled in favor of programmatic filter via search bar
       ],
       defaultToolPanel, // Set default tool panel based on saved state
     };
@@ -588,6 +589,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           sideBar={sideBarConfig}
           // Ensure smooth state transitions
           suppressColumnMoveAnimation={true}
+          // Enable Advanced Filter API for multi-column OR support
+          // Note: This disables Column Filters in favor of programmatic filter control
+          enableAdvancedFilter={true}
         />
       </div>
 

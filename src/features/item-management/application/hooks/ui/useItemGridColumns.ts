@@ -196,46 +196,24 @@ export const useItemGridColumns = () => {
         ...createCurrencyColumn({
           field: 'base_price',
           headerName: 'Harga Pokok',
-
           valueFormatter: params => formatBaseCurrency(params.value),
         }),
-        filter: 'agNumberColumnFilter',
-        filterParams: {
-          filterOptions: [
-            'equals',
-            'notEqual',
-            'greaterThan',
-            'greaterThanOrEqual',
-            'lessThan',
-            'lessThanOrEqual',
-            'inRange',
-          ],
-          defaultOption: 'equals',
-          suppressAndOrCondition: false,
-        },
+        // cellDataType is required for Advanced Filter to recognize this as a number column
+        // filter: true allows AG Grid to use cellDataType to determine filter type
+        cellDataType: 'number',
+        filter: true,
         suppressHeaderFilterButton: true,
       },
       sell_price: {
         ...createCurrencyColumn({
           field: 'sell_price',
           headerName: 'Harga Jual',
-
           valueFormatter: params => formatCurrency(params.value),
         }),
-        filter: 'agNumberColumnFilter',
-        filterParams: {
-          filterOptions: [
-            'equals',
-            'notEqual',
-            'greaterThan',
-            'greaterThanOrEqual',
-            'lessThan',
-            'lessThanOrEqual',
-            'inRange',
-          ],
-          defaultOption: 'equals',
-          suppressAndOrCondition: false,
-        },
+        // cellDataType is required for Advanced Filter to recognize this as a number column
+        // filter: true allows AG Grid to use cellDataType to determine filter type
+        cellDataType: 'number',
+        filter: true,
         suppressHeaderFilterButton: true,
       },
       stock: {
@@ -243,20 +221,10 @@ export const useItemGridColumns = () => {
           field: 'stock',
           headerName: 'Stok',
         }),
-        filter: 'agNumberColumnFilter',
-        filterParams: {
-          filterOptions: [
-            'equals',
-            'notEqual',
-            'greaterThan',
-            'greaterThanOrEqual',
-            'lessThan',
-            'lessThanOrEqual',
-            'inRange',
-          ],
-          defaultOption: 'equals',
-          suppressAndOrCondition: false,
-        },
+        // cellDataType is required for Advanced Filter to recognize this as a number column
+        // filter: true allows AG Grid to use cellDataType to determine filter type
+        cellDataType: 'number',
+        filter: true,
         suppressHeaderFilterButton: true,
       },
     };

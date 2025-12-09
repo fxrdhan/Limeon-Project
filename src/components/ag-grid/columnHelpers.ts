@@ -15,8 +15,11 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
     whiteSpace: 'nowrap',
   },
   tooltipField: config.tooltipField || config.field,
-  valueGetter: config.valueGetter,
-  valueFormatter: config.valueFormatter,
+  // Only include valueGetter/valueFormatter if explicitly provided
+  ...(config.valueGetter !== undefined && { valueGetter: config.valueGetter }),
+  ...(config.valueFormatter !== undefined && {
+    valueFormatter: config.valueFormatter,
+  }),
   // Remove default sortable, resizable - let saved state and explicit config control these
   ...(config.sortable !== undefined && { sortable: config.sortable }),
   ...(config.resizable !== undefined && { resizable: config.resizable }),
@@ -32,8 +35,11 @@ export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
     textOverflow: 'unset',
     whiteSpace: 'normal',
   },
-  valueGetter: config.valueGetter,
-  valueFormatter: config.valueFormatter,
+  // Only include valueGetter/valueFormatter if explicitly provided
+  ...(config.valueGetter !== undefined && { valueGetter: config.valueGetter }),
+  ...(config.valueFormatter !== undefined && {
+    valueFormatter: config.valueFormatter,
+  }),
   // Remove default sortable, resizable - let saved state and explicit config control these
   ...(config.sortable !== undefined && { sortable: config.sortable }),
   ...(config.resizable !== undefined && { resizable: config.resizable }),
@@ -45,8 +51,11 @@ export const createNumberColumn = (config: ColumnConfig): ColDef => ({
   minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || { textAlign: 'right' },
-  valueGetter: config.valueGetter,
-  valueFormatter: config.valueFormatter,
+  // Only include valueGetter/valueFormatter if explicitly provided
+  ...(config.valueGetter !== undefined && { valueGetter: config.valueGetter }),
+  ...(config.valueFormatter !== undefined && {
+    valueFormatter: config.valueFormatter,
+  }),
   // Remove default sortable, resizable - let saved state and explicit config control these
   ...(config.sortable !== undefined && { sortable: config.sortable }),
   ...(config.resizable !== undefined && { resizable: config.resizable }),
@@ -67,7 +76,8 @@ export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }) || ''),
-  valueGetter: config.valueGetter,
+  // Only include valueGetter if explicitly provided (undefined valueGetter can break Advanced Filter)
+  ...(config.valueGetter !== undefined && { valueGetter: config.valueGetter }),
   // Remove default sortable, resizable - let saved state and explicit config control these
   ...(config.sortable !== undefined && { sortable: config.sortable }),
   ...(config.resizable !== undefined && { resizable: config.resizable }),
@@ -79,8 +89,11 @@ export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
   minWidth: config.minWidth, // Only use explicit minWidth, no default fallback
   maxWidth: config.maxWidth, // Support maxWidth to prevent excessive expansion
   cellStyle: config.cellStyle || { textAlign: 'center' },
-  valueGetter: config.valueGetter,
-  valueFormatter: config.valueFormatter,
+  // Only include valueGetter/valueFormatter if explicitly provided
+  ...(config.valueGetter !== undefined && { valueGetter: config.valueGetter }),
+  ...(config.valueFormatter !== undefined && {
+    valueFormatter: config.valueFormatter,
+  }),
   // Remove default sortable, resizable - let saved state and explicit config control these
   ...(config.sortable !== undefined && { sortable: config.sortable }),
   ...(config.resizable !== undefined && { resizable: config.resizable }),
