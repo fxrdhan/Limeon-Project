@@ -126,14 +126,14 @@ export const itemSearchColumns: SearchColumn[] = [
     field: 'base_price',
     headerName: 'Harga Pokok',
     searchable: true,
-    type: 'number',
+    type: 'currency',
     description: 'Cari berdasarkan harga pokok',
   },
   {
     field: 'sell_price',
     headerName: 'Harga Jual',
     searchable: true,
-    type: 'number',
+    type: 'currency',
     description: 'Cari berdasarkan harga jual',
   },
   {
