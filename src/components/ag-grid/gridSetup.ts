@@ -124,26 +124,10 @@ export const getContextMenuItems: GetContextMenuItems = () => {
   return ['copy', 'copyWithHeaders', 'copyWithGroupHeaders'];
 };
 
-// Custom locale text with readable Advanced Filter operators
-export const localeText = {
-  ...AG_GRID_LOCALE_EN,
-  // Override Advanced Filter numeric operators with readable text
-  advancedFilterEquals: 'Equals',
-  advancedFilterNotEqual: 'Not equal',
-  advancedFilterGreaterThan: 'Greater than',
-  advancedFilterGreaterThanOrEqual: 'Greater than or equal',
-  advancedFilterLessThan: 'Less than',
-  advancedFilterLessThanOrEqual: 'Less than or equal',
-  // Keep text filter operators readable
-  advancedFilterTextEquals: 'Equals',
-  advancedFilterTextNotEqual: 'Not equal',
-  advancedFilterContains: 'Contains',
-  advancedFilterNotContains: 'Not contains',
-  advancedFilterStartsWith: 'Starts with',
-  advancedFilterEndsWith: 'Ends with',
-  advancedFilterBlank: 'Is blank',
-  advancedFilterNotBlank: 'Is not blank',
-};
+// Use default AG Grid locale (uses symbols like =, >, <, ≥, ≤)
+// Custom text with words like "Greater than or equal" causes parsing issues
+// because "or" is interpreted as OR join operator
+export const localeText = AG_GRID_LOCALE_EN;
 
 // Base grid configuration with sensible defaults
 export const getDefaultGridConfig = () => ({
