@@ -11,13 +11,20 @@ export interface SearchColumn {
 }
 
 export interface FilterCondition {
+  id?: string; // Unique identifier for stable badge identity
   operator: string;
   value: string;
   valueTo?: string; // For inRange operator (Between) - second value
-  // Multi-column support: each condition can have its own column
-  field?: string; // Column field name for this condition
-  column?: SearchColumn; // Column reference for this condition
+  // Each condition must have its own column
+  field: string; // Column field name for this condition (required)
+  column: SearchColumn; // Column reference for this condition (required)
 }
+
+/**
+ * Maximum number of filter conditions allowed
+ * This limit is for UX - too many conditions become confusing
+ */
+export const MAX_FILTER_CONDITIONS = 5;
 
 export interface FilterSearch {
   field: string;
@@ -26,15 +33,17 @@ export interface FilterSearch {
   column: SearchColumn;
   operator: string; // For single condition (backward compat)
   isExplicitOperator: boolean;
-  // Multi-condition support
-  conditions?: FilterCondition[]; // Array of conditions for AND/OR
-  joinOperator?: 'AND' | 'OR'; // Join operator between conditions
-  isMultiCondition?: boolean; // Flag to indicate multi-condition filter
+  // Multi-condition support (up to MAX_FILTER_CONDITIONS)
+  conditions?: FilterCondition[]; // Array of conditions for AND/OR (1 to N)
+  joinOperators?: ('AND' | 'OR')[]; // Join operators between conditions (length = conditions.length - 1)
+  isMultiCondition?: boolean; // Flag to indicate multi-condition filter (2+ conditions)
   isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
   // Confirmed state (user pressed Enter to lock filter value as badge)
   isConfirmed?: boolean; // Flag to show value as gray badge instead of in input
   // Between operator waiting state (first value entered, waiting for second)
   waitingForValueTo?: boolean;
+  // Deprecated: kept for backward compatibility, use joinOperators[0] instead
+  joinOperator?: 'AND' | 'OR';
 }
 
 export interface TableSearchProps {
@@ -60,18 +69,32 @@ export interface EnhancedSearchBarProps extends TableSearchProps {
 export interface EnhancedSearchState {
   showColumnSelector: boolean;
   showOperatorSelector: boolean;
-  showJoinOperatorSelector: boolean; // NEW: for #and/#or selection
+  showJoinOperatorSelector: boolean; // For #and/#or selection
   isFilterMode: boolean;
   selectedColumn?: SearchColumn;
   filterSearch?: FilterSearch;
   globalSearch?: string;
-  isSecondOperator?: boolean; // NEW: flag for second+ operator selection
-  partialJoin?: 'AND' | 'OR'; // NEW: selected join operator before next condition
-  secondOperator?: string; // NEW: second operator selected (for displaying blue badge)
-  secondValue?: string; // NEW: second condition value being typed
-  secondValueTo?: string; // NEW: second condition valueTo (for Between operator)
-  waitingForSecondValueTo?: boolean; // NEW: flag when second Between has value, waiting for valueTo
-  // Multi-column support
-  isSecondColumn?: boolean; // Flag: selecting second column after join operator
-  secondColumn?: SearchColumn; // The second column selected (for multi-column filtering)
+
+  // Dynamic multi-condition support (replaces hardcoded second* fields)
+  activeConditionIndex?: number; // Which condition is currently being edited (0-based)
+  pendingConditions?: FilterCondition[]; // Conditions being built (before confirmation)
+  pendingJoinOperators?: ('AND' | 'OR')[]; // Join operators being built
+
+  // Deprecated: kept for backward compatibility during migration
+  /** @deprecated Use activeConditionIndex instead */
+  isSecondOperator?: boolean;
+  /** @deprecated Use pendingJoinOperators[0] instead */
+  partialJoin?: 'AND' | 'OR';
+  /** @deprecated Use pendingConditions[1]?.operator instead */
+  secondOperator?: string;
+  /** @deprecated Use pendingConditions[1]?.value instead */
+  secondValue?: string;
+  /** @deprecated Use pendingConditions[1]?.valueTo instead */
+  secondValueTo?: string;
+  /** @deprecated Use activeConditionIndex to determine */
+  waitingForSecondValueTo?: boolean;
+  /** @deprecated Use activeConditionIndex to determine */
+  isSecondColumn?: boolean;
+  /** @deprecated Use pendingConditions[1]?.column instead */
+  secondColumn?: SearchColumn;
 }
