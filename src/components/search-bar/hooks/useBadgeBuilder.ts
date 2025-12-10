@@ -35,6 +35,146 @@ interface InlineEditingProps {
   onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
 }
 
+// ============ Helper Functions for Badge Creation ============
+
+/**
+ * Get inline editing props for a specific value badge.
+ * Returns undefined if this badge is not being edited.
+ */
+function getValueBadgeInlineProps(
+  inlineEditingProps: InlineEditingProps | undefined,
+  conditionIndex: number,
+  isValueTo: boolean
+): Pick<
+  BadgeConfig,
+  | 'isEditing'
+  | 'editingValue'
+  | 'onValueChange'
+  | 'onEditComplete'
+  | 'onNavigateEdit'
+  | 'onFocusInput'
+> | null {
+  if (!inlineEditingProps?.editingBadge) return null;
+
+  // Determine expected edit type based on condition index and isValueTo
+  const editType =
+    conditionIndex === 0
+      ? isValueTo
+        ? 'firstValueTo'
+        : 'firstValue'
+      : isValueTo
+        ? 'secondValueTo'
+        : 'secondValue';
+
+  const isEditing = inlineEditingProps.editingBadge.type === editType;
+  if (!isEditing) return null;
+
+  return {
+    isEditing: true,
+    editingValue: inlineEditingProps.editingBadge.value,
+    onValueChange: inlineEditingProps.onInlineValueChange,
+    onEditComplete: inlineEditingProps.onInlineEditComplete,
+    onNavigateEdit: inlineEditingProps.onNavigateEdit,
+    onFocusInput: inlineEditingProps.onFocusInput,
+  };
+}
+
+/**
+ * Get value badge handlers based on condition index.
+ * Handles both normal value and valueTo (Between operator).
+ */
+function getValueBadgeHandlers(
+  handlers: BadgeHandlers,
+  conditionIndex: number,
+  totalConditions: number,
+  isValueTo: boolean
+): { onClear: () => void; onEdit?: () => void; canEdit: boolean } {
+  const isFirst = conditionIndex === 0;
+  const isLast = conditionIndex === totalConditions - 1;
+  const isTwoConditions = totalConditions === 2;
+
+  if (isValueTo) {
+    return {
+      onClear: isFirst
+        ? (handlers.onClearValueTo ?? handlers.onClearValue)
+        : (handlers.onClearSecondValueTo ?? handlers.onClearSecondValue),
+      onEdit: isFirst ? handlers.onEditValueTo : handlers.onEditSecondValueTo,
+      canEdit: !!(isFirst
+        ? handlers.onEditValueTo
+        : handlers.onEditSecondValueTo),
+    };
+  }
+
+  return {
+    onClear: isFirst
+      ? handlers.onClearValue
+      : isLast && isTwoConditions
+        ? handlers.onClearSecondValue
+        : handlers.onClearAll,
+    onEdit: isFirst ? handlers.onEditValue : handlers.onEditSecondValue,
+    canEdit: true,
+  };
+}
+
+/**
+ * Get badge ID for value badges.
+ * Uses consistent IDs for AnimatePresence compatibility.
+ */
+function getValueBadgeId(
+  conditionIndex: number,
+  isValueTo: boolean,
+  isBetween: boolean
+): string {
+  const prefix = conditionIndex === 0 ? '' : 'second-';
+  if (!isBetween) return `${prefix}value`.replace(/^-/, '') || 'value';
+  return `${prefix}value-${isValueTo ? 'to' : 'from'}`.replace(/^-/, '');
+}
+
+/**
+ * Get badge ID for separator badges.
+ */
+function getSeparatorBadgeId(conditionIndex: number): string {
+  return conditionIndex === 0 ? 'separator' : 'second-separator';
+}
+
+/**
+ * Create a value badge configuration with all inline editing props.
+ */
+function createValueBadgeConfig(
+  id: string,
+  label: string,
+  badgeType: 'value' | 'valueSecond',
+  handlers: { onClear: () => void; onEdit?: () => void; canEdit: boolean },
+  columnType: 'text' | 'number' | 'date' | 'currency' | undefined,
+  inlineProps: ReturnType<typeof getValueBadgeInlineProps>
+): BadgeConfig {
+  return {
+    id,
+    type: badgeType,
+    label,
+    onClear: handlers.onClear,
+    canClear: true,
+    onEdit: handlers.onEdit,
+    canEdit: handlers.canEdit,
+    ...(inlineProps ?? {}),
+    columnType,
+  };
+}
+
+/**
+ * Create a separator badge configuration.
+ */
+function createSeparatorBadge(conditionIndex: number): BadgeConfig {
+  return {
+    id: getSeparatorBadgeId(conditionIndex),
+    type: 'separator',
+    label: 'to',
+    onClear: () => {},
+    canClear: false,
+    canEdit: false,
+  };
+}
+
 export const useBadgeBuilder = (
   searchMode: EnhancedSearchState,
   handlers: BadgeHandlers,
@@ -133,146 +273,50 @@ export const useBadgeBuilder = (
 
         // Value badge(s) for this condition (skip if value is empty)
         if (condition.value) {
+          const totalConditions = filter.conditions!.length;
+          const isBetween =
+            condition.operator === 'inRange' && !!condition.valueTo;
+
           // Check if this is a Between (inRange) operator - needs 2 value badges + separator
-          if (condition.operator === 'inRange' && condition.valueTo) {
-            // Determine if this badge is being edited
-            const isFirstValue = index === 0;
-            const isEditingFrom =
-              inlineEditingProps?.editingBadge?.type ===
-              (isFirstValue ? 'firstValue' : 'secondValue');
+          if (isBetween) {
+            // Value-from badge
+            badges.push(
+              createValueBadgeConfig(
+                getValueBadgeId(index, false, true),
+                condition.value,
+                'value',
+                getValueBadgeHandlers(handlers, index, totalConditions, false),
+                conditionColumnType,
+                getValueBadgeInlineProps(inlineEditingProps, index, false)
+              )
+            );
 
-            // First value badge - use consistent IDs
-            badges.push({
-              id: index === 0 ? 'value-from' : 'second-value-from',
-              type: 'value',
-              label: condition.value,
-              onClear:
-                index === 0
-                  ? handlers.onClearValue
-                  : index === filter.conditions!.length - 1 &&
-                      filter.conditions!.length === 2
-                    ? handlers.onClearSecondValue
-                    : handlers.onClearAll,
-              canClear: true,
-              onEdit:
-                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-              canEdit: true,
-              // Inline editing props
-              isEditing: isEditingFrom,
-              editingValue: isEditingFrom
-                ? inlineEditingProps?.editingBadge?.value
-                : undefined,
-              onValueChange: isEditingFrom
-                ? inlineEditingProps?.onInlineValueChange
-                : undefined,
-              onEditComplete: isEditingFrom
-                ? inlineEditingProps?.onInlineEditComplete
-                : undefined,
-              onNavigateEdit: isEditingFrom
-                ? inlineEditingProps?.onNavigateEdit
-                : undefined,
-              onFocusInput: isEditingFrom
-                ? inlineEditingProps?.onFocusInput
-                : undefined,
-              columnType: conditionColumnType,
-            });
+            // "to" separator badge
+            badges.push(createSeparatorBadge(index));
 
-            // "to" separator badge - use consistent IDs
-            badges.push({
-              id: index === 0 ? 'separator' : 'second-separator',
-              type: 'separator',
-              label: 'to',
-              onClear: () => {}, // Separator cannot be cleared independently
-              canClear: false,
-              canEdit: false,
-            });
-
-            // Determine if the "to" value badge is being edited
-            const isEditingTo =
-              inlineEditingProps?.editingBadge?.type ===
-              (isFirstValue ? 'firstValueTo' : 'secondValueTo');
-
-            // Second value badge (valueTo) - use consistent IDs
-            badges.push({
-              id: index === 0 ? 'value-to' : 'second-value-to',
-              type: 'valueSecond',
-              label: condition.valueTo,
-              // Use specific handler to clear only the "to" value, keeping "from" value
-              onClear:
-                index === 0
-                  ? (handlers.onClearValueTo ?? handlers.onClearValue)
-                  : (handlers.onClearSecondValueTo ??
-                    handlers.onClearSecondValue),
-              canClear: true,
-              onEdit:
-                index === 0
-                  ? handlers.onEditValueTo
-                  : handlers.onEditSecondValueTo,
-              // Only show edit if handler exists
-              canEdit: !!(index === 0
-                ? handlers.onEditValueTo
-                : handlers.onEditSecondValueTo),
-              // Inline editing props
-              isEditing: isEditingTo,
-              editingValue: isEditingTo
-                ? inlineEditingProps?.editingBadge?.value
-                : undefined,
-              onValueChange: isEditingTo
-                ? inlineEditingProps?.onInlineValueChange
-                : undefined,
-              onEditComplete: isEditingTo
-                ? inlineEditingProps?.onInlineEditComplete
-                : undefined,
-              onNavigateEdit: isEditingTo
-                ? inlineEditingProps?.onNavigateEdit
-                : undefined,
-              onFocusInput: isEditingTo
-                ? inlineEditingProps?.onFocusInput
-                : undefined,
-              columnType: conditionColumnType,
-            });
+            // Value-to badge
+            badges.push(
+              createValueBadgeConfig(
+                getValueBadgeId(index, true, true),
+                condition.valueTo!,
+                'valueSecond',
+                getValueBadgeHandlers(handlers, index, totalConditions, true),
+                conditionColumnType,
+                getValueBadgeInlineProps(inlineEditingProps, index, true)
+              )
+            );
           } else {
-            // Determine if this badge is being edited
-            const isFirstValue = index === 0;
-            const isEditingValue =
-              inlineEditingProps?.editingBadge?.type ===
-              (isFirstValue ? 'firstValue' : 'secondValue');
-
-            // Normal operator with single value - use consistent IDs
-            badges.push({
-              id: index === 0 ? 'value' : 'second-value',
-              type: 'value',
-              label: condition.value,
-              onClear:
-                index === 0
-                  ? handlers.onClearValue
-                  : index === filter.conditions!.length - 1 &&
-                      filter.conditions!.length === 2
-                    ? handlers.onClearSecondValue
-                    : handlers.onClearAll,
-              canClear: true,
-              onEdit:
-                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-              canEdit: true, // Value badges are now editable
-              // Inline editing props
-              isEditing: isEditingValue,
-              editingValue: isEditingValue
-                ? inlineEditingProps?.editingBadge?.value
-                : undefined,
-              onValueChange: isEditingValue
-                ? inlineEditingProps?.onInlineValueChange
-                : undefined,
-              onEditComplete: isEditingValue
-                ? inlineEditingProps?.onInlineEditComplete
-                : undefined,
-              onNavigateEdit: isEditingValue
-                ? inlineEditingProps?.onNavigateEdit
-                : undefined,
-              onFocusInput: isEditingValue
-                ? inlineEditingProps?.onFocusInput
-                : undefined,
-              columnType: conditionColumnType,
-            });
+            // Normal operator with single value
+            badges.push(
+              createValueBadgeConfig(
+                getValueBadgeId(index, false, false),
+                condition.value,
+                'value',
+                getValueBadgeHandlers(handlers, index, totalConditions, false),
+                conditionColumnType,
+                getValueBadgeInlineProps(inlineEditingProps, index, false)
+              )
+            );
           }
         }
 
@@ -359,159 +403,58 @@ export const useBadgeBuilder = (
       !filter?.isMultiCondition;
 
     if (shouldShowSingleValue) {
-      // NOTE: This section handles Single-Condition Value Badges
-      // The value displayed is always filter.value (first/only condition value)
-      // Even when selecting second operator, this badge is for FIRST condition
-      // So isSecondValue should always be false here
-      // The "second value" only exists in multi-condition filters (handled in section 2)
-      const isSecondValue = false;
+      // Single-Condition Value Badges (conditionIndex=0, totalConditions=1)
       const filterColumnType = filter.column.type;
-
-      // Check if this is a Between (inRange) operator
-      // Handle both complete (with valueTo) and waiting state (waitingForValueTo flag)
       const isWaitingForValueTo =
         filter.operator === 'inRange' &&
         !filter.valueTo &&
         filter.waitingForValueTo === true;
 
-      if (
+      const isBetween =
         filter.operator === 'inRange' &&
-        (filter.valueTo || isWaitingForValueTo)
-      ) {
-        // Determine if this badge is being edited
-        const editType = isSecondValue ? 'secondValue' : 'firstValue';
-        const isEditingFrom =
-          inlineEditingProps?.editingBadge?.type === editType;
+        (filter.valueTo || isWaitingForValueTo);
 
-        // Display value (already trimmed by parser)
-        const displayValue = filter.value;
-
-        badges.push({
-          id: 'value-from',
-          type: 'value',
-          label: displayValue,
-          onClear: isSecondValue
-            ? handlers.onClearSecondValue
-            : handlers.onClearValue,
-          canClear: true,
-          onEdit: isSecondValue
-            ? handlers.onEditSecondValue
-            : handlers.onEditValue,
-          canEdit: true,
-          // Inline editing props
-          isEditing: isEditingFrom,
-          editingValue: isEditingFrom
-            ? inlineEditingProps?.editingBadge?.value
-            : undefined,
-          onValueChange: isEditingFrom
-            ? inlineEditingProps?.onInlineValueChange
-            : undefined,
-          onEditComplete: isEditingFrom
-            ? inlineEditingProps?.onInlineEditComplete
-            : undefined,
-          onNavigateEdit: isEditingFrom
-            ? inlineEditingProps?.onNavigateEdit
-            : undefined,
-          onFocusInput: isEditingFrom
-            ? inlineEditingProps?.onFocusInput
-            : undefined,
-          columnType: filterColumnType,
-        });
+      if (isBetween) {
+        // Value-from badge
+        badges.push(
+          createValueBadgeConfig(
+            'value-from',
+            filter.value,
+            'value',
+            getValueBadgeHandlers(handlers, 0, 1, false),
+            filterColumnType,
+            getValueBadgeInlineProps(inlineEditingProps, 0, false)
+          )
+        );
 
         // "to" separator badge
-        badges.push({
-          id: 'separator',
-          type: 'separator',
-          label: 'to',
-          onClear: () => {}, // Separator cannot be cleared independently
-          canClear: false,
-          canEdit: false,
-        });
+        badges.push(createSeparatorBadge(0));
 
-        // Only add valueTo badge if we have the value AND it's confirmed (or in partialJoin state)
-        // When typing (not confirmed), valueTo is shown in input, not as badge
-        // Exception: When partialJoin is set, the filter WAS confirmed before user opened join selector
+        // Value-to badge (only if confirmed or in partialJoin state)
         if (filter.valueTo && (filter.isConfirmed || searchMode.partialJoin)) {
-          // Determine if the "to" value badge is being edited
-          const editTypeTo = isSecondValue ? 'secondValueTo' : 'firstValueTo';
-          const isEditingTo =
-            inlineEditingProps?.editingBadge?.type === editTypeTo;
-
-          // Second value badge (valueTo)
-          badges.push({
-            id: 'value-to',
-            type: 'valueSecond',
-            label: filter.valueTo,
-            // Use specific handler to clear only the "to" value, keeping "from" value
-            onClear: isSecondValue
-              ? (handlers.onClearSecondValueTo ?? handlers.onClearSecondValue)
-              : (handlers.onClearValueTo ?? handlers.onClearValue),
-            canClear: true,
-            onEdit: isSecondValue
-              ? handlers.onEditSecondValueTo
-              : handlers.onEditValueTo,
-            // Only show edit if handler exists
-            canEdit: !!(isSecondValue
-              ? handlers.onEditSecondValueTo
-              : handlers.onEditValueTo),
-            // Inline editing props
-            isEditing: isEditingTo,
-            editingValue: isEditingTo
-              ? inlineEditingProps?.editingBadge?.value
-              : undefined,
-            onValueChange: isEditingTo
-              ? inlineEditingProps?.onInlineValueChange
-              : undefined,
-            onEditComplete: isEditingTo
-              ? inlineEditingProps?.onInlineEditComplete
-              : undefined,
-            onNavigateEdit: isEditingTo
-              ? inlineEditingProps?.onNavigateEdit
-              : undefined,
-            onFocusInput: isEditingTo
-              ? inlineEditingProps?.onFocusInput
-              : undefined,
-            columnType: filterColumnType,
-          });
+          badges.push(
+            createValueBadgeConfig(
+              'value-to',
+              filter.valueTo,
+              'valueSecond',
+              getValueBadgeHandlers(handlers, 0, 1, true),
+              filterColumnType,
+              getValueBadgeInlineProps(inlineEditingProps, 0, true)
+            )
+          );
         }
       } else {
-        // Determine if this badge is being edited
-        const editType = isSecondValue ? 'secondValue' : 'firstValue';
-        const isEditingValue =
-          inlineEditingProps?.editingBadge?.type === editType;
-
         // Normal operator with single value
-        badges.push({
-          id: 'value',
-          type: 'value',
-          label: filter.value,
-          onClear: isSecondValue
-            ? handlers.onClearSecondValue
-            : handlers.onClearValue,
-          canClear: true,
-          onEdit: isSecondValue
-            ? handlers.onEditSecondValue
-            : handlers.onEditValue,
-          canEdit: true, // Value badges are now editable
-          // Inline editing props
-          isEditing: isEditingValue,
-          editingValue: isEditingValue
-            ? inlineEditingProps?.editingBadge?.value
-            : undefined,
-          onValueChange: isEditingValue
-            ? inlineEditingProps?.onInlineValueChange
-            : undefined,
-          onEditComplete: isEditingValue
-            ? inlineEditingProps?.onInlineEditComplete
-            : undefined,
-          onNavigateEdit: isEditingValue
-            ? inlineEditingProps?.onNavigateEdit
-            : undefined,
-          onFocusInput: isEditingValue
-            ? inlineEditingProps?.onFocusInput
-            : undefined,
-          columnType: filterColumnType,
-        });
+        badges.push(
+          createValueBadgeConfig(
+            'value',
+            filter.value,
+            'value',
+            getValueBadgeHandlers(handlers, 0, 1, false),
+            filterColumnType,
+            getValueBadgeInlineProps(inlineEditingProps, 0, false)
+          )
+        );
       }
     }
 
@@ -562,42 +505,33 @@ export const useBadgeBuilder = (
       });
     }
 
-    // 8. Second Value Badge(s) (Gray) - Show [value][to] after user presses Enter (adds #to marker)
-    // Show when waitingForSecondValueTo OR secondValueTo exists (user is typing second value)
-    // But DON'T show secondValueTo as badge - it stays in input until final confirmation
+    // 8. Second Value Badge(s) (Gray) - Partial state while user is typing
+    // Show [value][to] after user presses Enter (adds #to marker)
+    // Note: secondValueTo badge is NOT shown here - user is still typing it in input
     if (
       searchMode.secondOperator &&
       searchMode.secondValue &&
       searchMode.secondOperator === 'inRange' &&
       (searchMode.waitingForSecondValueTo || searchMode.secondValueTo)
     ) {
-      // Get column type for second condition (use secondColumn if available, otherwise filter's column)
       const secondConditionColumnType = (
         searchMode.secondColumn || filter?.column
       )?.type;
 
-      // Between operator with #to marker - show [value][to] only
-      badges.push({
-        id: 'second-value-from',
-        type: 'value',
-        label: searchMode.secondValue,
-        onClear: handlers.onClearSecondValue,
-        canClear: true,
-        canEdit: false, // Not editable while typing
-        columnType: secondConditionColumnType,
-      });
+      // Value-from badge (not editable while typing)
+      badges.push(
+        createValueBadgeConfig(
+          'second-value-from',
+          searchMode.secondValue,
+          'value',
+          { onClear: handlers.onClearSecondValue, canEdit: false },
+          secondConditionColumnType,
+          null
+        )
+      );
 
       // "to" separator badge
-      badges.push({
-        id: 'second-separator',
-        type: 'separator',
-        label: 'to',
-        onClear: () => {},
-        canClear: false,
-        canEdit: false,
-      });
-      // Note: secondValueTo badge is NOT shown here - user is still typing it in input
-      // It will show as part of confirmed multi-condition badges (section 2)
+      badges.push(createSeparatorBadge(1));
     }
 
     // Apply isSelected to badge at selectedBadgeIndex
