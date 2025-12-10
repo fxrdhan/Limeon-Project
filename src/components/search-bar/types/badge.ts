@@ -5,7 +5,7 @@ export type BadgeType =
   | 'separator' // For "to" text between Between values
   | 'valueSecond' // For second value in Between operator
   | 'join'
-  | 'secondOperator'; // Deprecated: use 'operator' with conditionIndex instead
+  | 'secondOperator';
 
 export type BadgeColorScheme = {
   bg: string;
@@ -60,7 +60,7 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
 };
 
 export interface BadgeConfig {
-  id: string; // Unique identifier for React key (format: condition-{index}-{type} or join-{index})
+  id: string; // Unique identifier for React key
   type: BadgeType;
   label: string;
   onClear: () => void;
@@ -81,7 +81,4 @@ export interface BadgeConfig {
   isSelected?: boolean; // Whether badge is selected via keyboard navigation
   // Column type for value validation (only for value badges)
   columnType?: 'text' | 'number' | 'date' | 'currency';
-  // Dynamic condition tracking
-  conditionIndex?: number; // Which condition this badge belongs to (0-based)
-  joinIndex?: number; // Which join operator this is (0-based, for join badges only)
 }
