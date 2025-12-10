@@ -95,10 +95,55 @@ function buildColumnCondition(
 }
 
 /**
+ * Build nested filter structure for N conditions with mixed join operators
+ * Uses left-to-right evaluation (no operator precedence)
+ *
+ * Example with 3 conditions: A AND B OR C
+ * Builds: OR(AND(A, B), C)
+ */
+function buildNestedJoinModel(
+  conditions: AdvancedFilterModel[],
+  joinOperators: ('AND' | 'OR')[]
+): AdvancedFilterModel {
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+
+  if (conditions.length === 2) {
+    return {
+      filterType: 'join',
+      type: joinOperators[0] || 'AND',
+      conditions: [conditions[0], conditions[1]],
+    } as AdvancedFilterModel;
+  }
+
+  // For N > 2 conditions, build left-to-right
+  // Start with first two conditions
+  let result: AdvancedFilterModel = {
+    filterType: 'join',
+    type: joinOperators[0] || 'AND',
+    conditions: [conditions[0], conditions[1]],
+  } as AdvancedFilterModel;
+
+  // Add remaining conditions left-to-right
+  for (let i = 2; i < conditions.length; i++) {
+    const joinType = joinOperators[i - 1] || 'AND';
+    result = {
+      filterType: 'join',
+      type: joinType,
+      conditions: [result, conditions[i]],
+    } as AdvancedFilterModel;
+  }
+
+  return result;
+}
+
+/**
  * Build an AdvancedFilterModel from a FilterSearch object
  *
  * This converts our badge-based filter representation to AG Grid's Advanced Filter format.
  * Key benefit: Advanced Filter supports OR operations across different columns.
+ * Supports N conditions (up to MAX_FILTER_CONDITIONS) with mixed AND/OR operators.
  */
 export function buildAdvancedFilterModel(
   filterSearch: FilterSearch | null
@@ -111,8 +156,6 @@ export function buildAdvancedFilterModel(
     filterSearch.conditions &&
     filterSearch.conditions.length > 0
   ) {
-    const joinType = filterSearch.joinOperator || 'AND';
-
     // Build conditions array
     const conditions = filterSearch.conditions.map(cond =>
       buildColumnCondition(cond, filterSearch.field, filterSearch.column)
@@ -123,12 +166,25 @@ export function buildAdvancedFilterModel(
       return conditions[0];
     }
 
-    // Return join model
-    return {
-      filterType: 'join',
-      type: joinType,
-      conditions,
-    } as AdvancedFilterModel;
+    // Get join operators array, falling back to legacy single joinOperator
+    const joinOps =
+      filterSearch.joinOperators ||
+      (filterSearch.joinOperator ? [filterSearch.joinOperator] : ['AND']);
+
+    // Check if all join operators are the same
+    const allSameJoin = joinOps.every(op => op === joinOps[0]);
+
+    if (allSameJoin) {
+      // Simple case: all same join type - flat structure
+      return {
+        filterType: 'join',
+        type: joinOps[0],
+        conditions,
+      } as AdvancedFilterModel;
+    }
+
+    // Mixed operators: build nested structure with left-to-right evaluation
+    return buildNestedJoinModel(conditions, joinOps);
   }
 
   // Single condition filter

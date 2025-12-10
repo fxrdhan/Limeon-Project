@@ -84,7 +84,14 @@ export const useBadgeBuilder = (
     }
 
     // 2. Handle Multi-Condition Badges (when filter is confirmed with multiple conditions)
+    // Supports N conditions (up to MAX_FILTER_CONDITIONS)
     if (searchMode.isFilterMode && isMultiCondition && filter.conditions) {
+      const conditionsCount = filter.conditions.length;
+      // Use new joinOperators array if available, fallback to legacy joinOperator
+      const joinOps =
+        filter.joinOperators ||
+        (filter.joinOperator ? [filter.joinOperator] : []);
+
       filter.conditions.forEach((condition, index) => {
         // Use condition's column if available (multi-column), otherwise use filter's column
         const conditionColumn = condition.column || filter.column;
@@ -94,70 +101,90 @@ export const useBadgeBuilder = (
           condition.operator
         );
 
-        // For second condition, always add second column badge BEFORE operator
+        // For conditions after the first, add column badge BEFORE operator
         // Show even if same column as first (no simplification)
-        if (index === 1) {
-          const secondColumnLabel =
+        if (index > 0) {
+          const columnLabel =
             condition.column?.headerName || filter.column.headerName;
           badges.push({
-            id: 'second-column',
+            // Use dynamic ID for N conditions, but keep 'second-column' for index 1 for backward compat
+            id: index === 1 ? 'second-column' : `condition-${index}-column`,
             type: 'column',
-            label: secondColumnLabel,
+            label: columnLabel,
             onClear:
-              handlers.onClearSecondColumn || handlers.onClearSecondOperator,
+              index === 1
+                ? handlers.onClearSecondColumn || handlers.onClearSecondOperator
+                : handlers.onClearAll,
             canClear: true,
-            onEdit: handlers.onEditSecondColumn || handlers.onEditColumn,
+            onEdit:
+              index === 1
+                ? handlers.onEditSecondColumn || handlers.onEditColumn
+                : handlers.onEditColumn,
             canEdit: true,
+            conditionIndex: index,
           });
         }
 
         // Operator badge for this condition
-        // Use consistent IDs: 'operator' for first, 'second-operator' for second
-        // This ensures AnimatePresence doesn't see them as new badges on state transitions
+        // Dynamic IDs: 'operator' for first, 'second-operator' for second, 'condition-N-operator' for N>1
         badges.push({
-          id: index === 0 ? 'operator' : 'second-operator',
+          id:
+            index === 0
+              ? 'operator'
+              : index === 1
+                ? 'second-operator'
+                : `condition-${index}-operator`,
           type: 'operator',
           label: operatorLabel,
           onClear:
             index === 0
-              ? handlers.onClearOperator // First operator: clear to column with operator selector
-              : index === filter.conditions!.length - 1 &&
-                  filter.conditions!.length === 2
+              ? handlers.onClearOperator
+              : index === 1
                 ? handlers.onClearSecondOperator
                 : handlers.onClearAll,
           canClear: true,
           onEdit: () =>
             handlers.onEditOperator(index > 0 && filter.isMultiCondition),
-          canEdit: true, // Operator badges are editable
+          canEdit: true,
+          conditionIndex: index,
         });
 
         // Value badge(s) for this condition (skip if value is empty)
         if (condition.value) {
           // Check if this is a Between (inRange) operator - needs 2 value badges + separator
           if (condition.operator === 'inRange' && condition.valueTo) {
-            // Determine if this badge is being edited
+            // Determine if this badge is being edited (only supports first 2 conditions for inline edit)
             const isFirstValue = index === 0;
             const isEditingFrom =
+              index <= 1 &&
               inlineEditingProps?.editingBadge?.type ===
-              (isFirstValue ? 'firstValue' : 'secondValue');
+                (isFirstValue ? 'firstValue' : 'secondValue');
 
-            // First value badge - use consistent IDs
+            // First value badge - dynamic IDs
             badges.push({
-              id: index === 0 ? 'value-from' : 'second-value-from',
+              id:
+                index === 0
+                  ? 'value-from'
+                  : index === 1
+                    ? 'second-value-from'
+                    : `condition-${index}-value-from`,
               type: 'value',
               label: condition.value,
               onClear:
                 index === 0
                   ? handlers.onClearValue
-                  : index === filter.conditions!.length - 1 &&
-                      filter.conditions!.length === 2
+                  : index === 1
                     ? handlers.onClearSecondValue
                     : handlers.onClearAll,
               canClear: true,
               onEdit:
-                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-              canEdit: true,
-              // Inline editing props
+                index === 0
+                  ? handlers.onEditValue
+                  : index === 1
+                    ? handlers.onEditSecondValue
+                    : undefined,
+              canEdit: index <= 1,
+              // Inline editing props (only for first 2 conditions)
               isEditing: isEditingFrom,
               editingValue: isEditingFrom
                 ? inlineEditingProps?.editingBadge?.value
@@ -175,43 +202,60 @@ export const useBadgeBuilder = (
                 ? inlineEditingProps?.onFocusInput
                 : undefined,
               columnType: conditionColumnType,
+              conditionIndex: index,
             });
 
-            // "to" separator badge - use consistent IDs
+            // "to" separator badge - dynamic IDs
             badges.push({
-              id: index === 0 ? 'separator' : 'second-separator',
+              id:
+                index === 0
+                  ? 'separator'
+                  : index === 1
+                    ? 'second-separator'
+                    : `condition-${index}-separator`,
               type: 'separator',
               label: 'to',
-              onClear: () => {}, // Separator cannot be cleared independently
+              onClear: () => {},
               canClear: false,
               canEdit: false,
+              conditionIndex: index,
             });
 
             // Determine if the "to" value badge is being edited
             const isEditingTo =
+              index <= 1 &&
               inlineEditingProps?.editingBadge?.type ===
-              (isFirstValue ? 'firstValueTo' : 'secondValueTo');
+                (isFirstValue ? 'firstValueTo' : 'secondValueTo');
 
-            // Second value badge (valueTo) - use consistent IDs
+            // Second value badge (valueTo) - dynamic IDs
             badges.push({
-              id: index === 0 ? 'value-to' : 'second-value-to',
+              id:
+                index === 0
+                  ? 'value-to'
+                  : index === 1
+                    ? 'second-value-to'
+                    : `condition-${index}-value-to`,
               type: 'valueSecond',
               label: condition.valueTo,
-              // Use specific handler to clear only the "to" value, keeping "from" value
               onClear:
                 index === 0
                   ? (handlers.onClearValueTo ?? handlers.onClearValue)
-                  : (handlers.onClearSecondValueTo ??
-                    handlers.onClearSecondValue),
+                  : index === 1
+                    ? (handlers.onClearSecondValueTo ??
+                      handlers.onClearSecondValue)
+                    : handlers.onClearAll,
               canClear: true,
               onEdit:
                 index === 0
                   ? handlers.onEditValueTo
-                  : handlers.onEditSecondValueTo,
-              // Only show edit if handler exists
-              canEdit: !!(index === 0
-                ? handlers.onEditValueTo
-                : handlers.onEditSecondValueTo),
+                  : index === 1
+                    ? handlers.onEditSecondValueTo
+                    : undefined,
+              canEdit:
+                index <= 1 &&
+                !!(index === 0
+                  ? handlers.onEditValueTo
+                  : handlers.onEditSecondValueTo),
               // Inline editing props
               isEditing: isEditingTo,
               editingValue: isEditingTo
@@ -230,30 +274,40 @@ export const useBadgeBuilder = (
                 ? inlineEditingProps?.onFocusInput
                 : undefined,
               columnType: conditionColumnType,
+              conditionIndex: index,
             });
           } else {
-            // Determine if this badge is being edited
+            // Determine if this badge is being edited (only supports first 2 conditions for inline edit)
             const isFirstValue = index === 0;
             const isEditingValue =
+              index <= 1 &&
               inlineEditingProps?.editingBadge?.type ===
-              (isFirstValue ? 'firstValue' : 'secondValue');
+                (isFirstValue ? 'firstValue' : 'secondValue');
 
-            // Normal operator with single value - use consistent IDs
+            // Normal operator with single value - dynamic IDs
             badges.push({
-              id: index === 0 ? 'value' : 'second-value',
+              id:
+                index === 0
+                  ? 'value'
+                  : index === 1
+                    ? 'second-value'
+                    : `condition-${index}-value`,
               type: 'value',
               label: condition.value,
               onClear:
                 index === 0
                   ? handlers.onClearValue
-                  : index === filter.conditions!.length - 1 &&
-                      filter.conditions!.length === 2
+                  : index === 1
                     ? handlers.onClearSecondValue
                     : handlers.onClearAll,
               canClear: true,
               onEdit:
-                index === 0 ? handlers.onEditValue : handlers.onEditSecondValue,
-              canEdit: true, // Value badges are now editable
+                index === 0
+                  ? handlers.onEditValue
+                  : index === 1
+                    ? handlers.onEditSecondValue
+                    : undefined,
+              canEdit: index <= 1,
               // Inline editing props
               isEditing: isEditingValue,
               editingValue: isEditingValue
@@ -272,29 +326,34 @@ export const useBadgeBuilder = (
                 ? inlineEditingProps?.onFocusInput
                 : undefined,
               columnType: conditionColumnType,
+              conditionIndex: index,
             });
           }
         }
 
-        // Join badge between conditions (not after last one) - use consistent ID
-        if (index < filter.conditions!.length - 1) {
+        // Join badge between conditions (not after last one)
+        // Use joinOperators array for N conditions
+        if (index < conditionsCount - 1) {
+          const joinLabel = joinOps[index] || filter.joinOperator || '';
           badges.push({
-            id: 'join',
+            // Dynamic ID for N joins: 'join' for first, 'join-1', 'join-2', etc.
+            id: index === 0 ? 'join' : `join-${index}`,
             type: 'join',
-            label: filter.joinOperator || '',
+            label: joinLabel,
             onClear: handlers.onClearPartialJoin,
             canClear: true,
             onEdit: handlers.onEditJoin,
-            canEdit: true, // Join badges are editable
+            canEdit: true,
+            joinIndex: index,
           });
         }
       });
 
       // Apply isSelected for multi-condition case before returning
       if (selectedBadgeIndex !== null && selectedBadgeIndex !== undefined) {
-        return badges.map((badge, index) => ({
+        return badges.map((badge, idx) => ({
           ...badge,
-          isSelected: index === selectedBadgeIndex,
+          isSelected: idx === selectedBadgeIndex,
         }));
       }
       return badges; // Return early for multi-condition case
