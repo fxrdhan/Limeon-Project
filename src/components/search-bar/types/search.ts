@@ -74,4 +74,48 @@ export interface EnhancedSearchState {
   // Multi-column support
   isSecondColumn?: boolean; // Flag: selecting second column after join operator
   secondColumn?: SearchColumn; // The second column selected (for multi-column filtering)
+
+  // ============ NEW: Scalable N-condition support ============
+  // These fields enable support for unlimited conditions
+  // The "second*" fields above are kept for backward compatibility
+  // but will be deprecated once migration is complete
+
+  /**
+   * Index of the condition currently being edited/selected
+   * -1 or undefined means no specific condition is being edited
+   */
+  editingConditionIndex?: number;
+
+  /**
+   * Partial conditions being built (not yet confirmed)
+   * Each entry contains partial data for a condition being typed
+   */
+  partialConditions?: PartialCondition[];
+
+  /**
+   * Array of join operators between conditions
+   * joins[0] = join between condition 0 and 1
+   * joins[1] = join between condition 1 and 2
+   * etc.
+   */
+  joins?: ('AND' | 'OR')[];
+}
+
+/**
+ * Represents a condition that is being typed/built but not yet confirmed
+ * Used during the input process before user presses Enter
+ */
+export interface PartialCondition {
+  /** Column field name for this condition */
+  field?: string;
+  /** Column reference */
+  column?: SearchColumn;
+  /** Operator value (e.g., 'contains', 'equals', 'inRange') */
+  operator?: string;
+  /** Primary value */
+  value?: string;
+  /** Secondary value for Between operator */
+  valueTo?: string;
+  /** Flag: waiting for user to enter valueTo (Between operator) */
+  waitingForValueTo?: boolean;
 }

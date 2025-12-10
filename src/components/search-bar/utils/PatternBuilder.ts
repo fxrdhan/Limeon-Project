@@ -549,4 +549,240 @@ export class PatternBuilder {
 
     return `${firstPart} #${join.toLowerCase()} ${secondPart}##`;
   }
+
+  // ========================================
+  // Scalable N-Condition Methods
+  // ========================================
+
+  /**
+   * Build a single condition part (helper for iterative building)
+   *
+   * @param field - Column field name
+   * @param operator - Operator value
+   * @param value - Primary value
+   * @param valueTo - Secondary value for Between operator
+   * @param includeField - Whether to include #field prefix
+   * @returns Condition pattern part
+   */
+  static buildConditionPart(
+    field: string,
+    operator: string,
+    value: string,
+    valueTo?: string,
+    includeField: boolean = true
+  ): string {
+    const fieldPart = includeField ? `#${field} ` : '';
+    if (operator === 'inRange' && valueTo) {
+      return `${fieldPart}#${operator} ${value} #to ${valueTo}`;
+    }
+    return `${fieldPart}#${operator} ${value}`;
+  }
+
+  /**
+   * Build pattern for N conditions (scalable, iterative)
+   *
+   * This method replaces the hardcoded 2-condition methods and can handle
+   * any number of conditions with any combination of operators.
+   *
+   * @param conditions - Array of condition objects
+   * @param joins - Array of join operators (length = conditions.length - 1)
+   * @param isMultiColumn - Whether to include field for each condition
+   * @param defaultField - Default field for same-column filters
+   * @param options - Additional options
+   * @returns Built pattern string
+   */
+  static buildNConditions(
+    conditions: Array<{
+      field?: string;
+      operator: string;
+      value: string;
+      valueTo?: string;
+    }>,
+    joins: ('AND' | 'OR')[],
+    isMultiColumn: boolean,
+    defaultField: string,
+    options?: {
+      /** Add ## confirmation marker */
+      confirmed?: boolean;
+      /** Add trailing # for selector */
+      openSelector?: boolean;
+      /** Stop after this condition index (for partial patterns) */
+      stopAfterIndex?: number;
+    }
+  ): string {
+    const {
+      confirmed = true,
+      openSelector = false,
+      stopAfterIndex,
+    } = options || {};
+
+    if (conditions.length === 0) {
+      return openSelector ? '#' : '';
+    }
+
+    const maxIndex = stopAfterIndex ?? conditions.length - 1;
+    let pattern = '';
+
+    for (let i = 0; i <= maxIndex && i < conditions.length; i++) {
+      const cond = conditions[i];
+      const condField = cond.field || defaultField;
+
+      if (i === 0) {
+        // First condition always includes field
+        pattern = this.buildConditionPart(
+          condField,
+          cond.operator,
+          cond.value,
+          cond.valueTo,
+          true
+        );
+      } else {
+        // Add join operator
+        const joinOp = joins[i - 1] || 'AND';
+        pattern += ` #${joinOp.toLowerCase()} `;
+
+        // Include field based on isMultiColumn
+        pattern += this.buildConditionPart(
+          condField,
+          cond.operator,
+          cond.value,
+          cond.valueTo,
+          isMultiColumn
+        );
+      }
+    }
+
+    if (openSelector) {
+      pattern += ' #';
+    } else if (confirmed) {
+      pattern += '##';
+    }
+
+    return pattern;
+  }
+
+  /**
+   * Build partial pattern for editing (without confirmation marker)
+   *
+   * @param conditions - Array of condition objects
+   * @param joins - Array of join operators
+   * @param isMultiColumn - Whether multi-column filter
+   * @param defaultField - Default column field
+   * @param editingIndex - Index of condition being edited (-1 for none)
+   * @returns Partial pattern for editing
+   */
+  static buildPartialForEdit(
+    conditions: Array<{
+      field?: string;
+      operator: string;
+      value: string;
+      valueTo?: string;
+    }>,
+    joins: ('AND' | 'OR')[],
+    isMultiColumn: boolean,
+    defaultField: string,
+    editingIndex: number = -1
+  ): string {
+    // If editing a specific condition, build up to that point
+    if (editingIndex >= 0 && editingIndex < conditions.length) {
+      return this.buildNConditions(
+        conditions,
+        joins,
+        isMultiColumn,
+        defaultField,
+        {
+          confirmed: false,
+          stopAfterIndex: editingIndex,
+        }
+      );
+    }
+
+    // Otherwise build full pattern without confirmation
+    return this.buildNConditions(
+      conditions,
+      joins,
+      isMultiColumn,
+      defaultField,
+      {
+        confirmed: false,
+      }
+    );
+  }
+
+  /**
+   * Build pattern with selector open at specific position
+   *
+   * @param conditions - Existing conditions
+   * @param joins - Existing joins
+   * @param isMultiColumn - Whether multi-column filter
+   * @param defaultField - Default column field
+   * @param selectorType - Type of selector to open
+   * @param atIndex - Index where selector should open (for condition selectors)
+   * @returns Pattern with trailing # for selector
+   */
+  static buildWithSelectorOpen(
+    conditions: Array<{
+      field?: string;
+      operator: string;
+      value: string;
+      valueTo?: string;
+    }>,
+    joins: ('AND' | 'OR')[],
+    isMultiColumn: boolean,
+    defaultField: string,
+    selectorType: 'column' | 'operator' | 'join',
+    atIndex?: number
+  ): string {
+    if (selectorType === 'column' && conditions.length === 0) {
+      return '#';
+    }
+
+    if (selectorType === 'operator' && conditions.length > 0) {
+      const idx = atIndex ?? 0;
+      if (idx < conditions.length) {
+        // Build pattern up to the condition before, then add column + #
+        const cond = conditions[idx];
+        const condField = cond.field || defaultField;
+
+        if (idx === 0) {
+          return `#${condField} #`;
+        }
+
+        // Build previous conditions, then add join + column + #
+        const prevPattern = this.buildNConditions(
+          conditions.slice(0, idx),
+          joins.slice(0, idx - 1),
+          isMultiColumn,
+          defaultField,
+          { confirmed: false }
+        );
+        const joinOp = joins[idx - 1] || 'AND';
+        return `${prevPattern} #${joinOp.toLowerCase()} #${condField} #`;
+      }
+    }
+
+    if (selectorType === 'join') {
+      return this.buildNConditions(
+        conditions,
+        joins,
+        isMultiColumn,
+        defaultField,
+        {
+          confirmed: false,
+          openSelector: true,
+        }
+      );
+    }
+
+    return this.buildNConditions(
+      conditions,
+      joins,
+      isMultiColumn,
+      defaultField,
+      {
+        confirmed: false,
+        openSelector: true,
+      }
+    );
+  }
 }
