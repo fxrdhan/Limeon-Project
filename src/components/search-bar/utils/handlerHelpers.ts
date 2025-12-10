@@ -9,45 +9,19 @@ import { RefObject } from 'react';
 import { EnhancedSearchState, FilterSearch } from '../types';
 
 /**
- * Preserved condition state for edit operations
- */
-export interface PreservedCondition {
-  field: string;
-  columnName: string;
-  operator: string;
-  value: string;
-  valueTo?: string; // For Between (inRange) operator
-}
-
-/**
- * Preserved filter state for edit operations (supports N conditions)
+ * Preserved filter state for edit operations
  */
 export interface PreservedFilter {
-  // Dynamic array-based storage (new)
-  conditions?: PreservedCondition[];
-  joinOperators?: ('AND' | 'OR')[];
-
-  // Legacy fields (kept for backward compatibility during migration)
-  /** @deprecated Use conditions[0] instead */
   columnName?: string;
-  /** @deprecated Use conditions[0].operator instead */
   operator: string;
-  /** @deprecated Use conditions[0].value instead */
   value: string;
-  /** @deprecated Use conditions[0].valueTo instead */
-  valueTo?: string;
-  /** @deprecated Use joinOperators[0] instead */
+  valueTo?: string; // For Between (inRange) operator - second value
   join?: 'AND' | 'OR';
-  /** @deprecated Use conditions[1].operator instead */
   secondOperator?: string;
-  /** @deprecated Use conditions[1].value instead */
   secondValue?: string;
-  /** @deprecated Use conditions[1].valueTo instead */
-  secondValueTo?: string;
-  /** @deprecated Use conditions[1].field instead */
-  secondColumnField?: string;
-  /** @deprecated Check if conditions have different fields */
-  wasMultiColumn?: boolean;
+  secondValueTo?: string; // For second Between in multi-condition
+  secondColumnField?: string; // For multi-column filters - second column field name
+  wasMultiColumn?: boolean; // Track if original structure had explicit second column badge
 }
 
 /**
