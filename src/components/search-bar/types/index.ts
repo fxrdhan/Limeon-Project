@@ -5,6 +5,7 @@ export type {
   TableSearchProps,
   EnhancedSearchBarProps,
   EnhancedSearchState,
+  PartialCondition,
 } from './search';
 
 export type {
