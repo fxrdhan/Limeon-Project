@@ -3,9 +3,185 @@ import {
   EnhancedSearchState,
   FilterSearch,
   FilterCondition,
+  MAX_FILTER_CONDITIONS,
 } from '../types';
 import { JOIN_OPERATORS } from '../operators';
 import { findOperatorForColumn } from './operatorUtils';
+
+/**
+ * Find column by field name or header name
+ * Supports flexible matching (case-insensitive, separator-agnostic)
+ */
+export const findColumn = (
+  columns: SearchColumn[],
+  input: string
+): SearchColumn | undefined => {
+  const normalizedInput = input.toLowerCase().trim();
+
+  // Exact match first (field or headerName)
+  const exactMatch = columns.find(
+    col =>
+      col.field.toLowerCase() === normalizedInput ||
+      col.headerName.toLowerCase() === normalizedInput
+  );
+  if (exactMatch) return exactMatch;
+
+  // Flexible match: normalize by removing/replacing separators
+  // "harga_pokok" matches "Harga Pokok", "hargaPokok", "harga-pokok"
+  const normalize = (str: string) => str.toLowerCase().replace(/[\s_-]/g, '');
+
+  const normalizedInputClean = normalize(normalizedInput);
+
+  return columns.find(
+    col =>
+      normalize(col.field) === normalizedInputClean ||
+      normalize(col.headerName) === normalizedInputClean
+  );
+};
+
+/**
+ * Result of splitting input by join operators
+ */
+interface SplitByJoinResult {
+  parts: string[];
+  joinOperators: ('AND' | 'OR')[];
+}
+
+/**
+ * Split input string by join operators (#and, #or)
+ * Returns condition parts and join operators array
+ *
+ * Example:
+ *   Input: "val1 #and #op2 val2 #or #op3 val3"
+ *   Output: { parts: ["val1", "#op2 val2", "#op3 val3"], joinOperators: ["AND", "OR"] }
+ */
+const splitByJoinOperators = (input: string): SplitByJoinResult => {
+  const parts: string[] = [];
+  const joinOperators: ('AND' | 'OR')[] = [];
+
+  // Split by #and or #or (case insensitive)
+  // Pattern captures: (content)(#and|#or)(rest...)
+  let remaining = input;
+  const joinPattern = /\s+#(and|or)\s+/i;
+
+  while (remaining) {
+    const match = remaining.match(joinPattern);
+    if (match && match.index !== undefined) {
+      // Get content before join operator
+      const beforeJoin = remaining.substring(0, match.index).trim();
+      if (beforeJoin) {
+        parts.push(beforeJoin);
+      }
+
+      // Store join operator
+      joinOperators.push(match[1].toUpperCase() as 'AND' | 'OR');
+
+      // Continue with rest
+      remaining = remaining.substring(match.index + match[0].length);
+    } else {
+      // No more join operators - rest is the last part
+      if (remaining.trim()) {
+        parts.push(remaining.trim());
+      }
+      break;
+    }
+  }
+
+  return { parts, joinOperators };
+};
+
+/**
+ * Parse a single condition part (column + operator + value)
+ *
+ * Formats supported:
+ * - "#col #op value" (explicit column)
+ * - "#op value" (inherits column from context)
+ *
+ * @param part - The condition string to parse
+ * @param columns - Available columns for lookup
+ * @param defaultColumn - Column to use if not specified in part
+ * @returns Parsed condition or null if invalid
+ */
+const parseConditionPart = (
+  part: string,
+  columns: SearchColumn[],
+  defaultColumn: SearchColumn
+): FilterCondition | null => {
+  const trimmed = part.trim().replace(/##$/, ''); // Remove trailing confirmation marker
+
+  // Try explicit column pattern: #col #op value
+  const explicitColMatch = trimmed.match(/^#([^\s#]+)\s+#([^\s]+)\s+(.+)$/);
+  if (explicitColMatch) {
+    const [, colName, opName, value] = explicitColMatch;
+    const column = findColumn(columns, colName);
+    if (column) {
+      const operator = findOperatorForColumn(column, opName);
+      if (operator) {
+        // Handle inRange (Between) operator
+        if (operator.value === 'inRange') {
+          const inRangeValues = parseInRangeValues(value, true);
+          if (inRangeValues) {
+            return {
+              operator: operator.value,
+              value: inRangeValues.value,
+              valueTo: inRangeValues.valueTo,
+              field: column.field,
+              column,
+            };
+          }
+        }
+        return {
+          operator: operator.value,
+          value: value.trim(),
+          field: column.field,
+          column,
+        };
+      }
+    }
+  }
+
+  // Try same-column pattern: #op value
+  const sameColMatch = trimmed.match(/^#([^\s]+)\s+(.+)$/);
+  if (sameColMatch) {
+    const [, opName, value] = sameColMatch;
+    const operator = findOperatorForColumn(defaultColumn, opName);
+    if (operator) {
+      // Handle inRange (Between) operator
+      if (operator.value === 'inRange') {
+        const inRangeValues = parseInRangeValues(value, true);
+        if (inRangeValues) {
+          return {
+            operator: operator.value,
+            value: inRangeValues.value,
+            valueTo: inRangeValues.valueTo,
+            field: defaultColumn.field,
+            column: defaultColumn,
+          };
+        }
+      }
+      return {
+        operator: operator.value,
+        value: value.trim(),
+        field: defaultColumn.field,
+        column: defaultColumn,
+      };
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Validate conditions array
+ * Ensures all conditions are valid and within MAX_FILTER_CONDITIONS limit
+ */
+const validateConditions = (conditions: FilterCondition[]): boolean => {
+  if (conditions.length < 2) return false;
+  if (conditions.length > MAX_FILTER_CONDITIONS) return false;
+  return conditions.every(
+    c => c.operator && c.value !== undefined && c.field && c.column
+  );
+};
 
 /**
  * Parse inRange (Between) operator values
@@ -61,173 +237,102 @@ const parseInRangeValues = (
 };
 
 /**
- * Parse multi-condition filter pattern:
- * Same column:  #field #op1 val1 #and #op2 val2##
- * Multi column: #col1 #op1 val1 #and #col2 #op2 val2##
+ * Parse multi-condition filter pattern (supports N conditions up to MAX_FILTER_CONDITIONS):
+ *
+ * Same column:  #field #op1 val1 #and #op2 val2 #or #op3 val3##
+ * Multi column: #col1 #op1 val1 #and #col2 #op2 val2 #or #col3 #op3 val3##
+ * Mixed:        #col1 #op1 val1 #and #op2 val2 #or #col3 #op3 val3##
+ *
  * Returns null if not a complete multi-condition pattern
  */
 const parseMultiConditionFilter = (
   searchValue: string,
-  column: SearchColumn,
+  _column: SearchColumn, // Kept for API compatibility, but we extract column from searchValue
   columns: SearchColumn[]
 ): FilterSearch | null => {
   // Pattern to detect join operators (#and or #or)
   const hasJoinOperator = /#(and|or)/i.test(searchValue);
   if (!hasJoinOperator) return null;
 
-  // IMPORTANT: Only treat as complete multi-condition if BOTH values are confirmed
+  // IMPORTANT: Only treat as complete multi-condition if ALL values are confirmed
   // Check if pattern ends with "##" (Enter confirmation) to ensure user finished typing
   const hasConfirmationMarker = searchValue.endsWith('##');
   if (!hasConfirmationMarker) {
     return null;
   }
 
-  // Try multi-column pattern first: #col1 #op1 val1 #and #col2 #op2 val2##
-  const multiColMatch = searchValue.match(
-    /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+)##$/i
-  );
-
-  if (multiColMatch) {
-    const [, col1, op1, val1, join, col2, op2, val2] = multiColMatch;
-    const column1 = findColumn(columns, col1);
-    const column2 = findColumn(columns, col2);
-
-    if (column1 && column2) {
-      const operator1Obj = findOperatorForColumn(column1, op1);
-      const operator2Obj = findOperatorForColumn(column2, op2);
-
-      if (operator1Obj && operator2Obj) {
-        const conditions: FilterCondition[] = [];
-
-        // First condition
-        if (operator1Obj.value === 'inRange') {
-          const inRangeValues = parseInRangeValues(val1.trim(), true); // Confirmed pattern
-          if (inRangeValues) {
-            conditions.push({
-              operator: operator1Obj.value,
-              value: inRangeValues.value,
-              valueTo: inRangeValues.valueTo,
-              field: column1.field,
-              column: column1,
-            });
-          }
-        } else {
-          conditions.push({
-            operator: operator1Obj.value,
-            value: val1.trim(),
-            field: column1.field,
-            column: column1,
-          });
-        }
-
-        // Second condition
-        if (operator2Obj.value === 'inRange') {
-          const inRangeValues = parseInRangeValues(val2.trim(), true); // Confirmed pattern
-          if (inRangeValues) {
-            conditions.push({
-              operator: operator2Obj.value,
-              value: inRangeValues.value,
-              valueTo: inRangeValues.valueTo,
-              field: column2.field,
-              column: column2,
-            });
-          }
-        } else {
-          conditions.push({
-            operator: operator2Obj.value,
-            value: val2.trim(),
-            field: column2.field,
-            column: column2,
-          });
-        }
-
-        if (conditions.length >= 2) {
-          // Always true for multi-column pattern (matched explicit #col1...#col2 pattern)
-          // Even if col1 == col2, the pattern explicitly specifies two columns
-          // This preserves the multi-column structure/badges
-          const isMultiColumn = true;
-
-          return {
-            field: column1.field,
-            value: conditions[0].value,
-            operator: conditions[0].operator,
-            column: column1,
-            isExplicitOperator: true,
-            isConfirmed: true,
-            conditions,
-            joinOperator: join.toUpperCase() as 'AND' | 'OR',
-            isMultiCondition: true,
-            isMultiColumn,
-          };
-        }
-      }
-    }
-  }
-
-  // Fallback: Same-column pattern #field #op1 val1 #and #op2 val2##
-  const cleanValue = searchValue;
-  const fieldMatch = cleanValue.match(/^#([^\s#]+)\s+(.+)$/);
+  // Extract field/column prefix: #colName
+  const fieldMatch = searchValue.match(/^#([^\s#]+)\s+(.+)$/);
   if (!fieldMatch) return null;
 
-  const [, , remainingPart] = fieldMatch;
-  const parts = remainingPart.split(/#(and|or)\s+/i);
+  const [, firstColumnName, restAfterFirstCol] = fieldMatch;
+  const firstColumn = findColumn(columns, firstColumnName);
+  if (!firstColumn) return null;
 
-  const conditions: FilterCondition[] = [];
-  let joinOperator: 'AND' | 'OR' | undefined;
+  // Split the rest by join operators
+  const { parts, joinOperators } = splitByJoinOperators(restAfterFirstCol);
 
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 0) {
-      const condMatch = parts[i].trim().match(/^#([^\s]+)\s+(.*)$/);
-      if (condMatch) {
-        const [, op, val] = condMatch;
-        const operatorObj = findOperatorForColumn(column, op);
-        const cleanVal = val.trim().replace(/##$/, '');
-
-        if (operatorObj && cleanVal) {
-          if (operatorObj.value === 'inRange') {
-            const inRangeValues = parseInRangeValues(cleanVal, true); // Confirmed with ##
-            if (inRangeValues) {
-              conditions.push({
-                operator: operatorObj.value,
-                value: inRangeValues.value,
-                valueTo: inRangeValues.valueTo,
-                field: column.field,
-                column: column,
-              });
-            }
-          } else {
-            conditions.push({
-              operator: operatorObj.value,
-              value: cleanVal,
-              field: column.field,
-              column: column,
-            });
-          }
-        }
-      }
-    } else {
-      const currentJoin = parts[i].toUpperCase() as 'AND' | 'OR';
-      if (!joinOperator) {
-        joinOperator = currentJoin;
-      }
-    }
+  // Validate we have at least 2 parts (conditions) and correct number of joins
+  if (parts.length < 2 || joinOperators.length !== parts.length - 1) {
+    return null;
   }
 
-  if (conditions.length < 2) {
+  // Check MAX_FILTER_CONDITIONS limit
+  if (parts.length > MAX_FILTER_CONDITIONS) {
+    return null;
+  }
+
+  // Parse each condition part
+  const conditions: FilterCondition[] = [];
+  let isMultiColumn = false;
+  let lastColumn = firstColumn;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const defaultColumn = lastColumn; // Inherit from previous condition
+
+    // Parts from splitByJoinOperators already have # prefix
+    // Just ensure # is present if missing (shouldn't happen normally)
+    const condition = parseConditionPart(
+      part.startsWith('#') ? part : `#${part}`,
+      columns,
+      defaultColumn
+    );
+
+    if (!condition) {
+      return null; // Invalid condition
+    }
+
+    // Track if any condition uses a different column
+    if (condition.column.field !== firstColumn.field) {
+      isMultiColumn = true;
+    }
+
+    // Update last column for next condition's default
+    lastColumn = condition.column;
+
+    conditions.push(condition);
+  }
+
+  // Validate all conditions
+  if (!validateConditions(conditions)) {
     return null;
   }
 
   return {
-    field: column.field,
+    field: firstColumn.field,
     value: conditions[0].value,
+    valueTo: conditions[0].valueTo,
     operator: conditions[0].operator,
-    column,
+    column: firstColumn,
     isExplicitOperator: true,
     isConfirmed: true,
     conditions,
-    joinOperator,
+    // Support both new joinOperators array and legacy joinOperator
+    joinOperators,
+    joinOperator: joinOperators[0], // Backward compatibility
     isMultiCondition: true,
-    isMultiColumn: false,
+    isMultiColumn,
   };
 };
 
@@ -1144,33 +1249,6 @@ export const parseSearchValue = (
     showJoinOperatorSelector: false,
     isFilterMode: false,
   };
-};
-
-export const findColumn = (
-  columns: SearchColumn[],
-  input: string
-): SearchColumn | undefined => {
-  const normalizedInput = input.toLowerCase().trim();
-
-  // Exact match first (field or headerName)
-  const exactMatch = columns.find(
-    col =>
-      col.field.toLowerCase() === normalizedInput ||
-      col.headerName.toLowerCase() === normalizedInput
-  );
-  if (exactMatch) return exactMatch;
-
-  // Flexible match: normalize by removing/replacing separators
-  // "harga_pokok" matches "Harga Pokok", "hargaPokok", "harga-pokok"
-  const normalize = (str: string) => str.toLowerCase().replace(/[\s_-]/g, '');
-
-  const normalizedInputClean = normalize(normalizedInput);
-
-  return columns.find(
-    col =>
-      normalize(col.field) === normalizedInputClean ||
-      normalize(col.headerName) === normalizedInputClean
-  );
 };
 
 export const getOperatorSearchTerm = (value: string): string => {
