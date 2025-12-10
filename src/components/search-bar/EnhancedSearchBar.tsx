@@ -28,6 +28,7 @@ import { useSearchState } from './hooks/useSearchState';
 import { useSelectorPosition } from './hooks/useSelectorPosition';
 import { useSearchInput } from './hooks/useSearchInput';
 import { useSearchKeyboard } from './hooks/useSearchKeyboard';
+import { useBadgeHandlers } from './hooks/useBadgeHandlers';
 import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
 import ColumnSelector from './components/selectors/ColumnSelector';
@@ -247,6 +248,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setIsEditingSecondOperator(false);
     setIsEditingSecondColumnState(false);
   }, []);
+
+  // Use centralized badge handlers for clear operations
+  const { legacy: badgeHandlers } = useBadgeHandlers({
+    value,
+    onChange,
+    inputRef,
+    searchMode,
+    preservedSearchMode,
+    setPreservedSearchMode,
+    preservedFilterRef,
+    onClearPreservedState: handleClearPreservedState,
+    onFilterSearch,
+    onClearSearch,
+    columns: memoizedColumns,
+  });
 
   // Handler for badge count changes from SearchBadge
   const handleBadgeCountChange = useCallback(
@@ -1555,36 +1571,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [onClearSearch, onChange, handleClearPreservedState]);
 
-  // Clear to column only - used by blue badge (operator)
-  const handleClearToColumn = useCallback(() => {
-    // Get state BEFORE clearing preserved state (closure captures current value)
-    const stateToUse = preservedSearchMode || searchMode;
-
-    // Clear preserved state to ensure badges update correctly
-    handleClearPreservedState();
-
-    // Explicitly clear filter since value might not change
-    // (when already in operator selector mode, value stays the same)
-    onFilterSearch?.(null);
-
-    if (stateToUse.filterSearch) {
-      const columnName = stateToUse.filterSearch.field;
-      // Auto-open operator selector after clearing operator
-      const newValue = PatternBuilder.columnWithOperatorSelector(columnName);
-      setFilterValue(newValue, onChange, inputRef);
-    } else {
-      handleClearAll();
-    }
-  }, [
-    searchMode,
-    preservedSearchMode,
-    onChange,
-    inputRef,
-    handleClearAll,
-    handleClearPreservedState,
-    onFilterSearch,
-  ]);
-
   // Clear value only - used by gray badge (value)
   // For Between operator, this clears BOTH values (value and valueTo)
   const handleClearValue = useCallback(() => {
@@ -1627,100 +1613,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleClearAll,
     handleClearPreservedState,
     onFilterSearch,
-  ]);
-
-  // Clear partial join - used by orange badge (AND/OR)
-  const handleClearPartialJoin = useCallback(() => {
-    // Get state BEFORE clearing preserved state (closure captures current value)
-    const stateToUse = preservedSearchMode || searchMode;
-
-    // Clear preserved state to ensure badges update correctly
-    handleClearPreservedState();
-
-    if (!stateToUse.filterSearch) {
-      handleClearAll();
-      return;
-    }
-
-    const columnName = stateToUse.filterSearch.field;
-    const firstCondition = getFirstCondition(stateToUse.filterSearch);
-
-    // Back to confirmed single-condition: #field #operator value##
-    // For Between operator with valueTo, use betweenConfirmed to preserve both values
-    // This will trigger useSearchState to apply the first condition filter
-    let newValue: string;
-    if (firstCondition.operator === 'inRange' && firstCondition.valueTo) {
-      // Between operator with valueTo - use betweenConfirmed
-      newValue = PatternBuilder.betweenConfirmed(
-        columnName,
-        firstCondition.value,
-        firstCondition.valueTo
-      );
-    } else {
-      // Normal operator or Between without valueTo
-      newValue = PatternBuilder.confirmed(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value
-      );
-    }
-
-    setFilterValue(newValue, onChange, inputRef);
-  }, [
-    searchMode,
-    preservedSearchMode,
-    onChange,
-    inputRef,
-    handleClearAll,
-    handleClearPreservedState,
-  ]);
-
-  // Clear second operator - used by blue badge (second operator in multi-condition)
-  const handleClearSecondOperator = useCallback(() => {
-    // Use preservedSearchMode if available (during edit mode), otherwise use current
-    const stateToUse = preservedSearchMode || searchMode;
-
-    // Clear preserved state to ensure badge disappears and no operator is pre-highlighted
-    handleClearPreservedState();
-
-    if (!stateToUse.filterSearch) {
-      handleClearAll();
-      return;
-    }
-
-    const columnName = stateToUse.filterSearch.field;
-    const firstCondition = getFirstCondition(stateToUse.filterSearch);
-    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
-
-    // Check for multi-column: get second column from conditions or secondColumn state
-    const secondColumnField =
-      stateToUse.filterSearch.conditions?.[1]?.field ||
-      stateToUse.secondColumn?.field;
-
-    if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
-      // Always include second column in pattern (even if same as first)
-      // This ensures the second column badge is shown consistently
-      const col2 = secondColumnField || columnName;
-      const newValue = PatternBuilder.multiColumnPartial(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        joinOp,
-        col2
-      );
-
-      setFilterValue(newValue, onChange, inputRef);
-    } else {
-      // Fallback if no join operator found
-      handleClearAll();
-    }
-  }, [
-    searchMode,
-    preservedSearchMode,
-    onChange,
-    inputRef,
-    handleClearAll,
-    handleClearPreservedState,
   ]);
 
   // Clear second value - used by gray badge (second value in multi-condition)
@@ -1776,42 +1668,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onChange,
     inputRef,
     handleClearValue,
-    handleClearPreservedState,
-  ]);
-
-  // Clear second column - goes back to column selector after join (multi-column)
-  const handleClearSecondColumn = useCallback(() => {
-    const stateToUse = preservedSearchMode || searchMode;
-    handleClearPreservedState();
-
-    if (!stateToUse.filterSearch) {
-      handleClearAll();
-      return;
-    }
-
-    const columnName = stateToUse.filterSearch.field;
-    const firstCondition = getFirstCondition(stateToUse.filterSearch);
-    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
-
-    if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
-      // Back to state with join operator, showing column selector: #field #op1 val1 #join #
-      const newValue = PatternBuilder.partialMulti(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        joinOp
-      );
-
-      setFilterValue(newValue, onChange, inputRef);
-    } else {
-      handleClearAll();
-    }
-  }, [
-    searchMode,
-    preservedSearchMode,
-    onChange,
-    inputRef,
-    handleClearAll,
     handleClearPreservedState,
   ]);
 
@@ -2217,82 +2073,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       value: secondCondition.valueTo,
     });
   }, [searchMode, preservedSearchMode]);
-
-  // Clear "to" value in Between operator (first condition) - keep "from" value
-  const handleClearValueTo = useCallback(() => {
-    if (!searchMode.filterSearch) return;
-
-    const columnName = searchMode.filterSearch.field;
-    const operator = searchMode.filterSearch.operator;
-
-    // For multi-condition, get the from value from first condition
-    const fromValue = searchMode.filterSearch.isMultiCondition
-      ? searchMode.filterSearch.conditions?.[0]?.value
-      : searchMode.filterSearch.value;
-
-    if (!fromValue) return;
-
-    // Build pattern with just the from value, ready for new to value input
-    const newPattern = `#${columnName} #${operator} ${fromValue} `;
-    onChange({
-      target: { value: newPattern },
-    } as React.ChangeEvent<HTMLInputElement>);
-
-    setTimeout(() => {
-      if (inputRef?.current) {
-        inputRef.current.focus();
-        // Set cursor to end of input
-        const len = newPattern.length;
-        inputRef.current.setSelectionRange(len, len);
-      }
-    }, 50);
-  }, [searchMode, onChange, inputRef]);
-
-  // Clear "to" value in Between operator (second condition) - keep "from" value
-  const handleClearSecondValueTo = useCallback(() => {
-    if (
-      !searchMode.filterSearch ||
-      !searchMode.filterSearch.isMultiCondition ||
-      !searchMode.filterSearch.conditions ||
-      searchMode.filterSearch.conditions.length < 2
-    ) {
-      return;
-    }
-
-    const columnName = searchMode.filterSearch.field;
-    const cond1 = searchMode.filterSearch.conditions[0];
-    const cond2 = searchMode.filterSearch.conditions[1];
-    const join = searchMode.filterSearch.joinOperator || 'AND';
-    const col1 = cond1.field || columnName;
-    const col2 = cond2.field || columnName;
-    const isMultiColumn = searchMode.filterSearch.isMultiColumn;
-
-    // Build pattern with second condition's from value only
-    // Use #to marker for Between operators
-    const firstPart = cond1.valueTo
-      ? `#${col1} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo}`
-      : `#${col1} #${cond1.operator} ${cond1.value}`;
-
-    let newPattern: string;
-    if (isMultiColumn) {
-      newPattern = `${firstPart} #${join.toLowerCase()} #${col2} #${cond2.operator} ${cond2.value} `;
-    } else {
-      newPattern = `${firstPart} #${join.toLowerCase()} #${cond2.operator} ${cond2.value} `;
-    }
-
-    onChange({
-      target: { value: newPattern },
-    } as React.ChangeEvent<HTMLInputElement>);
-
-    setTimeout(() => {
-      if (inputRef?.current) {
-        inputRef.current.focus();
-        // Set cursor to end of input
-        const len = newPattern.length;
-        inputRef.current.setSelectionRange(len, len);
-      }
-    }, 50);
-  }, [searchMode, onChange, inputRef]);
 
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
@@ -3435,16 +3215,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               joinBadgeRef={joinBadgeRef}
               secondColumnBadgeRef={secondColumnBadgeRef}
               secondOperatorBadgeRef={secondOperatorBadgeRef}
-              onClearColumn={handleClearAll}
-              onClearOperator={handleClearToColumn}
-              onClearValue={handleClearValue}
-              onClearValueTo={handleClearValueTo}
-              onClearPartialJoin={handleClearPartialJoin}
-              onClearSecondColumn={handleClearSecondColumn}
-              onClearSecondOperator={handleClearSecondOperator}
-              onClearSecondValue={handleClearSecondValue}
-              onClearSecondValueTo={handleClearSecondValueTo}
-              onClearAll={handleClearAll}
+              onClearColumn={badgeHandlers.onClearColumn}
+              onClearOperator={badgeHandlers.onClearOperator}
+              onClearValue={badgeHandlers.onClearValue}
+              onClearValueTo={badgeHandlers.onClearValueTo}
+              onClearPartialJoin={badgeHandlers.onClearPartialJoin}
+              onClearSecondColumn={badgeHandlers.onClearSecondColumn}
+              onClearSecondOperator={badgeHandlers.onClearSecondOperator}
+              onClearSecondValue={badgeHandlers.onClearSecondValue}
+              onClearSecondValueTo={badgeHandlers.onClearSecondValueTo}
+              onClearAll={badgeHandlers.onClearAll}
               onEditColumn={handleEditColumn}
               onEditSecondColumn={handleEditSecondColumn}
               onEditOperator={handleEditOperator}
