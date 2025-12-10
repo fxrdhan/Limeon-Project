@@ -23,6 +23,7 @@ import {
   getJoinOperator,
   getSecondOperatorValue,
 } from './utils/handlerHelpers';
+import { restoreConfirmedPattern } from './utils/patternRestoration';
 import { useSearchState } from './hooks/useSearchState';
 import { useSelectorPosition } from './hooks/useSelectorPosition';
 import { useSearchInput } from './hooks/useSearchInput';
@@ -1403,53 +1404,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // CASE 1: Edit mode with confirmed filter - restore the original pattern
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       const filter = preservedSearchMode.filterSearch;
-      const columnName = filter.field;
-
-      let restoredPattern: string;
-      if (
-        filter.isMultiCondition &&
-        filter.conditions &&
-        filter.conditions.length >= 2
-      ) {
-        const cond1 = filter.conditions[0];
-        const cond2 = filter.conditions[1];
-        const join = filter.joinOperator || 'AND';
-
-        // Determine column fields for each condition
-        const col1Field = cond1.field || columnName;
-        const col2Field = cond2.field || columnName;
-
-        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
-        // even when col1 == col2 (preserves the explicit second column badge)
-        if (filter.isMultiColumn) {
-          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-          }
-        } else {
-          // Same-column pattern: #col #op1 val1 #join #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-          }
-        }
-      } else {
-        if (filter.valueTo) {
-          // Use #to marker for Between operator
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-        } else {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-        }
-      }
+      const restoredPattern = restoreConfirmedPattern(filter);
 
       onChange({
         target: { value: restoredPattern },
@@ -1508,53 +1463,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // If in edit mode, restore the original pattern instead of clearing
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       const filter = preservedSearchMode.filterSearch;
-      const columnName = filter.field;
-
-      let restoredPattern: string;
-      if (
-        filter.isMultiCondition &&
-        filter.conditions &&
-        filter.conditions.length >= 2
-      ) {
-        const cond1 = filter.conditions[0];
-        const cond2 = filter.conditions[1];
-        const join = filter.joinOperator || 'AND';
-
-        // Determine column fields for each condition
-        const col1Field = cond1.field || columnName;
-        const col2Field = cond2.field || columnName;
-
-        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
-        // even when col1 == col2 (preserves the explicit second column badge)
-        if (filter.isMultiColumn) {
-          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-          }
-        } else {
-          // Same-column pattern: #col #op1 val1 #join #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-          }
-        }
-      } else {
-        if (filter.valueTo) {
-          // Use #to marker for Between operator
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-        } else {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-        }
-      }
+      const restoredPattern = restoreConfirmedPattern(filter);
 
       onChange({
         target: { value: restoredPattern },
@@ -1602,53 +1511,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // If in edit mode, restore the original pattern instead of clearing
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       const filter = preservedSearchMode.filterSearch;
-      const columnName = filter.field;
-
-      let restoredPattern: string;
-      if (
-        filter.isMultiCondition &&
-        filter.conditions &&
-        filter.conditions.length >= 2
-      ) {
-        const cond1 = filter.conditions[0];
-        const cond2 = filter.conditions[1];
-        const join = filter.joinOperator || 'AND';
-
-        // Determine column fields for each condition
-        const col1Field = cond1.field || columnName;
-        const col2Field = cond2.field || columnName;
-
-        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
-        // even when col1 == col2 (preserves the explicit second column badge)
-        if (filter.isMultiColumn) {
-          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-          }
-        } else {
-          // Same-column pattern: #col #op1 val1 #join #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-          }
-        }
-      } else {
-        if (filter.valueTo) {
-          // Use #to marker for Between operator
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-        } else {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-        }
-      }
+      const restoredPattern = restoreConfirmedPattern(filter);
 
       onChange({
         target: { value: restoredPattern },
@@ -2242,59 +2105,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       // Rebuild the confirmed pattern to close any open modal
       const filter = preservedSearchMode.filterSearch;
-      const columnName = filter.field;
-
-      let restoredPattern: string;
-      if (
-        filter.isMultiCondition &&
-        filter.conditions &&
-        filter.conditions.length >= 2
-      ) {
-        // Multi-condition: rebuild full pattern
-        const cond1 = filter.conditions[0];
-        const cond2 = filter.conditions[1];
-        const join = filter.joinOperator || 'AND';
-
-        // Determine column fields for each condition
-        const col1Field = cond1.field || columnName;
-        const col2Field = cond2.field || columnName;
-
-        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
-        // even when col1 == col2 (preserves the explicit second column badge)
-        if (filter.isMultiColumn) {
-          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            // Between operator for first condition
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            // Between operator for second condition
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-          }
-        } else {
-          // Same-column pattern: #col #op1 val1 #join #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            // Between operator for first condition
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            // Between operator for second condition
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-          }
-        }
-      } else {
-        // Single condition
-        if (filter.valueTo) {
-          // Use #to marker for Between operator
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-        } else {
-          restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-        }
-      }
+      const restoredPattern = restoreConfirmedPattern(filter);
 
       onChange({
         target: { value: restoredPattern },
@@ -2330,52 +2141,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
       // Rebuild the confirmed pattern to close any open modal
       const filter = preservedSearchMode.filterSearch;
-      const columnName = filter.field;
+      const restoredPattern = restoreConfirmedPattern(filter);
 
-      if (
-        filter.isMultiCondition &&
-        filter.conditions &&
-        filter.conditions.length >= 2
-      ) {
-        const cond1 = filter.conditions[0];
-        const cond2 = filter.conditions[1];
-        const join = filter.joinOperator || 'AND';
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
 
-        // Determine column fields for each condition
-        const col1Field = cond1.field || columnName;
-        const col2Field = cond2.field || columnName;
-
-        // Use filter.isMultiColumn directly - it's set true for explicit multi-column patterns
-        // even when col1 == col2 (preserves the explicit second column badge)
-        let restoredPattern: string;
-        if (filter.isMultiColumn) {
-          // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-          }
-        } else {
-          // Same-column pattern: #col #op1 val1 #join #op2 val2##
-          // Use #to marker for Between operators
-          if (cond1.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-          } else if (cond2.valueTo) {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-          } else {
-            restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-          }
-        }
-
-        onChange({
-          target: { value: restoredPattern },
-        } as React.ChangeEvent<HTMLInputElement>);
-
-        setPreservedSearchMode(null);
-      }
+      setPreservedSearchMode(null);
     }
 
     // Enter inline editing mode for second value
@@ -3102,41 +2874,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         if (filter.isConfirmed) {
           // Confirmed filter (has value) - restore full pattern with ##
-          if (
-            filter.isMultiCondition &&
-            filter.conditions &&
-            filter.conditions.length >= 2
-          ) {
-            const cond1 = filter.conditions[0];
-            const cond2 = filter.conditions[1];
-            const join = filter.joinOperator || 'AND';
-            const col1Field = cond1.field || columnName;
-            const col2Field = cond2.field || columnName;
-
-            if (filter.isMultiColumn) {
-              if (cond1.valueTo) {
-                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-              } else if (cond2.valueTo) {
-                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-              } else {
-                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-              }
-            } else {
-              if (cond1.valueTo) {
-                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-              } else if (cond2.valueTo) {
-                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-              } else {
-                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-              }
-            }
-          } else {
-            if (filter.valueTo) {
-              restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-            } else {
-              restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-            }
-          }
+          restoredPattern = restoreConfirmedPattern(filter);
         } else {
           // Unconfirmed filter (no value yet) - restore pattern without ##
           if (filter.operator && filter.isExplicitOperator) {
@@ -3380,41 +3118,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         if (filter.isConfirmed) {
           // Confirmed filter (has value) - restore full pattern with ##
-          if (
-            filter.isMultiCondition &&
-            filter.conditions &&
-            filter.conditions.length >= 2
-          ) {
-            const cond1 = filter.conditions[0];
-            const cond2 = filter.conditions[1];
-            const join = filter.joinOperator || 'AND';
-            const col1Field = cond1.field || columnName;
-            const col2Field = cond2.field || columnName;
-
-            if (filter.isMultiColumn) {
-              if (cond1.valueTo) {
-                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${col2Field} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-              } else if (cond2.valueTo) {
-                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-              } else {
-                restoredPattern = `#${col1Field} #${cond1.operator} ${cond1.value} #${join} #${col2Field} #${cond2.operator} ${cond2.value}##`;
-              }
-            } else {
-              if (cond1.valueTo) {
-                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #to ${cond1.valueTo} #${join} #${cond2.operator} ${cond2.valueTo ? `${cond2.value} #to ${cond2.valueTo}` : cond2.value}##`;
-              } else if (cond2.valueTo) {
-                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value} #to ${cond2.valueTo}##`;
-              } else {
-                restoredPattern = `#${columnName} #${cond1.operator} ${cond1.value} #${join} #${cond2.operator} ${cond2.value}##`;
-              }
-            }
-          } else {
-            if (filter.valueTo) {
-              restoredPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-            } else {
-              restoredPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-            }
-          }
+          restoredPattern = restoreConfirmedPattern(filter);
         } else {
           // Unconfirmed filter (no value yet) - restore pattern without ##
           // This handles the case: [Column] [Operator] with no value
