@@ -249,6 +249,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setIsEditingSecondColumnState(false);
   }, []);
 
+  // Try to restore confirmed pattern from preservedSearchMode
+  // Returns true if restored (caller should return), false otherwise
+  const tryRestorePreservedPattern = useCallback((): boolean => {
+    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
+      const filter = preservedSearchMode.filterSearch;
+      const restoredPattern = restoreConfirmedPattern(filter);
+
+      onChange({
+        target: { value: restoredPattern },
+      } as React.ChangeEvent<HTMLInputElement>);
+
+      preservedFilterRef.current = null;
+      setPreservedSearchMode(null);
+      return true;
+    }
+    return false;
+  }, [preservedSearchMode, onChange]);
+
   // Use centralized badge handlers for clear operations
   const { legacy: badgeHandlers } = useBadgeHandlers({
     value,
@@ -1418,18 +1436,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleCloseColumnSelector = useCallback(() => {
     // CASE 1: Edit mode with confirmed filter - restore the original pattern
-    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
-      const filter = preservedSearchMode.filterSearch;
-      const restoredPattern = restoreConfirmedPattern(filter);
-
-      onChange({
-        target: { value: restoredPattern },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      preservedFilterRef.current = null;
-      setPreservedSearchMode(null);
-      return;
-    }
+    if (tryRestorePreservedPattern()) return;
 
     // CASE 2: Edit mode with column selected but no filter yet (was editing from operator selector)
     // Restore back to operator selector state
@@ -1473,22 +1480,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onClearSearch,
     onChange,
     preservedSearchMode,
+    tryRestorePreservedPattern,
   ]);
 
   const handleCloseOperatorSelector = useCallback(() => {
     // If in edit mode, restore the original pattern instead of clearing
-    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
-      const filter = preservedSearchMode.filterSearch;
-      const restoredPattern = restoreConfirmedPattern(filter);
-
-      onChange({
-        target: { value: restoredPattern },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      preservedFilterRef.current = null;
-      setPreservedSearchMode(null);
-      return;
-    }
+    if (tryRestorePreservedPattern()) return;
 
     // GUARD: Don't interfere if value is already confirmed (has ##) or in partial join state
     // This prevents this handler from clearing value when other handlers set it correctly
@@ -1520,21 +1517,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     value,
     onChange,
     onClearSearch,
-    preservedSearchMode,
+    tryRestorePreservedPattern,
   ]);
 
   const handleCloseJoinOperatorSelector = useCallback(() => {
     // If in edit mode, restore the original pattern instead of clearing
-    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
-      const filter = preservedSearchMode.filterSearch;
-      const restoredPattern = restoreConfirmedPattern(filter);
-
-      onChange({
-        target: { value: restoredPattern },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      preservedFilterRef.current = null;
-      setPreservedSearchMode(null);
+    if (tryRestorePreservedPattern()) {
       setCurrentJoinOperator(undefined);
       return;
     }
@@ -1555,7 +1543,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         target: { value: trimmedValue },
       } as React.ChangeEvent<HTMLInputElement>);
     }
-  }, [value, onChange, preservedSearchMode]);
+  }, [value, onChange, tryRestorePreservedPattern]);
 
   // Clear all - used by purple badge (column)
   const handleClearAll = useCallback(() => {
