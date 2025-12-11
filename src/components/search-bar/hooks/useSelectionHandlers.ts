@@ -54,12 +54,14 @@ export interface SelectionHandlersReturn {
 }
 
 // ============================================================================
-// Scalable Helper Functions
+// Scalable Helper Functions (Index-Based)
 // ============================================================================
 
 /**
  * Get active condition index from searchMode.
  * Uses new scalable field with fallback to deprecated fields.
+ *
+ * @returns Current condition index being built (0 = first, 1 = second, etc.)
  */
 function getActiveConditionIndex(searchMode: EnhancedSearchState): number {
   // Prefer new scalable field
@@ -74,25 +76,35 @@ function getActiveConditionIndex(searchMode: EnhancedSearchState): number {
 }
 
 /**
- * Check if we're building a condition after the first one.
- * Uses scalable activeConditionIndex with fallback.
+ * Check if we're building a condition at index > 0.
+ * Replaces hardcoded "isSecondOperator" / "isSecondColumn" checks.
+ *
+ * @returns true if activeConditionIndex > 0
  */
-function isSecondOrLaterCondition(searchMode: EnhancedSearchState): boolean {
+function isBuildingConditionN(searchMode: EnhancedSearchState): boolean {
   return getActiveConditionIndex(searchMode) > 0;
 }
 
 /**
- * Get second column from scalable partialConditions or deprecated field.
+ * Get column at specific condition index from scalable partialConditions.
+ * Falls back to deprecated field for index 1 (backward compatibility).
+ *
+ * @param searchMode - The search state
+ * @param index - Condition index (0 = first, 1 = second, etc.)
  */
-function getSecondColumn(
-  searchMode: EnhancedSearchState
+function getColumnAt(
+  searchMode: EnhancedSearchState,
+  index: number
 ): typeof searchMode.secondColumn {
   // Prefer new scalable field
-  if (searchMode.partialConditions?.[1]?.column) {
-    return searchMode.partialConditions[1].column;
+  if (searchMode.partialConditions?.[index]?.column) {
+    return searchMode.partialConditions[index].column;
   }
-  // Fallback to deprecated field
-  return searchMode.secondColumn;
+  // Fallback to deprecated field only for index 1
+  if (index === 1) {
+    return searchMode.secondColumn;
+  }
+  return undefined;
 }
 
 // ============================================================================
@@ -762,14 +774,16 @@ function handleOperatorSelectSecond(
   let newValue: string;
 
   // Check for multi-column using scalable helper (with fallback to deprecated fields)
-  const secondColumn = getSecondColumn(searchMode);
-  const secondCol = secondColumn?.field;
-  const isMultiColumn = isSecondOrLaterCondition(searchMode) && !!secondCol;
+  // getColumnAt(searchMode, 1) returns column at index 1 (second condition)
+  const conditionColumn1 = getColumnAt(searchMode, 1);
+  const conditionCol1Field = conditionColumn1?.field;
+  const isMultiColumn =
+    isBuildingConditionN(searchMode) && !!conditionCol1Field;
 
   if (firstValTo) {
     // First condition is Between
     if (isMultiColumn) {
-      newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${secondCol} #${operator.value} `;
+      newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${conditionCol1Field} #${operator.value} `;
     } else {
       newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${operator.value} `;
     }
@@ -780,7 +794,7 @@ function handleOperatorSelectSecond(
         firstOp,
         firstVal,
         join,
-        secondCol!,
+        conditionCol1Field!,
         operator.value
       );
     } else {
@@ -844,13 +858,13 @@ export function useSelectionHandlers(
   // ============================================================================
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
-      // CASE 0: MULTI-COLUMN - selecting second column after join operator
+      // CASE 0: MULTI-COLUMN - selecting column for condition[N] after join operator
       // Use scalable check: activeConditionIndex > 0 (with fallback to deprecated isSecondColumn)
-      const isSelectingSecondColumn =
-        isSecondOrLaterCondition(searchMode) &&
+      const isSelectingConditionNColumn =
+        isBuildingConditionN(searchMode) &&
         searchMode.filterSearch &&
         searchMode.partialJoin;
-      if (isSelectingSecondColumn) {
+      if (isSelectingConditionNColumn) {
         handleColumnSelectMultiColumn(
           column,
           searchMode,
@@ -931,10 +945,10 @@ export function useSelectionHandlers(
       }
 
       // CASE 2: EDITING first operator with preserved filter
-      // Skip this case if we're selecting operator for second column in multi-column filter
+      // Skip this case if we're selecting operator for condition[N] in multi-column filter
       // (preservedFilterRef might be set by handleJoinOperatorSelect, but we should use CASE 3)
       // Use scalable check: activeConditionIndex (with fallback to deprecated isSecondOperator)
-      if (preservedFilterRef.current && !isSecondOrLaterCondition(searchMode)) {
+      if (preservedFilterRef.current && !isBuildingConditionN(searchMode)) {
         handleOperatorSelectEditFirst(
           operator,
           columnName,
@@ -947,12 +961,12 @@ export function useSelectionHandlers(
         return;
       }
 
-      // CASE 3: Selecting second operator in partial multi-condition
+      // CASE 3: Selecting operator for condition[N] in partial multi-condition
       // Note: Don't require isConfirmed - when building new multi-column filter,
       // the pattern is "#col1 #op1 val1 #and #col2 #" which has no ## marker
       // Use scalable check: activeConditionIndex > 0 (with fallback to deprecated isSecondOperator)
       if (
-        isSecondOrLaterCondition(searchMode) &&
+        isBuildingConditionN(searchMode) &&
         searchMode.partialJoin &&
         searchMode.filterSearch?.value // First condition has value (is complete)
       ) {

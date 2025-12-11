@@ -83,8 +83,10 @@ export const useSelectorPosition = ({
       // CRITICAL FIX: Recalculate position after a frame to ensure refs are updated
       // React batches state updates and refs might not be assigned when effect first runs
       // Also recalculate after badge animations settle (300ms)
+      // Added: Extra recalculation at 100ms for ref assignment timing issues
       const rafId = requestAnimationFrame(updatePosition);
       const delayedUpdateId = setTimeout(updatePosition, 50);
+      const extraDelayId = setTimeout(updatePosition, 100); // Extra check for ref timing
       const animationSettleId = setTimeout(updatePosition, 300);
 
       return () => {
@@ -96,6 +98,7 @@ export const useSelectorPosition = ({
         }
         cancelAnimationFrame(rafId);
         clearTimeout(delayedUpdateId);
+        clearTimeout(extraDelayId);
         clearTimeout(animationSettleId);
       };
     }
