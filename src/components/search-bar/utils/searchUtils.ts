@@ -30,11 +30,11 @@ const parseInRangeValues = (
   // This is used when Between operator transitions from typing to confirmed state
   const toMarkerMatch = trimmed.match(/^(.+?)\s+#to\s+(.+)$/i);
   if (toMarkerMatch) {
-    const [, firstVal, secondVal] = toMarkerMatch;
-    if (firstVal.trim() && secondVal.trim()) {
+    const [, fromVal, toVal] = toMarkerMatch;
+    if (fromVal.trim() && toVal.trim()) {
       return {
-        value: firstVal.trim(),
-        valueTo: secondVal.trim(),
+        value: fromVal.trim(),
+        valueTo: toVal.trim(),
       };
     }
   }
@@ -45,12 +45,12 @@ const parseInRangeValues = (
   if (isConfirmed) {
     const dashMatch = trimmed.match(/^(.+?)-(.+)$/);
     if (dashMatch) {
-      const [, firstVal, secondVal] = dashMatch;
+      const [, fromVal, toVal] = dashMatch;
       // Ensure both parts are non-empty after trim
-      if (firstVal.trim() && secondVal.trim()) {
+      if (fromVal.trim() && toVal.trim()) {
         return {
-          value: firstVal.trim(),
-          valueTo: secondVal.trim(),
+          value: fromVal.trim(),
+          valueTo: toVal.trim(),
         };
       }
     }
@@ -352,7 +352,7 @@ export const parseSearchValue = (
               selectedColumn: column,
               partialJoin: join.toUpperCase() as 'AND' | 'OR',
               // ============ SCALABLE: N-condition support ============
-              activeConditionIndex: 1, // Building second condition (index 1)
+              activeConditionIndex: 1, // Building condition[1] (index 1)
               partialConditions: [
                 {
                   field: column.field,
@@ -361,7 +361,7 @@ export const parseSearchValue = (
                   value: filterValue,
                   valueTo: filterValueTo,
                 },
-                // Second condition slot - empty, waiting for column selection
+                // Condition[1] slot - empty, waiting for column selection
                 {},
               ],
               joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -379,10 +379,10 @@ export const parseSearchValue = (
         }
 
         // ============ MULTI-COLUMN PATTERNS ============
-        // These patterns handle when second column is DIFFERENT from first column
+        // These patterns handle when condition[1] column is DIFFERENT from first column
         // Pattern: #col1 #op1 val1 #and #col2 ...
 
-        // Pattern: #col1 #op val #and #col2 #op2 val2 (typing second value, multi-column)
+        // Pattern: #col1 #op val #and #col2 #op2 val2 (typing condition[1] value, multi-column)
         const multiColTypingValue = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+)$/i
         );
@@ -411,10 +411,10 @@ export const parseSearchValue = (
                   }
                 }
 
-                // Parse second value - check for Between operator with #to marker
-                let secondValue: string | undefined;
-                let secondValueTo: string | undefined;
-                let waitingForSecondValueTo = false;
+                // Parse condition[1] value - check for Between operator with #to marker
+                let cond1Value: string | undefined;
+                let cond1ValueTo: string | undefined;
+                let waitingForCond1ValueTo = false;
 
                 if (operator2Obj.value === 'inRange') {
                   // Check for #to marker: "700 #to" or "700 #to 800"
@@ -422,24 +422,24 @@ export const parseSearchValue = (
                     /^(.+?)\s+#to(?:\s+(.*))?$/i
                   );
                   if (toMarkerMatch) {
-                    secondValue = toMarkerMatch[1].trim();
+                    cond1Value = toMarkerMatch[1].trim();
                     const afterTo = toMarkerMatch[2]?.trim();
                     if (afterTo) {
-                      secondValueTo = afterTo;
+                      cond1ValueTo = afterTo;
                     } else {
                       // Has #to but no value after - waiting for valueTo
-                      waitingForSecondValueTo = true;
+                      waitingForCond1ValueTo = true;
                     }
                   } else {
                     // No #to marker yet - just the first value
-                    secondValue = val2.trim();
+                    cond1Value = val2.trim();
                   }
                 } else {
                   // Not a Between operator - just store the value
-                  secondValue = val2.trim();
+                  cond1Value = val2.trim();
                 }
 
-                // User is typing second value in multi-column filter
+                // User is typing condition[1] value in multi-column filter
                 return {
                   globalSearch: undefined,
                   showColumnSelector: false,
@@ -449,7 +449,7 @@ export const parseSearchValue = (
                   selectedColumn: column1,
                   partialJoin: join.toUpperCase() as 'AND' | 'OR',
                   // ============ SCALABLE: N-condition support ============
-                  activeConditionIndex: 1, // Building second condition (index 1)
+                  activeConditionIndex: 1, // Building condition[1] (index 1)
                   partialConditions: [
                     {
                       field: column1.field,
@@ -462,9 +462,9 @@ export const parseSearchValue = (
                       field: column2.field,
                       column: column2,
                       operator: operator2Obj.value,
-                      value: secondValue,
-                      valueTo: secondValueTo,
-                      waitingForValueTo: waitingForSecondValueTo,
+                      value: cond1Value,
+                      valueTo: cond1ValueTo,
+                      waitingForValueTo: waitingForCond1ValueTo,
                     },
                   ],
                   joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -483,7 +483,7 @@ export const parseSearchValue = (
           }
         }
 
-        // Pattern: #col1 #op val #and #col2 #op2 (second operator selected, no value yet)
+        // Pattern: #col1 #op val #and #col2 #op2 (condition[1] operator selected, no value yet)
         const multiColOperatorSelected = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s*$/i
         );
@@ -573,17 +573,17 @@ export const parseSearchValue = (
                 }
               }
 
-              // Show operator selector for second column
+              // Show operator selector for condition[1] column
               return {
                 globalSearch: undefined,
                 showColumnSelector: false,
                 showOperatorSelector: true, // Show operator selector
                 showJoinOperatorSelector: false,
                 isFilterMode: false,
-                selectedColumn: column2, // Use col2 for operator selection
+                selectedColumn: column2, // Use column[1] for operator selection
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
-                activeConditionIndex: 1, // Building second condition (index 1)
+                activeConditionIndex: 1, // Building condition[1] (index 1)
                 partialConditions: [
                   {
                     field: column1.field,
@@ -613,7 +613,7 @@ export const parseSearchValue = (
           }
         }
 
-        // Pattern: #col1 #op val #and #col2 (second column selected, waiting for operator)
+        // Pattern: #col1 #op val #and #col2 (condition[1] column selected, waiting for operator)
         const multiColColumnSelected = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s*$/i
         );
@@ -680,8 +680,8 @@ export const parseSearchValue = (
               };
             }
           }
-          // NEW: Handle partial second column name being typed/deleted (multi-column)
-          // col2 is NOT a valid column (user is typing/deleting column name)
+          // NEW: Handle partial condition[1] column name being typed/deleted (multi-column)
+          // col2 is NOT a valid column (user is typing/deleting column[1] name)
           else if (column1 && !column2) {
             const operator1Obj = findOperatorForColumn(column1, op1);
             // Ensure col2 is also not a valid operator (to avoid collision with same-column patterns)
@@ -737,10 +737,10 @@ export const parseSearchValue = (
         }
 
         // ============ SAME-COLUMN PATTERNS (existing) ============
-        // These patterns handle when second condition uses the SAME column
+        // These patterns handle when condition[1] uses the SAME column
         // Pattern: #col #op1 val1 #and #op2 ...
 
-        // Check for incomplete multi-condition with second value being typed (SAME COLUMN)
+        // Check for incomplete multi-condition with condition[1] value being typed (SAME COLUMN)
         // Pattern: #field #op1 val1 #and #op2 val2 (without ## confirmation)
         const incompleteMultiWithValue = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s]+)\s+(.+)$/i
@@ -766,33 +766,33 @@ export const parseSearchValue = (
                 }
               }
 
-              // Parse second value - check for Between operator with #to marker
-              let secondValue: string | undefined;
-              let secondValueTo: string | undefined;
-              let waitingForSecondValueTo = false;
+              // Parse condition[1] value - check for Between operator with #to marker
+              let cond1Value: string | undefined;
+              let cond1ValueTo: string | undefined;
+              let waitingForCond1ValueTo = false;
 
               if (operator2Obj.value === 'inRange') {
                 // Check for #to marker: "700 #to" or "700 #to 800"
                 const toMarkerMatch = val2.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
                 if (toMarkerMatch) {
-                  secondValue = toMarkerMatch[1].trim();
+                  cond1Value = toMarkerMatch[1].trim();
                   const afterTo = toMarkerMatch[2]?.trim();
                   if (afterTo) {
-                    secondValueTo = afterTo;
+                    cond1ValueTo = afterTo;
                   } else {
                     // Has #to but no value after - waiting for valueTo
-                    waitingForSecondValueTo = true;
+                    waitingForCond1ValueTo = true;
                   }
                 } else {
                   // No #to marker yet - just the first value
-                  secondValue = val2.trim();
+                  cond1Value = val2.trim();
                 }
               } else {
                 // Not a Between operator - just store the value
-                secondValue = val2.trim();
+                cond1Value = val2.trim();
               }
 
-              // User is typing second value - keep in input mode for Enter key to work
+              // User is typing condition[1] value - keep in input mode for Enter key to work
               return {
                 globalSearch: undefined,
                 showColumnSelector: false,
@@ -802,7 +802,7 @@ export const parseSearchValue = (
                 selectedColumn: column,
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
-                activeConditionIndex: 1, // Building second condition (index 1)
+                activeConditionIndex: 1, // Building condition[1] (index 1)
                 partialConditions: [
                   {
                     field: column.field,
@@ -815,9 +815,9 @@ export const parseSearchValue = (
                     field: column.field, // Same column for same-column filter
                     column,
                     operator: operator2Obj.value,
-                    value: secondValue,
-                    valueTo: secondValueTo,
-                    waitingForValueTo: waitingForSecondValueTo,
+                    value: cond1Value,
+                    valueTo: cond1ValueTo,
+                    waitingForValueTo: waitingForCond1ValueTo,
                   },
                 ],
                 joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -835,7 +835,7 @@ export const parseSearchValue = (
           }
         }
 
-        // Check for incomplete multi-condition - second operator selected but no value yet (SAME COLUMN)
+        // Check for incomplete multi-condition - condition[1] operator selected but no value yet (SAME COLUMN)
         // Pattern: #field #op1 val1 #and #op2 (with optional trailing space)
         const incompleteMultiCondition = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s]+)\s*$/i
@@ -924,7 +924,7 @@ export const parseSearchValue = (
                 filterValueTo = inRangeValues.valueTo;
               } else {
                 // Between operator requires 2 values - don't show join selector
-                // Keep in filter mode to let user complete the second value
+                // Keep in filter mode to let user complete condition[1] value
                 return {
                   globalSearch: undefined,
                   showColumnSelector: false,
@@ -990,15 +990,15 @@ export const parseSearchValue = (
               selectedColumn: column,
               partialJoin: joinOp.value.toUpperCase() as 'AND' | 'OR',
               // ============ SCALABLE: N-condition support ============
-              activeConditionIndex: 1, // About to build second condition
+              activeConditionIndex: 1, // About to build condition[1]
               partialConditions: [
                 {
                   field: column.field,
                   column,
                   // Note: filterValue here is the raw value, operator was the join op
-                  // This state is transitional - waiting for second operator
+                  // This state is transitional - waiting for condition[1] operator
                 },
-                // Second condition slot - empty
+                // Condition[1] slot - empty
                 {},
               ],
               joins: [joinOp.value.toUpperCase() as 'AND' | 'OR'],
@@ -1007,7 +1007,7 @@ export const parseSearchValue = (
           }
 
           // IMPORTANT: Don't treat as single condition if filterValue contains incomplete multi-condition pattern
-          // Pattern: value contains "#and #operator" or "#or #operator" (waiting for second value OR typing second value)
+          // Pattern: value contains "#and #operator" or "#or #operator" (waiting for condition[1] value OR typing condition[1] value)
           const incompleteMultiMatch = filterValue?.match(
             /#(and|or)\s+#([^\s]+)(?:\s+(.*))?$/i
           );
@@ -1019,11 +1019,11 @@ export const parseSearchValue = (
               .substring(0, filterValue!.indexOf(`#${join}`))
               .trim();
 
-            // Validate second operator
+            // Validate condition[1] operator
             const operator2Obj = findOperatorForColumn(column, op2Text);
 
             if (operator2Obj) {
-              // This is incomplete multi-condition - waiting for second value input OR typing second value
+              // This is incomplete multi-condition - waiting for condition[1] value input OR typing condition[1] value
               return {
                 globalSearch: undefined,
                 showColumnSelector: false,
@@ -1033,7 +1033,7 @@ export const parseSearchValue = (
                 selectedColumn: column,
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
-                activeConditionIndex: 1, // Building second condition
+                activeConditionIndex: 1, // Building condition[1]
                 partialConditions: [
                   {
                     field: column.field,
@@ -1060,13 +1060,13 @@ export const parseSearchValue = (
               };
             }
 
-            // NEW: Handle partial second column name being typed/deleted (multi-column)
+            // NEW: Handle partial condition[1] column name being typed/deleted (multi-column)
             // When op2Text is NOT a valid operator, check if it could be a partial column name
             // Pattern: #col1 #op1 val1 #and #partialColName
             const partialColumn = findColumn(columns, op2Text);
             if (!operator2Obj && !partialColumn) {
               // op2Text is neither a valid operator nor a valid column
-              // User is typing/deleting second column name - show column selector
+              // User is typing/deleting condition[1] column name - show column selector
               return {
                 globalSearch: undefined,
                 showColumnSelector: true,
@@ -1076,7 +1076,7 @@ export const parseSearchValue = (
                 selectedColumn: column,
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
-                activeConditionIndex: 1, // Building second condition
+                activeConditionIndex: 1, // Building condition[1]
                 partialConditions: [
                   {
                     field: column.field,
@@ -1084,7 +1084,7 @@ export const parseSearchValue = (
                     operator: operatorInput,
                     value: beforeJoin,
                   },
-                  // Second condition slot - typing column name
+                  // Condition[1] slot - typing column name
                   {},
                 ],
                 joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -1100,7 +1100,7 @@ export const parseSearchValue = (
             }
           }
 
-          // NEW: Handle partial join with incomplete second part: #col1 #op val #and # or #col1 #op val #and
+          // NEW: Handle partial join with incomplete condition[1] part: #col1 #op val #and # or #col1 #op val #and
           // This catches the case where join operator is present but nothing/just # after it
           const partialJoinInValue = filterValue?.match(/#(and|or)\s*#?\s*$/i);
           if (partialJoinInValue) {
@@ -1118,7 +1118,7 @@ export const parseSearchValue = (
               selectedColumn: column,
               partialJoin: join.toUpperCase() as 'AND' | 'OR',
               // ============ SCALABLE: N-condition support ============
-              activeConditionIndex: 1, // Building second condition
+              activeConditionIndex: 1, // Building condition[1]
               partialConditions: [
                 {
                   field: column.field,
@@ -1126,7 +1126,7 @@ export const parseSearchValue = (
                   operator: operatorInput,
                   value: beforeJoin,
                 },
-                // Second condition slot - waiting
+                // Condition[1] slot - waiting
                 {},
               ],
               joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -1159,19 +1159,19 @@ export const parseSearchValue = (
                 /^(.+?)\s+#to(?:\s+(.*))?$/i
               );
               if (toMarkerMatch) {
-                const [, firstValue, secondValue] = toMarkerMatch;
-                // Clean second value: remove trailing ## (confirmation) and trailing # (join selector)
+                const [, firstValue, toValue] = toMarkerMatch;
+                // Clean toValue: remove trailing ## (confirmation) and trailing # (join selector)
                 // Pattern "500 #to 600## #" should extract "600" not "600## #"
-                const cleanedSecond = secondValue
+                const cleanedToValue = toValue
                   ?.trim()
                   .replace(/#+\s*#?\s*$/, '') // Remove trailing ## or ## # patterns
                   .trim();
 
-                if (cleanedSecond) {
+                if (cleanedToValue) {
                   // Has both values: "500 #to 700"
                   // Check if original had ## confirmation marker (before join selector #)
                   const hasValueConfirmation =
-                    hasConfirmation || /##\s*#?\s*$/.test(secondValue || '');
+                    hasConfirmation || /##\s*#?\s*$/.test(toValue || '');
                   return {
                     globalSearch: undefined,
                     showColumnSelector: false,
@@ -1181,7 +1181,7 @@ export const parseSearchValue = (
                     filterSearch: {
                       field: column.field,
                       value: firstValue.trim(),
-                      valueTo: cleanedSecond,
+                      valueTo: cleanedToValue,
                       column,
                       operator: operator.value,
                       isExplicitOperator: true,
@@ -1190,7 +1190,7 @@ export const parseSearchValue = (
                     },
                   };
                 } else {
-                  // Waiting for second value: "500 #to" or "500 #to "
+                  // Waiting for valueTo: "500 #to" or "500 #to "
                   return {
                     globalSearch: undefined,
                     showColumnSelector: false,
@@ -1359,17 +1359,17 @@ export const findColumn = (
 export const getOperatorSearchTerm = (value: string): string => {
   if (value.startsWith('#')) {
     // MULTI-COLUMN: Check for pattern #col1 #op1 val1 #and #col2 #searchTerm
-    // Extract operator search term for second column
+    // Extract operator search term for condition[1] column
     const multiColOpMatch = value.match(/#(?:and|or)\s+#[^\s#]+\s+#([^\s]*)$/i);
     if (multiColOpMatch) {
-      return multiColOpMatch[1]; // Return search term after second column
+      return multiColOpMatch[1]; // Return search term after condition[1] column
     }
 
-    // SAME-COLUMN: Check for second operator pattern: #field #op1 val1 #and #search_term
-    // This ensures operator selector doesn't filter when selecting second operator
-    const secondOpMatch = value.match(/#(and|or)\s+#([^\s]*)$/i);
-    if (secondOpMatch) {
-      return secondOpMatch[2]; // Return search term after join operator
+    // SAME-COLUMN: Check for condition[1] operator pattern: #field #op1 val1 #and #search_term
+    // This ensures operator selector doesn't filter when selecting condition[1] operator
+    const cond1OpMatch = value.match(/#(and|or)\s+#([^\s]*)$/i);
+    if (cond1OpMatch) {
+      return cond1OpMatch[2]; // Return search term after join operator
     }
 
     // First operator pattern: #field #search_term
