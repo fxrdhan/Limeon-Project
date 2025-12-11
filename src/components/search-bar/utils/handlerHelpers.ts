@@ -15,13 +15,13 @@ export interface PreservedFilter {
   columnName?: string;
   operator: string;
   value: string;
-  valueTo?: string; // For Between (inRange) operator - second value
+  valueTo?: string; // For Between (inRange) operator - "to" value
   join?: 'AND' | 'OR';
-  secondOperator?: string;
-  secondValue?: string;
-  secondValueTo?: string; // For second Between in multi-condition
-  secondColumnField?: string; // For multi-column filters - second column field name
-  wasMultiColumn?: boolean; // Track if original structure had explicit second column badge
+  condition1Operator?: string; // Operator at condition index 1
+  condition1Value?: string; // Value at condition index 1
+  condition1ValueTo?: string; // "to" value for Between at condition index 1
+  condition1Field?: string; // Column field for condition index 1
+  wasMultiColumn?: boolean; // Track if original structure had explicit condition[1] column badge
 }
 
 /**
@@ -96,18 +96,18 @@ export function extractMultiConditionPreservation(
     filter.conditions.length >= 2
   ) {
     const firstCondition = filter.conditions[0];
-    const secondCondition = filter.conditions[1];
+    const condition1 = filter.conditions[1];
 
     return {
       operator: firstCondition.operator,
       value: firstCondition.value,
       valueTo: firstCondition.valueTo, // Preserve valueTo for Between
       join: filter.joinOperator,
-      secondOperator: secondCondition.operator,
-      secondValue: secondCondition.value,
-      secondValueTo: secondCondition.valueTo, // Preserve second valueTo for Between
-      secondColumnField: secondCondition.field, // Preserve second column for multi-column filters
-      wasMultiColumn: filter.isMultiColumn, // Track if original had explicit col2 badge
+      condition1Operator: condition1.operator,
+      condition1Value: condition1.value,
+      condition1ValueTo: condition1.valueTo, // Preserve condition[1] valueTo for Between
+      condition1Field: condition1.field, // Preserve condition[1] column for multi-column
+      wasMultiColumn: filter.isMultiColumn, // Track if original had explicit condition[1] column badge
     };
   }
 
@@ -119,36 +119,36 @@ export function extractMultiConditionPreservation(
       value: filter.value,
       valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
-      secondOperator: condition1.operator,
-      secondValue: condition1.value ?? '',
-      secondColumnField: condition1.field, // Preserve second column for multi-column filters
-      wasMultiColumn: !!condition1.column, // Has explicit second column = multi-column
+      condition1Operator: condition1.operator,
+      condition1Value: condition1.value ?? '',
+      condition1Field: condition1.field, // Preserve condition[1] column for multi-column
+      wasMultiColumn: !!condition1.column, // Has explicit condition[1] column = multi-column
     };
   }
 
   // Partial join with condition[1] column but no operator yet
-  // This happens when operator selector for second column is open
+  // This happens when operator selector for condition[1] column is open
   if (searchMode.partialJoin && condition1?.column && filter.value) {
     return {
       operator: filter.operator,
       value: filter.value,
       valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
-      secondColumnField: condition1.field, // Preserve second column!
-      wasMultiColumn: true, // Has explicit second column = multi-column
-      // No secondOperator/secondValue yet
+      condition1Field: condition1.field, // Preserve condition[1] column!
+      wasMultiColumn: true, // Has explicit condition[1] column = multi-column
+      // No condition1Operator/condition1Value yet
     };
   }
 
-  // Partial join only (has join but no second column yet)
-  // This happens when column selector for second column is open
+  // Partial join only (has join but no condition[1] column yet)
+  // This happens when column selector for condition[1] column is open
   if (searchMode.partialJoin && filter.value) {
     return {
       operator: filter.operator,
       value: filter.value,
       valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
-      // No secondOperator/secondValue/secondColumnField yet
+      // No condition1Operator/condition1Value/condition1Field yet
     };
   }
 
@@ -195,13 +195,13 @@ export function getFirstCondition(filter: FilterSearch): {
 }
 
 /**
- * Extract second condition from filter
+ * Extract condition[1] from filter
  *
  * @param filter - Filter search object
  * @param searchMode - Current search state
- * @returns Second condition or undefined
+ * @returns Condition[1] or undefined
  */
-export function getSecondCondition(
+export function getCondition1(
   filter: FilterSearch,
   searchMode?: EnhancedSearchState
 ): { operator: string; value: string } | undefined {
@@ -247,29 +247,29 @@ export function getJoinOperator(
 }
 
 /**
- * Extract second operator from various sources
+ * Extract condition[1] operator from various sources
  *
  * @param filter - Filter search object
  * @param searchMode - Current search state
  * @param valuePattern - Current value string to parse
- * @returns Second operator value or undefined
+ * @returns Condition[1] operator value or undefined
  */
-export function getSecondOperatorValue(
+export function getCondition1OperatorValue(
   filter: FilterSearch,
   searchMode: EnhancedSearchState | undefined,
   valuePattern?: string
 ): string | undefined {
   // From confirmed multi-condition
-  const secondCondition = getSecondCondition(filter, searchMode);
-  if (secondCondition) {
-    return secondCondition.operator;
+  const condition1 = getCondition1(filter, searchMode);
+  if (condition1) {
+    return condition1.operator;
   }
 
   // Extract from value pattern as fallback
   if (valuePattern) {
-    const secondOpMatch = valuePattern.match(/#(and|or)\s+#([^\s]+)/i);
-    if (secondOpMatch) {
-      return secondOpMatch[2];
+    const cond1OpMatch = valuePattern.match(/#(and|or)\s+#([^\s]+)/i);
+    if (cond1OpMatch) {
+      return cond1OpMatch[2];
     }
   }
 
