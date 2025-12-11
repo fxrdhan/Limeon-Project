@@ -111,29 +111,30 @@ export function extractMultiConditionPreservation(
     };
   }
 
-  // Partial multi-condition (has join and second operator but no second value)
-  if (searchMode.partialJoin && searchMode.secondOperator && filter.value) {
+  // Partial multi-condition (has join and condition[1] operator but no value)
+  const condition1 = searchMode.partialConditions?.[1];
+  if (searchMode.partialJoin && condition1?.operator && filter.value) {
     return {
       operator: filter.operator,
       value: filter.value,
       valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
-      secondOperator: searchMode.secondOperator,
-      secondValue: '',
-      secondColumnField: searchMode.secondColumn?.field, // Preserve second column for multi-column filters
-      wasMultiColumn: !!searchMode.secondColumn, // Has explicit second column = multi-column
+      secondOperator: condition1.operator,
+      secondValue: condition1.value ?? '',
+      secondColumnField: condition1.field, // Preserve second column for multi-column filters
+      wasMultiColumn: !!condition1.column, // Has explicit second column = multi-column
     };
   }
 
-  // Partial join with second column but no operator yet
+  // Partial join with condition[1] column but no operator yet
   // This happens when operator selector for second column is open
-  if (searchMode.partialJoin && searchMode.secondColumn && filter.value) {
+  if (searchMode.partialJoin && condition1?.column && filter.value) {
     return {
       operator: filter.operator,
       value: filter.value,
       valueTo: filter.valueTo, // Preserve valueTo for Between
       join: searchMode.partialJoin,
-      secondColumnField: searchMode.secondColumn.field, // Preserve second column!
+      secondColumnField: condition1.field, // Preserve second column!
       wasMultiColumn: true, // Has explicit second column = multi-column
       // No secondOperator/secondValue yet
     };
@@ -209,11 +210,12 @@ export function getSecondCondition(
     return filter.conditions[1];
   }
 
-  // From partial multi-condition state
-  if (searchMode?.secondOperator) {
+  // From partial multi-condition state (using scalable partialConditions)
+  const condition1Op = searchMode?.partialConditions?.[1]?.operator;
+  if (condition1Op) {
     return {
-      operator: searchMode.secondOperator,
-      value: '', // No value yet in partial state
+      operator: condition1Op,
+      value: searchMode?.partialConditions?.[1]?.value ?? '', // Value if available
     };
   }
 

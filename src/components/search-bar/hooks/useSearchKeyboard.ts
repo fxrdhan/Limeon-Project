@@ -71,9 +71,11 @@ export const useSearchKeyboard = ({
         // Enter key: Confirm filter value (add ## marker)
         if (e.key === KEY_CODES.ENTER) {
           // Handle multi-condition confirmation (building second condition)
+          const condition1Operator =
+            searchMode.partialConditions?.[1]?.operator;
           if (
             searchMode.partialJoin &&
-            searchMode.secondOperator &&
+            condition1Operator &&
             !searchMode.isFilterMode
           ) {
             e.preventDefault();
@@ -85,9 +87,7 @@ export const useSearchKeyboard = ({
             // Check if second value exists (not just operator with no value)
             // Pattern: #col #op val #join #col2 #op2 secondValue
             // If pattern ends with #operator (no value after), don't confirm
-            const secondOpPattern = new RegExp(
-              `#${searchMode.secondOperator}\\s*$`
-            );
+            const secondOpPattern = new RegExp(`#${condition1Operator}\\s*$`);
             const hasSecondValue = !secondOpPattern.test(currentValue);
 
             if (
@@ -97,7 +97,7 @@ export const useSearchKeyboard = ({
             ) {
               // Special handling for Between (inRange) operator on second condition
               // If second operator is inRange and doesn't have #to marker yet, add it
-              if (searchMode.secondOperator === 'inRange') {
+              if (condition1Operator === 'inRange') {
                 // Check if pattern already has #to marker for second condition
                 // Pattern with #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2 #to"
                 // Pattern without #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2"
@@ -293,9 +293,10 @@ export const useSearchKeyboard = ({
 
           // E9 Step 6: Delete on partial multi-condition (5 badges) removes second operator and opens operator selector
           // Pattern: [Column][Operator][Value][Join][SecondOperator] + Delete -> [Column][Operator][Value][Join] with operator selector open
+          const cond1Op = searchMode.partialConditions?.[1]?.operator;
           if (
             searchMode.partialJoin &&
-            searchMode.secondOperator &&
+            cond1Op &&
             searchMode.filterSearch && // filterSearch exists (value may be empty after Step 5)
             !searchMode.isFilterMode
           ) {
@@ -311,7 +312,8 @@ export const useSearchKeyboard = ({
 
             // Always include second column in pattern (even if same as first)
             // This ensures the second column badge is shown consistently
-            const col2 = searchMode.secondColumn?.field || columnName;
+            const col2 =
+              searchMode.partialConditions?.[1]?.column?.field || columnName;
 
             // For Between (inRange) operator, include valueTo if it exists
             const valueToPart =
