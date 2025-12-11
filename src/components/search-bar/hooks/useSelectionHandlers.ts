@@ -40,8 +40,8 @@ export interface SelectionHandlersProps {
   setPreservedSearchMode: (mode: EnhancedSearchState | null) => void;
   preservedFilterRef: RefObject<PreservedFilter | null>;
   memoizedColumns: SearchColumn[];
-  isEditingSecondOperator: boolean;
-  setIsEditingSecondOperator: (editing: boolean) => void;
+  isEditingCondition1Operator: boolean;
+  setIsEditingCondition1Operator: (editing: boolean) => void;
   setEditingBadge: (
     badge: { type: EditingBadgeType; value: string } | null
   ) => void;
@@ -121,7 +121,7 @@ function handleColumnSelectMultiColumn(
   preservedFilterRef: RefObject<PreservedFilter | null>,
   preservedSearchMode: EnhancedSearchState | null,
   setPreservedSearchMode: (mode: EnhancedSearchState | null) => void,
-  setIsEditingSecondOperator: (editing: boolean) => void,
+  setIsEditingCondition1Operator: (editing: boolean) => void,
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
   inputRef: RefObject<HTMLInputElement | null> | undefined
 ): void {
@@ -217,7 +217,7 @@ function handleColumnSelectMultiColumn(
           showOperatorSelector: true,
         });
       }
-      setIsEditingSecondOperator(true);
+      setIsEditingCondition1Operator(true);
     }
   } else {
     // No preserved second operator - open operator selector for new column
@@ -242,7 +242,7 @@ function handleColumnSelectMultiColumn(
         showOperatorSelector: true,
       });
     }
-    setIsEditingSecondOperator(true);
+    setIsEditingCondition1Operator(true);
   }
 
   setFilterValue(newValue, onChange, inputRef);
@@ -493,7 +493,7 @@ function handleOperatorSelectEditSecond(
   preservedFilterRef: RefObject<PreservedFilter | null>,
   preservedSearchMode: EnhancedSearchState | null,
   setPreservedSearchMode: (mode: EnhancedSearchState | null) => void,
-  setIsEditingSecondOperator: (editing: boolean) => void,
+  setIsEditingCondition1Operator: (editing: boolean) => void,
   setEditingBadge: (
     badge: { type: EditingBadgeType; value: string } | null
   ) => void,
@@ -541,7 +541,7 @@ function handleOperatorSelectEditSecond(
       });
     }
 
-    setIsEditingSecondOperator(false);
+    setIsEditingCondition1Operator(false);
     setFilterValue(newValue, onChange, inputRef);
 
     // Enter inline edit mode with dash appended
@@ -617,7 +617,7 @@ function handleOperatorSelectEditSecond(
     }
   }
 
-  setIsEditingSecondOperator(false);
+  setIsEditingCondition1Operator(false);
   setFilterValue(newValue, onChange, inputRef);
 
   setTimeout(() => {
@@ -848,8 +848,8 @@ export function useSelectionHandlers(
     setPreservedSearchMode,
     preservedFilterRef,
     memoizedColumns,
-    isEditingSecondOperator,
-    setIsEditingSecondOperator,
+    isEditingCondition1Operator,
+    setIsEditingCondition1Operator,
     setEditingBadge,
   } = props;
 
@@ -871,7 +871,7 @@ export function useSelectionHandlers(
           preservedFilterRef,
           preservedSearchMode,
           setPreservedSearchMode,
-          setIsEditingSecondOperator,
+          setIsEditingCondition1Operator,
           onChange,
           inputRef
         );
@@ -909,7 +909,7 @@ export function useSelectionHandlers(
       preservedSearchMode,
       setPreservedSearchMode,
       preservedFilterRef,
-      setIsEditingSecondOperator,
+      setIsEditingCondition1Operator,
     ]
   );
 
@@ -925,7 +925,7 @@ export function useSelectionHandlers(
 
       // CASE 1: EDITING second operator
       if (
-        isEditingSecondOperator &&
+        isEditingCondition1Operator &&
         preservedFilterRef.current?.join &&
         (preservedFilterRef.current.join === 'AND' ||
           preservedFilterRef.current.join === 'OR')
@@ -936,7 +936,7 @@ export function useSelectionHandlers(
           preservedFilterRef,
           preservedSearchMode,
           setPreservedSearchMode,
-          setIsEditingSecondOperator,
+          setIsEditingCondition1Operator,
           setEditingBadge,
           onChange,
           inputRef
@@ -982,11 +982,11 @@ export function useSelectionHandlers(
       onChange,
       inputRef,
       searchMode,
-      isEditingSecondOperator,
+      isEditingCondition1Operator,
       preservedFilterRef,
       preservedSearchMode,
       setPreservedSearchMode,
-      setIsEditingSecondOperator,
+      setIsEditingCondition1Operator,
       setEditingBadge,
     ]
   );
