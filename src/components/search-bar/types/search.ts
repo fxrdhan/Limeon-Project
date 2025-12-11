@@ -81,8 +81,22 @@ export interface EnhancedSearchState {
   // but will be deprecated once migration is complete
 
   /**
-   * Index of the condition currently being edited/selected
-   * -1 or undefined means no specific condition is being edited
+   * Index of the condition currently being BUILT (input phase)
+   * 0 = first condition, 1 = second condition, etc.
+   * undefined means first condition (default)
+   *
+   * This replaces: isSecondOperator, isSecondColumn
+   * Usage: activeConditionIndex > 0 means we're building a subsequent condition
+   */
+  activeConditionIndex?: number;
+
+  /**
+   * Index of the condition currently being EDITED (badge edit mode)
+   * undefined means no specific condition is being edited
+   *
+   * This is different from activeConditionIndex:
+   * - activeConditionIndex: building NEW condition
+   * - editingConditionIndex: editing EXISTING condition badge
    */
   editingConditionIndex?: number;
 
