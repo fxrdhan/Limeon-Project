@@ -44,8 +44,8 @@ interface SearchBadgeProps {
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
   operatorBadgeRef: React.RefObject<HTMLDivElement | null>;
   joinBadgeRef: React.RefObject<HTMLDivElement | null>;
-  secondColumnBadgeRef: React.RefObject<HTMLDivElement | null>;
-  secondOperatorBadgeRef: React.RefObject<HTMLDivElement | null>;
+  condition1ColumnBadgeRef: React.RefObject<HTMLDivElement | null>;
+  condition1OperatorBadgeRef: React.RefObject<HTMLDivElement | null>;
   onClearColumn: () => void;
   onClearOperator: () => void;
   onClearValue: () => void;
@@ -93,8 +93,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   badgesContainerRef,
   operatorBadgeRef,
   joinBadgeRef,
-  secondColumnBadgeRef,
-  secondOperatorBadgeRef,
+  condition1ColumnBadgeRef,
+  condition1OperatorBadgeRef,
   onClearColumn,
   onClearOperator,
   onClearValue,
@@ -299,9 +299,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           } else if (badge.id.startsWith('join-')) {
             refToUse = joinBadgeRef; // Join badge (AND/OR) - join-0, join-1, etc.
           } else if (badge.id === 'condition-1-column') {
-            refToUse = secondColumnBadgeRef; // Second column badge (multi-column)
+            refToUse = condition1ColumnBadgeRef; // Second column badge (multi-column)
           } else if (badge.id === 'condition-1-operator') {
-            refToUse = secondOperatorBadgeRef; // Second operator badge
+            refToUse = condition1OperatorBadgeRef; // Second operator badge
           }
 
           // Add glow state based on selector being open

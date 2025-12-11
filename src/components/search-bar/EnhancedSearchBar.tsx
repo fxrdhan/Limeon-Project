@@ -134,8 +134,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     badgesContainerRef,
     operatorBadgeRef,
     joinBadgeRef,
-    secondColumnBadgeRef,
-    secondOperatorBadgeRef,
+    condition1ColumnBadgeRef,
+    condition1OperatorBadgeRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -151,7 +151,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedSearchMode !== null && searchMode.isSecondColumn;
   const columnAnchorRef = searchMode.isSecondColumn
     ? isEditingSecondColumn
-      ? secondColumnBadgeRef // Edit mode: position below the 2nd column badge
+      ? condition1ColumnBadgeRef // Edit mode: position below the condition[1] column badge
       : badgesContainerRef // Create mode: position at end of badges
     : undefined;
   const columnSelectorPosition = useSelectorPosition({
@@ -197,15 +197,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   if (isSelectingNewOperatorForConditionNColumn) {
     // Selecting NEW operator for condition[N] column: position after column badge
-    operatorAnchorRef = secondColumnBadgeRef;
+    operatorAnchorRef = condition1ColumnBadgeRef;
     operatorAnchorAlign = 'right';
   } else if (isEditingConditionNOp) {
     // Edit existing condition[N] operator: position below operator badge
-    operatorAnchorRef = secondOperatorBadgeRef;
+    operatorAnchorRef = condition1OperatorBadgeRef;
     operatorAnchorAlign = 'left';
   } else if (isCreatingConditionNOp) {
     // Creating condition[N] operator in multi-column: position after column badge
-    operatorAnchorRef = secondColumnBadgeRef;
+    operatorAnchorRef = condition1ColumnBadgeRef;
     operatorAnchorAlign = 'right';
   } else {
     // First operator: position after column badge
@@ -2255,8 +2255,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               badgesContainerRef={badgesContainerRef}
               operatorBadgeRef={operatorBadgeRef}
               joinBadgeRef={joinBadgeRef}
-              secondColumnBadgeRef={secondColumnBadgeRef}
-              secondOperatorBadgeRef={secondOperatorBadgeRef}
+              condition1ColumnBadgeRef={condition1ColumnBadgeRef}
+              condition1OperatorBadgeRef={condition1OperatorBadgeRef}
               onClearColumn={badgeHandlers.onClearColumn}
               onClearOperator={badgeHandlers.onClearOperator}
               onClearValue={badgeHandlers.onClearValue}
