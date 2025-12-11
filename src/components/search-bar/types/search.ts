@@ -60,32 +60,20 @@ export interface EnhancedSearchBarProps extends TableSearchProps {
 export interface EnhancedSearchState {
   showColumnSelector: boolean;
   showOperatorSelector: boolean;
-  showJoinOperatorSelector: boolean; // NEW: for #and/#or selection
+  showJoinOperatorSelector: boolean; // for #and/#or selection
   isFilterMode: boolean;
   selectedColumn?: SearchColumn;
   filterSearch?: FilterSearch;
   globalSearch?: string;
-  isSecondOperator?: boolean; // NEW: flag for second+ operator selection
-  partialJoin?: 'AND' | 'OR'; // NEW: selected join operator before next condition
-  secondOperator?: string; // NEW: second operator selected (for displaying blue badge)
-  secondValue?: string; // NEW: second condition value being typed
-  secondValueTo?: string; // NEW: second condition valueTo (for Between operator)
-  waitingForSecondValueTo?: boolean; // NEW: flag when second Between has value, waiting for valueTo
-  // Multi-column support
-  isSecondColumn?: boolean; // Flag: selecting second column after join operator
-  secondColumn?: SearchColumn; // The second column selected (for multi-column filtering)
+  partialJoin?: 'AND' | 'OR'; // selected join operator before next condition
 
-  // ============ NEW: Scalable N-condition support ============
-  // These fields enable support for unlimited conditions
-  // The "second*" fields above are kept for backward compatibility
-  // but will be deprecated once migration is complete
+  // ============ Scalable N-condition support ============
 
   /**
    * Index of the condition currently being BUILT (input phase)
    * 0 = first condition, 1 = second condition, etc.
    * undefined means first condition (default)
    *
-   * This replaces: isSecondOperator, isSecondColumn
    * Usage: activeConditionIndex > 0 means we're building a subsequent condition
    */
   activeConditionIndex?: number;
@@ -103,6 +91,8 @@ export interface EnhancedSearchState {
   /**
    * Partial conditions being built (not yet confirmed)
    * Each entry contains partial data for a condition being typed
+   * partialConditions[0] = first condition data
+   * partialConditions[1] = second condition data (column, operator, value, etc.)
    */
   partialConditions?: PartialCondition[];
 
