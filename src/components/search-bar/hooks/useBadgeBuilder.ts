@@ -35,21 +35,29 @@ interface InlineEditingProps {
   onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
 }
 
-// ============ Scalable Helper Functions ============
+// ============ Scalable Helper Functions (Index-Based) ============
 
-/**
- * Get second condition from scalable partialConditions or deprecated fields.
- * Provides unified access to second condition data regardless of source.
- */
-function getSecondCondition(searchMode: EnhancedSearchState): {
-  column?: typeof searchMode.secondColumn;
+interface PartialConditionData {
+  column?: EnhancedSearchState['secondColumn'];
   operator?: string;
   value?: string;
   valueTo?: string;
   waitingForValueTo?: boolean;
-} {
+}
+
+/**
+ * Get condition at specific index from scalable partialConditions.
+ * Falls back to deprecated fields for index 1 (backward compatibility).
+ *
+ * @param searchMode - The search state
+ * @param index - Condition index (0 = first, 1 = second, etc.)
+ */
+function getConditionAt(
+  searchMode: EnhancedSearchState,
+  index: number
+): PartialConditionData {
   // Prefer new scalable field
-  const partial = searchMode.partialConditions?.[1];
+  const partial = searchMode.partialConditions?.[index];
   if (partial) {
     return {
       column: partial.column,
@@ -59,32 +67,49 @@ function getSecondCondition(searchMode: EnhancedSearchState): {
       waitingForValueTo: partial.waitingForValueTo,
     };
   }
-  // Fallback to deprecated fields
-  return {
-    column: searchMode.secondColumn,
-    operator: searchMode.secondOperator,
-    value: searchMode.secondValue,
-    valueTo: searchMode.secondValueTo,
-    waitingForValueTo: searchMode.waitingForSecondValueTo,
-  };
+
+  // Fallback to deprecated fields only for index 1
+  if (index === 1) {
+    return {
+      column: searchMode.secondColumn,
+      operator: searchMode.secondOperator,
+      value: searchMode.secondValue,
+      valueTo: searchMode.secondValueTo,
+      waitingForValueTo: searchMode.waitingForSecondValueTo,
+    };
+  }
+
+  // No data for this index
+  return {};
 }
 
 /**
- * Check if there is a second condition being built.
- * Uses scalable activeConditionIndex with fallback.
+ * Get the number of conditions being built.
+ * Uses activeConditionIndex with fallback to deprecated fields.
  */
-function hasSecondCondition(searchMode: EnhancedSearchState): boolean {
+function getConditionCount(searchMode: EnhancedSearchState): number {
   // Prefer new scalable field
-  if (searchMode.activeConditionIndex !== undefined) {
-    return searchMode.activeConditionIndex > 0;
+  if (searchMode.partialConditions?.length) {
+    return searchMode.partialConditions.length;
   }
-  // Fallback to deprecated fields
-  return !!(
+  // Fallback: check deprecated fields
+  if (
     searchMode.secondColumn ||
     searchMode.secondOperator ||
     searchMode.isSecondColumn ||
     searchMode.isSecondOperator
-  );
+  ) {
+    return 2; // Has second condition
+  }
+  return 1; // Only first condition
+}
+
+/**
+ * Check if currently building condition at index > 0.
+ * Replaces the old "isSecondOperator" / "isSecondColumn" checks.
+ */
+function isMultiConditionMode(searchMode: EnhancedSearchState): boolean {
+  return getConditionCount(searchMode) > 1;
 }
 
 // ============ Helper Functions for Badge Creation ============
@@ -237,20 +262,21 @@ export const useBadgeBuilder = (
     const badges: BadgeConfig[] = [];
 
     // Early return if no badges should be shown
-    // Use scalable helper for second condition check
+    // Use scalable helper: isMultiConditionMode checks if building condition[1+]
     if (
       !searchMode.isFilterMode &&
       !searchMode.showOperatorSelector &&
       !searchMode.showJoinOperatorSelector &&
       !searchMode.showColumnSelector && // Include column selector for second column
       !searchMode.selectedColumn &&
-      !hasSecondCondition(searchMode) // Include second column for multi-column
+      !isMultiConditionMode(searchMode) // Include multi-column filters
     ) {
       return badges;
     }
 
-    // Get second condition data using scalable helper (with fallback to deprecated fields)
-    const secondCond = getSecondCondition(searchMode);
+    // Get condition at index 1 using scalable helper (with fallback to deprecated fields)
+    // This replaces all direct access to searchMode.secondColumn, secondOperator, etc.
+    const condition1 = getConditionAt(searchMode, 1);
 
     const filter = searchMode.filterSearch;
     const isMultiCondition =
@@ -527,63 +553,64 @@ export const useBadgeBuilder = (
       });
     }
 
-    // 6. Second Column Badge (Purple) - MULTI-COLUMN SUPPORT
-    // Always show second column badge when it exists (even if same as first column)
-    // Use scalable helper: secondCond.column (from partialConditions[1] or deprecated secondColumn)
-    if (secondCond.column) {
+    // 6. Condition[1] Column Badge (Purple) - MULTI-COLUMN SUPPORT
+    // Always show condition[1] column badge when it exists (even if same as first column)
+    // Use scalable helper: getConditionAt(searchMode, 1).column
+    // NOTE: Keep ID as 'second-column' for ref assignment compatibility (SearchBadge.tsx line 293)
+    if (condition1.column) {
       badges.push({
-        id: 'second-column',
+        id: 'second-column', // Keep for ref compatibility - TODO: migrate to 'condition-1-column'
         type: 'column', // Same type as first column badge
-        label: secondCond.column.headerName,
-        onClear: handlers.onClearSecondColumn || handlers.onClearSecondOperator, // Fallback to clearing second operator
+        label: condition1.column.headerName,
+        onClear: handlers.onClearSecondColumn || handlers.onClearSecondOperator, // TODO: onClearColumn(1)
         canClear: true,
-        onEdit: handlers.onEditSecondColumn || handlers.onEditColumn, // Fallback to first column edit
+        onEdit: handlers.onEditSecondColumn || handlers.onEditColumn, // TODO: onEditColumn(1)
         canEdit: true,
       });
     }
 
-    // 7. Second Operator Badge (Blue)
-    // Use scalable helper: secondCond.operator (from partialConditions[1] or deprecated secondOperator)
-    if (secondCond.operator && filter) {
-      // For multi-column, use secondCond.column for operator label
-      const columnForLabel = secondCond.column || filter.column;
+    // 7. Condition[1] Operator Badge (Blue)
+    // Use scalable helper: getConditionAt(searchMode, 1).operator
+    // NOTE: Keep ID as 'second-operator' for ref assignment compatibility (SearchBadge.tsx line 295)
+    if (condition1.operator && filter) {
+      // For multi-column, use condition1.column for operator label
+      const columnForLabel = condition1.column || filter.column;
       const operatorLabel = getOperatorLabelForColumn(
         columnForLabel,
-        secondCond.operator
+        condition1.operator
       );
 
       badges.push({
-        id: 'second-operator',
+        id: 'second-operator', // Keep for ref compatibility - TODO: migrate to 'condition-1-operator'
         type: 'secondOperator',
         label: operatorLabel,
-        onClear: handlers.onClearSecondOperator,
+        onClear: handlers.onClearSecondOperator, // TODO: onClearOperator(1)
         canClear: true,
-        onEdit: () => handlers.onEditOperator(true), // Edit second operator
-        canEdit: true, // Second operator badge is also editable
+        onEdit: () => handlers.onEditOperator(true), // TODO: onEditOperator(1)
+        canEdit: true, // Operator badges are editable
       });
     }
 
-    // 8. Second Value Badge(s) (Gray) - Partial state while user is typing
+    // 8. Condition[1] Value Badge(s) (Gray) - Partial state while user is typing
     // Show [value][to] after user presses Enter (adds #to marker)
-    // Note: secondCond.valueTo badge is NOT shown here - user is still typing it in input
-    // Use scalable helper: secondCond.* (from partialConditions[1] or deprecated second* fields)
+    // Note: condition1.valueTo badge is NOT shown here - user is still typing it in input
+    // Use scalable helper: getConditionAt(searchMode, 1).*
     if (
-      secondCond.operator &&
-      secondCond.value &&
-      secondCond.operator === 'inRange' &&
-      (secondCond.waitingForValueTo || secondCond.valueTo)
+      condition1.operator &&
+      condition1.value &&
+      condition1.operator === 'inRange' &&
+      (condition1.waitingForValueTo || condition1.valueTo)
     ) {
-      const secondConditionColumnType = (secondCond.column || filter?.column)
-        ?.type;
+      const condition1ColumnType = (condition1.column || filter?.column)?.type;
 
       // Value-from badge (not editable while typing)
       badges.push(
         createValueBadgeConfig(
-          'second-value-from',
-          secondCond.value,
+          'second-value-from', // Keep for consistency - TODO: migrate to 'condition-1-value-from'
+          condition1.value,
           'value',
-          { onClear: handlers.onClearSecondValue, canEdit: false },
-          secondConditionColumnType,
+          { onClear: handlers.onClearSecondValue, canEdit: false }, // TODO: onClearValue(1)
+          condition1ColumnType,
           null
         )
       );

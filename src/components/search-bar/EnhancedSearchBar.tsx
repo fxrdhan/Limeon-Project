@@ -167,35 +167,44 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Operator selector: position below the badges
   // - First operator: anchor to column badge (badgeRef), align right - appears after column
-  // - Second operator editing: anchor to second operator badge, align left - appears below it
-  // - Second operator creating (multi-column): anchor to second column badge, align right - appears after second column
-  // - Second column edited, selecting NEW operator: anchor to second column badge, align right
-  const isEditingSecondOp =
+  // - Condition[N] operator editing: anchor to condition[N] operator badge, align left - appears below it
+  // - Condition[N] operator creating (multi-column): anchor to condition[N] column badge, align right
+  // - Condition[N] column edited, selecting NEW operator: anchor to condition[N] column badge, align right
+  //
+  // Use scalable checks: activeConditionIndex > 0 OR deprecated isSecondOperator/secondColumn
+  const hasCondition1Column =
+    searchMode.partialConditions?.[1]?.column || searchMode.secondColumn;
+  const hasCondition1Operator =
+    searchMode.partialConditions?.[1]?.operator || searchMode.secondOperator;
+  const isBuildingConditionN =
+    (searchMode.activeConditionIndex !== undefined &&
+      searchMode.activeConditionIndex > 0) ||
+    searchMode.isSecondOperator ||
+    searchMode.isSecondColumn;
+
+  const isEditingConditionNOp =
     isEditingSecondOperator && searchMode.showOperatorSelector;
-  const isCreatingSecondOp =
-    searchMode.isSecondOperator && searchMode.secondColumn;
-  // Check if we're selecting NEW operator for second column (after editing column)
-  // When editing column, the preservedSearchMode has the old operator, but searchMode.secondOperator is empty
-  // because we're waiting for user to select a new operator
-  const isSelectingNewOperatorForSecondColumn =
+  const isCreatingConditionNOp = isBuildingConditionN && hasCondition1Column;
+  // Check if we're selecting NEW operator for condition[N] column (after editing column)
+  const isSelectingNewOperatorForConditionNColumn =
     isEditingSecondOperator &&
     searchMode.showOperatorSelector &&
-    searchMode.secondColumn &&
-    !searchMode.secondOperator; // No current second operator = selecting new one
+    hasCondition1Column &&
+    !hasCondition1Operator; // No current condition[N] operator = selecting new one
 
   let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
-  if (isSelectingNewOperatorForSecondColumn) {
-    // Selecting NEW operator for second column (after column edit): position after second column badge
+  if (isSelectingNewOperatorForConditionNColumn) {
+    // Selecting NEW operator for condition[N] column: position after column badge
     operatorAnchorRef = secondColumnBadgeRef;
     operatorAnchorAlign = 'right';
-  } else if (isEditingSecondOp) {
-    // Edit existing second operator: position below second operator badge
+  } else if (isEditingConditionNOp) {
+    // Edit existing condition[N] operator: position below operator badge
     operatorAnchorRef = secondOperatorBadgeRef;
     operatorAnchorAlign = 'left';
-  } else if (isCreatingSecondOp) {
-    // Creating second operator in multi-column: position after second column badge
+  } else if (isCreatingConditionNOp) {
+    // Creating condition[N] operator in multi-column: position after column badge
     operatorAnchorRef = secondColumnBadgeRef;
     operatorAnchorAlign = 'right';
   } else {
