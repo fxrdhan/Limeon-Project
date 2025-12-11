@@ -59,20 +59,11 @@ export interface SelectionHandlersReturn {
 
 /**
  * Get active condition index from searchMode.
- * Uses new scalable field with fallback to deprecated fields.
  *
  * @returns Current condition index being built (0 = first, 1 = second, etc.)
  */
 function getActiveConditionIndex(searchMode: EnhancedSearchState): number {
-  // Prefer new scalable field
-  if (searchMode.activeConditionIndex !== undefined) {
-    return searchMode.activeConditionIndex;
-  }
-  // Fallback to deprecated flags
-  if (searchMode.isSecondOperator || searchMode.isSecondColumn) {
-    return 1;
-  }
-  return 0;
+  return searchMode.activeConditionIndex ?? 0;
 }
 
 /**
@@ -87,7 +78,6 @@ function isBuildingConditionN(searchMode: EnhancedSearchState): boolean {
 
 /**
  * Get column at specific condition index from scalable partialConditions.
- * Falls back to deprecated field for index 1 (backward compatibility).
  *
  * @param searchMode - The search state
  * @param index - Condition index (0 = first, 1 = second, etc.)
@@ -95,16 +85,8 @@ function isBuildingConditionN(searchMode: EnhancedSearchState): boolean {
 function getColumnAt(
   searchMode: EnhancedSearchState,
   index: number
-): typeof searchMode.secondColumn {
-  // Prefer new scalable field
-  if (searchMode.partialConditions?.[index]?.column) {
-    return searchMode.partialConditions[index].column;
-  }
-  // Fallback to deprecated field only for index 1
-  if (index === 1) {
-    return searchMode.secondColumn;
-  }
-  return undefined;
+): SearchColumn | undefined {
+  return searchMode.partialConditions?.[index]?.column;
 }
 
 // ============================================================================

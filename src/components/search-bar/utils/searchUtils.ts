@@ -350,7 +350,6 @@ export const parseSearchValue = (
               showJoinOperatorSelector: false,
               isFilterMode: false,
               selectedColumn: column,
-              isSecondColumn: true, // DEPRECATED: use activeConditionIndex > 0
               partialJoin: join.toUpperCase() as 'AND' | 'OR',
               // ============ SCALABLE: N-condition support ============
               activeConditionIndex: 1, // Building second condition (index 1)
@@ -448,12 +447,7 @@ export const parseSearchValue = (
                   showJoinOperatorSelector: false,
                   isFilterMode: false,
                   selectedColumn: column1,
-                  secondColumn: column2, // DEPRECATED: use partialConditions[1].column
                   partialJoin: join.toUpperCase() as 'AND' | 'OR',
-                  secondOperator: operator2Obj.value, // DEPRECATED: use partialConditions[1].operator
-                  secondValue, // DEPRECATED: use partialConditions[1].value
-                  secondValueTo, // DEPRECATED: use partialConditions[1].valueTo
-                  waitingForSecondValueTo, // DEPRECATED: use partialConditions[1].waitingForValueTo
                   // ============ SCALABLE: N-condition support ============
                   activeConditionIndex: 1, // Building second condition (index 1)
                   partialConditions: [
@@ -522,9 +516,7 @@ export const parseSearchValue = (
                 showJoinOperatorSelector: false,
                 isFilterMode: false,
                 selectedColumn: column1,
-                secondColumn: column2, // DEPRECATED: use partialConditions[1].column
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
-                secondOperator: operator2Obj.value, // DEPRECATED: use partialConditions[1].operator
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition (index 1)
                 partialConditions: [
@@ -589,8 +581,6 @@ export const parseSearchValue = (
                 showJoinOperatorSelector: false,
                 isFilterMode: false,
                 selectedColumn: column2, // Use col2 for operator selection
-                secondColumn: column2, // DEPRECATED: use partialConditions[1].column
-                isSecondOperator: true, // DEPRECATED: use activeConditionIndex > 0
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition (index 1)
@@ -660,7 +650,6 @@ export const parseSearchValue = (
                 showJoinOperatorSelector: false,
                 isFilterMode: false,
                 selectedColumn: column1,
-                secondColumn: column2, // DEPRECATED: use partialConditions[1].column
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition (index 1)
@@ -718,7 +707,6 @@ export const parseSearchValue = (
                 showJoinOperatorSelector: false,
                 isFilterMode: false,
                 selectedColumn: column1,
-                isSecondColumn: true, // DEPRECATED: use activeConditionIndex > 0
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition (index 1)
@@ -812,12 +800,7 @@ export const parseSearchValue = (
                 showJoinOperatorSelector: false,
                 isFilterMode: false, // ← NOT filter mode - allows Enter key to add ##
                 selectedColumn: column,
-                isSecondOperator: false, // DEPRECATED: use activeConditionIndex
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
-                secondOperator: operator2Obj.value, // DEPRECATED: use partialConditions[1].operator
-                secondValue, // DEPRECATED: use partialConditions[1].value
-                secondValueTo, // DEPRECATED: use partialConditions[1].valueTo
-                waitingForSecondValueTo, // DEPRECATED: use partialConditions[1].waitingForValueTo
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition (index 1)
                 partialConditions: [
@@ -884,9 +867,7 @@ export const parseSearchValue = (
               showJoinOperatorSelector: false,
               isFilterMode: false, // ← NOT filter mode yet!
               selectedColumn: column,
-              isSecondOperator: false, // DEPRECATED: use activeConditionIndex
               partialJoin: join.toUpperCase() as 'AND' | 'OR',
-              secondOperator: operator2Obj.value, // DEPRECATED: use partialConditions[1].operator
               // ============ SCALABLE: N-condition support ============
               activeConditionIndex: 1, // Building second condition (index 1)
               partialConditions: [
@@ -1007,7 +988,6 @@ export const parseSearchValue = (
               showJoinOperatorSelector: false,
               isFilterMode: false,
               selectedColumn: column,
-              isSecondOperator: true, // DEPRECATED: use activeConditionIndex > 0
               partialJoin: joinOp.value.toUpperCase() as 'AND' | 'OR',
               // ============ SCALABLE: N-condition support ============
               activeConditionIndex: 1, // About to build second condition
@@ -1052,7 +1032,6 @@ export const parseSearchValue = (
                 isFilterMode: false,
                 selectedColumn: column,
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
-                secondOperator: operator2Obj.value, // DEPRECATED: use partialConditions[1].operator
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition
                 partialConditions: [
@@ -1095,7 +1074,6 @@ export const parseSearchValue = (
                 showJoinOperatorSelector: false,
                 isFilterMode: false,
                 selectedColumn: column,
-                isSecondColumn: true, // DEPRECATED: use activeConditionIndex > 0
                 partialJoin: join.toUpperCase() as 'AND' | 'OR',
                 // ============ SCALABLE: N-condition support ============
                 activeConditionIndex: 1, // Building second condition
@@ -1138,7 +1116,6 @@ export const parseSearchValue = (
               showJoinOperatorSelector: false,
               isFilterMode: false,
               selectedColumn: column,
-              isSecondColumn: true, // DEPRECATED: use activeConditionIndex > 0
               partialJoin: join.toUpperCase() as 'AND' | 'OR',
               // ============ SCALABLE: N-condition support ============
               activeConditionIndex: 1, // Building second condition

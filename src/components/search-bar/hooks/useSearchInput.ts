@@ -31,8 +31,8 @@ export const useSearchInput = ({
     [value]
   );
 
-  // Compute stable boolean for isSecondOperator to avoid dependency array size changes
-  const isSecondOperator = !!searchMode.isSecondOperator;
+  // Compute stable boolean for condition[1] operator to avoid dependency array size changes
+  const hasCondition1Operator = !!searchMode.partialConditions?.[1]?.operator;
 
   const showTargetedIndicator = useMemo(
     () =>
@@ -92,20 +92,21 @@ export const useSearchInput = ({
       searchMode.selectedColumn
     ) {
       // Special case: Second Between operator waiting for valueTo - badge shows [value][to], input empty
-      if (searchMode.waitingForSecondValueTo && searchMode.secondValue) {
+      const condition1 = searchMode.partialConditions?.[1];
+      if (condition1?.waitingForValueTo && condition1?.value) {
         return ''; // Value already shown in badge, input empty for typing second value
       }
 
       // Special case: Second Between operator with valueTo being typed - show only valueTo
-      if (searchMode.secondValueTo) {
-        return searchMode.secondValueTo; // Show only valueTo being typed
+      if (condition1?.valueTo) {
+        return condition1.valueTo; // Show only valueTo being typed
       }
 
       // Case: Second operator selected, ready for second value input - show the second value being typed
       // Multi-column pattern: #col1 #op1 val1 #and #col2 #op2 val2 → extract val2
       // Same-column pattern:  #col1 #op1 val1 #and #op2 val2 → extract val2
-      // Detect multi-column by checking if secondColumn exists
-      if (searchMode.secondColumn) {
+      // Detect multi-column by checking if condition1.column exists
+      if (condition1?.column) {
         // Multi-column: extract value after #col2 #op2
         const multiColMatch = value.match(
           /#(?:and|or)\s+#[^\s]+\s+#[^\s]+\s+(.*)$/i
@@ -163,10 +164,7 @@ export const useSearchInput = ({
     searchMode.showColumnSelector,
     searchMode.partialJoin,
     searchMode.selectedColumn,
-    searchMode.secondColumn,
-    searchMode.waitingForSecondValueTo,
-    searchMode.secondValue,
-    searchMode.secondValueTo,
+    searchMode.partialConditions,
   ]);
 
   // Ref to store last measured width - persists across renders
@@ -190,7 +188,7 @@ export const useSearchInput = ({
       count++;
     // Second operator badge
     if (
-      searchMode.secondOperator ||
+      searchMode.partialConditions?.[1]?.operator ||
       (searchMode.filterSearch?.conditions &&
         searchMode.filterSearch.conditions.length >= 2)
     )
@@ -204,7 +202,7 @@ export const useSearchInput = ({
     searchMode.selectedColumn,
     searchMode.filterSearch,
     searchMode.partialJoin,
-    searchMode.secondOperator,
+    searchMode.partialConditions,
   ]);
 
   // Dynamic badge width tracking using CSS variable - no React state updates!
@@ -223,7 +221,7 @@ export const useSearchInput = ({
     const shouldUseContainer =
       (searchMode.isFilterMode ||
         searchMode.showJoinOperatorSelector ||
-        (searchMode.showOperatorSelector && isSecondOperator) ||
+        (searchMode.showOperatorSelector && hasCondition1Operator) ||
         // Show container for incomplete multi-condition (waiting for second value)
         (!searchMode.isFilterMode &&
           searchMode.partialJoin &&
@@ -309,7 +307,7 @@ export const useSearchInput = ({
     searchMode.filterSearch?.isMultiCondition,
     searchMode.partialJoin,
     inputRef,
-    isSecondOperator,
+    hasCondition1Operator,
     currentBadgeCount,
   ]);
 
@@ -417,7 +415,7 @@ export const useSearchInput = ({
         } as React.ChangeEvent<HTMLInputElement>);
       } else if (
         searchMode.showColumnSelector &&
-        searchMode.isSecondColumn &&
+        (searchMode.activeConditionIndex ?? 0) > 0 &&
         searchMode.partialJoin &&
         searchMode.filterSearch
       ) {
@@ -453,7 +451,8 @@ export const useSearchInput = ({
         // Extract groups based on match type
         // multiColMatch: [full, join, col2, op2]
         // sameColMatch: [full, join, op2]
-        const isMultiColumn = searchMode.secondColumn && multiColMatch;
+        const isMultiColumn =
+          searchMode.partialConditions?.[1]?.column && multiColMatch;
 
         let join: string;
         let col2: string | undefined;
@@ -497,11 +496,12 @@ export const useSearchInput = ({
         }
 
         // SPECIAL CASE: Second Between operator - preserve first value and #to marker
-        // When waitingForSecondValueTo is true, append typed value after #to
+        // When waitingForValueTo is true, append typed value after #to
+        const cond1 = searchMode.partialConditions?.[1];
         if (
-          searchMode.waitingForSecondValueTo &&
-          searchMode.secondValue &&
-          searchMode.secondOperator === 'inRange'
+          cond1?.waitingForValueTo &&
+          cond1?.value &&
+          cond1?.operator === 'inRange'
         ) {
           // Pattern: #col1 #op1 val1 #and #col2 #inRange secondVal #to → append typed value
           const basePattern = isMultiColumn
@@ -512,8 +512,8 @@ export const useSearchInput = ({
             : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
 
           const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #inRange ${searchMode.secondValue} #to ${inputValue}`
-            : `${basePattern.trim()} #${join} #inRange ${searchMode.secondValue} #to ${inputValue}`;
+            ? `${basePattern.trim()} #${join} #${col2} #inRange ${cond1.value} #to ${inputValue}`
+            : `${basePattern.trim()} #${join} #inRange ${cond1.value} #to ${inputValue}`;
 
           onChange({
             target: { value: newValue },
@@ -522,10 +522,7 @@ export const useSearchInput = ({
         }
 
         // SPECIAL CASE: Second Between operator typing valueTo - preserve first value and #to marker
-        if (
-          searchMode.secondValueTo &&
-          searchMode.secondOperator === 'inRange'
-        ) {
+        if (cond1?.valueTo && cond1?.operator === 'inRange') {
           const basePattern = isMultiColumn
             ? currentValue.replace(
                 /#(and|or)\s+#([^\s#]+)\s+#inRange\s+.+$/i,
@@ -534,8 +531,8 @@ export const useSearchInput = ({
             : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
 
           const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #inRange ${searchMode.secondValue} #to ${inputValue}`
-            : `${basePattern.trim()} #${join} #inRange ${searchMode.secondValue} #to ${inputValue}`;
+            ? `${basePattern.trim()} #${join} #${col2} #inRange ${cond1.value} #to ${inputValue}`
+            : `${basePattern.trim()} #${join} #inRange ${cond1.value} #to ${inputValue}`;
 
           onChange({
             target: { value: newValue },

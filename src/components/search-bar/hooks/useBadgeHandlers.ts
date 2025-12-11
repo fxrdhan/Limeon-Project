@@ -177,7 +177,7 @@ export function useBadgeHandlers(
             const joinOp = getJoinOperator(filter, state);
             const secondColField =
               filter.conditions?.[conditionIndex]?.field ||
-              state.secondColumn?.field ||
+              state.partialConditions?.[conditionIndex]?.field ||
               columnName;
             if (joinOp) {
               const newValue = PatternBuilder.multiColumnPartial(
@@ -212,11 +212,11 @@ export function useBadgeHandlers(
             const joinOp = getJoinOperator(filter, state);
             const secondColField =
               filter.conditions?.[conditionIndex]?.field ||
-              state.secondColumn?.field ||
+              state.partialConditions?.[conditionIndex]?.field ||
               columnName;
             const secondOp =
               filter.conditions?.[conditionIndex]?.operator ||
-              state.secondOperator;
+              state.partialConditions?.[conditionIndex]?.operator;
             if (joinOp && secondOp) {
               const newValue = PatternBuilder.multiColumnWithOperator(
                 columnName,
@@ -385,7 +385,7 @@ export function useBadgeHandlers(
               const joinOp = getJoinOperator(filter, state);
               const secondColField =
                 filter.conditions?.[conditionIndex]?.field ||
-                state.secondColumn?.field ||
+                state.partialConditions?.[conditionIndex]?.field ||
                 columnName;
 
               if (joinOp) {
