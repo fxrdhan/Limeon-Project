@@ -146,11 +146,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Column selector: position depends on context
   // - First column: appears at container left (no badge yet)
-  // - Second column editing (preservedSearchMode + isSecondColumn): appears below second column badge
-  // - Second column creating (isSecondColumn only): appears after all badges
+  // - Second column editing (preservedSearchMode + activeConditionIndex > 0): appears below second column badge
+  // - Second column creating (activeConditionIndex > 0 only): appears after all badges
+  const isSelectingConditionNColumn =
+    (searchMode.activeConditionIndex ?? 0) > 0;
   const isEditingCondition1Column =
-    preservedSearchMode !== null && searchMode.isSecondColumn;
-  const columnAnchorRef = searchMode.isSecondColumn
+    preservedSearchMode !== null && isSelectingConditionNColumn;
+  const columnAnchorRef = isSelectingConditionNColumn
     ? isEditingCondition1Column
       ? condition1ColumnBadgeRef // Edit mode: position below the condition[1] column badge
       : badgesContainerRef // Create mode: position at end of badges
@@ -159,7 +161,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     isOpen: searchMode.showColumnSelector,
     containerRef,
     anchorRef: columnAnchorRef,
-    anchorAlign: searchMode.isSecondColumn
+    anchorAlign: isSelectingConditionNColumn
       ? isEditingCondition1Column
         ? 'left' // Edit mode: left-aligned below 2nd column badge
         : 'right' // Create mode: right edge of badges
@@ -172,16 +174,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // - Condition[N] operator creating (multi-column): anchor to condition[N] column badge, align right
   // - Condition[N] column edited, selecting NEW operator: anchor to condition[N] column badge, align right
   //
-  // Use scalable checks: activeConditionIndex > 0 OR deprecated isSecondOperator/secondColumn
-  const hasCondition1Column =
-    searchMode.partialConditions?.[1]?.column || searchMode.secondColumn;
-  const hasCondition1Operator =
-    searchMode.partialConditions?.[1]?.operator || searchMode.secondOperator;
-  const isBuildingConditionN =
-    (searchMode.activeConditionIndex !== undefined &&
-      searchMode.activeConditionIndex > 0) ||
-    searchMode.isSecondOperator ||
-    searchMode.isSecondColumn;
+  // Use scalable checks: activeConditionIndex > 0 or partialConditions[1]
+  const hasCondition1Column = searchMode.partialConditions?.[1]?.column;
+  const hasCondition1Operator = searchMode.partialConditions?.[1]?.operator;
+  const isBuildingConditionN = (searchMode.activeConditionIndex ?? 0) > 0;
 
   const isEditingConditionNOp =
     isEditingCondition1Operator && searchMode.showOperatorSelector;
@@ -680,10 +676,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       value
     );
 
-    // Check for multi-column: get second column from conditions or secondColumn state
+    // Check for multi-column: get second column from conditions or partialConditions state
     const secondColumnField =
       stateToUse.filterSearch.conditions?.[1]?.field ||
-      stateToUse.secondColumn?.field;
+      stateToUse.partialConditions?.[1]?.column?.field;
 
     if (joinOp && (joinOp === 'AND' || joinOp === 'OR') && secondOp) {
       // Always include second column in pattern (even if same as first)
@@ -849,7 +845,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Always include second column to trigger operator selector (not column selector)
         const secondColField =
           preservedFilterRef.current.secondColumnField ||
-          stateToUse.secondColumn?.field ||
+          stateToUse.partialConditions?.[1]?.column?.field ||
           columnName; // Fallback to first column if same column filter
 
         // Build pattern for operator selector, including valueTo if first condition is Between
@@ -948,8 +944,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // This happens when user is typing value for second condition
     const hasPartialMultiColumn =
       searchMode.partialJoin ||
-      searchMode.secondColumn ||
-      searchMode.secondOperator;
+      searchMode.partialConditions?.[1]?.column ||
+      searchMode.partialConditions?.[1]?.operator;
 
     if ((isSelectorOpen || hasPartialMultiColumn) && !preservedSearchMode) {
       // Determine which selector is open or if it's partial state for restoration later
@@ -2037,7 +2033,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const searchTerm = useMemo(() => {
     // For second column selection, extract search term after #and/or #
-    if (searchMode.isSecondColumn) {
+    if (isSelectingConditionNColumn) {
       // Pattern: #col1 #op val #and #searchTerm or #col1 #op val #and #
       const secondColMatch = value.match(/#(?:and|or)\s+#([^\s#]*)$/i);
       return secondColMatch ? secondColMatch[1] : '';
@@ -2049,7 +2045,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return match ? match[1] : '';
     }
     return '';
-  }, [value, searchMode.isSecondColumn]);
+  }, [value, isSelectingConditionNColumn]);
 
   const searchableColumns = useMemo(() => {
     return columns.filter(col => col.searchable);
@@ -2126,12 +2122,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const index = operators.findIndex(op => op.value === currentOperator);
       return index >= 0 ? index : undefined;
     }
-    // If editing second operator in partial multi-condition, use secondOperator
+    // If editing second operator in partial multi-condition, use partialConditions[1].operator
     else if (
       isEditingCondition1Operator &&
-      preservedSearchMode?.secondOperator
+      preservedSearchMode?.partialConditions?.[1]?.operator
     ) {
-      const currentOperator = preservedSearchMode.secondOperator;
+      const currentOperator = preservedSearchMode.partialConditions[1].operator;
       const index = operators.findIndex(op => op.value === currentOperator);
       return index >= 0 ? index : undefined;
     }
@@ -2146,13 +2142,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
-    // Check if editing second column - use second column field from conditions or secondColumn state
+    // Check if editing second column - use second column field from conditions or partialConditions state
     if (isEditingCondition1Column) {
       // Try to get second column field from multi-condition filter
       const secondColFromConditions =
         preservedSearchMode?.filterSearch?.conditions?.[1]?.field;
-      // Or from secondColumn state
-      const secondColFromState = preservedSearchMode?.secondColumn?.field;
+      // Or from partialConditions state
+      const secondColFromState =
+        preservedSearchMode?.partialConditions?.[1]?.column?.field;
       const secondColumnField = secondColFromConditions || secondColFromState;
 
       if (secondColumnField) {
@@ -2192,7 +2189,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       searchMode.showOperatorSelector ||
       searchMode.showJoinOperatorSelector ||
       searchMode.partialJoin ||
-      searchMode.secondOperator;
+      searchMode.partialConditions?.[1]?.operator;
 
     const isLeftIconVisible =
       (((displayValue && !displayValue.startsWith('#')) ||

@@ -25,7 +25,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     searchMode.showOperatorSelector ||
     searchMode.showJoinOperatorSelector ||
     searchMode.partialJoin ||
-    searchMode.secondOperator;
+    searchMode.partialConditions?.[1]?.operator;
 
   const shouldShowLeftIcon =
     (((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
@@ -90,7 +90,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
       (searchMode.showOperatorSelector && searchMode.selectedColumn) ||
       searchMode.showJoinOperatorSelector ||
       searchMode.partialJoin ||
-      searchMode.secondOperator
+      searchMode.partialConditions?.[1]?.operator
     ) {
       return (
         <LuFilter

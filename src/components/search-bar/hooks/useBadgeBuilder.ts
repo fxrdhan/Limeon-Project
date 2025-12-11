@@ -37,8 +37,10 @@ interface InlineEditingProps {
 
 // ============ Scalable Helper Functions (Index-Based) ============
 
+import type { SearchColumn } from '../types';
+
 interface PartialConditionData {
-  column?: EnhancedSearchState['secondColumn'];
+  column?: SearchColumn;
   operator?: string;
   value?: string;
   valueTo?: string;
@@ -47,7 +49,6 @@ interface PartialConditionData {
 
 /**
  * Get condition at specific index from scalable partialConditions.
- * Falls back to deprecated fields for index 1 (backward compatibility).
  *
  * @param searchMode - The search state
  * @param index - Condition index (0 = first, 1 = second, etc.)
@@ -56,7 +57,6 @@ function getConditionAt(
   searchMode: EnhancedSearchState,
   index: number
 ): PartialConditionData {
-  // Prefer new scalable field
   const partial = searchMode.partialConditions?.[index];
   if (partial) {
     return {
@@ -67,46 +67,18 @@ function getConditionAt(
       waitingForValueTo: partial.waitingForValueTo,
     };
   }
-
-  // Fallback to deprecated fields only for index 1
-  if (index === 1) {
-    return {
-      column: searchMode.secondColumn,
-      operator: searchMode.secondOperator,
-      value: searchMode.secondValue,
-      valueTo: searchMode.secondValueTo,
-      waitingForValueTo: searchMode.waitingForSecondValueTo,
-    };
-  }
-
-  // No data for this index
   return {};
 }
 
 /**
  * Get the number of conditions being built.
- * Uses activeConditionIndex with fallback to deprecated fields.
  */
 function getConditionCount(searchMode: EnhancedSearchState): number {
-  // Prefer new scalable field
-  if (searchMode.partialConditions?.length) {
-    return searchMode.partialConditions.length;
-  }
-  // Fallback: check deprecated fields
-  if (
-    searchMode.secondColumn ||
-    searchMode.secondOperator ||
-    searchMode.isSecondColumn ||
-    searchMode.isSecondOperator
-  ) {
-    return 2; // Has second condition
-  }
-  return 1; // Only first condition
+  return searchMode.partialConditions?.length ?? 1;
 }
 
 /**
  * Check if currently building condition at index > 0.
- * Replaces the old "isSecondOperator" / "isSecondColumn" checks.
  */
 function isMultiConditionMode(searchMode: EnhancedSearchState): boolean {
   return getConditionCount(searchMode) > 1;
@@ -433,10 +405,14 @@ export const useBadgeBuilder = (
     }
 
     // 3. Single-Condition Operator Badge (Blue)
+    // Check if building condition at index > 0 using scalable activeConditionIndex
+    const isBuildingConditionN =
+      searchMode.activeConditionIndex !== undefined &&
+      searchMode.activeConditionIndex > 0;
     const shouldShowSingleOperator =
       (searchMode.isFilterMode ||
         searchMode.showJoinOperatorSelector ||
-        (searchMode.showOperatorSelector && searchMode.isSecondOperator) ||
+        (searchMode.showOperatorSelector && isBuildingConditionN) ||
         (!searchMode.isFilterMode && searchMode.partialJoin && filter)) &&
       filter &&
       (filter.operator !== 'contains' || filter.isExplicitOperator) &&
@@ -475,9 +451,7 @@ export const useBadgeBuilder = (
 
     const shouldShowSingleValue =
       (searchMode.showJoinOperatorSelector ||
-        (searchMode.showOperatorSelector &&
-          searchMode.isSecondOperator &&
-          filter) ||
+        (searchMode.showOperatorSelector && isBuildingConditionN && filter) ||
         (!searchMode.isFilterMode &&
           !searchMode.showOperatorSelector &&
           searchMode.partialJoin &&
