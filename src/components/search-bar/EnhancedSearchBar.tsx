@@ -71,10 +71,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     useState<EnhancedSearchState | null>(null);
 
   // Track whether we're editing the second operator (after AND/OR join)
-  const [isEditingSecondOperator, setIsEditingSecondOperator] = useState(false);
+  const [isEditingCondition1Operator, setIsEditingCondition1Operator] =
+    useState(false);
 
   // Track whether we're editing the second column (for live preview)
-  const [isEditingSecondColumnState, setIsEditingSecondColumnState] =
+  const [isEditingCondition1ColumnState, setIsEditingSecondColumnState] =
     useState(false);
 
   // State to track current join operator value during edit mode
@@ -147,10 +148,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // - First column: appears at container left (no badge yet)
   // - Second column editing (preservedSearchMode + isSecondColumn): appears below second column badge
   // - Second column creating (isSecondColumn only): appears after all badges
-  const isEditingSecondColumn =
+  const isEditingCondition1Column =
     preservedSearchMode !== null && searchMode.isSecondColumn;
   const columnAnchorRef = searchMode.isSecondColumn
-    ? isEditingSecondColumn
+    ? isEditingCondition1Column
       ? condition1ColumnBadgeRef // Edit mode: position below the condition[1] column badge
       : badgesContainerRef // Create mode: position at end of badges
     : undefined;
@@ -159,7 +160,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     containerRef,
     anchorRef: columnAnchorRef,
     anchorAlign: searchMode.isSecondColumn
-      ? isEditingSecondColumn
+      ? isEditingCondition1Column
         ? 'left' // Edit mode: left-aligned below 2nd column badge
         : 'right' // Create mode: right edge of badges
       : 'left',
@@ -183,11 +184,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.isSecondColumn;
 
   const isEditingConditionNOp =
-    isEditingSecondOperator && searchMode.showOperatorSelector;
+    isEditingCondition1Operator && searchMode.showOperatorSelector;
   const isCreatingConditionNOp = isBuildingConditionN && hasCondition1Column;
   // Check if we're selecting NEW operator for condition[N] column (after editing column)
   const isSelectingNewOperatorForConditionNColumn =
-    isEditingSecondOperator &&
+    isEditingCondition1Operator &&
     searchMode.showOperatorSelector &&
     hasCondition1Column &&
     !hasCondition1Operator; // No current condition[N] operator = selecting new one
@@ -251,7 +252,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setPreservedSearchMode(null);
     preservedFilterRef.current = null;
     setCurrentJoinOperator(undefined);
-    setIsEditingSecondOperator(false);
+    setIsEditingCondition1Operator(false);
     setIsEditingSecondColumnState(false);
   }, []);
 
@@ -299,8 +300,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setPreservedSearchMode,
       preservedFilterRef,
       memoizedColumns,
-      isEditingSecondOperator,
-      setIsEditingSecondOperator,
+      isEditingCondition1Operator,
+      setIsEditingCondition1Operator,
       setEditingBadge,
     });
 
@@ -714,7 +715,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   ]);
 
   // Edit second column - show column selector for second column (multi-column)
-  const handleEditSecondColumn = useCallback(() => {
+  const handleEditCondition1Column = useCallback(() => {
     // Mark that we're editing SECOND column for preview
     setIsEditingSecondColumnState(true);
 
@@ -829,7 +830,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       });
 
       // Track if we're editing the second operator
-      setIsEditingSecondOperator(isSecond);
+      setIsEditingCondition1Operator(isSecond);
 
       // Extract and preserve filter data from original state
       preservedFilterRef.current =
@@ -1020,7 +1021,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [searchMode, preservedSearchMode, onChange, value]);
 
   // Edit second value in multi-condition filter - INLINE EDITING
-  const handleEditSecondValue = useCallback(() => {
+  const handleEditCondition1Value = useCallback(() => {
     // Use preserved state if in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
 
@@ -1086,7 +1087,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [searchMode, preservedSearchMode]);
 
   // Edit "to" value in Between operator (second condition) - INLINE EDITING
-  const handleEditSecondValueTo = useCallback(() => {
+  const handleEditCondition1ValueTo = useCallback(() => {
     // Use preserved state if in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
 
@@ -1912,8 +1913,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onClearPreservedState: handleClearPreservedState,
     onEditValue: handleEditValue,
     onEditValueTo: handleEditValueTo,
-    onEditSecondValue: handleEditSecondValue,
-    onEditSecondValueTo: handleEditSecondValueTo,
+    onEditCondition1Value: handleEditCondition1Value,
+    onEditCondition1ValueTo: handleEditCondition1ValueTo,
   });
 
   // Handler for Ctrl+I to focus input, clear badge selection, and close selectors
@@ -2115,7 +2116,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const defaultOperatorIndex = useMemo(() => {
     // If editing second operator in confirmed multi-condition, get from conditions array
     if (
-      isEditingSecondOperator &&
+      isEditingCondition1Operator &&
       preservedSearchMode?.filterSearch?.isMultiCondition &&
       preservedSearchMode?.filterSearch?.conditions &&
       preservedSearchMode.filterSearch.conditions.length >= 2
@@ -2126,7 +2127,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     // If editing second operator in partial multi-condition, use secondOperator
-    else if (isEditingSecondOperator && preservedSearchMode?.secondOperator) {
+    else if (
+      isEditingCondition1Operator &&
+      preservedSearchMode?.secondOperator
+    ) {
       const currentOperator = preservedSearchMode.secondOperator;
       const index = operators.findIndex(op => op.value === currentOperator);
       return index >= 0 ? index : undefined;
@@ -2138,12 +2142,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, isEditingSecondOperator, operators]);
+  }, [preservedSearchMode, isEditingCondition1Operator, operators]);
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
     // Check if editing second column - use second column field from conditions or secondColumn state
-    if (isEditingSecondColumn) {
+    if (isEditingCondition1Column) {
       // Try to get second column field from multi-condition filter
       const secondColFromConditions =
         preservedSearchMode?.filterSearch?.conditions?.[1]?.field;
@@ -2175,7 +2179,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, sortedColumns, isEditingSecondColumn]);
+  }, [preservedSearchMode, sortedColumns, isEditingCondition1Column]);
 
   // Calculate base padding (CSS variable will override when badges are present)
   // When left icon is visible (column selector, filter mode, etc.), use smaller padding
@@ -2262,19 +2266,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onClearValue={badgeHandlers.onClearValue}
               onClearValueTo={badgeHandlers.onClearValueTo}
               onClearPartialJoin={badgeHandlers.onClearPartialJoin}
-              onClearSecondColumn={badgeHandlers.onClearSecondColumn}
-              onClearSecondOperator={badgeHandlers.onClearSecondOperator}
-              onClearSecondValue={badgeHandlers.onClearSecondValue}
-              onClearSecondValueTo={badgeHandlers.onClearSecondValueTo}
+              onClearCondition1Column={badgeHandlers.onClearCondition1Column}
+              onClearCondition1Operator={
+                badgeHandlers.onClearCondition1Operator
+              }
+              onClearCondition1Value={badgeHandlers.onClearCondition1Value}
+              onClearCondition1ValueTo={badgeHandlers.onClearCondition1ValueTo}
               onClearAll={badgeHandlers.onClearAll}
               onEditColumn={handleEditColumn}
-              onEditSecondColumn={handleEditSecondColumn}
+              onEditCondition1Column={handleEditCondition1Column}
               onEditOperator={handleEditOperator}
               onEditJoin={handleEditJoin}
               onEditValue={handleEditValue}
               onEditValueTo={handleEditValueTo}
-              onEditSecondValue={handleEditSecondValue}
-              onEditSecondValueTo={handleEditSecondValueTo}
+              onEditCondition1Value={handleEditCondition1Value}
+              onEditCondition1ValueTo={handleEditCondition1ValueTo}
               onHoverChange={handleHoverChange}
               preservedSearchMode={preservedSearchMode}
               editingBadge={editingBadge}
@@ -2287,8 +2293,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onBadgesChange={handleBadgesChange}
               previewColumn={previewColumn}
               previewOperator={previewOperator}
-              isEditingSecondColumn={isEditingSecondColumnState}
-              isEditingSecondOperator={isEditingSecondOperator}
+              isEditingCondition1Column={isEditingCondition1ColumnState}
+              isEditingCondition1Operator={isEditingCondition1Operator}
             />
           </div>
         </div>

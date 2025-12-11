@@ -9,19 +9,19 @@ interface BadgeHandlers {
   onClearValue: () => void;
   onClearValueTo?: () => void; // Clear "to" value in Between operator (first condition)
   onClearPartialJoin: () => void;
-  onClearSecondColumn?: () => void; // Clear second column (multi-column filter)
-  onClearSecondOperator: () => void;
-  onClearSecondValue: () => void;
-  onClearSecondValueTo?: () => void; // Clear "to" value in Between operator (second condition)
+  onClearCondition1Column?: () => void; // Clear second column (multi-column filter)
+  onClearCondition1Operator: () => void;
+  onClearCondition1Value: () => void;
+  onClearCondition1ValueTo?: () => void; // Clear "to" value in Between operator (second condition)
   onClearAll: () => void;
   onEditColumn: () => void;
-  onEditSecondColumn?: () => void; // Edit second column (multi-column filter)
+  onEditCondition1Column?: () => void; // Edit second column (multi-column filter)
   onEditOperator: (isSecond?: boolean) => void; // Updated to accept optional parameter
   onEditJoin: () => void;
   onEditValue: () => void; // Edit first value (or "from" value in Between)
   onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
-  onEditSecondValue?: () => void; // Edit second condition value
-  onEditSecondValueTo?: () => void; // Edit "to" value in Between operator (second condition)
+  onEditCondition1Value?: () => void; // Edit second condition value
+  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (second condition)
 }
 
 interface InlineEditingProps {
@@ -174,11 +174,14 @@ function getValueBadgeHandlers(
     return {
       onClear: isFirst
         ? (handlers.onClearValueTo ?? handlers.onClearValue)
-        : (handlers.onClearSecondValueTo ?? handlers.onClearSecondValue),
-      onEdit: isFirst ? handlers.onEditValueTo : handlers.onEditSecondValueTo,
+        : (handlers.onClearCondition1ValueTo ??
+          handlers.onClearCondition1Value),
+      onEdit: isFirst
+        ? handlers.onEditValueTo
+        : handlers.onEditCondition1ValueTo,
       canEdit: !!(isFirst
         ? handlers.onEditValueTo
-        : handlers.onEditSecondValueTo),
+        : handlers.onEditCondition1ValueTo),
     };
   }
 
@@ -186,9 +189,9 @@ function getValueBadgeHandlers(
     onClear: isFirst
       ? handlers.onClearValue
       : isLast && isTwoConditions
-        ? handlers.onClearSecondValue
+        ? handlers.onClearCondition1Value
         : handlers.onClearAll,
-    onEdit: isFirst ? handlers.onEditValue : handlers.onEditSecondValue,
+    onEdit: isFirst ? handlers.onEditValue : handlers.onEditCondition1Value,
     canEdit: true,
   };
 }
@@ -328,9 +331,10 @@ export const useBadgeBuilder = (
             type: 'column',
             label: secondColumnLabel,
             onClear:
-              handlers.onClearSecondColumn || handlers.onClearSecondOperator,
+              handlers.onClearCondition1Column ||
+              handlers.onClearCondition1Operator,
             canClear: true,
-            onEdit: handlers.onEditSecondColumn || handlers.onEditColumn,
+            onEdit: handlers.onEditCondition1Column || handlers.onEditColumn,
             canEdit: true,
           });
         }
@@ -347,7 +351,7 @@ export const useBadgeBuilder = (
               ? handlers.onClearOperator // First operator: clear to column with operator selector
               : index === filter.conditions!.length - 1 &&
                   filter.conditions!.length === 2
-                ? handlers.onClearSecondOperator
+                ? handlers.onClearCondition1Operator
                 : handlers.onClearAll,
           canClear: true,
           onEdit: () =>
@@ -564,9 +568,11 @@ export const useBadgeBuilder = (
         id: 'condition-1-column',
         type: 'column', // Same type as first column badge
         label: condition1.column.headerName,
-        onClear: handlers.onClearSecondColumn || handlers.onClearSecondOperator, // TODO: onClearColumn(1)
+        onClear:
+          handlers.onClearCondition1Column ||
+          handlers.onClearCondition1Operator, // TODO: onClearColumn(1)
         canClear: true,
-        onEdit: handlers.onEditSecondColumn || handlers.onEditColumn, // TODO: onEditColumn(1)
+        onEdit: handlers.onEditCondition1Column || handlers.onEditColumn, // TODO: onEditColumn(1)
         canEdit: true,
       });
     }
@@ -585,7 +591,7 @@ export const useBadgeBuilder = (
         id: 'condition-1-operator',
         type: 'secondOperator',
         label: operatorLabel,
-        onClear: handlers.onClearSecondOperator, // TODO: onClearOperator(1)
+        onClear: handlers.onClearCondition1Operator, // TODO: onClearOperator(1)
         canClear: true,
         onEdit: () => handlers.onEditOperator(true), // TODO: onEditOperator(1)
         canEdit: true, // Operator badges are editable
@@ -610,7 +616,7 @@ export const useBadgeBuilder = (
           'condition-1-value-from',
           condition1.value,
           'value',
-          { onClear: handlers.onClearSecondValue, canEdit: false }, // TODO: onClearValue(1)
+          { onClear: handlers.onClearCondition1Value, canEdit: false }, // TODO: onClearValue(1)
           condition1ColumnType,
           null
         )

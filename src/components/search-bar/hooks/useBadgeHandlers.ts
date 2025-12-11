@@ -69,19 +69,19 @@ export interface BadgeHandlersReturn {
     onClearValue: () => void;
     onClearValueTo: () => void;
     onClearPartialJoin: () => void;
-    onClearSecondColumn: () => void;
-    onClearSecondOperator: () => void;
-    onClearSecondValue: () => void;
-    onClearSecondValueTo: () => void;
+    onClearCondition1Column: () => void;
+    onClearCondition1Operator: () => void;
+    onClearCondition1Value: () => void;
+    onClearCondition1ValueTo: () => void;
     onClearAll: () => void;
     onEditColumn: () => void;
-    onEditSecondColumn: () => void;
+    onEditCondition1Column: () => void;
     onEditOperator: (isSecond?: boolean) => void;
     onEditJoin: () => void;
     onEditValue: () => void;
     onEditValueTo: () => void;
-    onEditSecondValue: () => void;
-    onEditSecondValueTo: () => void;
+    onEditCondition1Value: () => void;
+    onEditCondition1ValueTo: () => void;
   };
 }
 
@@ -493,19 +493,19 @@ export function useBadgeHandlers(
       [clearConditionPart]
     ),
     onClearPartialJoin: useCallback(() => clearJoin(0), [clearJoin]),
-    onClearSecondColumn: useCallback(
+    onClearCondition1Column: useCallback(
       () => clearConditionPart(1, 'column'),
       [clearConditionPart]
     ),
-    onClearSecondOperator: useCallback(
+    onClearCondition1Operator: useCallback(
       () => clearConditionPart(1, 'operator'),
       [clearConditionPart]
     ),
-    onClearSecondValue: useCallback(
+    onClearCondition1Value: useCallback(
       () => clearConditionPart(1, 'value'),
       [clearConditionPart]
     ),
-    onClearSecondValueTo: useCallback(
+    onClearCondition1ValueTo: useCallback(
       () => clearConditionPart(1, 'valueTo'),
       [clearConditionPart]
     ),
@@ -514,7 +514,7 @@ export function useBadgeHandlers(
       () => editConditionPart(0, 'column'),
       [editConditionPart]
     ),
-    onEditSecondColumn: useCallback(
+    onEditCondition1Column: useCallback(
       () => editConditionPart(1, 'column'),
       [editConditionPart]
     ),
@@ -531,11 +531,11 @@ export function useBadgeHandlers(
       () => editConditionPart(0, 'valueTo'),
       [editConditionPart]
     ),
-    onEditSecondValue: useCallback(
+    onEditCondition1Value: useCallback(
       () => editConditionPart(1, 'value'),
       [editConditionPart]
     ),
-    onEditSecondValueTo: useCallback(
+    onEditCondition1ValueTo: useCallback(
       () => editConditionPart(1, 'valueTo'),
       [editConditionPart]
     ),

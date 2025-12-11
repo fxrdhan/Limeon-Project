@@ -14,8 +14,8 @@ interface UseSearchKeyboardProps {
   onClearPreservedState?: () => void;
   onEditValue?: () => void;
   onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
-  onEditSecondValue?: () => void;
-  onEditSecondValueTo?: () => void; // Edit "to" value in Between operator (second condition)
+  onEditCondition1Value?: () => void;
+  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (second condition)
 }
 
 export const useSearchKeyboard = ({
@@ -30,8 +30,8 @@ export const useSearchKeyboard = ({
   onClearPreservedState,
   onEditValue,
   onEditValueTo,
-  onEditSecondValue,
-  onEditSecondValueTo,
+  onEditCondition1Value,
+  onEditCondition1ValueTo,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -239,14 +239,14 @@ export const useSearchKeyboard = ({
             if (
               secondCondition?.operator === 'inRange' &&
               secondCondition?.valueTo &&
-              onEditSecondValueTo
+              onEditCondition1ValueTo
             ) {
-              onEditSecondValueTo();
+              onEditCondition1ValueTo();
               return;
             }
             // Otherwise edit second condition's value
-            if (onEditSecondValue) {
-              onEditSecondValue();
+            if (onEditCondition1Value) {
+              onEditCondition1Value();
               return;
             }
           }
@@ -471,8 +471,8 @@ export const useSearchKeyboard = ({
       onClearPreservedState,
       onEditValue,
       onEditValueTo,
-      onEditSecondValue,
-      onEditSecondValueTo,
+      onEditCondition1Value,
+      onEditCondition1ValueTo,
     ]
   );
 
