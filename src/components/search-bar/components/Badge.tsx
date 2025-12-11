@@ -46,8 +46,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   // Format display label for currency columns (only for value badges)
   const displayLabel = useMemo(() => {
-    const isValueBadge =
-      config.type === 'value' || config.type === 'valueSecond';
+    const isValueBadge = config.type === 'value' || config.type === 'valueTo';
     if (isValueBadge && columnType === 'currency' && config.label) {
       return formatCurrencyDisplay(config.label);
     }
@@ -112,9 +111,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Track if we've already triggered for this label to prevent infinite loop
   const hasAutoTriggered = useRef(false);
   useEffect(() => {
-    // Only for value badges (type 'value' or 'valueSecond')
+    // Only for value badges (type 'value' or 'valueTo')
     const isValueBadgeType =
-      config.type === 'value' || config.type === 'valueSecond';
+      config.type === 'value' || config.type === 'valueTo';
     if (isValueBadgeType && !isEditing && !hasAutoTriggered.current) {
       const isInvalid = !validateValue(config.label);
       if (isInvalid) {
@@ -231,7 +230,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   };
 
   // Check if badge value is invalid (for value badges only, when not editing)
-  const isValueBadge = config.type === 'value' || config.type === 'valueSecond';
+  const isValueBadge = config.type === 'value' || config.type === 'valueTo';
   const hasInvalidValue =
     isValueBadge && !isEditing && !validateValue(config.label);
 

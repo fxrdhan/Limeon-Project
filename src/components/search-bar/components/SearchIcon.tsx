@@ -81,8 +81,8 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     // - Multi-condition filters
     // - Operator selector open
     // - Join operator selector open
-    // - Building second condition (partialJoin state)
-    // - Second operator selected
+    // - Building condition[1] (partialJoin state)
+    // - Condition[1] operator selected
     if (
       searchMode.isFilterMode ||
       searchMode.filterSearch?.isExplicitOperator ||
