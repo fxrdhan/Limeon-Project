@@ -20,13 +20,17 @@ interface BadgeHandlers {
   onEditJoin: () => void;
   onEditValue: () => void; // Edit first value (or "from" value in Between)
   onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
-  onEditCondition1Value?: () => void; // Edit second condition value
-  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (second condition)
+  onEditCondition1Value?: () => void; // Edit condition[1] value
+  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (condition[1])
 }
 
 interface InlineEditingProps {
   editingBadge: {
-    type: 'firstValue' | 'secondValue' | 'firstValueTo' | 'secondValueTo';
+    type:
+      | 'firstValue'
+      | 'condition1Value'
+      | 'firstValueTo'
+      | 'condition1ValueTo';
     value: string;
   } | null;
   onInlineValueChange: (value: string) => void;
@@ -197,7 +201,7 @@ function getSeparatorBadgeId(conditionIndex: number): string {
 function createValueBadgeConfig(
   id: string,
   label: string,
-  badgeType: 'value' | 'valueSecond',
+  badgeType: 'value' | 'valueTo',
   handlers: { onClear: () => void; onEdit?: () => void; canEdit: boolean },
   columnType: 'text' | 'number' | 'date' | 'currency' | undefined,
   inlineProps: ReturnType<typeof getValueBadgeInlineProps>
@@ -251,8 +255,8 @@ export const useBadgeBuilder = (
       return badges;
     }
 
-    // Get condition at index 1 using scalable helper (with fallback to deprecated fields)
-    // This replaces all direct access to searchMode.secondColumn, secondOperator, etc.
+    // Get condition at index 1 using scalable helper
+    // This replaces all direct access to deprecated fields
     const condition1 = getConditionAt(searchMode, 1);
 
     const filter = searchMode.filterSearch;
@@ -359,7 +363,7 @@ export const useBadgeBuilder = (
               createValueBadgeConfig(
                 getValueBadgeId(index, true, true),
                 condition.valueTo!,
-                'valueSecond',
+                'valueTo',
                 getValueBadgeHandlers(handlers, index, totalConditions, true),
                 conditionColumnType,
                 getValueBadgeInlineProps(inlineEditingProps, index, true)
@@ -498,7 +502,7 @@ export const useBadgeBuilder = (
             createValueBadgeConfig(
               'value-to',
               filter.valueTo,
-              'valueSecond',
+              'valueTo',
               getValueBadgeHandlers(handlers, 0, 1, true),
               filterColumnType,
               getValueBadgeInlineProps(inlineEditingProps, 0, true)
@@ -563,7 +567,7 @@ export const useBadgeBuilder = (
 
       badges.push({
         id: 'condition-1-operator',
-        type: 'secondOperator',
+        type: 'operatorN',
         label: operatorLabel,
         onClear: handlers.onClearCondition1Operator, // TODO: onClearOperator(1)
         canClear: true,

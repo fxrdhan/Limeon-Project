@@ -186,18 +186,18 @@ export class PatternBuilder {
   }
 
   /**
-   * Build pattern for editing second value in multi-condition
-   * (shows full pattern without ## for second value)
+   * Build pattern for editing condition[1] value in multi-condition
+   * (shows full pattern without ## for condition[1] value)
    *
    * @param field - Column field name
    * @param op1 - First operator value
    * @param val1 - First value
    * @param join - Join operator ('AND' or 'OR')
-   * @param op2 - Second operator value
-   * @param val2 - Second value (for editing)
-   * @returns Pattern for editing second value
+   * @param op2 - Condition[1] operator value
+   * @param val2 - Condition[1] value (for editing)
+   * @returns Pattern for editing condition[1] value
    */
-  static editSecondValue(
+  static editCondition1Value(
     field: string,
     op1: string,
     val1: string,
@@ -367,14 +367,14 @@ export class PatternBuilder {
   }
 
   /**
-   * Edit second value of Between: #field #inRange value1 value2
+   * Edit valueTo of Between: #field #inRange value valueTo
    *
    * @param field - Column field name
    * @param value1 - First value (preserved)
-   * @param value2 - Second value for editing
-   * @returns Pattern for editing second value
+   * @param value2 - ValueTo for editing
+   * @returns Pattern for editing valueTo
    */
-  static editBetweenSecondValue(
+  static editBetweenValueTo(
     field: string,
     value1: string,
     value2: string
@@ -387,7 +387,7 @@ export class PatternBuilder {
   // ========================================
 
   /**
-   * Multi-column partial with second column: #col1 #op1 val1 #join #col2 #
+   * Multi-column partial with condition[1] column: #col1 #op1 val1 #join #col2 #
    *
    * @param col1 - First column field name
    * @param op1 - First operator value
