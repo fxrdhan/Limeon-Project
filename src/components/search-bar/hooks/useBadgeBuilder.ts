@@ -35,6 +35,58 @@ interface InlineEditingProps {
   onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
 }
 
+// ============ Scalable Helper Functions ============
+
+/**
+ * Get second condition from scalable partialConditions or deprecated fields.
+ * Provides unified access to second condition data regardless of source.
+ */
+function getSecondCondition(searchMode: EnhancedSearchState): {
+  column?: typeof searchMode.secondColumn;
+  operator?: string;
+  value?: string;
+  valueTo?: string;
+  waitingForValueTo?: boolean;
+} {
+  // Prefer new scalable field
+  const partial = searchMode.partialConditions?.[1];
+  if (partial) {
+    return {
+      column: partial.column,
+      operator: partial.operator,
+      value: partial.value,
+      valueTo: partial.valueTo,
+      waitingForValueTo: partial.waitingForValueTo,
+    };
+  }
+  // Fallback to deprecated fields
+  return {
+    column: searchMode.secondColumn,
+    operator: searchMode.secondOperator,
+    value: searchMode.secondValue,
+    valueTo: searchMode.secondValueTo,
+    waitingForValueTo: searchMode.waitingForSecondValueTo,
+  };
+}
+
+/**
+ * Check if there is a second condition being built.
+ * Uses scalable activeConditionIndex with fallback.
+ */
+function hasSecondCondition(searchMode: EnhancedSearchState): boolean {
+  // Prefer new scalable field
+  if (searchMode.activeConditionIndex !== undefined) {
+    return searchMode.activeConditionIndex > 0;
+  }
+  // Fallback to deprecated fields
+  return !!(
+    searchMode.secondColumn ||
+    searchMode.secondOperator ||
+    searchMode.isSecondColumn ||
+    searchMode.isSecondOperator
+  );
+}
+
 // ============ Helper Functions for Badge Creation ============
 
 /**
@@ -185,16 +237,20 @@ export const useBadgeBuilder = (
     const badges: BadgeConfig[] = [];
 
     // Early return if no badges should be shown
+    // Use scalable helper for second condition check
     if (
       !searchMode.isFilterMode &&
       !searchMode.showOperatorSelector &&
       !searchMode.showJoinOperatorSelector &&
       !searchMode.showColumnSelector && // Include column selector for second column
       !searchMode.selectedColumn &&
-      !searchMode.secondColumn // Include second column for multi-column
+      !hasSecondCondition(searchMode) // Include second column for multi-column
     ) {
       return badges;
     }
+
+    // Get second condition data using scalable helper (with fallback to deprecated fields)
+    const secondCond = getSecondCondition(searchMode);
 
     const filter = searchMode.filterSearch;
     const isMultiCondition =
@@ -473,11 +529,12 @@ export const useBadgeBuilder = (
 
     // 6. Second Column Badge (Purple) - MULTI-COLUMN SUPPORT
     // Always show second column badge when it exists (even if same as first column)
-    if (searchMode.secondColumn) {
+    // Use scalable helper: secondCond.column (from partialConditions[1] or deprecated secondColumn)
+    if (secondCond.column) {
       badges.push({
         id: 'second-column',
         type: 'column', // Same type as first column badge
-        label: searchMode.secondColumn.headerName,
+        label: secondCond.column.headerName,
         onClear: handlers.onClearSecondColumn || handlers.onClearSecondOperator, // Fallback to clearing second operator
         canClear: true,
         onEdit: handlers.onEditSecondColumn || handlers.onEditColumn, // Fallback to first column edit
@@ -486,12 +543,13 @@ export const useBadgeBuilder = (
     }
 
     // 7. Second Operator Badge (Blue)
-    if (searchMode.secondOperator && filter) {
-      // For multi-column, use secondColumn for operator label
-      const columnForLabel = searchMode.secondColumn || filter.column;
+    // Use scalable helper: secondCond.operator (from partialConditions[1] or deprecated secondOperator)
+    if (secondCond.operator && filter) {
+      // For multi-column, use secondCond.column for operator label
+      const columnForLabel = secondCond.column || filter.column;
       const operatorLabel = getOperatorLabelForColumn(
         columnForLabel,
-        searchMode.secondOperator
+        secondCond.operator
       );
 
       badges.push({
@@ -507,22 +565,22 @@ export const useBadgeBuilder = (
 
     // 8. Second Value Badge(s) (Gray) - Partial state while user is typing
     // Show [value][to] after user presses Enter (adds #to marker)
-    // Note: secondValueTo badge is NOT shown here - user is still typing it in input
+    // Note: secondCond.valueTo badge is NOT shown here - user is still typing it in input
+    // Use scalable helper: secondCond.* (from partialConditions[1] or deprecated second* fields)
     if (
-      searchMode.secondOperator &&
-      searchMode.secondValue &&
-      searchMode.secondOperator === 'inRange' &&
-      (searchMode.waitingForSecondValueTo || searchMode.secondValueTo)
+      secondCond.operator &&
+      secondCond.value &&
+      secondCond.operator === 'inRange' &&
+      (secondCond.waitingForValueTo || secondCond.valueTo)
     ) {
-      const secondConditionColumnType = (
-        searchMode.secondColumn || filter?.column
-      )?.type;
+      const secondConditionColumnType = (secondCond.column || filter?.column)
+        ?.type;
 
       // Value-from badge (not editable while typing)
       badges.push(
         createValueBadgeConfig(
           'second-value-from',
-          searchMode.secondValue,
+          secondCond.value,
           'value',
           { onClear: handlers.onClearSecondValue, canEdit: false },
           secondConditionColumnType,

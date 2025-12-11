@@ -54,6 +54,48 @@ export interface SelectionHandlersReturn {
 }
 
 // ============================================================================
+// Scalable Helper Functions
+// ============================================================================
+
+/**
+ * Get active condition index from searchMode.
+ * Uses new scalable field with fallback to deprecated fields.
+ */
+function getActiveConditionIndex(searchMode: EnhancedSearchState): number {
+  // Prefer new scalable field
+  if (searchMode.activeConditionIndex !== undefined) {
+    return searchMode.activeConditionIndex;
+  }
+  // Fallback to deprecated flags
+  if (searchMode.isSecondOperator || searchMode.isSecondColumn) {
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * Check if we're building a condition after the first one.
+ * Uses scalable activeConditionIndex with fallback.
+ */
+function isSecondOrLaterCondition(searchMode: EnhancedSearchState): boolean {
+  return getActiveConditionIndex(searchMode) > 0;
+}
+
+/**
+ * Get second column from scalable partialConditions or deprecated field.
+ */
+function getSecondColumn(
+  searchMode: EnhancedSearchState
+): typeof searchMode.secondColumn {
+  // Prefer new scalable field
+  if (searchMode.partialConditions?.[1]?.column) {
+    return searchMode.partialConditions[1].column;
+  }
+  // Fallback to deprecated field
+  return searchMode.secondColumn;
+}
+
+// ============================================================================
 // Column Selection Helper Functions
 // ============================================================================
 
@@ -719,9 +761,10 @@ function handleOperatorSelectSecond(
 
   let newValue: string;
 
-  // Check for multi-column
-  const secondCol = searchMode.secondColumn?.field;
-  const isMultiColumn = searchMode.isSecondOperator && secondCol;
+  // Check for multi-column using scalable helper (with fallback to deprecated fields)
+  const secondColumn = getSecondColumn(searchMode);
+  const secondCol = secondColumn?.field;
+  const isMultiColumn = isSecondOrLaterCondition(searchMode) && !!secondCol;
 
   if (firstValTo) {
     // First condition is Between
@@ -802,11 +845,12 @@ export function useSelectionHandlers(
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
       // CASE 0: MULTI-COLUMN - selecting second column after join operator
-      if (
-        searchMode.isSecondColumn &&
+      // Use scalable check: activeConditionIndex > 0 (with fallback to deprecated isSecondColumn)
+      const isSelectingSecondColumn =
+        isSecondOrLaterCondition(searchMode) &&
         searchMode.filterSearch &&
-        searchMode.partialJoin
-      ) {
+        searchMode.partialJoin;
+      if (isSelectingSecondColumn) {
         handleColumnSelectMultiColumn(
           column,
           searchMode,
@@ -889,7 +933,8 @@ export function useSelectionHandlers(
       // CASE 2: EDITING first operator with preserved filter
       // Skip this case if we're selecting operator for second column in multi-column filter
       // (preservedFilterRef might be set by handleJoinOperatorSelect, but we should use CASE 3)
-      if (preservedFilterRef.current && !searchMode.isSecondOperator) {
+      // Use scalable check: activeConditionIndex (with fallback to deprecated isSecondOperator)
+      if (preservedFilterRef.current && !isSecondOrLaterCondition(searchMode)) {
         handleOperatorSelectEditFirst(
           operator,
           columnName,
@@ -905,8 +950,9 @@ export function useSelectionHandlers(
       // CASE 3: Selecting second operator in partial multi-condition
       // Note: Don't require isConfirmed - when building new multi-column filter,
       // the pattern is "#col1 #op1 val1 #and #col2 #" which has no ## marker
+      // Use scalable check: activeConditionIndex > 0 (with fallback to deprecated isSecondOperator)
       if (
-        searchMode.isSecondOperator &&
+        isSecondOrLaterCondition(searchMode) &&
         searchMode.partialJoin &&
         searchMode.filterSearch?.value // First condition has value (is complete)
       ) {
