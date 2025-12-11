@@ -116,8 +116,8 @@ function getValueBadgeInlineProps(
         ? 'firstValueTo'
         : 'firstValue'
       : isValueTo
-        ? 'secondValueTo'
-        : 'secondValue';
+        ? 'condition1ValueTo'
+        : 'condition1Value';
 
   const isEditing = inlineEditingProps.editingBadge.type === editType;
   if (!isEditing) return null;
@@ -297,15 +297,15 @@ export const useBadgeBuilder = (
           condition.operator
         );
 
-        // For second condition, always add second column badge BEFORE operator
+        // For condition[1], always add column badge BEFORE operator
         // Show even if same column as first (no simplification)
         if (index === 1) {
-          const secondColumnLabel =
+          const cond1ColumnLabel =
             condition.column?.headerName || filter.column.headerName;
           badges.push({
             id: 'condition-1-column',
             type: 'column',
-            label: secondColumnLabel,
+            label: cond1ColumnLabel,
             onClear:
               handlers.onClearCondition1Column ||
               handlers.onClearCondition1Operator,

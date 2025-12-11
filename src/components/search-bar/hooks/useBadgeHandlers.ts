@@ -175,7 +175,7 @@ export function useBadgeHandlers(
             // Clear nth operator = keep up to join + column, show operator selector
             const firstCondition = getFirstCondition(filter);
             const joinOp = getJoinOperator(filter, state);
-            const secondColField =
+            const cond1ColField =
               filter.conditions?.[conditionIndex]?.field ||
               state.partialConditions?.[conditionIndex]?.field ||
               columnName;
@@ -185,7 +185,7 @@ export function useBadgeHandlers(
                 firstCondition.operator,
                 firstCondition.value,
                 joinOp,
-                secondColField
+                cond1ColField
               );
               setFilterValue(newValue, onChange, inputRef);
             }
@@ -210,21 +210,21 @@ export function useBadgeHandlers(
             // Clear nth value = keep up to join + column + operator
             const firstCondition = getFirstCondition(filter);
             const joinOp = getJoinOperator(filter, state);
-            const secondColField =
+            const cond1ColField =
               filter.conditions?.[conditionIndex]?.field ||
               state.partialConditions?.[conditionIndex]?.field ||
               columnName;
-            const secondOp =
+            const cond1Op =
               filter.conditions?.[conditionIndex]?.operator ||
               state.partialConditions?.[conditionIndex]?.operator;
-            if (joinOp && secondOp) {
+            if (joinOp && cond1Op) {
               const newValue = PatternBuilder.multiColumnWithOperator(
                 columnName,
                 firstCondition.operator,
                 firstCondition.value,
                 joinOp,
-                secondColField,
-                secondOp,
+                cond1ColField,
+                cond1Op,
                 firstCondition.valueTo
               );
               setFilterValue(newValue, onChange, inputRef);
@@ -383,7 +383,7 @@ export function useBadgeHandlers(
             if (filter) {
               const firstCondition = getFirstCondition(filter);
               const joinOp = getJoinOperator(filter, state);
-              const secondColField =
+              const cond1ColField =
                 filter.conditions?.[conditionIndex]?.field ||
                 state.partialConditions?.[conditionIndex]?.field ||
                 columnName;
@@ -394,14 +394,14 @@ export function useBadgeHandlers(
                   firstCondition.operator === 'inRange' &&
                   firstCondition.valueTo
                 ) {
-                  newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #to ${firstCondition.valueTo} #${joinOp.toLowerCase()} #${secondColField} #`;
+                  newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #to ${firstCondition.valueTo} #${joinOp.toLowerCase()} #${cond1ColField} #`;
                 } else {
                   newValue = PatternBuilder.multiColumnPartial(
                     columnName,
                     firstCondition.operator,
                     firstCondition.value,
                     joinOp,
-                    secondColField
+                    cond1ColField
                   );
                 }
                 setFilterValue(newValue, onChange, inputRef);

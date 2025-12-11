@@ -90,7 +90,7 @@ export class PatternBuilder {
    * @param operator - First operator value
    * @param value - First value
    * @param join - Join operator ('AND' or 'OR')
-   * @returns Partial multi-condition pattern ready for second operator
+   * @returns Partial multi-condition pattern ready for condition[1] operator
    */
   static partialMulti(
     field: string,
@@ -110,7 +110,7 @@ export class PatternBuilder {
    * @param value - First value
    * @param valueTo - Second value for Between operator (optional)
    * @param join - Join operator ('AND' or 'OR')
-   * @returns Partial multi-column pattern ready for second column selection
+   * @returns Partial multi-column pattern ready for condition[1] column selection
    */
   static partialMultiColumnWithValueTo(
     field: string,
@@ -127,14 +127,14 @@ export class PatternBuilder {
   }
 
   /**
-   * Partial multi with second operator: #field #op1 val1 #join #op2
+   * Partial multi with condition[1] operator: #field #op1 val1 #join #op2
    *
    * @param field - Column field name
    * @param op1 - First operator value
    * @param val1 - First value
    * @param join - Join operator ('AND' or 'OR')
    * @param op2 - Second operator value
-   * @returns Partial multi-condition with second operator, ready for second value
+   * @returns Partial multi-condition with condition[1] operator, ready for condition[1] value
    */
   static partialMultiWithOperator(
     field: string,
@@ -170,7 +170,7 @@ export class PatternBuilder {
 
   /**
    * Build pattern for editing first value in multi-condition
-   * (shows only first value without ##, hides second condition)
+   * (shows only first value without ##, hides condition[1])
    *
    * @param field - Column field name
    * @param operator - First operator value
@@ -217,7 +217,7 @@ export class PatternBuilder {
    *
    * @param field - Column field name
    * @param value1 - First value (from)
-   * @returns Pattern ready for second value input
+   * @returns Pattern ready for condition[1] value input
    */
   static betweenFirstValue(field: string, value1: string): string {
     return `#${field} #inRange ${value1} `;
@@ -278,7 +278,7 @@ export class PatternBuilder {
    * @param value1 - First value (from)
    * @param value2 - Second value (to)
    * @param join - Join operator ('AND' or 'OR')
-   * @returns Partial multi-condition pattern ready for second operator
+   * @returns Partial multi-condition pattern ready for condition[1] operator
    */
   static betweenMultiPartial(
     field: string,
@@ -394,7 +394,7 @@ export class PatternBuilder {
    * @param val1 - First value
    * @param join - Join operator ('AND' or 'OR')
    * @param col2 - Second column field name
-   * @returns Partial multi-column pattern ready for second operator
+   * @returns Partial multi-column pattern ready for condition[1] operator
    */
   static multiColumnPartial(
     col1: string,
@@ -416,7 +416,7 @@ export class PatternBuilder {
    * @param col2 - Second column field name
    * @param op2 - Second operator value
    * @param val1To - Optional second value for Between (inRange) operator
-   * @returns Partial multi-column with operator, ready for second value
+   * @returns Partial multi-column with operator, ready for condition[1] value
    */
   static multiColumnWithOperator(
     col1: string,
@@ -485,20 +485,20 @@ export class PatternBuilder {
     val2To: string | undefined
   ): string {
     const firstIsBetween = op1 === 'inRange' && val1To;
-    const secondIsBetween = op2 === 'inRange' && val2To;
+    const cond1IsBetween = op2 === 'inRange' && val2To;
 
     // Case 1: Between + Between
-    if (firstIsBetween && secondIsBetween) {
+    if (firstIsBetween && cond1IsBetween) {
       return this.betweenAndBetween(field, val1, val1To, join, val2, val2To);
     }
 
     // Case 2: Between + Normal
-    if (firstIsBetween && !secondIsBetween) {
+    if (firstIsBetween && !cond1IsBetween) {
       return this.betweenAndNormal(field, val1, val1To, join, op2, val2);
     }
 
     // Case 3: Normal + Between
-    if (!firstIsBetween && secondIsBetween) {
+    if (!firstIsBetween && cond1IsBetween) {
       return this.normalAndBetween(field, op1, val1, join, val2, val2To);
     }
 
@@ -533,7 +533,7 @@ export class PatternBuilder {
     val2To: string | undefined
   ): string {
     const firstIsBetween = op1 === 'inRange' && val1To;
-    const secondIsBetween = op2 === 'inRange' && val2To;
+    const cond1IsBetween = op2 === 'inRange' && val2To;
 
     // Build first condition part
     // Use #to marker for Between operators to ensure correct badge display
@@ -541,13 +541,13 @@ export class PatternBuilder {
       ? `#${col1} #${op1} ${val1} #to ${val1To}`
       : `#${col1} #${op1} ${val1}`;
 
-    // Build second condition part
+    // Build condition[1] part
     // Use #to marker for Between operators to ensure correct badge display
-    const secondPart = secondIsBetween
+    const cond1Part = cond1IsBetween
       ? `#${col2} #${op2} ${val2} #to ${val2To}`
       : `#${col2} #${op2} ${val2}`;
 
-    return `${firstPart} #${join.toLowerCase()} ${secondPart}##`;
+    return `${firstPart} #${join.toLowerCase()} ${cond1Part}##`;
   }
 
   // ========================================
