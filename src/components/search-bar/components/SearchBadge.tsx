@@ -54,7 +54,7 @@ interface SearchBadgeProps {
   onClearCondition1Column?: () => void; // Multi-column support
   onClearCondition1Operator: () => void;
   onClearCondition1Value: () => void;
-  onClearCondition1ValueTo?: () => void; // Clear "to" value in Between (second condition)
+  onClearCondition1ValueTo?: () => void; // Clear "to" value in Between (condition[1])
   onClearAll: () => void;
   onEditColumn: () => void;
   onEditCondition1Column?: () => void; // Multi-column support
@@ -63,12 +63,16 @@ interface SearchBadgeProps {
   onEditValue: () => void;
   onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
   onEditCondition1Value?: () => void;
-  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (second condition)
+  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (condition[1])
   onHoverChange?: (isHovered: boolean) => void;
   preservedSearchMode?: EnhancedSearchState | null;
   // Inline editing props
   editingBadge?: {
-    type: 'firstValue' | 'secondValue' | 'firstValueTo' | 'secondValueTo';
+    type:
+      | 'firstValue'
+      | 'condition1Value'
+      | 'firstValueTo'
+      | 'condition1ValueTo';
     value: string;
   } | null;
   onInlineValueChange?: (value: string) => void;
@@ -179,14 +183,14 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
 
     return rawBadges.map(badge => {
       // Preview column - apply to the correct column badge
-      // Only apply when in edit mode (not when creating new second column)
+      // Only apply when in edit mode (not when creating new condition[N] column)
       // Uses index-based IDs: condition-{index}-column
       if (previewColumn && isInEditMode) {
-        // If editing second column, apply to condition-1-column badge
+        // If editing condition[1] column, apply to condition-1-column badge
         if (isEditingCondition1Column && badge.id === 'condition-1-column') {
           return { ...badge, label: previewColumn.headerName };
         }
-        // If editing first column (not second), apply to condition-0-column badge
+        // If editing condition[0] column, apply to condition-0-column badge
         if (
           !isEditingCondition1Column &&
           badge.id === 'condition-0-column' &&
@@ -200,14 +204,14 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       // Only apply when in edit mode (not when creating new operator)
       // Uses index-based IDs: condition-{index}-operator
       if (previewOperator && isInEditMode) {
-        // If editing second operator, apply to condition-1-operator badge
+        // If editing condition[1] operator, apply to condition-1-operator badge
         if (
           isEditingCondition1Operator &&
           badge.id === 'condition-1-operator'
         ) {
           return { ...badge, label: previewOperator.label };
         }
-        // If editing first operator (not second), apply to condition-0-operator badge
+        // If editing condition[0] operator, apply to condition-0-operator badge
         if (
           !isEditingCondition1Operator &&
           badge.id === 'condition-0-operator' &&
@@ -302,9 +306,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           } else if (badge.id.startsWith('join-')) {
             refToUse = joinBadgeRef; // Join badge (AND/OR) - join-0, join-1, etc.
           } else if (badge.id === 'condition-1-column') {
-            refToUse = condition1ColumnBadgeRef; // Second column badge (multi-column)
+            refToUse = condition1ColumnBadgeRef; // Condition[1] column badge (multi-column)
           } else if (badge.id === 'condition-1-operator') {
-            refToUse = condition1OperatorBadgeRef; // Second operator badge
+            refToUse = condition1OperatorBadgeRef; // Condition[1] operator badge
           }
 
           // Add glow state based on selector being open

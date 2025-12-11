@@ -27,9 +27,9 @@ import { SEARCH_CONSTANTS } from '../constants';
 
 export type EditingBadgeType =
   | 'firstValue'
-  | 'secondValue'
+  | 'condition1Value'
   | 'firstValueTo'
-  | 'secondValueTo';
+  | 'condition1ValueTo';
 
 export interface SelectionHandlersProps {
   value: string;
@@ -118,21 +118,24 @@ function handleColumnSelectMultiColumn(
 
   // Check if we have preserved second operator/value (from handleEditSecondColumn)
   if (
-    preservedFilterRef.current?.secondOperator &&
-    preservedFilterRef.current.secondOperator.trim() !== ''
+    preservedFilterRef.current?.condition1Operator &&
+    preservedFilterRef.current.condition1Operator.trim() !== ''
   ) {
     const preserved = preservedFilterRef.current;
-    const secondOp = preserved.secondOperator!;
+    const cond1Op = preserved.condition1Operator!;
 
     // Check if preserved operator is compatible with new column type
     const isSecondOpCompatible = isOperatorCompatibleWithColumn(
       column,
-      secondOp
+      cond1Op
     );
 
     if (isSecondOpCompatible) {
       // Operator is compatible - restore pattern with preserved operator
-      if (preserved.secondValue && preserved.secondValue.trim() !== '') {
+      if (
+        preserved.condition1Value &&
+        preserved.condition1Value.trim() !== ''
+      ) {
         // Full multi-column with second value
         newValue = PatternBuilder.buildMultiColumnWithValueTo(
           firstCol,
@@ -141,14 +144,14 @@ function handleColumnSelectMultiColumn(
           firstValTo,
           join,
           column.field,
-          secondOp,
-          preserved.secondValue,
-          preserved.secondValueTo
+          cond1Op,
+          preserved.condition1Value,
+          preserved.condition1ValueTo
         );
       } else {
         // Multi-column with operator but no second value
         if (firstValTo) {
-          newValue = `#${firstCol} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${column.field} #${secondOp} `;
+          newValue = `#${firstCol} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${column.field} #${cond1Op} `;
         } else {
           newValue = PatternBuilder.multiColumnWithOperator(
             firstCol,
@@ -156,7 +159,7 @@ function handleColumnSelectMultiColumn(
             firstVal,
             join,
             column.field,
-            secondOp
+            cond1Op
           );
         }
       }
@@ -182,7 +185,7 @@ function handleColumnSelectMultiColumn(
       if (preservedFilterRef.current) {
         preservedFilterRef.current = {
           ...preservedFilterRef.current,
-          secondColumnField: column.field,
+          condition1Field: column.field,
         };
       }
       if (preservedSearchMode?.filterSearch?.conditions) {
@@ -250,9 +253,9 @@ function handleColumnSelectWithPreservedFilter(
     operator,
     value,
     join,
-    secondOperator,
-    secondValue,
-    secondColumnField,
+    condition1Operator,
+    condition1Value,
+    condition1Field,
     wasMultiColumn,
   } = preservedFilterRef.current!;
 
@@ -263,36 +266,37 @@ function handleColumnSelectWithPreservedFilter(
 
   if (isOperatorCompatible) {
     // Handle multi-condition or partial multi-condition
-    if (join && secondOperator) {
-      const isMultiColumn = wasMultiColumn && !!secondColumnField;
+    if (join && condition1Operator) {
+      const isMultiColumn = wasMultiColumn && !!condition1Field;
 
       if (isMultiColumn) {
         // MULTI-COLUMN FILTER
-        const secondColumn = memoizedColumns.find(
-          col => col.field === secondColumnField
+        const cond1Column = memoizedColumns.find(
+          col => col.field === condition1Field
         );
 
-        if (secondColumn) {
+        if (cond1Column) {
           const isSecondOperatorCompatible = isOperatorCompatibleWithColumn(
-            secondColumn,
-            secondOperator
+            cond1Column,
+            condition1Operator
           );
 
           if (isSecondOperatorCompatible) {
             const valueTo = preservedFilterRef.current?.valueTo;
-            const secondValueTo = preservedFilterRef.current?.secondValueTo;
+            const condition1ValueTo =
+              preservedFilterRef.current?.condition1ValueTo;
 
-            if (secondValue && secondValue.trim() !== '') {
+            if (condition1Value && condition1Value.trim() !== '') {
               newValue = PatternBuilder.buildMultiColumnWithValueTo(
                 column.field,
                 operator,
                 value,
                 valueTo,
                 join,
-                secondColumnField!,
-                secondOperator,
-                secondValue,
-                secondValueTo
+                condition1Field!,
+                condition1Operator,
+                condition1Value,
+                condition1ValueTo
               );
             } else {
               newValue = PatternBuilder.multiColumnWithOperator(
@@ -300,8 +304,8 @@ function handleColumnSelectWithPreservedFilter(
                 operator,
                 value,
                 join,
-                secondColumnField!,
-                secondOperator,
+                condition1Field!,
+                condition1Operator,
                 valueTo
               );
             }
@@ -339,34 +343,35 @@ function handleColumnSelectWithPreservedFilter(
         // SAME-COLUMN FILTER
         const isSecondOperatorCompatible = isOperatorCompatibleWithColumn(
           column,
-          secondOperator
+          condition1Operator
         );
 
         if (isSecondOperatorCompatible) {
           const valueTo = preservedFilterRef.current?.valueTo;
-          const secondValueTo = preservedFilterRef.current?.secondValueTo;
+          const condition1ValueTo =
+            preservedFilterRef.current?.condition1ValueTo;
 
-          if (secondValue && secondValue.trim() !== '') {
+          if (condition1Value && condition1Value.trim() !== '') {
             newValue = PatternBuilder.buildMultiConditionWithValueTo(
               column.field,
               operator,
               value,
               valueTo,
               join,
-              secondOperator,
-              secondValue,
-              secondValueTo
+              condition1Operator,
+              condition1Value,
+              condition1ValueTo
             );
           } else {
             if (valueTo) {
-              newValue = `#${column.field} #${operator} ${value} #to ${valueTo} #${join.toLowerCase()} #${secondOperator} `;
+              newValue = `#${column.field} #${operator} ${value} #to ${valueTo} #${join.toLowerCase()} #${condition1Operator} `;
             } else {
               newValue = PatternBuilder.partialMultiWithOperator(
                 column.field,
                 operator,
                 value,
                 join,
-                secondOperator
+                condition1Operator
               );
             }
           }
@@ -384,12 +389,12 @@ function handleColumnSelectWithPreservedFilter(
           }
         }
       }
-    } else if (join && secondColumnField) {
+    } else if (join && condition1Field) {
       // Has join and second column but no second operator yet
       if (preservedFilterRef.current?.valueTo) {
-        newValue = `#${column.field} #${operator} ${value} #to ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #${secondColumnField} #`;
+        newValue = `#${column.field} #${operator} ${value} #to ${preservedFilterRef.current.valueTo} #${join.toLowerCase()} #${condition1Field} #`;
       } else {
-        newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${secondColumnField} #`;
+        newValue = `#${column.field} #${operator} ${value} #${join.toLowerCase()} #${condition1Field} #`;
       }
     } else if (join) {
       // Has join but no second column yet
@@ -426,7 +431,7 @@ function handleColumnSelectWithPreservedFilter(
     // Don't clear preserved state if multi-condition
     if (
       preservedFilterRef.current?.join &&
-      preservedFilterRef.current?.secondOperator
+      preservedFilterRef.current?.condition1Operator
     ) {
       preservedFilterRef.current = {
         ...preservedFilterRef.current,
@@ -484,16 +489,16 @@ function handleOperatorSelectEditSecond(
 ): void {
   const preserved = preservedFilterRef.current!;
   const joinOp = preserved.join as 'AND' | 'OR';
-  const secondCol = preserved.secondColumnField;
-  const isMultiColumn = preserved.wasMultiColumn && secondCol;
+  const cond1Col = preserved.condition1Field;
+  const isMultiColumn = preserved.wasMultiColumn && cond1Col;
 
   let newValue: string;
 
-  // Special handling: changing to Between when no secondValueTo exists
+  // Special handling: changing to Between when no condition1ValueTo exists
   if (
     operator.value === 'inRange' &&
-    preserved.secondValue &&
-    !preserved.secondValueTo
+    preserved.condition1Value &&
+    !preserved.condition1ValueTo
   ) {
     const firstPart =
       preserved.operator === 'inRange' && preserved.valueTo
@@ -501,13 +506,16 @@ function handleOperatorSelectEditSecond(
         : `#${columnName} #${preserved.operator} ${preserved.value}`;
 
     if (isMultiColumn) {
-      newValue = `${firstPart} #${joinOp.toLowerCase()} #${secondCol} #${operator.value} ${preserved.secondValue}##`;
+      newValue = `${firstPart} #${joinOp.toLowerCase()} #${cond1Col} #${operator.value} ${preserved.condition1Value}##`;
     } else {
-      newValue = `${firstPart} #${joinOp.toLowerCase()} #${operator.value} ${preserved.secondValue}##`;
+      newValue = `${firstPart} #${joinOp.toLowerCase()} #${operator.value} ${preserved.condition1Value}##`;
     }
 
     // Update preserved state
-    preservedFilterRef.current = { ...preserved, secondOperator: 'inRange' };
+    preservedFilterRef.current = {
+      ...preserved,
+      condition1Operator: 'inRange',
+    };
 
     if (preservedSearchMode?.filterSearch) {
       const updatedConditions =
@@ -529,8 +537,8 @@ function handleOperatorSelectEditSecond(
     // Enter inline edit mode with dash appended
     setTimeout(() => {
       setEditingBadge({
-        type: 'secondValue',
-        value: `${preserved.secondValue}-`,
+        type: 'condition1Value',
+        value: `${preserved.condition1Value}-`,
       });
     }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 
@@ -538,9 +546,9 @@ function handleOperatorSelectEditSecond(
   }
 
   // Normal case with second value
-  if (preserved.secondValue) {
+  if (preserved.condition1Value) {
     const secondValTo =
-      operator.value === 'inRange' ? preserved.secondValueTo : undefined;
+      operator.value === 'inRange' ? preserved.condition1ValueTo : undefined;
 
     if (isMultiColumn) {
       newValue = PatternBuilder.buildMultiColumnWithValueTo(
@@ -549,9 +557,9 @@ function handleOperatorSelectEditSecond(
         preserved.value,
         preserved.valueTo,
         joinOp,
-        secondCol!,
+        cond1Col!,
         operator.value,
-        preserved.secondValue,
+        preserved.condition1Value,
         secondValTo
       );
     } else {
@@ -562,7 +570,7 @@ function handleOperatorSelectEditSecond(
         preserved.valueTo,
         joinOp,
         operator.value,
-        preserved.secondValue,
+        preserved.condition1Value,
         secondValTo
       );
     }
@@ -573,7 +581,7 @@ function handleOperatorSelectEditSecond(
     // No second value yet - ready for input
     if (preserved.valueTo) {
       if (isMultiColumn) {
-        newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOp.toLowerCase()} #${secondCol} #${operator.value} `;
+        newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOp.toLowerCase()} #${cond1Col} #${operator.value} `;
       } else {
         newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOp.toLowerCase()} #${operator.value} `;
       }
@@ -584,7 +592,7 @@ function handleOperatorSelectEditSecond(
           preserved.operator,
           preserved.value,
           joinOp,
-          secondCol!,
+          cond1Col!,
           operator.value
         );
       } else {
@@ -627,10 +635,10 @@ function handleOperatorSelectEditFirst(
   // Special handling: changing to Between when value exists but no valueTo
   if (operator.value === 'inRange' && preserved.value && !preserved.valueTo) {
     // Check if multi-condition
-    if (preserved.join && preserved.secondOperator) {
+    if (preserved.join && preserved.condition1Operator) {
       const joinOp = preserved.join as 'AND' | 'OR';
-      const secondCol = preserved.secondColumnField;
-      const isMultiColumn = preserved.wasMultiColumn && secondCol;
+      const cond1Col = preserved.condition1Field;
+      const isMultiColumn = preserved.wasMultiColumn && cond1Col;
 
       if (isMultiColumn) {
         newValue = PatternBuilder.buildMultiColumnWithValueTo(
@@ -639,10 +647,10 @@ function handleOperatorSelectEditFirst(
           preserved.value,
           undefined,
           joinOp,
-          secondCol!,
-          preserved.secondOperator,
-          preserved.secondValue!,
-          preserved.secondValueTo
+          cond1Col!,
+          preserved.condition1Operator,
+          preserved.condition1Value!,
+          preserved.condition1ValueTo
         );
       } else {
         newValue = PatternBuilder.buildMultiConditionWithValueTo(
@@ -651,9 +659,9 @@ function handleOperatorSelectEditFirst(
           preserved.value,
           undefined,
           joinOp,
-          preserved.secondOperator,
-          preserved.secondValue!,
-          preserved.secondValueTo
+          preserved.condition1Operator,
+          preserved.condition1Value!,
+          preserved.condition1ValueTo
         );
       }
     } else {
@@ -675,10 +683,10 @@ function handleOperatorSelectEditFirst(
   }
 
   // Normal case with multi-condition
-  if (preserved.join && preserved.secondOperator) {
+  if (preserved.join && preserved.condition1Operator) {
     const joinOp = preserved.join as 'AND' | 'OR';
-    const secondCol = preserved.secondColumnField;
-    const isMultiColumn = preserved.wasMultiColumn && secondCol;
+    const cond1Col = preserved.condition1Field;
+    const isMultiColumn = preserved.wasMultiColumn && cond1Col;
     const valueTo =
       operator.value === 'inRange' ? preserved.valueTo : undefined;
 
@@ -689,10 +697,10 @@ function handleOperatorSelectEditFirst(
         preserved.value,
         valueTo,
         joinOp,
-        secondCol!,
-        preserved.secondOperator,
-        preserved.secondValue!,
-        preserved.secondValueTo
+        cond1Col!,
+        preserved.condition1Operator,
+        preserved.condition1Value!,
+        preserved.condition1ValueTo
       );
     } else {
       newValue = PatternBuilder.buildMultiConditionWithValueTo(
@@ -701,9 +709,9 @@ function handleOperatorSelectEditFirst(
         preserved.value,
         valueTo,
         joinOp,
-        preserved.secondOperator,
-        preserved.secondValue!,
-        preserved.secondValueTo
+        preserved.condition1Operator,
+        preserved.condition1Value!,
+        preserved.condition1ValueTo
       );
     }
   } else if (preserved.value && preserved.value.trim() !== '') {
@@ -755,7 +763,7 @@ function handleOperatorSelectSecond(
 
   let newValue: string;
 
-  // Check for multi-column using scalable helper (with fallback to deprecated fields)
+  // Check for multi-column using scalable helper
   // getColumnAt(searchMode, 1) returns column at index 1 (second condition)
   const conditionColumn1 = getColumnAt(searchMode, 1);
   const conditionCol1Field = conditionColumn1?.field;
@@ -841,7 +849,7 @@ export function useSelectionHandlers(
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
       // CASE 0: MULTI-COLUMN - selecting column for condition[N] after join operator
-      // Use scalable check: activeConditionIndex > 0 (with fallback to deprecated isSecondColumn)
+      // Use scalable check: activeConditionIndex > 0
       const isSelectingConditionNColumn =
         isBuildingConditionN(searchMode) &&
         searchMode.filterSearch &&
@@ -929,7 +937,7 @@ export function useSelectionHandlers(
       // CASE 2: EDITING first operator with preserved filter
       // Skip this case if we're selecting operator for condition[N] in multi-column filter
       // (preservedFilterRef might be set by handleJoinOperatorSelect, but we should use CASE 3)
-      // Use scalable check: activeConditionIndex (with fallback to deprecated isSecondOperator)
+      // Use scalable check: activeConditionIndex > 0
       if (preservedFilterRef.current && !isBuildingConditionN(searchMode)) {
         handleOperatorSelectEditFirst(
           operator,
@@ -946,7 +954,7 @@ export function useSelectionHandlers(
       // CASE 3: Selecting operator for condition[N] in partial multi-condition
       // Note: Don't require isConfirmed - when building new multi-column filter,
       // the pattern is "#col1 #op1 val1 #and #col2 #" which has no ## marker
-      // Use scalable check: activeConditionIndex > 0 (with fallback to deprecated isSecondOperator)
+      // Use scalable check: activeConditionIndex > 0
       if (
         isBuildingConditionN(searchMode) &&
         searchMode.partialJoin &&
@@ -984,12 +992,15 @@ export function useSelectionHandlers(
       let newValue: string;
 
       // CASE 1: Editing join with preserved filter
-      if (preserved && preserved.secondOperator && preserved.columnName) {
+      if (preserved && preserved.condition1Operator && preserved.columnName) {
         const columnName = preserved.columnName;
-        const secondCol = preserved.secondColumnField;
-        const isMultiColumn = preserved.wasMultiColumn && secondCol;
+        const cond1Col = preserved.condition1Field;
+        const isMultiColumn = preserved.wasMultiColumn && cond1Col;
 
-        if (preserved.secondValue && preserved.secondValue.trim() !== '') {
+        if (
+          preserved.condition1Value &&
+          preserved.condition1Value.trim() !== ''
+        ) {
           // Full multi-condition
           if (isMultiColumn) {
             newValue = PatternBuilder.buildMultiColumnWithValueTo(
@@ -998,10 +1009,10 @@ export function useSelectionHandlers(
               preserved.value,
               preserved.valueTo,
               joinOperator,
-              secondCol!,
-              preserved.secondOperator,
-              preserved.secondValue,
-              preserved.secondValueTo
+              cond1Col!,
+              preserved.condition1Operator,
+              preserved.condition1Value,
+              preserved.condition1ValueTo
             );
           } else {
             newValue = PatternBuilder.buildMultiConditionWithValueTo(
@@ -1010,18 +1021,18 @@ export function useSelectionHandlers(
               preserved.value,
               preserved.valueTo,
               joinOperator,
-              preserved.secondOperator,
-              preserved.secondValue,
-              preserved.secondValueTo
+              preserved.condition1Operator,
+              preserved.condition1Value,
+              preserved.condition1ValueTo
             );
           }
         } else {
           // Partial multi-condition
           if (preserved.valueTo) {
             if (isMultiColumn) {
-              newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOperator.toLowerCase()} #${secondCol} #${preserved.secondOperator} `;
+              newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOperator.toLowerCase()} #${cond1Col} #${preserved.condition1Operator} `;
             } else {
-              newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOperator.toLowerCase()} #${preserved.secondOperator} `;
+              newValue = `#${columnName} #${preserved.operator} ${preserved.value} #to ${preserved.valueTo} #${joinOperator.toLowerCase()} #${preserved.condition1Operator} `;
             }
           } else {
             if (isMultiColumn) {
@@ -1030,8 +1041,8 @@ export function useSelectionHandlers(
                 preserved.operator,
                 preserved.value,
                 joinOperator,
-                secondCol!,
-                preserved.secondOperator
+                cond1Col!,
+                preserved.condition1Operator
               );
             } else {
               newValue = PatternBuilder.partialMultiWithOperator(
@@ -1039,7 +1050,7 @@ export function useSelectionHandlers(
                 preserved.operator,
                 preserved.value,
                 joinOperator,
-                preserved.secondOperator
+                preserved.condition1Operator
               );
             }
           }

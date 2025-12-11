@@ -3,9 +3,9 @@ export type BadgeType =
   | 'operator'
   | 'value'
   | 'separator' // For "to" text between Between values
-  | 'valueSecond' // For second value in Between operator
+  | 'valueTo' // For "to" value in Between operator
   | 'join'
-  | 'secondOperator';
+  | 'operatorN'; // Operator at condition index > 0
 
 export type BadgeColorScheme = {
   bg: string;
@@ -39,7 +39,7 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     hoverBg: 'hover:bg-slate-100', // No hover effect for separator
     glow: '', // Separator cannot be selected
   },
-  valueSecond: {
+  valueTo: {
     bg: 'bg-gray-100',
     text: 'text-gray-700',
     hoverBg: 'hover:bg-gray-200',
@@ -51,7 +51,7 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     hoverBg: 'hover:bg-orange-200',
     glow: 'shadow-[0_0_12px_rgba(251,146,60,0.5),0_0_24px_rgba(251,146,60,0.3)]',
   },
-  secondOperator: {
+  operatorN: {
     bg: 'bg-blue-100',
     text: 'text-blue-700',
     hoverBg: 'hover:bg-blue-200',
