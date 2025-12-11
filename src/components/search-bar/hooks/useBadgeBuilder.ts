@@ -195,23 +195,25 @@ function getValueBadgeHandlers(
 
 /**
  * Get badge ID for value badges.
- * Uses consistent IDs for AnimatePresence compatibility.
+ * Uses consistent index-based IDs for AnimatePresence compatibility.
+ * Format: condition-{index}-value or condition-{index}-value-{from|to}
  */
 function getValueBadgeId(
   conditionIndex: number,
   isValueTo: boolean,
   isBetween: boolean
 ): string {
-  const prefix = conditionIndex === 0 ? '' : 'second-';
-  if (!isBetween) return `${prefix}value`.replace(/^-/, '') || 'value';
-  return `${prefix}value-${isValueTo ? 'to' : 'from'}`.replace(/^-/, '');
+  const prefix = `condition-${conditionIndex}`;
+  if (!isBetween) return `${prefix}-value`;
+  return `${prefix}-value-${isValueTo ? 'to' : 'from'}`;
 }
 
 /**
  * Get badge ID for separator badges.
+ * Format: condition-{index}-separator
  */
 function getSeparatorBadgeId(conditionIndex: number): string {
-  return conditionIndex === 0 ? 'separator' : 'second-separator';
+  return `condition-${conditionIndex}-separator`;
 }
 
 /**
@@ -292,7 +294,7 @@ export const useBadgeBuilder = (
       searchMode.selectedColumn
     ) {
       badges.push({
-        id: 'column',
+        id: 'condition-0-column',
         type: 'column',
         label:
           filter?.column.headerName ||
@@ -322,7 +324,7 @@ export const useBadgeBuilder = (
           const secondColumnLabel =
             condition.column?.headerName || filter.column.headerName;
           badges.push({
-            id: 'second-column',
+            id: 'condition-1-column',
             type: 'column',
             label: secondColumnLabel,
             onClear:
@@ -334,10 +336,10 @@ export const useBadgeBuilder = (
         }
 
         // Operator badge for this condition
-        // Use consistent IDs: 'operator' for first, 'second-operator' for second
+        // Use index-based IDs: 'condition-0-operator', 'condition-1-operator', etc.
         // This ensures AnimatePresence doesn't see them as new badges on state transitions
         badges.push({
-          id: index === 0 ? 'operator' : 'second-operator',
+          id: `condition-${index}-operator`,
           type: 'operator',
           label: operatorLabel,
           onClear:
@@ -402,10 +404,10 @@ export const useBadgeBuilder = (
           }
         }
 
-        // Join badge between conditions (not after last one) - use consistent ID
+        // Join badge between conditions (not after last one) - use index-based ID
         if (index < filter.conditions!.length - 1) {
           badges.push({
-            id: 'join',
+            id: `join-${index}`,
             type: 'join',
             label: filter.joinOperator || '',
             onClear: handlers.onClearPartialJoin,
@@ -443,7 +445,7 @@ export const useBadgeBuilder = (
       );
 
       badges.push({
-        id: 'operator',
+        id: 'condition-0-operator',
         type: 'operator',
         label: operatorLabel,
         onClear: handlers.onClearOperator,
@@ -541,9 +543,10 @@ export const useBadgeBuilder = (
     }
 
     // 5. Join Badge (Orange) - AND/OR
+    // Use 'join-0' for the join between condition 0 and condition 1
     if (searchMode.partialJoin) {
       badges.push({
-        id: 'join',
+        id: 'join-0',
         type: 'join',
         label: searchMode.partialJoin,
         onClear: handlers.onClearPartialJoin,
@@ -556,10 +559,9 @@ export const useBadgeBuilder = (
     // 6. Condition[1] Column Badge (Purple) - MULTI-COLUMN SUPPORT
     // Always show condition[1] column badge when it exists (even if same as first column)
     // Use scalable helper: getConditionAt(searchMode, 1).column
-    // NOTE: Keep ID as 'second-column' for ref assignment compatibility (SearchBadge.tsx line 293)
     if (condition1.column) {
       badges.push({
-        id: 'second-column', // Keep for ref compatibility - TODO: migrate to 'condition-1-column'
+        id: 'condition-1-column',
         type: 'column', // Same type as first column badge
         label: condition1.column.headerName,
         onClear: handlers.onClearSecondColumn || handlers.onClearSecondOperator, // TODO: onClearColumn(1)
@@ -571,7 +573,6 @@ export const useBadgeBuilder = (
 
     // 7. Condition[1] Operator Badge (Blue)
     // Use scalable helper: getConditionAt(searchMode, 1).operator
-    // NOTE: Keep ID as 'second-operator' for ref assignment compatibility (SearchBadge.tsx line 295)
     if (condition1.operator && filter) {
       // For multi-column, use condition1.column for operator label
       const columnForLabel = condition1.column || filter.column;
@@ -581,7 +582,7 @@ export const useBadgeBuilder = (
       );
 
       badges.push({
-        id: 'second-operator', // Keep for ref compatibility - TODO: migrate to 'condition-1-operator'
+        id: 'condition-1-operator',
         type: 'secondOperator',
         label: operatorLabel,
         onClear: handlers.onClearSecondOperator, // TODO: onClearOperator(1)
@@ -606,7 +607,7 @@ export const useBadgeBuilder = (
       // Value-from badge (not editable while typing)
       badges.push(
         createValueBadgeConfig(
-          'second-value-from', // Keep for consistency - TODO: migrate to 'condition-1-value-from'
+          'condition-1-value-from',
           condition1.value,
           'value',
           { onClear: handlers.onClearSecondValue, canEdit: false }, // TODO: onClearValue(1)
