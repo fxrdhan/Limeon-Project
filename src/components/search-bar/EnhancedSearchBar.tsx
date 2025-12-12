@@ -157,6 +157,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     secondOperatorBadgeRef,
     // Dynamic Lazy Ref for N-Condition Selector Positioning
     getConditionNColumnRef,
+    getConditionNOperatorRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -221,7 +222,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
     };
 
+  // N-condition support: detect editing operator for any condition index
+  // Check preservedSearchMode (edit mode) + showOperatorSelector + activeConditionIndex
+  // IMPORTANT: This must be checked BEFORE isCreatingConditionNOp because both can be true,
+  // but edit mode takes precedence
+  const isEditingConditionNOperator =
+    preservedSearchMode !== null &&
+    searchMode.showOperatorSelector &&
+    activeConditionIndex >= 1;
+
+  // Creating operator - only when NOT in edit mode
   const isCreatingConditionNOp =
+    !isEditingConditionNOperator && // NOT editing
     isBuildingConditionN &&
     hasActiveConditionColumn &&
     searchMode.showOperatorSelector;
@@ -229,18 +241,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
-  if (isCreatingConditionNOp) {
-    // Creating/selecting operator for condition[N]: position after column badge
+  if (isEditingConditionNOperator) {
+    // EDIT existing operator for condition N: position below the OPERATOR badge being edited
+    // Use dynamic ref for N >= 2, static refs for 0 and 1
+    if (activeConditionIndex === 1) {
+      operatorAnchorRef = secondOperatorBadgeRef;
+    } else if (activeConditionIndex >= 2) {
+      operatorAnchorRef = getConditionNOperatorRef(activeConditionIndex);
+    } else {
+      operatorAnchorRef = operatorBadgeRef;
+    }
+    operatorAnchorAlign = 'left';
+  } else if (isCreatingConditionNOp) {
+    // CREATE/select operator for condition[N]: position after column badge
     operatorAnchorRef = getConditionColumnAnchorRef();
     operatorAnchorAlign = 'right';
-  } else if (isEditingSecondOperator && searchMode.showOperatorSelector) {
-    // Edit existing operator: position below operator badge
-    // For condition 1, use static ref; for N >= 2, use lazy column ref as fallback
-    operatorAnchorRef =
-      activeConditionIndex <= 1
-        ? secondOperatorBadgeRef
-        : getConditionNColumnRef(activeConditionIndex); // Fallback to column ref
-    operatorAnchorAlign = activeConditionIndex <= 1 ? 'left' : 'right';
   } else {
     // First operator: position after column badge
     operatorAnchorRef = badgeRef;
@@ -327,6 +342,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onFilterSearch,
     onClearSearch,
     columns: memoizedColumns,
+    setEditingSelectorTarget,
   });
 
   // Note: Scalable handlers (clearConditionPart, clearJoin, etc.) are passed directly
@@ -2337,6 +2353,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected operator index when in edit mode
   const defaultOperatorIndex = useMemo(() => {
+    // N-condition support: Check if editing condition N's operator (N >= 2)
+    const editingIdx = searchMode.activeConditionIndex;
+    if (
+      editingIdx !== undefined &&
+      editingIdx >= 2 &&
+      preservedSearchMode?.filterSearch?.conditions?.[editingIdx]
+    ) {
+      const condNOperator =
+        preservedSearchMode.filterSearch.conditions[editingIdx].operator;
+      if (condNOperator) {
+        const index = operators.findIndex(op => op.value === condNOperator);
+        return index >= 0 ? index : undefined;
+      }
+    }
+
     // If editing condition[1] operator in confirmed multi-condition, get from conditions array
     if (
       isEditingSecondOperator &&
@@ -2365,7 +2396,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, isEditingSecondOperator, operators]);
+  }, [
+    preservedSearchMode,
+    isEditingSecondOperator,
+    operators,
+    searchMode.activeConditionIndex,
+  ]);
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {

@@ -1140,6 +1140,59 @@ export function useSelectionHandlers(
         return;
       }
 
+      // CASE 2b-EDIT: EDITING condition N's operator (N >= 2)
+      // When preservedFilterRef has the condition we're editing, rebuild pattern with new operator
+      const activeIdx = searchMode.activeConditionIndex ?? 0;
+      const isEditingConditionNOperator =
+        activeIdx >= 2 &&
+        searchMode.showOperatorSelector &&
+        preservedFilterRef.current?.conditions?.[activeIdx];
+
+      if (isEditingConditionNOperator) {
+        const preserved = preservedFilterRef.current!;
+        const conditions = preserved.conditions!;
+        const joins = preserved.joins || [];
+        const defaultField =
+          conditions[0]?.field || searchMode.filterSearch?.field || '';
+
+        // Build updated conditions array with new operator at edited index
+        const updatedConditions = conditions.map((cond, idx) => {
+          if (idx === activeIdx) {
+            // Replace operator for this condition, keep column and value
+            return {
+              field: cond.field || '',
+              operator: operator.value,
+              value: cond.value || '',
+              valueTo: cond.valueTo,
+            };
+          }
+          return {
+            field: cond.field || '',
+            operator: cond.operator || '',
+            value: cond.value || '',
+            valueTo: cond.valueTo,
+          };
+        });
+
+        // Build full pattern with updated operator
+        const newValue = PatternBuilder.buildNConditions(
+          updatedConditions,
+          joins,
+          preserved.isMultiColumn || true, // Likely multi-column for N >= 2
+          defaultField,
+          { confirmed: true }
+        );
+
+        preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
+        setFilterValue(newValue, onChange, inputRef);
+
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+        return;
+      }
+
       // CASE 3a: Selecting operator for condition N+1 (adding to existing multi-condition)
       // When we have 2+ complete conditions and selecting operator for the new condition
       const filter = searchMode.filterSearch;
@@ -1161,9 +1214,9 @@ export function useSelectionHandlers(
       // if findColumn didn't find the column during parsing
       const isAddingOperatorToNewCondition =
         hasMultipleCompleteConditions &&
-        searchMode.activeConditionIndex !== undefined &&
-        searchMode.activeConditionIndex >= 2 &&
+        activeIdx >= 2 &&
         searchMode.showOperatorSelector && // Operator selector is open
+        !preservedFilterRef.current?.conditions?.[activeIdx] && // NOT editing
         (lastPartialCondition?.column || // Has column (parsing succeeded)
           (searchMode.selectedColumn && // Or selectedColumn is set (fallback)
             partialConditionsCount >= 3)); // And we have enough partial conditions
@@ -1257,7 +1310,7 @@ export function useSelectionHandlers(
       // Note: Don't require isConfirmed - when building new multi-column filter,
       // the pattern is "#col1 #op1 val1 #and #col2 #" which has no ## marker
       // IMPORTANT: Only for condition 1 (index 1), NOT for condition 2+ which should use CASE 3a
-      const activeIdx = searchMode.activeConditionIndex ?? 0;
+      // Note: activeIdx is already defined above in CASE 2b-EDIT
       if (
         activeIdx === 1 && // Only for condition 1, not condition 2+
         isBuildingConditionN(searchMode) &&
