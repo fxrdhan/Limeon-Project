@@ -443,20 +443,19 @@ export const useBadgeBuilder = (
         // Operator badge for this condition
         // Use index-based IDs: 'condition-0-operator', 'condition-1-operator', etc.
         // This ensures AnimatePresence doesn't see them as new badges on state transitions
+        // IMPORTANT: Use scalable handlers for N-condition support
+        const operatorHandlers = getOperatorBadgeHandlers(
+          handlers,
+          index,
+          filter.conditions!.length
+        );
         badges.push({
           id: `condition-${index}-operator`,
           type: 'operator',
           label: operatorLabel,
-          onClear:
-            index === 0
-              ? handlers.onClearOperator // First operator: clear to column with operator selector
-              : index === filter.conditions!.length - 1 &&
-                  filter.conditions!.length === 2
-                ? handlers.onClearCondition1Operator
-                : handlers.onClearAll,
+          onClear: operatorHandlers.onClear,
           canClear: true,
-          onEdit: () =>
-            handlers.onEditOperator(index > 0 && filter.isMultiCondition),
+          onEdit: operatorHandlers.onEdit,
           canEdit: true, // Operator badges are editable
         });
 

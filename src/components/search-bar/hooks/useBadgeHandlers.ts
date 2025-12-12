@@ -47,6 +47,10 @@ export interface UseBadgeHandlersProps {
   onClearSearch?: () => void;
   /** Available columns */
   columns: SearchColumn[];
+  /** Set which condition's column/operator is being edited (for N-condition support) */
+  setEditingSelectorTarget?: (
+    target: { conditionIndex: number; target: 'column' | 'operator' } | null
+  ) => void;
 }
 
 export interface BadgeHandlersReturn {
@@ -100,6 +104,7 @@ export function useBadgeHandlers(
     onClearPreservedState,
     onFilterSearch,
     onClearSearch,
+    setEditingSelectorTarget,
   } = props;
 
   // ============ Helper: Get effective state ============
@@ -396,6 +401,12 @@ export function useBadgeHandlers(
       // Extract and preserve filter data
       preservedFilterRef.current = extractMultiConditionPreservation(state);
 
+      // Track which condition's column/operator is being edited
+      // This is used for correct selector positioning in N-condition editing
+      if (target === 'column' || target === 'operator') {
+        setEditingSelectorTarget?.({ conditionIndex, target });
+      }
+
       const filter = state.filterSearch;
       const columnName = filter?.field || state.selectedColumn?.field || '';
 
@@ -550,6 +561,7 @@ export function useBadgeHandlers(
       preservedFilterRef,
       onChange,
       inputRef,
+      setEditingSelectorTarget,
     ]
   );
 
