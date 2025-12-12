@@ -109,6 +109,25 @@ function restoreMultiConditionPattern(
   columnName: string
 ): string {
   const conditions = filter.conditions!;
+
+  // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditionsPattern
+  // This ensures all conditions are restored when closing modal without selection
+  if (conditions.length >= 3) {
+    // Build joins array from filter.joins or use joinOperator as fallback
+    const joins: ('AND' | 'OR')[] =
+      filter.joins ||
+      Array(conditions.length - 1).fill(filter.joinOperator || 'AND');
+
+    return buildNConditionsPattern(
+      conditions,
+      joins,
+      filter.isMultiColumn || false,
+      columnName,
+      true // confirmed
+    );
+  }
+
+  // Legacy 2-condition handling for backward compatibility
   const cond1 = conditions[0];
   const cond2 = conditions[1];
   const join = filter.joinOperator || 'AND';
