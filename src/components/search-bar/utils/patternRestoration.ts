@@ -99,6 +99,7 @@ function restoreSingleConditionPattern(
 
 /**
  * Restore a multi-condition confirmed pattern
+ * UNIFIED N-CONDITION: Use buildNConditionsPattern for ALL multi-condition cases
  *
  * @param filter - The FilterSearch object with conditions array
  * @param columnName - The primary column field name
@@ -110,93 +111,18 @@ function restoreMultiConditionPattern(
 ): string {
   const conditions = filter.conditions!;
 
-  // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditionsPattern
-  // This ensures all conditions are restored when closing modal without selection
-  if (conditions.length >= 3) {
-    // Build joins array from filter.joins or use joinOperator as fallback
-    const joins: ('AND' | 'OR')[] =
-      filter.joins ||
-      Array(conditions.length - 1).fill(filter.joinOperator || 'AND');
+  // Build joins array from filter.joins or use joinOperator as fallback
+  const joins: ('AND' | 'OR')[] =
+    filter.joins ||
+    Array(conditions.length - 1).fill(filter.joinOperator || 'AND');
 
-    return buildNConditionsPattern(
-      conditions,
-      joins,
-      filter.isMultiColumn || false,
-      columnName,
-      true // confirmed
-    );
-  }
-
-  // Legacy 2-condition handling for backward compatibility
-  const cond1 = conditions[0];
-  const cond2 = conditions[1];
-  const join = filter.joinOperator || 'AND';
-
-  // Determine column fields for each condition
-  const col1Field = cond1.field || columnName;
-  const col2Field = cond2.field || columnName;
-
-  if (filter.isMultiColumn) {
-    // Multi-column pattern: #col1 #op1 val1 #join #col2 #op2 val2##
-    return buildMultiColumnPattern(col1Field, cond1, join, col2Field, cond2);
-  }
-
-  // Same-column pattern: #col #op1 val1 #join #op2 val2##
-  return buildSameColumnPattern(columnName, cond1, join, cond2);
-}
-
-/**
- * Build multi-column pattern string
- */
-function buildMultiColumnPattern(
-  col1Field: string,
-  cond1: FilterCondition,
-  join: string,
-  col2Field: string,
-  cond2: FilterCondition
-): string {
-  const firstPart = buildConditionPart(
-    col1Field,
-    cond1.operator,
-    cond1.value,
-    cond1.valueTo
-  );
-
-  const secondPart = buildConditionPart(
-    col2Field,
-    cond2.operator,
-    cond2.value,
-    cond2.valueTo
-  );
-
-  return `${firstPart} #${join.toLowerCase()} ${secondPart}##`;
-}
-
-/**
- * Build same-column pattern string
- */
-function buildSameColumnPattern(
-  columnName: string,
-  cond1: FilterCondition,
-  join: string,
-  cond2: FilterCondition
-): string {
-  // First condition with field
-  const firstPart = buildConditionPart(
+  return buildNConditionsPattern(
+    conditions,
+    joins,
+    filter.isMultiColumn || false,
     columnName,
-    cond1.operator,
-    cond1.value,
-    cond1.valueTo
+    true // confirmed
   );
-
-  // Second condition without field (same column)
-  const secondPart = buildConditionPartNoField(
-    cond2.operator,
-    cond2.value,
-    cond2.valueTo
-  );
-
-  return `${firstPart} #${join.toLowerCase()} ${secondPart}##`;
 }
 
 /**

@@ -1588,277 +1588,56 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         return;
       }
 
-      // CASE 2: Multi-condition filter
+      // CASE 2: Multi-condition filter (unified N-condition handling)
       const conditions = stateToUse.filterSearch.conditions!;
-      const firstCondition = conditions[0];
-      const secondCond = conditions[1];
-      const joinOp = stateToUse.filterSearch.joinOperator || 'AND';
-      const joins = stateToUse.filterSearch.joins || [joinOp];
-
-      // Determine column fields - check if multi-column filter
-      const col1 = firstCondition.field || columnName;
-      const col2 = secondCond.field || columnName;
-      // Use isMultiColumn directly - it's set true for explicit multi-column patterns
-      // even when col1 == col2 (preserves the explicit condition[1] column badge)
+      const joins = stateToUse.filterSearch.joins || [
+        stateToUse.filterSearch.joinOperator || 'AND',
+      ];
       const isMultiColumn = stateToUse.filterSearch.isMultiColumn;
-
-      let newPattern: string;
-
-      // Use index-based checks for N-condition support
-      const isEditingCondition0 = editingBadge.conditionIndex === 0;
-      const isEditingCondition1 = editingBadge.conditionIndex === 1;
       const isEditingValue = editingBadge.field === 'value';
       const isEditingValueTo = editingBadge.field === 'valueTo';
 
-      // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditions for ALL edits
-      // This ensures condition 2+ are preserved when editing condition 0 or 1
-      if (conditions.length >= 3) {
-        // Build updated conditions array with new value at edited index
-        const updatedConditions = conditions.map((cond, idx) => {
-          if (idx === editingBadge.conditionIndex) {
-            let newValue = isEditingValue ? valueToUse : cond.value;
-            let newValueTo = isEditingValueTo ? valueToUse : cond.valueTo;
+      // UNIFIED N-CONDITION HANDLING: Use buildNConditions for ALL multi-condition edits
+      // Build updated conditions array with new value at edited index
+      const updatedConditions = conditions.map((cond, idx) => {
+        if (idx === editingBadge.conditionIndex) {
+          let newValue = isEditingValue ? valueToUse : cond.value;
+          let newValueTo = isEditingValueTo ? valueToUse : cond.valueTo;
 
-            // Handle dash pattern for Between operator
-            if (cond.operator === 'inRange' && isEditingValue) {
-              const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
-              if (dashMatch) {
-                const [, fromVal, toVal] = dashMatch;
-                if (fromVal.trim() && toVal.trim()) {
-                  newValue = fromVal.trim();
-                  newValueTo = toVal.trim();
-                }
+          // Handle dash pattern for Between operator
+          if (cond.operator === 'inRange' && isEditingValue) {
+            const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
+            if (dashMatch) {
+              const [, fromVal, toVal] = dashMatch;
+              if (fromVal.trim() && toVal.trim()) {
+                newValue = fromVal.trim();
+                newValueTo = toVal.trim();
               }
             }
-
-            return {
-              field: cond.field || '',
-              operator: cond.operator || '',
-              value: newValue || '',
-              valueTo: newValueTo,
-            };
           }
+
           return {
             field: cond.field || '',
             operator: cond.operator || '',
-            value: cond.value || '',
-            valueTo: cond.valueTo,
+            value: newValue || '',
+            valueTo: newValueTo,
           };
-        });
-
-        newPattern = PatternBuilder.buildNConditions(
-          updatedConditions,
-          joins,
-          isMultiColumn || true,
-          columnName,
-          { confirmed: true }
-        );
-
-        onChange({
-          target: { value: newPattern },
-        } as React.ChangeEvent<HTMLInputElement>);
-        setEditingBadge(null);
-        setPreservedSearchMode(null);
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, 50);
-        return;
-      }
-
-      // CASE 2a: 2-condition filter (legacy handling)
-      // Handle editing first condition
-      if (isEditingCondition0 && isEditingValue) {
-        // Editing first condition's "from" value
-        let firstValue = valueToUse;
-        let firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
-
-        // Check for dash pattern in Between operator (e.g., "500-600")
-        if (firstCondition.operator === 'inRange') {
-          const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
-          if (dashMatch) {
-            const [, fromVal, toVal] = dashMatch;
-            const trimmedFrom = fromVal.trim();
-            const trimmedTo = toVal.trim();
-            if (trimmedFrom && trimmedTo) {
-              firstValue = trimmedFrom;
-              firstValueTo = trimmedTo;
-            }
-          }
         }
+        return {
+          field: cond.field || '',
+          operator: cond.operator || '',
+          value: cond.value || '',
+          valueTo: cond.valueTo,
+        };
+      });
 
-        if (isMultiColumn) {
-          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
-            col1,
-            firstCondition.operator,
-            firstValue,
-            firstValueTo,
-            joinOp,
-            col2,
-            secondCond.operator,
-            secondCond.value,
-            secondCond.valueTo
-          );
-        } else {
-          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-            columnName,
-            firstCondition.operator,
-            firstValue,
-            firstValueTo,
-            joinOp,
-            secondCond.operator,
-            secondCond.value,
-            secondCond.valueTo
-          );
-        }
-      } else if (isEditingCondition0 && isEditingValueTo) {
-        // Editing first condition's "to" value (Between operator)
-        if (isMultiColumn) {
-          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
-            col1,
-            firstCondition.operator,
-            firstCondition.value, // Preserve "from" value
-            valueToUse, // Updated "to" value
-            joinOp,
-            col2,
-            secondCond.operator,
-            secondCond.value,
-            secondCond.valueTo
-          );
-        } else {
-          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-            columnName,
-            firstCondition.operator,
-            firstCondition.value, // Preserve "from" value
-            valueToUse, // Updated "to" value
-            joinOp,
-            secondCond.operator,
-            secondCond.value,
-            secondCond.valueTo
-          );
-        }
-      } else if (isEditingCondition1 && isEditingValue) {
-        // Editing condition[1]'s "from" value
-        let cond1Val = valueToUse;
-        let cond1ValTo = secondCond.valueTo; // Preserve "to" if exists
-
-        // Check for dash pattern in Between operator (e.g., "500-600")
-        if (secondCond.operator === 'inRange') {
-          const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
-          if (dashMatch) {
-            const [, fromVal, toVal] = dashMatch;
-            const trimmedFrom = fromVal.trim();
-            const trimmedTo = toVal.trim();
-            if (trimmedFrom && trimmedTo) {
-              cond1Val = trimmedFrom;
-              cond1ValTo = trimmedTo;
-            }
-          }
-        }
-
-        if (isMultiColumn) {
-          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
-            col1,
-            firstCondition.operator,
-            firstCondition.value,
-            firstCondition.valueTo,
-            joinOp,
-            col2,
-            secondCond.operator,
-            cond1Val,
-            cond1ValTo
-          );
-        } else {
-          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-            columnName,
-            firstCondition.operator,
-            firstCondition.value,
-            firstCondition.valueTo,
-            joinOp,
-            secondCond.operator,
-            cond1Val,
-            cond1ValTo
-          );
-        }
-      } else if (isEditingCondition1 && isEditingValueTo) {
-        // Editing condition[1]'s "to" value (Between operator)
-        if (isMultiColumn) {
-          newPattern = PatternBuilder.buildMultiColumnWithValueTo(
-            col1,
-            firstCondition.operator,
-            firstCondition.value,
-            firstCondition.valueTo,
-            joinOp,
-            col2,
-            secondCond.operator,
-            secondCond.value, // Preserve "from" value
-            valueToUse // Updated "to" value
-          );
-        } else {
-          newPattern = PatternBuilder.buildMultiConditionWithValueTo(
-            columnName,
-            firstCondition.operator,
-            firstCondition.value,
-            firstCondition.valueTo,
-            joinOp,
-            secondCond.operator,
-            secondCond.value, // Preserve "from" value
-            valueToUse // Updated "to" value
-          );
-        }
-      } else if (editingBadge.conditionIndex >= 2) {
-        // Editing condition[N]'s value (N >= 2) - N-condition support
-        const conditions = stateToUse.filterSearch.conditions!;
-        const joins = stateToUse.filterSearch.joins || [joinOp];
-
-        // Build updated conditions array with new value at edited index
-        const updatedConditions = conditions.map((cond, idx) => {
-          if (idx === editingBadge.conditionIndex) {
-            // Update this condition with new value
-            let newValue = valueToUse;
-            let newValueTo = cond.valueTo;
-
-            // Handle dash pattern for Between operator
-            if (cond.operator === 'inRange' && isEditingValue) {
-              const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
-              if (dashMatch) {
-                const [, fromVal, toVal] = dashMatch;
-                const trimmedFrom = fromVal.trim();
-                const trimmedTo = toVal.trim();
-                if (trimmedFrom && trimmedTo) {
-                  newValue = trimmedFrom;
-                  newValueTo = trimmedTo;
-                }
-              }
-            }
-
-            return {
-              field: cond.field,
-              operator: cond.operator,
-              value: isEditingValue ? newValue : cond.value,
-              valueTo: isEditingValueTo ? valueToUse : newValueTo,
-            };
-          }
-          return {
-            field: cond.field,
-            operator: cond.operator,
-            value: cond.value,
-            valueTo: cond.valueTo,
-          };
-        });
-
-        // Build pattern using N-condition builder
-        newPattern = PatternBuilder.buildNConditions(
-          updatedConditions,
-          joins,
-          stateToUse.filterSearch.isMultiColumn || false,
-          columnName,
-          { confirmed: true }
-        );
-      } else {
-        // Fallback - shouldn't reach here
-        setEditingBadge(null);
-        return;
-      }
+      const newPattern = PatternBuilder.buildNConditions(
+        updatedConditions,
+        joins,
+        isMultiColumn || false,
+        columnName,
+        { confirmed: true }
+      );
 
       onChange({
         target: { value: newPattern },
