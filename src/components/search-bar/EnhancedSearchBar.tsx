@@ -1160,6 +1160,84 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     });
   }, [searchMode, preservedSearchMode]);
 
+  // Scalable handler for editing value badges at any condition index
+  // This enables inline editing for N-condition support (condition 2, 3, 4, etc.)
+  const handleEditValueN = useCallback(
+    (conditionIndex: number, target: 'value' | 'valueTo') => {
+      // Delegate to existing handlers for condition 0 and 1
+      if (conditionIndex === 0) {
+        if (target === 'value') {
+          handleEditValue();
+        } else {
+          handleEditValueTo();
+        }
+        return;
+      }
+      if (conditionIndex === 1) {
+        if (target === 'value') {
+          handleEditCondition1Value();
+        } else {
+          handleEditCondition1ValueTo();
+        }
+        return;
+      }
+
+      // For condition N (N >= 2): similar logic to handleEditCondition1Value
+      const stateToUse = preservedSearchMode || searchMode;
+
+      if (
+        !stateToUse.filterSearch ||
+        !stateToUse.filterSearch.isMultiCondition ||
+        !stateToUse.filterSearch.conditions ||
+        stateToUse.filterSearch.conditions.length <= conditionIndex
+      ) {
+        return;
+      }
+
+      const conditionN = stateToUse.filterSearch.conditions[conditionIndex];
+      const valueToEdit =
+        target === 'value' ? conditionN.value : conditionN.valueTo;
+
+      if (!valueToEdit) return;
+
+      // Preserve current state for inline edit completion
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(stateToUse);
+      }
+
+      // If we're in edit mode (modal open), restore the confirmed pattern first
+      if (
+        preservedSearchMode &&
+        preservedSearchMode.filterSearch?.isConfirmed
+      ) {
+        const filter = preservedSearchMode.filterSearch;
+        const restoredPattern = restoreConfirmedPattern(filter);
+
+        onChange({
+          target: { value: restoredPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        setPreservedSearchMode(null);
+      }
+
+      // Enter inline editing mode for condition[N]
+      setEditingBadge({
+        conditionIndex,
+        field: target,
+        value: valueToEdit,
+      });
+    },
+    [
+      searchMode,
+      preservedSearchMode,
+      handleEditValue,
+      handleEditValueTo,
+      handleEditCondition1Value,
+      handleEditCondition1ValueTo,
+      onChange,
+    ]
+  );
+
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
     setEditingBadge(prev => (prev ? { ...prev, value: newValue } : null));
@@ -1648,6 +1726,55 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             valueToUse // Updated "to" value
           );
         }
+      } else if (editingBadge.conditionIndex >= 2) {
+        // Editing condition[N]'s value (N >= 2) - N-condition support
+        const conditions = stateToUse.filterSearch.conditions!;
+        const joins = stateToUse.filterSearch.joins || [joinOp];
+
+        // Build updated conditions array with new value at edited index
+        const updatedConditions = conditions.map((cond, idx) => {
+          if (idx === editingBadge.conditionIndex) {
+            // Update this condition with new value
+            let newValue = valueToUse;
+            let newValueTo = cond.valueTo;
+
+            // Handle dash pattern for Between operator
+            if (cond.operator === 'inRange' && isEditingValue) {
+              const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
+              if (dashMatch) {
+                const [, fromVal, toVal] = dashMatch;
+                const trimmedFrom = fromVal.trim();
+                const trimmedTo = toVal.trim();
+                if (trimmedFrom && trimmedTo) {
+                  newValue = trimmedFrom;
+                  newValueTo = trimmedTo;
+                }
+              }
+            }
+
+            return {
+              field: cond.field,
+              operator: cond.operator,
+              value: isEditingValue ? newValue : cond.value,
+              valueTo: isEditingValueTo ? valueToUse : newValueTo,
+            };
+          }
+          return {
+            field: cond.field,
+            operator: cond.operator,
+            value: cond.value,
+            valueTo: cond.valueTo,
+          };
+        });
+
+        // Build pattern using N-condition builder
+        newPattern = PatternBuilder.buildNConditions(
+          updatedConditions,
+          joins,
+          stateToUse.filterSearch.isMultiColumn || false,
+          columnName,
+          { confirmed: true }
+        );
       } else {
         // Fallback - shouldn't reach here
         setEditingBadge(null);
@@ -2356,6 +2483,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               clearJoin={clearJoin}
               editConditionPart={editConditionPart}
               editJoin={editJoin}
+              editValueN={handleEditValueN}
               // Legacy handlers
               onClearColumn={badgeHandlers.onClearColumn}
               onClearOperator={badgeHandlers.onClearOperator}

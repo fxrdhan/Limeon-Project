@@ -17,6 +17,8 @@ interface ScalableHandlers {
   editConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
   /** Edit a join at given index */
   editJoin: (joinIndex: number) => void;
+  /** Edit value badge at given index (triggers inline editing) */
+  editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
 }
 
 // ============ Legacy Handler Types (for backward compatibility) ============
@@ -160,13 +162,23 @@ function getValueBadgeHandlers(
   const isLast = conditionIndex === totalConditions - 1;
   const isTwoConditions = totalConditions === 2;
 
-  // For value editing: use legacy handlers (onEditValue/onEditCondition1Value)
-  // because they properly enter inline edit mode via setEditingBadge.
-  // The scalable editConditionPart for 'value' target only sets up state,
-  // but doesn't trigger inline editing.
+  // For value editing: prefer scalable editValueN handler when available.
+  // This properly triggers inline editing via setEditingBadge with correct conditionIndex.
+  // Fall back to legacy handlers (onEditValue/onEditCondition1Value) for backward compatibility.
   // For clearing: prefer scalable handlers if available.
 
+  // Scalable onEdit handler - works for any conditionIndex
+  const scalableOnEdit = handlers.editValueN
+    ? () =>
+        handlers.editValueN!(conditionIndex, isValueTo ? 'valueTo' : 'value')
+    : undefined;
+
   if (isValueTo) {
+    // Legacy fallback for valueTo editing
+    const legacyOnEdit = isFirst
+      ? handlers.onEditValueTo
+      : handlers.onEditCondition1ValueTo;
+
     return {
       onClear: handlers.clearConditionPart
         ? () => handlers.clearConditionPart!(conditionIndex, target)
@@ -174,14 +186,15 @@ function getValueBadgeHandlers(
           ? (handlers.onClearValueTo ?? handlers.onClearValue)
           : (handlers.onClearCondition1ValueTo ??
             handlers.onClearCondition1Value),
-      onEdit: isFirst
-        ? handlers.onEditValueTo
-        : handlers.onEditCondition1ValueTo,
-      canEdit: !!(isFirst
-        ? handlers.onEditValueTo
-        : handlers.onEditCondition1ValueTo),
+      onEdit: scalableOnEdit ?? legacyOnEdit,
+      canEdit: !!(scalableOnEdit ?? legacyOnEdit),
     };
   }
+
+  // Legacy fallback for value editing
+  const legacyOnEdit = isFirst
+    ? handlers.onEditValue
+    : handlers.onEditCondition1Value;
 
   return {
     onClear: handlers.clearConditionPart
@@ -191,7 +204,7 @@ function getValueBadgeHandlers(
         : isLast && isTwoConditions
           ? handlers.onClearCondition1Value
           : handlers.onClearAll,
-    onEdit: isFirst ? handlers.onEditValue : handlers.onEditCondition1Value,
+    onEdit: scalableOnEdit ?? legacyOnEdit,
     canEdit: true,
   };
 }
