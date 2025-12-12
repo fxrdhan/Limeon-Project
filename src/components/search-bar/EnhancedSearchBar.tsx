@@ -155,12 +155,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     joinBadgeRef,
     secondColumnBadgeRef,
     secondOperatorBadgeRef,
+    // Dynamic Lazy Ref for N-Condition Selector Positioning
+    getConditionNColumnRef,
   } = useSearchInput({
     value,
     searchMode,
     onChange,
     inputRef,
   });
+
+  const activeConditionIndex = searchMode.activeConditionIndex ?? 0;
 
   // Column selector: position depends on context
   // - First column: appears at container left (no badge yet)
@@ -187,41 +191,48 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   });
 
   // Operator selector: position below the badges
-  // - First operator: anchor to column badge (badgeRef), align right - appears after column
-  // - Condition[N] operator editing: anchor to condition[N] operator badge, align left - appears below it
-  // - Condition[N] operator creating (multi-column): anchor to condition[N] column badge, align right
-  // - Condition[N] column edited, selecting NEW operator: anchor to condition[N] column badge, align right
+  // - First operator (index 0): anchor to column badge (badgeRef), align right
+  // - Condition[1] operator: anchor to secondColumnBadgeRef
+  // - Condition[N >= 2] operator: anchor to activeConditionColumnRef (dynamic)
   //
-  // Use scalable checks: activeConditionIndex > 0 or partialConditions[1]
-  const hasSecondColumn = searchMode.partialConditions?.[1]?.column;
-  const hasSecondOperator = searchMode.partialConditions?.[1]?.operator;
-  const isBuildingConditionN = (searchMode.activeConditionIndex ?? 0) > 0;
+  // Use scalable checks based on activeConditionIndex
+  const isBuildingConditionN = activeConditionIndex > 0;
+  const hasActiveConditionColumn =
+    searchMode.partialConditions?.[activeConditionIndex]?.column;
 
-  const isEditingConditionNOp =
-    isEditingSecondOperator && searchMode.showOperatorSelector;
-  const isCreatingConditionNOp = isBuildingConditionN && hasSecondColumn;
-  // Check if we're selecting NEW operator for condition[N] column (after editing column)
-  const isSelectingNewOperatorForConditionNColumn =
-    isEditingSecondOperator &&
-    searchMode.showOperatorSelector &&
-    hasSecondColumn &&
-    !hasSecondOperator; // No current condition[N] operator = selecting new one
+  // Determine which anchor ref to use based on activeConditionIndex
+  const getConditionColumnAnchorRef =
+    (): React.RefObject<HTMLDivElement | null> => {
+      if (activeConditionIndex === 0) {
+        return badgeRef; // First condition column
+      } else if (activeConditionIndex === 1) {
+        return secondColumnBadgeRef; // Second condition column (static ref)
+      } else {
+        // N >= 2: use lazy ref that looks up element dynamically from badge map
+        return getConditionNColumnRef(activeConditionIndex);
+      }
+    };
+
+  const isCreatingConditionNOp =
+    isBuildingConditionN &&
+    hasActiveConditionColumn &&
+    searchMode.showOperatorSelector;
 
   let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
-  if (isSelectingNewOperatorForConditionNColumn) {
-    // Selecting NEW operator for condition[N] column: position after column badge
-    operatorAnchorRef = secondColumnBadgeRef;
+  if (isCreatingConditionNOp) {
+    // Creating/selecting operator for condition[N]: position after column badge
+    operatorAnchorRef = getConditionColumnAnchorRef();
     operatorAnchorAlign = 'right';
-  } else if (isEditingConditionNOp) {
-    // Edit existing condition[N] operator: position below operator badge
-    operatorAnchorRef = secondOperatorBadgeRef;
-    operatorAnchorAlign = 'left';
-  } else if (isCreatingConditionNOp) {
-    // Creating condition[N] operator in multi-column: position after column badge
-    operatorAnchorRef = secondColumnBadgeRef;
-    operatorAnchorAlign = 'right';
+  } else if (isEditingSecondOperator && searchMode.showOperatorSelector) {
+    // Edit existing operator: position below operator badge
+    // For condition 1, use static ref; for N >= 2, use lazy column ref as fallback
+    operatorAnchorRef =
+      activeConditionIndex <= 1
+        ? secondOperatorBadgeRef
+        : getConditionNColumnRef(activeConditionIndex); // Fallback to column ref
+    operatorAnchorAlign = activeConditionIndex <= 1 ? 'left' : 'right';
   } else {
     // First operator: position after column badge
     operatorAnchorRef = badgeRef;
@@ -1804,6 +1815,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // CASE 5: User types on confirmed multi-condition filter - enter edit mode for condition[1] value
       // Pattern: #field #op1 val1 #join #op2 val2## → user types → #field #op1 val1 #join #op2 newValue
+      // NOTE: Skip this when building condition 2+ (activeConditionIndex >= 2) to avoid losing partial condition
+      const isBuildingConditionN =
+        searchMode.activeConditionIndex !== undefined &&
+        searchMode.activeConditionIndex >= 2;
+      const hasPartialConditionsBeyondConfirmed =
+        searchMode.partialConditions &&
+        searchMode.partialConditions.length >
+          (searchMode.filterSearch?.conditions?.length ?? 0);
+
       if (
         searchMode.isFilterMode &&
         searchMode.filterSearch?.isConfirmed &&
@@ -1812,7 +1832,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         searchMode.filterSearch.conditions.length >= 2 &&
         inputValue.trim() !== '' &&
         inputValue.trim() !== '#' &&
-        !preservedFilterRef.current // Not already in edit mode
+        !preservedFilterRef.current && // Not already in edit mode
+        !isBuildingConditionN && // Not building condition 2+
+        !hasPartialConditionsBeyondConfirmed // No partial conditions beyond confirmed
       ) {
         const columnName = searchMode.filterSearch.field;
         const firstCondition = searchMode.filterSearch.conditions[0];

@@ -410,20 +410,19 @@ export const useBadgeBuilder = (
           condition.operator
         );
 
-        // For condition[1], always add column badge BEFORE operator
+        // For condition[N] (index >= 1), always add column badge BEFORE operator
         // Show even if same column as first (no simplification)
-        if (index === 1) {
-          const cond1ColumnLabel =
+        if (index >= 1) {
+          const condNColumnLabel =
             condition.column?.headerName || filter.column.headerName;
+          const columnHandlers = getColumnBadgeHandlers(handlers, index);
           badges.push({
-            id: 'condition-1-column',
+            id: `condition-${index}-column`,
             type: 'column',
-            label: cond1ColumnLabel,
-            onClear:
-              handlers.onClearCondition1Column ||
-              handlers.onClearCondition1Operator,
+            label: condNColumnLabel,
+            onClear: columnHandlers.onClear,
             canClear: true,
-            onEdit: handlers.onEditCondition1Column || handlers.onEditColumn,
+            onEdit: columnHandlers.onEdit,
             canEdit: true,
           });
         }
@@ -449,7 +448,14 @@ export const useBadgeBuilder = (
         });
 
         // Value badge(s) for this condition (skip if value is empty)
-        if (condition.value) {
+        // Also skip if user is actively typing this condition's value
+        const isTypingThisConditionValue =
+          searchMode.activeConditionIndex === index &&
+          !searchMode.showJoinOperatorSelector &&
+          !searchMode.showColumnSelector &&
+          !searchMode.showOperatorSelector;
+
+        if (condition.value && !isTypingThisConditionValue) {
           const totalConditions = filter.conditions!.length;
           const isBetween =
             condition.operator === 'inRange' && !!condition.valueTo;
@@ -498,42 +504,71 @@ export const useBadgeBuilder = (
         }
 
         // Join badge between conditions (not after last one) - use index-based ID
+        // Use filter.joins[index] for the correct join at each position
         if (index < filter.conditions!.length - 1) {
+          const joinLabel = filter.joins?.[index] || filter.joinOperator || '';
+          const joinHandlers = getJoinBadgeHandlers(handlers, index);
           badges.push({
             id: `join-${index}`,
             type: 'join',
-            label: filter.joinOperator || '',
-            onClear: handlers.onClearPartialJoin,
+            label: joinLabel,
+            onClear: joinHandlers.onClear,
             canClear: true,
-            onEdit: handlers.onEditJoin,
+            onEdit: joinHandlers.onEdit,
             canEdit: true, // Join badges are editable
           });
         }
       });
 
-      // Apply isSelected for multi-condition case before returning
-      if (selectedBadgeIndex !== null && selectedBadgeIndex !== undefined) {
-        return badges.map((badge, index) => ({
-          ...badge,
-          isSelected: index === selectedBadgeIndex,
-        }));
+      // Check if there are additional partial conditions being built beyond complete ones
+      // If so, DON'T return early - continue to N-condition loop to render them
+      const completeConditionsCount = filter.conditions?.length ?? 0;
+      const partialConditionsCount = searchMode.partialConditions?.length ?? 0;
+      const hasPartialConditionsBeingBuilt =
+        partialConditionsCount > completeConditionsCount;
+
+      if (!hasPartialConditionsBeingBuilt) {
+        // Apply isSelected for multi-condition case before returning
+        if (selectedBadgeIndex !== null && selectedBadgeIndex !== undefined) {
+          return badges.map((badge, index) => ({
+            ...badge,
+            isSelected: index === selectedBadgeIndex,
+          }));
+        }
+        return badges; // Return early for multi-condition case
       }
-      return badges; // Return early for multi-condition case
+      // Otherwise, continue to N-condition loop for partial condition being built
     }
 
+    // Track if multi-condition block executed (used to skip single-condition sections)
+    // Multi-condition block runs when: (isFilterMode || showJoinOperatorSelector) && isMultiCondition
+    const multiConditionBlockDidExecute =
+      (searchMode.isFilterMode || searchMode.showJoinOperatorSelector) &&
+      isMultiCondition &&
+      filter?.conditions;
+
     // 3. Single-Condition Operator Badge (Blue)
+    // SKIP if multi-condition block already rendered condition 0
     // Check if building condition at index > 0 using scalable activeConditionIndex
     const isBuildingConditionN =
       searchMode.activeConditionIndex !== undefined &&
       searchMode.activeConditionIndex > 0;
+
+    // Check if we're in N-condition partial state (using partialConditions array)
+    // In this state, we need to render condition 0 via single-condition sections
+    // ONLY if multi-condition block didn't execute
+    const isNConditionPartialState =
+      (searchMode.partialConditions?.length ?? 0) > 1;
+
     const shouldShowSingleOperator =
+      !multiConditionBlockDidExecute && // Skip if multi-condition block already rendered
       (searchMode.isFilterMode ||
         searchMode.showJoinOperatorSelector ||
         (searchMode.showOperatorSelector && isBuildingConditionN) ||
         (!searchMode.isFilterMode && searchMode.partialJoin && filter)) &&
       filter &&
       (filter.operator !== 'contains' || filter.isExplicitOperator) &&
-      !filter.isMultiCondition;
+      (!filter.isMultiCondition || isNConditionPartialState);
 
     if (shouldShowSingleOperator) {
       const operatorLabel = getOperatorLabelForColumn(
@@ -567,6 +602,7 @@ export const useBadgeBuilder = (
       !filter?.isConfirmed;
 
     const shouldShowSingleValue =
+      !multiConditionBlockDidExecute && // Skip if multi-condition block already rendered
       (searchMode.showJoinOperatorSelector ||
         (searchMode.showOperatorSelector && isBuildingConditionN && filter) ||
         (!searchMode.isFilterMode &&
@@ -579,7 +615,7 @@ export const useBadgeBuilder = (
         isWaitingForBetweenValueTo ||
         isBetweenTypingValueTo) &&
       filter?.value &&
-      !filter?.isMultiCondition;
+      (!filter?.isMultiCondition || isNConditionPartialState);
 
     if (shouldShowSingleValue) {
       // Single-Condition Value Badges (conditionIndex=0, totalConditions=1)
@@ -643,7 +679,19 @@ export const useBadgeBuilder = (
     const partialConditions = searchMode.partialConditions || [];
     const totalPartialConditions = partialConditions.length;
 
-    for (let condIdx = 1; condIdx < totalPartialConditions; condIdx++) {
+    // Determine starting index for N-condition loop
+    // Only skip conditions that were ACTUALLY rendered by multi-condition block
+    // Uses multiConditionBlockDidExecute flag defined earlier
+    const multiConditionRenderedCount = multiConditionBlockDidExecute
+      ? filter!.conditions!.length
+      : 0;
+    const nConditionStartIdx = Math.max(1, multiConditionRenderedCount);
+
+    for (
+      let condIdx = nConditionStartIdx;
+      condIdx < totalPartialConditions;
+      condIdx++
+    ) {
       const condition = getConditionAt(searchMode, condIdx);
       const joinIndex = condIdx - 1;
 
