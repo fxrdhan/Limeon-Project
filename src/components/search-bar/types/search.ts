@@ -28,7 +28,8 @@ export interface FilterSearch {
   isExplicitOperator: boolean;
   // Multi-condition support
   conditions?: FilterCondition[]; // Array of conditions for AND/OR
-  joinOperator?: 'AND' | 'OR'; // Join operator between conditions
+  joinOperator?: 'AND' | 'OR'; // Primary join operator (backward compat)
+  joins?: ('AND' | 'OR')[]; // Full joins array for N-condition (joins[i] between condition[i] and condition[i+1])
   isMultiCondition?: boolean; // Flag to indicate multi-condition filter
   isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
   // Confirmed state (user pressed Enter to lock filter value as badge)
@@ -103,6 +104,16 @@ export interface EnhancedSearchState {
    * etc.
    */
   joins?: ('AND' | 'OR')[];
+
+  /**
+   * Index of the join operator currently being EDITED
+   * undefined means no specific join is being edited (or building new join at end)
+   *
+   * editingJoinIndex[0] = editing join between condition 0 and 1
+   * editingJoinIndex[1] = editing join between condition 1 and 2
+   * etc.
+   */
+  editingJoinIndex?: number;
 }
 
 /**

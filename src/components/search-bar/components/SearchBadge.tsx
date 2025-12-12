@@ -38,14 +38,27 @@ const badgeVariants = {
   },
 };
 
+// Scalable handler type for N-condition support
+type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
+
 interface SearchBadgeProps {
   searchMode: EnhancedSearchState;
   badgeRef: React.RefObject<HTMLDivElement | null>;
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
   operatorBadgeRef: React.RefObject<HTMLDivElement | null>;
   joinBadgeRef: React.RefObject<HTMLDivElement | null>;
-  condition1ColumnBadgeRef: React.RefObject<HTMLDivElement | null>;
-  condition1OperatorBadgeRef: React.RefObject<HTMLDivElement | null>;
+  secondColumnBadgeRef: React.RefObject<HTMLDivElement | null>;
+  secondOperatorBadgeRef: React.RefObject<HTMLDivElement | null>;
+  // ============ Dynamic Ref Map API (N-Condition Support) ============
+  setBadgeRef?: (badgeId: string, element: HTMLDivElement | null) => void;
+  getColumnRef?: (conditionIndex: number) => HTMLDivElement | null;
+  getOperatorRef?: (conditionIndex: number) => HTMLDivElement | null;
+  // ============ Scalable Handler API (N-Condition Support) ============
+  clearConditionPart?: (conditionIndex: number, target: BadgeTarget) => void;
+  clearJoin?: (joinIndex: number) => void;
+  editConditionPart?: (conditionIndex: number, target: BadgeTarget) => void;
+  editJoin?: (joinIndex: number) => void;
+  // ============ Legacy Handlers (Backward Compatibility) ============
   onClearColumn: () => void;
   onClearOperator: () => void;
   onClearValue: () => void;
@@ -68,11 +81,8 @@ interface SearchBadgeProps {
   preservedSearchMode?: EnhancedSearchState | null;
   // Inline editing props
   editingBadge?: {
-    type:
-      | 'firstValue'
-      | 'condition1Value'
-      | 'firstValueTo'
-      | 'condition1ValueTo';
+    conditionIndex: number; // 0 = first condition, 1 = second, etc.
+    field: 'value' | 'valueTo'; // Which field is being edited
     value: string;
   } | null;
   onInlineValueChange?: (value: string) => void;
@@ -86,9 +96,9 @@ interface SearchBadgeProps {
   // Live preview props - show highlighted selector item in badge
   previewColumn?: { headerName: string; field: string } | null;
   previewOperator?: { label: string; value: string } | null;
-  // Explicit flags for which column/operator is being edited (for preview and glow)
-  isEditingCondition1Column?: boolean;
-  isEditingCondition1Operator?: boolean;
+  // Scalable editing state (which condition's column/operator is being edited)
+  editingConditionIndex?: number | null;
+  editingTarget?: 'column' | 'operator' | null;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -97,8 +107,16 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   badgesContainerRef,
   operatorBadgeRef,
   joinBadgeRef,
-  condition1ColumnBadgeRef,
-  condition1OperatorBadgeRef,
+  secondColumnBadgeRef,
+  secondOperatorBadgeRef,
+  // ============ Dynamic Ref Map API ============
+  setBadgeRef,
+  // ============ Scalable Handler API (N-Condition Support) ============
+  clearConditionPart,
+  clearJoin,
+  editConditionPart,
+  editJoin,
+  // ============ Legacy Handlers ============
   onClearColumn,
   onClearOperator,
   onClearValue,
@@ -129,8 +147,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onBadgesChange,
   previewColumn,
   previewOperator,
-  isEditingCondition1Column,
-  isEditingCondition1Operator,
+  editingConditionIndex,
+  editingTarget,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
   const modeToRender = preservedSearchMode || searchMode;
@@ -138,6 +156,13 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   const rawBadges = useBadgeBuilder(
     modeToRender,
     {
+      // Scalable handlers (N-condition support)
+      clearConditionPart,
+      clearJoin,
+      clearAll: onClearAll,
+      editConditionPart,
+      editJoin,
+      // Legacy handlers (backward compatibility)
       onClearColumn,
       onClearOperator,
       onClearValue,
@@ -170,7 +195,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   );
 
   // Apply preview values to badges for live preview during selector navigation
-  // isEditingCondition1Column and isEditingCondition1Operator are passed as props from EnhancedSearchBar
+  // editingConditionIndex and editingTarget track which badge is being edited
 
   // Check if we're in edit mode (preservedSearchMode exists)
   // Preview should only apply when EDITING existing badges, not when CREATING new ones
@@ -182,41 +207,30 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     }
 
     return rawBadges.map(badge => {
-      // Preview column - apply to the correct column badge
+      // Preview column - apply to the correct column badge based on editingConditionIndex
       // Only apply when in edit mode (not when creating new condition[N] column)
-      // Uses index-based IDs: condition-{index}-column
-      if (previewColumn && isInEditMode) {
-        // If editing condition[1] column, apply to condition-1-column badge
-        if (isEditingCondition1Column && badge.id === 'condition-1-column') {
-          return { ...badge, label: previewColumn.headerName };
-        }
-        // If editing condition[0] column, apply to condition-0-column badge
-        if (
-          !isEditingCondition1Column &&
-          badge.id === 'condition-0-column' &&
-          badge.type === 'column'
-        ) {
+      if (
+        previewColumn &&
+        isInEditMode &&
+        editingTarget === 'column' &&
+        editingConditionIndex !== null
+      ) {
+        const expectedBadgeId = `condition-${editingConditionIndex}-column`;
+        if (badge.id === expectedBadgeId) {
           return { ...badge, label: previewColumn.headerName };
         }
       }
 
-      // Preview operator - apply to the correct operator badge
+      // Preview operator - apply to the correct operator badge based on editingConditionIndex
       // Only apply when in edit mode (not when creating new operator)
-      // Uses index-based IDs: condition-{index}-operator
-      if (previewOperator && isInEditMode) {
-        // If editing condition[1] operator, apply to condition-1-operator badge
-        if (
-          isEditingCondition1Operator &&
-          badge.id === 'condition-1-operator'
-        ) {
-          return { ...badge, label: previewOperator.label };
-        }
-        // If editing condition[0] operator, apply to condition-0-operator badge
-        if (
-          !isEditingCondition1Operator &&
-          badge.id === 'condition-0-operator' &&
-          badge.type === 'operator'
-        ) {
+      if (
+        previewOperator &&
+        isInEditMode &&
+        editingTarget === 'operator' &&
+        editingConditionIndex !== null
+      ) {
+        const expectedBadgeId = `condition-${editingConditionIndex}-operator`;
+        if (badge.id === expectedBadgeId) {
           return { ...badge, label: previewOperator.label };
         }
       }
@@ -228,8 +242,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     previewColumn,
     previewOperator,
     isInEditMode,
-    isEditingCondition1Column,
-    isEditingCondition1Operator,
+    editingConditionIndex,
+    editingTarget,
   ]);
 
   // Notify parent of badge count changes for keyboard navigation
@@ -257,20 +271,24 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     // Only show glow when in edit mode (preservedSearchMode exists)
     if (!isInEditMode) return false;
 
-    // Column selector open
-    if (searchMode.showColumnSelector) {
-      if (isEditingCondition1Column && badgeId === 'condition-1-column')
-        return true;
-      if (!isEditingCondition1Column && badgeId === 'condition-0-column')
-        return true;
+    // Column selector open - glow the column being edited
+    if (
+      searchMode.showColumnSelector &&
+      editingTarget === 'column' &&
+      editingConditionIndex !== null
+    ) {
+      const expectedId = `condition-${editingConditionIndex}-column`;
+      if (badgeId === expectedId) return true;
     }
 
-    // Operator selector open
-    if (searchMode.showOperatorSelector) {
-      if (isEditingCondition1Operator && badgeId === 'condition-1-operator')
-        return true;
-      if (!isEditingCondition1Operator && badgeId === 'condition-0-operator')
-        return true;
+    // Operator selector open - glow the operator being edited
+    if (
+      searchMode.showOperatorSelector &&
+      editingTarget === 'operator' &&
+      editingConditionIndex !== null
+    ) {
+      const expectedId = `condition-${editingConditionIndex}-operator`;
+      if (badgeId === expectedId) return true;
     }
 
     // Join operator selector open
@@ -295,21 +313,35 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     >
       <AnimatePresence mode="popLayout">
         {badges.map((badge, index) => {
-          // Determine which ref to use for this badge
-          // Use pattern matching for index-based badge IDs
-          let refToUse: React.RefObject<HTMLDivElement | null> | undefined =
+          // Determine which static ref to use for this badge
+          // These refs are used by useSelectorPosition for positioning
+          let staticRef: React.RefObject<HTMLDivElement | null> | undefined =
             undefined;
           if (index === 0) {
-            refToUse = badgeRef; // Column badge (condition-0-column)
+            staticRef = badgeRef; // Column badge (condition-0-column)
           } else if (badge.id === 'condition-0-operator') {
-            refToUse = operatorBadgeRef; // First operator badge
-          } else if (badge.id.startsWith('join-')) {
-            refToUse = joinBadgeRef; // Join badge (AND/OR) - join-0, join-1, etc.
+            staticRef = operatorBadgeRef; // First operator badge
+          } else if (badge.id === 'join-0') {
+            staticRef = joinBadgeRef; // First join badge only
           } else if (badge.id === 'condition-1-column') {
-            refToUse = condition1ColumnBadgeRef; // Condition[1] column badge (multi-column)
+            staticRef = secondColumnBadgeRef; // Second column badge
           } else if (badge.id === 'condition-1-operator') {
-            refToUse = condition1OperatorBadgeRef; // Condition[1] operator badge
+            staticRef = secondOperatorBadgeRef; // Second operator badge
           }
+          // All other badges (condition-N-column, condition-N-operator for N>1)
+          // are stored in dynamic ref map via setBadgeRef only
+
+          // Callback ref that updates both static ref and dynamic ref map
+          const handleRef = (element: HTMLDivElement | null) => {
+            // Update static ref if applicable (for useSelectorPosition)
+            if (staticRef && 'current' in staticRef) {
+              (
+                staticRef as React.MutableRefObject<HTMLDivElement | null>
+              ).current = element;
+            }
+            // Update dynamic ref map for N-condition support
+            setBadgeRef?.(badge.id, element);
+          };
 
           // Add glow state based on selector being open
           const shouldGlow = getBadgeGlowState(badge.id);
@@ -320,7 +352,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           return (
             <motion.div
               key={badge.id}
-              ref={refToUse}
+              ref={handleRef}
               layout
               variants={badgeVariants}
               initial="initial"

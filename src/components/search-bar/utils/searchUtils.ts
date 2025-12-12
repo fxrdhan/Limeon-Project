@@ -3,9 +3,291 @@ import {
   EnhancedSearchState,
   FilterSearch,
   FilterCondition,
+  PartialCondition,
 } from '../types';
 import { JOIN_OPERATORS } from '../operators';
 import { findOperatorForColumn } from './operatorUtils';
+
+// ============================================================================
+// N-CONDITION PARTIAL PARSER (Scalable)
+// ============================================================================
+
+/**
+ * Count the number of join operators (#and/#or) in a pattern
+ */
+const countJoins = (pattern: string): number => {
+  const matches = pattern.match(/#(and|or)/gi);
+  return matches ? matches.length : 0;
+};
+
+/**
+ * Parse N-condition partial pattern (while user is typing)
+ * Handles patterns with 2+ joins dynamically.
+ *
+ * Returns null if pattern doesn't match or has fewer than 2 joins (let existing code handle it)
+ */
+const parsePartialNConditions = (
+  searchValue: string,
+  columns: SearchColumn[]
+): EnhancedSearchState | null => {
+  // Only handle patterns with 2+ joins (3+ conditions)
+  const joinCount = countJoins(searchValue);
+  if (joinCount < 2) return null;
+
+  // Don't handle confirmed patterns (ending with ##)
+  if (searchValue.endsWith('##')) return null;
+
+  // Split by join operators, preserving them
+  const joinSplitRegex = /\s+#(and|or)\s+/gi;
+  const segments: string[] = [];
+  const joins: ('AND' | 'OR')[] = [];
+
+  let lastIndex = 0;
+  let match;
+  const regex = new RegExp(joinSplitRegex.source, 'gi');
+
+  while ((match = regex.exec(searchValue)) !== null) {
+    segments.push(searchValue.slice(lastIndex, match.index));
+    joins.push(match[1].toUpperCase() as 'AND' | 'OR');
+    lastIndex = match.index + match[0].length;
+  }
+  // Add remaining part
+  segments.push(searchValue.slice(lastIndex));
+
+  if (segments.length < 3) return null; // Need at least 3 segments for 2 joins
+
+  const partialConditions: PartialCondition[] = [];
+  let firstColumn: SearchColumn | null = null;
+
+  // Parse each segment
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i].trim();
+
+    if (i === 0) {
+      // First segment: #col1 #op1 val1
+      const firstMatch = segment.match(/^#([^\s#]+)\s+#([^\s]+)\s+(.+)$/);
+      if (firstMatch) {
+        const [, colName, opName, value] = firstMatch;
+        const col = findColumn(columns, colName);
+        if (col) {
+          firstColumn = col;
+          const opObj = findOperatorForColumn(col, opName);
+          if (opObj) {
+            let filterValue = value.trim();
+            let filterValueTo: string | undefined;
+
+            if (opObj.value === 'inRange') {
+              const toMatch = filterValue.match(/^(.+?)\s+#to\s+(.+)$/i);
+              if (toMatch) {
+                filterValue = toMatch[1].trim();
+                filterValueTo = toMatch[2].trim();
+              }
+            }
+
+            partialConditions.push({
+              field: col.field,
+              column: col,
+              operator: opObj.value,
+              value: filterValue,
+              valueTo: filterValueTo,
+            });
+          }
+        }
+      }
+    } else {
+      // Subsequent segments
+      const trimmed = segment.trim();
+
+      if (!trimmed || trimmed === '#') {
+        // Empty or just # - show column selector
+        partialConditions.push({});
+      } else if (trimmed.match(/^#([^\s#]+)\s+#([^\s]+)\s+(.+)$/)) {
+        // Full: #col #op value
+        const [, colName, opName, value] = trimmed.match(
+          /^#([^\s#]+)\s+#([^\s]+)\s+(.+)$/
+        )!;
+        const col = findColumn(columns, colName);
+        if (col) {
+          const opObj = findOperatorForColumn(col, opName);
+          if (opObj) {
+            let filterValue = value.trim();
+            let filterValueTo: string | undefined;
+            let waitingForValueTo = false;
+
+            if (opObj.value === 'inRange') {
+              const toMatch = filterValue.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
+              if (toMatch) {
+                filterValue = toMatch[1].trim();
+                if (toMatch[2]?.trim()) {
+                  filterValueTo = toMatch[2].trim();
+                } else {
+                  waitingForValueTo = true;
+                }
+              }
+            }
+
+            partialConditions.push({
+              field: col.field,
+              column: col,
+              operator: opObj.value,
+              value: filterValue,
+              valueTo: filterValueTo,
+              waitingForValueTo,
+            });
+          }
+        }
+      } else if (trimmed.match(/^#([^\s#]+)\s+#([^\s]+)\s*$/)) {
+        // Partial: #col #op (no value yet)
+        const [, colName, opName] = trimmed.match(
+          /^#([^\s#]+)\s+#([^\s]+)\s*$/
+        )!;
+        const col = findColumn(columns, colName);
+        if (col) {
+          const opObj = findOperatorForColumn(col, opName);
+          if (opObj) {
+            partialConditions.push({
+              field: col.field,
+              column: col,
+              operator: opObj.value,
+            });
+          }
+        }
+      } else if (trimmed.match(/^#([^\s#]+)\s+#\s*$/)) {
+        // Partial: #col # (operator selector)
+        const [, colName] = trimmed.match(/^#([^\s#]+)\s+#\s*$/)!;
+        const col = findColumn(columns, colName);
+        if (col) {
+          partialConditions.push({
+            field: col.field,
+            column: col,
+          });
+        }
+      } else if (trimmed.match(/^#([^\s#]+)\s*$/)) {
+        // Partial: #col (column selected, waiting for #)
+        const [, colName] = trimmed.match(/^#([^\s#]+)\s*$/)!;
+        const col = findColumn(columns, colName);
+        if (col) {
+          partialConditions.push({
+            field: col.field,
+            column: col,
+          });
+        } else {
+          // Column being typed
+          partialConditions.push({});
+        }
+      } else if (trimmed.match(/^#([^\s]+)\s+(.+)$/)) {
+        // Same-column: #op value
+        const [, opName, value] = trimmed.match(/^#([^\s]+)\s+(.+)$/)!;
+        const col = firstColumn || columns[0];
+        if (col) {
+          const opObj = findOperatorForColumn(col, opName);
+          if (opObj) {
+            let filterValue = value.trim();
+            let filterValueTo: string | undefined;
+            let waitingForValueTo = false;
+
+            if (opObj.value === 'inRange') {
+              const toMatch = filterValue.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
+              if (toMatch) {
+                filterValue = toMatch[1].trim();
+                if (toMatch[2]?.trim()) {
+                  filterValueTo = toMatch[2].trim();
+                } else {
+                  waitingForValueTo = true;
+                }
+              }
+            }
+
+            partialConditions.push({
+              field: col.field,
+              column: col,
+              operator: opObj.value,
+              value: filterValue,
+              valueTo: filterValueTo,
+              waitingForValueTo,
+            });
+          }
+        }
+      } else if (trimmed.match(/^#([^\s]+)\s*$/)) {
+        // Same-column: #op (no value yet)
+        const [, opName] = trimmed.match(/^#([^\s]+)\s*$/)!;
+        const col = firstColumn || columns[0];
+        if (col) {
+          const opObj = findOperatorForColumn(col, opName);
+          if (opObj) {
+            partialConditions.push({
+              field: col.field,
+              column: col,
+              operator: opObj.value,
+            });
+          } else {
+            // Could be column being typed
+            partialConditions.push({});
+          }
+        }
+      } else {
+        // Unknown segment - empty slot
+        partialConditions.push({});
+      }
+    }
+  }
+
+  if (partialConditions.length < 3) return null;
+
+  // Determine UI state based on last condition
+  const lastCondition = partialConditions[partialConditions.length - 1];
+  const activeConditionIndex = partialConditions.length - 1;
+
+  let showColumnSelector = false;
+  let showOperatorSelector = false;
+  let selectedColumn = firstColumn || undefined;
+
+  if (!lastCondition.column) {
+    // No column yet - show column selector
+    showColumnSelector = true;
+  } else if (!lastCondition.operator) {
+    // Has column but no operator - check if pattern ends with #
+    selectedColumn = lastCondition.column;
+    if (searchValue.trimEnd().endsWith('#')) {
+      showOperatorSelector = true;
+    }
+  } else {
+    // Has operator - might be typing value
+    selectedColumn = lastCondition.column;
+  }
+
+  // Build first condition's filter for backward compat
+  const firstCond = partialConditions[0];
+  const filterSearch: FilterSearch | undefined =
+    firstCond.operator && firstCond.value !== undefined
+      ? {
+          field: firstCond.field || firstColumn?.field || '',
+          value: firstCond.value || '',
+          valueTo: firstCond.valueTo,
+          column: firstCond.column || firstColumn!,
+          operator: firstCond.operator,
+          isExplicitOperator: true,
+        }
+      : undefined;
+
+  return {
+    globalSearch: undefined,
+    showColumnSelector,
+    showOperatorSelector,
+    showJoinOperatorSelector: false,
+    isFilterMode: false,
+    selectedColumn,
+    partialJoin: joins[0],
+    activeConditionIndex,
+    partialConditions,
+    joins,
+    filterSearch,
+  };
+};
+
+// ============================================================================
+// END N-CONDITION PARTIAL PARSER
+// ============================================================================
 
 /**
  * Parse inRange (Between) operator values
@@ -61,10 +343,90 @@ const parseInRangeValues = (
 };
 
 /**
- * Parse multi-condition filter pattern:
- * Same column:  #field #op1 val1 #and #op2 val2##
- * Multi column: #col1 #op1 val1 #and #col2 #op2 val2##
- * Returns null if not a complete multi-condition pattern
+ * Parse a single condition segment from pattern
+ * Handles: "#col #op value" or "#op value" (same-column)
+ *
+ * @param segment - The condition segment to parse
+ * @param defaultColumn - Default column if not specified in segment
+ * @param columns - Available columns for lookup
+ * @returns Parsed condition or null
+ */
+const parseConditionSegment = (
+  segment: string,
+  defaultColumn: SearchColumn,
+  columns: SearchColumn[]
+): FilterCondition | null => {
+  const trimmed = segment.trim().replace(/##$/, '');
+  if (!trimmed) return null;
+
+  // Try multi-column format: #col #op value
+  const multiColMatch = trimmed.match(/^#([^\s#]+)\s+#([^\s]+)\s+(.+)$/);
+  if (multiColMatch) {
+    const [, colName, opName, value] = multiColMatch;
+    const col = findColumn(columns, colName);
+    if (col) {
+      const opObj = findOperatorForColumn(col, opName);
+      if (opObj) {
+        if (opObj.value === 'inRange') {
+          const inRangeValues = parseInRangeValues(value.trim(), true);
+          if (inRangeValues) {
+            return {
+              operator: opObj.value,
+              value: inRangeValues.value,
+              valueTo: inRangeValues.valueTo,
+              field: col.field,
+              column: col,
+            };
+          }
+        }
+        return {
+          operator: opObj.value,
+          value: value.trim(),
+          field: col.field,
+          column: col,
+        };
+      }
+    }
+  }
+
+  // Try same-column format: #op value
+  const sameColMatch = trimmed.match(/^#([^\s]+)\s+(.+)$/);
+  if (sameColMatch) {
+    const [, opName, value] = sameColMatch;
+    const opObj = findOperatorForColumn(defaultColumn, opName);
+    if (opObj) {
+      if (opObj.value === 'inRange') {
+        const inRangeValues = parseInRangeValues(value.trim(), true);
+        if (inRangeValues) {
+          return {
+            operator: opObj.value,
+            value: inRangeValues.value,
+            valueTo: inRangeValues.valueTo,
+            field: defaultColumn.field,
+            column: defaultColumn,
+          };
+        }
+      }
+      return {
+        operator: opObj.value,
+        value: value.trim(),
+        field: defaultColumn.field,
+        column: defaultColumn,
+      };
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Parse multi-condition filter pattern (N-condition scalable):
+ * Same column:  #field #op1 val1 #and #op2 val2 #or #op3 val3##
+ * Multi column: #col1 #op1 val1 #and #col2 #op2 val2 #or #col3 #op3 val3##
+ * Mixed:        #col1 #op1 val1 #and #op2 val2 #or #col3 #op3 val3##
+ *
+ * Supports unlimited N conditions with N-1 joins.
+ * Returns null if not a complete multi-condition pattern.
  */
 const parseMultiConditionFilter = (
   searchValue: string,
@@ -75,141 +437,70 @@ const parseMultiConditionFilter = (
   const hasJoinOperator = /#(and|or)/i.test(searchValue);
   if (!hasJoinOperator) return null;
 
-  // IMPORTANT: Only treat as complete multi-condition if BOTH values are confirmed
+  // IMPORTANT: Only treat as complete multi-condition if ALL values are confirmed
   // Check if pattern ends with "##" (Enter confirmation) to ensure user finished typing
   const hasConfirmationMarker = searchValue.endsWith('##');
   if (!hasConfirmationMarker) {
     return null;
   }
 
-  // Try multi-column pattern first: #col1 #op1 val1 #and #col2 #op2 val2##
-  const multiColMatch = searchValue.match(
-    /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+)##$/i
-  );
+  // Remove the ## marker for parsing
+  const cleanValue = searchValue.slice(0, -2);
 
-  if (multiColMatch) {
-    const [, col1, op1, val1, join, col2, op2, val2] = multiColMatch;
-    const column1 = findColumn(columns, col1);
-    const column2 = findColumn(columns, col2);
+  // Split by join operators while preserving them
+  // Pattern: split on " #and " or " #or " (with spaces)
+  const joinSplitRegex = /\s+#(and|or)\s+/i;
+  const segments = cleanValue.split(joinSplitRegex);
 
-    if (column1 && column2) {
-      const operator1Obj = findOperatorForColumn(column1, op1);
-      const operator2Obj = findOperatorForColumn(column2, op2);
-
-      if (operator1Obj && operator2Obj) {
-        const conditions: FilterCondition[] = [];
-
-        // First condition
-        if (operator1Obj.value === 'inRange') {
-          const inRangeValues = parseInRangeValues(val1.trim(), true); // Confirmed pattern
-          if (inRangeValues) {
-            conditions.push({
-              operator: operator1Obj.value,
-              value: inRangeValues.value,
-              valueTo: inRangeValues.valueTo,
-              field: column1.field,
-              column: column1,
-            });
-          }
-        } else {
-          conditions.push({
-            operator: operator1Obj.value,
-            value: val1.trim(),
-            field: column1.field,
-            column: column1,
-          });
-        }
-
-        // Second condition
-        if (operator2Obj.value === 'inRange') {
-          const inRangeValues = parseInRangeValues(val2.trim(), true); // Confirmed pattern
-          if (inRangeValues) {
-            conditions.push({
-              operator: operator2Obj.value,
-              value: inRangeValues.value,
-              valueTo: inRangeValues.valueTo,
-              field: column2.field,
-              column: column2,
-            });
-          }
-        } else {
-          conditions.push({
-            operator: operator2Obj.value,
-            value: val2.trim(),
-            field: column2.field,
-            column: column2,
-          });
-        }
-
-        if (conditions.length >= 2) {
-          // Always true for multi-column pattern (matched explicit #col1...#col2 pattern)
-          // Even if col1 == col2, the pattern explicitly specifies two columns
-          // This preserves the multi-column structure/badges
-          const isMultiColumn = true;
-
-          return {
-            field: column1.field,
-            value: conditions[0].value,
-            operator: conditions[0].operator,
-            column: column1,
-            isExplicitOperator: true,
-            isConfirmed: true,
-            conditions,
-            joinOperator: join.toUpperCase() as 'AND' | 'OR',
-            isMultiCondition: true,
-            isMultiColumn,
-          };
-        }
-      }
-    }
-  }
-
-  // Fallback: Same-column pattern #field #op1 val1 #and #op2 val2##
-  const cleanValue = searchValue;
-  const fieldMatch = cleanValue.match(/^#([^\s#]+)\s+(.+)$/);
-  if (!fieldMatch) return null;
-
-  const [, , remainingPart] = fieldMatch;
-  const parts = remainingPart.split(/#(and|or)\s+/i);
+  // segments array alternates: [condition1, join1, condition2, join2, condition3, ...]
+  // Even indices (0, 2, 4, ...) are conditions
+  // Odd indices (1, 3, 5, ...) are join operators
 
   const conditions: FilterCondition[] = [];
-  let joinOperator: 'AND' | 'OR' | undefined;
+  const joins: ('AND' | 'OR')[] = [];
+  let firstColumn: SearchColumn | null = null;
+  let hasMultiColumn = false;
 
-  for (let i = 0; i < parts.length; i++) {
+  for (let i = 0; i < segments.length; i++) {
     if (i % 2 === 0) {
-      const condMatch = parts[i].trim().match(/^#([^\s]+)\s+(.*)$/);
-      if (condMatch) {
-        const [, op, val] = condMatch;
-        const operatorObj = findOperatorForColumn(column, op);
-        const cleanVal = val.trim().replace(/##$/, '');
+      // This is a condition segment
+      const segment = segments[i];
 
-        if (operatorObj && cleanVal) {
-          if (operatorObj.value === 'inRange') {
-            const inRangeValues = parseInRangeValues(cleanVal, true); // Confirmed with ##
-            if (inRangeValues) {
-              conditions.push({
-                operator: operatorObj.value,
-                value: inRangeValues.value,
-                valueTo: inRangeValues.valueTo,
-                field: column.field,
-                column: column,
-              });
+      // For first segment, extract the column from the beginning
+      if (i === 0) {
+        // First condition: #col1 #op1 val1 OR just #op1 val1 (if defaultColumn)
+        const firstColMatch = segment.match(/^#([^\s#]+)\s+(.+)$/);
+        if (firstColMatch) {
+          const [, colName, rest] = firstColMatch;
+          const col = findColumn(columns, colName);
+          if (col) {
+            firstColumn = col;
+            // rest already includes "#" (e.g., "#contains para")
+            const condition = parseConditionSegment(rest, col, columns);
+            if (condition) {
+              conditions.push(condition);
             }
-          } else {
-            conditions.push({
-              operator: operatorObj.value,
-              value: cleanVal,
-              field: column.field,
-              column: column,
-            });
+          }
+        }
+      } else {
+        // Subsequent conditions: may or may not have explicit column
+        const condition = parseConditionSegment(
+          segment,
+          firstColumn || column,
+          columns
+        );
+        if (condition) {
+          conditions.push(condition);
+          // Check if this condition uses a different column
+          if (condition.field !== firstColumn?.field) {
+            hasMultiColumn = true;
           }
         }
       }
     } else {
-      const currentJoin = parts[i].toUpperCase() as 'AND' | 'OR';
-      if (!joinOperator) {
-        joinOperator = currentJoin;
-      }
+      // This is a join operator
+      const joinOp = segments[i].toUpperCase() as 'AND' | 'OR';
+      joins.push(joinOp);
     }
   }
 
@@ -217,17 +508,27 @@ const parseMultiConditionFilter = (
     return null;
   }
 
+  // Determine isMultiColumn: true if any condition has different column
+  // OR if explicit column syntax was used (e.g., #col2 #op2 val2)
+  const isMultiColumn =
+    hasMultiColumn ||
+    conditions.some((c, i) => i > 0 && c.field !== conditions[0].field);
+
+  const primaryColumn = conditions[0].column || firstColumn || column;
+
   return {
-    field: column.field,
+    field: conditions[0].field || primaryColumn.field,
     value: conditions[0].value,
+    valueTo: conditions[0].valueTo,
     operator: conditions[0].operator,
-    column,
+    column: primaryColumn,
     isExplicitOperator: true,
     isConfirmed: true,
     conditions,
-    joinOperator,
+    joinOperator: joins[0], // Primary join (for backward compat)
+    joins, // Full joins array for N-condition support
     isMultiCondition: true,
-    isMultiColumn: false,
+    isMultiColumn,
   };
 };
 
@@ -250,6 +551,12 @@ export const parseSearchValue = (
   }
 
   if (searchValue.startsWith('#')) {
+    // ============ N-CONDITION PARTIAL PATTERNS (3+ conditions) ============
+    // Handle patterns with 2+ joins dynamically before falling through to legacy patterns
+    const nConditionResult = parsePartialNConditions(searchValue, columns);
+    if (nConditionResult) return nConditionResult;
+    // ============ END N-CONDITION CHECK ============
+
     if (searchValue.includes(':')) {
       const colonMatch = searchValue.match(/^#([^:]+):(.*)$/);
       if (colonMatch) {

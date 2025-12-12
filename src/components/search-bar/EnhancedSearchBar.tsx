@@ -17,7 +17,8 @@ import {
   extractMultiConditionPreservation,
   getFirstCondition,
   getJoinOperator,
-  getCondition1OperatorValue,
+  getConditionOperatorAt,
+  PreservedFilter,
 } from './utils/handlerHelpers';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
 import { useSearchState } from './hooks/useSearchState';
@@ -52,44 +53,54 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const memoizedColumns = useMemo(() => columns, [columns]);
 
   // Ref to store preserved filter when editing column/operator
-  const preservedFilterRef = useRef<{
-    columnName?: string;
-    operator: string;
-    value: string;
-    valueTo?: string; // For Between (inRange) operator
-    // For multi-condition filters (AND/OR)
-    join?: 'AND' | 'OR';
-    condition1Operator?: string; // Operator at condition index 1
-    condition1Value?: string; // Value at condition index 1
-    condition1ValueTo?: string; // "to" value for Between at condition index 1
-    condition1Field?: string; // Column field for condition index 1
-    wasMultiColumn?: boolean; // Track if original had explicit condition[1] column badge
-  } | null>(null);
+  // Uses PreservedFilter type which supports N conditions via conditions[] array
+  const preservedFilterRef = useRef<PreservedFilter | null>(null);
 
   // State to preserve searchMode during edit (to keep badges visible)
   const [preservedSearchMode, setPreservedSearchMode] =
     useState<EnhancedSearchState | null>(null);
 
-  // Track whether we're editing condition[1] operator (after AND/OR join)
-  const [isEditingCondition1Operator, setIsEditingCondition1Operator] =
-    useState(false);
+  // ============ Consolidated Editing State (N-Condition Support) ============
+  // Tracks which condition's column/operator is being edited
+  const [editingSelectorTarget, setEditingSelectorTarget] = useState<{
+    conditionIndex: number; // 0 = first, 1 = second, etc.
+    target: 'column' | 'operator';
+  } | null>(null);
 
-  // Track whether we're editing condition[1] column (for live preview)
-  const [isEditingCondition1ColumnState, setIsEditingCondition1ColumnState] =
-    useState(false);
+  // ============ Derived Helpers for N-Condition Editing ============
+  // Check if editing column/operator at specific index
+  const isEditingColumnAt = (index: number) =>
+    editingSelectorTarget?.conditionIndex === index &&
+    editingSelectorTarget?.target === 'column';
+  const isEditingOperatorAt = (index: number) =>
+    editingSelectorTarget?.conditionIndex === index &&
+    editingSelectorTarget?.target === 'operator';
+
+  // Convenient aliases for second condition (most common case)
+  const isEditingSecondOperator = isEditingOperatorAt(1);
+  const isEditingSecondColumnState = isEditingColumnAt(1);
+
+  // Setter wrapper for useSelectionHandlers
+  const setIsEditingSecondOperator = (editing: boolean) => {
+    if (editing) {
+      setEditingSelectorTarget({ conditionIndex: 1, target: 'operator' });
+    } else if (isEditingSecondOperator) {
+      setEditingSelectorTarget(null);
+    }
+  };
 
   // State to track current join operator value during edit mode
   const [currentJoinOperator, setCurrentJoinOperator] = useState<
     'AND' | 'OR' | undefined
   >(undefined);
 
-  // State for inline badge editing
+  // State for inline badge editing - uses index-based structure for N conditions
   const [editingBadge, setEditingBadge] = useState<{
-    type:
-      | 'firstValue'
-      | 'condition1Value'
-      | 'firstValueTo'
-      | 'condition1ValueTo';
+    /** Condition index (0 = first, 1 = second, etc.) */
+    conditionIndex: number;
+    /** Which field is being edited */
+    field: 'value' | 'valueTo';
+    /** Current value being edited */
     value: string;
   } | null>(null);
 
@@ -135,12 +146,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     operatorSearchTerm,
     handleInputChange,
     handleHoverChange,
+    // Dynamic Ref Map API (N-Condition Support)
+    setBadgeRef,
+    // Static Refs for Selector Positioning
     badgeRef,
     badgesContainerRef,
     operatorBadgeRef,
     joinBadgeRef,
-    condition1ColumnBadgeRef,
-    condition1OperatorBadgeRef,
+    secondColumnBadgeRef,
+    secondOperatorBadgeRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -150,15 +164,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Column selector: position depends on context
   // - First column: appears at container left (no badge yet)
-  // - Condition[1] column editing (preservedSearchMode + activeConditionIndex > 0): appears below condition[1] column badge
-  // - Condition[1] column creating (activeConditionIndex > 0 only): appears after all badges
+  // - Second column editing (preservedSearchMode + activeConditionIndex > 0): appears below second column badge
+  // - Second column creating (activeConditionIndex > 0 only): appears after all badges
   const isSelectingConditionNColumn =
     (searchMode.activeConditionIndex ?? 0) > 0;
-  const isEditingCondition1Column =
+  const isEditingSecondColumn =
     preservedSearchMode !== null && isSelectingConditionNColumn;
   const columnAnchorRef = isSelectingConditionNColumn
-    ? isEditingCondition1Column
-      ? condition1ColumnBadgeRef // Edit mode: position below the condition[1] column badge
+    ? isEditingSecondColumn
+      ? secondColumnBadgeRef // Edit mode: position below the second column badge
       : badgesContainerRef // Create mode: position at end of badges
     : undefined;
   const columnSelectorPosition = useSelectorPosition({
@@ -166,7 +180,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     containerRef,
     anchorRef: columnAnchorRef,
     anchorAlign: isSelectingConditionNColumn
-      ? isEditingCondition1Column
+      ? isEditingSecondColumn
         ? 'left' // Edit mode: left-aligned below 2nd column badge
         : 'right' // Create mode: right edge of badges
       : 'left',
@@ -179,34 +193,34 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // - Condition[N] column edited, selecting NEW operator: anchor to condition[N] column badge, align right
   //
   // Use scalable checks: activeConditionIndex > 0 or partialConditions[1]
-  const hasCondition1Column = searchMode.partialConditions?.[1]?.column;
-  const hasCondition1Operator = searchMode.partialConditions?.[1]?.operator;
+  const hasSecondColumn = searchMode.partialConditions?.[1]?.column;
+  const hasSecondOperator = searchMode.partialConditions?.[1]?.operator;
   const isBuildingConditionN = (searchMode.activeConditionIndex ?? 0) > 0;
 
   const isEditingConditionNOp =
-    isEditingCondition1Operator && searchMode.showOperatorSelector;
-  const isCreatingConditionNOp = isBuildingConditionN && hasCondition1Column;
+    isEditingSecondOperator && searchMode.showOperatorSelector;
+  const isCreatingConditionNOp = isBuildingConditionN && hasSecondColumn;
   // Check if we're selecting NEW operator for condition[N] column (after editing column)
   const isSelectingNewOperatorForConditionNColumn =
-    isEditingCondition1Operator &&
+    isEditingSecondOperator &&
     searchMode.showOperatorSelector &&
-    hasCondition1Column &&
-    !hasCondition1Operator; // No current condition[N] operator = selecting new one
+    hasSecondColumn &&
+    !hasSecondOperator; // No current condition[N] operator = selecting new one
 
   let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
   if (isSelectingNewOperatorForConditionNColumn) {
     // Selecting NEW operator for condition[N] column: position after column badge
-    operatorAnchorRef = condition1ColumnBadgeRef;
+    operatorAnchorRef = secondColumnBadgeRef;
     operatorAnchorAlign = 'right';
   } else if (isEditingConditionNOp) {
     // Edit existing condition[N] operator: position below operator badge
-    operatorAnchorRef = condition1OperatorBadgeRef;
+    operatorAnchorRef = secondOperatorBadgeRef;
     operatorAnchorAlign = 'left';
   } else if (isCreatingConditionNOp) {
     // Creating condition[N] operator in multi-column: position after column badge
-    operatorAnchorRef = condition1ColumnBadgeRef;
+    operatorAnchorRef = secondColumnBadgeRef;
     operatorAnchorAlign = 'right';
   } else {
     // First operator: position after column badge
@@ -252,8 +266,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setPreservedSearchMode(null);
     preservedFilterRef.current = null;
     setCurrentJoinOperator(undefined);
-    setIsEditingCondition1Operator(false);
-    setIsEditingCondition1ColumnState(false);
+    setEditingSelectorTarget(null); // Clear all editing states
   }, []);
 
   // Try to restore confirmed pattern from preservedSearchMode
@@ -275,7 +288,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [preservedSearchMode, onChange]);
 
   // Use centralized badge handlers for clear operations
-  const { legacy: badgeHandlers } = useBadgeHandlers({
+  // Get both scalable handlers and legacy handlers
+  const {
+    clearConditionPart,
+    clearJoin,
+    // clearAll is available as badgeHandlers.onClearAll for backward compatibility
+    editConditionPart,
+    editJoin,
+    legacy: badgeHandlers,
+  } = useBadgeHandlers({
     value,
     onChange,
     inputRef,
@@ -289,6 +310,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     columns: memoizedColumns,
   });
 
+  // Note: Scalable handlers (clearConditionPart, clearJoin, etc.) are passed directly
+  // to SearchBadge, which forwards them to useBadgeBuilder. The clearAll handler is
+  // available as both clearAll and badgeHandlers.onClearAll for backward compatibility.
+
   // Use centralized selection handlers for column/operator/join selection
   const { handleColumnSelect, handleOperatorSelect, handleJoinOperatorSelect } =
     useSelectionHandlers({
@@ -300,8 +325,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setPreservedSearchMode,
       preservedFilterRef,
       memoizedColumns,
-      isEditingCondition1Operator,
-      setIsEditingCondition1Operator,
+      isEditingSecondOperator,
+      setIsEditingSecondOperator,
       setEditingBadge,
     });
 
@@ -674,9 +699,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const columnName = stateToUse.filterSearch.field;
     const firstCondition = getFirstCondition(stateToUse.filterSearch);
     const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
-    const cond1Op = getCondition1OperatorValue(
+    const cond1Op = getConditionOperatorAt(
       stateToUse.filterSearch,
       stateToUse,
+      1,
       value
     );
 
@@ -717,7 +743,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Edit condition[1] column - show column selector for condition[1] column (multi-column)
   const handleEditCondition1Column = useCallback(() => {
     // Mark that we're editing condition[1] column for preview
-    setIsEditingCondition1ColumnState(true);
+    setEditingSelectorTarget({ conditionIndex: 1, target: 'column' });
 
     // Use preserved state if already in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
@@ -762,8 +788,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Edit column - show column selector with all columns
   // Preserve operator and value to restore after column selection
   const handleEditColumn = useCallback(() => {
-    // Mark that we're editing condition[0] column (not condition[1]) for preview
-    setIsEditingCondition1ColumnState(false);
+    // Mark that we're editing condition[0] column for preview
+    setEditingSelectorTarget({ conditionIndex: 0, target: 'column' });
 
     // Use preserved state if already in edit mode, otherwise use current state
     const stateToUse = preservedSearchMode || searchMode;
@@ -829,8 +855,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         }
       });
 
-      // Track if we're editing condition[1] operator
-      setIsEditingCondition1Operator(isSecond);
+      // Track which condition's operator we're editing (0 or 1)
+      setEditingSelectorTarget({
+        conditionIndex: isSecond ? 1 : 0,
+        target: 'operator',
+      });
 
       // Extract and preserve filter data from original state
       preservedFilterRef.current =
@@ -839,36 +868,34 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Build pattern for operator selector
       let newValue: string;
 
-      if (
-        isSecond &&
-        preservedFilterRef.current?.operator &&
-        preservedFilterRef.current?.value &&
-        preservedFilterRef.current?.join
-      ) {
+      // Access from scalable structure
+      const firstCond = preservedFilterRef.current?.conditions?.[0];
+      const joinOp = preservedFilterRef.current?.joins?.[0];
+
+      if (isSecond && firstCond?.operator && firstCond?.value && joinOp) {
         // For condition[1] operator edit, preserve first condition
         // Always include condition[1] column to trigger operator selector (not column selector)
         const cond1ColField =
-          preservedFilterRef.current.condition1Field ||
+          preservedFilterRef.current?.conditions?.[1]?.field ||
           stateToUse.partialConditions?.[1]?.column?.field ||
           columnName; // Fallback to first column if same column filter
 
         // Build pattern for operator selector, including valueTo if first condition is Between
         // Pattern: #col1 #op1 val1 [val1To] #join #col2 #
-        const firstOp = preservedFilterRef.current.operator;
-        const firstVal = preservedFilterRef.current.value;
-        const firstValTo = preservedFilterRef.current.valueTo;
-        const join = preservedFilterRef.current.join;
+        const firstOp = firstCond.operator;
+        const firstVal = firstCond.value;
+        const firstValTo = firstCond.valueTo;
 
         if (firstOp === 'inRange' && firstValTo) {
           // First condition is Between - include valueTo
           // Use #to marker to ensure correct badge display
-          newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${join.toLowerCase()} #${cond1ColField} #`;
+          newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${joinOp.toLowerCase()} #${cond1ColField} #`;
         } else {
           newValue = PatternBuilder.multiColumnPartial(
             columnName,
             firstOp,
             firstVal,
-            join,
+            joinOp,
             cond1ColField
           );
         }
@@ -994,7 +1021,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // Enter inline editing mode
       setEditingBadge({
-        type: 'firstValue',
+        conditionIndex: 0,
+        field: 'value',
         value: currentValue,
       });
       return;
@@ -1015,7 +1043,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Enter inline editing mode
     setEditingBadge({
-      type: 'firstValue',
+      conditionIndex: 0,
+      field: 'value',
       value: currentValue,
     });
   }, [searchMode, preservedSearchMode, onChange, value]);
@@ -1034,7 +1063,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
-    const condition1 = stateToUse.filterSearch.conditions[1];
+    const secondCond = stateToUse.filterSearch.conditions[1];
 
     // If we're in edit mode (modal open), restore the original pattern first
     if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
@@ -1051,8 +1080,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Enter inline editing mode for condition[1] value
     setEditingBadge({
-      type: 'condition1Value',
-      value: condition1.value,
+      conditionIndex: 1,
+      field: 'value',
+      value: secondCond.value,
     });
   }, [searchMode, preservedSearchMode, onChange]);
 
@@ -1081,7 +1111,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Enter inline editing mode for "to" value
     setEditingBadge({
-      type: 'firstValueTo',
+      conditionIndex: 0,
+      field: 'valueTo',
       value: valueTo,
     });
   }, [searchMode, preservedSearchMode]);
@@ -1100,9 +1131,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
-    const condition1 = stateToUse.filterSearch.conditions[1];
+    const secondCond = stateToUse.filterSearch.conditions[1];
 
-    if (!condition1.valueTo) return;
+    if (!secondCond.valueTo) return;
 
     // IMPORTANT: Preserve current state BEFORE entering inline edit mode
     // This ensures handleInlineEditComplete has access to original state
@@ -1112,8 +1143,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Enter inline editing mode for condition[1]'s "to" value
     setEditingBadge({
-      type: 'condition1ValueTo',
-      value: condition1.valueTo,
+      conditionIndex: 1,
+      field: 'valueTo',
+      value: secondCond.valueTo,
     });
   }, [searchMode, preservedSearchMode]);
 
@@ -1148,11 +1180,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const columnName = stateToUse.filterSearch.field;
         const operator = stateToUse.filterSearch.operator;
 
-        // Clear based on which badge was being edited
-        if (editingBadge.type === 'firstValue') {
+        // Clear based on which badge was being edited (using conditionIndex and field)
+        const isFirstCondition = editingBadge.conditionIndex === 0;
+        const isValueField = editingBadge.field === 'value';
+        const isValueToField = editingBadge.field === 'valueTo';
+
+        if (isFirstCondition && isValueField) {
           // Clearing first condition "from" value - clear entire filter
           handleClearValue();
-        } else if (editingBadge.type === 'firstValueTo') {
+        } else if (isFirstCondition && isValueToField) {
           // Clearing "to" value in Between - transition to inline editing mode for first value badge
           // User expectation: DELETE on valueTo badge -> edit first value badge [col][Between][value|]
           const fromValue = stateToUse.filterSearch.value;
@@ -1203,17 +1239,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             // Use setTimeout to ensure pattern is applied before setting edit mode
             setTimeout(() => {
               setEditingBadge({
-                type: 'firstValue',
+                conditionIndex: 0,
+                field: 'value',
                 value: fromValue,
               });
             }, 10);
             return;
           }
           // If no fromValue, fall through to handleClearValue
-        } else if (editingBadge.type === 'condition1Value') {
+        } else if (editingBadge.conditionIndex === 1 && isValueField) {
           // Clearing condition[1] "from" value - clear condition[1] only
           handleClearCondition1Value();
-        } else if (editingBadge.type === 'condition1ValueTo') {
+        } else if (editingBadge.conditionIndex === 1 && isValueToField) {
           // Clearing condition[1] "to" value in Between - transition to edit condition[1] value
           // Similar to firstValueTo handling: DELETE on valueTo → edit value badge
           if (
@@ -1247,7 +1284,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               } as React.ChangeEvent<HTMLInputElement>);
 
               // Update preservedSearchMode to remove valueTo from condition[1]
-              // This ensures the [to][700] badge is not rendered during condition1Value edit
+              // This ensures the [to][700] badge is not rendered during condition[1] value edit
               if (preservedSearchMode?.filterSearch?.conditions) {
                 const updatedConditions = [
                   ...preservedSearchMode.filterSearch.conditions,
@@ -1268,7 +1305,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               // Transition to inline editing mode for condition[1]'s value badge
               setTimeout(() => {
                 setEditingBadge({
-                  type: 'condition1Value',
+                  conditionIndex: 1,
+                  field: 'value',
                   value: cond1Value,
                 });
               }, 10);
@@ -1298,7 +1336,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // This allows user to type both values in one badge
           const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
 
-          if (dashMatch && editingBadge.type === 'firstValue') {
+          // Use index-based check: conditionIndex === 0 && field === 'value'
+          const isEditingFirstValue =
+            editingBadge.conditionIndex === 0 && editingBadge.field === 'value';
+          const isEditingFirstValueTo =
+            editingBadge.conditionIndex === 0 &&
+            editingBadge.field === 'valueTo';
+
+          if (dashMatch && isEditingFirstValue) {
             // User typed "500-600" format - split into fromVal and toVal
             const [, fromVal, toVal] = dashMatch;
             const trimmedFrom = fromVal.trim();
@@ -1321,17 +1366,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
           if (stateToUse.filterSearch.valueTo) {
             // Editing Between operator that has both values
-            if (editingBadge.type === 'firstValue') {
+            if (isEditingFirstValue) {
               // Editing "from" value - preserve "to" value
               newPattern = `#${columnName} #${operator} ${valueToUse} #to ${stateToUse.filterSearch.valueTo}##`;
-            } else if (editingBadge.type === 'firstValueTo') {
+            } else if (isEditingFirstValueTo) {
               // Editing "to" value - preserve "from" value
               newPattern = `#${columnName} #${operator} ${stateToUse.filterSearch.value} #to ${valueToUse}##`;
             } else {
               // Fallback
               newPattern = `#${columnName} #${operator} ${valueToUse}##`;
             }
-          } else if (editingBadge.type === 'firstValue') {
+          } else if (isEditingFirstValue) {
             // Between operator without valueTo (cleared or never set)
             // When editing first value and pressing ENTER: create [value][to] badge, wait for valueTo
             // Pattern: #col #inRange value #to (no ##, ready for valueTo input)
@@ -1435,20 +1480,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // CASE 2: Multi-condition filter
       const firstCondition = stateToUse.filterSearch.conditions![0];
-      const condition1 = stateToUse.filterSearch.conditions![1];
+      const secondCond = stateToUse.filterSearch.conditions![1];
       const joinOp = stateToUse.filterSearch.joinOperator || 'AND';
 
       // Determine column fields - check if multi-column filter
       const col1 = firstCondition.field || columnName;
-      const col2 = condition1.field || columnName;
+      const col2 = secondCond.field || columnName;
       // Use isMultiColumn directly - it's set true for explicit multi-column patterns
       // even when col1 == col2 (preserves the explicit condition[1] column badge)
       const isMultiColumn = stateToUse.filterSearch.isMultiColumn;
 
       let newPattern: string;
 
+      // Use index-based checks for N-condition support
+      const isEditingCondition0 = editingBadge.conditionIndex === 0;
+      const isEditingCondition1 = editingBadge.conditionIndex === 1;
+      const isEditingValue = editingBadge.field === 'value';
+      const isEditingValueTo = editingBadge.field === 'valueTo';
+
       // Handle editing first condition
-      if (editingBadge.type === 'firstValue') {
+      if (isEditingCondition0 && isEditingValue) {
         // Editing first condition's "from" value
         let firstValue = valueToUse;
         let firstValueTo = firstCondition.valueTo; // Preserve "to" if exists
@@ -1475,9 +1526,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstValueTo,
             joinOp,
             col2,
-            condition1.operator,
-            condition1.value,
-            condition1.valueTo
+            secondCond.operator,
+            secondCond.value,
+            secondCond.valueTo
           );
         } else {
           newPattern = PatternBuilder.buildMultiConditionWithValueTo(
@@ -1486,12 +1537,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstValue,
             firstValueTo,
             joinOp,
-            condition1.operator,
-            condition1.value,
-            condition1.valueTo
+            secondCond.operator,
+            secondCond.value,
+            secondCond.valueTo
           );
         }
-      } else if (editingBadge.type === 'firstValueTo') {
+      } else if (isEditingCondition0 && isEditingValueTo) {
         // Editing first condition's "to" value (Between operator)
         if (isMultiColumn) {
           newPattern = PatternBuilder.buildMultiColumnWithValueTo(
@@ -1501,9 +1552,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             valueToUse, // Updated "to" value
             joinOp,
             col2,
-            condition1.operator,
-            condition1.value,
-            condition1.valueTo
+            secondCond.operator,
+            secondCond.value,
+            secondCond.valueTo
           );
         } else {
           newPattern = PatternBuilder.buildMultiConditionWithValueTo(
@@ -1512,18 +1563,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstCondition.value, // Preserve "from" value
             valueToUse, // Updated "to" value
             joinOp,
-            condition1.operator,
-            condition1.value,
-            condition1.valueTo
+            secondCond.operator,
+            secondCond.value,
+            secondCond.valueTo
           );
         }
-      } else if (editingBadge.type === 'condition1Value') {
+      } else if (isEditingCondition1 && isEditingValue) {
         // Editing condition[1]'s "from" value
         let cond1Val = valueToUse;
-        let cond1ValTo = condition1.valueTo; // Preserve "to" if exists
+        let cond1ValTo = secondCond.valueTo; // Preserve "to" if exists
 
         // Check for dash pattern in Between operator (e.g., "500-600")
-        if (condition1.operator === 'inRange') {
+        if (secondCond.operator === 'inRange') {
           const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
           if (dashMatch) {
             const [, fromVal, toVal] = dashMatch;
@@ -1544,7 +1595,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstCondition.valueTo,
             joinOp,
             col2,
-            condition1.operator,
+            secondCond.operator,
             cond1Val,
             cond1ValTo
           );
@@ -1555,12 +1606,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstCondition.value,
             firstCondition.valueTo,
             joinOp,
-            condition1.operator,
+            secondCond.operator,
             cond1Val,
             cond1ValTo
           );
         }
-      } else if (editingBadge.type === 'condition1ValueTo') {
+      } else if (isEditingCondition1 && isEditingValueTo) {
         // Editing condition[1]'s "to" value (Between operator)
         if (isMultiColumn) {
           newPattern = PatternBuilder.buildMultiColumnWithValueTo(
@@ -1570,8 +1621,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstCondition.valueTo,
             joinOp,
             col2,
-            condition1.operator,
-            condition1.value, // Preserve "from" value
+            secondCond.operator,
+            secondCond.value, // Preserve "from" value
             valueToUse // Updated "to" value
           );
         } else {
@@ -1581,8 +1632,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             firstCondition.value,
             firstCondition.valueTo,
             joinOp,
-            condition1.operator,
-            condition1.value, // Preserve "from" value
+            secondCond.operator,
+            secondCond.value, // Preserve "from" value
             valueToUse // Updated "to" value
           );
         }
@@ -1765,7 +1816,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       ) {
         const columnName = searchMode.filterSearch.field;
         const firstCondition = searchMode.filterSearch.conditions[0];
-        const condition1 = searchMode.filterSearch.conditions[1];
+        const secondCond = searchMode.filterSearch.conditions[1];
         const joinOp = searchMode.filterSearch.joinOperator || 'AND';
 
         // Create modified searchMode with condition[1] value hidden (empty string)
@@ -1777,7 +1828,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             conditions: [
               firstCondition,
               {
-                ...condition1,
+                ...secondCond,
                 value: '', // Empty value will hide the badge
               },
             ],
@@ -1788,17 +1839,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Preserve first condition while editing condition[1] value
         preservedFilterRef.current = {
-          columnName,
-          operator: firstCondition.operator,
-          value: firstCondition.value,
-          join: joinOp,
-          condition1Operator: condition1.operator,
-          condition1Value: condition1.value,
+          conditions: [
+            {
+              field: columnName,
+              operator: firstCondition.operator,
+              value: firstCondition.value,
+            },
+            { operator: secondCond.operator, value: secondCond.value },
+          ],
+          joins: [joinOp],
         };
 
         // Build pattern for editing condition[1] value
         // Remove ## marker and replace condition[1] value with new input
-        const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${condition1.operator} ${inputValue}`;
+        const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCond.operator} ${inputValue}`;
 
         onChange({
           ...e,
@@ -1812,18 +1866,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // When input is emptied → should become: #field #op1 val1 #join #
       if (
         inputValue.trim() === '' &&
-        preservedFilterRef.current?.columnName &&
-        preservedFilterRef.current?.join &&
-        preservedFilterRef.current?.condition1Operator &&
-        preservedFilterRef.current?.value &&
-        preservedFilterRef.current?.value.trim() !== ''
+        preservedFilterRef.current?.conditions?.[0]?.field &&
+        preservedFilterRef.current?.joins?.[0] &&
+        preservedFilterRef.current?.conditions?.[1]?.operator &&
+        preservedFilterRef.current?.conditions?.[0]?.value &&
+        preservedFilterRef.current?.conditions?.[0]?.value.trim() !== ''
       ) {
         // Input is now empty while in partial multi-condition with condition[1] operator
         // Remove condition[1] operator and add trailing # to open operator selector
-        const columnName = preservedFilterRef.current.columnName;
-        const operator = preservedFilterRef.current.operator;
-        const firstValue = preservedFilterRef.current.value;
-        const joinOp = preservedFilterRef.current.join.toLowerCase();
+        const columnName = preservedFilterRef.current.conditions[0].field!;
+        const operator = preservedFilterRef.current.conditions[0].operator;
+        const firstValue = preservedFilterRef.current.conditions[0].value!;
+        const joinOp = preservedFilterRef.current.joins[0].toLowerCase();
 
         // Create pattern without condition[1] operator but with trailing # for operator selector
         const newValue = `#${columnName} #${operator} ${firstValue} #${joinOp} #`;
@@ -1842,8 +1896,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Detect confirmation of value edit (## marker added)
       if (
         inputValue.endsWith('##') &&
-        preservedFilterRef.current?.condition1Operator &&
-        preservedFilterRef.current?.condition1Value
+        preservedFilterRef.current?.conditions?.[1]?.operator &&
+        preservedFilterRef.current?.conditions?.[1]?.value
       ) {
         // Remove ## marker
         const baseValue = inputValue.slice(0, -2);
@@ -1851,7 +1905,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Check if baseValue already contains the join operator
         // If yes → editing condition[1] value (full pattern present)
         // If no  → editing first value (only first condition present)
-        const joinPattern = `#${preservedFilterRef.current.join?.toLowerCase()}`;
+        const joinPattern = `#${preservedFilterRef.current.joins?.[0]?.toLowerCase()}`;
         const hasJoinInBase = baseValue.includes(joinPattern);
 
         if (hasJoinInBase) {
@@ -1861,30 +1915,31 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } else {
           // Editing first value - reconstruct full multi-condition pattern
           // Check for multi-column filter
-          const cond1Col = preservedFilterRef.current.condition1Field;
+          const cond1Col = preservedFilterRef.current.conditions?.[1]?.field;
           const isMultiColumn =
-            preservedFilterRef.current.wasMultiColumn && cond1Col;
+            preservedFilterRef.current.isMultiColumn && cond1Col;
 
           // Build condition[1] part, handling Between (inRange) with valueTo
-          const cond1Op = preservedFilterRef.current.condition1Operator!;
-          const cond1Val = preservedFilterRef.current.condition1Value!;
-          const cond1ValTo = preservedFilterRef.current.condition1ValueTo;
+          const cond1Op = preservedFilterRef.current.conditions![1].operator!;
+          const cond1Val = preservedFilterRef.current.conditions![1].value!;
+          const cond1ValTo =
+            preservedFilterRef.current.conditions?.[1]?.valueTo;
 
-          let condition1Part: string;
+          let secondCondPart: string;
           if (cond1Op === 'inRange' && cond1ValTo) {
             // Condition[1] is Between with valueTo
-            condition1Part = `#${cond1Op} ${cond1Val} #to ${cond1ValTo}`;
+            secondCondPart = `#${cond1Op} ${cond1Val} #to ${cond1ValTo}`;
           } else {
-            condition1Part = `#${cond1Op} ${cond1Val}`;
+            secondCondPart = `#${cond1Op} ${cond1Val}`;
           }
 
           let fullPattern: string;
           if (isMultiColumn) {
             // Multi-column: include condition[1] column field
-            fullPattern = `${baseValue} ${joinPattern} #${cond1Col} ${condition1Part}##`;
+            fullPattern = `${baseValue} ${joinPattern} #${cond1Col} ${secondCondPart}##`;
           } else {
             // Same-column: no condition[1] column field
-            fullPattern = `${baseValue} ${joinPattern} ${condition1Part}##`;
+            fullPattern = `${baseValue} ${joinPattern} ${secondCondPart}##`;
           }
 
           // Call parent onChange with reconstructed pattern
@@ -1913,8 +1968,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onClearPreservedState: handleClearPreservedState,
     onEditValue: handleEditValue,
     onEditValueTo: handleEditValueTo,
-    onEditCondition1Value: handleEditCondition1Value,
-    onEditCondition1ValueTo: handleEditCondition1ValueTo,
+    // Scalable handler for N-condition support
+    editConditionValue: (
+      conditionIndex: number,
+      target: 'value' | 'valueTo'
+    ) => {
+      if (conditionIndex === 1) {
+        if (target === 'value') {
+          handleEditCondition1Value();
+        } else {
+          handleEditCondition1ValueTo();
+        }
+      }
+    },
   });
 
   // Handler for Ctrl+I to focus input, clear badge selection, and close selectors
@@ -2116,7 +2182,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const defaultOperatorIndex = useMemo(() => {
     // If editing condition[1] operator in confirmed multi-condition, get from conditions array
     if (
-      isEditingCondition1Operator &&
+      isEditingSecondOperator &&
       preservedSearchMode?.filterSearch?.isMultiCondition &&
       preservedSearchMode?.filterSearch?.conditions &&
       preservedSearchMode.filterSearch.conditions.length >= 2
@@ -2128,7 +2194,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
     // If editing condition[1] operator in partial multi-condition, use partialConditions[1].operator
     else if (
-      isEditingCondition1Operator &&
+      isEditingSecondOperator &&
       preservedSearchMode?.partialConditions?.[1]?.operator
     ) {
       const currentOperator = preservedSearchMode.partialConditions[1].operator;
@@ -2142,12 +2208,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, isEditingCondition1Operator, operators]);
+  }, [preservedSearchMode, isEditingSecondOperator, operators]);
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
     // Check if editing condition[1] column - use condition[1] column field from conditions or partialConditions state
-    if (isEditingCondition1Column) {
+    if (isEditingSecondColumnState) {
       // Try to get condition[1] column field from multi-condition filter
       const cond1ColFromConditions =
         preservedSearchMode?.filterSearch?.conditions?.[1]?.field;
@@ -2180,7 +2246,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, sortedColumns, isEditingCondition1Column]);
+  }, [preservedSearchMode, sortedColumns, isEditingSecondColumnState]);
 
   // Calculate base padding (CSS variable will override when badges are present)
   // When left icon is visible (column selector, filter mode, etc.), use smaller padding
@@ -2260,8 +2326,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               badgesContainerRef={badgesContainerRef}
               operatorBadgeRef={operatorBadgeRef}
               joinBadgeRef={joinBadgeRef}
-              condition1ColumnBadgeRef={condition1ColumnBadgeRef}
-              condition1OperatorBadgeRef={condition1OperatorBadgeRef}
+              secondColumnBadgeRef={secondColumnBadgeRef}
+              secondOperatorBadgeRef={secondOperatorBadgeRef}
+              setBadgeRef={setBadgeRef}
+              // Scalable handlers for N-condition support
+              clearConditionPart={clearConditionPart}
+              clearJoin={clearJoin}
+              editConditionPart={editConditionPart}
+              editJoin={editJoin}
+              // Legacy handlers
               onClearColumn={badgeHandlers.onClearColumn}
               onClearOperator={badgeHandlers.onClearOperator}
               onClearValue={badgeHandlers.onClearValue}
@@ -2294,8 +2367,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onBadgesChange={handleBadgesChange}
               previewColumn={previewColumn}
               previewOperator={previewOperator}
-              isEditingCondition1Column={isEditingCondition1ColumnState}
-              isEditingCondition1Operator={isEditingCondition1Operator}
+              editingConditionIndex={
+                isEditingSecondColumnState
+                  ? 1
+                  : isEditingSecondOperator
+                    ? 1
+                    : null
+              }
+              editingTarget={
+                isEditingSecondColumnState
+                  ? 'column'
+                  : isEditingSecondOperator
+                    ? 'operator'
+                    : null
+              }
             />
           </div>
         </div>

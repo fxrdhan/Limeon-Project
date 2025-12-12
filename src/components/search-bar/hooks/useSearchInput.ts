@@ -13,26 +13,97 @@ interface UseSearchInputProps {
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
+// ============================================================================
+// Dynamic Ref Map for N-Condition Support
+// ============================================================================
+
+/**
+ * Badge ID format for scalable ref system:
+ * - Column: condition-{index}-column
+ * - Operator: condition-{index}-operator
+ * - Join: join-{index}
+ * - Value: condition-{index}-value or condition-{index}-value-{from|to}
+ */
+
 export const useSearchInput = ({
   value,
   searchMode,
   onChange,
   inputRef,
 }: UseSearchInputProps) => {
+  // ============ Dynamic Ref Map ============
+  // Map<badgeId, HTMLDivElement | null>
+  const badgeRefsMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  /**
+   * Get ref for a badge by ID
+   */
+  const getBadgeRef = useCallback((badgeId: string): HTMLDivElement | null => {
+    return badgeRefsMap.current.get(badgeId) || null;
+  }, []);
+
+  /**
+   * Set ref for a badge by ID (used as callback ref)
+   */
+  const setBadgeRef = useCallback(
+    (badgeId: string, element: HTMLDivElement | null) => {
+      if (element) {
+        badgeRefsMap.current.set(badgeId, element);
+      } else {
+        badgeRefsMap.current.delete(badgeId);
+      }
+    },
+    []
+  );
+
+  /**
+   * Get column badge ref by condition index
+   */
+  const getColumnRef = useCallback(
+    (conditionIndex: number): HTMLDivElement | null => {
+      return getBadgeRef(`condition-${conditionIndex}-column`);
+    },
+    [getBadgeRef]
+  );
+
+  /**
+   * Get operator badge ref by condition index
+   */
+  const getOperatorRef = useCallback(
+    (conditionIndex: number): HTMLDivElement | null => {
+      return getBadgeRef(`condition-${conditionIndex}-operator`);
+    },
+    [getBadgeRef]
+  );
+
+  /**
+   * Get join badge ref by index (join-0 = between condition 0 and 1)
+   */
+  const getJoinRef = useCallback(
+    (joinIndex: number): HTMLDivElement | null => {
+      return getBadgeRef(`join-${joinIndex}`);
+    },
+    [getBadgeRef]
+  );
+
+  // ============ Static Refs for Selector Positioning ============
+  // These are needed for useSelectorPosition which requires RefObjects
+  // Dynamic refs are preferred via getColumnRef(n), getOperatorRef(n), getJoinRef(n)
   const badgeRef = useRef<HTMLDivElement>(null); // Column badge (condition-0-column)
   const badgesContainerRef = useRef<HTMLDivElement>(null);
   const operatorBadgeRef = useRef<HTMLDivElement>(null); // First operator badge (condition-0-operator)
   const joinBadgeRef = useRef<HTMLDivElement>(null); // Join badge (join-0)
-  const condition1ColumnBadgeRef = useRef<HTMLDivElement>(null); // Second column badge (condition-1-column)
-  const condition1OperatorBadgeRef = useRef<HTMLDivElement>(null); // Second operator badge (condition-1-operator)
+  const secondColumnBadgeRef = useRef<HTMLDivElement>(null); // Second column badge (condition-1-column)
+  const secondOperatorBadgeRef = useRef<HTMLDivElement>(null); // Second operator badge (condition-1-operator)
 
   const operatorSearchTerm = useMemo(
     () => getOperatorSearchTerm(value),
     [value]
   );
 
-  // Compute stable boolean for condition[1] operator to avoid dependency array size changes
-  const hasCondition1Operator = !!searchMode.partialConditions?.[1]?.operator;
+  // Compute stable boolean for second condition operator to avoid dependency array size changes
+  const hasSecondConditionOperator =
+    !!searchMode.partialConditions?.[1]?.operator;
 
   const showTargetedIndicator = useMemo(
     () =>
@@ -92,21 +163,21 @@ export const useSearchInput = ({
       searchMode.selectedColumn
     ) {
       // Special case: Second Between operator waiting for valueTo - badge shows [value][to], input empty
-      const condition1 = searchMode.partialConditions?.[1];
-      if (condition1?.waitingForValueTo && condition1?.value) {
+      const secondCondition = searchMode.partialConditions?.[1];
+      if (secondCondition?.waitingForValueTo && secondCondition?.value) {
         return ''; // Value already shown in badge, input empty for typing second value
       }
 
       // Special case: Second Between operator with valueTo being typed - show only valueTo
-      if (condition1?.valueTo) {
-        return condition1.valueTo; // Show only valueTo being typed
+      if (secondCondition?.valueTo) {
+        return secondCondition.valueTo; // Show only valueTo being typed
       }
 
       // Case: Second operator selected, ready for second value input - show the second value being typed
       // Multi-column pattern: #col1 #op1 val1 #and #col2 #op2 val2 → extract val2
       // Same-column pattern:  #col1 #op1 val1 #and #op2 val2 → extract val2
-      // Detect multi-column by checking if condition1.column exists
-      if (condition1?.column) {
+      // Detect multi-column by checking if secondCondition.column exists
+      if (secondCondition?.column) {
         // Multi-column: extract value after #col2 #op2
         const multiColMatch = value.match(
           /#(?:and|or)\s+#[^\s]+\s+#[^\s]+\s+(.*)$/i
@@ -221,7 +292,7 @@ export const useSearchInput = ({
     const shouldUseContainer =
       (searchMode.isFilterMode ||
         searchMode.showJoinOperatorSelector ||
-        (searchMode.showOperatorSelector && hasCondition1Operator) ||
+        (searchMode.showOperatorSelector && hasSecondConditionOperator) ||
         // Show container for incomplete multi-condition (waiting for second value)
         (!searchMode.isFilterMode &&
           searchMode.partialJoin &&
@@ -307,7 +378,7 @@ export const useSearchInput = ({
     searchMode.filterSearch?.isMultiCondition,
     searchMode.partialJoin,
     inputRef,
-    hasCondition1Operator,
+    hasSecondConditionOperator,
     currentBadgeCount,
   ]);
 
@@ -624,11 +695,18 @@ export const useSearchInput = ({
     operatorSearchTerm,
     handleInputChange,
     handleHoverChange,
+    // ============ Dynamic Ref Map API (N-Condition Support) ============
+    getBadgeRef,
+    setBadgeRef,
+    getColumnRef,
+    getOperatorRef,
+    getJoinRef,
+    // ============ Static Refs for Selector Positioning ============
     badgeRef,
     badgesContainerRef,
     operatorBadgeRef,
     joinBadgeRef,
-    condition1ColumnBadgeRef,
-    condition1OperatorBadgeRef,
+    secondColumnBadgeRef,
+    secondOperatorBadgeRef,
   };
 };
