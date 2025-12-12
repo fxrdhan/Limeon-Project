@@ -127,6 +127,63 @@ function handleColumnSelectMultiColumn(
 
   let newValue: string;
 
+  // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditions to preserve all
+  // This ensures condition 2+ are not lost when editing condition 1's column
+  const preserved = preservedFilterRef.current;
+  if ((preserved?.conditions?.length ?? 0) >= 3) {
+    const conditions = preserved!.conditions!;
+    const joins = preserved!.joins || [];
+    const defaultField = conditions[0]?.field || firstCol;
+
+    // Check if preserved operator is compatible with new column type
+    const secondCondOp = conditions[1]?.operator;
+    const isSecondOpCompatible = isOperatorCompatibleWithColumn(
+      column,
+      secondCondOp || ''
+    );
+
+    if (isSecondOpCompatible) {
+      // Build updated conditions with new column at index 1
+      const updatedConditions = conditions.map((cond, idx) => {
+        if (idx === 1) {
+          return {
+            field: column.field,
+            operator: cond.operator || '',
+            value: cond.value || '',
+            valueTo: cond.valueTo,
+          };
+        }
+        return {
+          field: cond.field || '',
+          operator: cond.operator || '',
+          value: cond.value || '',
+          valueTo: cond.valueTo,
+        };
+      });
+
+      newValue = PatternBuilder.buildNConditions(
+        updatedConditions,
+        joins,
+        true, // isMultiColumn since we're changing column
+        defaultField,
+        { confirmed: true }
+      );
+
+      // Clear preserved state
+      preservedFilterRef.current = null;
+      setPreservedSearchMode(null);
+
+      setFilterValue(newValue, onChange, inputRef);
+
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+      return;
+    }
+    // If operator not compatible, fall through to open operator selector
+    // The existing code will handle this case
+  }
+
   // Check if we have preserved second operator/value (from handleEditSecondColumn)
   const secondCondOp = preservedFilterRef.current?.conditions?.[1]?.operator;
   if (secondCondOp && secondCondOp.trim() !== '') {
@@ -271,6 +328,51 @@ function handleColumnSelectWithPreservedFilter(
 
   // Check if operator is compatible with new column type
   const isOperatorCompatible = isOperatorCompatibleWithColumn(column, operator);
+
+  // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditions to preserve all
+  // This ensures condition 2+ are not lost when editing condition 0's column
+  if ((preserved.conditions?.length ?? 0) >= 3 && isOperatorCompatible) {
+    const conditions = preserved.conditions!;
+    const joins = preserved.joins || [];
+    const defaultField = column.field; // New column becomes the default field
+
+    // Build updated conditions with new column at index 0
+    const updatedConditions = conditions.map((cond, idx) => {
+      if (idx === 0) {
+        return {
+          field: column.field,
+          operator: cond.operator || '',
+          value: cond.value || '',
+          valueTo: cond.valueTo,
+        };
+      }
+      return {
+        field: cond.field || '',
+        operator: cond.operator || '',
+        value: cond.value || '',
+        valueTo: cond.valueTo,
+      };
+    });
+
+    newValue = PatternBuilder.buildNConditions(
+      updatedConditions,
+      joins,
+      preserved.isMultiColumn || true, // Force multi-column since we're changing column
+      defaultField,
+      { confirmed: true }
+    );
+
+    // Clear preserved state
+    preservedFilterRef.current = null;
+    setPreservedSearchMode(null);
+
+    setFilterValue(newValue, onChange, inputRef);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    return;
+  }
 
   if (isOperatorCompatible) {
     // Handle multi-condition or partial multi-condition
@@ -501,6 +603,48 @@ function handleOperatorSelectEditSecond(
 
   let newValue: string;
 
+  // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditions to preserve all
+  if ((preserved.conditions?.length ?? 0) >= 3) {
+    const conditions = preserved.conditions!;
+    const joins = preserved.joins || [];
+
+    // Build updated conditions with new operator at index 1
+    const updatedConditions = conditions.map((cond, idx) => {
+      if (idx === 1) {
+        return {
+          field: cond.field || '',
+          operator: operator.value,
+          value: cond.value || '',
+          valueTo: operator.value === 'inRange' ? cond.valueTo : undefined,
+        };
+      }
+      return {
+        field: cond.field || '',
+        operator: cond.operator || '',
+        value: cond.value || '',
+        valueTo: cond.valueTo,
+      };
+    });
+
+    newValue = PatternBuilder.buildNConditions(
+      updatedConditions,
+      joins,
+      preserved.isMultiColumn || true,
+      columnName,
+      { confirmed: true }
+    );
+
+    preservedFilterRef.current = null;
+    setPreservedSearchMode(null);
+    setIsEditingSecondOperator(false);
+    setFilterValue(newValue, onChange, inputRef);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    return;
+  }
+
   // Special handling: changing to Between when no secondCondValueTo exists
   if (
     operator.value === 'inRange' &&
@@ -640,6 +784,47 @@ function handleOperatorSelectEditFirst(
   const secondCond = preserved.conditions?.[1];
   const joinOp = preserved.joins?.[0];
   let newValue: string;
+
+  // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditions to preserve all
+  if ((preserved.conditions?.length ?? 0) >= 3) {
+    const conditions = preserved.conditions!;
+    const joins = preserved.joins || [];
+
+    // Build updated conditions with new operator at index 0
+    const updatedConditions = conditions.map((cond, idx) => {
+      if (idx === 0) {
+        return {
+          field: cond.field || columnName,
+          operator: operator.value,
+          value: cond.value || '',
+          valueTo: operator.value === 'inRange' ? cond.valueTo : undefined,
+        };
+      }
+      return {
+        field: cond.field || '',
+        operator: cond.operator || '',
+        value: cond.value || '',
+        valueTo: cond.valueTo,
+      };
+    });
+
+    newValue = PatternBuilder.buildNConditions(
+      updatedConditions,
+      joins,
+      preserved.isMultiColumn || true,
+      columnName,
+      { confirmed: true }
+    );
+
+    preservedFilterRef.current = null;
+    setPreservedSearchMode(null);
+    setFilterValue(newValue, onChange, inputRef);
+
+    setTimeout(() => {
+      inputRef?.current?.focus();
+    }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+    return;
+  }
 
   // Special handling: changing to Between when value exists but no valueTo
   if (operator.value === 'inRange' && firstCond?.value && !firstCond?.valueTo) {
