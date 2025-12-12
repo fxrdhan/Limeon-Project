@@ -9,19 +9,32 @@ import { RefObject } from 'react';
 import { EnhancedSearchState, FilterSearch } from '../types';
 
 /**
+ * Preserved condition data for N-condition support
+ */
+export interface PreservedCondition {
+  field?: string; // Column field name
+  operator?: string; // Operator value
+  value?: string; // Primary value
+  valueTo?: string; // Secondary value for Between operator
+}
+
+/**
  * Preserved filter state for edit operations
+ * Supports unlimited N conditions through array-based structure
+ *
+ * Migration note: Legacy fields (columnName, operator, value, etc.) are kept
+ * for backward compatibility. Use conditions[] array for new code.
  */
 export interface PreservedFilter {
-  columnName?: string;
-  operator: string;
-  value: string;
-  valueTo?: string; // For Between (inRange) operator - "to" value
-  join?: 'AND' | 'OR';
-  condition1Operator?: string; // Operator at condition index 1
-  condition1Value?: string; // Value at condition index 1
-  condition1ValueTo?: string; // "to" value for Between at condition index 1
-  condition1Field?: string; // Column field for condition index 1
-  wasMultiColumn?: boolean; // Track if original structure had explicit condition[1] column badge
+  // ============ NEW: Scalable N-condition fields ============
+  /** Array of preserved conditions (index 0 = first condition) */
+  conditions: PreservedCondition[];
+  /** Array of join operators (joins[0] = between condition 0 and 1) */
+  joins: ('AND' | 'OR')[];
+  /** Index of condition being edited */
+  editingIndex?: number;
+  /** Flag indicating multi-column filter (different columns per condition) */
+  isMultiColumn?: boolean;
 }
 
 /**
@@ -79,6 +92,9 @@ export function setFilterValue(
 
 /**
  * Extract preserved filter data from multi-condition filter
+ * Supports N conditions through array-based structure
+ *
+ * Populates both new (conditions[], joins[]) and legacy fields for backward compatibility
  *
  * @param searchMode - Current search state
  * @returns Preserved filter object or null
@@ -89,83 +105,88 @@ export function extractMultiConditionPreservation(
   const filter = searchMode.filterSearch;
   if (!filter) return null;
 
-  // Multi-condition filter with both conditions
+  const conditions: PreservedCondition[] = [];
+  const joins: ('AND' | 'OR')[] = [];
+
+  // Multi-condition filter with confirmed conditions
   if (
     filter.isMultiCondition &&
     filter.conditions &&
-    filter.conditions.length >= 2
+    filter.conditions.length >= 1
   ) {
-    const firstCondition = filter.conditions[0];
-    const condition1 = filter.conditions[1];
+    // Extract all conditions from confirmed filter
+    filter.conditions.forEach((cond, index) => {
+      conditions.push({
+        field: cond.field || filter.field,
+        operator: cond.operator,
+        value: cond.value,
+        valueTo: cond.valueTo,
+      });
+
+      // Add join operator between conditions (N-1 joins for N conditions)
+      if (index < filter.conditions!.length - 1) {
+        joins.push(filter.joinOperator || 'AND');
+      }
+    });
 
     return {
-      operator: firstCondition.operator,
-      value: firstCondition.value,
-      valueTo: firstCondition.valueTo, // Preserve valueTo for Between
-      join: filter.joinOperator,
-      condition1Operator: condition1.operator,
-      condition1Value: condition1.value,
-      condition1ValueTo: condition1.valueTo, // Preserve condition[1] valueTo for Between
-      condition1Field: condition1.field, // Preserve condition[1] column for multi-column
-      wasMultiColumn: filter.isMultiColumn, // Track if original had explicit condition[1] column badge
+      conditions,
+      joins,
+      isMultiColumn: filter.isMultiColumn,
     };
   }
 
-  // Partial multi-condition (has join and condition[1] operator but no value)
-  const condition1 = searchMode.partialConditions?.[1];
-  if (searchMode.partialJoin && condition1?.operator && filter.value) {
+  // Build conditions from partial state + first condition
+  // First condition: from filter itself
+  conditions.push({
+    field: filter.field,
+    operator: filter.operator,
+    value: filter.value,
+    valueTo: filter.valueTo,
+  });
+
+  // Check for partial conditions being built
+  const partialConditions = searchMode.partialConditions || [];
+
+  // Add partial join if exists
+  if (searchMode.partialJoin) {
+    joins.push(searchMode.partialJoin);
+
+    // Add partial condition[N] if exists
+    for (let i = 1; i < partialConditions.length + 1; i++) {
+      const partialCond = partialConditions[i];
+      if (partialCond) {
+        conditions.push({
+          field: partialCond.field,
+          operator: partialCond.operator,
+          value: partialCond.value,
+          valueTo: partialCond.valueTo,
+        });
+
+        // Add join for next condition if more partials exist
+        if (i < partialConditions.length && partialConditions[i + 1]) {
+          // Use joins array if available, otherwise fallback to partialJoin
+          const joinAtIndex = searchMode.joins?.[i] || searchMode.partialJoin;
+          joins.push(joinAtIndex);
+        }
+      }
+    }
+
+    const hasMultiColumn = partialConditions.some(p => p?.column !== undefined);
+
     return {
-      operator: filter.operator,
-      value: filter.value,
-      valueTo: filter.valueTo, // Preserve valueTo for Between
-      join: searchMode.partialJoin,
-      condition1Operator: condition1.operator,
-      condition1Value: condition1.value ?? '',
-      condition1Field: condition1.field, // Preserve condition[1] column for multi-column
-      wasMultiColumn: !!condition1.column, // Has explicit condition[1] column = multi-column
+      conditions,
+      joins,
+      isMultiColumn: hasMultiColumn,
     };
   }
 
-  // Partial join with condition[1] column but no operator yet
-  // This happens when operator selector for condition[1] column is open
-  if (searchMode.partialJoin && condition1?.column && filter.value) {
-    return {
-      operator: filter.operator,
-      value: filter.value,
-      valueTo: filter.valueTo, // Preserve valueTo for Between
-      join: searchMode.partialJoin,
-      condition1Field: condition1.field, // Preserve condition[1] column!
-      wasMultiColumn: true, // Has explicit condition[1] column = multi-column
-      // No condition1Operator/condition1Value yet
-    };
-  }
-
-  // Partial join only (has join but no condition[1] column yet)
-  // This happens when column selector for condition[1] column is open
-  if (searchMode.partialJoin && filter.value) {
-    return {
-      operator: filter.operator,
-      value: filter.value,
-      valueTo: filter.valueTo, // Preserve valueTo for Between
-      join: searchMode.partialJoin,
-      // No condition1Operator/condition1Value/condition1Field yet
-    };
-  }
-
-  // Single condition with value
-  if (filter.operator && filter.value) {
-    return {
-      operator: filter.operator,
-      value: filter.value,
-      valueTo: filter.valueTo, // Preserve valueTo for Between
-    };
-  }
-
-  // Single condition without value (column + operator only)
+  // Single condition only
   if (filter.operator) {
     return {
-      operator: filter.operator,
-      value: '',
+      conditions,
+      joins: [],
+      isMultiColumn: false,
     };
   }
 
@@ -173,7 +194,7 @@ export function extractMultiConditionPreservation(
 }
 
 /**
- * Extract first condition from filter
+ * Extract first condition from filter (convenience wrapper)
  *
  * @param filter - Filter search object
  * @returns First condition or fallback to filter's operator/value
@@ -182,40 +203,66 @@ export function getFirstCondition(filter: FilterSearch): {
   operator: string;
   value: string;
   valueTo?: string;
+  field?: string;
 } {
-  if (filter.isMultiCondition && filter.conditions && filter.conditions[0]) {
-    return filter.conditions[0];
-  }
-
-  return {
-    operator: filter.operator,
-    value: filter.value,
-    valueTo: filter.valueTo,
-  };
+  return (
+    getConditionAt(filter, undefined, 0) || {
+      operator: filter.operator,
+      value: filter.value,
+      valueTo: filter.valueTo,
+      field: filter.field,
+    }
+  );
 }
 
 /**
- * Extract condition[1] from filter
+ * Extract condition at specific index (scalable N-condition support)
  *
  * @param filter - Filter search object
  * @param searchMode - Current search state
- * @returns Condition[1] or undefined
+ * @param index - Condition index (0 = first, 1 = second, etc.)
+ * @returns Condition at index or undefined
  */
-export function getCondition1(
+export function getConditionAt(
   filter: FilterSearch,
-  searchMode?: EnhancedSearchState
-): { operator: string; value: string } | undefined {
+  searchMode?: EnhancedSearchState,
+  index: number = 0
+):
+  | { operator: string; value: string; valueTo?: string; field?: string }
+  | undefined {
   // From confirmed multi-condition
-  if (filter.isMultiCondition && filter.conditions && filter.conditions[1]) {
-    return filter.conditions[1];
+  if (
+    filter.isMultiCondition &&
+    filter.conditions &&
+    filter.conditions[index]
+  ) {
+    const cond = filter.conditions[index];
+    return {
+      operator: cond.operator,
+      value: cond.value,
+      valueTo: cond.valueTo,
+      field: cond.field || filter.field,
+    };
   }
 
-  // From partial multi-condition state (using scalable partialConditions)
-  const condition1Op = searchMode?.partialConditions?.[1]?.operator;
-  if (condition1Op) {
+  // Index 0: fallback to filter itself
+  if (index === 0) {
     return {
-      operator: condition1Op,
-      value: searchMode?.partialConditions?.[1]?.value ?? '', // Value if available
+      operator: filter.operator,
+      value: filter.value,
+      valueTo: filter.valueTo,
+      field: filter.field,
+    };
+  }
+
+  // From partial multi-condition state
+  const partialCond = searchMode?.partialConditions?.[index];
+  if (partialCond?.operator) {
+    return {
+      operator: partialCond.operator,
+      value: partialCond.value ?? '',
+      valueTo: partialCond.valueTo,
+      field: partialCond.field,
     };
   }
 
@@ -223,7 +270,7 @@ export function getCondition1(
 }
 
 /**
- * Get join operator from filter
+ * Get join operator from filter (convenience wrapper for first join)
  *
  * @param filter - Filter search object
  * @param searchMode - Current search state
@@ -233,43 +280,69 @@ export function getJoinOperator(
   filter: FilterSearch,
   searchMode?: EnhancedSearchState
 ): 'AND' | 'OR' | undefined {
-  // From confirmed multi-condition
-  if (filter.joinOperator) {
-    return filter.joinOperator;
+  // Delegate to getJoinAt for index 0
+  return getJoinAt(filter, searchMode, 0);
+}
+
+/**
+ * Get join operator at specific index (scalable N-condition support)
+ *
+ * @param filter - Filter search object
+ * @param searchMode - Current search state
+ * @param index - Join index (0 = between condition 0 and 1)
+ * @returns Join operator or undefined
+ */
+export function getJoinAt(
+  filter: FilterSearch,
+  searchMode?: EnhancedSearchState,
+  index: number = 0
+): 'AND' | 'OR' | undefined {
+  // First, check searchMode.joins array (scalable N-join support)
+  if (searchMode?.joins?.[index]) {
+    return searchMode.joins[index];
   }
 
-  // From partial join state
-  if (searchMode?.partialJoin) {
-    return searchMode.partialJoin;
+  // For index 0, also check legacy sources
+  if (index === 0) {
+    // From confirmed multi-condition filter
+    if (filter.joinOperator) {
+      return filter.joinOperator;
+    }
+    // From partial join state (building second condition)
+    if (searchMode?.partialJoin) {
+      return searchMode.partialJoin;
+    }
   }
 
   return undefined;
 }
 
 /**
- * Extract condition[1] operator from various sources
+ * Extract condition operator at specific index from various sources
  *
  * @param filter - Filter search object
  * @param searchMode - Current search state
- * @param valuePattern - Current value string to parse
- * @returns Condition[1] operator value or undefined
+ * @param index - Condition index
+ * @param valuePattern - Current value string to parse (fallback)
+ * @returns Condition operator value or undefined
  */
-export function getCondition1OperatorValue(
+export function getConditionOperatorAt(
   filter: FilterSearch,
   searchMode: EnhancedSearchState | undefined,
+  index: number,
   valuePattern?: string
 ): string | undefined {
-  // From confirmed multi-condition
-  const condition1 = getCondition1(filter, searchMode);
-  if (condition1) {
-    return condition1.operator;
+  // From confirmed/partial condition
+  const condition = getConditionAt(filter, searchMode, index);
+  if (condition) {
+    return condition.operator;
   }
 
-  // Extract from value pattern as fallback
-  if (valuePattern) {
-    const cond1OpMatch = valuePattern.match(/#(and|or)\s+#([^\s]+)/i);
-    if (cond1OpMatch) {
-      return cond1OpMatch[2];
+  // Extract from value pattern as fallback (for index 1 only - legacy support)
+  if (index === 1 && valuePattern) {
+    const condOpMatch = valuePattern.match(/#(and|or)\s+#([^\s]+)/i);
+    if (condOpMatch) {
+      return condOpMatch[2];
     }
   }
 

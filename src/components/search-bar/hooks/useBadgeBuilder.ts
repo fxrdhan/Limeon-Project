@@ -3,34 +3,51 @@ import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
 import { getOperatorLabelForColumn } from '../utils/operatorUtils';
 
-interface BadgeHandlers {
+// ============ Scalable Index-Based Handler Types ============
+type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
+
+interface ScalableHandlers {
+  /** Clear a specific part of a condition at given index */
+  clearConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
+  /** Clear a join at given index */
+  clearJoin: (joinIndex: number) => void;
+  /** Clear everything */
+  clearAll: () => void;
+  /** Edit a specific part of a condition at given index */
+  editConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
+  /** Edit a join at given index */
+  editJoin: (joinIndex: number) => void;
+}
+
+// ============ Legacy Handler Types (for backward compatibility) ============
+interface LegacyHandlers {
   onClearColumn: () => void;
   onClearOperator: () => void;
   onClearValue: () => void;
-  onClearValueTo?: () => void; // Clear "to" value in Between operator (first condition)
+  onClearValueTo?: () => void;
   onClearPartialJoin: () => void;
-  onClearCondition1Column?: () => void; // Clear second column (multi-column filter)
+  onClearCondition1Column?: () => void;
   onClearCondition1Operator: () => void;
   onClearCondition1Value: () => void;
-  onClearCondition1ValueTo?: () => void; // Clear "to" value in Between operator (second condition)
+  onClearCondition1ValueTo?: () => void;
   onClearAll: () => void;
   onEditColumn: () => void;
-  onEditCondition1Column?: () => void; // Edit second column (multi-column filter)
-  onEditOperator: (isSecond?: boolean) => void; // Updated to accept optional parameter
+  onEditCondition1Column?: () => void;
+  onEditOperator: (isSecond?: boolean) => void;
   onEditJoin: () => void;
-  onEditValue: () => void; // Edit first value (or "from" value in Between)
-  onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
-  onEditCondition1Value?: () => void; // Edit condition[1] value
-  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (condition[1])
+  onEditValue: () => void;
+  onEditValueTo?: () => void;
+  onEditCondition1Value?: () => void;
+  onEditCondition1ValueTo?: () => void;
 }
+
+// Combined interface - supports both scalable and legacy
+interface BadgeHandlers extends Partial<ScalableHandlers>, LegacyHandlers {}
 
 interface InlineEditingProps {
   editingBadge: {
-    type:
-      | 'firstValue'
-      | 'condition1Value'
-      | 'firstValueTo'
-      | 'condition1ValueTo';
+    conditionIndex: number; // 0 = first condition, 1 = second, etc.
+    field: 'value' | 'valueTo'; // Which field is being edited
     value: string;
   } | null;
   onInlineValueChange: (value: string) => void;
@@ -109,17 +126,12 @@ function getValueBadgeInlineProps(
 > | null {
   if (!inlineEditingProps?.editingBadge) return null;
 
-  // Determine expected edit type based on condition index and isValueTo
-  const editType =
-    conditionIndex === 0
-      ? isValueTo
-        ? 'firstValueTo'
-        : 'firstValue'
-      : isValueTo
-        ? 'condition1ValueTo'
-        : 'condition1Value';
-
-  const isEditing = inlineEditingProps.editingBadge.type === editType;
+  // Check if this badge matches the editing state using index-based comparison
+  const { conditionIndex: editingIndex, field: editingField } =
+    inlineEditingProps.editingBadge;
+  const expectedField = isValueTo ? 'valueTo' : 'value';
+  const isEditing =
+    editingIndex === conditionIndex && editingField === expectedField;
   if (!isEditing) return null;
 
   return {
@@ -134,7 +146,7 @@ function getValueBadgeInlineProps(
 
 /**
  * Get value badge handlers based on condition index.
- * Handles both normal value and valueTo (Between operator).
+ * Uses scalable handlers when available, falls back to legacy.
  */
 function getValueBadgeHandlers(
   handlers: BadgeHandlers,
@@ -142,6 +154,18 @@ function getValueBadgeHandlers(
   totalConditions: number,
   isValueTo: boolean
 ): { onClear: () => void; onEdit?: () => void; canEdit: boolean } {
+  const target: BadgeTarget = isValueTo ? 'valueTo' : 'value';
+
+  // Prefer scalable handlers if available
+  if (handlers.clearConditionPart && handlers.editConditionPart) {
+    return {
+      onClear: () => handlers.clearConditionPart!(conditionIndex, target),
+      onEdit: () => handlers.editConditionPart!(conditionIndex, target),
+      canEdit: true,
+    };
+  }
+
+  // Fallback to legacy handlers
   const isFirst = conditionIndex === 0;
   const isLast = conditionIndex === totalConditions - 1;
   const isTwoConditions = totalConditions === 2;
@@ -169,6 +193,94 @@ function getValueBadgeHandlers(
         : handlers.onClearAll,
     onEdit: isFirst ? handlers.onEditValue : handlers.onEditCondition1Value,
     canEdit: true,
+  };
+}
+
+/**
+ * Get column badge handlers for a condition at given index.
+ * Uses scalable handlers when available, falls back to legacy.
+ */
+function getColumnBadgeHandlers(
+  handlers: BadgeHandlers,
+  conditionIndex: number
+): { onClear: () => void; onEdit: () => void } {
+  // Prefer scalable handlers if available
+  if (handlers.clearConditionPart && handlers.editConditionPart) {
+    return {
+      onClear: () => handlers.clearConditionPart!(conditionIndex, 'column'),
+      onEdit: () => handlers.editConditionPart!(conditionIndex, 'column'),
+    };
+  }
+
+  // Fallback to legacy handlers
+  if (conditionIndex === 0) {
+    return {
+      onClear: handlers.onClearColumn,
+      onEdit: handlers.onEditColumn,
+    };
+  }
+  return {
+    onClear:
+      handlers.onClearCondition1Column ?? handlers.onClearCondition1Operator,
+    onEdit: handlers.onEditCondition1Column ?? handlers.onEditColumn,
+  };
+}
+
+/**
+ * Get operator badge handlers for a condition at given index.
+ * Uses scalable handlers when available, falls back to legacy.
+ */
+function getOperatorBadgeHandlers(
+  handlers: BadgeHandlers,
+  conditionIndex: number,
+  totalConditions: number
+): { onClear: () => void; onEdit: () => void } {
+  // Prefer scalable handlers if available
+  if (handlers.clearConditionPart && handlers.editConditionPart) {
+    return {
+      onClear: () => handlers.clearConditionPart!(conditionIndex, 'operator'),
+      onEdit: () => handlers.editConditionPart!(conditionIndex, 'operator'),
+    };
+  }
+
+  // Fallback to legacy handlers
+  if (conditionIndex === 0) {
+    return {
+      onClear: handlers.onClearOperator,
+      onEdit: () => handlers.onEditOperator(false),
+    };
+  }
+
+  const isLast = conditionIndex === totalConditions - 1;
+  return {
+    onClear:
+      isLast && totalConditions === 2
+        ? handlers.onClearCondition1Operator
+        : handlers.onClearAll,
+    onEdit: () => handlers.onEditOperator(true),
+  };
+}
+
+/**
+ * Get join badge handlers for a join at given index.
+ * Uses scalable handlers when available, falls back to legacy.
+ */
+function getJoinBadgeHandlers(
+  handlers: BadgeHandlers,
+  joinIndex: number
+): { onClear: () => void; onEdit: () => void } {
+  // Prefer scalable handlers if available
+  if (handlers.clearJoin && handlers.editJoin) {
+    return {
+      onClear: () => handlers.clearJoin!(joinIndex),
+      onEdit: () => handlers.editJoin!(joinIndex),
+    };
+  }
+
+  // Fallback to legacy handlers
+  return {
+    onClear: handlers.onClearPartialJoin,
+    onEdit: handlers.onEditJoin,
   };
 }
 
@@ -254,10 +366,6 @@ export const useBadgeBuilder = (
     ) {
       return badges;
     }
-
-    // Get condition at index 1 using scalable helper
-    // This replaces all direct access to deprecated fields
-    const condition1 = getConditionAt(searchMode, 1);
 
     const filter = searchMode.filterSearch;
     const isMultiCondition =
@@ -524,84 +632,115 @@ export const useBadgeBuilder = (
       }
     }
 
-    // 5. Join Badge (Orange) - AND/OR
-    // Use 'join-0' for the join between condition 0 and condition 1
-    if (searchMode.partialJoin) {
+    // ============ SCALABLE N-CONDITION BADGES (index > 0) ============
+    // Loop over all conditions at index > 0 (second, third, etc.)
+    // This replaces hardcoded condition[1] handling
+    const partialConditions = searchMode.partialConditions || [];
+    const totalPartialConditions = partialConditions.length;
+
+    for (let condIdx = 1; condIdx < totalPartialConditions; condIdx++) {
+      const condition = getConditionAt(searchMode, condIdx);
+      const joinIndex = condIdx - 1;
+
+      // 5. Join Badge (Orange) - AND/OR between conditions
+      // Use partialJoin for first join, or joins array for N joins
+      const joinLabel = searchMode.joins?.[joinIndex] || searchMode.partialJoin;
+      if (joinLabel) {
+        const joinHandlers = getJoinBadgeHandlers(handlers, joinIndex);
+        badges.push({
+          id: `join-${joinIndex}`,
+          type: 'join',
+          label: joinLabel,
+          onClear: joinHandlers.onClear,
+          canClear: true,
+          onEdit: joinHandlers.onEdit,
+          canEdit: true,
+        });
+      }
+
+      // 6. Column Badge (Purple) - for multi-column filters
+      if (condition.column) {
+        const columnHandlers = getColumnBadgeHandlers(handlers, condIdx);
+        badges.push({
+          id: `condition-${condIdx}-column`,
+          type: 'column',
+          label: condition.column.headerName,
+          onClear: columnHandlers.onClear,
+          canClear: true,
+          onEdit: columnHandlers.onEdit,
+          canEdit: true,
+        });
+      }
+
+      // 7. Operator Badge (Blue)
+      if (condition.operator && filter) {
+        const columnForLabel = condition.column || filter.column;
+        const operatorLabel = getOperatorLabelForColumn(
+          columnForLabel,
+          condition.operator
+        );
+        const operatorHandlers = getOperatorBadgeHandlers(
+          handlers,
+          condIdx,
+          totalPartialConditions
+        );
+
+        badges.push({
+          id: `condition-${condIdx}-operator`,
+          type: 'operatorN',
+          label: operatorLabel,
+          onClear: operatorHandlers.onClear,
+          canClear: true,
+          onEdit: operatorHandlers.onEdit,
+          canEdit: true,
+        });
+      }
+
+      // 8. Value Badge(s) (Gray) - for Between operator partial state
+      if (
+        condition.operator &&
+        condition.value &&
+        condition.operator === 'inRange' &&
+        (condition.waitingForValueTo || condition.valueTo)
+      ) {
+        const columnType = (condition.column || filter?.column)?.type;
+        const valueHandlers = getValueBadgeHandlers(
+          handlers,
+          condIdx,
+          totalPartialConditions,
+          false
+        );
+
+        // Value-from badge
+        badges.push(
+          createValueBadgeConfig(
+            `condition-${condIdx}-value-from`,
+            condition.value,
+            'value',
+            { onClear: valueHandlers.onClear, canEdit: false },
+            columnType,
+            null
+          )
+        );
+
+        // "to" separator badge
+        badges.push(createSeparatorBadge(condIdx));
+      }
+    }
+
+    // Handle legacy case: partialJoin exists but no partialConditions[1]
+    // This maintains backward compatibility during transition
+    if (searchMode.partialJoin && totalPartialConditions <= 1) {
+      const joinHandlers = getJoinBadgeHandlers(handlers, 0);
       badges.push({
         id: 'join-0',
         type: 'join',
         label: searchMode.partialJoin,
-        onClear: handlers.onClearPartialJoin,
+        onClear: joinHandlers.onClear,
         canClear: true,
-        onEdit: handlers.onEditJoin,
-        canEdit: true, // Join badges are editable
-      });
-    }
-
-    // 6. Condition[1] Column Badge (Purple) - MULTI-COLUMN SUPPORT
-    // Always show condition[1] column badge when it exists (even if same as first column)
-    // Use scalable helper: getConditionAt(searchMode, 1).column
-    if (condition1.column) {
-      badges.push({
-        id: 'condition-1-column',
-        type: 'column', // Same type as first column badge
-        label: condition1.column.headerName,
-        onClear:
-          handlers.onClearCondition1Column ||
-          handlers.onClearCondition1Operator, // TODO: onClearColumn(1)
-        canClear: true,
-        onEdit: handlers.onEditCondition1Column || handlers.onEditColumn, // TODO: onEditColumn(1)
+        onEdit: joinHandlers.onEdit,
         canEdit: true,
       });
-    }
-
-    // 7. Condition[1] Operator Badge (Blue)
-    // Use scalable helper: getConditionAt(searchMode, 1).operator
-    if (condition1.operator && filter) {
-      // For multi-column, use condition1.column for operator label
-      const columnForLabel = condition1.column || filter.column;
-      const operatorLabel = getOperatorLabelForColumn(
-        columnForLabel,
-        condition1.operator
-      );
-
-      badges.push({
-        id: 'condition-1-operator',
-        type: 'operatorN',
-        label: operatorLabel,
-        onClear: handlers.onClearCondition1Operator, // TODO: onClearOperator(1)
-        canClear: true,
-        onEdit: () => handlers.onEditOperator(true), // TODO: onEditOperator(1)
-        canEdit: true, // Operator badges are editable
-      });
-    }
-
-    // 8. Condition[1] Value Badge(s) (Gray) - Partial state while user is typing
-    // Show [value][to] after user presses Enter (adds #to marker)
-    // Note: condition1.valueTo badge is NOT shown here - user is still typing it in input
-    // Use scalable helper: getConditionAt(searchMode, 1).*
-    if (
-      condition1.operator &&
-      condition1.value &&
-      condition1.operator === 'inRange' &&
-      (condition1.waitingForValueTo || condition1.valueTo)
-    ) {
-      const condition1ColumnType = (condition1.column || filter?.column)?.type;
-
-      // Value-from badge (not editable while typing)
-      badges.push(
-        createValueBadgeConfig(
-          'condition-1-value-from',
-          condition1.value,
-          'value',
-          { onClear: handlers.onClearCondition1Value, canEdit: false }, // TODO: onClearValue(1)
-          condition1ColumnType,
-          null
-        )
-      );
-
-      // "to" separator badge
-      badges.push(createSeparatorBadge(1));
     }
 
     // Apply isSelected to badge at selectedBadgeIndex

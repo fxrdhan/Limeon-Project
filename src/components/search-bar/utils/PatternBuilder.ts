@@ -785,4 +785,81 @@ export class PatternBuilder {
       }
     );
   }
+
+  /**
+   * Build pattern with join selector open at specific index
+   * For N-condition editing: opens join selector after condition[joinIndex]
+   *
+   * @param conditions - Array of condition objects
+   * @param joins - Array of existing join operators
+   * @param isMultiColumn - Whether multi-column filter
+   * @param defaultField - Default column field
+   * @param joinIndex - Index of join to edit (0 = after condition 0, 1 = after condition 1, etc.)
+   * @returns Pattern with join selector open at specified position
+   */
+  static withJoinSelectorAtIndex(
+    conditions: Array<{
+      field?: string;
+      operator: string;
+      value: string;
+      valueTo?: string;
+    }>,
+    joins: ('AND' | 'OR')[],
+    isMultiColumn: boolean,
+    defaultField: string,
+    joinIndex: number
+  ): string {
+    // Build pattern up to and including condition[joinIndex]
+    // Then add trailing # to open join selector
+    const conditionsUpToJoin = conditions.slice(0, joinIndex + 1);
+    const joinsUpToJoin = joins.slice(0, joinIndex);
+
+    return this.buildNConditions(
+      conditionsUpToJoin,
+      joinsUpToJoin,
+      isMultiColumn,
+      defaultField,
+      {
+        confirmed: false,
+        openSelector: true,
+      }
+    );
+  }
+
+  /**
+   * Build confirmed pattern for N conditions up to specific index
+   * Used when clearing a join - confirms conditions up to that point
+   *
+   * @param conditions - Array of condition objects
+   * @param joins - Array of join operators
+   * @param isMultiColumn - Whether multi-column filter
+   * @param defaultField - Default column field
+   * @param upToIndex - Include conditions up to and including this index
+   * @returns Confirmed pattern with conditions up to specified index
+   */
+  static confirmedUpToIndex(
+    conditions: Array<{
+      field?: string;
+      operator: string;
+      value: string;
+      valueTo?: string;
+    }>,
+    joins: ('AND' | 'OR')[],
+    isMultiColumn: boolean,
+    defaultField: string,
+    upToIndex: number
+  ): string {
+    const conditionsToInclude = conditions.slice(0, upToIndex + 1);
+    const joinsToInclude = joins.slice(0, upToIndex);
+
+    return this.buildNConditions(
+      conditionsToInclude,
+      joinsToInclude,
+      isMultiColumn,
+      defaultField,
+      {
+        confirmed: true,
+      }
+    );
+  }
 }
