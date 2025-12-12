@@ -464,6 +464,9 @@ export class PatternBuilder {
    * Handles all combinations: Normal+Normal, Between+Normal, Normal+Between, Between+Between
    * NOTE: This is for SAME-COLUMN filters only. For multi-column, use buildMultiColumnWithValueTo.
    *
+   * @deprecated Use buildNConditions instead for scalable N-condition support.
+   * This method only supports 2 conditions and will not preserve 3+ conditions.
+   *
    * @param field - Column field name
    * @param op1 - First operator value
    * @param val1 - First value
@@ -509,6 +512,9 @@ export class PatternBuilder {
   /**
    * Build multi-column pattern with optional valueTo for Between operators
    * Handles all combinations with different columns for each condition
+   *
+   * @deprecated Use buildNConditions instead for scalable N-condition support.
+   * This method only supports 2 conditions and will not preserve 3+ conditions.
    *
    * @param col1 - First column field name
    * @param op1 - First operator value
