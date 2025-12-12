@@ -857,6 +857,96 @@ export function useSelectionHandlers(
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
       const filter = searchMode.filterSearch;
+      const activeIdx = searchMode.activeConditionIndex ?? 0;
+
+      // CASE 0-EDIT: EDITING an existing condition's column (N >= 2)
+      // When preservedFilterRef has the condition we're editing, rebuild pattern with new column
+      const isEditingConditionNColumn =
+        activeIdx >= 2 &&
+        searchMode.showColumnSelector &&
+        preservedFilterRef.current?.conditions?.[activeIdx];
+
+      if (isEditingConditionNColumn) {
+        const preserved = preservedFilterRef.current!;
+        const conditions = preserved.conditions!;
+        const joins = preserved.joins || [];
+        const defaultField = conditions[0]?.field || filter?.field || '';
+
+        // Build updated conditions array with new column at edited index
+        const updatedConditions = conditions.map((cond, idx) => {
+          if (idx === activeIdx) {
+            // Replace column for this condition, keep operator and value
+            return {
+              field: column.field,
+              operator: cond.operator || '',
+              value: cond.value || '',
+              valueTo: cond.valueTo,
+            };
+          }
+          return {
+            field: cond.field,
+            operator: cond.operator || '',
+            value: cond.value || '',
+            valueTo: cond.valueTo,
+          };
+        });
+
+        // Check if operator is compatible with new column type
+        const editedCondOp = conditions[activeIdx]?.operator;
+        const isOpCompatible = isOperatorCompatibleWithColumn(
+          column,
+          editedCondOp || ''
+        );
+
+        if (isOpCompatible && conditions[activeIdx]?.value) {
+          // Operator compatible and has value - rebuild full pattern
+          const newValue = PatternBuilder.buildNConditions(
+            updatedConditions,
+            joins,
+            true, // isMultiColumn since we're changing a column
+            defaultField,
+            { confirmed: true }
+          );
+
+          preservedFilterRef.current = null;
+          setPreservedSearchMode(null);
+          setFilterValue(newValue, onChange, inputRef);
+        } else {
+          // Operator not compatible or no value - open operator selector
+          const conditionsUpToEdit = updatedConditions
+            .slice(0, activeIdx)
+            .map(c => ({
+              field: c.field,
+              operator: c.operator,
+              value: c.value,
+              valueTo: c.valueTo,
+            }));
+          const joinsUpToEdit = joins.slice(0, activeIdx - 1);
+          const joinForEdit = joins[activeIdx - 1] || 'AND';
+
+          const basePattern = PatternBuilder.buildNConditions(
+            conditionsUpToEdit,
+            joinsUpToEdit,
+            true,
+            defaultField,
+            { confirmed: false }
+          );
+
+          const newValue = `${basePattern} #${joinForEdit.toLowerCase()} #${column.field} #`;
+
+          // Update preserved state with new column
+          if (preserved.conditions?.[activeIdx]) {
+            preserved.conditions[activeIdx].field = column.field;
+          }
+
+          setFilterValue(newValue, onChange, inputRef);
+        }
+
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+        return;
+      }
 
       // CASE 0a: Adding NEW condition to existing multi-condition filter
       // When activeConditionIndex >= existing complete conditions, we're adding a new condition
@@ -868,6 +958,7 @@ export function useSelectionHandlers(
       // 1. We have 2+ complete conditions (filter.conditions or partialConditions with values)
       // 2. activeConditionIndex points to a new slot (>= existingConditionsCount)
       // 3. Column selector is showing (partialConditions has empty last slot)
+      // 4. NOT editing (preservedFilterRef doesn't have this condition)
       const hasMultipleCompleteConditions =
         existingConditionsCount >= 2 ||
         (partialConditionsCount >= 3 &&
@@ -876,9 +967,9 @@ export function useSelectionHandlers(
 
       const isAddingNewConditionToMulti =
         hasMultipleCompleteConditions &&
-        searchMode.activeConditionIndex !== undefined &&
-        searchMode.activeConditionIndex >= 2 &&
-        searchMode.showColumnSelector;
+        activeIdx >= 2 &&
+        searchMode.showColumnSelector &&
+        !preservedFilterRef.current?.conditions?.[activeIdx]; // NOT editing
 
       if (isAddingNewConditionToMulti) {
         // Build pattern with all existing conditions + new column + operator selector
