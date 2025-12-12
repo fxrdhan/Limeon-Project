@@ -168,7 +168,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const activeConditionIndex = searchMode.activeConditionIndex ?? 0;
 
   // Column selector: position depends on context
-  // - First column: appears at container left (no badge yet)
+  // - First column (index 0): appears at container left (no anchor)
   // - Condition N editing (preservedSearchMode + activeConditionIndex > 0): appears below Nth column badge
   // - Condition N creating (activeConditionIndex > 0 only): appears after all badges
   const isSelectingConditionNColumn =
@@ -179,13 +179,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const getColumnAnchorRef = ():
     | React.RefObject<HTMLDivElement | null>
     | undefined => {
-    if (!isSelectingConditionNColumn) return undefined;
+    if (!isSelectingConditionNColumn) return undefined; // First column: no anchor
     if (!isEditingConditionNColumn) return badgesContainerRef; // Create mode: position at end of badges
     // Edit mode: position below the correct column badge
+    // Note: activeConditionIndex >= 1 here (guaranteed by isSelectingConditionNColumn)
     if (activeConditionIndex === 1) return secondColumnBadgeRef;
-    if (activeConditionIndex >= 2)
-      return getConditionNColumnRef(activeConditionIndex);
-    return badgesContainerRef;
+    return getConditionNColumnRef(activeConditionIndex); // N >= 2
   };
   const columnAnchorRef = getColumnAnchorRef();
   const columnSelectorPosition = useSelectorPosition({
@@ -223,17 +222,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     };
 
   // N-condition support: detect editing operator for any condition index
-  // Check preservedSearchMode (edit mode) + showOperatorSelector + activeConditionIndex
+  // Check preservedSearchMode (edit mode) + showOperatorSelector
   // IMPORTANT: This must be checked BEFORE isCreatingConditionNOp because both can be true,
   // but edit mode takes precedence
-  const isEditingConditionNOperator =
-    preservedSearchMode !== null &&
-    searchMode.showOperatorSelector &&
-    activeConditionIndex >= 1;
+  const isEditingOperator =
+    preservedSearchMode !== null && searchMode.showOperatorSelector;
 
   // Creating operator - only when NOT in edit mode
   const isCreatingConditionNOp =
-    !isEditingConditionNOperator && // NOT editing
+    !isEditingOperator && // NOT editing
     isBuildingConditionN &&
     hasActiveConditionColumn &&
     searchMode.showOperatorSelector;
@@ -241,15 +238,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
-  if (isEditingConditionNOperator) {
-    // EDIT existing operator for condition N: position below the OPERATOR badge being edited
+  if (isEditingOperator) {
+    // EDIT existing operator: position below the OPERATOR badge being edited
     // Use dynamic ref for N >= 2, static refs for 0 and 1
-    if (activeConditionIndex === 1) {
-      operatorAnchorRef = secondOperatorBadgeRef;
-    } else if (activeConditionIndex >= 2) {
-      operatorAnchorRef = getConditionNOperatorRef(activeConditionIndex);
-    } else {
+    if (activeConditionIndex === 0) {
       operatorAnchorRef = operatorBadgeRef;
+    } else if (activeConditionIndex === 1) {
+      operatorAnchorRef = secondOperatorBadgeRef;
+    } else {
+      operatorAnchorRef = getConditionNOperatorRef(activeConditionIndex);
     }
     operatorAnchorAlign = 'left';
   } else if (isCreatingConditionNOp) {
