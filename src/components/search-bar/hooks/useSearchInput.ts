@@ -96,6 +96,60 @@ export const useSearchInput = ({
   const secondColumnBadgeRef = useRef<HTMLDivElement>(null); // Second column badge (condition-1-column)
   const secondOperatorBadgeRef = useRef<HTMLDivElement>(null); // Second operator badge (condition-1-operator)
 
+  // ============ Dynamic Ref Wrapper for N-Condition Support ============
+  // Creates a "lazy ref" that looks up the element from the badge map on access
+  // This ensures we always get the current element, even if the map was updated after render
+  const createLazyColumnRef = useCallback(
+    (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
+      // Create an object with a getter for 'current' that looks up dynamically
+      return {
+        get current() {
+          return getColumnRef(conditionIndex);
+        },
+      } as React.RefObject<HTMLDivElement | null>;
+    },
+    [getColumnRef]
+  );
+
+  // Memoized lazy refs for each condition index (to avoid creating new objects on every render)
+  const condition2ColumnRef = useMemo(
+    () => createLazyColumnRef(2),
+    [createLazyColumnRef]
+  );
+  const condition3ColumnRef = useMemo(
+    () => createLazyColumnRef(3),
+    [createLazyColumnRef]
+  );
+  const condition4ColumnRef = useMemo(
+    () => createLazyColumnRef(4),
+    [createLazyColumnRef]
+  );
+
+  /**
+   * Get the appropriate lazy ref for a condition index >= 2
+   */
+  const getConditionNColumnRef = useCallback(
+    (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
+      switch (conditionIndex) {
+        case 2:
+          return condition2ColumnRef;
+        case 3:
+          return condition3ColumnRef;
+        case 4:
+          return condition4ColumnRef;
+        default:
+          // For indices > 4, create a new lazy ref (less optimal but handles edge cases)
+          return createLazyColumnRef(conditionIndex);
+      }
+    },
+    [
+      condition2ColumnRef,
+      condition3ColumnRef,
+      condition4ColumnRef,
+      createLazyColumnRef,
+    ]
+  );
+
   const operatorSearchTerm = useMemo(
     () => getOperatorSearchTerm(value),
     [value]
@@ -133,6 +187,25 @@ export const useSearchInput = ({
     }
     if (searchMode.showJoinOperatorSelector) {
       return ''; // Join operator selector open - hide "#"
+    }
+
+    // PRIORITY 0.5: Building condition N (index >= 2) value - show the value being typed
+    // This takes precedence over multi-condition verbose mode
+    const isBuildingConditionNValue =
+      searchMode.activeConditionIndex !== undefined &&
+      searchMode.activeConditionIndex >= 2 &&
+      !searchMode.showColumnSelector &&
+      !searchMode.showOperatorSelector &&
+      !searchMode.showJoinOperatorSelector;
+
+    if (isBuildingConditionNValue) {
+      // Extract the value being typed for condition N from the pattern
+      // Pattern: ...#col #op value → extract value
+      const lastValueMatch = value.match(/#[^\s#]+\s+#[^\s#]+\s+([^#]*)$/);
+      if (lastValueMatch) {
+        return lastValueMatch[1].trim();
+      }
+      return '';
     }
 
     // PRIORITY 1: Multi-condition verbose mode - all values shown in badges, input empty
@@ -236,6 +309,7 @@ export const useSearchInput = ({
     searchMode.partialJoin,
     searchMode.selectedColumn,
     searchMode.partialConditions,
+    searchMode.activeConditionIndex,
   ]);
 
   // Ref to store last measured width - persists across renders
@@ -414,13 +488,24 @@ export const useSearchInput = ({
         // SPECIAL CASE: User types on confirmed multi-condition - trigger second value edit
         // This is Case 5 - user types any char on a confirmed 6-badge multi-condition filter
         // We need to trigger parent's handleEditSecondValue indirectly by setting a flag
+        // NOTE: Skip this when building condition 2+ (activeConditionIndex >= 2) to avoid losing partial condition
+        const isBuildingConditionN =
+          searchMode.activeConditionIndex !== undefined &&
+          searchMode.activeConditionIndex >= 2;
+        const hasPartialConditionsBeyondConfirmed =
+          searchMode.partialConditions &&
+          searchMode.partialConditions.length >
+            (searchMode.filterSearch.conditions?.length ?? 0);
+
         if (
           searchMode.filterSearch.isConfirmed &&
           searchMode.filterSearch.isMultiCondition &&
           searchMode.filterSearch.conditions &&
           searchMode.filterSearch.conditions.length >= 2 &&
           inputValue.trim() !== '' &&
-          inputValue.trim() !== '#'
+          inputValue.trim() !== '#' &&
+          !isBuildingConditionN && // Not building condition 2+
+          !hasPartialConditionsBeyondConfirmed // No partial conditions beyond confirmed
         ) {
           // Signal to parent: user wants to edit second value
           // We'll add a special marker that parent can detect
@@ -467,6 +552,31 @@ export const useSearchInput = ({
           const newValue = `#${columnName} #${operator} ${firstValue} #to ${inputValue}`;
           onChange({
             target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+
+        // SPECIAL CASE: Building condition 2+ (N-condition) value
+        // Append inputValue to the last condition's value position in the pattern
+        if (isBuildingConditionN || hasPartialConditionsBeyondConfirmed) {
+          // Pattern structure: ...#join #col #op [value]
+          // Find the last "#col #op" and append inputValue after it
+          const lastConditionMatch = value.match(
+            /^(.*#[^\s#]+\s+#[^\s#]+)\s*.*$/
+          );
+          if (lastConditionMatch) {
+            const basePattern = lastConditionMatch[1];
+            const newValue = inputValue
+              ? `${basePattern} ${inputValue}`
+              : basePattern;
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+          // Fallback: append to current value
+          onChange({
+            target: { value: value + inputValue },
           } as React.ChangeEvent<HTMLInputElement>);
           return;
         }
@@ -709,5 +819,7 @@ export const useSearchInput = ({
     joinBadgeRef,
     secondColumnBadgeRef,
     secondOperatorBadgeRef,
+    // ============ Dynamic Lazy Ref for N-Condition Selector Positioning ============
+    getConditionNColumnRef,
   };
 };

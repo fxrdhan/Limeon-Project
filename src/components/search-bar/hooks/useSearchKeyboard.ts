@@ -76,6 +76,69 @@ export const useSearchKeyboard = ({
 
         // Enter key: Confirm filter value (add ## marker)
         if (e.key === KEY_CODES.ENTER) {
+          // IMPORTANT: When modal selector is open, let BaseSelector handle Enter key
+          // Don't intercept Enter for value confirmation when selector is open
+          if (isModalOpen) {
+            // Don't prevent default - let BaseSelector handle it
+            return;
+          }
+
+          // Handle N-condition confirmation (building condition N, index >= 2)
+          // When isFilterMode is true but we're building a new condition
+          const activeIdx = searchMode.activeConditionIndex ?? 0;
+          const lastPartialCond = searchMode.partialConditions?.[activeIdx];
+          const isBuildingConditionN =
+            activeIdx >= 2 &&
+            searchMode.isFilterMode &&
+            lastPartialCond?.operator &&
+            lastPartialCond?.value;
+
+          if (isBuildingConditionN) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const currentValue = value.trim();
+            if (!currentValue.endsWith('#') && !currentValue.endsWith('##')) {
+              // Handle Between operator for condition N
+              if (
+                lastPartialCond.operator === 'inRange' &&
+                !lastPartialCond.valueTo
+              ) {
+                // Check for dash format
+                const afterOpMatch = currentValue.match(/#inRange\s+([^#]+)$/i);
+                if (afterOpMatch) {
+                  const valPart = afterOpMatch[1].trim();
+                  const dashMatch = valPart.match(/^(.+?)-(.+)$/);
+                  if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
+                    // Has both values in dash format - confirm with ##
+                    const newValue = currentValue + '##';
+                    onChange({
+                      target: { value: newValue },
+                    } as React.ChangeEvent<HTMLInputElement>);
+                    onClearPreservedState?.();
+                    return;
+                  }
+                }
+                // No dash format and no valueTo - add #to marker
+                if (!currentValue.includes('#to')) {
+                  const newValue = currentValue + ' #to ';
+                  onChange({
+                    target: { value: newValue },
+                  } as React.ChangeEvent<HTMLInputElement>);
+                  return;
+                }
+              }
+
+              // Add ## marker to confirm
+              const newValue = currentValue + '##';
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+              onClearPreservedState?.();
+            }
+            return;
+          }
+
           // Handle multi-condition confirmation (building second condition)
           const secondConditionOperator =
             searchMode.partialConditions?.[1]?.operator;

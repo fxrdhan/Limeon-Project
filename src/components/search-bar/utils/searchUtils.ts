@@ -161,6 +161,9 @@ const parsePartialNConditions = (
             field: col.field,
             column: col,
           });
+        } else {
+          // Column not found - push empty to maintain array length
+          partialConditions.push({});
         }
       } else if (trimmed.match(/^#([^\s#]+)\s*$/)) {
         // Partial: #col (column selected, waiting for #)
@@ -256,26 +259,87 @@ const parsePartialNConditions = (
     selectedColumn = lastCondition.column;
   }
 
-  // Build first condition's filter for backward compat
+  // Build filterSearch with multi-condition support
   const firstCond = partialConditions[0];
-  const filterSearch: FilterSearch | undefined =
-    firstCond.operator && firstCond.value !== undefined
-      ? {
-          field: firstCond.field || firstColumn?.field || '',
-          value: firstCond.value || '',
-          valueTo: firstCond.valueTo,
-          column: firstCond.column || firstColumn!,
-          operator: firstCond.operator,
-          isExplicitOperator: true,
-        }
-      : undefined;
+
+  // Check how many complete conditions we have (conditions with values)
+  const completeConditions = partialConditions.filter(
+    c => c.operator && c.value !== undefined && c.value !== ''
+  );
+
+  // Determine if this is multi-column
+  const hasMultiColumn = completeConditions.some(
+    (c, i) => i > 0 && c.field !== completeConditions[0]?.field
+  );
+
+  let filterSearch: FilterSearch | undefined;
+
+  // Check if the last condition is being actively typed (not yet confirmed)
+  // If so, exclude it from the confirmed filter - only include previously confirmed conditions
+  const lastConditionIdx = partialConditions.length - 1;
+  const isTypingLastConditionValue =
+    activeConditionIndex === lastConditionIdx &&
+    !showColumnSelector &&
+    !showOperatorSelector &&
+    partialConditions[lastConditionIdx]?.value; // Has a value being typed
+
+  // Only include conditions that were confirmed BEFORE user started typing the new one
+  // The last condition with value is being typed, so exclude it from confirmed filter
+  const confirmedConditions = isTypingLastConditionValue
+    ? completeConditions.slice(0, -1) // Exclude last condition being typed
+    : completeConditions;
+
+  if (confirmedConditions.length >= 2) {
+    // Multi-condition with at least 2 confirmed conditions
+    // Build conditions array for grid filter (excludes condition being typed)
+    const conditions: FilterCondition[] = confirmedConditions.map(c => ({
+      field: c.field || firstColumn?.field || '',
+      column: c.column || firstColumn!,
+      operator: c.operator!,
+      value: c.value!,
+      valueTo: c.valueTo,
+    }));
+
+    filterSearch = {
+      field: firstCond.field || firstColumn?.field || '',
+      value: firstCond.value || '',
+      valueTo: firstCond.valueTo,
+      column: firstCond.column || firstColumn!,
+      operator: firstCond.operator!,
+      isExplicitOperator: true,
+      isConfirmed: true, // The existing conditions ARE confirmed
+      isMultiCondition: true,
+      isMultiColumn: hasMultiColumn,
+      conditions,
+      joins: joins.slice(0, confirmedConditions.length - 1),
+      joinOperator: joins[0],
+    };
+  } else if (firstCond.operator && firstCond.value !== undefined) {
+    // Single complete condition
+    filterSearch = {
+      field: firstCond.field || firstColumn?.field || '',
+      value: firstCond.value || '',
+      valueTo: firstCond.valueTo,
+      column: firstCond.column || firstColumn!,
+      operator: firstCond.operator,
+      isExplicitOperator: true,
+    };
+  }
+
+  // Only set isFilterMode when we have confirmed multi-condition AND not showing selectors
+  // When showing selectors, we're in partial state - use N-condition loop in useBadgeBuilder
+  // Use confirmedConditions (excludes condition being typed) to avoid premature filter application
+  const isInFilterMode =
+    confirmedConditions.length >= 2 &&
+    !showColumnSelector &&
+    !showOperatorSelector;
 
   return {
     globalSearch: undefined,
     showColumnSelector,
     showOperatorSelector,
     showJoinOperatorSelector: false,
-    isFilterMode: false,
+    isFilterMode: isInFilterMode,
     selectedColumn,
     partialJoin: joins[0],
     activeConditionIndex,
@@ -748,7 +812,8 @@ export const parseSearchValue = (
                       field: column2.field,
                       column: column2,
                       operator: operator2Obj.value,
-                      value: val2.trim(),
+                      // Strip trailing ## confirmation marker that may be captured
+                      value: val2.trim().replace(/##$/, ''),
                     },
                   ],
                 },
@@ -766,7 +831,8 @@ export const parseSearchValue = (
                     field: column2.field,
                     column: column2,
                     operator: operator2Obj.value,
-                    value: val2.trim(),
+                    // Strip trailing ## confirmation marker that may be captured
+                    value: val2.trim().replace(/##$/, ''),
                   },
                 ],
                 joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -1187,7 +1253,8 @@ export const parseSearchValue = (
                     field: column.field,
                     column,
                     operator: operator2Obj.value,
-                    value: val2.trim(),
+                    // Strip trailing ## confirmation marker that may be captured
+                    value: val2.trim().replace(/##$/, ''),
                   },
                 ],
               },
@@ -1205,7 +1272,8 @@ export const parseSearchValue = (
                   field: column.field,
                   column,
                   operator: operator2Obj.value,
-                  value: val2.trim(),
+                  // Strip trailing ## confirmation marker that may be captured
+                  value: val2.trim().replace(/##$/, ''),
                 },
               ],
               joins: [join.toUpperCase() as 'AND' | 'OR'],
