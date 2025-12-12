@@ -58,6 +58,7 @@ interface SearchBadgeProps {
   clearJoin?: (joinIndex: number) => void;
   editConditionPart?: (conditionIndex: number, target: BadgeTarget) => void;
   editJoin?: (joinIndex: number) => void;
+  editValueN?: (conditionIndex: number, target: 'value' | 'valueTo') => void;
   // ============ Legacy Handlers (Backward Compatibility) ============
   onClearColumn: () => void;
   onClearOperator: () => void;
@@ -116,6 +117,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   clearJoin,
   editConditionPart,
   editJoin,
+  editValueN,
   // ============ Legacy Handlers ============
   onClearColumn,
   onClearOperator,
@@ -162,6 +164,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       clearAll: onClearAll,
       editConditionPart,
       editJoin,
+      editValueN,
       // Legacy handlers (backward compatibility)
       onClearColumn,
       onClearOperator,
