@@ -393,15 +393,16 @@ export const useSearchInput = ({
       if (searchMode.isFilterMode && searchMode.filterSearch) {
         // SPECIAL CASE: Confirmed filter + user types # or SPACE for join selector
         // Remove ## marker first, then append # to open join selector
-        // SPACE only works for single-condition (not multi-condition)
+        // Works for both single-condition AND multi-condition (N-condition support)
         const isHashTrigger = inputValue.trim() === '#';
-        const isSpaceTrigger =
-          inputValue === ' ' && !searchMode.filterSearch.isMultiCondition;
+        const isSpaceTrigger = inputValue === ' ';
 
         if (
           searchMode.filterSearch.isConfirmed &&
           (isHashTrigger || isSpaceTrigger)
         ) {
+          // For multi-condition: rebuild full pattern, then append #
+          // For single-condition: just remove ## and append #
           const cleanValue = value.replace(/##\s*$/, '').trim();
           const newValue = cleanValue + ' #';
           onChange({
