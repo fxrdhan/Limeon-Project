@@ -1589,9 +1589,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       // CASE 2: Multi-condition filter
-      const firstCondition = stateToUse.filterSearch.conditions![0];
-      const secondCond = stateToUse.filterSearch.conditions![1];
+      const conditions = stateToUse.filterSearch.conditions!;
+      const firstCondition = conditions[0];
+      const secondCond = conditions[1];
       const joinOp = stateToUse.filterSearch.joinOperator || 'AND';
+      const joins = stateToUse.filterSearch.joins || [joinOp];
 
       // Determine column fields - check if multi-column filter
       const col1 = firstCondition.field || columnName;
@@ -1608,6 +1610,62 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const isEditingValue = editingBadge.field === 'value';
       const isEditingValueTo = editingBadge.field === 'valueTo';
 
+      // N-CONDITION SUPPORT: If 3+ conditions, use buildNConditions for ALL edits
+      // This ensures condition 2+ are preserved when editing condition 0 or 1
+      if (conditions.length >= 3) {
+        // Build updated conditions array with new value at edited index
+        const updatedConditions = conditions.map((cond, idx) => {
+          if (idx === editingBadge.conditionIndex) {
+            let newValue = isEditingValue ? valueToUse : cond.value;
+            let newValueTo = isEditingValueTo ? valueToUse : cond.valueTo;
+
+            // Handle dash pattern for Between operator
+            if (cond.operator === 'inRange' && isEditingValue) {
+              const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
+              if (dashMatch) {
+                const [, fromVal, toVal] = dashMatch;
+                if (fromVal.trim() && toVal.trim()) {
+                  newValue = fromVal.trim();
+                  newValueTo = toVal.trim();
+                }
+              }
+            }
+
+            return {
+              field: cond.field || '',
+              operator: cond.operator || '',
+              value: newValue || '',
+              valueTo: newValueTo,
+            };
+          }
+          return {
+            field: cond.field || '',
+            operator: cond.operator || '',
+            value: cond.value || '',
+            valueTo: cond.valueTo,
+          };
+        });
+
+        newPattern = PatternBuilder.buildNConditions(
+          updatedConditions,
+          joins,
+          isMultiColumn || true,
+          columnName,
+          { confirmed: true }
+        );
+
+        onChange({
+          target: { value: newPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+        setEditingBadge(null);
+        setPreservedSearchMode(null);
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, 50);
+        return;
+      }
+
+      // CASE 2a: 2-condition filter (legacy handling)
       // Handle editing first condition
       if (isEditingCondition0 && isEditingValue) {
         // Editing first condition's "from" value
