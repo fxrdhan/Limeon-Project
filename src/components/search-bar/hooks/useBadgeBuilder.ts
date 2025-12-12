@@ -395,7 +395,12 @@ export const useBadgeBuilder = (
     }
 
     // 2. Handle Multi-Condition Badges (when filter is confirmed with multiple conditions)
-    if (searchMode.isFilterMode && isMultiCondition && filter.conditions) {
+    // Also handle when join selector is open on multi-condition (for adding N+1 condition)
+    if (
+      (searchMode.isFilterMode || searchMode.showJoinOperatorSelector) &&
+      isMultiCondition &&
+      filter.conditions
+    ) {
       filter.conditions.forEach((condition, index) => {
         // Use condition's column if available (multi-column), otherwise use filter's column
         const conditionColumn = condition.column || filter.column;
@@ -696,35 +701,91 @@ export const useBadgeBuilder = (
         });
       }
 
-      // 8. Value Badge(s) (Gray) - for Between operator partial state
+      // 8. Value Badge(s) (Gray) - for condition N (index > 0)
+      // Don't show value badge if user is actively typing this condition's value
+      // Only show when: we've moved past this condition OR join/column selector is open
+      const isTypingThisConditionValue =
+        searchMode.activeConditionIndex === condIdx &&
+        !searchMode.showJoinOperatorSelector &&
+        !searchMode.showColumnSelector;
+
       if (
         condition.operator &&
         condition.value &&
-        condition.operator === 'inRange' &&
-        (condition.waitingForValueTo || condition.valueTo)
+        !isTypingThisConditionValue
       ) {
         const columnType = (condition.column || filter?.column)?.type;
-        const valueHandlers = getValueBadgeHandlers(
-          handlers,
-          condIdx,
-          totalPartialConditions,
-          false
-        );
+        const isBetween =
+          condition.operator === 'inRange' &&
+          (condition.waitingForValueTo || condition.valueTo);
 
-        // Value-from badge
-        badges.push(
-          createValueBadgeConfig(
-            `condition-${condIdx}-value-from`,
-            condition.value,
-            'value',
-            { onClear: valueHandlers.onClear, canEdit: false },
-            columnType,
-            null
-          )
-        );
+        if (isBetween) {
+          // Between operator: value-from, separator, value-to
+          const valueFromHandlers = getValueBadgeHandlers(
+            handlers,
+            condIdx,
+            totalPartialConditions,
+            false
+          );
 
-        // "to" separator badge
-        badges.push(createSeparatorBadge(condIdx));
+          // Value-from badge
+          badges.push(
+            createValueBadgeConfig(
+              `condition-${condIdx}-value-from`,
+              condition.value,
+              'value',
+              { onClear: valueFromHandlers.onClear, canEdit: false },
+              columnType,
+              null
+            )
+          );
+
+          // "to" separator badge
+          badges.push(createSeparatorBadge(condIdx));
+
+          // Value-to badge (if available)
+          if (condition.valueTo) {
+            const valueToHandlers = getValueBadgeHandlers(
+              handlers,
+              condIdx,
+              totalPartialConditions,
+              true
+            );
+            badges.push(
+              createValueBadgeConfig(
+                `condition-${condIdx}-value-to`,
+                condition.valueTo,
+                'valueTo',
+                { onClear: valueToHandlers.onClear, canEdit: false },
+                columnType,
+                null
+              )
+            );
+          }
+        } else {
+          // Normal operator: single value badge
+          const valueHandlers = getValueBadgeHandlers(
+            handlers,
+            condIdx,
+            totalPartialConditions,
+            false
+          );
+
+          badges.push(
+            createValueBadgeConfig(
+              `condition-${condIdx}-value`,
+              condition.value,
+              'value',
+              {
+                onClear: valueHandlers.onClear,
+                onEdit: valueHandlers.onEdit,
+                canEdit: valueHandlers.canEdit,
+              },
+              columnType,
+              getValueBadgeInlineProps(inlineEditingProps, condIdx, false)
+            )
+          );
+        }
       }
     }
 
