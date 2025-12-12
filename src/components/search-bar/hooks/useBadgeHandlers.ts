@@ -405,8 +405,8 @@ export function useBadgeHandlers(
             // Edit first column - open column selector
             const newValue = PatternBuilder.column('');
             setFilterValue(newValue, onChange, inputRef);
-          } else {
-            // Edit nth column - open column selector for that position
+          } else if (conditionIndex === 1) {
+            // Edit second column - open column selector for condition 1
             if (filter) {
               const firstCondition = getFirstCondition(filter);
               const joinOp = getJoinOperator(filter, state);
@@ -422,6 +422,41 @@ export function useBadgeHandlers(
                 setFilterValue(newValue, onChange, inputRef);
               }
             }
+          } else {
+            // Edit Nth column (N >= 2) - preserve all conditions up to N-1, open selector for N
+            if (
+              filter?.conditions &&
+              filter.conditions.length >= conditionIndex
+            ) {
+              const conditionsToKeep = filter.conditions.slice(
+                0,
+                conditionIndex
+              );
+              const joinsToKeep =
+                filter.joins?.slice(0, conditionIndex - 1) || [];
+              const joinForNewCondition =
+                filter.joins?.[conditionIndex - 1] ||
+                filter.joinOperator ||
+                'AND';
+
+              // Build pattern with all conditions up to N-1, then add join + column selector
+              const basePattern = PatternBuilder.buildNConditions(
+                conditionsToKeep.map(c => ({
+                  field: c.field,
+                  operator: c.operator,
+                  value: c.value,
+                  valueTo: c.valueTo,
+                })),
+                joinsToKeep,
+                filter.isMultiColumn || false,
+                columnName,
+                { confirmed: false }
+              );
+
+              // Add join and column selector for the condition being edited
+              const newValue = `${basePattern} #${joinForNewCondition.toLowerCase()} #`;
+              setFilterValue(newValue, onChange, inputRef);
+            }
           }
           break;
 
@@ -431,8 +466,8 @@ export function useBadgeHandlers(
             const newValue =
               PatternBuilder.columnWithOperatorSelector(columnName);
             setFilterValue(newValue, onChange, inputRef);
-          } else {
-            // Edit nth operator - open operator selector for that condition
+          } else if (conditionIndex === 1) {
+            // Edit second operator - open operator selector for condition 1
             if (filter) {
               const firstCondition = getFirstCondition(filter);
               const joinOp = getJoinOperator(filter, state);
@@ -459,6 +494,43 @@ export function useBadgeHandlers(
                 }
                 setFilterValue(newValue, onChange, inputRef);
               }
+            }
+          } else {
+            // Edit Nth operator (N >= 2) - preserve all conditions up to N-1, then column N + operator selector
+            if (
+              filter?.conditions &&
+              filter.conditions.length >= conditionIndex
+            ) {
+              const conditionsToKeep = filter.conditions.slice(
+                0,
+                conditionIndex
+              );
+              const joinsToKeep =
+                filter.joins?.slice(0, conditionIndex - 1) || [];
+              const joinForCondition =
+                filter.joins?.[conditionIndex - 1] ||
+                filter.joinOperator ||
+                'AND';
+              const condNColField =
+                filter.conditions[conditionIndex]?.field || columnName;
+
+              // Build pattern with all conditions up to N-1
+              const basePattern = PatternBuilder.buildNConditions(
+                conditionsToKeep.map(c => ({
+                  field: c.field,
+                  operator: c.operator,
+                  value: c.value,
+                  valueTo: c.valueTo,
+                })),
+                joinsToKeep,
+                filter.isMultiColumn || false,
+                columnName,
+                { confirmed: false }
+              );
+
+              // Add join + column + operator selector
+              const newValue = `${basePattern} #${joinForCondition.toLowerCase()} #${condNColField} #`;
+              setFilterValue(newValue, onChange, inputRef);
             }
           }
           break;
