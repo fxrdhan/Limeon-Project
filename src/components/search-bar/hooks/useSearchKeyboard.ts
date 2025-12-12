@@ -2,6 +2,9 @@ import { useCallback } from 'react';
 import { EnhancedSearchState } from '../types';
 import { KEY_CODES } from '../constants';
 
+// Scalable type for edit targets
+type EditValueTarget = 'value' | 'valueTo';
+
 interface UseSearchKeyboardProps {
   value: string;
   searchMode: EnhancedSearchState;
@@ -12,10 +15,14 @@ interface UseSearchKeyboardProps {
   handleCloseOperatorSelector: () => void;
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
+  // Scalable edit handlers for N-condition support
+  editConditionValue?: (
+    conditionIndex: number,
+    target: EditValueTarget
+  ) => void;
+  // Legacy handlers (first condition only) - used as fallback
   onEditValue?: () => void;
-  onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
-  onEditCondition1Value?: () => void;
-  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (second condition)
+  onEditValueTo?: () => void;
 }
 
 export const useSearchKeyboard = ({
@@ -28,10 +35,9 @@ export const useSearchKeyboard = ({
   handleCloseOperatorSelector,
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
+  editConditionValue,
   onEditValue,
   onEditValueTo,
-  onEditCondition1Value,
-  onEditCondition1ValueTo,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -71,11 +77,11 @@ export const useSearchKeyboard = ({
         // Enter key: Confirm filter value (add ## marker)
         if (e.key === KEY_CODES.ENTER) {
           // Handle multi-condition confirmation (building second condition)
-          const condition1Operator =
+          const secondConditionOperator =
             searchMode.partialConditions?.[1]?.operator;
           if (
             searchMode.partialJoin &&
-            condition1Operator &&
+            secondConditionOperator &&
             !searchMode.isFilterMode
           ) {
             e.preventDefault();
@@ -85,19 +91,21 @@ export const useSearchKeyboard = ({
             const currentValue = value.trim();
 
             // Check if condition[1] value exists (not just operator with no value)
-            // Pattern: #col #op val #join #col2 #op2 cond1Value
+            // Pattern: #col #op val #join #col2 #op2 secondValue
             // If pattern ends with #operator (no value after), don't confirm
-            const cond1OpPattern = new RegExp(`#${condition1Operator}\\s*$`);
-            const hasCond1Value = !cond1OpPattern.test(currentValue);
+            const secondOpPattern = new RegExp(
+              `#${secondConditionOperator}\\s*$`
+            );
+            const hasSecondCondValue = !secondOpPattern.test(currentValue);
 
             if (
-              hasCond1Value &&
+              hasSecondCondValue &&
               !currentValue.endsWith('#') &&
               !currentValue.endsWith('##')
             ) {
               // Special handling for Between (inRange) operator on condition[1]
               // If condition[1] operator is inRange and doesn't have #to marker yet, add it
-              if (condition1Operator === 'inRange') {
+              if (secondConditionOperator === 'inRange') {
                 // Check if pattern already has #to marker for condition[1]
                 // Pattern with #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2 #to"
                 // Pattern without #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2"
@@ -234,19 +242,19 @@ export const useSearchKeyboard = ({
           ) {
             e.preventDefault();
             // Get condition at index 1
-            const condition1 = searchMode.filterSearch.conditions?.[1];
+            const secondCondition = searchMode.filterSearch.conditions?.[1];
             // For Between operator with valueTo on condition[1], edit valueTo first
             if (
-              condition1?.operator === 'inRange' &&
-              condition1?.valueTo &&
-              onEditCondition1ValueTo
+              secondCondition?.operator === 'inRange' &&
+              secondCondition?.valueTo &&
+              editConditionValue
             ) {
-              onEditCondition1ValueTo();
+              editConditionValue(1, 'valueTo');
               return;
             }
             // Otherwise edit condition[1]'s value
-            if (onEditCondition1Value) {
-              onEditCondition1Value();
+            if (editConditionValue) {
+              editConditionValue(1, 'value');
               return;
             }
           }
@@ -473,8 +481,7 @@ export const useSearchKeyboard = ({
       onClearPreservedState,
       onEditValue,
       onEditValueTo,
-      onEditCondition1Value,
-      onEditCondition1ValueTo,
+      editConditionValue,
     ]
   );
 

@@ -282,11 +282,14 @@ export function useBadgeHandlers(
 
   /**
    * Clear a join operator at given index
-   * Note: joinIndex is for future N-condition support when we have N-1 joins
+   * Scalable: supports N joins (joinIndex 0 to N-1)
+   *
+   * Behavior:
+   * - joinIndex 0: Clear first join, return to confirmed single condition
+   * - joinIndex N: Keep conditions 0 to N, clear everything after
    */
   const clearJoin = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_joinIndex: number) => {
+    (joinIndex: number) => {
       const state = getEffectiveState();
       onClearPreservedState();
 
@@ -295,24 +298,74 @@ export function useBadgeHandlers(
         return;
       }
 
-      const columnName = state.filterSearch.field;
-      const firstCondition = getFirstCondition(state.filterSearch);
+      const filter = state.filterSearch;
+      const columnName = filter.field;
 
-      // Back to confirmed single-condition
-      let newValue: string;
-      if (firstCondition.operator === 'inRange' && firstCondition.valueTo) {
-        newValue = PatternBuilder.betweenConfirmed(
-          columnName,
-          firstCondition.value,
-          firstCondition.valueTo
-        );
+      // Extract all conditions from filter
+      const conditions: Array<{
+        field?: string;
+        operator: string;
+        value: string;
+        valueTo?: string;
+      }> = [];
+
+      // Get conditions from multi-condition filter or build from single + partial
+      if (filter.isMultiCondition && filter.conditions) {
+        filter.conditions.forEach(cond => {
+          conditions.push({
+            field: cond.field,
+            operator: cond.operator,
+            value: cond.value,
+            valueTo: cond.valueTo,
+          });
+        });
       } else {
-        newValue = PatternBuilder.confirmed(
-          columnName,
-          firstCondition.operator,
-          firstCondition.value
-        );
+        // First condition from filter itself
+        conditions.push({
+          field: filter.field,
+          operator: filter.operator,
+          value: filter.value,
+          valueTo: filter.valueTo,
+        });
+
+        // Add partial conditions if any
+        if (state.partialConditions) {
+          state.partialConditions.forEach((partial, idx) => {
+            if (idx > 0 && partial.operator) {
+              conditions.push({
+                field: partial.field,
+                operator: partial.operator,
+                value: partial.value || '',
+                valueTo: partial.valueTo,
+              });
+            }
+          });
+        }
       }
+
+      // Extract joins
+      const joins: ('AND' | 'OR')[] = [];
+      if (filter.joinOperator) {
+        joins.push(filter.joinOperator);
+      } else if (state.partialJoin) {
+        joins.push(state.partialJoin);
+      }
+      if (state.joins) {
+        state.joins.forEach((j, i) => {
+          if (i >= joins.length) joins.push(j);
+        });
+      }
+
+      const isMultiColumn = filter.isMultiColumn || false;
+
+      // Build confirmed pattern up to condition[joinIndex] (before the join)
+      const newValue = PatternBuilder.confirmedUpToIndex(
+        conditions,
+        joins,
+        isMultiColumn,
+        columnName,
+        joinIndex // Keep conditions 0 to joinIndex
+      );
 
       setFilterValue(newValue, onChange, inputRef);
     },
@@ -430,11 +483,14 @@ export function useBadgeHandlers(
 
   /**
    * Edit a join operator at given index
-   * Note: joinIndex is for future N-condition support when we have N-1 joins
+   * Scalable: supports N joins (joinIndex 0 to N-1)
+   *
+   * Behavior:
+   * - Opens join selector after condition[joinIndex]
+   * - Preserves all other conditions and joins
    */
   const editJoin = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_joinIndex: number) => {
+    (joinIndex: number) => {
       const state = getEffectiveState();
 
       if (!state.filterSearch) {
@@ -448,15 +504,73 @@ export function useBadgeHandlers(
 
       preservedFilterRef.current = extractMultiConditionPreservation(state);
 
-      const columnName = state.filterSearch.field;
-      const firstCondition = getFirstCondition(state.filterSearch);
+      const filter = state.filterSearch;
+      const columnName = filter.field;
 
-      // Build pattern to show join selector
-      const newValue = PatternBuilder.withJoinSelector(
+      // Extract all conditions from filter
+      const conditions: Array<{
+        field?: string;
+        operator: string;
+        value: string;
+        valueTo?: string;
+      }> = [];
+
+      // Get conditions from multi-condition filter or build from single + partial
+      if (filter.isMultiCondition && filter.conditions) {
+        filter.conditions.forEach(cond => {
+          conditions.push({
+            field: cond.field,
+            operator: cond.operator,
+            value: cond.value,
+            valueTo: cond.valueTo,
+          });
+        });
+      } else {
+        // First condition from filter itself
+        conditions.push({
+          field: filter.field,
+          operator: filter.operator,
+          value: filter.value,
+          valueTo: filter.valueTo,
+        });
+
+        // Add partial conditions if any
+        if (state.partialConditions) {
+          state.partialConditions.forEach((partial, idx) => {
+            if (idx > 0 && partial.operator) {
+              conditions.push({
+                field: partial.field,
+                operator: partial.operator,
+                value: partial.value || '',
+                valueTo: partial.valueTo,
+              });
+            }
+          });
+        }
+      }
+
+      // Extract joins
+      const joins: ('AND' | 'OR')[] = [];
+      if (filter.joinOperator) {
+        joins.push(filter.joinOperator);
+      } else if (state.partialJoin) {
+        joins.push(state.partialJoin);
+      }
+      if (state.joins) {
+        state.joins.forEach((j, i) => {
+          if (i >= joins.length) joins.push(j);
+        });
+      }
+
+      const isMultiColumn = filter.isMultiColumn || false;
+
+      // Build pattern with join selector open at specified index
+      const newValue = PatternBuilder.withJoinSelectorAtIndex(
+        conditions,
+        joins,
+        isMultiColumn,
         columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        firstCondition.valueTo
+        joinIndex
       );
 
       setFilterValue(newValue, onChange, inputRef);
