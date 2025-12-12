@@ -156,26 +156,24 @@ function getValueBadgeHandlers(
 ): { onClear: () => void; onEdit?: () => void; canEdit: boolean } {
   const target: BadgeTarget = isValueTo ? 'valueTo' : 'value';
 
-  // Prefer scalable handlers if available
-  if (handlers.clearConditionPart && handlers.editConditionPart) {
-    return {
-      onClear: () => handlers.clearConditionPart!(conditionIndex, target),
-      onEdit: () => handlers.editConditionPart!(conditionIndex, target),
-      canEdit: true,
-    };
-  }
-
-  // Fallback to legacy handlers
   const isFirst = conditionIndex === 0;
   const isLast = conditionIndex === totalConditions - 1;
   const isTwoConditions = totalConditions === 2;
 
+  // For value editing: use legacy handlers (onEditValue/onEditCondition1Value)
+  // because they properly enter inline edit mode via setEditingBadge.
+  // The scalable editConditionPart for 'value' target only sets up state,
+  // but doesn't trigger inline editing.
+  // For clearing: prefer scalable handlers if available.
+
   if (isValueTo) {
     return {
-      onClear: isFirst
-        ? (handlers.onClearValueTo ?? handlers.onClearValue)
-        : (handlers.onClearCondition1ValueTo ??
-          handlers.onClearCondition1Value),
+      onClear: handlers.clearConditionPart
+        ? () => handlers.clearConditionPart!(conditionIndex, target)
+        : isFirst
+          ? (handlers.onClearValueTo ?? handlers.onClearValue)
+          : (handlers.onClearCondition1ValueTo ??
+            handlers.onClearCondition1Value),
       onEdit: isFirst
         ? handlers.onEditValueTo
         : handlers.onEditCondition1ValueTo,
@@ -186,11 +184,13 @@ function getValueBadgeHandlers(
   }
 
   return {
-    onClear: isFirst
-      ? handlers.onClearValue
-      : isLast && isTwoConditions
-        ? handlers.onClearCondition1Value
-        : handlers.onClearAll,
+    onClear: handlers.clearConditionPart
+      ? () => handlers.clearConditionPart!(conditionIndex, target)
+      : isFirst
+        ? handlers.onClearValue
+        : isLast && isTwoConditions
+          ? handlers.onClearCondition1Value
+          : handlers.onClearAll,
     onEdit: isFirst ? handlers.onEditValue : handlers.onEditCondition1Value,
     canEdit: true,
   };
