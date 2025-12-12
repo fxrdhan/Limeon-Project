@@ -168,24 +168,32 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Column selector: position depends on context
   // - First column: appears at container left (no badge yet)
-  // - Second column editing (preservedSearchMode + activeConditionIndex > 0): appears below second column badge
-  // - Second column creating (activeConditionIndex > 0 only): appears after all badges
+  // - Condition N editing (preservedSearchMode + activeConditionIndex > 0): appears below Nth column badge
+  // - Condition N creating (activeConditionIndex > 0 only): appears after all badges
   const isSelectingConditionNColumn =
     (searchMode.activeConditionIndex ?? 0) > 0;
-  const isEditingSecondColumn =
+  const isEditingConditionNColumn =
     preservedSearchMode !== null && isSelectingConditionNColumn;
-  const columnAnchorRef = isSelectingConditionNColumn
-    ? isEditingSecondColumn
-      ? secondColumnBadgeRef // Edit mode: position below the second column badge
-      : badgesContainerRef // Create mode: position at end of badges
-    : undefined;
+  // For N-condition support, use dynamic ref for condition 2+
+  const getColumnAnchorRef = ():
+    | React.RefObject<HTMLDivElement | null>
+    | undefined => {
+    if (!isSelectingConditionNColumn) return undefined;
+    if (!isEditingConditionNColumn) return badgesContainerRef; // Create mode: position at end of badges
+    // Edit mode: position below the correct column badge
+    if (activeConditionIndex === 1) return secondColumnBadgeRef;
+    if (activeConditionIndex >= 2)
+      return getConditionNColumnRef(activeConditionIndex);
+    return badgesContainerRef;
+  };
+  const columnAnchorRef = getColumnAnchorRef();
   const columnSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showColumnSelector,
     containerRef,
     anchorRef: columnAnchorRef,
     anchorAlign: isSelectingConditionNColumn
-      ? isEditingSecondColumn
-        ? 'left' // Edit mode: left-aligned below 2nd column badge
+      ? isEditingConditionNColumn
+        ? 'left' // Edit mode: left-aligned below Nth column badge
         : 'right' // Create mode: right edge of badges
       : 'left',
   });
@@ -2361,6 +2369,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
+    // N-condition support: Check if editing condition N's column (N >= 2)
+    const editingIdx = searchMode.activeConditionIndex;
+    if (
+      editingIdx !== undefined &&
+      editingIdx >= 2 &&
+      preservedSearchMode?.filterSearch?.conditions?.[editingIdx]
+    ) {
+      const condNColumnField =
+        preservedSearchMode.filterSearch.conditions[editingIdx].field;
+      if (condNColumnField) {
+        const index = sortedColumns.findIndex(
+          col => col.field === condNColumnField
+        );
+        return index >= 0 ? index : undefined;
+      }
+    }
+
     // Check if editing condition[1] column - use condition[1] column field from conditions or partialConditions state
     if (isEditingSecondColumnState) {
       // Try to get condition[1] column field from multi-condition filter
@@ -2395,7 +2420,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return index >= 0 ? index : undefined;
     }
     return undefined;
-  }, [preservedSearchMode, sortedColumns, isEditingSecondColumnState]);
+  }, [
+    preservedSearchMode,
+    sortedColumns,
+    isEditingSecondColumnState,
+    searchMode.activeConditionIndex,
+  ]);
 
   // Calculate base padding (CSS variable will override when badges are present)
   // When left icon is visible (column selector, filter mode, etc.), use smaller padding
@@ -2518,18 +2548,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               previewColumn={previewColumn}
               previewOperator={previewOperator}
               editingConditionIndex={
-                isEditingSecondColumnState
-                  ? 1
-                  : isEditingSecondOperator
-                    ? 1
-                    : null
+                // Use scalable editingSelectorTarget for N-condition support
+                // Fallback to activeConditionIndex when column/operator selector is open with preserved state
+                editingSelectorTarget?.conditionIndex ??
+                (preservedSearchMode &&
+                (searchMode.showColumnSelector ||
+                  searchMode.showOperatorSelector) &&
+                searchMode.activeConditionIndex !== undefined &&
+                searchMode.activeConditionIndex >= 1
+                  ? searchMode.activeConditionIndex
+                  : null)
               }
               editingTarget={
-                isEditingSecondColumnState
+                editingSelectorTarget?.target ??
+                (preservedSearchMode && searchMode.showColumnSelector
                   ? 'column'
-                  : isEditingSecondOperator
+                  : preservedSearchMode && searchMode.showOperatorSelector
                     ? 'operator'
-                    : null
+                    : null)
               }
             />
           </div>
