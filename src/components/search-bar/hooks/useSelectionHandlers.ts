@@ -1066,7 +1066,35 @@ export function useSelectionHandlers(
         const extraction = extractMultiConditionPreservation(searchMode);
         preservedFilterRef.current = extraction;
 
-        if (filter.valueTo) {
+        // Check if this is a multi-condition filter
+        if (
+          filter.isMultiCondition &&
+          filter.conditions &&
+          filter.conditions.length > 0
+        ) {
+          // Multi-condition: build pattern with all existing conditions + new join + column selector
+          const conditions = filter.conditions;
+          const existingJoins = filter.joins || [filter.joinOperator || 'AND'];
+          const isMultiColumn = filter.isMultiColumn || false;
+          const defaultField = conditions[0]?.field || filter.field;
+
+          // Build pattern with all existing conditions (confirmed, no trailing marker)
+          const basePattern = PatternBuilder.buildNConditions(
+            conditions.map(c => ({
+              field: c.field,
+              operator: c.operator,
+              value: c.value,
+              valueTo: c.valueTo,
+            })),
+            existingJoins,
+            isMultiColumn,
+            defaultField,
+            { confirmed: false } // No ## or #
+          );
+
+          // Add new join + column selector
+          newValue = `${basePattern} #${joinOperator.toLowerCase()} #`;
+        } else if (filter.valueTo) {
           newValue = `#${filter.field} #${filter.operator} ${filter.value} #to ${filter.valueTo} #${joinOperator.toLowerCase()} #`;
         } else {
           newValue = PatternBuilder.partialMulti(

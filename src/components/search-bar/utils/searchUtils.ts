@@ -689,6 +689,92 @@ export const parseSearchValue = (
         // These patterns handle when condition[1] column is DIFFERENT from first column
         // Pattern: #col1 #op1 val1 #and #col2 ...
 
+        // Pattern: #col1 #op1 val1 #and #col2 #op2 val2 # (trailing # for adding condition N+1)
+        // Shows join selector to add third condition
+        const multiColJoinSelector = searchValue.match(
+          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#\s*$/i
+        );
+        if (multiColJoinSelector) {
+          const [, col1, op1, val1, join, col2, op2, val2] =
+            multiColJoinSelector;
+          const column1 = findColumn(columns, col1);
+          const column2 = findColumn(columns, col2);
+
+          if (column1 && column2) {
+            const operator1Obj = findOperatorForColumn(column1, op1);
+            const operator2Obj = findOperatorForColumn(column2, op2);
+
+            if (operator1Obj && operator2Obj) {
+              let filterValue = val1.trim();
+              let filterValueTo: string | undefined;
+
+              if (operator1Obj.value === 'inRange') {
+                const inRangeValues = parseInRangeValues(val1);
+                if (inRangeValues) {
+                  filterValue = inRangeValues.value;
+                  filterValueTo = inRangeValues.valueTo;
+                }
+              }
+
+              // Show join selector for adding condition[2]
+              return {
+                globalSearch: undefined,
+                showColumnSelector: false,
+                showOperatorSelector: false,
+                showJoinOperatorSelector: true, // Show join selector!
+                isFilterMode: false,
+                selectedColumn: column1,
+                filterSearch: {
+                  field: column1.field,
+                  value: filterValue,
+                  valueTo: filterValueTo,
+                  column: column1,
+                  operator: operator1Obj.value,
+                  isExplicitOperator: true,
+                  isConfirmed: true,
+                  isMultiCondition: true,
+                  isMultiColumn: true,
+                  joinOperator: join.toUpperCase() as 'AND' | 'OR',
+                  joins: [join.toUpperCase() as 'AND' | 'OR'],
+                  conditions: [
+                    {
+                      field: column1.field,
+                      column: column1,
+                      operator: operator1Obj.value,
+                      value: filterValue,
+                      valueTo: filterValueTo,
+                    },
+                    {
+                      field: column2.field,
+                      column: column2,
+                      operator: operator2Obj.value,
+                      value: val2.trim(),
+                    },
+                  ],
+                },
+                // N-condition support
+                activeConditionIndex: 2, // Ready for condition[2]
+                partialConditions: [
+                  {
+                    field: column1.field,
+                    column: column1,
+                    operator: operator1Obj.value,
+                    value: filterValue,
+                    valueTo: filterValueTo,
+                  },
+                  {
+                    field: column2.field,
+                    column: column2,
+                    operator: operator2Obj.value,
+                    value: val2.trim(),
+                  },
+                ],
+                joins: [join.toUpperCase() as 'AND' | 'OR'],
+              };
+            }
+          }
+        }
+
         // Pattern: #col1 #op val #and #col2 #op2 val2 (typing condition[1] value, multi-column)
         const multiColTypingValue = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+)$/i
@@ -1046,6 +1132,86 @@ export const parseSearchValue = (
         // ============ SAME-COLUMN PATTERNS (existing) ============
         // These patterns handle when condition[1] uses the SAME column
         // Pattern: #col #op1 val1 #and #op2 ...
+
+        // Pattern: #col #op1 val1 #and #op2 val2 # (trailing # for adding condition N+1, same-column)
+        // Shows join selector to add third condition
+        const sameColJoinSelector = searchValue.match(
+          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s]+)\s+(.+?)\s+#\s*$/i
+        );
+        if (sameColJoinSelector) {
+          const [, , op1, val1, join, op2, val2] = sameColJoinSelector;
+          const operator1Obj = findOperatorForColumn(column, op1);
+          const operator2Obj = findOperatorForColumn(column, op2);
+
+          if (operator1Obj && operator2Obj) {
+            let filterValue = val1.trim();
+            let filterValueTo: string | undefined;
+
+            if (operator1Obj.value === 'inRange') {
+              const inRangeValues = parseInRangeValues(val1);
+              if (inRangeValues) {
+                filterValue = inRangeValues.value;
+                filterValueTo = inRangeValues.valueTo;
+              }
+            }
+
+            // Show join selector for adding condition[2]
+            return {
+              globalSearch: undefined,
+              showColumnSelector: false,
+              showOperatorSelector: false,
+              showJoinOperatorSelector: true, // Show join selector!
+              isFilterMode: false,
+              selectedColumn: column,
+              filterSearch: {
+                field: column.field,
+                value: filterValue,
+                valueTo: filterValueTo,
+                column,
+                operator: operator1Obj.value,
+                isExplicitOperator: true,
+                isConfirmed: true,
+                isMultiCondition: true,
+                isMultiColumn: false,
+                joinOperator: join.toUpperCase() as 'AND' | 'OR',
+                joins: [join.toUpperCase() as 'AND' | 'OR'],
+                conditions: [
+                  {
+                    field: column.field,
+                    column,
+                    operator: operator1Obj.value,
+                    value: filterValue,
+                    valueTo: filterValueTo,
+                  },
+                  {
+                    field: column.field,
+                    column,
+                    operator: operator2Obj.value,
+                    value: val2.trim(),
+                  },
+                ],
+              },
+              // N-condition support
+              activeConditionIndex: 2, // Ready for condition[2]
+              partialConditions: [
+                {
+                  field: column.field,
+                  column,
+                  operator: operator1Obj.value,
+                  value: filterValue,
+                  valueTo: filterValueTo,
+                },
+                {
+                  field: column.field,
+                  column,
+                  operator: operator2Obj.value,
+                  value: val2.trim(),
+                },
+              ],
+              joins: [join.toUpperCase() as 'AND' | 'OR'],
+            };
+          }
+        }
 
         // Check for incomplete multi-condition with condition[1] value being typed (SAME COLUMN)
         // Pattern: #field #op1 val1 #and #op2 val2 (without ## confirmation)
