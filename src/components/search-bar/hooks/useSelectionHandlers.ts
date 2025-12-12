@@ -856,12 +856,102 @@ export function useSelectionHandlers(
   // ============================================================================
   const handleColumnSelect = useCallback(
     (column: SearchColumn) => {
-      // CASE 0: MULTI-COLUMN - selecting column for condition[N] after join operator
-      // Use scalable check: activeConditionIndex > 0
+      const filter = searchMode.filterSearch;
+
+      // CASE 0a: Adding NEW condition to existing multi-condition filter
+      // When activeConditionIndex >= existing complete conditions, we're adding a new condition
+      // Check both filter.conditions and partialConditions for robustness
+      const existingConditionsCount = filter?.conditions?.length ?? 0;
+      const partialConditionsCount = searchMode.partialConditions?.length ?? 0;
+
+      // We're adding a new condition if:
+      // 1. We have 2+ complete conditions (filter.conditions or partialConditions with values)
+      // 2. activeConditionIndex points to a new slot (>= existingConditionsCount)
+      // 3. Column selector is showing (partialConditions has empty last slot)
+      const hasMultipleCompleteConditions =
+        existingConditionsCount >= 2 ||
+        (partialConditionsCount >= 3 &&
+          searchMode.partialConditions?.[0]?.value &&
+          searchMode.partialConditions?.[1]?.value);
+
+      const isAddingNewConditionToMulti =
+        hasMultipleCompleteConditions &&
+        searchMode.activeConditionIndex !== undefined &&
+        searchMode.activeConditionIndex >= 2 &&
+        searchMode.showColumnSelector;
+
+      if (isAddingNewConditionToMulti) {
+        // Build pattern with all existing conditions + new column + operator selector
+        // Use filter.conditions if available, otherwise build from partialConditions
+        const existingConditions =
+          filter?.conditions ||
+          (searchMode.partialConditions || [])
+            .filter(c => c.operator && c.value)
+            .map(c => ({
+              field: c.field || '',
+              column: c.column!,
+              operator: c.operator!,
+              value: c.value!,
+              valueTo: c.valueTo,
+            }));
+
+        const existingJoins = filter?.joins ||
+          searchMode.joins?.slice(0, existingConditions.length - 1) || [
+            searchMode.partialJoin || 'AND',
+          ];
+        const defaultField =
+          existingConditions[0]?.field || filter?.field || '';
+
+        // Get the new join from joins array (the last join is for connecting to new condition)
+        const newJoinIndex = existingConditions.length - 1;
+        const newJoin =
+          searchMode.joins?.[newJoinIndex] || searchMode.partialJoin || 'AND';
+
+        // Determine if multi-column from filter or by checking field names
+        const isMultiColumn =
+          filter?.isMultiColumn ||
+          existingConditions.some(
+            (c, i) => i > 0 && c.field !== existingConditions[0]?.field
+          );
+
+        // Build base pattern with all existing conditions
+        const basePattern = PatternBuilder.buildNConditions(
+          existingConditions.map(c => ({
+            field: c.field,
+            operator: c.operator,
+            value: c.value,
+            valueTo: c.valueTo,
+          })),
+          existingJoins,
+          isMultiColumn,
+          defaultField,
+          { confirmed: false }
+        );
+
+        // Add new join + new column + operator selector
+        const newValue = `${basePattern} #${newJoin.toLowerCase()} #${column.field} #`;
+
+        // Clear any stale state that might interfere
+        preservedFilterRef.current = null;
+        setPreservedSearchMode(null);
+        setIsEditingSecondOperator(false); // Ensure this is false for new condition
+
+        setFilterValue(newValue, onChange, inputRef);
+
+        setTimeout(() => {
+          inputRef?.current?.focus();
+        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+        return;
+      }
+
+      // CASE 0b: MULTI-COLUMN - selecting column for condition[1] after join operator
+      // Use scalable check: activeConditionIndex > 0 (but only for condition 1)
       const isSelectingConditionNColumn =
         isBuildingConditionN(searchMode) &&
         searchMode.filterSearch &&
-        searchMode.partialJoin;
+        searchMode.partialJoin &&
+        !isAddingNewConditionToMulti;
+
       if (isSelectingConditionNColumn) {
         handleColumnSelectMultiColumn(
           column,
@@ -959,11 +1049,126 @@ export function useSelectionHandlers(
         return;
       }
 
-      // CASE 3: Selecting operator for condition[N] in partial multi-condition
+      // CASE 3a: Selecting operator for condition N+1 (adding to existing multi-condition)
+      // When we have 2+ complete conditions and selecting operator for the new condition
+      const filter = searchMode.filterSearch;
+      const existingConditionsCount = filter?.conditions?.length ?? 0;
+      const partialConditionsCount = searchMode.partialConditions?.length ?? 0;
+
+      // Check if we're adding operator to a NEW condition (condition N+1)
+      const hasMultipleCompleteConditions =
+        existingConditionsCount >= 2 ||
+        (partialConditionsCount >= 3 &&
+          searchMode.partialConditions?.[0]?.value &&
+          searchMode.partialConditions?.[1]?.value);
+
+      const lastPartialCondition =
+        searchMode.partialConditions?.[partialConditionsCount - 1];
+
+      // Check if we're at the last partial condition AND operator selector is showing
+      // This is more robust than checking lastPartialCondition?.column which might fail
+      // if findColumn didn't find the column during parsing
+      const isAddingOperatorToNewCondition =
+        hasMultipleCompleteConditions &&
+        searchMode.activeConditionIndex !== undefined &&
+        searchMode.activeConditionIndex >= 2 &&
+        searchMode.showOperatorSelector && // Operator selector is open
+        (lastPartialCondition?.column || // Has column (parsing succeeded)
+          (searchMode.selectedColumn && // Or selectedColumn is set (fallback)
+            partialConditionsCount >= 3)); // And we have enough partial conditions
+
+      if (isAddingOperatorToNewCondition) {
+        // Build pattern with all existing conditions + new column + new operator
+        const existingConditions =
+          filter?.conditions ||
+          (searchMode.partialConditions || [])
+            .filter(c => c.operator && c.value)
+            .map(c => ({
+              field: c.field || '',
+              column: c.column!,
+              operator: c.operator!,
+              value: c.value!,
+              valueTo: c.valueTo,
+            }));
+
+        const existingJoins = filter?.joins ||
+          searchMode.joins?.slice(0, existingConditions.length - 1) || [
+            searchMode.partialJoin || 'AND',
+          ];
+
+        const isMultiColumn =
+          filter?.isMultiColumn ||
+          existingConditions.some(
+            (c, i) => i > 0 && c.field !== existingConditions[0]?.field
+          );
+
+        const defaultField =
+          existingConditions[0]?.field || filter?.field || '';
+
+        // Get the new join (last join in the array)
+        const newJoinIndex = existingConditions.length - 1;
+        const newJoin =
+          searchMode.joins?.[newJoinIndex] || searchMode.partialJoin || 'AND';
+
+        // Get the new column from last partial condition or selectedColumn
+        // Fallback: extract from the value pattern (e.g., "#col1 #op val #and #col2 #")
+        let newColumnField =
+          lastPartialCondition?.column?.field ||
+          searchMode.selectedColumn?.field ||
+          '';
+
+        // If still empty, try to extract from the value pattern
+        if (!newColumnField) {
+          // Pattern: ...#join #column # at the end
+          const colFromValueMatch = value.match(
+            /#(?:and|or)\s+#([^\s#]+)\s+#\s*$/i
+          );
+          if (colFromValueMatch) {
+            newColumnField = colFromValueMatch[1];
+          }
+        }
+
+        // Guard: need a valid column field to proceed
+        if (newColumnField) {
+          // Build base pattern with all existing conditions
+          const basePattern = PatternBuilder.buildNConditions(
+            existingConditions.map(c => ({
+              field: c.field,
+              operator: c.operator,
+              value: c.value,
+              valueTo: c.valueTo,
+            })),
+            existingJoins,
+            isMultiColumn,
+            defaultField,
+            { confirmed: false }
+          );
+
+          // Add new join + new column + new operator + space for value
+          const newValue = `${basePattern} #${newJoin.toLowerCase()} #${newColumnField} #${operator.value} `;
+
+          // Clear any stale state
+          preservedFilterRef.current = null;
+          setPreservedSearchMode(null);
+          setIsEditingSecondOperator(false);
+
+          setFilterValue(newValue, onChange, inputRef);
+
+          setTimeout(() => {
+            inputRef?.current?.focus();
+          }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
+          return;
+        }
+        // If newColumnField is empty, fall through to other cases
+      }
+
+      // CASE 3b: Selecting operator for condition[1] (second condition) in partial multi-condition
       // Note: Don't require isConfirmed - when building new multi-column filter,
       // the pattern is "#col1 #op1 val1 #and #col2 #" which has no ## marker
-      // Use scalable check: activeConditionIndex > 0
+      // IMPORTANT: Only for condition 1 (index 1), NOT for condition 2+ which should use CASE 3a
+      const activeIdx = searchMode.activeConditionIndex ?? 0;
       if (
+        activeIdx === 1 && // Only for condition 1, not condition 2+
         isBuildingConditionN(searchMode) &&
         searchMode.partialJoin &&
         searchMode.filterSearch?.value // First condition has value (is complete)
