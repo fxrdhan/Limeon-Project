@@ -37,15 +37,15 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@ag-grid-community/locale": "^34.3.1",
+    "@ag-grid-community/locale": "35.0.0",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.88.0",
     "@tailwindcss/cli": "^4.1.18",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-query-devtools": "^5.91.1",
-    "ag-grid-enterprise": "34.2.0",
-    "ag-grid-react": "34.2.0",
+    "ag-grid-enterprise": "35.0.0",
+    "ag-grid-react": "35.0.0",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
     "classnames": "^2.5.1",
