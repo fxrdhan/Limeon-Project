@@ -5,15 +5,15 @@
     "": {
       "name": "pharmasys",
       "dependencies": {
-        "@ag-grid-community/locale": "^34.3.1",
+        "@ag-grid-community/locale": "35.0.0",
         "@headlessui/react": "^2.2.9",
         "@heroicons/react": "^2.2.0",
-        "@supabase/supabase-js": "^2.87.3",
+        "@supabase/supabase-js": "^2.88.0",
         "@tailwindcss/cli": "^4.1.18",
         "@tanstack/react-query": "^5.90.12",
         "@tanstack/react-query-devtools": "^5.91.1",
-        "ag-grid-enterprise": "34.2.0",
-        "ag-grid-react": "34.2.0",
+        "ag-grid-enterprise": "35.0.0",
+        "ag-grid-react": "35.0.0",
         "axios": "^1.13.2",
         "chart.js": "^4.5.1",
         "classnames": "^2.5.1",
@@ -29,7 +29,7 @@
         "react-dom": "^19.2.3",
         "react-hot-toast": "^2.6.0",
         "react-icons": "^5.5.0",
-        "react-router-dom": "^7.10.1",
+        "react-router-dom": "^7.11.0",
         "react-spinners": "^0.17.0",
         "tailwind-merge": "^3.4.0",
         "zod": "^4.2.1",
@@ -56,7 +56,7 @@
         "eslint": "^9.39.2",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-react-hooks": "7.0.1",
-        "eslint-plugin-react-refresh": "^0.4.25",
+        "eslint-plugin-react-refresh": "^0.4.26",
         "globals": "^16.5.0",
         "happy-dom": "^20.0.11",
         "husky": "^9.1.7",
@@ -89,7 +89,7 @@
 
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
 
-    "@ag-grid-community/locale": ["@ag-grid-community/locale@34.3.1", "", {}, "sha512-fAHvOZ6p6nURaUsm4S0KTOc5vuhDWzsEimljbpAVkVQspvuDvRAYW/cZnTl+KSUEp8QhfZ6JRrwuVitbdpgihg=="],
+    "@ag-grid-community/locale": ["@ag-grid-community/locale@35.0.0", "", {}, "sha512-WzCa7VdX2D2XMifDCG8pBXUOdrpnYGd6gT/J+HLH3oGnQAXLk31r7WvvVmgKuFD6xGetPzg4hWX79GdJssVxTQ=="],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
@@ -557,21 +557,21 @@
 
     "acorn-jsx": ["acorn-jsx@5.3.2", "", { "peerDependencies": { "acorn": "^6.0.0 || ^7.0.0 || ^8.0.0" } }, "sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ=="],
 
-    "ag-charts-community": ["ag-charts-community@12.2.0", "", { "dependencies": { "ag-charts-core": "12.2.0", "ag-charts-locale": "12.2.0", "ag-charts-types": "12.2.0" } }, "sha512-j5IYDtePqOde5LdnmpcKGSkgqhWRCke4W3uJvIFRFDQrFmI+hrnIRFgoea6+QBmtsKcho2vv5N8FqHOwN/udOw=="],
+    "ag-charts-community": ["ag-charts-community@13.0.0", "", { "dependencies": { "ag-charts-core": "13.0.0", "ag-charts-locale": "13.0.0", "ag-charts-types": "13.0.0" } }, "sha512-zIBokGrkvpySdksjCFVC/gOrtQSFeJ8j8n1WT7XV4UW1qvEeBIlme6Ng0srWS0HaACwNg9hn9WDEhnBDldbRTg=="],
 
-    "ag-charts-core": ["ag-charts-core@12.2.0", "", { "dependencies": { "ag-charts-types": "12.2.0" } }, "sha512-3hTpW9MGJCyvonfHHOrIeN3VPW7Crses9Os2W/TFJzRqFD0O4Zf0lzIYTQFfPCQRhCLM8Ch211XvoCkX/Goo5g=="],
+    "ag-charts-core": ["ag-charts-core@13.0.0", "", { "dependencies": { "ag-charts-types": "13.0.0" } }, "sha512-OFN6aDhKDKzez8sSN1NEO/j/rNa0C5G/9EH5FkNFdVh4T96Ul19xpyZupZZl4kTvENN+ayGwRU6Ui8zau71Rog=="],
 
-    "ag-charts-enterprise": ["ag-charts-enterprise@12.2.0", "", { "dependencies": { "ag-charts-community": "12.2.0", "ag-charts-core": "12.2.0" } }, "sha512-GKboOSRIj14vBY68ueOBJJgSe/s76Ui8P0S0vU5xmfdi3xfnAC8xVIIEeMmJyZ2Z4NHsP/HxJlj1gXF/t4ZDWw=="],
+    "ag-charts-enterprise": ["ag-charts-enterprise@13.0.0", "", { "dependencies": { "ag-charts-community": "13.0.0", "ag-charts-core": "13.0.0" } }, "sha512-xIpXHD6jQ/7quDdogINV7yhVdcH2Pkwxe/xIzgOlffJcIEnPuKftlSMmZ3ybuDUnbgZqAwdH22IoGqqQTVpM5w=="],
 
-    "ag-charts-locale": ["ag-charts-locale@12.2.0", "", {}, "sha512-xwMTzoNi/SAV6EwApRuBXOc3K+Thi/ijsKIkIhaGPmc3VPkCVCWW/TcAontiZ3dXUgxsL3jXBNyarH7f+XzWkQ=="],
+    "ag-charts-locale": ["ag-charts-locale@13.0.0", "", {}, "sha512-QUJsinNJIQgtaOiz+DvnCPynux3UwYrk9TIdXl0x3dH9OjSWPrF38cshDD7CZ8qJVR4YJloRyJ1aWGYOUBipUQ=="],
 
-    "ag-charts-types": ["ag-charts-types@12.2.0", "", {}, "sha512-d2qQrQirt9wP36YW5HPuOvXsiajyiFnr1CTsoCbs02bavPDz7Lk2jHp64+waM4YKgXb3GN7gafbBI9Qgk33BmQ=="],
+    "ag-charts-types": ["ag-charts-types@13.0.0", "", {}, "sha512-mqOmKS0q4s2tt/C+CBG2Z+HWrSKYvRUCAlQzcKXKfARE3v/KdnBuxfjafa2c8ivElTTywdVdOe0q52Cow2Oggw=="],
 
-    "ag-grid-community": ["ag-grid-community@34.2.0", "", { "dependencies": { "ag-charts-types": "12.2.0" } }, "sha512-peS7THEMYwpIrwLQHmkRxw/TlOnddD/F5A88RqlBxf8j+WqVYRWMOOhU5TqymGcha7z2oZ8IoL9ROl3gvtdEjg=="],
+    "ag-grid-community": ["ag-grid-community@35.0.0", "", { "dependencies": { "ag-charts-types": "13.0.0" } }, "sha512-Cz3MA98zZygPwvCi8OKIhP0nea+YXdx8r5MwIXqVqnQwb/BEL05nGxwovIpelL6spv3jNlHQrTVgt4lw9J+nyg=="],
 
-    "ag-grid-enterprise": ["ag-grid-enterprise@34.2.0", "", { "dependencies": { "ag-grid-community": "34.2.0" }, "optionalDependencies": { "ag-charts-community": "12.2.0", "ag-charts-enterprise": "12.2.0" } }, "sha512-ldQl5mB8dyzad3/z0fmtQRBP8+dGw8+8Po/WmkJOPDqtAQuMpRmp5+ICWGTlql0pMLKocll2jccQKJVbHDXfoA=="],
+    "ag-grid-enterprise": ["ag-grid-enterprise@35.0.0", "", { "dependencies": { "ag-grid-community": "35.0.0" }, "optionalDependencies": { "ag-charts-community": "13.0.0", "ag-charts-enterprise": "13.0.0" } }, "sha512-mCL2PIzTFU60uF+RrQBdLHmgOamwIgmxsJJdDs86xdROBykyyAclUMdMMhIl5ywHRI27VpN9GbaME9mNCU6jEQ=="],
 
-    "ag-grid-react": ["ag-grid-react@34.2.0", "", { "dependencies": { "ag-grid-community": "34.2.0", "prop-types": "^15.8.1" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-dLKFw6hz75S0HLuZvtcwjm+gyiI4gXVzHEu7lWNafWAX0mb8DhogEOP5wbzAlsN6iCfi7bK/cgZImZFjenlqwg=="],
+    "ag-grid-react": ["ag-grid-react@35.0.0", "", { "dependencies": { "ag-grid-community": "35.0.0", "prop-types": "^15.8.1" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-ZmAjDnLONYja3IazKnMsqWZ8ZsJNTOTVQQX2tXNEkDHTMlVqIkDrcVU2f/o8awJhLCZhOMh7bE1YmYG/yHZLOg=="],
 
     "agent-base": ["agent-base@7.1.4", "", {}, "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ=="],
 

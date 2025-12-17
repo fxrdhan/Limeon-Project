@@ -37,7 +37,11 @@ coverage
 
 # AI project instructions
 CLAUDE.md
-AGENTS.md
+
+# gemini-cli settings
+.gemini/
+.geminiignore
+GEMINI.md
 
 # MCP configuration (contains sensitive tokens)
 .mcp.json
