@@ -1,37 +1,43 @@
-import React, { useRef, useCallback, useMemo, useState } from 'react';
+import fuzzysort from 'fuzzysort';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { flushSync } from 'react-dom';
 import { LuSearch } from 'react-icons/lu';
-import fuzzysort from 'fuzzysort';
-import {
-  EnhancedSearchBarProps,
-  SearchColumn,
-  EnhancedSearchState,
-} from './types';
-import { SEARCH_CONSTANTS } from './constants';
-import { JOIN_OPERATORS } from './operators';
-import { buildColumnValue, findColumn } from './utils/searchUtils';
-import { getOperatorsForColumn } from './utils/operatorUtils';
-import { PatternBuilder } from './utils/PatternBuilder';
-import {
-  setFilterValue,
-  extractMultiConditionPreservation,
-  getFirstCondition,
-  getJoinOperator,
-  getConditionOperatorAt,
-  PreservedFilter,
-} from './utils/handlerHelpers';
-import { restoreConfirmedPattern } from './utils/patternRestoration';
-import { useSearchState } from './hooks/useSearchState';
-import { useSelectorPosition } from './hooks/useSelectorPosition';
-import { useSearchInput } from './hooks/useSearchInput';
-import { useSearchKeyboard } from './hooks/useSearchKeyboard';
-import { useBadgeHandlers } from './hooks/useBadgeHandlers';
-import { useSelectionHandlers } from './hooks/useSelectionHandlers';
 import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
 import ColumnSelector from './components/selectors/ColumnSelector';
-import OperatorSelector from './components/selectors/OperatorSelector';
 import JoinOperatorSelector from './components/selectors/JoinOperatorSelector';
+import OperatorSelector from './components/selectors/OperatorSelector';
+import { SEARCH_CONSTANTS } from './constants';
+import { useBadgeHandlers } from './hooks/useBadgeHandlers';
+import { useSearchInput } from './hooks/useSearchInput';
+import { useSearchKeyboard } from './hooks/useSearchKeyboard';
+import { useSearchState } from './hooks/useSearchState';
+import { useSelectionHandlers } from './hooks/useSelectionHandlers';
+import { useSelectorPosition } from './hooks/useSelectorPosition';
+import { JOIN_OPERATORS } from './operators';
+import {
+  EnhancedSearchBarProps,
+  EnhancedSearchState,
+  SearchColumn,
+} from './types';
+import {
+  extractMultiConditionPreservation,
+  getConditionOperatorAt,
+  getFirstCondition,
+  getJoinOperator,
+  PreservedFilter,
+  setFilterValue,
+} from './utils/handlerHelpers';
+import { getOperatorsForColumn } from './utils/operatorUtils';
+import { PatternBuilder } from './utils/PatternBuilder';
+import { restoreConfirmedPattern } from './utils/patternRestoration';
+import { buildColumnValue, findColumn } from './utils/searchUtils';
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   value,
@@ -471,6 +477,51 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     },
     [selectedBadgeIndex]
   );
+
+  // Global Ctrl+D handler to override browser bookmark shortcut reliability
+  // Uses capture phase to ensure we intercept it when a badge is selected
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (
+        selectedBadgeIndex !== null &&
+        e.ctrlKey &&
+        e.key.toLowerCase() === 'd'
+      ) {
+        // Always prevent default to block browser bookmarking
+        e.preventDefault();
+
+        // Special case: If focused on a badge input, let the badge's own bubbling
+        // handler handle it. This is because Badge.tsx sets isClearing=true
+        // which prevents its onBlur handler from reverting the deletion.
+        if (
+          e.target instanceof HTMLInputElement &&
+          e.target.classList.contains('badge-edit-input')
+        ) {
+          return;
+        }
+
+        e.stopPropagation();
+
+        const badge = badgesRef.current[selectedBadgeIndex];
+        if (badge && badge.canClear && badge.onClear) {
+          setSelectedBadgeIndex(null);
+          badge.onClear();
+        }
+      }
+    };
+
+    if (selectedBadgeIndex !== null) {
+      document.addEventListener('keydown', handleGlobalKeyDown, {
+        capture: true,
+      });
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown, {
+        capture: true,
+      });
+    };
+  }, [selectedBadgeIndex]);
 
   // Handler for Ctrl+Arrow keyboard navigation
   const handleBadgeNavigation = useCallback(
@@ -1298,6 +1349,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         if (isFirstCondition && isValueField) {
           // Clearing first condition "from" value - clear entire filter
           handleClearValue();
+          setSelectedBadgeIndex(null); // Clear selection
         } else if (isFirstCondition && isValueToField) {
           // Clearing "to" value in Between - transition to inline editing mode for first value badge
           // User expectation: DELETE on valueTo badge -> edit first value badge [col][Between][value|]
@@ -1360,6 +1412,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } else if (editingBadge.conditionIndex === 1 && isValueField) {
           // Clearing condition[1] "from" value - clear condition[1] only
           handleClearCondition1Value();
+          setSelectedBadgeIndex(null); // Clear selection
         } else if (editingBadge.conditionIndex === 1 && isValueToField) {
           // Clearing condition[1] "to" value in Between - transition to edit condition[1] value
           // Similar to firstValueTo handling: DELETE on valueTo → edit value badge
@@ -1420,12 +1473,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   value: cond1Value,
                 });
               }, 10);
+              setSelectedBadgeIndex(null); // Clear selection to prevent auto-selecting previous badge
               return;
             }
           }
           handleClearCondition1Value();
         }
 
+        setSelectedBadgeIndex(null); // Clear selection to prevent auto-selecting previous badge
         // Ensure focus returns to search input after clearing
         setTimeout(() => {
           inputRef?.current?.focus();
