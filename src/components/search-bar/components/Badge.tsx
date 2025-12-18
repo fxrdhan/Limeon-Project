@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { LuX } from 'react-icons/lu';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiEdit2 } from 'react-icons/fi';
+import { LuX } from 'react-icons/lu';
 import { PiTrashSimpleBold } from 'react-icons/pi';
-import { BadgeConfig, BADGE_COLORS } from '../types/badge';
+import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 
 // Format currency value for display (e.g., "500" -> "Rp 500")
 const formatCurrencyDisplay = (value: string): string => {
@@ -146,6 +146,17 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   // Handle keyboard events for inline editing
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle Ctrl+D (delete badge during edit)
+    if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      e.stopPropagation();
+      // Set flag to prevent blur handler
+      isClearing.current = true;
+      // Clear value which effectively deletes the badge
+      onEditComplete?.('');
+      return;
+    }
+
     // Handle Ctrl+E (left) and Ctrl+Shift+E (right) to navigate between badges
     if (e.ctrlKey && e.key.toLowerCase() === 'e') {
       e.preventDefault();
@@ -269,7 +280,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0`}
+          className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0 badge-edit-input`}
           style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
         />
       ) : (
