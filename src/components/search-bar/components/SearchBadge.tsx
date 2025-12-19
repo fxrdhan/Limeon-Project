@@ -1,8 +1,8 @@
+import { AnimatePresence, motion } from 'motion/react';
 import React, { useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
-import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import Badge from './Badge';
 
 // Bouncy spring animation config
@@ -307,7 +307,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   return (
     <div
       ref={badgesContainerRef}
-      className="absolute left-1.5 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-1.5 max-w-[70%] scrollbar-hide overflow-visible"
+      className="absolute left-1.5 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-1.5 max-w-[95%] scrollbar-hide overflow-visible"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
