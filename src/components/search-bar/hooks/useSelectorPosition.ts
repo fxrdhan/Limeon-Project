@@ -1,10 +1,10 @@
-import { useState, useEffect, RefObject } from 'react';
+import { RefObject, useEffect, useState } from 'react';
 
 interface UseSelectorPositionProps {
   isOpen: boolean;
-  containerRef: RefObject<HTMLDivElement | null>;
+  containerRef: RefObject<HTMLElement | null>;
   /** Optional anchor element to position relative to (e.g., badge). Falls back to containerRef. */
-  anchorRef?: RefObject<HTMLDivElement | null>;
+  anchorRef?: RefObject<HTMLElement | null>;
   /** Position relative to anchor: 'left', 'right', or 'center' */
   anchorAlign?: 'left' | 'right' | 'center';
   /** Optional offset ratio (0-1) from anchor's left edge. Overrides anchorAlign when provided. */
