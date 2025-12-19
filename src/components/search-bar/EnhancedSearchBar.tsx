@@ -2225,6 +2225,32 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       .map(item => item.column);
   }, [searchableColumns, searchTerm]);
 
+  // Restricted join operators to ensure consistency (all AND or all OR)
+  const restrictedJoinOperators = useMemo(() => {
+    // Determine the primary/locked join operator
+    // Case 1: Confirmed multi-condition joins array
+    let lockedJoin = searchMode.filterSearch?.joins?.[0];
+
+    // Case 2: Backward compatibility with single joinOperator field
+    if (!lockedJoin) {
+      lockedJoin = searchMode.filterSearch?.joinOperator;
+    }
+
+    // Case 3: Partial join being built (if no confirmed joins yet)
+    if (!lockedJoin) {
+      lockedJoin = searchMode.partialJoin;
+    }
+
+    if (lockedJoin) {
+      const lowerLocked = lockedJoin.toLowerCase();
+      // Only show the matching operator
+      return JOIN_OPERATORS.filter(op => op.value === lowerLocked);
+    }
+
+    // If no join exists yet, show both AND and OR
+    return JOIN_OPERATORS;
+  }, [searchMode.filterSearch, searchMode.partialJoin]);
+
   const getPlaceholder = () => {
     if (showTargetedIndicator) {
       return 'Cari...';
@@ -2527,7 +2553,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       />
 
       <JoinOperatorSelector
-        operators={JOIN_OPERATORS}
+        operators={restrictedJoinOperators}
         isOpen={searchMode.showJoinOperatorSelector}
         onSelect={handleJoinOperatorSelect}
         onClose={handleCloseJoinOperatorSelector}
