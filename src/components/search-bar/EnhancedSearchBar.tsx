@@ -184,10 +184,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedSearchMode !== null && isSelectingConditionNColumn;
   // For N-condition support, use dynamic ref for condition 2+
   const getColumnAnchorRef = ():
-    | React.RefObject<HTMLDivElement | null>
+    | React.RefObject<HTMLElement | null>
     | undefined => {
-    if (!isSelectingConditionNColumn) return undefined; // First column: no anchor
-    if (!isEditingConditionNColumn) return badgesContainerRef; // Create mode: position at end of badges
+    if (!isSelectingConditionNColumn) return undefined; // First column: no anchor (or container left)
+    if (!isEditingConditionNColumn)
+      return inputRef as React.RefObject<HTMLElement | null>; // Create mode: position at input (end of badges)
     // Edit mode: position below the correct column badge
     // Note: activeConditionIndex >= 1 here (guaranteed by isSelectingConditionNColumn)
     if (activeConditionIndex === 1) return secondColumnBadgeRef;
@@ -199,9 +200,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     containerRef,
     anchorRef: columnAnchorRef,
     anchorAlign: isSelectingConditionNColumn
-      ? isEditingConditionNColumn
-        ? 'left' // Edit mode: left-aligned below Nth column badge
-        : 'right' // Create mode: right edge of badges
+      ? 'left' // Always left-aligned: below badge (Edit) or at start of input (Create)
       : 'left',
   });
 
@@ -217,7 +216,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Determine which anchor ref to use based on activeConditionIndex
   const getConditionColumnAnchorRef =
-    (): React.RefObject<HTMLDivElement | null> => {
+    (): React.RefObject<HTMLElement | null> => {
       if (activeConditionIndex === 0) {
         return badgeRef; // First condition column
       } else if (activeConditionIndex === 1) {
@@ -242,7 +241,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     hasActiveConditionColumn &&
     searchMode.showOperatorSelector;
 
-  let operatorAnchorRef: React.RefObject<HTMLDivElement | null>;
+  let operatorAnchorRef: React.RefObject<HTMLElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
   if (isEditingOperator) {
@@ -285,7 +284,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Detect if specifically editing an existing join badge
   const isEditingJoinOperator = editingSelectorTarget?.target === 'join';
 
-  const getJoinAnchorRef = (): React.RefObject<HTMLDivElement | null> => {
+  const getJoinAnchorRef = (): React.RefObject<HTMLElement | null> => {
     // 1. EDIT existing join: use the specific join badge being edited
     if (
       isEditingJoinOperator &&
@@ -294,8 +293,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return getConditionNJoinRef(editingSelectorTarget.conditionIndex);
     }
 
-    // 2. CREATE new join: position after the last confirmed badge in the container
-    return badgesContainerRef;
+    // 2. CREATE new join: position at the input (after last confirmed badge)
+    return inputRef as React.RefObject<HTMLElement | null>;
   };
 
   const joinAnchorRef = getJoinAnchorRef();
@@ -304,7 +303,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     isOpen: searchMode.showJoinOperatorSelector,
     containerRef,
     anchorRef: joinAnchorRef,
-    anchorAlign: isEditingJoinOperator ? 'left' : 'right', // left for edit, right for create
+    anchorAlign: 'left', // Always left: below badge (Edit) or at start of input (Create)
   });
 
   // Clear preserved state - used to reset edit mode and badge visibility
@@ -1862,7 +1861,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
 
-      // CASE 5: User types on confirmed multi-condition filter - enter edit mode for condition[1] value
       // Pattern: #field #op1 val1 #join #op2 val2## → user types → #field #op1 val1 #join #op2 newValue
       // NOTE: Skip this when building condition 2+ (activeConditionIndex >= 2) to avoid losing partial condition
       const isBuildingConditionN =
@@ -2387,34 +2385,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.activeConditionIndex,
   ]);
 
-  // Calculate base padding (CSS variable will override when badges are present)
-  // When left icon is visible (column selector, filter mode, etc.), use smaller padding
-  // since the icon container already provides visual spacing
-  const getBasePadding = () => {
-    // Check if left icon is showing (same logic as SearchIcon's shouldShowLeftIcon)
-    const hasExplicitOperator =
-      searchMode.filterSearch?.isExplicitOperator ||
-      searchMode.filterSearch?.isMultiCondition ||
-      searchMode.showOperatorSelector ||
-      searchMode.showJoinOperatorSelector ||
-      searchMode.partialJoin ||
-      searchMode.partialConditions?.[1]?.operator;
-
-    const isLeftIconVisible =
-      (((displayValue && !displayValue.startsWith('#')) ||
-        hasExplicitOperator) &&
-        !searchMode.showColumnSelector) ||
-      searchMode.showColumnSelector;
-
-    // When left icon is visible, use smaller padding (icon provides spacing)
-    if (isLeftIconVisible) {
-      return '12px';
-    }
-
-    // Default padding when no left icon (search icon is absolute positioned inside input)
-    return '40px';
-  };
-
   return (
     <>
       <div ref={containerRef} className={`mb-2 relative ${className}`}>
@@ -2426,39 +2396,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             showTargetedIndicator={showTargetedIndicator}
           />
 
-          <div className="relative flex-1">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={getPlaceholder()}
-              className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-[border-color,box-shadow] duration-200 ease-in-out placeholder-gray-400 ${
-                searchState === 'not-found'
-                  ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
-                  : searchMode.isFilterMode &&
-                      searchMode.filterSearch &&
-                      searchMode.filterSearch.operator === 'contains' &&
-                      !searchMode.filterSearch.isExplicitOperator
-                    ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
-                    : searchMode.isFilterMode && searchMode.filterSearch
-                      ? 'border-blue-300 ring-3 ring-blue-100 focus:border-blue-500 focus:ring-3 focus:ring-blue-100'
-                      : searchMode.showColumnSelector
-                        ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
-                        : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
-              } focus:outline-none rounded-lg`}
-              style={{
-                // Use CSS variable set by ResizeObserver (dynamic), fallback to base padding
-                paddingLeft: showTargetedIndicator
-                  ? 'var(--badge-width, 60px)'
-                  : getBasePadding(),
-                // No transition on padding - prevents placeholder from animating
-              }}
-              value={displayValue}
-              onChange={wrappedInputChangeHandler}
-              onKeyDown={wrappedKeyDownHandler}
-              onFocus={onFocus}
-              onBlur={onBlur}
-            />
-
+          <div
+            className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow] duration-200 ease-in-out rounded-lg ${
+              searchState === 'not-found'
+                ? 'border-danger focus-within:border-danger focus-within:ring-3 focus-within:ring-red-100'
+                : searchMode.isFilterMode &&
+                    searchMode.filterSearch &&
+                    searchMode.filterSearch.operator === 'contains' &&
+                    !searchMode.filterSearch.isExplicitOperator
+                  ? 'border-purple-300 ring-3 ring-purple-100 focus-within:border-purple-500 focus-within:ring-3 focus-within:ring-purple-100'
+                  : searchMode.isFilterMode && searchMode.filterSearch
+                    ? 'border-blue-300 ring-3 ring-blue-100 focus-within:border-blue-500 focus-within:ring-3 focus-within:ring-blue-100'
+                    : searchMode.showColumnSelector
+                      ? 'border-purple-300 ring-3 ring-purple-100 focus-within:border-purple-500 focus-within:ring-3 focus-within:ring-purple-100'
+                      : 'border-gray-300 focus-within:border-primary focus-within:ring-3 focus-within:ring-emerald-200'
+            }`}
+          >
             <SearchBadge
               searchMode={searchMode}
               badgeRef={badgeRef}
@@ -2527,6 +2480,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                     ? 'operator'
                     : null)
               }
+            />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={getPlaceholder()}
+              className="text-sm outline-none tracking-normal flex-grow min-w-[100px] bg-transparent border-none focus:ring-0 p-1 placeholder-gray-400"
+              value={displayValue}
+              onChange={wrappedInputChangeHandler}
+              onKeyDown={wrappedKeyDownHandler}
+              onFocus={onFocus}
+              onBlur={onBlur}
             />
           </div>
         </div>
