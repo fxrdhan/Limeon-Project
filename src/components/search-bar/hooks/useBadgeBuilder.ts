@@ -767,7 +767,8 @@ export const useBadgeBuilder = (
       const isTypingThisConditionValue =
         searchMode.activeConditionIndex === condIdx &&
         !searchMode.showJoinOperatorSelector &&
-        !searchMode.showColumnSelector;
+        !searchMode.showColumnSelector &&
+        !searchMode.showOperatorSelector; // [FIX] Also check showOperatorSelector
 
       // Special check for Between operator: show value badge if we have first value
       // and are waiting for second value (even if "active")

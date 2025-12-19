@@ -99,7 +99,7 @@ interface SearchBadgeProps {
   previewOperator?: { label: string; value: string } | null;
   // Scalable editing state (which condition's column/operator is being edited)
   editingConditionIndex?: number | null;
-  editingTarget?: 'column' | 'operator' | null;
+  editingTarget?: 'column' | 'operator' | 'join' | null;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({

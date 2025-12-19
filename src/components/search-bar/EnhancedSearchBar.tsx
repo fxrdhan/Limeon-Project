@@ -70,7 +70,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Tracks which condition's column/operator is being edited
   const [editingSelectorTarget, setEditingSelectorTarget] = useState<{
     conditionIndex: number; // 0 = first, 1 = second, etc.
-    target: 'column' | 'operator';
+    target: 'column' | 'operator' | 'join';
   } | null>(null);
 
   // ============ Derived Helpers for N-Condition Editing ============
@@ -164,6 +164,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // Dynamic Lazy Ref for N-Condition Selector Positioning
     getConditionNColumnRef,
     getConditionNOperatorRef,
+    getConditionNJoinRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -281,15 +282,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // 2. preservedSearchMode?.partialJoin - exists when editing from partial multi-column
   // 3. preservedSearchMode?.filterSearch?.joinOperator - exists when editing complete multi-condition
   // 4. preservedSearchMode?.filterSearch?.isMultiCondition - alternative signal for edit mode
-  const isEditingJoinOperator =
-    searchMode.partialJoin ||
-    preservedSearchMode?.partialJoin ||
-    preservedSearchMode?.filterSearch?.joinOperator ||
-    preservedSearchMode?.filterSearch?.isMultiCondition;
+  // Detect if specifically editing an existing join badge
+  const isEditingJoinOperator = editingSelectorTarget?.target === 'join';
 
-  const joinAnchorRef = isEditingJoinOperator
-    ? joinBadgeRef // EDIT: join badge exists (from preservedSearchMode), anchor to it
-    : badgesContainerRef; // CREATE: no join badge yet, anchor to badges container
+  const getJoinAnchorRef = (): React.RefObject<HTMLDivElement | null> => {
+    // 1. EDIT existing join: use the specific join badge being edited
+    if (
+      isEditingJoinOperator &&
+      editingSelectorTarget?.conditionIndex !== undefined
+    ) {
+      return getConditionNJoinRef(editingSelectorTarget.conditionIndex);
+    }
+
+    // 2. CREATE new join: position after the last confirmed badge in the container
+    return badgesContainerRef;
+  };
+
+  const joinAnchorRef = getJoinAnchorRef();
 
   const joinOperatorSelectorPosition = useSelectorPosition({
     isOpen: searchMode.showJoinOperatorSelector,
