@@ -1,11 +1,11 @@
-import {
-  SearchColumn,
-  EnhancedSearchState,
-  FilterSearch,
-  FilterCondition,
-  PartialCondition,
-} from '../types';
 import { JOIN_OPERATORS } from '../operators';
+import {
+  EnhancedSearchState,
+  FilterCondition,
+  FilterSearch,
+  PartialCondition,
+  SearchColumn,
+} from '../types';
 import { findOperatorForColumn } from './operatorUtils';
 
 // ============================================================================
@@ -77,10 +77,24 @@ const parsePartialNConditions = (
             let filterValueTo: string | undefined;
 
             if (opObj.value === 'inRange') {
-              const toMatch = filterValue.match(/^(.+?)\s+#to\s+(.+)$/i);
+              const toMatch = filterValue.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
               if (toMatch) {
                 filterValue = toMatch[1].trim();
-                filterValueTo = toMatch[2].trim();
+                if (toMatch[2]?.trim()) {
+                  filterValueTo = toMatch[2].trim();
+                } else {
+                  // [FIX] Set waitingForValueTo for first condition too
+                  const waitingForValueTo = true;
+                  partialConditions.push({
+                    field: col.field,
+                    column: col,
+                    operator: opObj.value,
+                    value: filterValue,
+                    valueTo: filterValueTo,
+                    waitingForValueTo,
+                  });
+                  continue; // Skip the generic push below
+                }
               }
             }
 
@@ -241,22 +255,46 @@ const parsePartialNConditions = (
   const lastCondition = partialConditions[partialConditions.length - 1];
   const activeConditionIndex = partialConditions.length - 1;
 
+  // NEW: Detect join selector trigger (trailing #)
+  // This allows triggering join selector after 3rd, 4th... condition
+  // [FIX] Exclude join operators (#and/#or) followed by # to avoid multi-selector anomaly
+  const hasJoinOperatorEnd = /#(and|or)\s*#\s*$/i.test(searchValue);
+  const isJoinSelectorTrigger =
+    searchValue.trimEnd().endsWith(' #') &&
+    !hasJoinOperatorEnd &&
+    // [FIX] Ensure the previous condition is strictly COMPLETE before triggering join selector.
+    // Must have a value (or valueTo for inRange).
+    // If we only have a column (but no value), the # means "Operator Selector", not "Join Selector".
+    (!!lastCondition.value || !!lastCondition.valueTo);
+  let showJoinOperatorSelector = false;
   let showColumnSelector = false;
   let showOperatorSelector = false;
   let selectedColumn = firstColumn || undefined;
 
-  if (!lastCondition.column) {
-    // No column yet - show column selector
-    showColumnSelector = true;
-  } else if (!lastCondition.operator) {
-    // Has column but no operator - check if pattern ends with #
-    selectedColumn = lastCondition.column;
-    if (searchValue.trimEnd().endsWith('#')) {
-      showOperatorSelector = true;
+  if (isJoinSelectorTrigger) {
+    showJoinOperatorSelector = true;
+    showColumnSelector = false; // Force other selectors off
+    showOperatorSelector = false;
+
+    // Remove the trigger hash from the last condition's value if it's there
+    if (lastCondition.value && lastCondition.value.endsWith(' #')) {
+      lastCondition.value = lastCondition.value.slice(0, -2).trim();
     }
   } else {
-    // Has operator - might be typing value
-    selectedColumn = lastCondition.column;
+    // Only check for other selectors if NOT a join trigger
+    if (!lastCondition.column) {
+      // No column yet - show column selector
+      showColumnSelector = true;
+    } else if (!lastCondition.operator) {
+      // Has column but no operator - check if pattern ends with #
+      selectedColumn = lastCondition.column;
+      if (searchValue.trimEnd().endsWith('#')) {
+        showOperatorSelector = true;
+      }
+    } else {
+      // Has operator - might be typing value
+      selectedColumn = lastCondition.column;
+    }
   }
 
   // Build filterSearch with multi-condition support
@@ -281,6 +319,7 @@ const parsePartialNConditions = (
     activeConditionIndex === lastConditionIdx &&
     !showColumnSelector &&
     !showOperatorSelector &&
+    !showJoinOperatorSelector && // Join selector trigger confirms the value
     partialConditions[lastConditionIdx]?.value; // Has a value being typed
 
   // Only include conditions that were confirmed BEFORE user started typing the new one
@@ -338,7 +377,7 @@ const parsePartialNConditions = (
     globalSearch: undefined,
     showColumnSelector,
     showOperatorSelector,
-    showJoinOperatorSelector: false,
+    showJoinOperatorSelector,
     isFilterMode: isInFilterMode,
     selectedColumn,
     partialJoin: joins[0],
@@ -756,7 +795,7 @@ export const parseSearchValue = (
         // Pattern: #col1 #op1 val1 #and #col2 #op2 val2 # (trailing # for adding condition N+1)
         // Shows join selector to add third condition
         const multiColJoinSelector = searchValue.match(
-          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#\s*$/i
+          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/i
         );
         if (multiColJoinSelector) {
           const [, col1, op1, val1, join, col2, op2, val2] =
@@ -1202,7 +1241,7 @@ export const parseSearchValue = (
         // Pattern: #col #op1 val1 #and #op2 val2 # (trailing # for adding condition N+1, same-column)
         // Shows join selector to add third condition
         const sameColJoinSelector = searchValue.match(
-          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#(and|or)\s+#([^\s]+)\s+(.+?)\s+#\s*$/i
+          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#(and|or)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/i
         );
         if (sameColJoinSelector) {
           const [, , op1, val1, join, op2, val2] = sameColJoinSelector;
@@ -1443,8 +1482,9 @@ export const parseSearchValue = (
         // Check for join operator selection state
         // Pattern: #field #operator value # (MUST have space before final #)
         // User must explicitly type space + # to open join selector
+        // [FIX] Use more specific regex to avoid matching join operators like "#and #"
         const joinSelectorMatch = searchValue.match(
-          /^#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#\s*$/
+          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/
         );
         if (joinSelectorMatch) {
           const [, , op, val] = joinSelectorMatch;
