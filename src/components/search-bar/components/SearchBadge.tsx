@@ -307,12 +307,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   return (
     <div
       ref={badgesContainerRef}
-      className="absolute left-1.5 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-1.5 max-w-[95%] scrollbar-hide overflow-visible"
+      className="contents"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={{
-        pointerEvents: badges.length === 0 ? 'none' : 'auto',
-      }}
     >
       <AnimatePresence mode="popLayout">
         {badges.map((badge, index) => {
