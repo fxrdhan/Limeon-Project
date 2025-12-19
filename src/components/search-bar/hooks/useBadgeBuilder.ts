@@ -769,10 +769,17 @@ export const useBadgeBuilder = (
         !searchMode.showJoinOperatorSelector &&
         !searchMode.showColumnSelector;
 
+      // Special check for Between operator: show value badge if we have first value
+      // and are waiting for second value (even if "active")
+      const isBetweenWaiting =
+        condition.operator === 'inRange' && condition.waitingForValueTo;
+
       if (
         condition.operator &&
         condition.value &&
-        !isTypingThisConditionValue
+        (!isTypingThisConditionValue ||
+          isBetweenWaiting ||
+          (condition.operator === 'inRange' && !!condition.valueTo))
       ) {
         const columnType = (condition.column || filter?.column)?.type;
         const isBetween =
@@ -804,7 +811,8 @@ export const useBadgeBuilder = (
           badges.push(createSeparatorBadge(condIdx));
 
           // Value-to badge (if available)
-          if (condition.valueTo) {
+          // Hide if actively typing this condition (logic handled by input)
+          if (condition.valueTo && !isTypingThisConditionValue) {
             const valueToHandlers = getValueBadgeHandlers(
               handlers,
               condIdx,
