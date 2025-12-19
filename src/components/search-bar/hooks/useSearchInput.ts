@@ -123,6 +123,18 @@ export const useSearchInput = ({
     [getOperatorRef]
   );
 
+  // Lazy ref for join badges
+  const createLazyJoinRef = useCallback(
+    (joinIndex: number): React.RefObject<HTMLDivElement | null> => {
+      return {
+        get current() {
+          return getJoinRef(joinIndex);
+        },
+      } as React.RefObject<HTMLDivElement | null>;
+    },
+    [getJoinRef]
+  );
+
   // Memoized lazy refs for each condition index (to avoid creating new objects on every render)
   const condition2ColumnRef = useMemo(
     () => createLazyColumnRef(2),
@@ -198,6 +210,21 @@ export const useSearchInput = ({
       condition4OperatorRef,
       createLazyOperatorRef,
     ]
+  );
+
+  /**
+   * Get the appropriate lazy ref for a join badge at index >= 1
+   */
+  const getConditionNJoinRef = useCallback(
+    (joinIndex: number): React.RefObject<HTMLDivElement | null> => {
+      switch (joinIndex) {
+        case 0:
+          return joinBadgeRef;
+        default:
+          return createLazyJoinRef(joinIndex);
+      }
+    },
+    [joinBadgeRef, createLazyJoinRef]
   );
 
   const operatorSearchTerm = useMemo(
@@ -872,5 +899,6 @@ export const useSearchInput = ({
     // ============ Dynamic Lazy Ref for N-Condition Selector Positioning ============
     getConditionNColumnRef,
     getConditionNOperatorRef,
+    getConditionNJoinRef,
   };
 };
