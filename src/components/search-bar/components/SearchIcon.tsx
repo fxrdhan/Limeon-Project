@@ -1,88 +1,30 @@
+import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
-import { LuSearch, LuHash, LuFilter } from 'react-icons/lu';
-import { EnhancedSearchState } from '../types';
+import { LuFilter, LuHash, LuSearch } from 'react-icons/lu';
 import { SearchState } from '../constants';
+import { EnhancedSearchState } from '../types';
 
 interface SearchIconProps {
   searchMode: EnhancedSearchState;
   searchState: SearchState;
   displayValue: string;
-  showTargetedIndicator: boolean;
 }
 
 const SearchIcon: React.FC<SearchIconProps> = ({
   searchMode,
   searchState,
   displayValue,
-  showTargetedIndicator,
 }) => {
-  // Show icon on the left when:
-  // 1. There's a display value that doesn't start with '#' (normal typing)
-  // 2. OR when there are blue badges (explicit operators) present
-  const hasExplicitOperator =
-    searchMode.filterSearch?.isExplicitOperator ||
-    searchMode.filterSearch?.isMultiCondition ||
-    searchMode.showOperatorSelector ||
-    searchMode.showJoinOperatorSelector ||
-    searchMode.partialJoin ||
-    searchMode.partialConditions?.[1]?.operator;
-
-  const shouldShowLeftIcon =
-    (((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
-      !searchMode.showColumnSelector) ||
-    // Show purple hash icon when column selector is open
-    searchMode.showColumnSelector;
-
-  const getSearchIconColor = () => {
+  // Consolidated active state determination
+  // If it should show ANY icon other than the default Search icon, it is "Active"
+  const currentIcon = (() => {
+    if (searchMode.showColumnSelector) return 'hash-purple';
     if (
       searchMode.isFilterMode &&
       searchMode.filterSearch?.operator === 'contains' &&
       !searchMode.filterSearch?.isExplicitOperator
     )
-      return 'text-purple-500';
-    if (searchMode.isFilterMode) return 'text-blue-500';
-
-    switch (searchState) {
-      case 'idle':
-        return 'text-gray-400';
-      case 'typing':
-        return 'text-gray-800';
-      case 'found':
-        return 'text-primary';
-      case 'not-found':
-        return 'text-red-500';
-      default:
-        return 'text-gray-400';
-    }
-  };
-
-  const getSearchIcon = () => {
-    // Show Hash icon when column selector is open (user typed #)
-    if (searchMode.showColumnSelector) {
-      return <LuHash className="text-purple-500 transition-all duration-300" />;
-    }
-
-    // Show Hash icon for implicit contains operator (colon pattern)
-    if (
-      searchMode.isFilterMode &&
-      searchMode.filterSearch?.operator === 'contains' &&
-      !searchMode.filterSearch?.isExplicitOperator
-    ) {
-      return (
-        <LuHash
-          className={`${getSearchIconColor()} transition-all duration-300`}
-        />
-      );
-    }
-
-    // Show Filter icon for any explicit operator usage (blue badges present)
-    // This includes:
-    // - Filter mode with explicit operator
-    // - Multi-condition filters
-    // - Operator selector open
-    // - Join operator selector open
-    // - Building condition[1] (partialJoin state)
-    // - Condition[1] operator selected
+      return 'hash-dynamic';
     if (
       searchMode.isFilterMode ||
       searchMode.filterSearch?.isExplicitOperator ||
@@ -91,55 +33,87 @@ const SearchIcon: React.FC<SearchIconProps> = ({
       searchMode.showJoinOperatorSelector ||
       searchMode.partialJoin ||
       searchMode.partialConditions?.[1]?.operator
-    ) {
-      return (
-        <LuFilter
-          className={`${getSearchIconColor()} transition-all duration-300`}
-        />
-      );
-    }
+    )
+      return 'filter';
+    return 'search';
+  })();
 
-    return (
-      <LuSearch
-        className={`${getSearchIconColor()} transition-all duration-300`}
-      />
-    );
+  // If we are NOT showing the default search icon, we are in Active Mode.
+  // This guarantees that Funnel (Filter) and Hash icons always get the "Active" styling.
+  // We also consider non-empty input (not starting with #) as active typing mode.
+  const isDefaultIcon = currentIcon === 'search';
+  const isActiveMode =
+    !isDefaultIcon || (!!displayValue && !displayValue.startsWith('#'));
+
+  const getSearchIconColor = () => {
+    if (currentIcon === 'hash-dynamic') return '#A855F7'; // text-purple-500
+    if (currentIcon === 'filter' || searchMode.isFilterMode) return '#3B82F6'; // text-blue-500
+
+    switch (searchState) {
+      case 'idle':
+        return '#9CA3AF'; // text-gray-400
+      case 'typing':
+        return '#1F2937'; // text-gray-800
+      case 'found':
+        return '#10B981'; // text-primary
+      case 'not-found':
+        return '#EF4444'; // text-red-500
+      default:
+        return '#9CA3AF';
+    }
+  };
+
+  const renderIcon = () => {
+    switch (currentIcon) {
+      case 'hash-purple':
+      case 'hash-dynamic':
+        return <LuHash className="transition-colors duration-300" />;
+      case 'filter':
+        return <LuFilter className="transition-colors duration-300" />;
+      default:
+        return <LuSearch className="transition-colors duration-300" />;
+    }
   };
 
   return (
-    <>
-      <div
-        className={`transition-all ease-out ${
-          shouldShowLeftIcon
-            ? 'opacity-100 transform translate-x-0 scale-150 pl-2'
-            : 'opacity-0 transform -translate-x-2 scale-100'
-        }`}
-        style={{
-          visibility: shouldShowLeftIcon ? 'visible' : 'hidden',
-          width: shouldShowLeftIcon ? 'auto' : '0',
-          minWidth: shouldShowLeftIcon ? '40px' : '0',
-          transitionDuration: shouldShowLeftIcon ? '150ms' : '200ms',
-        }}
-      >
-        {getSearchIcon()}
-      </div>
-
-      {!showTargetedIndicator && (
-        <div
-          className={`absolute top-3.5 transition-all ease-out ${
-            shouldShowLeftIcon
-              ? 'opacity-0 transform translate-x-2 left-3'
-              : 'opacity-100 transform translate-x-0 left-3'
-          }`}
-          style={{
-            visibility: shouldShowLeftIcon ? 'hidden' : 'visible',
-            transitionDuration: shouldShowLeftIcon ? '200ms' : '150ms',
-          }}
+    <motion.div
+      layout
+      className={`flex items-center justify-center flex-shrink-0 ${
+        isActiveMode
+          ? 'relative'
+          : 'absolute left-3 top-1/2 -translate-y-1/2 z-10'
+      }`}
+      initial={false}
+      animate={{
+        scale: isActiveMode ? 1.6 : 1,
+        width: isActiveMode ? '36px' : '24px',
+        color: getSearchIconColor(),
+        x: isActiveMode ? 2 : 0,
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 300,
+        damping: 25,
+      }}
+      style={{
+        height: '24px',
+        marginLeft: isActiveMode ? '4px' : '0',
+        marginRight: isActiveMode ? '12px' : '4px',
+      }}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentIcon}
+          initial={{ opacity: 0, scale: 0.4, rotate: -20 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          exit={{ opacity: 0, scale: 0.4, rotate: 20 }}
+          transition={{ duration: 0.15 }}
+          className="flex items-center justify-center w-full h-full"
         >
-          {getSearchIcon()}
-        </div>
-      )}
-    </>
+          {renderIcon()}
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
