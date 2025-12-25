@@ -277,8 +277,10 @@ export const useSearchInput = ({
 
     if (isBuildingConditionNValue) {
       // Extract the value being typed for condition N from the pattern
-      // Pattern: ...#col #op value → extract value
-      const lastValueMatch = value.match(/#[^\s#]+\s+#[^\s#]+\s+([^#]*)$/);
+      // Pattern 1: ...#col #op value → extract value
+      // Pattern 2: ...#op value (same-column) → extract value
+      // Look for the last hash-marker followed by a space and then the value
+      const lastValueMatch = value.match(/#[^\s#]+\s+([^#]*)$/);
       if (lastValueMatch) {
         return lastValueMatch[1].trim();
       }
