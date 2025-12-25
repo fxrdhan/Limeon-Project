@@ -166,9 +166,9 @@ const parsePartialNConditions = (
             });
           }
         }
-      } else if (trimmed.match(/^#([^\s#]+)\s+#\s*$/)) {
-        // Partial: #col # (operator selector)
-        const [, colName] = trimmed.match(/^#([^\s#]+)\s+#\s*$/)!;
+      } else if (trimmed.match(/^#([^\s#]+)\s*#\s*$/)) {
+        // Partial: #col # (operator selector) - handle both "#col #" and "#col#"
+        const [, colName] = trimmed.match(/^#([^\s#]+)\s*#\s*$/)!;
         const col = findColumn(columns, colName);
         if (col) {
           partialConditions.push({
@@ -214,7 +214,13 @@ const parsePartialNConditions = (
         }
       } else if (trimmed.match(/^#([^\s]+)\s*$/)) {
         // Combine check: Is it an operator OR a column?
-        const [, name] = trimmed.match(/^#([^\s]+)\s*$/)!;
+        // Handle both "#op" and "#col" and even "#col#" gracefully
+        const name = trimmed.match(/^#([^\s#]+)/)?.[1] || '';
+        if (!name && trimmed === '#') {
+          partialConditions.push({});
+          continue;
+        }
+
         const col = firstColumn || columns[0];
         const opObj = col ? findOperatorForColumn(col, name) : null;
 
