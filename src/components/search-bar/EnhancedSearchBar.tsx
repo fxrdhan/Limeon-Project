@@ -2385,6 +2385,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.activeConditionIndex,
   ]);
 
+  // Determine if icon should be on the left (active state) // Show active animated mode when typing or focused filters exist
+  const hasExplicitOperator =
+    searchMode.isFilterMode ||
+    searchMode.filterSearch?.isExplicitOperator ||
+    searchMode.filterSearch?.isMultiCondition ||
+    searchMode.showOperatorSelector ||
+    searchMode.showJoinOperatorSelector ||
+    searchMode.partialJoin ||
+    searchMode.partialConditions?.[1]?.operator;
+
+  const shouldShowLeftIcon =
+    (((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
+      !searchMode.showColumnSelector) ||
+    searchMode.showColumnSelector;
+
   return (
     <>
       <div ref={containerRef} className={`mb-2 relative ${className}`}>
@@ -2393,11 +2408,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             searchMode={searchMode}
             searchState={searchState}
             displayValue={displayValue}
-            showTargetedIndicator={showTargetedIndicator}
           />
 
           <div
-            className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow] duration-200 ease-in-out rounded-lg ${
+            className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg ${
+              shouldShowLeftIcon ? 'pl-1.5' : 'pl-9'
+            } ${
               searchState === 'not-found'
                 ? 'border-danger focus-within:border-danger focus-within:ring-3 focus-within:ring-red-100'
                 : searchMode.isFilterMode &&
