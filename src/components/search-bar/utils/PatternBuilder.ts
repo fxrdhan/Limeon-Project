@@ -467,24 +467,38 @@ export class PatternBuilder {
    * Build a single condition part (helper for iterative building)
    *
    * @param field - Column field name
-   * @param operator - Operator value
-   * @param value - Primary value
-   * @param valueTo - Secondary value for Between operator
+   * @param operator - Operator value (optional)
+   * @param value - Primary value (optional)
+   * @param valueTo - Secondary value for Between operator (optional)
    * @param includeField - Whether to include #field prefix
    * @returns Condition pattern part
    */
   static buildConditionPart(
     field: string,
-    operator: string,
-    value: string,
+    operator?: string,
+    value?: string,
     valueTo?: string,
     includeField: boolean = true
   ): string {
-    const fieldPart = includeField ? `#${field} ` : '';
-    if (operator === 'inRange' && valueTo) {
-      return `${fieldPart}#${operator} ${value} #to ${valueTo}`;
+    const fieldPart = includeField ? `#${field}` : '';
+
+    if (!operator) {
+      // Just column name, add hash for operator selector if it's the end
+      return fieldPart;
     }
-    return `${fieldPart}#${operator} ${value}`;
+
+    const opPart = ` #${operator}`;
+
+    if (value === undefined) {
+      // Column + Operator, add hash for value if it's the end
+      return `${fieldPart}${opPart} `;
+    }
+
+    if (operator === 'inRange' && valueTo !== undefined) {
+      return `${fieldPart}${opPart} ${value} #to ${valueTo}`;
+    }
+
+    return `${fieldPart}${opPart} ${value}`;
   }
 
   /**
@@ -503,8 +517,8 @@ export class PatternBuilder {
   static buildNConditions(
     conditions: Array<{
       field?: string;
-      operator: string;
-      value: string;
+      operator?: string;
+      value?: string;
       valueTo?: string;
     }>,
     joins: ('AND' | 'OR')[],
@@ -536,35 +550,42 @@ export class PatternBuilder {
       const cond = conditions[i];
       const condField = cond.field || defaultField;
 
-      if (i === 0) {
-        // First condition always includes field
-        pattern = this.buildConditionPart(
-          condField,
-          cond.operator,
-          cond.value,
-          cond.valueTo,
-          true
-        );
-      } else {
+      if (i > 0) {
         // Add join operator
         const joinOp = joins[i - 1] || 'AND';
         pattern += ` #${joinOp.toLowerCase()} `;
+      }
 
-        // Include field based on isMultiColumn
-        pattern += this.buildConditionPart(
-          condField,
-          cond.operator,
-          cond.value,
-          cond.valueTo,
-          isMultiColumn
-        );
+      // Build condition part
+      const includeField = i === 0 || isMultiColumn;
+      const part = this.buildConditionPart(
+        condField,
+        cond.operator,
+        cond.value,
+        cond.valueTo,
+        includeField
+      );
+
+      pattern += part;
+
+      // Handle trailing # for selectors based on what's missing in the last condition
+      if (i === maxIndex && openSelector) {
+        if (!cond.operator) {
+          pattern += ' #'; // Open operator selector
+        } else if (cond.value !== undefined) {
+          // Last condition is complete, open join selector
+          pattern += ' #';
+        }
       }
     }
 
-    if (openSelector) {
-      pattern += ' #';
-    } else if (confirmed) {
-      pattern += '##';
+    if (confirmed && !openSelector) {
+      // Only confirm if every condition is "complete" (has operator and value)
+      // or at least handle it gracefully.
+      const lastCond = conditions[maxIndex];
+      if (lastCond && lastCond.operator && lastCond.value !== undefined) {
+        pattern += '##';
+      }
     }
 
     return pattern;
