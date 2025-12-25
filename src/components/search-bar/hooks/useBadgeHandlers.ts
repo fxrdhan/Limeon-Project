@@ -139,7 +139,7 @@ export function useBadgeHandlers(
         return;
       }
 
-      const { conditions, joins, isMultiColumn } = preservation;
+      const { conditions, joins } = preservation;
       const defaultField = state.filterSearch?.field || '';
 
       // Handle based on target
@@ -149,27 +149,76 @@ export function useBadgeHandlers(
             // Clear first column = clear all
             clearAll();
           } else {
-            // Clear nth column = go back to join selector after previous condition
-            // Remove condition at index and its preceding join
+            // Clear nth column = keep preceding join and open column selector
+            // Remove condition at index and everything after
             conditions.splice(conditionIndex);
-            if (joins.length >= conditionIndex) {
-              joins.splice(conditionIndex - 1);
-            }
 
-            // Build pattern with conditions 0 to Index-1, then add trailing # for join selector
-            const newValue = PatternBuilder.buildNConditions(
+            // Build pattern with conditions 0 to conditionIndex-1
+            // IMPORTANT: Force isMultiColumn=true so all field names are included,
+            // which is needed when opening column selector for the next condition
+            const basePattern = PatternBuilder.buildNConditions(
               conditions,
-              joins,
-              !!isMultiColumn,
+              joins.slice(0, conditionIndex - 1), // joins for connections between remaining conditions
+              true, // Force multi-column to include all field names
               defaultField,
-              { confirmed: false, openSelector: true }
+              { confirmed: false, openSelector: false }
             );
+
+            // Add the preserved join (the one before deleted condition) + column selector
+            const preservedJoin = joins[conditionIndex - 1] || 'AND';
+            const newValue = `${basePattern} #${preservedJoin.toLowerCase()} #`;
+
             setFilterValue(newValue, onChange, inputRef);
           }
           break;
         }
 
         case 'operator': {
+          // Check if condition exists - it might be a partial condition not in the array
+          if (conditionIndex >= conditions.length) {
+            // Partial condition being built - check if we have column info from partialConditions
+            const partialConds = state.partialConditions || [];
+            const partialCond = partialConds[conditionIndex];
+            const partialField =
+              partialCond?.field ||
+              partialCond?.column?.field ||
+              state.selectedColumn?.field;
+
+            // Keep all complete conditions and their joins
+            const joinsToKeep = joins.slice(0, conditionIndex - 1);
+            const conditionsToKeep = conditions.slice(0, conditionIndex);
+
+            if (conditionsToKeep.length === 0 && !partialField) {
+              clearAll();
+              return;
+            }
+
+            // Build pattern with existing conditions
+            const basePattern = PatternBuilder.buildNConditions(
+              conditionsToKeep,
+              joinsToKeep,
+              true, // Force multi-column to include all field names
+              defaultField,
+              { confirmed: false, openSelector: false }
+            );
+
+            const preservedJoin = joins[conditionIndex - 1] || 'AND';
+
+            // If we have a partial field (column was selected), keep it and open operator selector
+            // Otherwise, go back to column selector
+            let newValuePartial: string;
+            if (partialField) {
+              // Keep column, open operator selector: basePattern #join #column #
+              newValuePartial = `${basePattern} #${preservedJoin.toLowerCase()} #${partialField} #`;
+            } else {
+              // No column info, go back to column selector: basePattern #join #
+              newValuePartial = `${basePattern} #${preservedJoin.toLowerCase()} #`;
+            }
+
+            setFilterValue(newValuePartial, onChange, inputRef);
+            return;
+          }
+
           // Clear operator and everything after it in the targeted condition
           conditions[conditionIndex].operator = undefined;
           conditions[conditionIndex].value = undefined;
@@ -184,10 +233,12 @@ export function useBadgeHandlers(
           }
 
           // Rebuild with trailing # for operator selector
+          // IMPORTANT: Force isMultiColumn=true so all field names are included
+          // This ensures the parser correctly identifies each condition's column
           const newValueOp = PatternBuilder.buildNConditions(
             conditions,
             joins,
-            !!isMultiColumn,
+            true, // Force multi-column to include all field names
             defaultField,
             { confirmed: false, openSelector: true }
           );
@@ -196,16 +247,26 @@ export function useBadgeHandlers(
         }
 
         case 'value': {
+          // Check if condition exists
+          if (
+            conditionIndex >= conditions.length ||
+            !conditions[conditionIndex]
+          ) {
+            // Partial condition - shouldn't happen for value, but handle gracefully
+            return;
+          }
+
           // Clear value and valueTo of the targeted condition
           // BUT keep all other conditions intact (don't remove subsequent conditions)
           conditions[conditionIndex].value = undefined;
           conditions[conditionIndex].valueTo = undefined;
 
           // Rebuild pattern with all conditions preserved
+          // Force isMultiColumn=true so all field names are included
           const newValueVal = PatternBuilder.buildNConditions(
             conditions,
             joins,
-            !!isMultiColumn,
+            true, // Force multi-column to include all field names
             defaultField,
             { confirmed: false, openSelector: false }
           );
@@ -217,14 +278,24 @@ export function useBadgeHandlers(
         }
 
         case 'valueTo': {
+          // Check if condition exists
+          if (
+            conditionIndex >= conditions.length ||
+            !conditions[conditionIndex]
+          ) {
+            // Partial condition - shouldn't happen for valueTo, but handle gracefully
+            return;
+          }
+
           // Clear only valueTo of the targeted condition, keep it unconfirmed
           conditions[conditionIndex].valueTo = undefined;
 
           // Keep all conditions intact - just clear valueTo
+          // Force isMultiColumn=true so all field names are included
           const newValueValTo = PatternBuilder.buildNConditions(
             conditions,
             joins,
-            !!isMultiColumn,
+            true, // Force multi-column to include all field names
             defaultField,
             { confirmed: false, openSelector: false }
           );
@@ -383,7 +454,7 @@ export function useBadgeHandlers(
             return;
           }
 
-          const { conditions, joins, isMultiColumn } = preservation;
+          const { conditions, joins } = preservation;
           const defaultField = state.filterSearch?.field || '';
 
           if (conditionIndex === 0) {
@@ -395,7 +466,7 @@ export function useBadgeHandlers(
             const basePattern = PatternBuilder.buildNConditions(
               conditions,
               joins,
-              !!isMultiColumn,
+              true, // Force multi-column to include all field names
               defaultField,
               { confirmed: false, stopAfterIndex: conditionIndex - 1 }
             );
@@ -417,7 +488,7 @@ export function useBadgeHandlers(
             return;
           }
 
-          const { conditions, joins, isMultiColumn } = preservation;
+          const { conditions, joins } = preservation;
           const defaultField = state.filterSearch?.field || '';
 
           // To edit operator at conditionIndex, we need column at conditionIndex
@@ -434,7 +505,7 @@ export function useBadgeHandlers(
             const basePattern = PatternBuilder.buildNConditions(
               conditions,
               joins,
-              !!isMultiColumn,
+              true, // Force multi-column to include all field names
               defaultField,
               { confirmed: false, stopAfterIndex: conditionIndex - 1 }
             );
