@@ -557,7 +557,12 @@ export class PatternBuilder {
       }
 
       // Build condition part
-      const includeField = i === 0 || isMultiColumn;
+      // For same-column filters: always include field for the last condition
+      // when it has no operator (user needs to see which column they're editing)
+      const isLastConditionWithoutOperator =
+        i === maxIndex && !cond.operator && openSelector;
+      const includeField =
+        i === 0 || isMultiColumn || isLastConditionWithoutOperator;
       const part = this.buildConditionPart(
         condField,
         cond.operator,
@@ -571,7 +576,7 @@ export class PatternBuilder {
       // Handle trailing # for selectors based on what's missing in the last condition
       if (i === maxIndex && openSelector) {
         if (!cond.operator) {
-          pattern += ' #'; // Open operator selector
+          pattern += ' #'; // Open operator selector (added space for parser reliability)
         } else if (cond.value !== undefined) {
           // Last condition is complete, open join selector
           pattern += ' #';
