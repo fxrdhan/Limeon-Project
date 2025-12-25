@@ -179,19 +179,6 @@ const parsePartialNConditions = (
           // Column not found - push empty to maintain array length
           partialConditions.push({});
         }
-      } else if (trimmed.match(/^#([^\s#]+)\s*$/)) {
-        // Partial: #col (column selected, waiting for #)
-        const [, colName] = trimmed.match(/^#([^\s#]+)\s*$/)!;
-        const col = findColumn(columns, colName);
-        if (col) {
-          partialConditions.push({
-            field: col.field,
-            column: col,
-          });
-        } else {
-          // Column being typed
-          partialConditions.push({});
-        }
       } else if (trimmed.match(/^#([^\s]+)\s+(.+)$/)) {
         // Same-column: #op value
         const [, opName, value] = trimmed.match(/^#([^\s]+)\s+(.+)$/)!;
@@ -226,19 +213,28 @@ const parsePartialNConditions = (
           }
         }
       } else if (trimmed.match(/^#([^\s]+)\s*$/)) {
-        // Same-column: #op (no value yet)
-        const [, opName] = trimmed.match(/^#([^\s]+)\s*$/)!;
+        // Combine check: Is it an operator OR a column?
+        const [, name] = trimmed.match(/^#([^\s]+)\s*$/)!;
         const col = firstColumn || columns[0];
-        if (col) {
-          const opObj = findOperatorForColumn(col, opName);
-          if (opObj) {
+        const opObj = col ? findOperatorForColumn(col, name) : null;
+
+        if (opObj) {
+          // It's a valid operator for the current column
+          partialConditions.push({
+            field: col!.field,
+            column: col!,
+            operator: opObj.value,
+          });
+        } else {
+          // Not an operator, check if it's a known column
+          const knownCol = findColumn(columns, name);
+          if (knownCol) {
             partialConditions.push({
-              field: col.field,
-              column: col,
-              operator: opObj.value,
+              field: knownCol.field,
+              column: knownCol,
             });
           } else {
-            // Could be column being typed
+            // Column being typed (unknown yet)
             partialConditions.push({});
           }
         }
