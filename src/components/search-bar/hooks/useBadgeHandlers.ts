@@ -10,7 +10,7 @@
  */
 
 import { RefObject, useCallback } from 'react';
-import { EnhancedSearchState, FilterSearch, SearchColumn } from '../types';
+import { EnhancedSearchState, SearchColumn } from '../types';
 import { PatternBuilder } from '../utils/PatternBuilder';
 import {
   extractMultiConditionPreservation,
@@ -39,8 +39,6 @@ export interface UseBadgeHandlersProps {
   preservedFilterRef: React.MutableRefObject<PreservedFilter | null>;
   /** Clear preserved state callback */
   onClearPreservedState: () => void;
-  /** Filter search callback */
-  onFilterSearch?: (filter: FilterSearch | null) => void;
   /** Clear search callback */
   onClearSearch?: () => void;
   /** Available columns */
@@ -100,7 +98,6 @@ export function useBadgeHandlers(
     setPreservedSearchMode,
     preservedFilterRef,
     onClearPreservedState,
-    onFilterSearch,
     onClearSearch,
     setEditingSelectorTarget,
   } = props;
@@ -134,7 +131,6 @@ export function useBadgeHandlers(
       const state = getEffectiveState();
 
       onClearPreservedState();
-      onFilterSearch?.(null);
 
       // Extract all current conditions and joins
       const preservation = extractMultiConditionPreservation(state);
@@ -200,19 +196,12 @@ export function useBadgeHandlers(
         }
 
         case 'value': {
-          // Clear value and everything after it in the targeted condition
+          // Clear value and valueTo of the targeted condition
+          // BUT keep all other conditions intact (don't remove subsequent conditions)
           conditions[conditionIndex].value = undefined;
           conditions[conditionIndex].valueTo = undefined;
 
-          // Remove subsequent conditions and joins
-          if (conditions.length > conditionIndex + 1) {
-            conditions.splice(conditionIndex + 1);
-          }
-          if (joins.length > conditionIndex) {
-            joins.splice(conditionIndex);
-          }
-
-          // Rebuild pattern (builder will add trailing space for value input)
+          // Rebuild pattern with all conditions preserved
           const newValueVal = PatternBuilder.buildNConditions(
             conditions,
             joins,
@@ -255,14 +244,7 @@ export function useBadgeHandlers(
         }
       }
     },
-    [
-      getEffectiveState,
-      clearAll,
-      onClearPreservedState,
-      onFilterSearch,
-      onChange,
-      inputRef,
-    ]
+    [getEffectiveState, clearAll, onClearPreservedState, onChange, inputRef]
   );
 
   /**
