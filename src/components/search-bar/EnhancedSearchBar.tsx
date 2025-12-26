@@ -1418,6 +1418,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
     editConditionValue: editValueN,
+    clearConditionPart,
+    clearJoin,
   });
 
   // Handler for Ctrl+I to focus input, clear badge selection, and close selectors
