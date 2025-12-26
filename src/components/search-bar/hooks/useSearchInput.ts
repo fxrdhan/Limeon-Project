@@ -208,14 +208,13 @@ export const useSearchInput = ({
       !searchMode.showJoinOperatorSelector;
 
     if (isBuildingConditionNValue) {
-      // Extract the value being typed for condition N from the pattern
-      // Pattern 1: ...#col #op value → extract value
-      // Pattern 2: ...#op value (same-column) → extract value
-      // Look for the last hash-marker followed by a space and then the value
-      const lastValueMatch = value.match(/#[^\s#]+\s+([^#]*)$/);
-      if (lastValueMatch) {
-        return lastValueMatch[1].trim();
+      // Use state-based extraction (more reliable than regex)
+      const activeIdx = searchMode.activeConditionIndex!; // Safe: isBuildingConditionNValue ensures this is defined
+      const nthCondition = searchMode.partialConditions?.[activeIdx];
+      if (nthCondition?.value !== undefined) {
+        return nthCondition.value;
       }
+      // No value yet - return empty to allow typing
       return '';
     }
 
@@ -257,19 +256,13 @@ export const useSearchInput = ({
         return secondCondition.valueTo; // Show only valueTo being typed
       }
 
-      // Case: Second operator selected, ready for second value input - show the second value being typed
-      // Multi-column pattern: #col1 #op1 val1 #and #col2 #op2 val2 → extract val2
-      // Same-column pattern:  #col1 #op1 val1 #and #op2 val2 → extract val2
-      // NOTE: Try multi-column regex first, if fails try same-column (more robust than checking state)
-      const multiColMatch = value.match(
-        /#(?:and|or)\s+#[^\s]+\s+#[^\s]+\s+(.*)$/i
-      );
-      if (multiColMatch) {
-        return multiColMatch[1];
+      // Case: Second operator selected, ready for second value input
+      // Use state-based extraction first (more reliable than regex)
+      if (secondCondition?.value !== undefined) {
+        return secondCondition.value;
       }
-      // Same-column: extract value after #op2
-      const sameColMatch = value.match(/#(?:and|or)\s+#[^\s]+\s+(.*)$/i);
-      return sameColMatch ? sameColMatch[1] : '';
+      // No value yet - return empty to allow typing
+      return '';
     }
 
     // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
@@ -475,15 +468,27 @@ export const useSearchInput = ({
       const inputValue = e.target.value;
 
       if (searchMode.isFilterMode && searchMode.filterSearch) {
+        // Calculate early: Are we building condition 3+ (index >= 2)?
+        const isBuildingConditionN =
+          searchMode.activeConditionIndex !== undefined &&
+          searchMode.activeConditionIndex >= 2;
+        const hasPartialConditionsBeyondConfirmed =
+          searchMode.partialConditions &&
+          searchMode.partialConditions.length >
+            (searchMode.filterSearch.conditions?.length ?? 0);
+
         // SPECIAL CASE: Confirmed filter + user types # or SPACE for join selector
         // Remove ## marker first, then append # to open join selector
         // Works for both single-condition AND multi-condition (N-condition support)
+        // BUT: Skip when building condition 3+ (user is typing a value, not triggering join)
         const isHashTrigger = inputValue.trim() === '#';
         const isSpaceTrigger = inputValue === ' ';
 
         if (
           searchMode.filterSearch.isConfirmed &&
-          (isHashTrigger || isSpaceTrigger)
+          (isHashTrigger || isSpaceTrigger) &&
+          !isBuildingConditionN && // Don't trigger join selector when building condition 3+
+          !hasPartialConditionsBeyondConfirmed // Don't trigger when there are partial conditions
         ) {
           // For multi-condition: rebuild full pattern, then append #
           // For single-condition: just remove ## and append #
@@ -499,13 +504,6 @@ export const useSearchInput = ({
         // This is Case 5 - user types any char on a confirmed 6-badge multi-condition filter
         // We need to trigger parent's handleEditSecondValue indirectly by setting a flag
         // NOTE: Skip this when building condition 2+ (activeConditionIndex >= 2) to avoid losing partial condition
-        const isBuildingConditionN =
-          searchMode.activeConditionIndex !== undefined &&
-          searchMode.activeConditionIndex >= 2;
-        const hasPartialConditionsBeyondConfirmed =
-          searchMode.partialConditions &&
-          searchMode.partialConditions.length >
-            (searchMode.filterSearch.conditions?.length ?? 0);
 
         if (
           searchMode.filterSearch.isConfirmed &&
