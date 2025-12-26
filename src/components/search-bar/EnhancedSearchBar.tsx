@@ -6,7 +6,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { flushSync } from 'react-dom';
 import { LuSearch } from 'react-icons/lu';
 import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
@@ -26,14 +25,7 @@ import {
   EnhancedSearchState,
   SearchColumn,
 } from './types';
-import {
-  extractMultiConditionPreservation,
-  getConditionOperatorAt,
-  getFirstCondition,
-  getJoinOperator,
-  PreservedFilter,
-  setFilterValue,
-} from './utils/handlerHelpers';
+import { PreservedFilter } from './utils/handlerHelpers';
 import { getOperatorsForColumn } from './utils/operatorUtils';
 import { PatternBuilder } from './utils/PatternBuilder';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
@@ -154,17 +146,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleHoverChange,
     // Dynamic Ref Map API (N-Condition Support)
     setBadgeRef,
-    // Static Refs for Selector Positioning
-    badgeRef,
+    // Container Ref
     badgesContainerRef,
-    operatorBadgeRef,
-    joinBadgeRef,
-    secondColumnBadgeRef,
-    secondOperatorBadgeRef,
-    // Dynamic Lazy Ref for N-Condition Selector Positioning
-    getConditionNColumnRef,
-    getConditionNOperatorRef,
-    getConditionNJoinRef,
+    // Generalized Lazy Ref System
+    getLazyColumnRef,
+    getLazyOperatorRef,
+    getLazyJoinRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -191,8 +178,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return inputRef as React.RefObject<HTMLElement | null>; // Create mode: position at input (end of badges)
     // Edit mode: position below the correct column badge
     // Note: activeConditionIndex >= 1 here (guaranteed by isSelectingConditionNColumn)
-    if (activeConditionIndex === 1) return secondColumnBadgeRef;
-    return getConditionNColumnRef(activeConditionIndex); // N >= 2
+    if (activeConditionIndex === 1) return getLazyColumnRef(1);
+    return getLazyColumnRef(activeConditionIndex); // N >= 2
   };
   const columnAnchorRef = getColumnAnchorRef();
   const columnSelectorPosition = useSelectorPosition({
@@ -218,12 +205,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const getConditionColumnAnchorRef =
     (): React.RefObject<HTMLElement | null> => {
       if (activeConditionIndex === 0) {
-        return badgeRef; // First condition column
+        return getLazyColumnRef(0); // First condition column
       } else if (activeConditionIndex === 1) {
-        return secondColumnBadgeRef; // Second condition column (static ref)
+        return getLazyColumnRef(1); // Second condition column
       } else {
         // N >= 2: use lazy ref that looks up element dynamically from badge map
-        return getConditionNColumnRef(activeConditionIndex);
+        return getLazyColumnRef(activeConditionIndex);
       }
     };
 
@@ -248,11 +235,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // EDIT existing operator: position below the OPERATOR badge being edited
     // Use dynamic ref for N >= 2, static refs for 0 and 1
     if (activeConditionIndex === 0) {
-      operatorAnchorRef = operatorBadgeRef;
+      operatorAnchorRef = getLazyOperatorRef(0);
     } else if (activeConditionIndex === 1) {
-      operatorAnchorRef = secondOperatorBadgeRef;
+      operatorAnchorRef = getLazyOperatorRef(1);
     } else {
-      operatorAnchorRef = getConditionNOperatorRef(activeConditionIndex);
+      operatorAnchorRef = getLazyOperatorRef(activeConditionIndex);
     }
     operatorAnchorAlign = 'left';
   } else if (isCreatingConditionNOp) {
@@ -261,7 +248,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     operatorAnchorAlign = 'right';
   } else {
     // First operator: position after column badge
-    operatorAnchorRef = badgeRef;
+    operatorAnchorRef = getLazyColumnRef(0);
     operatorAnchorAlign = 'right';
   }
 
@@ -290,7 +277,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       isEditingJoinOperator &&
       editingSelectorTarget?.conditionIndex !== undefined
     ) {
-      return getConditionNJoinRef(editingSelectorTarget.conditionIndex);
+      return getLazyJoinRef(editingSelectorTarget.conditionIndex);
     }
 
     // 2. CREATE new join: position at the input (after last confirmed badge)
@@ -333,14 +320,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [preservedSearchMode, onChange]);
 
   // Use centralized badge handlers for clear operations
-  // Get both scalable handlers and legacy handlers
   const {
     clearConditionPart,
     clearJoin,
-    // clearAll is available as badgeHandlers.onClearAll for backward compatibility
+    clearAll,
     editConditionPart,
     editJoin,
-    legacy: badgeHandlers,
+    editValueN,
   } = useBadgeHandlers({
     value,
     onChange,
@@ -353,11 +339,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onClearSearch,
     columns: memoizedColumns,
     setEditingSelectorTarget,
+    setEditingBadge,
   });
-
-  // Note: Scalable handlers (clearConditionPart, clearJoin, etc.) are passed directly
-  // to SearchBadge, which forwards them to useBadgeBuilder. The clearAll handler is
-  // available as both clearAll and badgeHandlers.onClearAll for backward compatibility.
 
   // Use centralized selection handlers for column/operator/join selection
   const { handleColumnSelect, handleOperatorSelect, handleJoinOperatorSelect } =
@@ -715,608 +698,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [value, onChange, tryRestorePreservedPattern]);
 
-  // Clear all - used by purple badge (column)
-  const handleClearAll = useCallback(() => {
-    // Clear preserved state to ensure badges disappear
-    handleClearPreservedState();
-
-    if (onClearSearch) {
-      onClearSearch();
-    } else {
-      onChange({
-        target: { value: '' },
-      } as React.ChangeEvent<HTMLInputElement>);
-    }
-  }, [onClearSearch, onChange, handleClearPreservedState]);
-
-  // Clear value only - used by gray badge (value)
-  // For Between operator, this clears BOTH values (value and valueTo)
-  const handleClearValue = useCallback(() => {
-    // Get state BEFORE clearing preserved state (closure captures current value)
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (stateToUse.filterSearch) {
-      // Get operator from correct location (multi-condition uses conditions array)
-      const operator = stateToUse.filterSearch.isMultiCondition
-        ? stateToUse.filterSearch.conditions?.[0]?.operator
-        : stateToUse.filterSearch.operator;
-
-      // Clear preserved state to ensure badges update correctly
-      handleClearPreservedState();
-
-      // Explicitly clear filter since value might not change
-      // (when clearing value, there's nothing to filter on yet)
-      onFilterSearch?.(null);
-
-      // Keep column and operator, clear value (and valueTo for Between)
-      const columnName = stateToUse.filterSearch.field;
-      const newValue = PatternBuilder.columnOperator(
-        columnName,
-        operator || ''
-      );
-      setFilterValue(newValue, onChange, inputRef, {
-        focus: true,
-        cursorAtEnd: true,
-      });
-    } else {
-      handleClearPreservedState();
-      onFilterSearch?.(null);
-      handleClearAll();
-    }
-  }, [
-    searchMode,
-    preservedSearchMode,
-    onChange,
-    inputRef,
-    handleClearAll,
-    handleClearPreservedState,
-    onFilterSearch,
-  ]);
-
-  // Clear condition[1] value - used by gray badge (condition[1] value in multi-condition)
-  const handleClearCondition1Value = useCallback(() => {
-    // Use preserved state if available, otherwise current searchMode
-    const stateToUse = preservedSearchMode || searchMode;
-
-    // Clear preserved state to ensure badges update correctly
-    handleClearPreservedState();
-
-    if (!stateToUse.filterSearch) {
-      handleClearValue();
-      return;
-    }
-
-    const columnName = stateToUse.filterSearch.field;
-    const firstCondition = getFirstCondition(stateToUse.filterSearch);
-    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
-    const cond1Op = getConditionOperatorAt(
-      stateToUse.filterSearch,
-      stateToUse,
-      1,
-      value
-    );
-
-    // Check for multi-column: get condition[1] column from conditions or partialConditions state
-    const cond1ColumnField =
-      stateToUse.filterSearch.conditions?.[1]?.field ||
-      stateToUse.partialConditions?.[1]?.column?.field;
-
-    if (joinOp && (joinOp === 'AND' || joinOp === 'OR') && cond1Op) {
-      // Always include condition[1] column in pattern (even if same as first)
-      // This ensures the condition[1] column badge is shown consistently
-      const col2 = cond1ColumnField || columnName;
-      const newValue = PatternBuilder.multiColumnWithOperator(
-        columnName,
-        firstCondition.operator,
-        firstCondition.value,
-        joinOp,
-        col2,
-        cond1Op,
-        firstCondition.valueTo // Pass valueTo for Between operator
-      );
-
-      setFilterValue(newValue, onChange, inputRef);
-    } else {
-      // Fallback if missing data
-      handleClearValue();
-    }
-  }, [
-    searchMode,
-    preservedSearchMode,
-    value,
-    onChange,
-    inputRef,
-    handleClearValue,
-    handleClearPreservedState,
-  ]);
-
-  // Edit condition[1] column - show column selector for condition[1] column (multi-column)
-  const handleEditCondition1Column = useCallback(() => {
-    // Mark that we're editing condition[1] column for preview
-    setEditingSelectorTarget({ conditionIndex: 1, target: 'column' });
-
-    // Use preserved state if already in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (!stateToUse.filterSearch) {
-      return;
-    }
-
-    const columnName = stateToUse.filterSearch.field;
-    const firstCondition = getFirstCondition(stateToUse.filterSearch);
-    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
-
-    if (!joinOp || (joinOp !== 'AND' && joinOp !== 'OR')) {
-      return;
-    }
-
-    // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
-    flushSync(() => {
-      if (!preservedSearchMode) {
-        setPreservedSearchMode(searchMode);
-      }
-    });
-
-    // Extract and preserve filter data including condition[1] (operator, value)
-    preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
-
-    // Build pattern to trigger condition[1] column selector: #col1 #op1 val1 [val1To] #join #
-    // Use partialMultiColumnWithValueTo to handle Between operators with valueTo
-    const newValue = PatternBuilder.partialMultiColumnWithValueTo(
-      columnName,
-      firstCondition.operator,
-      firstCondition.value,
-      firstCondition.valueTo,
-      joinOp
-    );
-
-    setFilterValue(newValue, onChange, inputRef);
-  }, [searchMode, preservedSearchMode, onChange, inputRef]);
-
-  // ==================== EDIT HANDLERS ====================
-
-  // Edit column - show column selector with all columns
-  // Preserve operator and value to restore after column selection
-  const handleEditColumn = useCallback(() => {
-    // Mark that we're editing condition[0] column for preview
-    setEditingSelectorTarget({ conditionIndex: 0, target: 'column' });
-
-    // Use preserved state if already in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    // CASE 1: Column selected but no filter yet (operator selector is open)
-    // Preserve the column badge and switch to column selector
-    if (!stateToUse.filterSearch && stateToUse.selectedColumn) {
-      // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
-      flushSync(() => {
-        if (!preservedSearchMode) {
-          setPreservedSearchMode(searchMode);
-        }
-      });
-
-      // No filter data to preserve, just open column selector
-      const newValue = PatternBuilder.column('');
-      setFilterValue(newValue, onChange, inputRef);
-      return;
-    }
-
-    // CASE 2: No filter and no column - nothing to edit
-    if (!stateToUse.filterSearch) {
-      return;
-    }
-
-    // CASE 3: Has filter data - preserve it for restoration after column selection
-    // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
-    // This prevents race condition where useSearchState sees isEditMode: false
-    flushSync(() => {
-      // Save state only if not already preserved (prevent overwriting original state)
-      if (!preservedSearchMode) {
-        setPreservedSearchMode(searchMode);
-      }
-    });
-
-    // Extract and preserve filter data from original state
-    preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
-
-    // Set to just # to show all columns in selector
-    const newValue = PatternBuilder.column('');
-
-    setFilterValue(newValue, onChange, inputRef);
-  }, [searchMode, preservedSearchMode, onChange, inputRef]);
-
-  // Edit operator - show operator selector
-  const handleEditOperator = useCallback(
-    (isSecond: boolean = false) => {
-      // Use preserved state if already in edit mode, otherwise use current state
-      const stateToUse = preservedSearchMode || searchMode;
-
-      if (!stateToUse.filterSearch) {
-        return;
-      }
-
-      const columnName = stateToUse.filterSearch.field;
-
-      // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
-      // This prevents race condition where useSearchState sees isEditMode: false
-      flushSync(() => {
-        // Save state only if not already preserved (prevent overwriting original state)
-        if (!preservedSearchMode) {
-          setPreservedSearchMode(searchMode);
-        }
-      });
-
-      // Track which condition's operator we're editing (0 or 1)
-      setEditingSelectorTarget({
-        conditionIndex: isSecond ? 1 : 0,
-        target: 'operator',
-      });
-
-      // Extract and preserve filter data from original state
-      preservedFilterRef.current =
-        extractMultiConditionPreservation(stateToUse);
-
-      // Build pattern for operator selector
-      let newValue: string;
-
-      // Access from scalable structure
-      const firstCond = preservedFilterRef.current?.conditions?.[0];
-      const joinOp = preservedFilterRef.current?.joins?.[0];
-
-      if (isSecond && firstCond?.operator && firstCond?.value && joinOp) {
-        // For condition[1] operator edit, preserve first condition
-        // Always include condition[1] column to trigger operator selector (not column selector)
-        const cond1ColField =
-          preservedFilterRef.current?.conditions?.[1]?.field ||
-          stateToUse.partialConditions?.[1]?.column?.field ||
-          columnName; // Fallback to first column if same column filter
-
-        // Build pattern for operator selector, including valueTo if first condition is Between
-        // Pattern: #col1 #op1 val1 [val1To] #join #col2 #
-        const firstOp = firstCond.operator;
-        const firstVal = firstCond.value;
-        const firstValTo = firstCond.valueTo;
-
-        if (firstOp === 'inRange' && firstValTo) {
-          // First condition is Between - include valueTo
-          // Use #to marker to ensure correct badge display
-          newValue = `#${columnName} #${firstOp} ${firstVal} #to ${firstValTo} #${joinOp.toLowerCase()} #${cond1ColField} #`;
-        } else {
-          newValue = PatternBuilder.multiColumnPartial(
-            columnName,
-            firstOp,
-            firstVal,
-            joinOp,
-            cond1ColField
-          );
-        }
-      } else {
-        // For first operator edit, just: #column #
-        newValue = PatternBuilder.columnWithOperatorSelector(columnName);
-      }
-
-      setFilterValue(newValue, onChange, inputRef);
-    },
-    [searchMode, preservedSearchMode, onChange, inputRef]
-  );
-
-  // Edit join operator - show join operator selector
-  const handleEditJoin = useCallback(() => {
-    // Use preserved state if already in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (!stateToUse.filterSearch) {
-      return;
-    }
-
-    const columnName = stateToUse.filterSearch.field;
-    const firstCondition = getFirstCondition(stateToUse.filterSearch);
-    const joinOp = getJoinOperator(stateToUse.filterSearch, stateToUse);
-
-    // Use flushSync to ensure preservedSearchMode is set BEFORE value changes
-    // This prevents race condition where useSearchState sees isEditMode: false
-    flushSync(() => {
-      // Save state only if not already preserved (prevent overwriting original state)
-      if (!preservedSearchMode) {
-        setPreservedSearchMode(searchMode);
-      }
-    });
-
-    // Extract and preserve filter data from original state
-    preservedFilterRef.current = extractMultiConditionPreservation(stateToUse);
-
-    // Set current join operator state for selector highlighting
-    if (joinOp && (joinOp === 'AND' || joinOp === 'OR')) {
-      setCurrentJoinOperator(joinOp);
-    }
-
-    // Set to #col #op value # to trigger join selector
-    const newValue = PatternBuilder.withJoinSelector(
-      columnName,
-      firstCondition.operator,
-      firstCondition.value,
-      firstCondition.valueTo // Pass valueTo for Between operators
-    );
-
-    setFilterValue(newValue, onChange, inputRef);
-  }, [searchMode, preservedSearchMode, onChange, inputRef]);
-
-  // Edit value - INLINE EDITING: Badge itself becomes editable
-  const handleEditValue = useCallback(() => {
-    // Use preserved state if in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (!stateToUse.filterSearch) {
-      return;
-    }
-
-    const currentValue = stateToUse.filterSearch.value;
-
-    // NEW: Check if any selector is currently open OR if there's partial multi-column state
-    // When user clicks value badge while selector is open or during multi-column input, we need to:
-    // 1. Save the current pattern (to restore state after edit)
-    // 2. Close the selector / preserve partial state by changing to confirmed pattern
-    // 3. Enter inline edit mode
-    const isSelectorOpen =
-      searchMode.showColumnSelector ||
-      searchMode.showOperatorSelector ||
-      searchMode.showJoinOperatorSelector;
-
-    // Also check for partial multi-column state (no selector open but has partial data)
-    // This happens when user is typing value for condition[1]
-    const hasPartialMultiColumn =
-      searchMode.partialJoin ||
-      searchMode.partialConditions?.[1]?.column ||
-      searchMode.partialConditions?.[1]?.operator;
-
-    if ((isSelectorOpen || hasPartialMultiColumn) && !preservedSearchMode) {
-      // Determine which selector is open or if it's partial state for restoration later
-      const selectorType: 'column' | 'operator' | 'join' | 'partial' =
-        searchMode.showColumnSelector
-          ? 'column'
-          : searchMode.showOperatorSelector
-            ? 'operator'
-            : searchMode.showJoinOperatorSelector
-              ? 'join'
-              : 'partial'; // No selector open but has partial multi-column state
-
-      // Save current pattern for restoration after inline edit completes
-      interruptedSelectorRef.current = {
-        type: selectorType,
-        originalPattern: value,
-      };
-
-      // IMPORTANT: Preserve current searchMode BEFORE changing pattern
-      // This keeps all badges visible (including join badge and condition[1] column)
-      // while the selector is closed and inline edit is active
-      setPreservedSearchMode(searchMode);
-
-      // Build confirmed pattern to close the selector
-      const filter = stateToUse.filterSearch;
-      const columnName = filter.field;
-      let confirmedPattern: string;
-
-      if (filter.valueTo) {
-        // Between operator
-        // Use #to marker to ensure correct badge display
-        confirmedPattern = `#${columnName} #${filter.operator} ${filter.value} #to ${filter.valueTo}##`;
-      } else {
-        confirmedPattern = `#${columnName} #${filter.operator} ${filter.value}##`;
-      }
-
-      // Close selector by setting confirmed pattern
-      // Note: Badges are rendered from preservedSearchMode, so they stay visible
-      onChange({
-        target: { value: confirmedPattern },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      // Enter inline editing mode
-      setEditingBadge({
-        conditionIndex: 0,
-        field: 'value',
-        value: currentValue,
-      });
-      return;
-    }
-
-    // If we're in edit mode (modal open), restore the original pattern first
-    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
-      // Rebuild the confirmed pattern to close any open modal
-      const filter = preservedSearchMode.filterSearch;
-      const restoredPattern = restoreConfirmedPattern(filter);
-
-      onChange({
-        target: { value: restoredPattern },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      setPreservedSearchMode(null);
-    }
-
-    // Enter inline editing mode
-    setEditingBadge({
-      conditionIndex: 0,
-      field: 'value',
-      value: currentValue,
-    });
-  }, [searchMode, preservedSearchMode, onChange, value]);
-
-  // Edit condition[1] value in multi-condition filter - INLINE EDITING
-  const handleEditCondition1Value = useCallback(() => {
-    // Use preserved state if in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (
-      !stateToUse.filterSearch ||
-      !stateToUse.filterSearch.isMultiCondition ||
-      !stateToUse.filterSearch.conditions ||
-      stateToUse.filterSearch.conditions.length < 2
-    ) {
-      return;
-    }
-
-    const secondCond = stateToUse.filterSearch.conditions[1];
-
-    // If we're in edit mode (modal open), restore the original pattern first
-    if (preservedSearchMode && preservedSearchMode.filterSearch?.isConfirmed) {
-      // Rebuild the confirmed pattern to close any open modal
-      const filter = preservedSearchMode.filterSearch;
-      const restoredPattern = restoreConfirmedPattern(filter);
-
-      onChange({
-        target: { value: restoredPattern },
-      } as React.ChangeEvent<HTMLInputElement>);
-
-      setPreservedSearchMode(null);
-    }
-
-    // Enter inline editing mode for condition[1] value
-    setEditingBadge({
-      conditionIndex: 1,
-      field: 'value',
-      value: secondCond.value,
-    });
-  }, [searchMode, preservedSearchMode, onChange]);
-
-  // Edit "to" value in Between operator (first condition) - INLINE EDITING
-  const handleEditValueTo = useCallback(() => {
-    // Use preserved state if in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (!stateToUse.filterSearch) {
-      return;
-    }
-
-    // For multi-condition, get valueTo from first condition
-    // For single-condition, get valueTo directly from filterSearch
-    const valueTo = stateToUse.filterSearch.isMultiCondition
-      ? stateToUse.filterSearch.conditions?.[0]?.valueTo
-      : stateToUse.filterSearch.valueTo;
-
-    if (!valueTo) return;
-
-    // IMPORTANT: Preserve current state BEFORE entering inline edit mode
-    // This ensures handleInlineEditComplete has access to original state
-    if (!preservedSearchMode) {
-      setPreservedSearchMode(stateToUse);
-    }
-
-    // Enter inline editing mode for "to" value
-    setEditingBadge({
-      conditionIndex: 0,
-      field: 'valueTo',
-      value: valueTo,
-    });
-  }, [searchMode, preservedSearchMode]);
-
-  // Edit "to" value in Between operator (condition[1]) - INLINE EDITING
-  const handleEditCondition1ValueTo = useCallback(() => {
-    // Use preserved state if in edit mode, otherwise use current state
-    const stateToUse = preservedSearchMode || searchMode;
-
-    if (
-      !stateToUse.filterSearch ||
-      !stateToUse.filterSearch.isMultiCondition ||
-      !stateToUse.filterSearch.conditions ||
-      stateToUse.filterSearch.conditions.length < 2
-    ) {
-      return;
-    }
-
-    const secondCond = stateToUse.filterSearch.conditions[1];
-
-    if (!secondCond.valueTo) return;
-
-    // IMPORTANT: Preserve current state BEFORE entering inline edit mode
-    // This ensures handleInlineEditComplete has access to original state
-    if (!preservedSearchMode) {
-      setPreservedSearchMode(stateToUse);
-    }
-
-    // Enter inline editing mode for condition[1]'s "to" value
-    setEditingBadge({
-      conditionIndex: 1,
-      field: 'valueTo',
-      value: secondCond.valueTo,
-    });
-  }, [searchMode, preservedSearchMode]);
-
-  // Scalable handler for editing value badges at any condition index
-  // This enables inline editing for N-condition support (condition 2, 3, 4, etc.)
-  const handleEditValueN = useCallback(
-    (conditionIndex: number, target: 'value' | 'valueTo') => {
-      // Delegate to existing handlers for condition 0 and 1
-      if (conditionIndex === 0) {
-        if (target === 'value') {
-          handleEditValue();
-        } else {
-          handleEditValueTo();
-        }
-        return;
-      }
-      if (conditionIndex === 1) {
-        if (target === 'value') {
-          handleEditCondition1Value();
-        } else {
-          handleEditCondition1ValueTo();
-        }
-        return;
-      }
-
-      // For condition N (N >= 2): similar logic to handleEditCondition1Value
-      const stateToUse = preservedSearchMode || searchMode;
-
-      if (
-        !stateToUse.filterSearch ||
-        !stateToUse.filterSearch.isMultiCondition ||
-        !stateToUse.filterSearch.conditions ||
-        stateToUse.filterSearch.conditions.length <= conditionIndex
-      ) {
-        return;
-      }
-
-      const conditionN = stateToUse.filterSearch.conditions[conditionIndex];
-      const valueToEdit =
-        target === 'value' ? conditionN.value : conditionN.valueTo;
-
-      if (!valueToEdit) return;
-
-      // Preserve current state for inline edit completion
-      if (!preservedSearchMode) {
-        setPreservedSearchMode(stateToUse);
-      }
-
-      // If we're in edit mode (modal open), restore the confirmed pattern first
-      if (
-        preservedSearchMode &&
-        preservedSearchMode.filterSearch?.isConfirmed
-      ) {
-        const filter = preservedSearchMode.filterSearch;
-        const restoredPattern = restoreConfirmedPattern(filter);
-
-        onChange({
-          target: { value: restoredPattern },
-        } as React.ChangeEvent<HTMLInputElement>);
-
-        setPreservedSearchMode(null);
-      }
-
-      // Enter inline editing mode for condition[N]
-      setEditingBadge({
-        conditionIndex,
-        field: target,
-        value: valueToEdit,
-      });
-    },
-    [
-      searchMode,
-      preservedSearchMode,
-      handleEditValue,
-      handleEditValueTo,
-      handleEditCondition1Value,
-      handleEditCondition1ValueTo,
-      onChange,
-    ]
-  );
-
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
     setEditingBadge(prev => (prev ? { ...prev, value: newValue } : null));
@@ -1355,7 +736,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         if (isFirstCondition && isValueField) {
           // Clearing first condition "from" value - clear entire filter
-          handleClearValue();
+          clearConditionPart(0, 'value');
           setSelectedBadgeIndex(null); // Clear selection
         } else if (isFirstCondition && isValueToField) {
           // Clearing "to" value in Between - transition to inline editing mode for first value badge
@@ -1415,10 +796,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             }, 10);
             return;
           }
-          // If no fromValue, fall through to handleClearValue
+          // If no fromValue, fall through to clearConditionPart
+          clearConditionPart(0, 'valueTo');
         } else if (editingBadge.conditionIndex === 1 && isValueField) {
           // Clearing condition[1] "from" value - clear condition[1] only
-          handleClearCondition1Value();
+          clearConditionPart(1, 'value');
           setSelectedBadgeIndex(null); // Clear selection
         } else if (editingBadge.conditionIndex === 1 && isValueToField) {
           // Clearing condition[1] "to" value in Between - transition to edit condition[1] value
@@ -1484,7 +866,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               return;
             }
           }
-          handleClearCondition1Value();
+          clearConditionPart(1, 'valueTo');
+        } else {
+          // For N-condition (N >= 2) or other cases, use generic clear
+          clearConditionPart(editingBadge.conditionIndex, editingBadge.field);
         }
 
         setSelectedBadgeIndex(null); // Clear selection to prevent auto-selecting previous badge
@@ -1719,8 +1104,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       searchMode,
       preservedSearchMode,
       onChange,
-      handleClearValue,
-      handleClearCondition1Value,
+      clearConditionPart,
       inputRef,
     ]
   );
@@ -2034,21 +1418,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseOperatorSelector,
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
-    onEditValue: handleEditValue,
-    onEditValueTo: handleEditValueTo,
-    // Scalable handler for N-condition support
-    editConditionValue: (
-      conditionIndex: number,
-      target: 'value' | 'valueTo'
-    ) => {
-      if (conditionIndex === 1) {
-        if (target === 'value') {
-          handleEditCondition1Value();
-        } else {
-          handleEditCondition1ValueTo();
-        }
-      }
-    },
+    editConditionValue: editValueN,
   });
 
   // Handler for Ctrl+I to focus input, clear badge selection, and close selectors
@@ -2429,40 +1799,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           >
             <SearchBadge
               searchMode={searchMode}
-              badgeRef={badgeRef}
               badgesContainerRef={badgesContainerRef}
-              operatorBadgeRef={operatorBadgeRef}
-              joinBadgeRef={joinBadgeRef}
-              secondColumnBadgeRef={secondColumnBadgeRef}
-              secondOperatorBadgeRef={secondOperatorBadgeRef}
               setBadgeRef={setBadgeRef}
-              // Scalable handlers for N-condition support
               clearConditionPart={clearConditionPart}
               clearJoin={clearJoin}
+              clearAll={clearAll}
               editConditionPart={editConditionPart}
               editJoin={editJoin}
-              editValueN={handleEditValueN}
-              // Legacy handlers
-              onClearColumn={badgeHandlers.onClearColumn}
-              onClearOperator={badgeHandlers.onClearOperator}
-              onClearValue={badgeHandlers.onClearValue}
-              onClearValueTo={badgeHandlers.onClearValueTo}
-              onClearPartialJoin={badgeHandlers.onClearPartialJoin}
-              onClearCondition1Column={badgeHandlers.onClearCondition1Column}
-              onClearCondition1Operator={
-                badgeHandlers.onClearCondition1Operator
-              }
-              onClearCondition1Value={badgeHandlers.onClearCondition1Value}
-              onClearCondition1ValueTo={badgeHandlers.onClearCondition1ValueTo}
-              onClearAll={badgeHandlers.onClearAll}
-              onEditColumn={handleEditColumn}
-              onEditCondition1Column={handleEditCondition1Column}
-              onEditOperator={handleEditOperator}
-              onEditJoin={handleEditJoin}
-              onEditValue={handleEditValue}
-              onEditValueTo={handleEditValueTo}
-              onEditCondition1Value={handleEditCondition1Value}
-              onEditCondition1ValueTo={handleEditCondition1ValueTo}
+              editValueN={editValueN}
               onHoverChange={handleHoverChange}
               preservedSearchMode={preservedSearchMode}
               editingBadge={editingBadge}
@@ -2476,8 +1820,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               previewColumn={previewColumn}
               previewOperator={previewOperator}
               editingConditionIndex={
-                // Use scalable editingSelectorTarget for N-condition support
-                // Fallback to activeConditionIndex when column/operator selector is open with preserved state
                 editingSelectorTarget?.conditionIndex ??
                 (preservedSearchMode &&
                 (searchMode.showColumnSelector ||

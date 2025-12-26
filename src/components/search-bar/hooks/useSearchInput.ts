@@ -56,6 +56,7 @@ export const useSearchInput = ({
     []
   );
 
+  // ============ Ref Map Helpers ============
   /**
    * Get column badge ref by condition index
    */
@@ -86,22 +87,17 @@ export const useSearchInput = ({
     [getBadgeRef]
   );
 
-  // ============ Static Refs for Selector Positioning ============
-  // These are needed for useSelectorPosition which requires RefObjects
-  // Dynamic refs are preferred via getColumnRef(n), getOperatorRef(n), getJoinRef(n)
-  const badgeRef = useRef<HTMLDivElement>(null); // Column badge (condition-0-column)
+  // ============ Container Ref ============
+  // Used for measuring the total width of all badges combined
   const badgesContainerRef = useRef<HTMLDivElement>(null);
-  const operatorBadgeRef = useRef<HTMLDivElement>(null); // First operator badge (condition-0-operator)
-  const joinBadgeRef = useRef<HTMLDivElement>(null); // Join badge (join-0)
-  const secondColumnBadgeRef = useRef<HTMLDivElement>(null); // Second column badge (condition-1-column)
-  const secondOperatorBadgeRef = useRef<HTMLDivElement>(null); // Second operator badge (condition-1-operator)
 
-  // ============ Dynamic Ref Wrapper for N-Condition Support ============
-  // Creates a "lazy ref" that looks up the element from the badge map on access
-  // This ensures we always get the current element, even if the map was updated after render
-  const createLazyColumnRef = useCallback(
+  // ============ Generalized Lazy Ref System ============
+  /**
+   * Creates a "lazy ref" that looks up the element from the badge map on access.
+   * This is required for Selector components that expect a React.RefObject.
+   */
+  const getLazyColumnRef = useCallback(
     (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      // Create an object with a getter for 'current' that looks up dynamically
       return {
         get current() {
           return getColumnRef(conditionIndex);
@@ -111,8 +107,7 @@ export const useSearchInput = ({
     [getColumnRef]
   );
 
-  // Lazy ref for operator badges (similar to column refs)
-  const createLazyOperatorRef = useCallback(
+  const getLazyOperatorRef = useCallback(
     (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
       return {
         get current() {
@@ -123,8 +118,7 @@ export const useSearchInput = ({
     [getOperatorRef]
   );
 
-  // Lazy ref for join badges
-  const createLazyJoinRef = useCallback(
+  const getLazyJoinRef = useCallback(
     (joinIndex: number): React.RefObject<HTMLDivElement | null> => {
       return {
         get current() {
@@ -133,98 +127,6 @@ export const useSearchInput = ({
       } as React.RefObject<HTMLDivElement | null>;
     },
     [getJoinRef]
-  );
-
-  // Memoized lazy refs for each condition index (to avoid creating new objects on every render)
-  const condition2ColumnRef = useMemo(
-    () => createLazyColumnRef(2),
-    [createLazyColumnRef]
-  );
-  const condition3ColumnRef = useMemo(
-    () => createLazyColumnRef(3),
-    [createLazyColumnRef]
-  );
-  const condition4ColumnRef = useMemo(
-    () => createLazyColumnRef(4),
-    [createLazyColumnRef]
-  );
-
-  // Memoized lazy refs for operator badges
-  const condition2OperatorRef = useMemo(
-    () => createLazyOperatorRef(2),
-    [createLazyOperatorRef]
-  );
-  const condition3OperatorRef = useMemo(
-    () => createLazyOperatorRef(3),
-    [createLazyOperatorRef]
-  );
-  const condition4OperatorRef = useMemo(
-    () => createLazyOperatorRef(4),
-    [createLazyOperatorRef]
-  );
-
-  /**
-   * Get the appropriate lazy ref for a condition index >= 2
-   */
-  const getConditionNColumnRef = useCallback(
-    (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      switch (conditionIndex) {
-        case 2:
-          return condition2ColumnRef;
-        case 3:
-          return condition3ColumnRef;
-        case 4:
-          return condition4ColumnRef;
-        default:
-          // For indices > 4, create a new lazy ref (less optimal but handles edge cases)
-          return createLazyColumnRef(conditionIndex);
-      }
-    },
-    [
-      condition2ColumnRef,
-      condition3ColumnRef,
-      condition4ColumnRef,
-      createLazyColumnRef,
-    ]
-  );
-
-  /**
-   * Get the appropriate lazy ref for an operator badge at condition index >= 2
-   */
-  const getConditionNOperatorRef = useCallback(
-    (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      switch (conditionIndex) {
-        case 2:
-          return condition2OperatorRef;
-        case 3:
-          return condition3OperatorRef;
-        case 4:
-          return condition4OperatorRef;
-        default:
-          return createLazyOperatorRef(conditionIndex);
-      }
-    },
-    [
-      condition2OperatorRef,
-      condition3OperatorRef,
-      condition4OperatorRef,
-      createLazyOperatorRef,
-    ]
-  );
-
-  /**
-   * Get the appropriate lazy ref for a join badge at index >= 1
-   */
-  const getConditionNJoinRef = useCallback(
-    (joinIndex: number): React.RefObject<HTMLDivElement | null> => {
-      switch (joinIndex) {
-        case 0:
-          return joinBadgeRef;
-        default:
-          return createLazyJoinRef(joinIndex);
-      }
-    },
-    [joinBadgeRef, createLazyJoinRef]
   );
 
   const operatorSearchTerm = useMemo(
@@ -457,7 +359,7 @@ export const useSearchInput = ({
     const targetElement =
       shouldUseContainer && badgesContainerRef.current
         ? badgesContainerRef.current
-        : badgeRef.current;
+        : getColumnRef(0);
 
     if (!targetElement || !inputRef.current) {
       return;
@@ -533,6 +435,7 @@ export const useSearchInput = ({
     inputRef,
     hasSecondConditionOperator,
     currentBadgeCount,
+    getColumnRef,
   ]);
 
   const handleHoverChange = useCallback(() => {
@@ -891,16 +794,11 @@ export const useSearchInput = ({
     getColumnRef,
     getOperatorRef,
     getJoinRef,
-    // ============ Static Refs for Selector Positioning ============
-    badgeRef,
+    // ============ Container Ref ============
     badgesContainerRef,
-    operatorBadgeRef,
-    joinBadgeRef,
-    secondColumnBadgeRef,
-    secondOperatorBadgeRef,
-    // ============ Dynamic Lazy Ref for N-Condition Selector Positioning ============
-    getConditionNColumnRef,
-    getConditionNOperatorRef,
-    getConditionNJoinRef,
+    // ============ Dynamic Lazy Ref for Selector Positioning ============
+    getLazyColumnRef,
+    getLazyOperatorRef,
+    getLazyJoinRef,
   };
 };
