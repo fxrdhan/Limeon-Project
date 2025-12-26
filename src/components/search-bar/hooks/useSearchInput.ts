@@ -260,18 +260,16 @@ export const useSearchInput = ({
       // Case: Second operator selected, ready for second value input - show the second value being typed
       // Multi-column pattern: #col1 #op1 val1 #and #col2 #op2 val2 → extract val2
       // Same-column pattern:  #col1 #op1 val1 #and #op2 val2 → extract val2
-      // Detect multi-column by checking if secondCondition.column exists
-      if (secondCondition?.column) {
-        // Multi-column: extract value after #col2 #op2
-        const multiColMatch = value.match(
-          /#(?:and|or)\s+#[^\s]+\s+#[^\s]+\s+(.*)$/i
-        );
-        return multiColMatch ? multiColMatch[1] : '';
-      } else {
-        // Same-column: extract value after #op2
-        const sameColMatch = value.match(/#(?:and|or)\s+#[^\s]+\s+(.*)$/i);
-        return sameColMatch ? sameColMatch[1] : '';
+      // NOTE: Try multi-column regex first, if fails try same-column (more robust than checking state)
+      const multiColMatch = value.match(
+        /#(?:and|or)\s+#[^\s]+\s+#[^\s]+\s+(.*)$/i
+      );
+      if (multiColMatch) {
+        return multiColMatch[1];
       }
+      // Same-column: extract value after #op2
+      const sameColMatch = value.match(/#(?:and|or)\s+#[^\s]+\s+(.*)$/i);
+      return sameColMatch ? sameColMatch[1] : '';
     }
 
     // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
@@ -519,29 +517,49 @@ export const useSearchInput = ({
           !isBuildingConditionN && // Not building condition 2+
           !hasPartialConditionsBeyondConfirmed // No partial conditions beyond confirmed
         ) {
-          // Signal to parent: user wants to edit second value
-          // We'll add a special marker that parent can detect
-          const columnName = searchMode.filterSearch.field;
-          const firstCondition = searchMode.filterSearch.conditions[0];
-          const secondCondition = searchMode.filterSearch.conditions[1];
-          const joinOp = searchMode.filterSearch.joinOperator || 'AND';
+          // N-CONDITION SUPPORT: Build pattern with ALL conditions, replacing LAST condition's value
+          const conditions = searchMode.filterSearch.conditions;
+          const joins = searchMode.filterSearch.joins || [
+            searchMode.filterSearch.joinOperator || 'AND',
+          ];
+          const firstColumn =
+            conditions[0].column?.field || searchMode.filterSearch.field;
 
-          // Check if this is multi-COLUMN (second condition has different column)
-          const secondColumnField = secondCondition.column?.field;
-          const isMultiColumn =
-            secondColumnField && secondColumnField !== columnName;
+          // Build pattern for all conditions
+          let newValue = '';
 
-          // Handle Between operator valueTo for first condition
-          const firstValueTo = firstCondition.valueTo
-            ? ` #to ${firstCondition.valueTo}`
-            : '';
+          for (let i = 0; i < conditions.length; i++) {
+            const cond = conditions[i];
+            const condColumn = cond.column?.field || cond.field;
+            const isMultiCol = condColumn !== firstColumn;
 
-          // Build pattern for editing second value (without ## marker)
-          // Multi-column: #col1 #op1 val1 [#to val1To] #join #col2 #op2 inputValue
-          // Same-column: #col1 #op1 val1 [#to val1To] #join #op2 inputValue
-          const newValue = isMultiColumn
-            ? `#${columnName} #${firstCondition.operator} ${firstCondition.value}${firstValueTo} #${joinOp.toLowerCase()} #${secondColumnField} #${secondCondition.operator} ${inputValue}`
-            : `#${columnName} #${firstCondition.operator} ${firstCondition.value}${firstValueTo} #${joinOp.toLowerCase()} #${secondCondition.operator} ${inputValue}`;
+            // Handle Between operator valueTo
+            const valueToStr = cond.valueTo ? ` #to ${cond.valueTo}` : '';
+
+            if (i === 0) {
+              // First condition: #col #op value [#to valueTo]
+              newValue = `#${condColumn} #${cond.operator} ${cond.value}${valueToStr}`;
+            } else {
+              // Subsequent conditions: #join [#col] #op value [#to valueTo]
+              const joinOp = joins[i - 1] || 'AND';
+
+              if (i === conditions.length - 1) {
+                // LAST condition: use inputValue instead of stored value
+                if (isMultiCol) {
+                  newValue += ` #${joinOp.toLowerCase()} #${condColumn} #${cond.operator} ${inputValue}`;
+                } else {
+                  newValue += ` #${joinOp.toLowerCase()} #${cond.operator} ${inputValue}`;
+                }
+              } else {
+                // Middle conditions: keep original value
+                if (isMultiCol) {
+                  newValue += ` #${joinOp.toLowerCase()} #${condColumn} #${cond.operator} ${cond.value}${valueToStr}`;
+                } else {
+                  newValue += ` #${joinOp.toLowerCase()} #${cond.operator} ${cond.value}${valueToStr}`;
+                }
+              }
+            }
+          }
 
           onChange({
             target: { value: newValue },
@@ -639,8 +657,9 @@ export const useSearchInput = ({
           /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)/i
         );
 
-        // SAME-COLUMN: Check for pattern #col1 #op1 val1 #join #op2
-        const sameColMatch = currentValue.match(/#(and|or)\s+#([^\s]+)$/i);
+        // SAME-COLUMN: Check for pattern #col1 #op1 val1 #join #op2 [value]
+        // NOTE: Removed $ anchor to also match when user is typing value (e.g., "#and #contains m")
+        const sameColMatch = currentValue.match(/#(and|or)\s+#([^\s]+)/i);
 
         // Extract groups based on match type
         // multiColMatch: [full, join, col2, op2]
