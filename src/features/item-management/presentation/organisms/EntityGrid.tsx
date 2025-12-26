@@ -164,7 +164,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           `grid_state_${tableType}`,
           JSON.stringify(event.state)
         );
-        // console.log('✅ Grid state auto-saved for:', tableType);
       } catch (error) {
         console.error('Failed to save grid state:', error);
       }
@@ -196,7 +195,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           requestAnimationFrame(() => {
             if (gridApi && !gridApi.isDestroyed()) {
               gridApi.setState(parsedState);
-              // console.log('✅ Grid state restored for:', tableType);
             }
           });
         } catch (error) {

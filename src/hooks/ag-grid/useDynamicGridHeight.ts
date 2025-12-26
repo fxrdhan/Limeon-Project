@@ -14,8 +14,6 @@ interface UseDynamicGridHeightOptions {
   rowHeight?: number;
   /** Minimum rows to display (default: 5) */
   minRows?: number;
-  /** Enable debug logging (default: false) */
-  debug?: boolean;
 }
 
 /**
@@ -29,7 +27,6 @@ export const useDynamicGridHeight = ({
   baseHeight = 108,
   rowHeight = 36,
   minRows = 5,
-  debug = false,
 }: UseDynamicGridHeightOptions) => {
   // Get dynamic table height based on viewport
   const dynamicTableHeight = useTableHeight(viewportOffset);
@@ -61,12 +58,6 @@ export const useDynamicGridHeight = ({
 
     const calculatedHeight = baseHeight + actualRows * rowHeight;
 
-    if (debug) {
-      console.log(
-        `[useDynamicGridHeight] Viewport: ${availableHeight}px, max rows by viewport: ${maxRowsByViewport}, data length: ${dataLength}, page size: ${currentPageSize}, effective page size: ${effectivePageSize}, displayed rows: ${displayedRows}, actual rows: ${actualRows}, final height: ${calculatedHeight}px`
-      );
-    }
-
     return calculatedHeight;
   }, [
     data,
@@ -75,7 +66,6 @@ export const useDynamicGridHeight = ({
     baseHeight,
     rowHeight,
     minRows,
-    debug,
   ]);
 
   return {

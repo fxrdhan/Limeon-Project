@@ -1,22 +1,22 @@
+import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type {
-  ItemModalProps,
-  ItemManagementContextValue,
-} from '../../../shared/types';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
+import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
 import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext';
 import {
   useItemActions,
   useItemForm,
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
-import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
-import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
+import type {
+  ItemManagementContextValue,
+  ItemModalProps,
+} from '../../../shared/types';
 
 // Template and Organisms
-import ItemModalTemplate from '../ItemModalTemplate';
 import { ItemFormSections } from '../ItemFormSections';
+import ItemModalTemplate from '../ItemModalTemplate';
 import ItemModalContainer from '../containers/ItemModalContainer';
 
 const ItemModal: React.FC<ItemModalProps> = ({
@@ -128,19 +128,16 @@ const ItemModal: React.FC<ItemModalProps> = ({
   } = useEntityHistory('items', itemId || '');
 
   // Memoized callbacks for realtime to prevent unnecessary reconnections
-  const handleItemUpdated = useCallback((payload: unknown) => {
-    console.log('🔄 Item updated in modal:', payload);
+  const handleItemUpdated = useCallback(() => {
     // Smart sync handles the updates intelligently
   }, []);
 
   const handleItemDeleted = useCallback(() => {
-    console.log('🗑️ Item deleted, closing modal');
     setIsClosing(true);
   }, [setIsClosing]);
 
   const handleSmartUpdate = useCallback(
     (updates: Record<string, unknown>) => {
-      console.log('🧠 Applying smart updates:', updates);
       // Apply updates that don't conflict with user input
       updateFormData(updates);
     },
@@ -182,7 +179,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
   // Version selection handler
   const handleVersionSelect = useCallback(
     (versionNumber: number, entityData: Record<string, unknown>) => {
-      console.log('📌 Viewing version:', versionNumber, entityData);
       setViewingVersionNumber(versionNumber);
 
       // Update form data with version data (but don't mark as dirty)
@@ -193,7 +189,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   // Clear version viewing (back to current)
   const handleClearVersionView = useCallback(() => {
-    console.log('🔄 Clearing version view, back to current data');
     setViewingVersionNumber(null);
 
     // Trigger modal close and reopen to reload current data

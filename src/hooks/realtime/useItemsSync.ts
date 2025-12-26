@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 interface ItemsSyncOptions {
   enabled?: boolean;
@@ -29,12 +29,10 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
     const timeoutId = setTimeout(() => {
       // Only setup if network is available and document is ready
       if (navigator.onLine && document.readyState === 'complete') {
-        // console.log('🔗 Setting up items sync (production)');
         setupRealtimeConnection();
       } else {
         // Retry after another second
         setTimeout(() => {
-          // console.log('🔗 Setting up items sync (production)');
           setupRealtimeConnection();
         }, 1000);
       }
@@ -52,13 +50,6 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
           commit_timestamp?: string;
         }
       ) => {
-        // console.log(`🔄 ${_tableName} ${_payload.eventType}:`);
-        // console.log('📦 Raw payload:', _payload);
-        // console.log('🔵 New data:', _payload.new);
-        // console.log('🔴 Old data:', _payload.old);
-        // console.log('⏰ Timestamp:', _payload.commit_timestamp);
-        // console.log('---');
-
         // Invalidate all item master queries
         queryClient.invalidateQueries({ queryKey: ['items'] });
         queryClient.invalidateQueries({
@@ -153,10 +144,9 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
         )
         .subscribe(status => {
           if (status === 'SUBSCRIBED') {
-            // console.log('✅ Items sync connected');
-            // console.log('🔍 Syncing:', tables.join(', '));
+            // Connected
           } else if (status === 'CHANNEL_ERROR') {
-            // console.log('🔌 Sync disconnected');
+            // Error
           }
         });
 
@@ -173,7 +163,6 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
         try {
           globalChannelRef.unsubscribe();
           supabase.removeChannel(globalChannelRef);
-          // console.log('🔌 Realtime disconnected');
         } catch {
           // Ignore cleanup errors
         }

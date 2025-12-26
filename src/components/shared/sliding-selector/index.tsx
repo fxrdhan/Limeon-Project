@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, LayoutGroup } from 'motion/react';
 import classNames from 'classnames';
+import { LayoutGroup, motion } from 'motion/react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface SlidingSelectorOption<T = unknown> {
   key: string;
@@ -195,7 +195,6 @@ export const SlidingSelector = <T,>({
 
       // Ignore keyboard auto-repeat to prevent rapid navigation spam
       if (event.repeat) {
-        console.log('⏸️ Ignoring keyboard auto-repeat');
         return;
       }
 

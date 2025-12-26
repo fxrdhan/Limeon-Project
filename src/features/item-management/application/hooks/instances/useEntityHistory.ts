@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { HISTORY_DEBUG } from '../../../config/debug';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface EntityHistoryItem {
   id: string;
@@ -37,20 +36,6 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         return;
       }
 
-      if (HISTORY_DEBUG)
-        console.log('🔍 Fetching history for:', {
-          entityTable,
-          entityId,
-          silent,
-        });
-
-      // Check auth status
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (HISTORY_DEBUG)
-        console.log('🔑 Current user:', user?.id || 'Not authenticated');
-
       // Only show loading spinner for initial/manual fetch, not realtime updates
       if (!silent) {
         setIsLoading(true);
@@ -58,15 +43,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       setError(null);
 
       try {
-        // Test basic connectivity first
-        const { data: testData, error: testError } = await supabase
-          .from('entity_history')
-          .select('count')
-          .limit(1);
-        if (HISTORY_DEBUG)
-          console.log('🔗 Connection test:', { testData, testError });
-
-        // Now try the actual query with user info
+        // Fetch entity history with user info
         const { data, error: fetchError } = await supabase
           .from('entity_history')
           .select(
@@ -82,17 +59,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           .eq('entity_id', entityId)
           .order('version_number', { ascending: false });
 
-        if (HISTORY_DEBUG) {
-          console.log('📊 History query result:', {
-            data,
-            error: fetchError,
-            queryParams: { entityTable, entityId },
-            resultCount: data?.length || 0,
-          });
-        }
-
         if (fetchError) {
-          if (HISTORY_DEBUG) console.error('❌ Query error:', fetchError);
           throw new Error(fetchError.message);
         }
 
@@ -104,15 +71,10 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         }));
 
         setHistory(transformedData);
-        if (HISTORY_DEBUG) {
-          console.log('✅ History set to:', transformedData);
-        }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error';
         setError(errorMessage);
-        if (HISTORY_DEBUG)
-          console.error('💥 Error fetching entity history:', err);
       } finally {
         // Only update loading state if we set it to true (not silent mode)
         if (!silent) {
@@ -227,8 +189,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
       // Refresh history
       await fetchHistory();
-    } catch (err) {
-      if (HISTORY_DEBUG) console.error('Error adding history entry:', err);
+    } catch {
+      // Silent error
     }
   };
 
@@ -253,13 +215,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Create unique channel name for this entity
     const channelName = `entity-history-${entityTable}-${entityId}`;
 
-    if (HISTORY_DEBUG) {
-      console.log('🔗 Setting up realtime subscription for entity history:', {
-        entityTable,
-        entityId,
-        channelName,
-      });
-    }
+    // Setup realtime subscription with postgres_changes
 
     // Setup realtime subscription with postgres_changes
     // NOTE: Supabase doesn't support multi-column filters like "table=eq.X,id=eq.Y"
@@ -280,41 +236,18 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           const oldRecord = payload.old as EntityHistoryItem | null;
           const recordEntityId = newRecord?.entity_id || oldRecord?.entity_id;
 
-          if (HISTORY_DEBUG) {
-            console.log('🔄 Entity history event received:', {
-              eventType: payload.eventType,
-              recordEntityId,
-              targetEntityId: entityId,
-              match: recordEntityId === entityId,
-              payloadNew: payload.new,
-              payloadOld: payload.old,
-            });
-          }
-
           // Only process events for THIS specific entity
           if (recordEntityId === entityId) {
-            if (HISTORY_DEBUG) {
-              console.log('✅ Event matches, re-fetching history (silent)');
-            }
-
             // Re-fetch history silently (no loading spinner for smooth UX)
             fetchHistory(true); // silent = true
-          } else {
-            if (HISTORY_DEBUG) {
-              console.log('⏭️ Event skipped (different entity)');
-            }
           }
         }
       )
       .subscribe(status => {
         if (status === 'SUBSCRIBED') {
-          if (HISTORY_DEBUG) {
-            console.log('✅ Entity history realtime connected:', channelName);
-          }
+          // Connected
         } else if (status === 'CHANNEL_ERROR') {
-          if (HISTORY_DEBUG) {
-            console.log('❌ Entity history realtime error:', channelName);
-          }
+          // Error
         }
       });
 
@@ -323,9 +256,6 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup on unmount or when entityTable/entityId changes
     return () => {
       if (channelRef.current) {
-        if (HISTORY_DEBUG) {
-          console.log('🔌 Disconnecting entity history realtime:', channelName);
-        }
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -351,16 +281,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Create unique channel name for entity table subscription
     const entityChannelName = `entity-table-${entityTable}-${entityId}`;
 
-    if (HISTORY_DEBUG) {
-      console.log(
-        '🔗 Setting up realtime subscription for entity table (hard rollback detection):',
-        {
-          entityTable,
-          entityId,
-          channelName: entityChannelName,
-        }
-      );
-    }
+    // Setup realtime subscription for entity table UPDATE events
 
     // Setup realtime subscription for entity table UPDATE events
     // This catches hard rollback which updates the entity directly via RPC
@@ -374,18 +295,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           event: 'UPDATE',
           filter: `id=eq.${entityId}`,
         },
-        payload => {
-          if (HISTORY_DEBUG) {
-            console.log(
-              '🔄 Entity table update detected (potential hard rollback):',
-              {
-                table: entityTable,
-                entityId,
-                payload,
-              }
-            );
-          }
-
+        () => {
           // Re-fetch history silently when entity is updated
           // This handles hard rollback case where RPC updates entity directly
           fetchHistory(true);
@@ -393,16 +303,9 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       )
       .subscribe(status => {
         if (status === 'SUBSCRIBED') {
-          if (HISTORY_DEBUG) {
-            console.log(
-              '✅ Entity table realtime connected:',
-              entityChannelName
-            );
-          }
+          // Connected
         } else if (status === 'CHANNEL_ERROR') {
-          if (HISTORY_DEBUG) {
-            console.log('❌ Entity table realtime error:', entityChannelName);
-          }
+          // Error
         }
       });
 
@@ -411,12 +314,6 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup on unmount or when entityTable/entityId changes
     return () => {
       if (entityChannelRef.current) {
-        if (HISTORY_DEBUG) {
-          console.log(
-            '🔌 Disconnecting entity table realtime:',
-            entityChannelName
-          );
-        }
         entityChannelRef.current.unsubscribe();
         supabase.removeChannel(entityChannelRef.current);
         entityChannelRef.current = null;
