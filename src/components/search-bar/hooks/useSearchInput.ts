@@ -92,39 +92,69 @@ export const useSearchInput = ({
   const badgesContainerRef = useRef<HTMLDivElement>(null);
 
   // ============ Generalized Lazy Ref System ============
+  // Cache for lazy refs to ensure stability across renders
+  const lazyRefsCache = useRef<
+    Map<string, React.RefObject<HTMLDivElement | null>>
+  >(new Map());
+
   /**
    * Creates a "lazy ref" that looks up the element from the badge map on access.
    * This is required for Selector components that expect a React.RefObject.
+   * Stability is GUARANTEED by the lazyRefsCache to avoid infinite re-render loops.
    */
   const getLazyColumnRef = useCallback(
     (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      return {
+      const cacheKey = `column-${conditionIndex}`;
+      if (lazyRefsCache.current.has(cacheKey)) {
+        return lazyRefsCache.current.get(cacheKey)!;
+      }
+
+      const lazyRef = {
         get current() {
           return getColumnRef(conditionIndex);
         },
       } as React.RefObject<HTMLDivElement | null>;
+
+      lazyRefsCache.current.set(cacheKey, lazyRef);
+      return lazyRef;
     },
     [getColumnRef]
   );
 
   const getLazyOperatorRef = useCallback(
     (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      return {
+      const cacheKey = `operator-${conditionIndex}`;
+      if (lazyRefsCache.current.has(cacheKey)) {
+        return lazyRefsCache.current.get(cacheKey)!;
+      }
+
+      const lazyRef = {
         get current() {
           return getOperatorRef(conditionIndex);
         },
       } as React.RefObject<HTMLDivElement | null>;
+
+      lazyRefsCache.current.set(cacheKey, lazyRef);
+      return lazyRef;
     },
     [getOperatorRef]
   );
 
   const getLazyJoinRef = useCallback(
     (joinIndex: number): React.RefObject<HTMLDivElement | null> => {
-      return {
+      const cacheKey = `join-${joinIndex}`;
+      if (lazyRefsCache.current.has(cacheKey)) {
+        return lazyRefsCache.current.get(cacheKey)!;
+      }
+
+      const lazyRef = {
         get current() {
           return getJoinRef(joinIndex);
         },
       } as React.RefObject<HTMLDivElement | null>;
+
+      lazyRefsCache.current.set(cacheKey, lazyRef);
+      return lazyRef;
     },
     [getJoinRef]
   );

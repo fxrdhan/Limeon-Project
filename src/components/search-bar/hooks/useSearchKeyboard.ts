@@ -16,11 +16,16 @@ interface UseSearchKeyboardProps {
   handleCloseOperatorSelector: () => void;
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
-  // Scalable edit handlers for N-condition support
+  // Scalable handlers for N-condition support
   editConditionValue?: (
     conditionIndex: number,
     target: EditValueTarget
   ) => void;
+  clearConditionPart?: (
+    conditionIndex: number,
+    target: 'column' | 'operator' | 'value' | 'valueTo'
+  ) => void;
+  clearJoin?: (joinIndex: number) => void;
 }
 
 export const useSearchKeyboard = ({
@@ -34,6 +39,8 @@ export const useSearchKeyboard = ({
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
   editConditionValue,
+  clearConditionPart,
+  clearJoin,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -249,19 +256,31 @@ export const useSearchKeyboard = ({
             const lastCondition =
               partialConditions[lastIdx] || conditions[lastIdx];
 
-            if (lastIdx >= 0 && lastCondition) {
-              // For Between operator with valueTo on the last condition, edit valueTo first
+            if (lastIdx >= 0 && lastCondition && clearConditionPart) {
+              // 1. Delete valueTo if it exists (for Between operator)
               if (
-                lastCondition?.operator === 'inRange' &&
-                lastCondition?.valueTo &&
-                editConditionValue
+                lastCondition.operator === 'inRange' &&
+                lastCondition.valueTo
               ) {
-                editConditionValue(lastIdx, 'valueTo');
+                clearConditionPart(lastIdx, 'valueTo');
                 return;
               }
-              // Otherwise edit last condition's value
-              if (editConditionValue) {
-                editConditionValue(lastIdx, 'value');
+
+              // 2. Delete value if it exists and is non-empty
+              if (lastCondition.value && lastCondition.value.trim() !== '') {
+                clearConditionPart(lastIdx, 'value');
+                return;
+              }
+
+              // 3. Delete operator if it exists
+              if (lastCondition.operator) {
+                clearConditionPart(lastIdx, 'operator');
+                return;
+              }
+
+              // 4. Delete column if it exists
+              if (lastCondition.column) {
+                clearConditionPart(lastIdx, 'column');
                 return;
               }
             }
@@ -274,19 +293,18 @@ export const useSearchKeyboard = ({
             !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            // For Between (inRange) operator with valueTo, edit the second value (valueTo)
-            // This is more intuitive: DELETE removes the last value entered
+            // For Between (inRange) operator with valueTo, delete the second value (valueTo)
             if (
               searchMode.filterSearch.operator === 'inRange' &&
               searchMode.filterSearch.valueTo &&
-              editConditionValue
+              clearConditionPart
             ) {
-              editConditionValue(0, 'valueTo');
+              clearConditionPart(0, 'valueTo');
               return;
             }
-            // For other operators, edit the first/only value
-            if (editConditionValue) {
-              editConditionValue(0, 'value');
+            // For other operators, delete the first/only value
+            if (clearConditionPart) {
+              clearConditionPart(0, 'value');
             }
             return;
           }
@@ -301,8 +319,8 @@ export const useSearchKeyboard = ({
             !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            if (editConditionValue) {
-              editConditionValue(0, 'value');
+            if (clearConditionPart) {
+              clearConditionPart(0, 'value');
             }
             return;
           }
@@ -419,8 +437,9 @@ export const useSearchKeyboard = ({
             ) {
               e.preventDefault();
 
-              // Go back to join state with column selector open
-              // Pattern: ...[Join][Column] # -> ...[Join] #
+              // Go back to column selector while preserving the join badge
+              // Pattern: ...[Join][Column]# -> ...[Join]#
+              // This removes the column badge but keeps the join and opens column selector
               const conditions = (searchMode.partialConditions || []).map(
                 c => ({
                   field: c.column?.field || c.field,
@@ -430,18 +449,25 @@ export const useSearchKeyboard = ({
                 })
               );
 
-              // Build pattern up to previous condition, then add join + #
+              // Build pattern up to previous condition (confirmed), then add join + # for column selector
               const prevActiveIdx = searchMode.activeConditionIndex - 1;
-              const newValue = PatternBuilder.buildNConditions(
+              const basePattern = PatternBuilder.buildNConditions(
                 conditions.slice(0, prevActiveIdx + 1),
-                searchMode.joins || [],
+                (searchMode.joins || []).slice(0, prevActiveIdx),
                 searchMode.filterSearch?.isMultiColumn || false,
                 searchMode.filterSearch?.column?.field || '',
                 {
                   confirmed: false,
-                  openSelector: true, // This will add the trailing # for join selector
+                  openSelector: false, // Don't add trailing # here
                 }
               );
+
+              // Preserve the join operator and add trailing # for column selector
+              const preservedJoin =
+                searchMode.joins?.[prevActiveIdx] ||
+                searchMode.partialJoin ||
+                'AND';
+              const newValue = `${basePattern} #${preservedJoin.toLowerCase()} #`;
 
               onChange({
                 target: { value: newValue },
@@ -510,6 +536,8 @@ export const useSearchKeyboard = ({
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
       editConditionValue,
+      clearConditionPart,
+      clearJoin,
     ]
   );
 
