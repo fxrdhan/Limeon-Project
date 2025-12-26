@@ -382,7 +382,7 @@ const parsePartialNConditions = (
     showJoinOperatorSelector,
     isFilterMode: isInFilterMode,
     selectedColumn,
-    partialJoin: joins[0],
+    partialJoin: joins[joins.length - 1],
     activeConditionIndex,
     partialConditions,
     joins,

@@ -337,7 +337,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedFilterRef,
     onClearPreservedState: handleClearPreservedState,
     onClearSearch,
-    columns: memoizedColumns,
     setEditingSelectorTarget,
     setEditingBadge,
   });
