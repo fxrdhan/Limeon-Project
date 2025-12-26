@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { EnhancedSearchState } from '../types';
 import { KEY_CODES } from '../constants';
+import { EnhancedSearchState } from '../types';
 
 // Scalable type for edit targets
 type EditValueTarget = 'value' | 'valueTo';
@@ -20,9 +20,6 @@ interface UseSearchKeyboardProps {
     conditionIndex: number,
     target: EditValueTarget
   ) => void;
-  // Legacy handlers (first condition only) - used as fallback
-  onEditValue?: () => void;
-  onEditValueTo?: () => void;
 }
 
 export const useSearchKeyboard = ({
@@ -36,8 +33,6 @@ export const useSearchKeyboard = ({
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
   editConditionValue,
-  onEditValue,
-  onEditValueTo,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -334,14 +329,14 @@ export const useSearchKeyboard = ({
             if (
               searchMode.filterSearch.operator === 'inRange' &&
               searchMode.filterSearch.valueTo &&
-              onEditValueTo
+              editConditionValue
             ) {
-              onEditValueTo();
+              editConditionValue(0, 'valueTo');
               return;
             }
             // For other operators, edit the first/only value
-            if (onEditValue) {
-              onEditValue();
+            if (editConditionValue) {
+              editConditionValue(0, 'value');
             }
             return;
           }
@@ -356,8 +351,8 @@ export const useSearchKeyboard = ({
             !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            if (onEditValue) {
-              onEditValue();
+            if (editConditionValue) {
+              editConditionValue(0, 'value');
             }
             return;
           }
@@ -542,8 +537,6 @@ export const useSearchKeyboard = ({
       handleCloseOperatorSelector,
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
-      onEditValue,
-      onEditValueTo,
       editConditionValue,
     ]
   );
