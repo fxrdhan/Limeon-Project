@@ -1,10 +1,10 @@
-import { useState, memo, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { RiSendPlaneFill } from 'react-icons/ri';
-import { PiArrowCircleDownFill } from 'react-icons/pi';
-import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/authStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { AnimatePresence, motion } from 'motion/react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { PiArrowCircleDownFill } from 'react-icons/pi';
+import { RiSendPlaneFill } from 'react-icons/ri';
 
 interface ChatMessage {
   id: string;
@@ -92,8 +92,6 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const updateUserChatClose = useCallback(async () => {
     if (!user) return;
 
-    // console.log('🔴 Updating user chat close:', { userId: user.id });
-
     try {
       const { error } = await supabase
         .from('user_presence')
@@ -109,9 +107,6 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       if (error) {
         console.error('❌ Error updating user chat close:', error);
       }
-      // else {
-      //   console.log('✅ Successfully updated user chat close:', data);
-      // }
     } catch (error) {
       console.error('❌ Caught error updating user chat close:', error);
     }
@@ -120,11 +115,8 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   // Centralized close logic (used by close button AND external triggers)
   const performClose = useCallback(async () => {
     if (hasClosedRef.current || !user) {
-      // console.log('📡 Close already performed or no user');
       return;
     }
-
-    // console.log('🚪 Performing close sequence...');
 
     // Step 1: Broadcast close presence
     if (globalPresenceChannelRef.current) {
@@ -147,7 +139,6 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     // Step 2: Update database
     try {
       await updateUserChatClose();
-      // console.log('💾 Database updated successfully');
     } catch (error) {
       console.error('❌ Database update failed:', error);
     }
@@ -253,8 +244,6 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
     // SMART: When close detected from ANY source → use same close logic as close button
     if (previousIsOpen && !isOpen && user && !hasClosedRef.current) {
-      // console.log('🚪 Chat closing detected from external trigger');
-
       // Call the centralized close function
       performClose();
     }
@@ -491,8 +480,6 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   // Cleanup presence on component unmount
   useEffect(() => {
     return () => {
-      // console.log('🚪 Component unmount - attempting close...');
-
       // Perform close if not already closed
       if (!hasClosedRef.current && user) {
         performClose();
@@ -517,7 +504,6 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   // Handle browser tab close/refresh
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // console.log('🚪 Page unload - attempting close...');
       if (!hasClosedRef.current && user) {
         // Perform synchronous close operations for page unload
         hasClosedRef.current = true;

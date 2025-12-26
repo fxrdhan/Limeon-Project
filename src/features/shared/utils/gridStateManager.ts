@@ -320,7 +320,7 @@ export const cleanupLegacyGridStates = (): {
       removedCount++;
     });
 
-    console.log(`✅ Cleanup completed: Removed ${removedCount} legacy keys`);
+    // Cleanup completed successfully
 
     return {
       success: true,

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEntityModalRealtime } from '@/hooks/realtime/useEntityModalRealtime';
 import { formatDateTime } from '@/lib/formatters';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import type {
   EntityModalContextValue,
@@ -7,7 +8,6 @@ import type {
   VersionData,
 } from '../../../shared/contexts/EntityModalContext';
 import type { EntityData } from '../../../shared/types';
-import { useEntityModalRealtime } from '@/hooks/realtime/useEntityModalRealtime';
 
 interface UseEntityModalLogicProps {
   isOpen: boolean;
@@ -167,8 +167,6 @@ export const useEntityModalLogic = ({
   // ANTI-LOOP: This only updates local state, doesn't trigger save
   const handleRealtimeUpdate = useCallback(
     (updates: Record<string, unknown>) => {
-      console.log('🔄 Applying realtime updates to form:', updates);
-
       // Update state based on changed fields
       if ('code' in updates && typeof updates.code === 'string') {
         setCode(updates.code);
@@ -194,8 +192,6 @@ export const useEntityModalLogic = ({
           address?: string;
         }),
       }));
-
-      console.log('✅ Last synced state updated (via realtime)');
     },
     [] // Empty deps - setters are stable
   );

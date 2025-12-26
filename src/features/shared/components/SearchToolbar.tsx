@@ -1,9 +1,9 @@
-import { memo } from 'react';
-import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import { TbTablePlus } from 'react-icons/tb';
 import { ExportDropdown } from '@/components/export';
+import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import type { FilterSearch, SearchColumn } from '@/types/search';
 import { GridApi } from 'ag-grid-community';
-import type { SearchColumn, FilterSearch } from '@/types/search';
+import { memo } from 'react';
+import { TbTablePlus } from 'react-icons/tb';
 
 interface SearchToolbarProps<T = unknown> {
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -53,7 +53,6 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     if (e.key === 'Tab') {
       // Ignore keyboard auto-repeat to prevent rapid navigation spam
       if (e.repeat) {
-        console.log('⏸️ Ignoring keyboard auto-repeat in searchbar');
         e.preventDefault();
         return;
       }

@@ -38,7 +38,6 @@ if (typeof window !== 'undefined') {
     if (!document.hidden) {
       // Page became visible - good time to check connections
       setTimeout(() => {
-        // console.log('📱 Page visible - checking realtime connections...');
         startConnectionHealthCheck();
       }, 1000);
     } else {

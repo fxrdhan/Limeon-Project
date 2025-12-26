@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useSmartFormSync } from './useSmartFormSync';
 
@@ -61,10 +61,6 @@ export const useEntityModalRealtime = ({
       return;
     }
 
-    console.log(
-      `🔗 Setting up realtime for entity: ${entityTable}/${entityId}`
-    );
-
     const channelName = `entity-modal-${entityTable}-${entityId}`;
 
     const channel = supabase
@@ -78,12 +74,9 @@ export const useEntityModalRealtime = ({
           filter: `id=eq.${entityId}`,
         },
         payload => {
-          console.log('📝 Entity updated:', payload);
-
           // ANTI-LOOP #1: Prevent processing same update multiple times
           const currentTimestamp = payload.commit_timestamp || '';
           if (currentTimestamp === lastUpdateRef.current) {
-            console.log('⏭️ Skipping duplicate update (same timestamp)');
             return;
           }
           lastUpdateRef.current = currentTimestamp;
@@ -100,17 +93,11 @@ export const useEntityModalRealtime = ({
 
             // Skip if no actual changes (additional safety)
             if (Object.keys(changedFields).length === 0) {
-              console.log('⏭️ Skipping update (no changed fields)');
               return;
             }
 
             // ANTI-LOOP #3: Apply smart updates (respects active fields)
-            const result = smartFormSync.handleRealtimeUpdate(changedFields);
-
-            console.log('🧠 Smart sync result:', {
-              appliedImmediately: result.appliedImmediately,
-              pendingConflicts: result.pendingConflicts,
-            });
+            smartFormSync.handleRealtimeUpdate(changedFields);
           }
 
           // Invalidate queries for fresh data in lists
@@ -130,9 +117,7 @@ export const useEntityModalRealtime = ({
           event: 'DELETE',
           filter: `id=eq.${entityId}`,
         },
-        payload => {
-          console.log('🗑️ Entity deleted:', payload);
-
+        () => {
           toast.error('Data telah dihapus dari sumber lain', {
             duration: 5000,
             icon: '⚠️',
@@ -144,13 +129,9 @@ export const useEntityModalRealtime = ({
       )
       .subscribe(status => {
         if (status === 'SUBSCRIBED') {
-          console.log(
-            `✅ Entity realtime connected for: ${entityTable}/${entityId}`
-          );
+          // Connected
         } else if (status === 'CHANNEL_ERROR') {
-          console.log(
-            `❌ Entity realtime error for: ${entityTable}/${entityId}`
-          );
+          // Error
         }
       });
 
@@ -158,9 +139,6 @@ export const useEntityModalRealtime = ({
 
     return () => {
       if (channelRef.current) {
-        console.log(
-          `🔌 Disconnecting realtime for entity: ${entityTable}/${entityId}`
-        );
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;

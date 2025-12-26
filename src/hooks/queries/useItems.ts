@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { itemsService } from '@/services/api/items.service';
 import type { DBItem, DBPackageConversion } from '@/types/database';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Item Query Hooks
 export const useItems = (options?: {
@@ -175,14 +175,7 @@ export const useItemMutations = () => {
       if (result.error) throw result.error;
       return result.data;
     },
-    onSuccess: (data, variables) => {
-      console.log(
-        `🎉 UPDATE ITEM SUCCESS! Data:`,
-        data,
-        `Variables:`,
-        variables
-      );
-
+    onSuccess: (_data, variables) => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {

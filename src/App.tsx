@@ -1,18 +1,5 @@
-import Login from '@/pages/auth/login';
-import MainLayout from '@/layout/main';
 import { AlertProvider } from '@/components/alert';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy, useEffect } from 'react';
-import { useAuthStore } from '@/store/authStore';
 import { ConfirmDialogProvider } from '@/components/dialog-box';
-import { Toaster } from 'react-hot-toast';
-import { MasterDataRoutes } from '@/pages/routes/MasterDataRoutes';
-import { PurchasesRoutes } from '@/pages/routes/purchases';
-import { InventoryRoutes } from '@/pages/routes/inventory';
-import { SalesRoutes } from '@/pages/routes/sales';
-import { ClinicRoutes } from '@/pages/routes/clinic';
-import { ReportsRoutes } from '@/pages/routes/reports';
-import { SettingsRoutes } from '@/pages/routes/settings';
 import ErrorBoundary from '@/components/error-boundary';
 import { DashboardLoadingFallback } from '@/components/loading-fallback';
 import ToastTester from '@/components/ToastTester';
@@ -20,7 +7,20 @@ import {
   cleanupLegacyGridStates,
   hasLegacyKeys,
 } from '@/features/shared/utils/gridStateManager';
+import MainLayout from '@/layout/main';
+import Login from '@/pages/auth/login';
+import { ClinicRoutes } from '@/pages/routes/clinic';
+import { InventoryRoutes } from '@/pages/routes/inventory';
+import { MasterDataRoutes } from '@/pages/routes/MasterDataRoutes';
+import { PurchasesRoutes } from '@/pages/routes/purchases';
+import { ReportsRoutes } from '@/pages/routes/reports';
+import { SalesRoutes } from '@/pages/routes/sales';
+import { SettingsRoutes } from '@/pages/routes/settings';
+import { useAuthStore } from '@/store/authStore';
 import { initConsoleAPI } from '@/utils/consoleCommands';
+import { Suspense, lazy, useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const PrintPurchase = lazy(() => import('@/pages/purchases/print-purchase'));
@@ -42,9 +42,7 @@ function App() {
     if (hasLegacyKeys()) {
       const result = cleanupLegacyGridStates();
       if (result.success && result.removedCount > 0) {
-        console.log(
-          `🧹 Auto-cleanup: Removed ${result.removedCount} legacy grid state keys`
-        );
+        // Auto-cleanup successful
       }
     }
   }, []);
