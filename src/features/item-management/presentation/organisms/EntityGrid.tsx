@@ -254,7 +254,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     data: rowData,
     currentPageSize,
     viewportOffset: 320,
-    debug: false,
   });
 
   // ✅ AG Grid Best Practice: No manual restoration needed!

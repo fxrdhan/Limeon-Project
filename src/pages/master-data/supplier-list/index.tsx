@@ -1,23 +1,23 @@
-import IdentityDataModal from '@/features/identity/IdentityDataModal';
-import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import Button from '@/components/button';
-import { AGGridPagination } from '@/components/pagination';
-import PageTitle from '@/components/page-title';
 import { ExportDropdown } from '@/components/export';
+import PageTitle from '@/components/page-title';
+import { AGGridPagination } from '@/components/pagination';
+import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import IdentityDataModal from '@/features/identity/IdentityDataModal';
 
-import { FaPlus } from 'react-icons/fa';
-import { Card } from '@/components/card';
 import { DataGrid, createTextColumn } from '@/components/ag-grid';
+import { Card } from '@/components/card';
+import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 import {
   ColDef,
-  RowClickedEvent,
   GridApi,
   GridReadyEvent,
+  RowClickedEvent,
 } from 'ag-grid-community';
-import { useRef, useMemo, useCallback, useState } from 'react';
-import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FaPlus } from 'react-icons/fa';
 // import { useLocation } from "react-router-dom";
-import type { Supplier as SupplierType, FieldConfig } from '@/types';
+import type { FieldConfig, Supplier as SupplierType } from '@/types';
 
 // Use the new modular architecture
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
@@ -112,7 +112,6 @@ const SupplierListNew = () => {
     data: suppliers,
     currentPageSize,
     viewportOffset: 320, // navbar + toolbar + pagination + margins + bottom pagination
-    debug: false,
   });
 
   const supplierFields: FieldConfig[] = [
