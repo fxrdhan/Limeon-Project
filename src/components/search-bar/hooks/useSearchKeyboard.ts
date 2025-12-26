@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { KEY_CODES } from '../constants';
 import { EnhancedSearchState } from '../types';
+import { PatternBuilder } from '../utils/PatternBuilder';
 
 // Scalable type for edit targets
 type EditValueTarget = 'value' | 'valueTo';
@@ -78,134 +79,67 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // Handle N-condition confirmation (building condition N, index >= 2)
-          // When isFilterMode is true but we're building a new condition
+          // Handle confirmation for any condition after the first (index >= 1)
           const activeIdx = searchMode.activeConditionIndex ?? 0;
-          const lastPartialCond = searchMode.partialConditions?.[activeIdx];
-          const isBuildingConditionN =
-            activeIdx >= 2 &&
-            searchMode.isFilterMode &&
-            lastPartialCond?.operator &&
-            lastPartialCond?.value;
+          const currentPartialCond = searchMode.partialConditions?.[activeIdx];
+          const hasOperator = !!currentPartialCond?.operator;
 
-          if (isBuildingConditionN) {
+          if (activeIdx > 0 && hasOperator && searchMode.partialJoin) {
             e.preventDefault();
             e.stopPropagation();
 
             const currentValue = value.trim();
-            if (!currentValue.endsWith('#') && !currentValue.endsWith('##')) {
-              // Handle Between operator for condition N
-              if (
-                lastPartialCond.operator === 'inRange' &&
-                !lastPartialCond.valueTo
-              ) {
-                // Check for dash format
-                const afterOpMatch = currentValue.match(/#inRange\s+([^#]+)$/i);
-                if (afterOpMatch) {
-                  const valPart = afterOpMatch[1].trim();
-                  const dashMatch = valPart.match(/^(.+?)-(.+)$/);
-                  if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
-                    // Has both values in dash format - confirm with ##
-                    const newValue = currentValue + '##';
-                    onChange({
-                      target: { value: newValue },
-                    } as React.ChangeEvent<HTMLInputElement>);
-                    onClearPreservedState?.();
-                    return;
-                  }
-                }
-                // No dash format and no valueTo - add #to marker
-                if (!currentValue.includes('#to')) {
-                  const newValue = currentValue + ' #to ';
-                  onChange({
-                    target: { value: newValue },
-                  } as React.ChangeEvent<HTMLInputElement>);
-                  return;
-                }
-              }
 
-              // Add ## marker to confirm
-              const newValue = currentValue + '##';
-              onChange({
-                target: { value: newValue },
-              } as React.ChangeEvent<HTMLInputElement>);
-              onClearPreservedState?.();
-            }
-            return;
-          }
-
-          // Handle multi-condition confirmation (building second condition)
-          const secondConditionOperator =
-            searchMode.partialConditions?.[1]?.operator;
-          if (
-            searchMode.partialJoin &&
-            secondConditionOperator &&
-            !searchMode.isFilterMode
-          ) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Add ## marker to confirm multi-condition pattern
-            const currentValue = value.trim();
-
-            // Check if condition[1] value exists (not just operator with no value)
-            // Pattern: #col #op val #join #col2 #op2 secondValue
-            // If pattern ends with #operator (no value after), don't confirm
-            const secondOpPattern = new RegExp(
-              `#${secondConditionOperator}\\s*$`
+            // Check if current condition has a value being typed
+            // (Exclude cases where input ends exactly with the operator badge pattern)
+            const opPattern = new RegExp(
+              `#${currentPartialCond.operator}\\s*$`
             );
-            const hasSecondCondValue = !secondOpPattern.test(currentValue);
+            const hasCondValue = !opPattern.test(currentValue);
 
             if (
-              hasSecondCondValue &&
+              hasCondValue &&
               !currentValue.endsWith('#') &&
               !currentValue.endsWith('##')
             ) {
-              // Special handling for Between (inRange) operator on condition[1]
-              // If condition[1] operator is inRange and doesn't have #to marker yet, add it
-              if (secondConditionOperator === 'inRange') {
-                // Check if pattern already has #to marker for condition[1]
-                // Pattern with #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2 #to"
-                // Pattern without #to: "#col1 #op1 val1 #to val1b #and #col2 #inRange val2"
-                // Need to check if there's #to AFTER condition[1]'s #inRange
-                const cond1InRangeMatch = currentValue.match(
-                  /#(and|or)\s+(?:#[^\s#]+\s+)?#inRange\s+(.*)$/i
-                );
-                if (cond1InRangeMatch) {
-                  const afterCond1InRange = cond1InRangeMatch[2].trim();
-                  // If there's no #to after condition[1]'s inRange value
-                  if (!afterCond1InRange.includes('#to')) {
-                    // IMPORTANT: Check for dash-separated format first (e.g., "700-900")
-                    // If dash format, confirm with ## instead of adding #to
-                    const dashMatch = afterCond1InRange.match(/^(.+?)-(.+)$/);
-                    if (dashMatch) {
-                      const [, firstVal, secondVal] = dashMatch;
-                      if (firstVal.trim() && secondVal.trim()) {
-                        // Has both values in dash format - confirm with ##
-                        const newValue = currentValue.trim() + '##';
-                        onChange({
-                          target: { value: newValue },
-                        } as React.ChangeEvent<HTMLInputElement>);
-                        onClearPreservedState?.();
-                        return;
-                      }
+              // Special handling for Between (inRange) operator
+              if (currentPartialCond.operator === 'inRange') {
+                // Check if current condition already has #to marker
+                // Pattern: ... #and [#col] #inRange val [#to]
+                const inRangeRegex =
+                  /#(and|or)\s+(?:#[^\s#]+\s+)?#inRange\s+(.*)$/i;
+                const match = currentValue.match(inRangeRegex);
+                if (match) {
+                  const valPart = match[2].trim();
+                  if (!valPart.includes('#to')) {
+                    // Check for dash format first
+                    const dashMatch = valPart.match(/^(.+?)-(.+)$/);
+                    if (
+                      dashMatch &&
+                      dashMatch[1].trim() &&
+                      dashMatch[2].trim()
+                    ) {
+                      // Confirm with ##
+                      onChange({
+                        target: { value: currentValue + '##' },
+                      } as React.ChangeEvent<HTMLInputElement>);
+                      onClearPreservedState?.();
+                      return;
                     }
-                    // No dash format - add #to marker for entering valueTo
-                    const newValue = currentValue + ' #to ';
+                    // Add #to marker
                     onChange({
-                      target: { value: newValue },
+                      target: { value: currentValue + ' #to ' },
                     } as React.ChangeEvent<HTMLInputElement>);
                     return;
                   }
                 }
               }
 
+              // Confirm pattern
               const newValue = currentValue + '##';
               onChange({
                 target: { value: newValue },
               } as React.ChangeEvent<HTMLInputElement>);
-
-              // Clear preserved state after confirming edit
               onClearPreservedState?.();
             }
             return;
@@ -292,28 +226,44 @@ export const useSearchKeyboard = ({
         // DELETE key: Used for badge deletion (works even when modal is open)
         // This is separate from Backspace which is used for modal internal search
         if (e.key === KEY_CODES.DELETE) {
-          // Delete on confirmed multi-condition filter: Enter edit mode for condition[1]'s valueTo first
+          // Delete on confirmed multi-condition filter: Enter edit mode for the last condition's valueTo first
           if (
             searchMode.isFilterMode &&
             searchMode.filterSearch?.isConfirmed &&
             searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            // Get condition at index 1
-            const secondCondition = searchMode.filterSearch.conditions?.[1];
-            // For Between operator with valueTo on condition[1], edit valueTo first
-            if (
-              secondCondition?.operator === 'inRange' &&
-              secondCondition?.valueTo &&
-              editConditionValue
-            ) {
-              editConditionValue(1, 'valueTo');
-              return;
-            }
-            // Otherwise edit condition[1]'s value
-            if (editConditionValue) {
-              editConditionValue(1, 'value');
-              return;
+            const conditions = searchMode.filterSearch.conditions || [];
+
+            // FIX: For partial patterns where user is typing a new condition,
+            // partialConditions may have more elements than conditions.
+            // Use the actual count of all conditions (including the one being typed).
+            const partialConditions = searchMode.partialConditions || [];
+            const totalConditions = Math.max(
+              conditions.length,
+              partialConditions.length
+            );
+            const lastIdx = totalConditions - 1;
+
+            // Get the last condition from either partialConditions or conditions
+            const lastCondition =
+              partialConditions[lastIdx] || conditions[lastIdx];
+
+            if (lastIdx >= 0 && lastCondition) {
+              // For Between operator with valueTo on the last condition, edit valueTo first
+              if (
+                lastCondition?.operator === 'inRange' &&
+                lastCondition?.valueTo &&
+                editConditionValue
+              ) {
+                editConditionValue(lastIdx, 'valueTo');
+                return;
+              }
+              // Otherwise edit last condition's value
+              if (editConditionValue) {
+                editConditionValue(lastIdx, 'value');
+                return;
+              }
             }
           }
 
@@ -357,42 +307,49 @@ export const useSearchKeyboard = ({
             return;
           }
 
-          // E9 Step 6: Delete on partial multi-condition (5 badges) removes condition[1] operator and opens operator selector
-          // Pattern: [Column][Operator][Value][Join][Cond1Operator] + Delete -> [Column][Operator][Value][Join] with operator selector open
-          const cond1Op = searchMode.partialConditions?.[1]?.operator;
+          // Generalize Step 6: Delete on partial multi-condition removes the last operator and opens operator selector
+          // Pattern: ...[Join][Column][Operator] + Delete -> ...[Join][Column] with operator selector open (#)
+          const activeIdx = searchMode.activeConditionIndex ?? 0;
+          const currentPartialCond = searchMode.partialConditions?.[activeIdx];
+          const currentOp = currentPartialCond?.operator;
+
           if (
+            activeIdx > 0 &&
+            currentOp &&
             searchMode.partialJoin &&
-            cond1Op &&
-            searchMode.filterSearch && // filterSearch exists (value may be empty after Step 5)
             !searchMode.isFilterMode
           ) {
             e.preventDefault();
 
-            // Remove condition[1] operator, keep join operator with trailing # to open operator selector
-            // Pattern: #field #operator value #join #cond1Operator -> #field #operator value #join #
-            // For multi-column: preserve condition[1] column -> #col1 #op1 val1 #join #col2 #
-            const columnName = searchMode.filterSearch.field;
-            const operator = searchMode.filterSearch.operator;
-            const filterValue = searchMode.filterSearch.value || ''; // value may be empty
-            const joinOp = searchMode.partialJoin.toLowerCase();
+            // Use PatternBuilder to reconstruct the pattern up to the current column, then add trailing '#'
+            // This ensures the operator selector opens for the current condition.
+            const conditions = (searchMode.partialConditions || []).map(c => ({
+              field: c.column?.field || c.field,
+              operator: c.operator,
+              value: c.value,
+              valueTo: c.valueTo,
+            }));
 
-            // Always include condition[1] column in pattern (even if same as first)
-            // This ensures the condition[1] column badge is shown consistently
-            const cond1Col =
-              searchMode.partialConditions?.[1]?.column?.field || columnName;
+            // To "delete" the operator, we clear it from the last condition and use openSelector: true
+            if (conditions[activeIdx]) {
+              conditions[activeIdx].operator = undefined;
+              conditions[activeIdx].value = undefined;
+              conditions[activeIdx].valueTo = undefined;
+            }
 
-            // For Between (inRange) operator, include valueTo if it exists
-            const valueToPart =
-              operator === 'inRange' && searchMode.filterSearch.valueTo
-                ? ` #to ${searchMode.filterSearch.valueTo}`
-                : '';
+            const newValue = PatternBuilder.buildNConditions(
+              conditions,
+              searchMode.joins || [],
+              searchMode.filterSearch?.isMultiColumn || false,
+              searchMode.filterSearch?.column?.field || '',
+              {
+                confirmed: false,
+                openSelector: true,
+                stopAfterIndex: activeIdx,
+              }
+            );
 
-            const newValue =
-              filterValue.trim() !== ''
-                ? `#${columnName} #${operator} ${filterValue}${valueToPart} #${joinOp} #${cond1Col} #`
-                : `#${columnName} #${operator} #${joinOp} #${cond1Col} #`;
-
-            // Clear preserved state to remove condition[1] operator badge from UI
+            // Clear preserved state to remove the operator badge from UI
             onClearPreservedState?.();
 
             onChange({
@@ -402,12 +359,13 @@ export const useSearchKeyboard = ({
           }
 
           // D6 Step 3: Remove trailing join operator from confirmed filter
-          // Pattern: #field #operator value #join # -> #field #operator value##
+          // Pattern: ... [Value] #join # -> ... [Value]##
           // This handles when user added join operator but wants to remove it and go back to confirmed state
-          if (value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/)) {
+          const trailingJoinRegex = /(.*)\s+#(?:and|or)\s+#\s*$/i;
+          if (value.match(trailingJoinRegex)) {
             e.preventDefault();
             // Remove trailing join operator and restore ## marker
-            const match = value.match(/^(#\w+ #\w+ .+?)\s+#(and|or)\s+#\s*$/);
+            const match = value.match(trailingJoinRegex);
             if (match) {
               const baseFilter = match[1];
               const newValue = `${baseFilter}##`;
@@ -419,9 +377,11 @@ export const useSearchKeyboard = ({
           }
 
           // Delete on empty value: Navigate back to operator/column selection
+          // Only for single condition filters (multi-condition uses generalized logic above)
           if (
             searchMode.isFilterMode &&
-            searchMode.filterSearch?.value === ''
+            searchMode.filterSearch?.value === '' &&
+            !searchMode.filterSearch?.isMultiCondition
           ) {
             if (
               searchMode.filterSearch.operator === 'contains' &&
@@ -451,25 +411,37 @@ export const useSearchKeyboard = ({
           ) {
             e.preventDefault();
 
-            // Check if this is condition[1] operator selector in multi-column filter
-            if (searchMode.partialJoin && searchMode.filterSearch) {
-              // This is condition[1] operator selector - go back to join state with column selector open
-              // Pattern: #col1 #op1 val1 #join #col2 # -> #col1 #op1 val1 #join #
-              const columnName = searchMode.filterSearch.field;
-              const operator = searchMode.filterSearch.operator;
-              const filterValue = searchMode.filterSearch.value || '';
-              const joinOp = searchMode.partialJoin.toLowerCase();
+            // Generalize: check if this is a subsequent condition's operator selector
+            if (
+              searchMode.partialJoin &&
+              searchMode.activeConditionIndex &&
+              searchMode.activeConditionIndex > 0
+            ) {
+              e.preventDefault();
 
-              // For Between (inRange) operator, include valueTo if it exists
-              const valueToPart =
-                operator === 'inRange' && searchMode.filterSearch.valueTo
-                  ? ` #to ${searchMode.filterSearch.valueTo}`
-                  : '';
+              // Go back to join state with column selector open
+              // Pattern: ...[Join][Column] # -> ...[Join] #
+              const conditions = (searchMode.partialConditions || []).map(
+                c => ({
+                  field: c.column?.field || c.field,
+                  operator: c.operator,
+                  value: c.value,
+                  valueTo: c.valueTo,
+                })
+              );
 
-              const newValue =
-                filterValue.trim() !== ''
-                  ? `#${columnName} #${operator} ${filterValue}${valueToPart} #${joinOp} #`
-                  : `#${columnName} #${operator} #${joinOp} #`;
+              // Build pattern up to previous condition, then add join + #
+              const prevActiveIdx = searchMode.activeConditionIndex - 1;
+              const newValue = PatternBuilder.buildNConditions(
+                conditions.slice(0, prevActiveIdx + 1),
+                searchMode.joins || [],
+                searchMode.filterSearch?.isMultiColumn || false,
+                searchMode.filterSearch?.column?.field || '',
+                {
+                  confirmed: false,
+                  openSelector: true, // This will add the trailing # for join selector
+                }
+              );
 
               onChange({
                 target: { value: newValue },
