@@ -188,12 +188,10 @@ class GoogleSheetsService {
           scope: 'https://www.googleapis.com/auth/spreadsheets',
           callback: (tokenResponse: TokenResponse) => {
             this.accessToken = tokenResponse.access_token;
-            // Store token in session storage for reuse
-            sessionStorage.setItem(
-              this.tokenStorageKey,
-              tokenResponse.access_token
-            );
-            console.log('💾 Saved Google Sheets token to session storage');
+            // sessionStorage.setItem(
+            //   this.tokenStorageKey,
+            //   tokenResponse.access_token
+            // );
             resolve(tokenResponse.access_token);
           },
         });
@@ -210,7 +208,6 @@ class GoogleSheetsService {
   clearToken(): void {
     this.accessToken = null;
     sessionStorage.removeItem(this.tokenStorageKey);
-    console.log('🗑️ Cleared Google Sheets token');
   }
 
   // Create a new spreadsheet with data
@@ -301,7 +298,6 @@ class GoogleSheetsService {
         errorMessage.includes('unauthorized') ||
         errorMessage.includes('invalid')
       ) {
-        console.log('🔄 Token might be expired, clearing and retrying...');
         this.clearToken();
 
         // Don't auto-retry to avoid infinite loop - let caller handle retry

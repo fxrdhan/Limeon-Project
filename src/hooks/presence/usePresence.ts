@@ -1,9 +1,9 @@
-import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { OnlineUser } from '@/types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { useCallback, useEffect, useRef } from 'react';
 
 // Helper function to count unique users from presence state
 const countUniqueUsers = (presenceState: Record<string, unknown>) => {
@@ -79,8 +79,6 @@ export const usePresence = () => {
   const isConnectedRef = useRef(false);
   const isSubscribedRef = useRef(false);
   const setupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastLoggedCount = useRef<number>(-1);
-  const lastEventType = useRef<string>('');
 
   // Helper to handle presence state changes
   const handlePresenceChange = useCallback(
@@ -104,27 +102,6 @@ export const usePresence = () => {
     },
     [setOnlineUsers, setOnlineUsersList]
   );
-
-  const logPresenceUpdate = (
-    eventType: string,
-    userCount: number,
-    userIds: string[]
-  ) => {
-    // DISABLED: Presence logging disabled to reduce console noise
-    void userIds; // Acknowledge unused parameter
-    // Only log if count changed or event type is different
-    if (
-      userCount !== lastLoggedCount.current ||
-      eventType !== lastEventType.current
-    ) {
-      // console.log(
-      //   `🟢 Presence ${eventType}: ${userCount} users online`,
-      //   userIds.length <= 3 ? userIds : `[${userIds.length} users]`
-      // );
-      lastLoggedCount.current = userCount;
-      lastEventType.current = eventType;
-    }
-  };
 
   const cleanupChannel = useCallback(async () => {
     const currentChannel = channelRef.current;
@@ -195,23 +172,17 @@ export const usePresence = () => {
         .on('presence', { event: 'sync' }, async () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          const { userCount, userIds } =
-            await handlePresenceChange(presenceState);
-          logPresenceUpdate('sync', userCount, userIds);
+          await handlePresenceChange(presenceState);
         })
         .on('presence', { event: 'join' }, async () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          const { userCount, userIds } =
-            await handlePresenceChange(presenceState);
-          logPresenceUpdate('join', userCount, userIds);
+          await handlePresenceChange(presenceState);
         })
         .on('presence', { event: 'leave' }, async () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          const { userCount, userIds } =
-            await handlePresenceChange(presenceState);
-          logPresenceUpdate('leave', userCount, userIds);
+          await handlePresenceChange(presenceState);
         });
 
       // Mark as subscribed before calling subscribe to prevent multiple calls
@@ -223,10 +194,6 @@ export const usePresence = () => {
         if (status === 'SUBSCRIBED') {
           isConnectedRef.current = true;
           try {
-            // console.log(
-            //   '🔵 Connected to presence channel, tracking user:',
-            //   user.id
-            // );
             await newChannel.track({
               online_at: new Date().toISOString(),
               user_id: user.id,
@@ -251,7 +218,6 @@ export const usePresence = () => {
                     },
                   ]);
                 }
-                // console.log('🟡 No presence state detected, setting to 1 user');
               } else {
                 await handlePresenceChange(presenceState);
               }
@@ -261,17 +227,14 @@ export const usePresence = () => {
             setOnlineUsers(1);
           }
         } else if (status === 'CHANNEL_ERROR') {
-          // console.error('🔴 Presence channel error');
           isConnectedRef.current = false;
           isSubscribedRef.current = false;
           setOnlineUsers(1);
         } else if (status === 'TIMED_OUT') {
-          // console.error('🔴 Presence channel timed out');
           isConnectedRef.current = false;
           isSubscribedRef.current = false;
           setOnlineUsers(1);
         } else if (status === 'CLOSED') {
-          // console.log('🔴 Presence channel closed');
           isConnectedRef.current = false;
           isSubscribedRef.current = false;
         }
@@ -321,7 +284,6 @@ export const usePresence = () => {
       if (document.visibilityState === 'visible' && user) {
         // Always try to re-establish presence when page becomes visible
         if (!isConnectedRef.current) {
-          // console.log('🔄 Page became visible, re-establishing presence');
           isSetupRef.current = false;
           setupPresence();
         } else if (channelRef.current) {

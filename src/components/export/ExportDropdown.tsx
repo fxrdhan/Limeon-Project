@@ -1,18 +1,18 @@
-import React, {
-  memo,
-  useCallback,
-  useState,
-  useRef,
-  useEffect,
-  CSSProperties,
-} from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import type { GridApi, Column, IRowNode } from 'ag-grid-community';
-import { TbTableExport, TbCsv, TbTableFilled, TbJson } from 'react-icons/tb';
-import { FaGoogle } from 'react-icons/fa';
 import Button from '@/components/button';
 import { googleSheetsService } from '@/utils/googleSheetsApi';
+import type { Column, GridApi, IRowNode } from 'ag-grid-community';
+import { AnimatePresence, motion } from 'motion/react';
+import React, {
+  CSSProperties,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { FaGoogle } from 'react-icons/fa';
+import { TbCsv, TbJson, TbTableExport, TbTableFilled } from 'react-icons/tb';
 
 interface ExportDropdownProps {
   gridApi: GridApi | null;
@@ -206,8 +206,6 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
             allRowData.push(node.data);
           }
         });
-
-        console.log(`📊 Found ${allRowData.length} rows for export`);
       } catch (error) {
         console.error('❌ Error getting row data:', error);
         throw new Error(
@@ -277,32 +275,20 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         processedData.push(rowValues);
       });
 
-      console.log(
-        `✅ Processed ${processedData.length} rows with ${headers.length} columns`
-      );
-
       return { processedData, headers };
     }, [gridApi]);
 
     const handleGoogleSheetsExport = useCallback(async () => {
-      console.log('🚀 Starting Google Sheets export...');
-
       if (!gridApi || gridApi.isDestroyed()) {
-        console.log('❌ Grid API not available');
         return;
       }
 
       try {
         // Initialize service first if needed
-        console.log('📝 Initializing Google Sheets service...');
         await googleSheetsService.initialize();
 
         // Check if already authorized (token exists in memory for current session)
         if (googleSheetsService.isAuthorized()) {
-          console.log(
-            '✅ Already authorized (token in memory), proceeding directly to export...'
-          );
-
           // Open placeholder tab and start export
           const placeholderTab = window.open('about:blank', '_blank');
           if (!placeholderTab) {
@@ -316,16 +302,13 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         }
 
         // Need authentication - set state and trigger auth
-        console.log('🔑 Not authorized, starting authentication...');
         setIsAuthenticating(true);
 
         // Trigger auth popup (synchronous with user click)
         await googleSheetsService.authorize();
-        console.log('✅ Authorization successful!');
         setIsAuthenticating(false);
 
         // Open placeholder tab after successful auth
-        console.log('🪟 Opening placeholder tab...');
         const placeholderTab = window.open('about:blank', '_blank');
         if (!placeholderTab) {
           alert('Please allow popups to open Google Sheets.');
@@ -359,8 +342,8 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
               </body>
             </html>
           `);
-        } catch (e) {
-          console.log('Could not write to placeholder tab:', e);
+        } catch {
+          // Silent error
         }
       }
 
@@ -368,28 +351,20 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         let exportSuccess = false;
 
         try {
-          console.log('📊 Starting export process...');
           setIsGoogleSheetsLoading(true);
 
           // Process data from AG Grid
-          console.log('📋 Processing grid data...');
           const { processedData, headers } = await processAndExportData();
-          console.log(
-            `📋 Processed ${processedData.length} rows with ${headers.length} columns`
-          );
 
           // Export to Google Sheets
-          console.log('☁️ Uploading to Google Sheets...');
           const sheetUrl = await googleSheetsService.exportGridDataToSheets(
             processedData,
             headers,
             filename
           );
-          console.log('✅ Google Sheets export successful:', sheetUrl);
 
           // Redirect placeholder tab to actual Google Sheet
           if (sheetUrl) {
-            console.log('🌐 Redirecting to Google Sheet...');
             placeholderTab.location.href = sheetUrl;
             exportSuccess = true;
           } else {
@@ -423,15 +398,13 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
             alert(`Failed to export to Google Sheets: ${errorMessage}`);
           }
         } finally {
-          console.log('🏁 Cleaning up export state...');
           setIsGoogleSheetsLoading(false);
 
           // Only close dropdown if export was successful
           if (exportSuccess) {
-            console.log('✅ Export successful, closing dropdown');
             closeDropdown();
           } else {
-            console.log('❌ Export failed, keeping dropdown open');
+            // Keep dropdown open
           }
         }
       }
@@ -442,9 +415,6 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       const handleClickOutside = (event: MouseEvent) => {
         // Don't close dropdown if we're in the middle of auth or export process
         if (isAuthenticating || isGoogleSheetsLoading) {
-          console.log(
-            '🔒 Preventing dropdown close during auth/export process'
-          );
           return;
         }
 
@@ -454,7 +424,6 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
           buttonRef.current &&
           !buttonRef.current.contains(event.target as Node)
         ) {
-          console.log('👆 Click outside detected, closing dropdown');
           closeDropdown();
         }
       };

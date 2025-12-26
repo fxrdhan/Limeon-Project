@@ -1,50 +1,50 @@
-import { useState, useRef, useCallback, useEffect, memo, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { GridApi, GridReadyEvent, ColDef } from 'ag-grid-community';
 import { createTextColumn } from '@/components/ag-grid';
+import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Components
-import PageTitle from '@/components/page-title';
 import { Card } from '@/components/card';
-import SearchToolbar from '@/features/shared/components/SearchToolbar';
-import { EntityGrid } from '@/features/item-management/presentation/organisms';
-import ItemModal from '@/features/item-management/presentation/templates/item/ItemModal';
-import { EntityModal } from '@/features/item-management/presentation/templates/entity';
+import PageTitle from '@/components/page-title';
 import {
   SlidingSelector,
   SlidingSelectorOption,
 } from '@/components/shared/sliding-selector';
+import { EntityGrid } from '@/features/item-management/presentation/organisms';
+import { EntityModal } from '@/features/item-management/presentation/templates/entity';
+import ItemModal from '@/features/item-management/presentation/templates/item/ItemModal';
+import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
 // Simple realtime for all item master data
 import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 
 // Hooks and utilities
-import { useItemsManagement } from '@/hooks/data/useItemsManagement';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
+import { useItemsManagement } from '@/hooks/data/useItemsManagement';
 import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
+import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
-import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 
 // Entity management hooks
 import {
-  useEntityManager,
   useEntity,
+  useEntityManager,
 } from '@/features/item-management/application/hooks/collections';
 
 // Types
+import {
+  EntityData,
+  EntityType,
+} from '@/features/item-management/application/hooks/collections/useEntityManager';
 import type { Item as ItemDataType } from '@/types/database';
 import { FilterSearch } from '@/types/search';
-import {
-  EntityType,
-  EntityData,
-} from '@/features/item-management/application/hooks/collections/useEntityManager';
 
 // Testing utilities for random item generation
-import { RandomItemFloatingButton } from '@/utils/testing';
 import { config } from '@/config';
+import { RandomItemFloatingButton } from '@/utils/testing';
 
 type MasterDataType =
   | 'items'
@@ -426,11 +426,6 @@ const ItemMasterNew = memo(() => {
       // Advanced Filter API supports OR across different columns natively
       const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
 
-      console.log(
-        '[handleItemFilterSearch] Applying Advanced Filter:',
-        advancedFilterModel
-      );
-
       // Apply the Advanced Filter model
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
     },
@@ -493,7 +488,6 @@ const ItemMasterNew = memo(() => {
             .map(col => col.getColId())
             .filter(colId => colId); // Filter out empty IDs
           setVisibleColumns(visibleFields);
-          // console.log('📊 Visible columns updated:', visibleFields);
         }
       } catch (error) {
         console.error('Failed to update visible columns:', error);
@@ -590,11 +584,6 @@ const ItemMasterNew = memo(() => {
       // Build Advanced Filter model from FilterSearch
       // Advanced Filter API supports OR across different columns natively
       const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
-
-      console.log(
-        '[handleEntityFilterSearch] Applying Advanced Filter:',
-        advancedFilterModel
-      );
 
       // Apply the Advanced Filter model
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
@@ -707,7 +696,6 @@ const ItemMasterNew = memo(() => {
       // Grid restoration happens quickly after tab switch
       setTimeout(() => {
         isTabSwitchingRef.current = false;
-        // console.log('🔓 Tab switch complete - grid filter protection unlocked');
       }, 500);
 
       // Note: Grid state restoration will handle filter state correctly:
@@ -741,7 +729,6 @@ const ItemMasterNew = memo(() => {
 
       if (!isInCooldown) {
         // 🚀 First click or after cooldown - navigate IMMEDIATELY (0ms delay)
-        // console.log(`✅ Navigating immediately to: ${value}`);
         performNavigation(value);
         lastNavigationTimeRef.current = now;
 
@@ -753,9 +740,6 @@ const ItemMasterNew = memo(() => {
         pendingTabRef.current = null;
       } else {
         // ⏸️ Rapid clicking detected - debounce to capture final selection
-        // console.log(
-        //   `⏸️ Rapid clicking detected (${timeSinceLastNav}ms since last nav) - debouncing to final tab`
-        // );
 
         // Clear previous debounce timer
         if (debounceTimerRef.current) {
@@ -768,7 +752,6 @@ const ItemMasterNew = memo(() => {
         // Set new debounce timer - navigates to final selection after user settles
         debounceTimerRef.current = setTimeout(() => {
           if (pendingTabRef.current) {
-            // console.log(`✅ Navigating to final tab: ${pendingTabRef.current}`);
             performNavigation(pendingTabRef.current);
             lastNavigationTimeRef.current = Date.now();
             pendingTabRef.current = null;
