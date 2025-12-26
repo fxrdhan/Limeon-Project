@@ -1,22 +1,22 @@
-import IdentityDataModal from '@/features/identity/IdentityDataModal';
-import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import Button from '@/components/button';
-import { AGGridPagination } from '@/components/pagination';
-import PageTitle from '@/components/page-title';
 import { ExportDropdown } from '@/components/export';
+import PageTitle from '@/components/page-title';
+import { AGGridPagination } from '@/components/pagination';
+import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import IdentityDataModal from '@/features/identity/IdentityDataModal';
 
-import { FaPlus } from 'react-icons/fa';
-import { Card } from '@/components/card';
 import { DataGrid, createTextColumn } from '@/components/ag-grid';
+import { Card } from '@/components/card';
+import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
+import type { FieldConfig, Patient as PatientType } from '@/types';
 import {
   ColDef,
-  RowClickedEvent,
   GridApi,
   GridReadyEvent,
+  RowClickedEvent,
 } from 'ag-grid-community';
-import { useRef, useMemo, useCallback, useState } from 'react';
-import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
-import type { Patient as PatientType, FieldConfig } from '@/types';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FaPlus } from 'react-icons/fa';
 
 // Use the new modular architecture
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
@@ -111,7 +111,6 @@ const PatientListNew = () => {
     data: patients,
     currentPageSize,
     viewportOffset: 320, // navbar + toolbar + pagination + margins + bottom pagination
-    debug: false,
   });
 
   const patientFields: FieldConfig[] = [
