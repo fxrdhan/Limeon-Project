@@ -43,41 +43,16 @@ type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
 
 interface SearchBadgeProps {
   searchMode: EnhancedSearchState;
-  badgeRef: React.RefObject<HTMLDivElement | null>;
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
-  operatorBadgeRef: React.RefObject<HTMLDivElement | null>;
-  joinBadgeRef: React.RefObject<HTMLDivElement | null>;
-  secondColumnBadgeRef: React.RefObject<HTMLDivElement | null>;
-  secondOperatorBadgeRef: React.RefObject<HTMLDivElement | null>;
   // ============ Dynamic Ref Map API (N-Condition Support) ============
   setBadgeRef?: (badgeId: string, element: HTMLDivElement | null) => void;
-  getColumnRef?: (conditionIndex: number) => HTMLDivElement | null;
-  getOperatorRef?: (conditionIndex: number) => HTMLDivElement | null;
   // ============ Scalable Handler API (N-Condition Support) ============
-  clearConditionPart?: (conditionIndex: number, target: BadgeTarget) => void;
-  clearJoin?: (joinIndex: number) => void;
-  editConditionPart?: (conditionIndex: number, target: BadgeTarget) => void;
-  editJoin?: (joinIndex: number) => void;
-  editValueN?: (conditionIndex: number, target: 'value' | 'valueTo') => void;
-  // ============ Legacy Handlers (Backward Compatibility) ============
-  onClearColumn: () => void;
-  onClearOperator: () => void;
-  onClearValue: () => void;
-  onClearValueTo?: () => void; // Clear "to" value in Between (first condition)
-  onClearPartialJoin: () => void;
-  onClearCondition1Column?: () => void; // Multi-column support
-  onClearCondition1Operator: () => void;
-  onClearCondition1Value: () => void;
-  onClearCondition1ValueTo?: () => void; // Clear "to" value in Between (condition[1])
-  onClearAll: () => void;
-  onEditColumn: () => void;
-  onEditCondition1Column?: () => void; // Multi-column support
-  onEditOperator: () => void;
-  onEditJoin: () => void;
-  onEditValue: () => void;
-  onEditValueTo?: () => void; // Edit "to" value in Between operator (first condition)
-  onEditCondition1Value?: () => void;
-  onEditCondition1ValueTo?: () => void; // Edit "to" value in Between operator (condition[1])
+  clearConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
+  clearJoin: (joinIndex: number) => void;
+  clearAll: () => void;
+  editConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
+  editJoin: (joinIndex: number) => void;
+  editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
   onHoverChange?: (isHovered: boolean) => void;
   preservedSearchMode?: EnhancedSearchState | null;
   // Inline editing props
@@ -104,39 +79,16 @@ interface SearchBadgeProps {
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
   searchMode,
-  badgeRef,
   badgesContainerRef,
-  operatorBadgeRef,
-  joinBadgeRef,
-  secondColumnBadgeRef,
-  secondOperatorBadgeRef,
   // ============ Dynamic Ref Map API ============
   setBadgeRef,
   // ============ Scalable Handler API (N-Condition Support) ============
   clearConditionPart,
   clearJoin,
+  clearAll,
   editConditionPart,
   editJoin,
   editValueN,
-  // ============ Legacy Handlers ============
-  onClearColumn,
-  onClearOperator,
-  onClearValue,
-  onClearValueTo,
-  onClearPartialJoin,
-  onClearCondition1Column,
-  onClearCondition1Operator,
-  onClearCondition1Value,
-  onClearCondition1ValueTo,
-  onClearAll,
-  onEditColumn,
-  onEditCondition1Column,
-  onEditOperator,
-  onEditJoin,
-  onEditValue,
-  onEditValueTo,
-  onEditCondition1Value,
-  onEditCondition1ValueTo,
   onHoverChange,
   preservedSearchMode,
   editingBadge,
@@ -158,32 +110,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   const rawBadges = useBadgeBuilder(
     modeToRender,
     {
-      // Scalable handlers (N-condition support)
       clearConditionPart,
       clearJoin,
-      clearAll: onClearAll,
+      clearAll,
       editConditionPart,
       editJoin,
       editValueN,
-      // Legacy handlers (backward compatibility)
-      onClearColumn,
-      onClearOperator,
-      onClearValue,
-      onClearValueTo,
-      onClearPartialJoin,
-      onClearCondition1Column,
-      onClearCondition1Operator,
-      onClearCondition1Value,
-      onClearCondition1ValueTo,
-      onClearAll,
-      onEditColumn,
-      onEditCondition1Column,
-      onEditOperator,
-      onEditJoin,
-      onEditValue,
-      onEditValueTo,
-      onEditCondition1Value,
-      onEditCondition1ValueTo,
     },
     editingBadge && onInlineValueChange && onInlineEditComplete
       ? {
@@ -312,34 +244,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       onMouseLeave={handleMouseLeave}
     >
       <AnimatePresence mode="popLayout">
-        {badges.map((badge, index) => {
-          // Determine which static ref to use for this badge
-          // These refs are used by useSelectorPosition for positioning
-          let staticRef: React.RefObject<HTMLDivElement | null> | undefined =
-            undefined;
-          if (index === 0) {
-            staticRef = badgeRef; // Column badge (condition-0-column)
-          } else if (badge.id === 'condition-0-operator') {
-            staticRef = operatorBadgeRef; // First operator badge
-          } else if (badge.id === 'join-0') {
-            staticRef = joinBadgeRef; // First join badge only
-          } else if (badge.id === 'condition-1-column') {
-            staticRef = secondColumnBadgeRef; // Second column badge
-          } else if (badge.id === 'condition-1-operator') {
-            staticRef = secondOperatorBadgeRef; // Second operator badge
-          }
-          // All other badges (condition-N-column, condition-N-operator for N>1)
-          // are stored in dynamic ref map via setBadgeRef only
-
-          // Callback ref that updates both static ref and dynamic ref map
+        {badges.map(badge => {
+          // Callback ref that updates the dynamic ref map for N-condition support
           const handleRef = (element: HTMLDivElement | null) => {
-            // Update static ref if applicable (for useSelectorPosition)
-            if (staticRef && 'current' in staticRef) {
-              (
-                staticRef as React.MutableRefObject<HTMLDivElement | null>
-              ).current = element;
-            }
-            // Update dynamic ref map for N-condition support
             setBadgeRef?.(badge.id, element);
           };
 

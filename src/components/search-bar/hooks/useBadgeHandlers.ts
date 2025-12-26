@@ -10,13 +10,14 @@
  */
 
 import { RefObject, useCallback } from 'react';
-import { EnhancedSearchState, SearchColumn } from '../types';
+import { EnhancedSearchState } from '../types';
 import { PatternBuilder } from '../utils/PatternBuilder';
 import {
   extractMultiConditionPreservation,
   PreservedFilter,
   setFilterValue,
 } from '../utils/handlerHelpers';
+import { restoreConfirmedPattern } from '../utils/patternRestoration';
 
 // ============ Types ============
 
@@ -41,11 +42,20 @@ export interface UseBadgeHandlersProps {
   onClearPreservedState: () => void;
   /** Clear search callback */
   onClearSearch?: () => void;
-  /** Available columns */
-  columns: SearchColumn[];
   /** Set which condition's column/operator is being edited (for N-condition support) */
   setEditingSelectorTarget?: (
-    target: { conditionIndex: number; target: 'column' | 'operator' } | null
+    target: {
+      conditionIndex: number;
+      target: 'column' | 'operator' | 'join';
+    } | null
+  ) => void;
+  /** Set which badge's value is being edited (for inline editing) */
+  setEditingBadge?: (
+    badge: {
+      conditionIndex: number;
+      field: 'value' | 'valueTo';
+      value: string;
+    } | null
   ) => void;
 }
 
@@ -59,30 +69,10 @@ export interface BadgeHandlersReturn {
   clearAll: () => void;
   /** Edit a specific part of a condition */
   editConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
-  /** Edit a join operator */
+  /** Edit join at given index */
   editJoin: (joinIndex: number) => void;
-
-  // ============ Legacy Handlers (for backward compat with useBadgeBuilder) ============
-  legacy: {
-    onClearColumn: () => void;
-    onClearOperator: () => void;
-    onClearValue: () => void;
-    onClearValueTo: () => void;
-    onClearPartialJoin: () => void;
-    onClearCondition1Column: () => void;
-    onClearCondition1Operator: () => void;
-    onClearCondition1Value: () => void;
-    onClearCondition1ValueTo: () => void;
-    onClearAll: () => void;
-    onEditColumn: () => void;
-    onEditCondition1Column: () => void;
-    onEditOperator: (isSecond?: boolean) => void;
-    onEditJoin: () => void;
-    onEditValue: () => void;
-    onEditValueTo: () => void;
-    onEditCondition1Value: () => void;
-    onEditCondition1ValueTo: () => void;
-  };
+  /** Edit value badge at given index (triggers inline editing) */
+  editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
 }
 
 // ============ Hook Implementation ============
@@ -100,6 +90,7 @@ export function useBadgeHandlers(
     onClearPreservedState,
     onClearSearch,
     setEditingSelectorTarget,
+    setEditingBadge,
   } = props;
 
   // ============ Helper: Get effective state ============
@@ -413,6 +404,67 @@ export function useBadgeHandlers(
   // ============ EDIT HANDLERS ============
 
   /**
+   * Edit value badge at given index (triggers inline editing)
+   */
+  const editValueN = useCallback(
+    (conditionIndex: number, target: 'value' | 'valueTo') => {
+      const state = getEffectiveState();
+
+      if (!state.filterSearch) {
+        return;
+      }
+
+      // Preserve state before edit
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+
+      // If we're in edit mode (confirmed filter), restore the confirmed pattern first
+      // to "close" any open selectors and ensure we're looking at badges
+      if (state.filterSearch.isConfirmed) {
+        const restoredPattern = restoreConfirmedPattern(state.filterSearch);
+        onChange({
+          target: { value: restoredPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Note: we don't clear preservedSearchMode here because we're about to enter inline edit
+      }
+
+      // Get current value to edit
+      let currentValue = '';
+      if (
+        state.filterSearch.isMultiCondition &&
+        state.filterSearch.conditions
+      ) {
+        const cond = state.filterSearch.conditions[conditionIndex];
+        currentValue = target === 'value' ? cond.value : cond.valueTo || '';
+      } else if (conditionIndex === 0) {
+        currentValue =
+          target === 'value'
+            ? state.filterSearch.value
+            : state.filterSearch.valueTo || '';
+      }
+
+      if (!currentValue) return;
+
+      // Enter inline editing mode
+      setEditingBadge?.({
+        conditionIndex,
+        field: target,
+        value: currentValue,
+      });
+    },
+    [
+      getEffectiveState,
+      preservedSearchMode,
+      searchMode,
+      setPreservedSearchMode,
+      setEditingBadge,
+      onChange,
+    ]
+  );
+
+  /**
    * Edit a specific part of a condition at given index
    */
   const editConditionPart = useCallback(
@@ -519,8 +571,7 @@ export function useBadgeHandlers(
 
         case 'value':
         case 'valueTo':
-          // Value editing is handled via inline edit in EnhancedSearchBar
-          // This handler just sets up the state (which was done above by setting preservedFilterRef)
+          editValueN(conditionIndex, target);
           break;
       }
     },
@@ -533,6 +584,7 @@ export function useBadgeHandlers(
       onChange,
       inputRef,
       setEditingSelectorTarget,
+      editValueN,
     ]
   );
 
@@ -641,81 +693,12 @@ export function useBadgeHandlers(
     ]
   );
 
-  // ============ LEGACY HANDLERS ============
-  // These map to the new index-based handlers for backward compatibility
-
-  const legacyHandlers = {
-    onClearColumn: useCallback(
-      () => clearConditionPart(0, 'column'),
-      [clearConditionPart]
-    ),
-    onClearOperator: useCallback(
-      () => clearConditionPart(0, 'operator'),
-      [clearConditionPart]
-    ),
-    onClearValue: useCallback(
-      () => clearConditionPart(0, 'value'),
-      [clearConditionPart]
-    ),
-    onClearValueTo: useCallback(
-      () => clearConditionPart(0, 'valueTo'),
-      [clearConditionPart]
-    ),
-    onClearPartialJoin: useCallback(() => clearJoin(0), [clearJoin]),
-    onClearCondition1Column: useCallback(
-      () => clearConditionPart(1, 'column'),
-      [clearConditionPart]
-    ),
-    onClearCondition1Operator: useCallback(
-      () => clearConditionPart(1, 'operator'),
-      [clearConditionPart]
-    ),
-    onClearCondition1Value: useCallback(
-      () => clearConditionPart(1, 'value'),
-      [clearConditionPart]
-    ),
-    onClearCondition1ValueTo: useCallback(
-      () => clearConditionPart(1, 'valueTo'),
-      [clearConditionPart]
-    ),
-    onClearAll: clearAll,
-    onEditColumn: useCallback(
-      () => editConditionPart(0, 'column'),
-      [editConditionPart]
-    ),
-    onEditCondition1Column: useCallback(
-      () => editConditionPart(1, 'column'),
-      [editConditionPart]
-    ),
-    onEditOperator: useCallback(
-      (isSecond?: boolean) => editConditionPart(isSecond ? 1 : 0, 'operator'),
-      [editConditionPart]
-    ),
-    onEditJoin: useCallback(() => editJoin(0), [editJoin]),
-    onEditValue: useCallback(
-      () => editConditionPart(0, 'value'),
-      [editConditionPart]
-    ),
-    onEditValueTo: useCallback(
-      () => editConditionPart(0, 'valueTo'),
-      [editConditionPart]
-    ),
-    onEditCondition1Value: useCallback(
-      () => editConditionPart(1, 'value'),
-      [editConditionPart]
-    ),
-    onEditCondition1ValueTo: useCallback(
-      () => editConditionPart(1, 'valueTo'),
-      [editConditionPart]
-    ),
-  };
-
   return {
     clearConditionPart,
     clearJoin,
     clearAll,
     editConditionPart,
     editJoin,
-    legacy: legacyHandlers,
+    editValueN,
   };
 }
