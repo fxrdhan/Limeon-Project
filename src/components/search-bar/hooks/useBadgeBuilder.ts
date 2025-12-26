@@ -433,7 +433,9 @@ export const useBadgeBuilder = (
         });
       }
 
-      if (filter.value) {
+      // Only show value badge if value is confirmed (Enter/Space pressed)
+      // OR if user has moved on to add another condition (partialJoin exists)
+      if (filter.value && (filter.isConfirmed || searchMode.partialJoin)) {
         const valHandlersFrom = getValueBadgeHandlers(handlers, 0, false);
         const isBetween = filter.operator === 'inRange';
 
