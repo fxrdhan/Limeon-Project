@@ -124,8 +124,11 @@ export function extractMultiConditionPreservation(
       });
 
       // Add join operator between conditions (N-1 joins for N conditions)
+      // [FIX] Use filter.joins[index] if available, fallback to filter.joinOperator
       if (index < filter.conditions!.length - 1) {
-        joins.push(filter.joinOperator || 'AND');
+        const joinAtIndex =
+          filter.joins?.[index] || filter.joinOperator || 'AND';
+        joins.push(joinAtIndex);
       }
     });
 
