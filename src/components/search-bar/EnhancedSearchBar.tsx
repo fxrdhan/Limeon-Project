@@ -25,7 +25,10 @@ import {
   EnhancedSearchState,
   SearchColumn,
 } from './types';
-import { PreservedFilter } from './utils/handlerHelpers';
+import {
+  PreservedFilter,
+  extractMultiConditionPreservation,
+} from './utils/handlerHelpers';
 import { getOperatorsForColumn } from './utils/operatorUtils';
 import { PatternBuilder } from './utils/PatternBuilder';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
@@ -866,8 +869,73 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             }
           }
           clearConditionPart(1, 'valueTo');
+        } else if (isValueToField && editingBadge.conditionIndex >= 2) {
+          // [FIX] For N-condition (N >= 2) Between operator editing valueTo:
+          // Transition to inline edit mode for value instead of just clearing
+          const condIdx = editingBadge.conditionIndex;
+          const conditions = stateToUse.filterSearch.conditions;
+          const isMultiCondition = stateToUse.filterSearch.isMultiCondition;
+
+          if (isMultiCondition && conditions && conditions[condIdx]) {
+            const targetCond = conditions[condIdx];
+            const targetValue = targetCond.value;
+
+            if (targetCond.operator === 'inRange' && targetValue) {
+              // Build pattern without valueTo for this condition
+              const preservation =
+                extractMultiConditionPreservation(stateToUse);
+              if (preservation) {
+                // Clear valueTo from the target condition
+                preservation.conditions[condIdx].valueTo = undefined;
+
+                // Build new pattern using PatternBuilder
+                const newPattern = PatternBuilder.buildNConditions(
+                  preservation.conditions,
+                  preservation.joins,
+                  preservation.isMultiColumn || false,
+                  columnName,
+                  { confirmed: true, openSelector: false }
+                );
+
+                onChange({
+                  target: { value: newPattern },
+                } as React.ChangeEvent<HTMLInputElement>);
+
+                // Update preservedSearchMode to remove valueTo
+                if (preservedSearchMode?.filterSearch?.conditions) {
+                  const updatedConditions = [
+                    ...preservedSearchMode.filterSearch.conditions,
+                  ];
+                  updatedConditions[condIdx] = {
+                    ...updatedConditions[condIdx],
+                    valueTo: undefined,
+                  };
+                  setPreservedSearchMode({
+                    ...preservedSearchMode,
+                    filterSearch: {
+                      ...preservedSearchMode.filterSearch,
+                      conditions: updatedConditions,
+                    },
+                  });
+                }
+
+                // Transition to inline editing mode for value badge
+                setTimeout(() => {
+                  setEditingBadge({
+                    conditionIndex: condIdx,
+                    field: 'value',
+                    value: targetValue,
+                  });
+                }, 10);
+                setSelectedBadgeIndex(null);
+                return;
+              }
+            }
+          }
+          // Fallback to generic clear if above conditions not met
+          clearConditionPart(editingBadge.conditionIndex, editingBadge.field);
         } else {
-          // For N-condition (N >= 2) or other cases, use generic clear
+          // For other cases, use generic clear
           clearConditionPart(editingBadge.conditionIndex, editingBadge.field);
         }
 
@@ -1076,6 +1144,42 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           valueTo: cond.valueTo,
         };
       });
+
+      // [FIX] Special handling for Between operator editing value without valueTo
+      // When user edits value (500) and presses Enter, should show [value][to] and wait for valueTo
+      const editedCondition = updatedConditions[editingBadge.conditionIndex];
+      const isBetweenValueWithoutValueTo =
+        isEditingValue &&
+        editedCondition.operator === 'inRange' &&
+        !editedCondition.valueTo;
+
+      if (isBetweenValueWithoutValueTo) {
+        // Build pattern without confirmation, add #to suffix for valueTo input
+        const basePattern = PatternBuilder.buildNConditions(
+          updatedConditions,
+          joins,
+          isMultiColumn || false,
+          columnName,
+          { confirmed: false, openSelector: false }
+        );
+        const newPattern = `${basePattern} #to `;
+
+        onChange({
+          target: { value: newPattern },
+        } as React.ChangeEvent<HTMLInputElement>);
+        setEditingBadge(null);
+        setPreservedSearchMode(null);
+
+        // Focus input at end to wait for valueTo input
+        setTimeout(() => {
+          if (inputRef?.current) {
+            inputRef.current.focus();
+            const len = newPattern.length;
+            inputRef.current.setSelectionRange(len, len);
+          }
+        }, 50);
+        return;
+      }
 
       const newPattern = PatternBuilder.buildNConditions(
         updatedConditions,

@@ -211,6 +211,20 @@ export const useSearchInput = ({
       // Use state-based extraction (more reliable than regex)
       const activeIdx = searchMode.activeConditionIndex!; // Safe: isBuildingConditionNValue ensures this is defined
       const nthCondition = searchMode.partialConditions?.[activeIdx];
+
+      // [FIX] For Between operator waiting for valueTo, return empty to allow typing valueTo
+      if (
+        nthCondition?.operator === 'inRange' &&
+        nthCondition?.waitingForValueTo
+      ) {
+        return ''; // Empty input, user types valueTo fresh
+      }
+
+      // [FIX] For Between operator typing valueTo, show only valueTo being typed
+      if (nthCondition?.valueTo && nthCondition?.operator === 'inRange') {
+        return nthCondition.valueTo;
+      }
+
       if (nthCondition?.value !== undefined) {
         return nthCondition.value;
       }
@@ -582,6 +596,32 @@ export const useSearchInput = ({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
           return;
+        }
+
+        // SPECIAL CASE: N-condition Between operator waiting for valueTo
+        // When condition N (index >= 2) is Between and waiting for valueTo, append to #to marker
+        if (isBuildingConditionN) {
+          const activeIdx = searchMode.activeConditionIndex!;
+          const nthCondition = searchMode.partialConditions?.[activeIdx];
+
+          if (
+            nthCondition?.operator === 'inRange' &&
+            (nthCondition?.waitingForValueTo || nthCondition?.valueTo)
+          ) {
+            // Pattern: ...#hargaPokok #inRange 500 #to → ...#hargaPokok #inRange 500 #to 700
+            // Find pattern up to and including "#to" and append inputValue
+            const toMarkerMatch = value.match(/^(.*#to)\s*.*$/i);
+            if (toMarkerMatch) {
+              const basePatternWithTo = toMarkerMatch[1];
+              const newValue = inputValue
+                ? `${basePatternWithTo} ${inputValue}`
+                : basePatternWithTo;
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+              return;
+            }
+          }
         }
 
         // SPECIAL CASE: Building condition 2+ (N-condition) value
