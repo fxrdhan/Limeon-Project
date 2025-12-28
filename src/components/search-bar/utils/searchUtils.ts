@@ -856,8 +856,9 @@ export const parseSearchValue = (
 
         // Pattern: #col1 #op1 val1 #and #col2 #op2 val2 # (trailing # for adding condition N+1)
         // Shows join selector to add third condition
+        // [FIX] Changed val2 capture from [^#]+? to .+? to allow ## in values
         const multiColJoinSelector = searchValue.match(
-          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/i
+          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#(and|or)\s+#([^\s#]+)\s+#([^\s]+)\s+(.+?)\s+#\s*$/i
         );
         if (multiColJoinSelector) {
           const [, col1, op1, val1, join, col2, op2, val2] =
@@ -878,6 +879,26 @@ export const parseSearchValue = (
                 if (inRangeValues) {
                   filterValue = inRangeValues.value;
                   filterValueTo = inRangeValues.valueTo;
+                }
+              }
+
+              // [FIX] Parse condition2 value - handle inRange with dash format
+              let cond2Value = val2.trim().replace(/##$/, '');
+              let cond2ValueTo: string | undefined;
+
+              if (operator2Obj.value === 'inRange') {
+                // Try #to marker format first
+                const toMatch = cond2Value.match(/^(.+?)\s+#to\s+(.+)$/i);
+                if (toMatch) {
+                  cond2Value = toMatch[1].trim();
+                  cond2ValueTo = toMatch[2].trim();
+                } else {
+                  // Try dash format: "500-600"
+                  const dashMatch = cond2Value.match(/^(.+?)-(.+)$/);
+                  if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
+                    cond2Value = dashMatch[1].trim();
+                    cond2ValueTo = dashMatch[2].trim();
+                  }
                 }
               }
 
@@ -913,8 +934,8 @@ export const parseSearchValue = (
                       field: column2.field,
                       column: column2,
                       operator: operator2Obj.value,
-                      // Strip trailing ## confirmation marker that may be captured
-                      value: val2.trim().replace(/##$/, ''),
+                      value: cond2Value,
+                      valueTo: cond2ValueTo,
                     },
                   ],
                 },
@@ -932,8 +953,8 @@ export const parseSearchValue = (
                     field: column2.field,
                     column: column2,
                     operator: operator2Obj.value,
-                    // Strip trailing ## confirmation marker that may be captured
-                    value: val2.trim().replace(/##$/, ''),
+                    value: cond2Value,
+                    valueTo: cond2ValueTo,
                   },
                 ],
                 joins: [join.toUpperCase() as 'AND' | 'OR'],
@@ -1302,8 +1323,9 @@ export const parseSearchValue = (
 
         // Pattern: #col #op1 val1 #and #op2 val2 # (trailing # for adding condition N+1, same-column)
         // Shows join selector to add third condition
+        // [FIX] Changed val2 capture from [^#]+? to .+? to allow ## in values
         const sameColJoinSelector = searchValue.match(
-          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#(and|or)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/i
+          /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#(and|or)\s+#([^\s]+)\s+(.+?)\s+#\s*$/i
         );
         if (sameColJoinSelector) {
           const [, , op1, val1, join, op2, val2] = sameColJoinSelector;
@@ -1319,6 +1341,26 @@ export const parseSearchValue = (
               if (inRangeValues) {
                 filterValue = inRangeValues.value;
                 filterValueTo = inRangeValues.valueTo;
+              }
+            }
+
+            // [FIX] Parse condition2 value - handle inRange with dash format
+            let cond2Value = val2.trim().replace(/##$/, '');
+            let cond2ValueTo: string | undefined;
+
+            if (operator2Obj.value === 'inRange') {
+              // Try #to marker format first
+              const toMatch = cond2Value.match(/^(.+?)\s+#to\s+(.+)$/i);
+              if (toMatch) {
+                cond2Value = toMatch[1].trim();
+                cond2ValueTo = toMatch[2].trim();
+              } else {
+                // Try dash format: "500-600"
+                const dashMatch = cond2Value.match(/^(.+?)-(.+)$/);
+                if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
+                  cond2Value = dashMatch[1].trim();
+                  cond2ValueTo = dashMatch[2].trim();
+                }
               }
             }
 
@@ -1354,8 +1396,8 @@ export const parseSearchValue = (
                     field: column.field,
                     column,
                     operator: operator2Obj.value,
-                    // Strip trailing ## confirmation marker that may be captured
-                    value: val2.trim().replace(/##$/, ''),
+                    value: cond2Value,
+                    valueTo: cond2ValueTo,
                   },
                 ],
               },
@@ -1373,8 +1415,8 @@ export const parseSearchValue = (
                   field: column.field,
                   column,
                   operator: operator2Obj.value,
-                  // Strip trailing ## confirmation marker that may be captured
-                  value: val2.trim().replace(/##$/, ''),
+                  value: cond2Value,
+                  valueTo: cond2ValueTo,
                 },
               ],
               joins: [join.toUpperCase() as 'AND' | 'OR'],
