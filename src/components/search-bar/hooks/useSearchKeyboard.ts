@@ -257,18 +257,31 @@ export const useSearchKeyboard = ({
               partialConditions[lastIdx] || conditions[lastIdx];
 
             if (lastIdx >= 0 && lastCondition && clearConditionPart) {
-              // 1. Delete valueTo if it exists (for Between operator)
+              // 1. For Between operator with valueTo: Enter edit mode for valueTo first
+              // [FIX] Use editConditionValue to enter edit mode instead of clearConditionPart
               if (
                 lastCondition.operator === 'inRange' &&
                 lastCondition.valueTo
               ) {
-                clearConditionPart(lastIdx, 'valueTo');
+                if (editConditionValue) {
+                  editConditionValue(lastIdx, 'valueTo');
+                } else {
+                  clearConditionPart(lastIdx, 'valueTo');
+                }
                 return;
               }
 
               // 2. Delete value if it exists and is non-empty
+              // [FIX] For Between operator, enter edit mode for value
               if (lastCondition.value && lastCondition.value.trim() !== '') {
-                clearConditionPart(lastIdx, 'value');
+                if (
+                  lastCondition.operator === 'inRange' &&
+                  editConditionValue
+                ) {
+                  editConditionValue(lastIdx, 'value');
+                } else {
+                  clearConditionPart(lastIdx, 'value');
+                }
                 return;
               }
 
@@ -293,13 +306,29 @@ export const useSearchKeyboard = ({
             !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
-            // For Between (inRange) operator with valueTo, delete the second value (valueTo)
+            // For Between (inRange) operator with valueTo, enter edit mode for valueTo
+            // [FIX] Use editConditionValue to enter edit mode instead of clearConditionPart
             if (
               searchMode.filterSearch.operator === 'inRange' &&
-              searchMode.filterSearch.valueTo &&
-              clearConditionPart
+              searchMode.filterSearch.valueTo
             ) {
-              clearConditionPart(0, 'valueTo');
+              if (editConditionValue) {
+                editConditionValue(0, 'valueTo');
+              } else if (clearConditionPart) {
+                clearConditionPart(0, 'valueTo');
+              }
+              return;
+            }
+            // For Between operator with only value (no valueTo), enter edit mode for value
+            if (
+              searchMode.filterSearch.operator === 'inRange' &&
+              searchMode.filterSearch.value
+            ) {
+              if (editConditionValue) {
+                editConditionValue(0, 'value');
+              } else if (clearConditionPart) {
+                clearConditionPart(0, 'value');
+              }
               return;
             }
             // For other operators, delete the first/only value
