@@ -105,7 +105,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   editingTarget,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
-  const modeToRender = preservedSearchMode || searchMode;
+  // IMPORTANT: When join selector is open, always use fresh searchMode to ensure valueTo badges are visible
+  // This prevents stale preservedSearchMode from hiding badges while join selector modal is displayed
+  const modeToRender =
+    preservedSearchMode && !searchMode.showJoinOperatorSelector
+      ? preservedSearchMode
+      : searchMode;
 
   const rawBadges = useBadgeBuilder(
     modeToRender,

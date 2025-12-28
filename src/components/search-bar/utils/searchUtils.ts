@@ -37,6 +37,21 @@ const parsePartialNConditions = (
   // Don't handle confirmed patterns (ending with ##)
   if (searchValue.endsWith('##')) return null;
 
+  // Helper to strip ## confirmation marker and trailing whitespace from values
+  // This handles cases like "600## #" → "600" and "600##" → "600"
+  const stripConfirmationMarker = (val: string): string => {
+    let result = val.trim();
+    // First remove trailing " #" (join selector trigger)
+    if (result.endsWith(' #')) {
+      result = result.slice(0, -2).trim();
+    }
+    // Then remove "##" (confirmation marker)
+    if (result.endsWith('##')) {
+      result = result.slice(0, -2).trim();
+    }
+    return result;
+  };
+
   // Split by join operators, preserving them
   const joinSplitRegex = /\s+#(and|or)\s+/gi;
   const segments: string[] = [];
@@ -73,15 +88,16 @@ const parsePartialNConditions = (
           firstColumn = col;
           const opObj = findOperatorForColumn(col, opName);
           if (opObj) {
-            let filterValue = value.trim();
+            let filterValue = stripConfirmationMarker(value);
             let filterValueTo: string | undefined;
 
             if (opObj.value === 'inRange') {
+              // Try #to marker format first: "500 #to 600"
               const toMatch = filterValue.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
               if (toMatch) {
-                filterValue = toMatch[1].trim();
+                filterValue = stripConfirmationMarker(toMatch[1]);
                 if (toMatch[2]?.trim()) {
-                  filterValueTo = toMatch[2].trim();
+                  filterValueTo = stripConfirmationMarker(toMatch[2]);
                 } else {
                   // [FIX] Set waitingForValueTo for first condition too
                   const waitingForValueTo = true;
@@ -94,6 +110,17 @@ const parsePartialNConditions = (
                     waitingForValueTo,
                   });
                   continue; // Skip the generic push below
+                }
+              } else {
+                // Try dash format: "500-600" (only for confirmed values)
+                const wasConfirmed =
+                  value.includes('##') || searchValue.trimEnd().endsWith(' #');
+                if (wasConfirmed) {
+                  const dashMatch = filterValue.match(/^(.+?)-(.+)$/);
+                  if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
+                    filterValue = dashMatch[1].trim();
+                    filterValueTo = dashMatch[2].trim();
+                  }
                 }
               }
             }
@@ -124,18 +151,31 @@ const parsePartialNConditions = (
         if (col) {
           const opObj = findOperatorForColumn(col, opName);
           if (opObj) {
-            let filterValue = value.trim();
+            let filterValue = stripConfirmationMarker(value);
             let filterValueTo: string | undefined;
             let waitingForValueTo = false;
 
             if (opObj.value === 'inRange') {
+              // Try #to marker format first: "500 #to 600"
               const toMatch = filterValue.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
               if (toMatch) {
-                filterValue = toMatch[1].trim();
+                filterValue = stripConfirmationMarker(toMatch[1]);
                 if (toMatch[2]?.trim()) {
-                  filterValueTo = toMatch[2].trim();
+                  filterValueTo = stripConfirmationMarker(toMatch[2]);
                 } else {
                   waitingForValueTo = true;
+                }
+              } else {
+                // Try dash format: "500-600" (only for confirmed values)
+                // Check if original value had ## marker or is in join selector trigger state
+                const wasConfirmed =
+                  value.includes('##') || searchValue.trimEnd().endsWith(' #');
+                if (wasConfirmed) {
+                  const dashMatch = filterValue.match(/^(.+?)-(.+)$/);
+                  if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
+                    filterValue = dashMatch[1].trim();
+                    filterValueTo = dashMatch[2].trim();
+                  }
                 }
               }
             }
@@ -186,16 +226,16 @@ const parsePartialNConditions = (
         if (col) {
           const opObj = findOperatorForColumn(col, opName);
           if (opObj) {
-            let filterValue = value.trim();
+            let filterValue = stripConfirmationMarker(value);
             let filterValueTo: string | undefined;
             let waitingForValueTo = false;
 
             if (opObj.value === 'inRange') {
               const toMatch = filterValue.match(/^(.+?)\s+#to(?:\s+(.*))?$/i);
               if (toMatch) {
-                filterValue = toMatch[1].trim();
+                filterValue = stripConfirmationMarker(toMatch[1]);
                 if (toMatch[2]?.trim()) {
-                  filterValueTo = toMatch[2].trim();
+                  filterValueTo = stripConfirmationMarker(toMatch[2]);
                 } else {
                   waitingForValueTo = true;
                 }
@@ -255,7 +295,13 @@ const parsePartialNConditions = (
 
   // Determine UI state based on last condition
   const lastCondition = partialConditions[partialConditions.length - 1];
-  const activeConditionIndex = partialConditions.length - 1;
+  let activeConditionIndex = partialConditions.length - 1;
+
+  // [FIX] Check if last condition's value is confirmed with ## marker
+  // If confirmed, activeConditionIndex should point to NEXT condition (not current)
+  // This prevents useBadgeBuilder from treating confirmed values as "being typed"
+  // Pattern: "...value##" or "...value## " (trailing space before adding new condition)
+  const lastConditionConfirmed = /##\s*$/.test(searchValue);
 
   // NEW: Detect join selector trigger (trailing #)
   // This allows triggering join selector after 3rd, 4th... condition
@@ -278,10 +324,24 @@ const parsePartialNConditions = (
     showColumnSelector = false; // Force other selectors off
     showOperatorSelector = false;
 
-    // Remove the trigger hash from the last condition's value if it's there
-    if (lastCondition.value && lastCondition.value.endsWith(' #')) {
-      lastCondition.value = lastCondition.value.slice(0, -2).trim();
+    // [SAFETY] Apply stripConfirmationMarker to lastCondition as a safety net
+    // This handles any edge cases where the parsing didn't fully clean the values
+    // Pattern: "500 #to 600## #" → "500 #to 600"
+    if (lastCondition.value) {
+      lastCondition.value = stripConfirmationMarker(lastCondition.value);
     }
+    if (lastCondition.valueTo) {
+      lastCondition.valueTo = stripConfirmationMarker(lastCondition.valueTo);
+    }
+
+    // [FIX] When join selector is open, point to NEXT condition
+    // The current condition[N] is complete, user is about to add condition[N+1]
+    activeConditionIndex = partialConditions.length;
+  } else if (lastConditionConfirmed && lastCondition.value) {
+    // [FIX] Last condition is confirmed with ## but join selector not yet triggered
+    // Point activeConditionIndex to NEXT condition to prevent hiding current badges
+    // This handles the "...value## " state (Space pressed, about to type #)
+    activeConditionIndex = partialConditions.length;
   } else {
     // Only check for other selectors if NOT a join trigger
     if (!lastCondition.column) {
@@ -1485,6 +1545,42 @@ export const parseSearchValue = (
         // Pattern: #field #operator value # (MUST have space before final #)
         // User must explicitly type space + # to open join selector
         // [FIX] Use more specific regex to avoid matching join operators like "#and #"
+
+        // NEW: Handle Between operator join selector: #col #inRange val1 #to val2## #
+        // This MUST come before joinSelectorMatch because that pattern uses [^#]+ which can't match #to
+        const betweenJoinSelectorMatch = searchValue.match(
+          /^#([^\s#]+)\s+#(inRange|between)\s+(.+?)\s+#to\s+(.+?)\s+#\s*$/i
+        );
+        if (betweenJoinSelectorMatch) {
+          const [, , op, val1, val2Raw] = betweenJoinSelectorMatch;
+          const operatorObj = findOperatorForColumn(column, op);
+
+          if (operatorObj) {
+            // Clean val2Raw: remove trailing ## confirmation marker
+            const val2Clean = val2Raw.trim().replace(/#+$/, '').trim();
+
+            if (val1.trim() && val2Clean) {
+              return {
+                globalSearch: undefined,
+                showColumnSelector: false,
+                showOperatorSelector: false,
+                showJoinOperatorSelector: true, // Show join selector!
+                isFilterMode: false,
+                selectedColumn: column,
+                filterSearch: {
+                  field: column.field,
+                  value: val1.trim(),
+                  valueTo: val2Clean,
+                  column,
+                  operator: operatorObj.value,
+                  isExplicitOperator: true,
+                  isConfirmed: true, // Value was confirmed with ## (Enter key)
+                },
+              };
+            }
+          }
+        }
+
         const joinSelectorMatch = searchValue.match(
           /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/
         );
