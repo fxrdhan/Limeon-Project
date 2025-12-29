@@ -9,6 +9,7 @@
  */
 
 import { FilterSearch, FilterCondition, EnhancedSearchState } from '../types';
+import { PatternBuilder } from './PatternBuilder';
 
 /**
  * Build the pattern string for a single condition
@@ -29,25 +30,6 @@ export function buildConditionPart(
     return `#${field} #${operator} ${value} #to ${valueTo}`;
   }
   return `#${field} #${operator} ${value}`;
-}
-
-/**
- * Build condition part for same-column multi-condition (no field prefix)
- *
- * @param operator - Operator value
- * @param value - Primary value
- * @param valueTo - Secondary value for Between operator
- * @returns Pattern string for the condition (operator + value only)
- */
-export function buildConditionPartNoField(
-  operator: string,
-  value: string,
-  valueTo?: string
-): string {
-  if (operator === 'inRange' && valueTo) {
-    return `#${operator} ${value} #to ${valueTo}`;
-  }
-  return `#${operator} ${value}`;
 }
 
 /**
@@ -215,7 +197,7 @@ export function buildPartialPattern(
           );
         } else {
           // Same-column: no field for subsequent conditions
-          pattern += buildConditionPartNoField(
+          pattern += PatternBuilder.conditionPartNoField(
             cond.operator,
             cond.value,
             cond.valueTo
@@ -284,7 +266,7 @@ export function buildNConditionsPattern(
         );
       } else {
         // Same-column: no field
-        pattern += buildConditionPartNoField(
+        pattern += PatternBuilder.conditionPartNoField(
           cond.operator,
           cond.value,
           cond.valueTo

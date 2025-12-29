@@ -502,6 +502,29 @@ export class PatternBuilder {
   }
 
   /**
+   * Build condition part WITHOUT field prefix (for same-column multi-conditions)
+   * Output format: #operator value or #inRange value #to valueTo
+   *
+   * Used in patternRestoration.ts for building same-column multi-condition patterns
+   * where the field is already specified once at the beginning.
+   *
+   * @param operator - Operator value
+   * @param value - Primary value
+   * @param valueTo - Secondary value for Between (inRange) operator
+   * @returns Condition part string without field prefix
+   */
+  static conditionPartNoField(
+    operator: string,
+    value: string,
+    valueTo?: string
+  ): string {
+    if (operator === 'inRange' && valueTo) {
+      return `#${operator} ${value} #to ${valueTo}`;
+    }
+    return `#${operator} ${value}`;
+  }
+
+  /**
    * Build pattern for N conditions (scalable, iterative)
    *
    * This method replaces the hardcoded 2-condition methods and can handle
