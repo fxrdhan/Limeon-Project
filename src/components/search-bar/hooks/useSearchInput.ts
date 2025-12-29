@@ -251,29 +251,32 @@ export const useSearchInput = ({
       return ''; // Value displayed in gray badge, input empty
     }
 
-    // PRIORITY 3: Incomplete multi-condition (building second condition)
-    // When user has selected join operator and is either selecting second operator OR ready to type second value
+    // PRIORITY 3: Incomplete multi-condition (building condition N where N >= 1)
+    // When user has selected join operator and is either selecting operator OR ready to type value
     if (
       !searchMode.isFilterMode &&
       searchMode.partialJoin &&
       searchMode.filterSearch &&
       searchMode.selectedColumn
     ) {
-      // Special case: Second Between operator waiting for valueTo - badge shows [value][to], input empty
-      const secondCondition = searchMode.partialConditions?.[1];
-      if (secondCondition?.waitingForValueTo && secondCondition?.value) {
+      // Use activeConditionIndex for N-condition scalability (defaults to 1 in this context)
+      const activeIdx = searchMode.activeConditionIndex ?? 1;
+      const activeCondition = searchMode.partialConditions?.[activeIdx];
+
+      // Special case: Between operator waiting for valueTo - badge shows [value][to], input empty
+      if (activeCondition?.waitingForValueTo && activeCondition?.value) {
         return ''; // Value already shown in badge, input empty for typing second value
       }
 
-      // Special case: Second Between operator with valueTo being typed - show only valueTo
-      if (secondCondition?.valueTo) {
-        return secondCondition.valueTo; // Show only valueTo being typed
+      // Special case: Between operator with valueTo being typed - show only valueTo
+      if (activeCondition?.valueTo) {
+        return activeCondition.valueTo; // Show only valueTo being typed
       }
 
-      // Case: Second operator selected, ready for second value input
+      // Case: Operator selected, ready for value input
       // Use state-based extraction first (more reliable than regex)
-      if (secondCondition?.value !== undefined) {
-        return secondCondition.value;
+      if (activeCondition?.value !== undefined) {
+        return activeCondition.value;
       }
       // No value yet - return empty to allow typing
       return '';
@@ -746,13 +749,15 @@ export const useSearchInput = ({
           return;
         }
 
-        // SPECIAL CASE: Second Between operator - preserve first value and #to marker
+        // SPECIAL CASE: Between operator - preserve first value and #to marker
         // When waitingForValueTo is true, append typed value after #to
-        const cond1 = searchMode.partialConditions?.[1];
+        // N-CONDITION: Use activeConditionIndex for scalability
+        const activeIdx = searchMode.activeConditionIndex ?? 1;
+        const activeCondN = searchMode.partialConditions?.[activeIdx];
         if (
-          cond1?.waitingForValueTo &&
-          cond1?.value &&
-          cond1?.operator === 'inRange'
+          activeCondN?.waitingForValueTo &&
+          activeCondN?.value &&
+          activeCondN?.operator === 'inRange'
         ) {
           // Pattern: #col1 #op1 val1 #and #col2 #inRange secondVal #to → append typed value
           const basePattern = isMultiColumn
@@ -763,8 +768,8 @@ export const useSearchInput = ({
             : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
 
           const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #inRange ${cond1.value} #to ${inputValue}`
-            : `${basePattern.trim()} #${join} #inRange ${cond1.value} #to ${inputValue}`;
+            ? `${basePattern.trim()} #${join} #${col2} #inRange ${activeCondN.value} #to ${inputValue}`
+            : `${basePattern.trim()} #${join} #inRange ${activeCondN.value} #to ${inputValue}`;
 
           onChange({
             target: { value: newValue },
@@ -772,8 +777,8 @@ export const useSearchInput = ({
           return;
         }
 
-        // SPECIAL CASE: Second Between operator typing valueTo - preserve first value and #to marker
-        if (cond1?.valueTo && cond1?.operator === 'inRange') {
+        // SPECIAL CASE: Between operator typing valueTo - preserve first value and #to marker
+        if (activeCondN?.valueTo && activeCondN?.operator === 'inRange') {
           const basePattern = isMultiColumn
             ? currentValue.replace(
                 /#(and|or)\s+#([^\s#]+)\s+#inRange\s+.+$/i,
@@ -782,8 +787,8 @@ export const useSearchInput = ({
             : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
 
           const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #inRange ${cond1.value} #to ${inputValue}`
-            : `${basePattern.trim()} #${join} #inRange ${cond1.value} #to ${inputValue}`;
+            ? `${basePattern.trim()} #${join} #${col2} #inRange ${activeCondN.value} #to ${inputValue}`
+            : `${basePattern.trim()} #${join} #inRange ${activeCondN.value} #to ${inputValue}`;
 
           onChange({
             target: { value: newValue },
