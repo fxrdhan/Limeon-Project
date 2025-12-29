@@ -30,9 +30,9 @@ const parsePartialNConditions = (
   searchValue: string,
   columns: SearchColumn[]
 ): EnhancedSearchState | null => {
-  // Only handle patterns with 2+ joins (3+ conditions)
+  // Only handle patterns with 1+ joins (2+ conditions)
   const joinCount = countJoins(searchValue);
-  if (joinCount < 2) return null;
+  if (joinCount < 1) return null;
 
   // Don't handle confirmed patterns (ending with ##)
   if (searchValue.endsWith('##')) return null;
@@ -69,7 +69,7 @@ const parsePartialNConditions = (
   // Add remaining part
   segments.push(searchValue.slice(lastIndex));
 
-  if (segments.length < 3) return null; // Need at least 3 segments for 2 joins
+  if (segments.length < 2) return null; // Need at least 2 segments for 1 join
 
   const partialConditions: PartialCondition[] = [];
   let firstColumn: SearchColumn | null = null;
@@ -291,7 +291,7 @@ const parsePartialNConditions = (
     }
   }
 
-  if (partialConditions.length < 3) return null;
+  if (partialConditions.length < 2) return null;
 
   // Determine UI state based on last condition
   const lastCondition = partialConditions[partialConditions.length - 1];
