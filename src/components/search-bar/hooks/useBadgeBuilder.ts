@@ -435,7 +435,17 @@ export const useBadgeBuilder = (
 
       // Only show value badge if value is confirmed (Enter/Space pressed)
       // OR if user has moved on to add another condition (partialJoin exists)
-      if (filter.value && (filter.isConfirmed || searchMode.partialJoin)) {
+      // OR if Between operator is waiting for valueTo (first value should be visible as badge)
+      // OR if Between operator is typing valueTo (both values visible as badges while typing)
+      if (
+        filter.value &&
+        (filter.isConfirmed ||
+          searchMode.partialJoin ||
+          filter.waitingForValueTo ||
+          (filter.operator === 'inRange' &&
+            filter.valueTo &&
+            !filter.isConfirmed))
+      ) {
         const valHandlersFrom = getValueBadgeHandlers(handlers, 0, false);
         const isBetween = filter.operator === 'inRange';
 
