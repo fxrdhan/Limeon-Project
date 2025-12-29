@@ -21,12 +21,8 @@ export interface PreservedCondition {
 /**
  * Preserved filter state for edit operations
  * Supports unlimited N conditions through array-based structure
- *
- * Migration note: Legacy fields (columnName, operator, value, etc.) are kept
- * for backward compatibility. Use conditions[] array for new code.
  */
 export interface PreservedFilter {
-  // ============ NEW: Scalable N-condition fields ============
   /** Array of preserved conditions (index 0 = first condition) */
   conditions: PreservedCondition[];
   /** Array of join operators (joins[0] = between condition 0 and 1) */
