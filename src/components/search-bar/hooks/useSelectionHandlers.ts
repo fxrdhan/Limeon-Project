@@ -26,17 +26,8 @@ import { SEARCH_CONSTANTS } from '../constants';
 // ============================================================================
 
 /**
- * @deprecated Use the new index-based structure instead:
- * { conditionIndex: number; field: 'value' | 'valueTo'; value: string }
- */
-export type EditingBadgeType =
-  | 'firstValue'
-  | 'secondValue'
-  | 'firstValueTo'
-  | 'secondValueTo';
-
-/**
- * New scalable structure for inline editing badges
+ * Scalable structure for inline editing badges
+ * Uses index-based approach to support N conditions
  */
 export interface EditingBadgeState {
   conditionIndex: number; // 0 = first condition, 1 = second, etc.
