@@ -3,6 +3,7 @@ import { FiEdit2 } from 'react-icons/fi';
 import { LuX } from 'react-icons/lu';
 import { PiTrashSimpleBold } from 'react-icons/pi';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
+import { validateFilterValue } from '../utils/validationUtils';
 
 // Format currency value for display (e.g., "500" -> "Rp 500")
 const formatCurrencyDisplay = (value: string): string => {
@@ -67,36 +68,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   // Validate value based on column type
   const validateValue = (value: string): boolean => {
-    const trimmedValue = value.trim();
-
-    // Empty value is invalid
-    if (trimmedValue === '') {
-      return false;
-    }
-
-    // For numeric columns (number, currency), validate numeric content
-    if (columnType === 'number' || columnType === 'currency') {
-      // Must contain at least one digit
-      if (!/\d/.test(trimmedValue)) {
-        return false;
-      }
-
-      // Remove known currency symbols/prefixes for validation
-      const withoutCurrency = trimmedValue
-        .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, '')
-        .trim();
-
-      // After removing currency, should only contain: digits, +, -, ., , (no spaces)
-      const hasInvalidChars = /[^\d+\-.,]/.test(withoutCurrency);
-      if (hasInvalidChars) {
-        return false;
-      }
-
-      return true;
-    }
-
-    // Text and date columns allow any value
-    return true;
+    return validateFilterValue(value, columnType);
   };
 
   // Auto-focus input when entering editing mode
