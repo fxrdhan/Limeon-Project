@@ -725,7 +725,7 @@ export const useSearchInput = ({
         // SPECIAL CASE: If input becomes empty, preserve second operator in partial multi-condition state
         // This handles when user deletes the second value completely
         // Step 5 of E9: Preserve 5 badges, then Step 6 backspace will trigger operator selector
-        if (inputValue.trim() === '') {
+        if (inputValue === '') {
           // Remove everything from #join onwards to get base pattern
           const basePattern = isMultiColumn
             ? currentValue.replace(

@@ -40,7 +40,7 @@ const parsePartialNConditions = (
   // Helper to strip ## confirmation marker and trailing whitespace from values
   // This handles cases like "600## #" → "600" and "600##" → "600"
   const stripConfirmationMarker = (val: string): string => {
-    let result = val.trim();
+    let result = val;
     // First remove trailing " #" (join selector trigger)
     if (result.endsWith(' #')) {
       result = result.slice(0, -2).trim();
@@ -76,10 +76,14 @@ const parsePartialNConditions = (
 
   // Parse each segment
   for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i].trim();
+    const segment = segments[i].trimStart();
+    const isLastSegment = i === segments.length - 1;
 
     if (i === 0) {
       // First segment: #col1 #op1 val1
+      // [FIX] For the first segment, if it's the only segment (joinCount >= 1 ensured above, so this is unlikely but handleable),
+      // or if we're just parsing it as part of a multi-condition string.
+      // Use (.+) instead of trim() to preserve trailing spaces if it's the active typing area.
       const firstMatch = segment.match(/^#([^\s#]+)\s+#([^\s]+)\s+(.+)$/);
       if (firstMatch) {
         const [, colName, opName, value] = firstMatch;
@@ -137,7 +141,8 @@ const parsePartialNConditions = (
       }
     } else {
       // Subsequent segments
-      const trimmed = segment.trim();
+      // [FIX] Don't trim trailing spaces from the last segment (active typing area)
+      const trimmed = isLastSegment ? segment : segment.trimEnd();
 
       if (!trimmed || trimmed === '#') {
         // Empty or just # - show column selector
