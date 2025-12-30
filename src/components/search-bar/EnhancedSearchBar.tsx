@@ -950,8 +950,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const columnName = stateToUse.filterSearch.field;
       const operator = stateToUse.filterSearch.operator;
 
+      // Extract robust preservation data to determine if we're in multi-condition mode
+      // This is more reliable than stateToUse.filterSearch.isMultiCondition which might be false for partial filters
+      const preservation = extractMultiConditionPreservation(stateToUse);
+      const isActuallyMulti =
+        (preservation?.conditions?.length ?? 0) > 1 ||
+        stateToUse.filterSearch.isMultiCondition;
+
       // CASE 1: Single-condition filter
-      if (!stateToUse.filterSearch.isMultiCondition) {
+      if (!isActuallyMulti) {
         let newPattern: string;
 
         // Check if this is a Between operator
@@ -1103,11 +1110,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       // CASE 2: Multi-condition filter (unified N-condition handling)
-      const conditions = stateToUse.filterSearch.conditions!;
-      const joins = stateToUse.filterSearch.joins || [
+      // Use extracted preservation data for conditions and joins
+      const conditions = preservation?.conditions || [];
+      const joins = preservation?.joins || [
         stateToUse.filterSearch.joinOperator || 'AND',
       ];
-      const isMultiColumn = stateToUse.filterSearch.isMultiColumn;
+      const isMultiColumn =
+        preservation?.isMultiColumn || stateToUse.filterSearch.isMultiColumn;
       const isEditingValue = editingBadge.field === 'value';
       const isEditingValueTo = editingBadge.field === 'valueTo';
 

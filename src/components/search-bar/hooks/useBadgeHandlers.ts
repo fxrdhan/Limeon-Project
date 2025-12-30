@@ -14,6 +14,7 @@ import { EnhancedSearchState } from '../types';
 import { PatternBuilder } from '../utils/PatternBuilder';
 import {
   extractMultiConditionPreservation,
+  getConditionAt,
   PreservedFilter,
   setFilterValue,
 } from '../utils/handlerHelpers';
@@ -423,35 +424,35 @@ export function useBadgeHandlers(
       // to "close" any open selectors and ensure we're looking at badges
       if (state.filterSearch.isConfirmed) {
         const restoredPattern = restoreConfirmedPattern(state.filterSearch);
-        onChange({
-          target: { value: restoredPattern },
-        } as React.ChangeEvent<HTMLInputElement>);
+
+        // Only call onChange if the pattern is actually different
+        // This prevents redundant updates that can break state sync in multi-condition mode
+        if (props.value !== restoredPattern) {
+          onChange({
+            target: { value: restoredPattern },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
 
         // Note: we don't clear preservedSearchMode here because we're about to enter inline edit
       }
 
-      // Get current value to edit
-      let currentValue = '';
-      if (
-        state.filterSearch.isMultiCondition &&
-        state.filterSearch.conditions
-      ) {
-        const cond = state.filterSearch.conditions[conditionIndex];
-        currentValue = target === 'value' ? cond.value : cond.valueTo || '';
-      } else if (conditionIndex === 0) {
-        currentValue =
-          target === 'value'
-            ? state.filterSearch.value
-            : state.filterSearch.valueTo || '';
-      }
+      // Update preserved filter data for consistency with other edit handlers
+      preservedFilterRef.current = extractMultiConditionPreservation(state);
 
-      if (!currentValue) return;
+      // Robustly get condition data using helper (handles both confirmed and partial conditions)
+      const cond = getConditionAt(state.filterSearch, state, conditionIndex);
+      const currentValue = cond
+        ? target === 'value'
+          ? cond.value
+          : cond.valueTo || ''
+        : '';
 
-      // Enter inline editing mode
+      // Enter inline editing mode - removed empty value early return to ensure
+      // typer appears even if value extraction is temporarily lagging
       setEditingBadge?.({
         conditionIndex,
         field: target,
-        value: currentValue,
+        value: currentValue || '',
       });
     },
     [
@@ -461,6 +462,8 @@ export function useBadgeHandlers(
       setPreservedSearchMode,
       setEditingBadge,
       onChange,
+      props.value,
+      preservedFilterRef,
     ]
   );
 
