@@ -31,7 +31,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check for file changes
         uses: dorny/paths-filter@v3
@@ -109,7 +109,7 @@ jobs:
     if: needs.detect-changes.outputs.critical == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -131,7 +131,7 @@ jobs:
       needs.detect-changes.outputs.config == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -153,7 +153,7 @@ jobs:
       needs.detect-changes.outputs.config == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -181,7 +181,7 @@ jobs:
       checks: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -241,7 +241,7 @@ jobs:
 
       - name: Checkout code
         if: steps.check.outputs.needed == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         if: steps.check.outputs.needed == 'true'
@@ -280,7 +280,7 @@ jobs:
       needs.detect-changes.outputs.config == 'false'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -309,7 +309,7 @@ jobs:
       needs.detect-changes.outputs.critical == 'false'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
