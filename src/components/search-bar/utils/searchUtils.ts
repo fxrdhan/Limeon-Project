@@ -244,6 +244,17 @@ const parsePartialNConditions = (
                 } else {
                   waitingForValueTo = true;
                 }
+              } else {
+                // [FIX] Try dash format: "500-600" (only for confirmed values)
+                const wasConfirmed =
+                  value.includes('##') || searchValue.trimEnd().endsWith(' #');
+                if (wasConfirmed) {
+                  const dashMatch = filterValue.match(/^(.+?)-(.+)$/);
+                  if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
+                    filterValue = dashMatch[1].trim();
+                    filterValueTo = dashMatch[2].trim();
+                  }
+                }
               }
             }
 

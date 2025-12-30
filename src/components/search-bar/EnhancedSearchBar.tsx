@@ -1092,6 +1092,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           interruptedSelectorRef.current = null;
           // Clear preserved state since we're restoring the selector pattern
           setPreservedSearchMode(null);
+          preservedFilterRef.current = null;
         }
 
         onChange({
@@ -1101,6 +1102,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Clear preserved state after inline edit completes (if not already cleared)
         setPreservedSearchMode(null);
+        preservedFilterRef.current = null;
 
         // Ensure focus returns to search input after edit completes
         setTimeout(() => {
@@ -1205,6 +1207,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // Clear preserved state after inline edit completes successfully
       setPreservedSearchMode(null);
+      preservedFilterRef.current = null;
 
       // Ensure focus returns to search input after edit completes
       setTimeout(() => {
