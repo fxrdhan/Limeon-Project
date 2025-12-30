@@ -453,7 +453,7 @@ export const useBadgeBuilder = (
         if (isBetween) {
           badges.push(
             createValueBadgeConfig(
-              'value-from',
+              getValueBadgeId(0, false, true),
               filter.value,
               'value',
               valHandlersFrom,
@@ -469,7 +469,7 @@ export const useBadgeBuilder = (
             const valHandlersTo = getValueBadgeHandlers(handlers, 0, true);
             badges.push(
               createValueBadgeConfig(
-                'value-to',
+                getValueBadgeId(0, true, true),
                 filter.valueTo,
                 'valueTo',
                 valHandlersTo,
@@ -481,7 +481,7 @@ export const useBadgeBuilder = (
         } else {
           badges.push(
             createValueBadgeConfig(
-              'value',
+              getValueBadgeId(0, false, false),
               filter.value,
               'value',
               valHandlersFrom,

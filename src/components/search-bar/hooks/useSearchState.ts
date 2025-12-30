@@ -2,6 +2,7 @@ import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { EnhancedSearchState, SearchColumn, FilterSearch } from '../types';
 import { parseSearchValue } from '../utils/searchUtils';
 import { SEARCH_CONSTANTS } from '../constants';
+import { isFilterSearchValid } from '../utils/validationUtils';
 
 interface UseSearchStateProps {
   value: string;
@@ -68,8 +69,14 @@ export const useSearchState = ({
         onFilterSearchRef.current?.(null);
         onGlobalSearchRef.current?.('');
       } else if (searchMode.filterSearch.isConfirmed) {
-        // Only trigger filter update if value is confirmed (user pressed Enter)
-        debouncedFilterUpdate(searchMode.filterSearch);
+        // Only trigger filter update if the entire filter object is valid
+        // This prevents "NaN" or other invalid states from reaching the grid
+        if (isFilterSearchValid(searchMode.filterSearch)) {
+          debouncedFilterUpdate(searchMode.filterSearch);
+        } else {
+          // If confirmed but invalid, clear the grid filter to avoid visual artifacts
+          onFilterSearchRef.current?.(null);
+        }
       }
       // If not confirmed yet, don't trigger filter - user is still typing
     } else if (
@@ -102,7 +109,10 @@ export const useSearchState = ({
       !isEditMode // Don't update filter when editing - preserve the original complete filter
     ) {
       // Keep the first condition's filter active while user selects second operator/value
-      debouncedFilterUpdate(searchMode.filterSearch);
+      // Only if it's still valid
+      if (isFilterSearchValid(searchMode.filterSearch)) {
+        debouncedFilterUpdate(searchMode.filterSearch);
+      }
     }
 
     prevValueRef.current = value;
