@@ -73,10 +73,9 @@ export const useSearchState = ({
         // This prevents "NaN" or other invalid states from reaching the grid
         if (isFilterSearchValid(searchMode.filterSearch)) {
           debouncedFilterUpdate(searchMode.filterSearch);
-        } else {
-          // If confirmed but invalid, clear the grid filter to avoid visual artifacts
-          onFilterSearchRef.current?.(null);
         }
+        // If confirmed but invalid, we do nothing - maintaining the previous valid filter
+        // in the grid until the user fixes the value or clears the search.
       }
       // If not confirmed yet, don't trigger filter - user is still typing
     } else if (
