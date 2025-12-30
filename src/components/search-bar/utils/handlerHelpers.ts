@@ -120,7 +120,6 @@ export function extractMultiConditionPreservation(
       });
 
       // Add join operator between conditions (N-1 joins for N conditions)
-      // [FIX] Use filter.joins[index] if available, fallback to filter.joinOperator
       if (index < filter.conditions!.length - 1) {
         const joinAtIndex =
           filter.joins?.[index] || filter.joinOperator || 'AND';
@@ -128,10 +127,50 @@ export function extractMultiConditionPreservation(
       }
     });
 
+    // [FIX] CHECK FOR PARTIAL CONDITIONS BEYOND CONFIRMED ONES
+    // This handles cases like 3+ conditions where the last one is being edited/typed
+    const partialConditions = searchMode.partialConditions || [];
+    if (partialConditions.length > filter.conditions.length) {
+      // Add missing join that connects confirmed to partial
+      const lastConfirmedIdx = filter.conditions.length - 1;
+      const nextJoin =
+        searchMode.joins?.[lastConfirmedIdx] || searchMode.partialJoin || 'AND';
+      joins.push(nextJoin);
+
+      // Add remaining partial conditions
+      for (
+        let i = filter.conditions.length;
+        i < partialConditions.length;
+        i++
+      ) {
+        const partial = partialConditions[i];
+        if (partial.operator) {
+          conditions.push({
+            field: partial.field,
+            operator: partial.operator,
+            value: partial.value,
+            valueTo: partial.valueTo,
+          });
+
+          // Add join if there's another condition after this
+          if (i < partialConditions.length - 1) {
+            const moreJoin =
+              searchMode.joins?.[i] || searchMode.partialJoin || 'AND';
+            joins.push(moreJoin);
+          }
+        }
+      }
+    }
+
+    // Re-evaluate isMultiColumn to include partial conditions
+    const hasAnyMultiColumn = conditions.some(
+      (c, i) => i > 0 && c.field !== conditions[0].field
+    );
+
     return {
       conditions,
       joins,
-      isMultiColumn: filter.isMultiColumn,
+      isMultiColumn: filter.isMultiColumn || hasAnyMultiColumn,
     };
   }
 
