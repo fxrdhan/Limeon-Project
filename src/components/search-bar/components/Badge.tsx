@@ -12,6 +12,12 @@ const formatCurrencyDisplay = (value: string): string => {
     .replace(/[.,]/g, '') // Remove thousand separators
     .trim();
 
+  // If value contains space (e.g. "500 600"), don't format it
+  // This prevents formatting partial/multiple values as a single currency
+  if (cleanValue.includes(' ')) {
+    return value;
+  }
+
   const numericValue = parseInt(cleanValue, 10);
 
   if (isNaN(numericValue)) {
@@ -120,11 +126,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
         hasAutoTriggered.current = true;
         // Shake to indicate error
         triggerShake();
-        // If editable, auto-enter edit mode after shake
+        // If editable, auto-enter edit mode immediately using RAF
         if (config.canEdit && config.onEdit) {
-          setTimeout(() => {
+          requestAnimationFrame(() => {
             config.onEdit?.();
-          }, 100);
+          });
         }
       }
     }

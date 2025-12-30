@@ -337,8 +337,7 @@ export const useBadgeBuilder = (
           !searchMode.showOperatorSelector;
 
         if (condition.value && !isTypingThisValue) {
-          const isBetween =
-            condition.operator === 'inRange' && !!condition.valueTo;
+          const isBetween = condition.operator === 'inRange';
 
           if (isBetween) {
             // Value-from
@@ -354,16 +353,18 @@ export const useBadgeBuilder = (
             );
             badges.push(createSeparatorBadge(index));
             // Value-to
-            badges.push(
-              createValueBadgeConfig(
-                getValueBadgeId(index, true, true),
-                condition.valueTo!,
-                'valueTo',
-                getValueBadgeHandlers(handlers, index, true),
-                conditionColumnType,
-                getValueBadgeInlineProps(inlineEditingProps, index, true)
-              )
-            );
+            if (condition.valueTo) {
+              badges.push(
+                createValueBadgeConfig(
+                  getValueBadgeId(index, true, true),
+                  condition.valueTo,
+                  'valueTo',
+                  getValueBadgeHandlers(handlers, index, true),
+                  conditionColumnType,
+                  getValueBadgeInlineProps(inlineEditingProps, index, true)
+                )
+              );
+            }
           } else {
             badges.push(
               createValueBadgeConfig(
@@ -567,7 +568,7 @@ export const useBadgeBuilder = (
               'value',
               getValueBadgeHandlers(handlers, i, false),
               (cond.column || filter?.column)?.type,
-              null
+              getValueBadgeInlineProps(inlineEditingProps, i, false)
             )
           );
           badges.push(createSeparatorBadge(i));
@@ -579,7 +580,7 @@ export const useBadgeBuilder = (
                 'valueTo',
                 getValueBadgeHandlers(handlers, i, true),
                 (cond.column || filter?.column)?.type,
-                null
+                getValueBadgeInlineProps(inlineEditingProps, i, true)
               )
             );
           }
