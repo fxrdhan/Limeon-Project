@@ -1,5 +1,10 @@
 import { RefObject, useEffect, useState } from 'react';
 
+export interface Position {
+  top: number;
+  left: number;
+}
+
 interface UseSelectorPositionProps {
   isOpen: boolean;
   containerRef: RefObject<HTMLElement | null>;
@@ -17,8 +22,8 @@ export const useSelectorPosition = ({
   anchorRef,
   anchorAlign = 'left',
   anchorOffsetRatio,
-}: UseSelectorPositionProps) => {
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+}: UseSelectorPositionProps): Position => {
+  const [position, setPosition] = useState<Position>({ top: 0, left: 0 });
 
   useEffect(() => {
     const updatePosition = () => {
