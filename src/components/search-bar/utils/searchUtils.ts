@@ -59,6 +59,7 @@ export const parseSearchValue = (
 ): EnhancedSearchState => {
   // Remove newlines (from paste) and trim only leading whitespace
   const searchValue = rawSearchValue.replace(/[\r\n]+/g, '').trimStart();
+  console.log('[DEBUG] parseSearchValue start - searchValue:', searchValue);
 
   // Single # = column selector
   if (searchValue === '#') {
@@ -175,13 +176,15 @@ export const parseSearchValue = (
   }
 
   // Global search (no # prefix)
-  return {
+  const result = {
     globalSearch: searchValue,
     showColumnSelector: false,
     showOperatorSelector: false,
     showJoinOperatorSelector: false,
     isFilterMode: false,
   };
+  console.log('[DEBUG] parseSearchValue end (global) - result:', result);
+  return result;
 };
 
 /**
@@ -220,6 +223,10 @@ function parseFilterPattern(
         }
       }
 
+      console.log(
+        '[DEBUG] parseFilterPattern - partialJoinMatch:',
+        !!partialJoinMatch
+      );
       // Show column selector for next condition
       return {
         globalSearch: undefined,
@@ -248,14 +255,68 @@ function parseFilterPattern(
           column,
           operator: operatorObj.value,
           isExplicitOperator: true,
+          isMultiCondition: true, // [FIX]
+          conditions: [
+            {
+              field: column.field,
+              column,
+              operator: operatorObj.value,
+              value: localFilterValue,
+              valueTo: localFilterValueTo,
+            },
+          ],
         },
       };
     }
   }
 
+  // Check for join selector trigger for Between (inRange) operator: #field #inRange val1 #to val2 #
+  // This MUST come before the generic joinSelectorMatch because the generic regex can't handle #to marker
+  const inRangeJoinSelectorMatch = searchValue.match(
+    /^#([^\s#]+)\s+#(inRange|between)\s+([^\s#]+)\s+#to\s+([^\s#]+)\s+#\s*$/i
+  );
+  console.log(
+    '[DEBUG] parseFilterPattern - inRangeJoinSelectorMatch:',
+    !!inRangeJoinSelectorMatch
+  );
+  if (inRangeJoinSelectorMatch) {
+    const [, , , val1, val2] = inRangeJoinSelectorMatch;
+    return {
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: false,
+      showJoinOperatorSelector: true,
+      isFilterMode: false,
+      selectedColumn: column,
+      filterSearch: {
+        field: column.field,
+        value: val1.trim(),
+        valueTo: val2.trim(),
+        column,
+        operator: 'inRange',
+        isExplicitOperator: true,
+        isConfirmed: true,
+        isMultiCondition: true,
+        conditions: [
+          {
+            field: column.field,
+            column,
+            operator: 'inRange',
+            value: val1.trim(),
+            valueTo: val2.trim(),
+          },
+        ],
+      },
+    };
+  }
+
   // Check for join selector trigger: #field #op value #
   const joinSelectorMatch = searchValue.match(
     /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/
+  );
+  console.log(
+    '[DEBUG] parseFilterPattern - joinSelectorMatch:',
+    !!joinSelectorMatch
   );
   if (joinSelectorMatch) {
     const [, , op, val] = joinSelectorMatch;
@@ -306,6 +367,16 @@ function parseFilterPattern(
           operator: operatorObj.value,
           isExplicitOperator: true,
           isConfirmed: true,
+          isMultiCondition: true, // [FIX] Treat as multi-condition to ensure badge rendering
+          conditions: [
+            {
+              field: column.field,
+              column,
+              operator: operatorObj.value,
+              value: localFilterValue,
+              valueTo: localFilterValueTo,
+            },
+          ],
         },
       };
     }

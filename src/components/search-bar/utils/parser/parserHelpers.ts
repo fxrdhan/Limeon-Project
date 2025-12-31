@@ -1,4 +1,4 @@
-import { SearchColumn, FilterSearch } from '../../types';
+import { FilterSearch, SearchColumn } from '../../types';
 
 /**
  * Find a column in the list of available columns by field or header name.

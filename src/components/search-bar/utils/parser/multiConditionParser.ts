@@ -6,12 +6,12 @@ import {
   SearchColumn,
 } from '../../types';
 import { findOperatorForColumn } from '../operatorUtils';
+import { parseConditionSegment } from './conditionParser';
 import {
   countJoins,
   findColumn,
   stripConfirmationMarker,
 } from './parserHelpers';
-import { parseConditionSegment } from './conditionParser';
 
 /**
  * Parse N-condition partial pattern (while user is typing)
@@ -25,6 +25,12 @@ export const parsePartialNConditions = (
 ): EnhancedSearchState | null => {
   // Only handle patterns with 1+ joins (2+ conditions)
   const joinCount = countJoins(searchValue);
+  console.log(
+    '[DEBUG] parsePartialNConditions - searchValue:',
+    searchValue,
+    'joinCount:',
+    joinCount
+  );
   if (joinCount < 1) return null;
 
   // Don't handle confirmed patterns (ending with ##)
@@ -365,8 +371,12 @@ export const parsePartialNConditions = (
     };
   } else if (
     partialConditions[0].operator &&
-    partialConditions[0].value !== undefined
+    partialConditions[0].value !== undefined &&
+    partialConditions[0].value !== ''
   ) {
+    // [FIX] If we have a partial join (isJoinSelectorTrigger), we should treat first condition as confirmed
+    const isConfirmed = isJoinSelectorTrigger || /##\s*$/.test(searchValue);
+
     filterSearch = {
       field: partialConditions[0].field || firstColumn?.field || '',
       value: partialConditions[0].value || '',
@@ -374,6 +384,19 @@ export const parsePartialNConditions = (
       column: partialConditions[0].column || firstColumn!,
       operator: partialConditions[0].operator,
       isExplicitOperator: true,
+      isConfirmed,
+      isMultiCondition: isJoinSelectorTrigger, // Treat as multi-condition if join selector is open
+      conditions: isJoinSelectorTrigger
+        ? [
+            {
+              field: partialConditions[0].field || firstColumn?.field || '',
+              column: partialConditions[0].column || firstColumn!,
+              operator: partialConditions[0].operator,
+              value: partialConditions[0].value,
+              valueTo: partialConditions[0].valueTo,
+            },
+          ]
+        : undefined,
     };
   }
 
@@ -382,7 +405,7 @@ export const parsePartialNConditions = (
     !showColumnSelector &&
     !showOperatorSelector;
 
-  return {
+  const result = {
     globalSearch: undefined,
     showColumnSelector,
     showOperatorSelector,
@@ -395,6 +418,12 @@ export const parsePartialNConditions = (
     joins,
     filterSearch,
   };
+
+  console.log(
+    '[DEBUG] parsePartialNConditions - result:',
+    JSON.stringify(result, null, 2)
+  );
+  return result;
 };
 
 /**

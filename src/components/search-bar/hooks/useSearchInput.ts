@@ -341,24 +341,48 @@ export const useSearchInput = ({
     if (!showTargetedIndicator) return 0;
 
     let count = 0;
-    // Column badge
-    if (searchMode.selectedColumn || searchMode.filterSearch?.field) count++;
-    // Operator badge
-    if (searchMode.filterSearch?.operator) count++;
-    // Value badge
-    if (searchMode.filterSearch?.value) count++;
-    // Join badge
-    if (searchMode.partialJoin || searchMode.filterSearch?.joinOperator)
+    const filter = searchMode.filterSearch;
+
+    // 1. Column badge
+    if (searchMode.selectedColumn || filter?.field) count++;
+
+    // 2. Operator badge
+    if (filter?.operator) count++;
+
+    // 3. First Value badge
+    if (filter?.value) count++;
+
+    // 4. "Between" (inRange) specific badges
+    if (filter?.operator === 'inRange') {
+      // Separator badge ("to")
+      if (filter.valueTo || filter.waitingForValueTo) count++;
+      // Second value badge
+      if (filter.valueTo) count++;
+    }
+
+    // 5. Join badge
+    if (searchMode.partialJoin || filter?.joinOperator) count++;
+
+    // 6. Second condition badges (if any)
+    const hasSecondCond =
+      (filter?.conditions && filter.conditions.length >= 2) ||
+      searchMode.partialConditions?.[1]?.operator;
+
+    if (hasSecondCond) {
+      // Second condition operator
       count++;
-    // Second operator badge
-    if (
-      searchMode.partialConditions?.[1]?.operator ||
-      (searchMode.filterSearch?.conditions &&
-        searchMode.filterSearch.conditions.length >= 2)
-    )
-      count++;
-    // Second value badge
-    if (searchMode.filterSearch?.conditions?.[1]?.value) count++;
+      // Second condition value(s)
+      const secondCond =
+        filter?.conditions?.[1] || searchMode.partialConditions?.[1];
+      if (secondCond?.value) count++;
+      if (secondCond?.operator === 'inRange') {
+        const waitingForValueTo = (
+          secondCond as { waitingForValueTo?: boolean }
+        ).waitingForValueTo;
+        if (secondCond.valueTo || waitingForValueTo) count++;
+        if (secondCond.valueTo) count++;
+      }
+    }
 
     return count;
   }, [
