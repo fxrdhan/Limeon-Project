@@ -527,12 +527,36 @@ export function useSelectionHandlers(
 
       let newValue: string;
 
+      console.log(
+        '[DEBUG] handleJoinOperatorSelect - filter:',
+        JSON.stringify(searchMode.filterSearch, null, 2)
+      );
+      console.log(
+        '[DEBUG] handleJoinOperatorSelect - preserved:',
+        JSON.stringify(preserved, null, 2)
+      );
+
       // CASE 1: Editing join at specific index with preserved N-conditions
+      // [FIX] Skip to CASE 2 if preserved conditions don't have valueTo but filter does
+      // This happens when join selector is opened for inRange operator
+      const filterHasValueTo =
+        searchMode.filterSearch?.valueTo ||
+        searchMode.filterSearch?.conditions?.[0]?.valueTo;
+      const preservedHasValueTo = preserved?.conditions?.[0]?.valueTo;
+      const shouldUseFiterInstead =
+        filterHasValueTo &&
+        !preservedHasValueTo &&
+        searchMode.filterSearch?.isConfirmed;
+
       if (
         preserved &&
         preserved.conditions &&
-        preserved.conditions.length > 0
+        preserved.conditions.length > 0 &&
+        !shouldUseFiterInstead
       ) {
+        console.log(
+          '[DEBUG] handleJoinOperatorSelect - CASE 1 (preserved conditions)'
+        );
         const conditions = preserved.conditions;
         const defaultField = conditions[0]?.field || '';
         const isMultiColumn = preserved.isMultiColumn || false;
@@ -581,6 +605,7 @@ export function useSelectionHandlers(
         setPreservedSearchMode(null);
       } else if (searchMode.filterSearch?.isConfirmed) {
         // CASE 2: Normal join selection after confirmed filter
+        console.log('[DEBUG] handleJoinOperatorSelect - CASE 2 (isConfirmed)');
         const filter = searchMode.filterSearch;
 
         const extraction = extractMultiConditionPreservation(searchMode);
@@ -591,6 +616,10 @@ export function useSelectionHandlers(
           filter.conditions &&
           filter.conditions.length > 0
         ) {
+          console.log(
+            '[DEBUG] handleJoinOperatorSelect - CASE 2a (isMultiCondition)',
+            filter.conditions
+          );
           const conditions = filter.conditions;
           const existingJoins = filter.joins || [filter.joinOperator || 'AND'];
           const isMultiColumn = filter.isMultiColumn || false;
@@ -611,6 +640,10 @@ export function useSelectionHandlers(
 
           newValue = `${basePattern} #${joinOperator.toLowerCase()} #`;
         } else if (filter.valueTo) {
+          console.log(
+            '[DEBUG] handleJoinOperatorSelect - CASE 2b (filter.valueTo)',
+            filter.valueTo
+          );
           newValue = `#${filter.field} #${filter.operator} ${filter.value} #to ${filter.valueTo} #${joinOperator.toLowerCase()} #`;
         } else {
           newValue = PatternBuilder.partialMulti(
@@ -624,6 +657,7 @@ export function useSelectionHandlers(
         return;
       }
 
+      console.log('[DEBUG] handleJoinOperatorSelect - newValue:', newValue);
       setFilterValue(newValue, onChange, inputRef);
 
       setTimeout(() => {
