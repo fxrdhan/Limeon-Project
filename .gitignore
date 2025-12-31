@@ -37,6 +37,7 @@ coverage
 
 # AI project instructions
 CLAUDE.md
+AGENTS.md
 .agent/
 
 # gemini-cli settings
