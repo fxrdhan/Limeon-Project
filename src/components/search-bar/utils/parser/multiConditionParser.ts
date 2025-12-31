@@ -25,12 +25,6 @@ export const parsePartialNConditions = (
 ): EnhancedSearchState | null => {
   // Only handle patterns with 1+ joins (2+ conditions)
   const joinCount = countJoins(searchValue);
-  console.log(
-    '[DEBUG] parsePartialNConditions - searchValue:',
-    searchValue,
-    'joinCount:',
-    joinCount
-  );
   if (joinCount < 1) return null;
 
   // Don't handle confirmed patterns (ending with ##)
@@ -356,11 +350,11 @@ export const parsePartialNConditions = (
     }));
 
     filterSearch = {
-      field: confirmedConditions[0].field || firstColumn?.field || '',
-      value: confirmedConditions[0].value || '',
-      valueTo: confirmedConditions[0].valueTo,
-      column: confirmedConditions[0].column || firstColumn!,
-      operator: confirmedConditions[0].operator!,
+      field: conditions[0].field || firstColumn?.field || '',
+      value: conditions[0].value || '',
+      valueTo: conditions[0].valueTo,
+      column: conditions[0].column || firstColumn!,
+      operator: conditions[0].operator!,
       isExplicitOperator: true,
       isConfirmed: true, // The existing conditions ARE confirmed
       isMultiCondition: true,
@@ -419,10 +413,6 @@ export const parsePartialNConditions = (
     filterSearch,
   };
 
-  console.log(
-    '[DEBUG] parsePartialNConditions - result:',
-    JSON.stringify(result, null, 2)
-  );
   return result;
 };
 
