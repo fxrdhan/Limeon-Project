@@ -59,7 +59,6 @@ export const parseSearchValue = (
 ): EnhancedSearchState => {
   // Remove newlines (from paste) and trim only leading whitespace
   const searchValue = rawSearchValue.replace(/[\r\n]+/g, '').trimStart();
-  console.log('[DEBUG] parseSearchValue start - searchValue:', searchValue);
 
   // Single # = column selector
   if (searchValue === '#') {
@@ -183,7 +182,6 @@ export const parseSearchValue = (
     showJoinOperatorSelector: false,
     isFilterMode: false,
   };
-  console.log('[DEBUG] parseSearchValue end (global) - result:', result);
   return result;
 };
 
@@ -223,10 +221,6 @@ function parseFilterPattern(
         }
       }
 
-      console.log(
-        '[DEBUG] parseFilterPattern - partialJoinMatch:',
-        !!partialJoinMatch
-      );
       // Show column selector for next condition
       return {
         globalSearch: undefined,
@@ -275,10 +269,6 @@ function parseFilterPattern(
   const inRangeJoinSelectorMatch = searchValue.match(
     /^#([^\s#]+)\s+#(inRange|between)\s+([^\s#]+)\s+#to\s+([^\s#]+)\s+#\s*$/i
   );
-  console.log(
-    '[DEBUG] parseFilterPattern - inRangeJoinSelectorMatch:',
-    !!inRangeJoinSelectorMatch
-  );
   if (inRangeJoinSelectorMatch) {
     const [, , , val1, val2] = inRangeJoinSelectorMatch;
     return {
@@ -313,10 +303,6 @@ function parseFilterPattern(
   // Check for join selector trigger: #field #op value #
   const joinSelectorMatch = searchValue.match(
     /^#([^\s#]+)\s+#([^\s]+)\s+([^#]+?)\s+#\s*$/
-  );
-  console.log(
-    '[DEBUG] parseFilterPattern - joinSelectorMatch:',
-    !!joinSelectorMatch
   );
   if (joinSelectorMatch) {
     const [, , op, val] = joinSelectorMatch;
