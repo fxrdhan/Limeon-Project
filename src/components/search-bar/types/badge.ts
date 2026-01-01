@@ -5,7 +5,9 @@ export type BadgeType =
   | 'separator' // For "to" text between Between values
   | 'valueTo' // For "to" value in Between operator
   | 'join'
-  | 'operatorN'; // Operator at condition index > 0
+  | 'operatorN' // Operator at condition index > 0
+  | 'groupOpen'
+  | 'groupClose';
 
 export type BadgeColorScheme = {
   bg: string;
@@ -56,6 +58,18 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     text: 'text-blue-700',
     hoverBg: 'hover:bg-blue-200',
     glow: 'shadow-[0_0_12px_rgba(96,165,250,0.5),0_0_24px_rgba(96,165,250,0.3)]',
+  },
+  groupOpen: {
+    bg: 'bg-slate-200',
+    text: 'text-slate-700',
+    hoverBg: 'hover:bg-slate-300',
+    glow: '',
+  },
+  groupClose: {
+    bg: 'bg-slate-200',
+    text: 'text-slate-700',
+    hoverBg: 'hover:bg-slate-300',
+    glow: '',
   },
 };
 

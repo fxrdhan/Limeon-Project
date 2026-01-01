@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
+import { tokenizeGroupPattern } from '../utils/groupPatternUtils';
 import Badge from './Badge';
 
 // Bouncy spring animation config
@@ -42,6 +43,7 @@ const badgeVariants = {
 type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
 
 interface SearchBadgeProps {
+  value: string;
   searchMode: EnhancedSearchState;
   badgesContainerRef: React.RefObject<HTMLDivElement | null>;
   // ============ Dynamic Ref Map API (N-Condition Support) ============
@@ -75,9 +77,29 @@ interface SearchBadgeProps {
   // Scalable editing state (which condition's column/operator is being edited)
   editingConditionIndex?: number | null;
   editingTarget?: 'column' | 'operator' | 'join' | null;
+  // Grouped inline editing props
+  groupEditingBadge?: {
+    path: number[];
+    field: 'value' | 'valueTo';
+    value: string;
+  } | null;
+  onGroupInlineValueChange?: (value: string) => void;
+  onGroupInlineEditComplete?: (finalValue?: string) => void;
+  onGroupEditStart?: (
+    path: number[],
+    field: 'value' | 'valueTo',
+    value: string
+  ) => void;
+  onGroupClearCondition?: (path: number[]) => void;
+  onGroupClearGroup?: (path: number[]) => void;
+  onGroupTokenClear?: (
+    tokenType: 'groupOpen' | 'groupClose',
+    occurrenceIndex: number
+  ) => void;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
+  value,
   searchMode,
   badgesContainerRef,
   // ============ Dynamic Ref Map API ============
@@ -103,6 +125,13 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   previewOperator,
   editingConditionIndex,
   editingTarget,
+  groupEditingBadge,
+  onGroupInlineValueChange,
+  onGroupInlineEditComplete,
+  onGroupEditStart,
+  onGroupClearCondition,
+  onGroupClearGroup,
+  onGroupTokenClear,
 }) => {
   // Use preserved search mode if available (during edit), otherwise use current
   // IMPORTANT: When join selector is open, always use fresh searchMode to ensure valueTo badges are visible
@@ -131,7 +160,21 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           onFocusInput,
         }
       : undefined,
-    selectedBadgeIndex
+    undefined,
+    groupEditingBadge && onGroupInlineValueChange && onGroupInlineEditComplete
+      ? {
+          editingBadge: groupEditingBadge,
+          onInlineValueChange: onGroupInlineValueChange,
+          onInlineEditComplete: onGroupInlineEditComplete,
+        }
+      : undefined,
+    onGroupEditStart || onGroupClearCondition || onGroupClearGroup
+      ? {
+          onEditValue: onGroupEditStart,
+          onClearCondition: onGroupClearCondition,
+          onClearGroup: onGroupClearGroup,
+        }
+      : undefined
   );
 
   // Apply preview values to badges for live preview during selector navigation
@@ -186,15 +229,85 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     editingTarget,
   ]);
 
+  const mergedBadges = useMemo(() => {
+    if (modeToRender.filterSearch?.filterGroup) {
+      return badges;
+    }
+
+    if (!value.includes('#(') && !value.includes('#)')) {
+      return badges;
+    }
+
+    const tokens = tokenizeGroupPattern(value);
+    const output: BadgeConfig[] = [];
+    let badgeIndex = 0;
+    let openIndex = 0;
+    let closeIndex = 0;
+
+    const createGroupBadge = (
+      type: 'groupOpen' | 'groupClose',
+      index: number
+    ): BadgeConfig => ({
+      id: `${type}-inline-${index}`,
+      type,
+      label: type === 'groupOpen' ? '(' : ')',
+      onClear: onGroupTokenClear
+        ? () => onGroupTokenClear(type, index)
+        : () => {},
+      canClear: !!onGroupTokenClear,
+      canEdit: false,
+    });
+
+    tokens.forEach(token => {
+      if (token.type === 'groupOpen') {
+        output.push(createGroupBadge('groupOpen', openIndex));
+        openIndex += 1;
+        return;
+      }
+
+      if (token.type === 'groupClose') {
+        output.push(createGroupBadge('groupClose', closeIndex));
+        closeIndex += 1;
+        return;
+      }
+
+      if (token.type === 'confirm' || token.type === 'marker') {
+        return;
+      }
+
+      if (badgeIndex < badges.length) {
+        output.push(badges[badgeIndex]);
+        badgeIndex += 1;
+      }
+    });
+
+    while (badgeIndex < badges.length) {
+      output.push(badges[badgeIndex]);
+      badgeIndex += 1;
+    }
+
+    return output;
+  }, [badges, value, modeToRender.filterSearch, onGroupTokenClear]);
+
+  const finalBadges = useMemo(() => {
+    if (selectedBadgeIndex === null || selectedBadgeIndex === undefined) {
+      return mergedBadges;
+    }
+    return mergedBadges.map((badge, index) => ({
+      ...badge,
+      isSelected: index === selectedBadgeIndex,
+    }));
+  }, [mergedBadges, selectedBadgeIndex]);
+
   // Notify parent of badge count changes for keyboard navigation
   useEffect(() => {
-    onBadgeCountChange?.(badges.length);
-  }, [badges.length, onBadgeCountChange]);
+    onBadgeCountChange?.(finalBadges.length);
+  }, [finalBadges.length, onBadgeCountChange]);
 
   // Notify parent of badges array changes for Ctrl+E edit
   useEffect(() => {
-    onBadgesChange?.(badges);
-  }, [badges, onBadgesChange]);
+    onBadgesChange?.(finalBadges);
+  }, [finalBadges, onBadgesChange]);
 
   const handleMouseEnter = () => {
     onHoverChange?.(true);
@@ -256,7 +369,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       data-hover-tick={hoverTick}
     >
       <AnimatePresence mode="popLayout">
-        {badges.map(badge => {
+        {finalBadges.map(badge => {
           // Callback ref that updates the dynamic ref map for N-condition support
           const handleRef = (element: HTMLDivElement | null) => {
             setBadgeRef?.(badge.id, element);

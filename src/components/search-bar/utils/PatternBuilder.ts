@@ -12,6 +12,8 @@
  * - #and / #or = join operators for multi-condition
  */
 
+import type { FilterGroup } from '../types';
+
 /**
  * Pattern Builder for search value construction
  */
@@ -819,5 +821,42 @@ export class PatternBuilder {
         confirmed: true,
       }
     );
+  }
+
+  /**
+   * Build a grouped pattern string from a nested filter group.
+   *
+   * @param group - Root filter group
+   * @param confirmed - Whether to add ## confirmation marker
+   * @returns Pattern string
+   */
+  static buildGroupedPattern(
+    group: FilterGroup,
+    confirmed: boolean = true
+  ): string {
+    const pattern = this.buildGroupNode(group, true);
+    return confirmed ? `${pattern}##` : pattern;
+  }
+
+  private static buildGroupNode(
+    group: FilterGroup,
+    isRoot: boolean = false
+  ): string {
+    const parts = group.nodes.map(node => {
+      if (node.kind === 'group') {
+        return this.buildGroupNode(node);
+      }
+      return this.buildConditionPart(
+        node.field || '',
+        node.operator,
+        node.value,
+        node.valueTo,
+        true
+      ).trim();
+    });
+    const joinToken = `#${group.join.toLowerCase()}`;
+    const joined = parts.join(` ${joinToken} `);
+    const shouldWrap = !isRoot || group.isExplicit !== false;
+    return shouldWrap ? `#( ${joined} #)` : joined;
   }
 }

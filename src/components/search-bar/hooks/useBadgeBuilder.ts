@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
-import { EnhancedSearchState } from '../types';
+import {
+  EnhancedSearchState,
+  FilterConditionNode,
+  FilterGroup,
+} from '../types';
 import { BadgeConfig } from '../types/badge';
 import { getOperatorLabelForColumn } from '../utils/operatorUtils';
 
@@ -33,6 +37,26 @@ interface InlineEditingProps {
   onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
 }
 
+interface GroupInlineEditingProps {
+  editingBadge: {
+    path: number[];
+    field: 'value' | 'valueTo';
+    value: string;
+  } | null;
+  onInlineValueChange: (value: string) => void;
+  onInlineEditComplete: (finalValue?: string) => void;
+}
+
+interface GroupBadgeHandlers {
+  onEditValue?: (
+    path: number[],
+    field: 'value' | 'valueTo',
+    value: string
+  ) => void;
+  onClearCondition?: (path: number[]) => void;
+  onClearGroup?: (path: number[]) => void;
+}
+
 // ============ Scalable Helper Functions (Index-Based) ============
 
 import type { SearchColumn } from '../types';
@@ -44,6 +68,241 @@ interface PartialConditionData {
   valueTo?: string;
   waitingForValueTo?: boolean;
 }
+
+const noop = () => {};
+
+const createStaticBadge = (
+  id: string,
+  type: BadgeConfig['type'],
+  label: string,
+  columnType?: BadgeConfig['columnType'],
+  options?: {
+    onClear?: () => void;
+    canClear?: boolean;
+    onEdit?: () => void;
+    canEdit?: boolean;
+  }
+): BadgeConfig => ({
+  id,
+  type,
+  label,
+  onClear: options?.onClear ?? noop,
+  canClear: options?.canClear ?? false,
+  onEdit: options?.onEdit,
+  canEdit: options?.canEdit ?? false,
+  columnType,
+});
+
+const createStaticSeparatorBadge = (id: string): BadgeConfig => ({
+  id,
+  type: 'separator',
+  label: 'to',
+  onClear: () => {},
+  canClear: false,
+  canEdit: false,
+});
+
+const getGroupValueBadgeInlineProps = (
+  inlineEditingProps: GroupInlineEditingProps | undefined,
+  path: number[],
+  field: 'value' | 'valueTo'
+): Pick<
+  BadgeConfig,
+  'isEditing' | 'editingValue' | 'onValueChange' | 'onEditComplete'
+> | null => {
+  if (!inlineEditingProps?.editingBadge) return null;
+  const { editingBadge } = inlineEditingProps;
+  const samePath =
+    editingBadge.path.length === path.length &&
+    editingBadge.path.every((value, index) => value === path[index]);
+  if (!samePath || editingBadge.field !== field) return null;
+
+  return {
+    isEditing: true,
+    editingValue: editingBadge.value,
+    onValueChange: inlineEditingProps.onInlineValueChange,
+    onEditComplete: inlineEditingProps.onInlineEditComplete,
+  };
+};
+
+const buildBadgesFromCondition = (
+  condition: FilterConditionNode,
+  key: string,
+  path: number[],
+  inlineEditingProps?: GroupInlineEditingProps,
+  groupHandlers?: GroupBadgeHandlers
+): BadgeConfig[] => {
+  const columnLabel = condition.column?.headerName || condition.field || '';
+  const columnType = condition.column?.type;
+  const operatorLabel = condition.column
+    ? getOperatorLabelForColumn(condition.column, condition.operator)
+    : condition.operator;
+
+  const badges: BadgeConfig[] = [
+    createStaticBadge(`condition-${key}-column`, 'column', columnLabel),
+    createStaticBadge(`condition-${key}-operator`, 'operator', operatorLabel),
+  ];
+
+  if (condition.operator === 'inRange') {
+    if (condition.value) {
+      const inlineProps = getGroupValueBadgeInlineProps(
+        inlineEditingProps,
+        path,
+        'value'
+      );
+      const onEdit = groupHandlers?.onEditValue
+        ? () => groupHandlers.onEditValue?.(path, 'value', condition.value)
+        : undefined;
+      const onClear = groupHandlers?.onClearCondition
+        ? () => groupHandlers.onClearCondition?.(path)
+        : undefined;
+      badges.push({
+        ...createStaticBadge(
+          `condition-${key}-value-from`,
+          'value',
+          condition.value,
+          columnType,
+          {
+            onEdit,
+            canEdit: !!groupHandlers?.onEditValue,
+            onClear,
+            canClear: !!groupHandlers?.onClearCondition,
+          }
+        ),
+        ...(inlineProps ?? {}),
+      });
+      badges.push(createStaticSeparatorBadge(`condition-${key}-separator`));
+    }
+    if (condition.valueTo) {
+      const inlineProps = getGroupValueBadgeInlineProps(
+        inlineEditingProps,
+        path,
+        'valueTo'
+      );
+      const onEdit = groupHandlers?.onEditValue
+        ? () => groupHandlers.onEditValue?.(path, 'valueTo', condition.valueTo!)
+        : undefined;
+      const onClear = groupHandlers?.onClearCondition
+        ? () => groupHandlers.onClearCondition?.(path)
+        : undefined;
+      badges.push({
+        ...createStaticBadge(
+          `condition-${key}-value-to`,
+          'valueTo',
+          condition.valueTo,
+          columnType,
+          {
+            onEdit,
+            canEdit: !!groupHandlers?.onEditValue,
+            onClear,
+            canClear: !!groupHandlers?.onClearCondition,
+          }
+        ),
+        ...(inlineProps ?? {}),
+      });
+    }
+  } else if (condition.value) {
+    const inlineProps = getGroupValueBadgeInlineProps(
+      inlineEditingProps,
+      path,
+      'value'
+    );
+    const onEdit = groupHandlers?.onEditValue
+      ? () => groupHandlers.onEditValue?.(path, 'value', condition.value)
+      : undefined;
+    const onClear = groupHandlers?.onClearCondition
+      ? () => groupHandlers.onClearCondition?.(path)
+      : undefined;
+    badges.push({
+      ...createStaticBadge(
+        `condition-${key}-value`,
+        'value',
+        condition.value,
+        columnType,
+        {
+          onEdit,
+          canEdit: !!groupHandlers?.onEditValue,
+          onClear,
+          canClear: !!groupHandlers?.onClearCondition,
+        }
+      ),
+      ...(inlineProps ?? {}),
+    });
+  }
+
+  return badges;
+};
+
+const buildBadgesFromGroup = (
+  group: FilterGroup,
+  path: number[] = [],
+  inlineEditingProps?: GroupInlineEditingProps,
+  groupHandlers?: GroupBadgeHandlers
+): BadgeConfig[] => {
+  const pathKey = path.length > 0 ? path.join('-') : 'root';
+  const onClearGroup = groupHandlers?.onClearGroup
+    ? () => groupHandlers.onClearGroup?.(path)
+    : undefined;
+  const isExplicit = group.isExplicit !== false;
+  const badges: BadgeConfig[] = [];
+
+  if (isExplicit) {
+    badges.push(
+      createStaticBadge(`group-open-${pathKey}`, 'groupOpen', '(', undefined, {
+        onClear: onClearGroup,
+        canClear: !!groupHandlers?.onClearGroup,
+      })
+    );
+  }
+
+  group.nodes.forEach((node, index) => {
+    const childPath = [...path, index];
+    const childKey = childPath.join('-');
+
+    if (node.kind === 'group') {
+      badges.push(
+        ...buildBadgesFromGroup(
+          node,
+          childPath,
+          inlineEditingProps,
+          groupHandlers
+        )
+      );
+    } else {
+      badges.push(
+        ...buildBadgesFromCondition(
+          node,
+          childKey,
+          childPath,
+          inlineEditingProps,
+          groupHandlers
+        )
+      );
+    }
+
+    if (index < group.nodes.length - 1) {
+      badges.push(
+        createStaticBadge(`join-${pathKey}-${index}`, 'join', group.join)
+      );
+    }
+  });
+
+  if (isExplicit && group.isClosed !== false) {
+    badges.push(
+      createStaticBadge(
+        `group-close-${pathKey}`,
+        'groupClose',
+        ')',
+        undefined,
+        {
+          onClear: onClearGroup,
+          canClear: !!groupHandlers?.onClearGroup,
+        }
+      )
+    );
+  }
+  return badges;
+};
 
 /**
  * Get condition at specific index from scalable partialConditions.
@@ -242,7 +501,9 @@ export const useBadgeBuilder = (
   searchMode: EnhancedSearchState,
   handlers: BadgeHandlers,
   inlineEditingProps?: InlineEditingProps,
-  selectedBadgeIndex?: number | null
+  selectedBadgeIndex?: number | null,
+  groupInlineEditingProps?: GroupInlineEditingProps,
+  groupHandlers?: GroupBadgeHandlers
 ): BadgeConfig[] => {
   return useMemo(() => {
     const badges: BadgeConfig[] = [];
@@ -260,6 +521,21 @@ export const useBadgeBuilder = (
     }
 
     const filter = searchMode.filterSearch;
+
+    if (filter?.filterGroup && searchMode.isFilterMode) {
+      const groupBadges = buildBadgesFromGroup(
+        filter.filterGroup,
+        [],
+        groupInlineEditingProps,
+        groupHandlers
+      );
+      return selectedBadgeIndex !== null && selectedBadgeIndex !== undefined
+        ? groupBadges.map((b, i) => ({
+            ...b,
+            isSelected: i === selectedBadgeIndex,
+          }))
+        : groupBadges;
+    }
     const isMultiCondition =
       filter?.isMultiCondition &&
       filter.conditions &&
@@ -607,5 +883,12 @@ export const useBadgeBuilder = (
     }
 
     return badges;
-  }, [searchMode, handlers, inlineEditingProps, selectedBadgeIndex]);
+  }, [
+    searchMode,
+    handlers,
+    inlineEditingProps,
+    selectedBadgeIndex,
+    groupInlineEditingProps,
+    groupHandlers,
+  ]);
 };

@@ -1,6 +1,7 @@
 import type {
   FilterSearch,
   FilterCondition,
+  FilterGroup,
   SearchColumn,
 } from '@/types/search';
 import type { AdvancedFilterModel } from 'ag-grid-community';
@@ -94,6 +95,29 @@ function buildColumnCondition(
   return baseCondition;
 }
 
+function buildGroupCondition(
+  group: FilterGroup,
+  defaultField: string,
+  defaultColumn?: SearchColumn
+): AdvancedFilterModel {
+  const conditions = group.nodes.map(node => {
+    if (node.kind === 'group') {
+      return buildGroupCondition(node, defaultField, defaultColumn);
+    }
+    return buildColumnCondition(node, defaultField, defaultColumn);
+  });
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+
+  return {
+    filterType: 'join',
+    type: group.join,
+    conditions,
+  } as AdvancedFilterModel;
+}
+
 /**
  * Build an AdvancedFilterModel from a FilterSearch object
  *
@@ -104,6 +128,14 @@ export function buildAdvancedFilterModel(
   filterSearch: FilterSearch | null
 ): AdvancedFilterModel | null {
   if (!filterSearch) return null;
+
+  if (filterSearch.filterGroup) {
+    return buildGroupCondition(
+      filterSearch.filterGroup,
+      filterSearch.field,
+      filterSearch.column
+    );
+  }
 
   // Multi-condition filter (AND/OR between conditions)
   if (
