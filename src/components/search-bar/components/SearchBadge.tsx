@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
@@ -239,6 +239,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     return false;
   };
 
+  // Force re-render of all badges on hover so layout animations can run on siblings
+  const [hoverTick, setHoverTick] = useState(0);
+  const handleBadgeHoverChange = useCallback(() => {
+    setHoverTick(prev => prev + 1);
+  }, []);
+
   // Always render container so AnimatePresence can handle exit animations
   // Use overflow-visible to allow exit animations to be visible (not clipped)
   return (
@@ -247,6 +253,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       className="contents"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      data-hover-tick={hoverTick}
     >
       <AnimatePresence mode="popLayout">
         {badges.map(badge => {
@@ -260,18 +267,29 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           const badgeWithGlow = shouldGlow
             ? { ...badge, isSelected: true }
             : badge;
+          const badgeWithHover = {
+            ...badgeWithGlow,
+            onHoverChange: handleBadgeHoverChange,
+          };
 
           return (
             <motion.div
               key={badge.id}
               ref={handleRef}
-              layout
+              layout="position"
+              transition={{
+                layout: {
+                  type: 'tween',
+                  duration: 0.18,
+                  ease: 'easeOut',
+                },
+              }}
               variants={badgeVariants}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              <Badge config={badgeWithGlow} />
+              <Badge config={badgeWithHover} />
             </motion.div>
           );
         })}

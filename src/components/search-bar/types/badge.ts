@@ -77,6 +77,8 @@ export interface BadgeConfig {
   onNavigateEdit?: (direction: 'left' | 'right') => void;
   // Called when Ctrl+I pressed during inline edit to focus main input
   onFocusInput?: () => void;
+  // Hover state hook to trigger layout re-measurement
+  onHoverChange?: (isHovered: boolean) => void;
   // Keyboard navigation selection
   isSelected?: boolean; // Whether badge is selected via keyboard navigation
   // Column type for value validation (only for value badges)
