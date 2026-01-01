@@ -57,6 +57,7 @@ interface SearchBadgeProps {
   editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
   onHoverChange?: (isHovered: boolean) => void;
   preservedSearchMode?: EnhancedSearchState | null;
+  preserveBadgesOnJoinSelector?: boolean;
   // Inline editing props
   editingBadge?: {
     conditionIndex: number; // 0 = first condition, 1 = second, etc.
@@ -90,6 +91,9 @@ interface SearchBadgeProps {
     field: 'value' | 'valueTo',
     value: string
   ) => void;
+  onGroupEditColumn?: (path: number[]) => void;
+  onGroupEditOperator?: (path: number[]) => void;
+  onGroupEditJoin?: (path: number[], joinIndex: number) => void;
   onGroupClearCondition?: (path: number[]) => void;
   onGroupClearGroup?: (path: number[]) => void;
   onGroupTokenClear?: (
@@ -113,6 +117,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   editValueN,
   onHoverChange,
   preservedSearchMode,
+  preserveBadgesOnJoinSelector,
   editingBadge,
   onInlineValueChange,
   onInlineEditComplete,
@@ -129,6 +134,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onGroupInlineValueChange,
   onGroupInlineEditComplete,
   onGroupEditStart,
+  onGroupEditColumn,
+  onGroupEditOperator,
+  onGroupEditJoin,
   onGroupClearCondition,
   onGroupClearGroup,
   onGroupTokenClear,
@@ -137,7 +145,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   // IMPORTANT: When join selector is open, always use fresh searchMode to ensure valueTo badges are visible
   // This prevents stale preservedSearchMode from hiding badges while join selector modal is displayed
   const modeToRender =
-    preservedSearchMode && !searchMode.showJoinOperatorSelector
+    preservedSearchMode &&
+    (!searchMode.showJoinOperatorSelector || preserveBadgesOnJoinSelector)
       ? preservedSearchMode
       : searchMode;
 
@@ -168,9 +177,17 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           onInlineEditComplete: onGroupInlineEditComplete,
         }
       : undefined,
-    onGroupEditStart || onGroupClearCondition || onGroupClearGroup
+    onGroupEditStart ||
+      onGroupEditColumn ||
+      onGroupEditOperator ||
+      onGroupEditJoin ||
+      onGroupClearCondition ||
+      onGroupClearGroup
       ? {
           onEditValue: onGroupEditStart,
+          onEditColumn: onGroupEditColumn,
+          onEditOperator: onGroupEditOperator,
+          onEditJoin: onGroupEditJoin,
           onClearCondition: onGroupClearCondition,
           onClearGroup: onGroupClearGroup,
         }
