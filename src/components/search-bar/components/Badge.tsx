@@ -43,6 +43,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const cursorPosition = useRef<number | null>(null);
   // Shake animation state for validation feedback
   const [isShaking, setIsShaking] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const isEditing = config.isEditing || false;
   const editingValue = config.editingValue || '';
@@ -50,6 +51,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const onEditComplete = config.onEditComplete;
   const isSelected = config.isSelected || false;
   const columnType = config.columnType;
+  const onHoverChange = config.onHoverChange;
 
   // Format display label for currency columns (only for value badges)
   const displayLabel = useMemo(() => {
@@ -243,93 +245,164 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Error state styles - persistent for invalid values, temporary during shake
   const errorClass =
     isShaking || hasInvalidValue ? '!bg-rose-200 !text-rose-800' : '';
+  const wantsEditButton = isEditing || isSelected || isHovered;
+  const wantsDeleteButton = !isEditing && (isSelected || isHovered);
+  const [editIconVisible, setEditIconVisible] = useState(wantsEditButton);
+  const [deleteIconVisible, setDeleteIconVisible] = useState(wantsDeleteButton);
+
+  useEffect(() => {
+    if (wantsEditButton) {
+      const rafId = requestAnimationFrame(() => {
+        onHoverChange?.(true);
+        setEditIconVisible(true);
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+    const timeoutId = setTimeout(() => {
+      onHoverChange?.(false);
+      setEditIconVisible(false);
+    }, 120);
+    return () => clearTimeout(timeoutId);
+  }, [wantsEditButton, onHoverChange]);
+
+  useEffect(() => {
+    if (wantsDeleteButton) {
+      const rafId = requestAnimationFrame(() => {
+        onHoverChange?.(true);
+        setDeleteIconVisible(true);
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+    const timeoutId = setTimeout(() => {
+      onHoverChange?.(false);
+      setDeleteIconVisible(false);
+    }, 120);
+    return () => clearTimeout(timeoutId);
+  }, [wantsDeleteButton, onHoverChange]);
+
+  const showEditButtonSpace = wantsEditButton || editIconVisible;
+  const showDeleteButtonSpace = wantsDeleteButton || deleteIconVisible;
+  const wantsAnyButtons = wantsEditButton || wantsDeleteButton;
+  const badgeTransform = wantsAnyButtons ? 'scaleX(1.02)' : 'scaleX(1)';
 
   return (
     <div
-      className={`group flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-all duration-300 ease-out ${selectedClass} ${errorClass}`}
+      className={`rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
-      style={shakeStyle}
+      style={{
+        ...shakeStyle,
+      }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        onHoverChange?.(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        onHoverChange?.(false);
+      }}
     >
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          type="text"
-          value={editingValue}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0 badge-edit-input`}
-          style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
-        />
-      ) : (
-        <span
-          onClick={config.canEdit && config.onEdit ? config.onEdit : undefined}
-          onMouseDown={
-            config.canEdit && config.onEdit
-              ? e => e.stopPropagation()
-              : undefined
-          }
-          className={config.canEdit && config.onEdit ? 'cursor-pointer' : ''}
-        >
-          {displayLabel}
-        </span>
-      )}
-      {/* Edit/Cancel button - same position, swaps icon based on mode */}
-      {config.canEdit && config.onEdit && (
-        <button
-          onClick={
-            isEditing ? () => onEditComplete?.(editingValue) : config.onEdit
-          }
-          onMouseDown={e => {
-            e.stopPropagation();
-            // Set flag to prevent blur validation when clicking X to cancel edit
-            if (isEditing) {
-              isClearing.current = true;
-            }
-          }}
-          className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 ${
-            isEditing || isSelected
-              ? 'ml-1.5 max-w-[24px] opacity-100'
-              : 'max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5'
-          }`}
-          type="button"
-          style={{
-            transition:
-              'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
-          }}
-        >
+      <div className="flex items-center">
+        <div className="flex items-center py-1.5 pl-2.5">
           {isEditing ? (
-            <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={editingValue}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0 badge-edit-input`}
+              style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
+            />
           ) : (
-            <FiEdit2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span
+              onClick={
+                config.canEdit && config.onEdit ? config.onEdit : undefined
+              }
+              onMouseDown={
+                config.canEdit && config.onEdit
+                  ? e => e.stopPropagation()
+                  : undefined
+              }
+              className={
+                config.canEdit && config.onEdit ? 'cursor-pointer' : ''
+              }
+            >
+              {displayLabel}
+            </span>
           )}
-        </button>
-      )}
-      {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
-      {!isEditing && config.canClear && (
-        <button
-          onClick={e => {
-            e.stopPropagation();
-            // Blur the button to release focus before clearing
-            // This allows the parent handler to focus the input
-            e.currentTarget.blur();
-            config.onClear?.();
-          }}
-          onMouseDown={e => e.stopPropagation()}
-          className={`${
-            isSelected
-              ? 'ml-1.5 max-w-[24px] opacity-100'
-              : 'max-w-0 opacity-0 overflow-hidden group-hover:max-w-[24px] group-hover:opacity-100 ml-0 group-hover:ml-1.5'
-          } rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0`}
-          type="button"
+        </div>
+        <div
+          className="flex items-center pt-0.5 pr-1 transition-transform ease-out"
           style={{
-            transition:
-              'max-width 100ms ease-out, margin-left 100ms ease-out, opacity 100ms ease-out',
+            transform: badgeTransform,
+            transformOrigin: 'center',
           }}
         >
-          <PiTrashSimpleBold className="w-3.5 h-3.5 flex-shrink-0" />
-        </button>
-      )}
+          {/* Edit/Cancel button - same position, swaps icon based on mode */}
+          {config.canEdit && config.onEdit && (
+            <div
+              className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ml-2 ${
+                showEditButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
+              }`}
+            >
+              <button
+                onClick={
+                  isEditing
+                    ? () => onEditComplete?.(editingValue)
+                    : config.onEdit
+                }
+                onMouseDown={e => {
+                  e.stopPropagation();
+                  // Set flag to prevent blur validation when clicking X to cancel edit
+                  if (isEditing) {
+                    isClearing.current = true;
+                  }
+                }}
+                className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                  editIconVisible
+                    ? 'opacity-100 translate-x-0'
+                    : 'pointer-events-none opacity-0 -translate-x-1'
+                }`}
+                type="button"
+              >
+                {isEditing ? (
+                  <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+                ) : (
+                  <FiEdit2 className="w-3.5 h-3.5 flex-shrink-0" />
+                )}
+              </button>
+            </div>
+          )}
+          {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
+          {!isEditing && config.canClear && (
+            <div
+              className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ${
+                showDeleteButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
+              }`}
+            >
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  // Blur the button to release focus before clearing
+                  // This allows the parent handler to focus the input
+                  e.currentTarget.blur();
+                  config.onClear?.();
+                }}
+                onMouseDown={e => e.stopPropagation()}
+                className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                  deleteIconVisible
+                    ? 'opacity-100 translate-x-0'
+                    : 'pointer-events-none opacity-0 -translate-x-1'
+                }`}
+                type="button"
+              >
+                <PiTrashSimpleBold className="w-3.5 h-3.5 flex-shrink-0" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

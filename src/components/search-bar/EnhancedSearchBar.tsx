@@ -204,19 +204,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const hasActiveConditionColumn =
     searchMode.partialConditions?.[activeConditionIndex]?.column;
 
-  // Determine which anchor ref to use based on activeConditionIndex
-  const getConditionColumnAnchorRef =
-    (): React.RefObject<HTMLElement | null> => {
-      if (activeConditionIndex === 0) {
-        return getLazyColumnRef(0); // First condition column
-      } else if (activeConditionIndex === 1) {
-        return getLazyColumnRef(1); // Second condition column
-      } else {
-        // N >= 2: use lazy ref that looks up element dynamically from badge map
-        return getLazyColumnRef(activeConditionIndex);
-      }
-    };
-
   // N-condition support: detect editing operator for any condition index
   // Check preservedSearchMode (edit mode) + showOperatorSelector
   // IMPORTANT: This must be checked BEFORE isCreatingConditionNOp because both can be true,
@@ -246,9 +233,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
     operatorAnchorAlign = 'left';
   } else if (isCreatingConditionNOp) {
-    // CREATE/select operator for condition[N]: position after column badge
-    operatorAnchorRef = getConditionColumnAnchorRef();
-    operatorAnchorAlign = 'right';
+    // CREATE/select operator for condition[N]: position at input caret
+    operatorAnchorRef = inputRef as React.RefObject<HTMLElement | null>;
+    operatorAnchorAlign = 'left';
   } else {
     // First operator: position after column badge
     operatorAnchorRef = getLazyColumnRef(0);
@@ -1897,7 +1884,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           />
 
           <div
-            className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg ${
+            className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg overflow-hidden ${
               shouldShowLeftIcon ? 'pl-1.5' : 'pl-9'
             } ${
               searchState === 'not-found'
@@ -1959,7 +1946,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
-              className="text-sm outline-none tracking-normal flex-grow min-w-[100px] bg-transparent border-none focus:ring-0 p-1 placeholder-gray-400"
+              className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 p-1 placeholder-gray-400"
               value={displayValue}
               onChange={wrappedInputChangeHandler}
               onKeyDown={wrappedKeyDownHandler}
