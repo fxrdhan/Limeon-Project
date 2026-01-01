@@ -183,10 +183,14 @@ export function useBadgeKeyboard(
       e.preventDefault();
       e.stopPropagation();
 
-      // Helper to check if a badge is selectable (not a separator)
+      // Helper to check if a badge is selectable (not a separator or group badge)
       const isSelectable = (index: number): boolean => {
         const badge = badgesRef.current[index];
-        return badge?.type !== 'separator';
+        return (
+          badge?.type !== 'separator' &&
+          badge?.type !== 'groupOpen' &&
+          badge?.type !== 'groupClose'
+        );
       };
 
       // Helper to find next selectable badge in direction

@@ -28,6 +28,7 @@ export {
   parseMultiConditionFilter,
   parsePartialNConditions,
 } from './parser/multiConditionParser';
+export { parseGroupedFilterPattern } from './parser/groupParser';
 
 // Import for internal use
 import { parseInRangeValues } from './parser/inRangeParser';
@@ -36,6 +37,7 @@ import {
   parsePartialNConditions,
 } from './parser/multiConditionParser';
 import { findColumn } from './parser/parserHelpers';
+import { parseGroupedFilterPattern } from './parser/groupParser';
 
 /**
  * Main search value parser
@@ -59,6 +61,16 @@ export const parseSearchValue = (
 ): EnhancedSearchState => {
   // Remove newlines (from paste) and trim only leading whitespace
   const searchValue = rawSearchValue.replace(/[\r\n]+/g, '').trimStart();
+  const hasGroupTokens =
+    searchValue.includes('#(') || searchValue.includes('#)');
+  const normalizedValue = hasGroupTokens
+    ? searchValue
+        .replace(/#\(|#\)/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trimStart()
+    : searchValue;
+  const valueToParse =
+    normalizedValue || (searchValue.startsWith('#') ? '#' : searchValue);
 
   // Single # = column selector
   if (searchValue === '#') {
@@ -72,13 +84,26 @@ export const parseSearchValue = (
   }
 
   if (searchValue.startsWith('#')) {
+    // Grouped pattern (confirmed with ##) - parse nested groups first
+    const groupedFilter = parseGroupedFilterPattern(searchValue, columns);
+    if (groupedFilter) {
+      return {
+        globalSearch: undefined,
+        showColumnSelector: false,
+        showOperatorSelector: false,
+        showJoinOperatorSelector: false,
+        isFilterMode: true,
+        filterSearch: groupedFilter,
+      };
+    }
+
     // Try N-condition partial patterns first (handles 2+ conditions dynamically)
-    const nConditionResult = parsePartialNConditions(searchValue, columns);
+    const nConditionResult = parsePartialNConditions(valueToParse, columns);
     if (nConditionResult) return nConditionResult;
 
     // Handle colon syntax: #column:value
-    if (searchValue.includes(':')) {
-      const colonMatch = searchValue.match(/^#([^:]+):(.*)$/);
+    if (valueToParse.includes(':')) {
+      const colonMatch = valueToParse.match(/^#([^:]+):(.*)$/);
       if (colonMatch) {
         const [, columnInput, searchTerm] = colonMatch;
         const column = findColumn(columns, columnInput);
@@ -114,7 +139,7 @@ export const parseSearchValue = (
     }
 
     // Parse filter pattern: #column #operator value
-    const filterMatch = searchValue.match(
+    const filterMatch = valueToParse.match(
       /^#([^\s:]+)(?:\s+#([^\s:]*)(?:\s+(.*))?)?$/
     );
 
@@ -125,7 +150,7 @@ export const parseSearchValue = (
       if (column) {
         // Check for complete multi-condition pattern (ends with ##)
         const multiCondition = parseMultiConditionFilter(
-          searchValue,
+          valueToParse,
           column,
           columns
         );
@@ -142,7 +167,7 @@ export const parseSearchValue = (
 
         // Handle partial patterns and operator selection
         return parseFilterPattern(
-          searchValue,
+          valueToParse,
           columns,
           column,
           operatorInput,
@@ -152,7 +177,7 @@ export const parseSearchValue = (
     }
 
     // Check for exact column match (e.g., #columnName without space)
-    const exactColumnMatch = findColumn(columns, searchValue.substring(1));
+    const exactColumnMatch = findColumn(columns, valueToParse.substring(1));
     if (exactColumnMatch) {
       return {
         globalSearch: undefined,

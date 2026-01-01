@@ -48,6 +48,10 @@ export function buildConditionPart(
 export function restoreConfirmedPattern(filter: FilterSearch): string {
   const columnName = filter.field;
 
+  if (filter.filterGroup) {
+    return PatternBuilder.buildGroupedPattern(filter.filterGroup, true);
+  }
+
   // Multi-condition filter
   if (
     filter.isMultiCondition &&

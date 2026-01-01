@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import { KEY_CODES } from '../constants';
 import { EnhancedSearchState } from '../types';
+import {
+  insertGroupCloseToken,
+  insertGroupOpenToken,
+} from '../utils/groupPatternUtils';
 import { PatternBuilder } from '../utils/PatternBuilder';
 
 // Scalable type for edit targets
@@ -40,7 +44,6 @@ export const useSearchKeyboard = ({
   onClearPreservedState,
   editConditionValue,
   clearConditionPart,
-  clearJoin,
 }: UseSearchKeyboardProps) => {
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -51,6 +54,70 @@ export const useSearchKeyboard = ({
           searchMode.showColumnSelector ||
           searchMode.showOperatorSelector ||
           searchMode.showJoinOperatorSelector;
+
+        const isPatternMode =
+          value.trimStart().startsWith('#') ||
+          searchMode.showColumnSelector ||
+          searchMode.showOperatorSelector ||
+          searchMode.showJoinOperatorSelector ||
+          searchMode.isFilterMode;
+
+        if ((e.key === '(' || e.key === ')') && isPatternMode) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (value.includes('#(') || value.includes('#)')) {
+            console.log('[SearchKeyboard] group key', {
+              key: e.key,
+              value,
+              inputValue: e.currentTarget.value,
+              isFilterMode: searchMode.isFilterMode,
+              partialJoin: searchMode.partialJoin,
+              activeConditionIndex: searchMode.activeConditionIndex,
+              showColumnSelector: searchMode.showColumnSelector,
+              showOperatorSelector: searchMode.showOperatorSelector,
+              showJoinOperatorSelector: searchMode.showJoinOperatorSelector,
+              filterOperator: searchMode.filterSearch?.operator,
+              filterValue: searchMode.filterSearch?.value,
+              conditionsCount: searchMode.filterSearch?.conditions?.length,
+            });
+          }
+
+          if (e.key === '(') {
+            const newValue = insertGroupOpenToken(value);
+            if (value.includes('#(') || value.includes('#)')) {
+              console.log('[SearchKeyboard] group open result', { newValue });
+            }
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+
+          const pendingValue = e.currentTarget.value.trim();
+          let baseValue = value;
+          if (pendingValue) {
+            const trimmedValue = value.trimEnd();
+            if (!trimmedValue.endsWith(pendingValue)) {
+              const separator = trimmedValue ? ' ' : '';
+              baseValue = `${trimmedValue}${separator}${pendingValue}`;
+            }
+          }
+
+          const newValue = insertGroupCloseToken(baseValue);
+          if (newValue) {
+            if (value.includes('#(') || value.includes('#)')) {
+              console.log('[SearchKeyboard] group close result', {
+                baseValue,
+                newValue,
+              });
+            }
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+          }
+          return;
+        }
 
         if (isModalOpen) {
           // Allow navigation keys (Arrow, Enter, Escape) - BaseSelector handles these too
@@ -566,7 +633,6 @@ export const useSearchKeyboard = ({
       onClearPreservedState,
       editConditionValue,
       clearConditionPart,
-      clearJoin,
     ]
   );
 

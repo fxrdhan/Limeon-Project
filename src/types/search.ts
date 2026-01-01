@@ -23,6 +23,20 @@ export interface FilterCondition {
   column?: SearchColumn; // Column reference for this condition
 }
 
+export interface FilterConditionNode extends FilterCondition {
+  kind: 'condition';
+}
+
+export interface FilterGroup {
+  kind: 'group';
+  join: 'AND' | 'OR';
+  nodes: FilterExpression[];
+  isClosed?: boolean;
+  isExplicit?: boolean;
+}
+
+export type FilterExpression = FilterConditionNode | FilterGroup;
+
 export interface FilterSearch extends TargetedSearch {
   operator: string;
   valueTo?: string; // For inRange (Between) operator - second value
@@ -33,6 +47,7 @@ export interface FilterSearch extends TargetedSearch {
   joinOperator?: 'AND' | 'OR'; // Join operator between conditions
   isMultiCondition?: boolean; // Flag to indicate multi-condition filter
   isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
+  filterGroup?: FilterGroup; // Nested group representation for advanced filter
 }
 
 export interface EnhancedSearchState {

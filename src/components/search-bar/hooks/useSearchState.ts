@@ -47,6 +47,23 @@ export const useSearchState = ({
   }, []);
 
   useEffect(() => {
+    const shouldLog = value.includes('#(') || value.includes('#)');
+    if (shouldLog) {
+      console.log('[SearchState] parsed', {
+        value,
+        isFilterMode: searchMode.isFilterMode,
+        showColumnSelector: searchMode.showColumnSelector,
+        showOperatorSelector: searchMode.showOperatorSelector,
+        showJoinOperatorSelector: searchMode.showJoinOperatorSelector,
+        partialJoin: searchMode.partialJoin,
+        activeConditionIndex: searchMode.activeConditionIndex,
+        filterOperator: searchMode.filterSearch?.operator,
+        filterValue: searchMode.filterSearch?.value,
+        conditionsCount: searchMode.filterSearch?.conditions?.length,
+        hasFilterGroup: !!searchMode.filterSearch?.filterGroup,
+      });
+    }
+
     if (value === '' || value.trim() === '') {
       onGlobalSearchRef.current?.('');
       onFilterSearchRef.current?.(null);

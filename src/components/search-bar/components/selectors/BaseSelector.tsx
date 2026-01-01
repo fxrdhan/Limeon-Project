@@ -246,6 +246,7 @@ function BaseSelector<T>({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
+      if (e.defaultPrevented) return;
 
       switch (e.key) {
         case 'ArrowDown':
