@@ -1,4 +1,4 @@
-import { SearchColumn } from '../types';
+import { FilterExpression, FilterGroup, SearchColumn } from '../types';
 
 /**
  * Validates a filter value based on the column type.
@@ -56,6 +56,10 @@ export const isFilterSearchValid = (
 ): boolean => {
   if (!filterSearch) return false;
 
+  if (filterSearch.filterGroup) {
+    return validateFilterGroup(filterSearch.filterGroup);
+  }
+
   // For multi-condition filters, validate every condition
   if (filterSearch.isMultiCondition && filterSearch.conditions) {
     return filterSearch.conditions.every(cond => {
@@ -91,4 +95,24 @@ export const isFilterSearchValid = (
   }
 
   return true;
+};
+
+const validateFilterGroup = (group: FilterGroup): boolean => {
+  const validateExpression = (node: FilterExpression): boolean => {
+    if (node.kind === 'group') {
+      return node.nodes.every(child => validateExpression(child));
+    }
+
+    const colType = node.column?.type;
+    if (!validateFilterValue(node.value, colType)) return false;
+    if (
+      node.operator === 'inRange' &&
+      !validateFilterValue(node.valueTo, colType)
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+  return validateExpression(group);
 };

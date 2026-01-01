@@ -19,6 +19,20 @@ export interface FilterCondition {
   column?: SearchColumn; // Column reference for this condition
 }
 
+export interface FilterConditionNode extends FilterCondition {
+  kind: 'condition';
+}
+
+export interface FilterGroup {
+  kind: 'group';
+  join: 'AND' | 'OR';
+  nodes: FilterExpression[];
+  isClosed?: boolean;
+  isExplicit?: boolean;
+}
+
+export type FilterExpression = FilterConditionNode | FilterGroup;
+
 export interface FilterSearch {
   field: string;
   value: string; // For single condition (backward compat)
@@ -32,6 +46,7 @@ export interface FilterSearch {
   joins?: ('AND' | 'OR')[]; // Full joins array for N-condition (joins[i] between condition[i] and condition[i+1])
   isMultiCondition?: boolean; // Flag to indicate multi-condition filter
   isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
+  filterGroup?: FilterGroup; // Nested group representation for advanced filter
   // Confirmed state (user pressed Enter to lock filter value as badge)
   isConfirmed?: boolean; // Flag to show value as gray badge instead of in input
   // Between operator waiting state (first value entered, waiting for second)

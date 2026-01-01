@@ -233,6 +233,10 @@ export const useSearchInput = ({
     }
 
     // PRIORITY 1: Multi-condition verbose mode - all values shown in badges, input empty
+    if (searchMode.filterSearch?.filterGroup && searchMode.isFilterMode) {
+      return '';
+    }
+
     if (
       searchMode.filterSearch?.isMultiCondition &&
       searchMode.filterSearch?.conditions &&
@@ -507,6 +511,25 @@ export const useSearchInput = ({
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
+      const shouldLog = value.includes('#(') || value.includes('#)');
+
+      if (shouldLog) {
+        console.log('[SearchInput] change', {
+          inputValue,
+          value,
+          isFilterMode: searchMode.isFilterMode,
+          partialJoin: searchMode.partialJoin,
+          activeConditionIndex: searchMode.activeConditionIndex,
+          showColumnSelector: searchMode.showColumnSelector,
+          showOperatorSelector: searchMode.showOperatorSelector,
+          showJoinOperatorSelector: searchMode.showJoinOperatorSelector,
+          selectedColumn: searchMode.selectedColumn?.field,
+          filterOperator: searchMode.filterSearch?.operator,
+          filterValue: searchMode.filterSearch?.value,
+          conditionsCount: searchMode.filterSearch?.conditions?.length,
+          hasFilterGroup: !!searchMode.filterSearch?.filterGroup,
+        });
+      }
 
       if (searchMode.isFilterMode && searchMode.filterSearch) {
         // Calculate early: Are we building condition 3+ (index >= 2)?
@@ -657,7 +680,7 @@ export const useSearchInput = ({
           // Pattern structure: ...#join #col #op [value]
           // Find the last "#col #op" and append inputValue after it
           const lastConditionMatch = value.match(
-            /^(.*#[^\s#]+\s+#[^\s#]+)\s*.*$/
+            /^(.*#(?![()])[^\s#]+\s+#(?![()])[^\s#]+)\s*.*$/
           );
           if (lastConditionMatch) {
             const basePattern = lastConditionMatch[1];
@@ -716,15 +739,20 @@ export const useSearchInput = ({
         // Build pattern: #field #op1 val1 #join #op2 val2 (same-column)
         // Or: #field #op1 val1 #join #col2 #op2 val2 (multi-column)
         const currentValue = value;
+        const normalizedCurrentValue = currentValue
+          .replace(/#\(|#\)/g, ' ')
+          .replace(/\s+/g, ' ');
 
         // MULTI-COLUMN: Check for pattern #col1 #op1 val1 #join #col2 #op2
-        const multiColMatch = currentValue.match(
+        const multiColMatch = normalizedCurrentValue.match(
           /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)/i
         );
 
         // SAME-COLUMN: Check for pattern #col1 #op1 val1 #join #op2 [value]
         // NOTE: Removed $ anchor to also match when user is typing value (e.g., "#and #contains m")
-        const sameColMatch = currentValue.match(/#(and|or)\s+#([^\s]+)/i);
+        const sameColMatch = normalizedCurrentValue.match(
+          /#(and|or)\s+#([^\s]+)/i
+        );
 
         // Extract groups based on match type
         // multiColMatch: [full, join, col2, op2]
@@ -732,43 +760,58 @@ export const useSearchInput = ({
         const isMultiColumn =
           searchMode.partialConditions?.[1]?.column && multiColMatch;
 
-        let join: string;
-        let col2: string | undefined;
-        let op2: string;
+        let op2: string | undefined;
 
         if (isMultiColumn && multiColMatch) {
-          [, join, col2, op2] = multiColMatch;
+          [, , , op2] = multiColMatch;
         } else if (sameColMatch) {
-          [, join, op2] = sameColMatch;
+          [, , op2] = sameColMatch;
         } else {
           // No match, use original onChange
           onChange(e);
           return;
         }
 
+        const activeIdx = searchMode.activeConditionIndex ?? 1;
+        const activeCondN = searchMode.partialConditions?.[activeIdx];
+        const operatorName = op2 || activeCondN?.operator;
+        if (!operatorName) {
+          onChange(e);
+          return;
+        }
+
+        const getBasePatternFromToken = (token: string): string | null => {
+          const lowerValue = currentValue.toLowerCase();
+          const lowerToken = token.toLowerCase();
+          const tokenIndex = lowerValue.lastIndexOf(lowerToken);
+          if (tokenIndex === -1) {
+            return null;
+          }
+          return currentValue.slice(0, tokenIndex + token.length).trimEnd();
+        };
+
         // SPECIAL CASE: If input becomes empty, preserve second operator in partial multi-condition state
         // This handles when user deletes the second value completely
         // Step 5 of E9: Preserve 5 badges, then Step 6 backspace will trigger operator selector
         if (inputValue === '') {
-          // Remove everything from #join onwards to get base pattern
-          const basePattern = isMultiColumn
-            ? currentValue.replace(
-                /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)(?:\s+.*)?$/i,
-                ''
-              )
-            : currentValue.replace(/#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i, '');
-
-          // Preserve second operator to maintain partial multi-condition state (5 badges)
-          // Step 6 backspace will be handled by useSearchKeyboard.ts to remove operator and open selector
-          const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #${op2}`
-            : `${basePattern.trim()} #${join} #${op2}`;
+          const basePattern = getBasePatternFromToken(`#${operatorName}`);
+          if (!basePattern) {
+            onChange(e);
+            return;
+          }
 
           // Keep preserved state to maintain second operator badge for Step 6
           // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler
 
+          if (shouldLog) {
+            console.log('[SearchInput] partialJoin empty value', {
+              operatorName,
+              basePattern,
+            });
+          }
+
           onChange({
-            target: { value: newValue },
+            target: { value: basePattern },
           } as React.ChangeEvent<HTMLInputElement>);
           return;
         }
@@ -776,64 +819,104 @@ export const useSearchInput = ({
         // SPECIAL CASE: Between operator - preserve first value and #to marker
         // When waitingForValueTo is true, append typed value after #to
         // N-CONDITION: Use activeConditionIndex for scalability
-        const activeIdx = searchMode.activeConditionIndex ?? 1;
-        const activeCondN = searchMode.partialConditions?.[activeIdx];
         if (
           activeCondN?.waitingForValueTo &&
           activeCondN?.value &&
           activeCondN?.operator === 'inRange'
         ) {
-          // Pattern: #col1 #op1 val1 #and #col2 #inRange secondVal #to → append typed value
-          const basePattern = isMultiColumn
-            ? currentValue.replace(
-                /#(and|or)\s+#([^\s#]+)\s+#inRange\s+.+$/i,
-                ''
-              )
-            : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
+          const basePattern = getBasePatternFromToken('#to');
+          if (basePattern) {
+            const newValue = inputValue
+              ? `${basePattern} ${inputValue}`
+              : basePattern;
+            if (shouldLog) {
+              console.log('[SearchInput] partialJoin inRange valueTo', {
+                operatorName,
+                basePattern,
+                newValue,
+              });
+            }
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
 
-          const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #inRange ${activeCondN.value} #to ${inputValue}`
-            : `${basePattern.trim()} #${join} #inRange ${activeCondN.value} #to ${inputValue}`;
-
-          onChange({
-            target: { value: newValue },
-          } as React.ChangeEvent<HTMLInputElement>);
-          return;
+          const operatorBase = getBasePatternFromToken(`#${operatorName}`);
+          if (operatorBase) {
+            const newValue = `${operatorBase} ${activeCondN.value} #to ${inputValue}`;
+            if (shouldLog) {
+              console.log(
+                '[SearchInput] partialJoin inRange valueTo fallback',
+                {
+                  operatorName,
+                  operatorBase,
+                  newValue,
+                }
+              );
+            }
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
         }
 
         // SPECIAL CASE: Between operator typing valueTo - preserve first value and #to marker
         if (activeCondN?.valueTo && activeCondN?.operator === 'inRange') {
-          const basePattern = isMultiColumn
-            ? currentValue.replace(
-                /#(and|or)\s+#([^\s#]+)\s+#inRange\s+.+$/i,
-                ''
-              )
-            : currentValue.replace(/#(and|or)\s+#inRange\s+.+$/i, '');
+          const basePattern = getBasePatternFromToken('#to');
+          if (basePattern) {
+            const newValue = inputValue
+              ? `${basePattern} ${inputValue}`
+              : basePattern;
+            if (shouldLog) {
+              console.log('[SearchInput] partialJoin inRange valueTo edit', {
+                operatorName,
+                basePattern,
+                newValue,
+              });
+            }
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
 
-          const newValue = isMultiColumn
-            ? `${basePattern.trim()} #${join} #${col2} #inRange ${activeCondN.value} #to ${inputValue}`
-            : `${basePattern.trim()} #${join} #inRange ${activeCondN.value} #to ${inputValue}`;
+          const operatorBase = getBasePatternFromToken(`#${operatorName}`);
+          if (operatorBase && activeCondN.value) {
+            const newValue = `${operatorBase} ${activeCondN.value} #to ${inputValue}`;
+            if (shouldLog) {
+              console.log('[SearchInput] partialJoin inRange edit fallback', {
+                operatorName,
+                operatorBase,
+                newValue,
+              });
+            }
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+        }
 
-          onChange({
-            target: { value: newValue },
-          } as React.ChangeEvent<HTMLInputElement>);
+        const basePattern = getBasePatternFromToken(`#${operatorName}`);
+        if (!basePattern) {
+          onChange(e);
           return;
         }
 
-        // Build complete multi-condition pattern
-        // Same-column: #field #op1 val1 #join #op2 val2
-        // Multi-column: #field #op1 val1 #join #col2 #op2 val2
-        const basePattern = isMultiColumn
-          ? currentValue.replace(
-              /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)(?:\s+.*)?$/i,
-              ''
-            )
-          : currentValue.replace(/#(and|or)\s+#([^\s]+)(?:\s+.*)?$/i, '');
-
         // inputValue now contains the full accumulated second value thanks to displayValue fix
-        const newValue = isMultiColumn
-          ? `${basePattern.trim()} #${join} #${col2} #${op2} ${inputValue}`
-          : `${basePattern.trim()} #${join} #${op2} ${inputValue}`;
+        const newValue = inputValue
+          ? `${basePattern} ${inputValue}`
+          : basePattern;
+
+        if (shouldLog) {
+          console.log('[SearchInput] partialJoin value update', {
+            operatorName,
+            basePattern,
+            newValue,
+          });
+        }
 
         onChange({
           target: { value: newValue },

@@ -71,23 +71,30 @@ export const isHashtagMode = (searchValue: string): boolean => {
  * Get the current search term for the operator selector based on the pattern.
  */
 export const getOperatorSearchTerm = (value: string): string => {
-  if (value.startsWith('#')) {
+  const normalizedValue = value
+    .replace(/#\(|#\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trimStart();
+
+  if (normalizedValue.startsWith('#')) {
     // MULTI-COLUMN: Check for pattern #col1 #op1 val1 #and #col2 #searchTerm
     // Extract operator search term for condition[1] column
-    const multiColOpMatch = value.match(/#(?:and|or)\s+#[^\s#]+\s+#([^\s]*)$/i);
+    const multiColOpMatch = normalizedValue.match(
+      /#(?:and|or)\s+#[^\s#]+\s+#([^\s]*)$/i
+    );
     if (multiColOpMatch) {
       return multiColOpMatch[1]; // Return search term after condition[1] column
     }
 
     // SAME-COLUMN: Check for condition[1] operator pattern: #field #op1 val1 #and #search_term
     // This ensures operator selector doesn't filter when selecting condition[1] operator
-    const cond1OpMatch = value.match(/#(and|or)\s+#([^\s]*)$/i);
+    const cond1OpMatch = normalizedValue.match(/#(and|or)\s+#([^\s]*)$/i);
     if (cond1OpMatch) {
       return cond1OpMatch[2]; // Return search term after join operator
     }
 
     // First operator pattern: #field #search_term
-    const match = value.match(/^#[^\s:]+\s+#([^\s]*)/);
+    const match = normalizedValue.match(/^#[^\s:]+\s+#([^\s]*)/);
     return match ? match[1] : '';
   }
   return '';
