@@ -23,6 +23,7 @@ import { JOIN_OPERATORS, JoinOperator } from './operators';
 import {
   EnhancedSearchBarProps,
   EnhancedSearchState,
+  FilterConditionNode,
   FilterExpression,
   FilterGroup,
   FilterOperator,
@@ -38,7 +39,10 @@ import {
   removeGroupTokenAtIndex,
   replaceTrailingHash,
 } from './utils/groupPatternUtils';
-import { getOperatorsForColumn } from './utils/operatorUtils';
+import {
+  getOperatorsForColumn,
+  isOperatorCompatibleWithColumn,
+} from './utils/operatorUtils';
 import { PatternBuilder } from './utils/PatternBuilder';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
 import { buildColumnValue, findColumn } from './utils/searchUtils';
@@ -65,6 +69,70 @@ const updateGroupConditionValue = (
     }
     if (node.kind !== 'group') return node;
     return updateGroupConditionValue(node, rest, field, nextValue, nextValueTo);
+  });
+  return { ...group, nodes };
+};
+
+const updateGroupConditionColumn = (
+  group: FilterGroup,
+  path: number[],
+  column: SearchColumn
+): FilterGroup => {
+  if (path.length === 0) return group;
+  const [index, ...rest] = path;
+  const nodes = group.nodes.map((node, idx) => {
+    if (idx !== index) return node;
+    if (rest.length === 0) {
+      if (node.kind !== 'condition') return node;
+      return {
+        ...node,
+        field: column.field,
+        column,
+      };
+    }
+    if (node.kind !== 'group') return node;
+    return updateGroupConditionColumn(node, rest, column);
+  });
+  return { ...group, nodes };
+};
+
+const updateGroupConditionOperator = (
+  group: FilterGroup,
+  path: number[],
+  operator: string
+): FilterGroup => {
+  if (path.length === 0) return group;
+  const [index, ...rest] = path;
+  const nodes = group.nodes.map((node, idx) => {
+    if (idx !== index) return node;
+    if (rest.length === 0) {
+      if (node.kind !== 'condition') return node;
+      const needsValueTo = operator === 'inRange' && !node.valueTo;
+      return {
+        ...node,
+        operator,
+        valueTo: needsValueTo ? node.value : node.valueTo,
+      };
+    }
+    if (node.kind !== 'group') return node;
+    return updateGroupConditionOperator(node, rest, operator);
+  });
+  return { ...group, nodes };
+};
+
+const updateGroupJoinAtPath = (
+  group: FilterGroup,
+  path: number[],
+  join: 'AND' | 'OR'
+): FilterGroup => {
+  if (path.length === 0) {
+    return { ...group, join };
+  }
+  const [index, ...rest] = path;
+  const nodes = group.nodes.map((node, idx) => {
+    if (idx !== index) return node;
+    if (node.kind !== 'group') return node;
+    return updateGroupJoinAtPath(node, rest, join);
   });
   return { ...group, nodes };
 };
@@ -113,6 +181,17 @@ const findGroupNodeAtPath = (
   if (rest.length === 0) return node;
   if (node.kind !== 'group') return undefined;
   return findGroupNodeAtPath(node, rest);
+};
+
+const findFirstConditionInGroup = (
+  group: FilterGroup
+): FilterConditionNode | undefined => {
+  for (const node of group.nodes) {
+    if (node.kind === 'condition') return node;
+    const nested = findFirstConditionInGroup(node);
+    if (nested) return nested;
+  }
+  return undefined;
 };
 
 const getActiveGroupJoin = (
@@ -170,6 +249,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // State to preserve searchMode during edit (to keep badges visible)
   const [preservedSearchMode, setPreservedSearchMode] =
     useState<EnhancedSearchState | null>(null);
+  const groupEditDraftRef = useRef<FilterGroup | null>(null);
+  const [groupEditingSelectorTarget, setGroupEditingSelectorTarget] = useState<{
+    path: number[];
+    target: 'column' | 'operator' | 'join';
+    joinIndex?: number;
+  } | null>(null);
 
   // ============ Consolidated Editing State (N-Condition Support) ============
   // Tracks which condition's column/operator is being edited
@@ -261,6 +346,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   );
   const isGroupingActive = hasGroupTokens;
   const activeGroupState = useMemo(() => getActiveGroupJoin(value), [value]);
+  const getGroupPathKey = (path: number[]) =>
+    path.length > 0 ? path.join('-') : 'root';
+  const getGroupConditionBadgeId = (
+    path: number[],
+    type: 'column' | 'operator'
+  ) => `condition-${getGroupPathKey(path)}-${type}`;
+  const getGroupJoinBadgeId = (path: number[], joinIndex: number) =>
+    `join-${getGroupPathKey(path)}-${joinIndex}`;
 
   // Badge refs are used for dynamic selector positioning
   // We need to access them before calling useSelectorPosition
@@ -278,6 +371,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     getLazyColumnRef,
     getLazyOperatorRef,
     getLazyJoinRef,
+    getLazyBadgeRef,
   } = useSearchInput({
     value,
     searchMode,
@@ -299,6 +393,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const getColumnAnchorRef = ():
     | React.RefObject<HTMLElement | null>
     | undefined => {
+    if (groupEditingSelectorTarget?.target === 'column') {
+      return getLazyBadgeRef(
+        getGroupConditionBadgeId(groupEditingSelectorTarget.path, 'column')
+      );
+    }
     if (!isSelectingConditionNColumn) return undefined; // First column: no anchor (or container left)
     if (!isEditingConditionNColumn)
       return inputRef as React.RefObject<HTMLElement | null>; // Create mode: position at input (end of badges)
@@ -344,7 +443,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   let operatorAnchorRef: React.RefObject<HTMLElement | null>;
   let operatorAnchorAlign: 'left' | 'right';
 
-  if (isEditingOperator) {
+  if (groupEditingSelectorTarget?.target === 'operator') {
+    operatorAnchorRef = getLazyBadgeRef(
+      getGroupConditionBadgeId(groupEditingSelectorTarget.path, 'operator')
+    );
+    operatorAnchorAlign = 'left';
+  } else if (isEditingOperator) {
     // EDIT existing operator: position below the OPERATOR badge being edited
     // Use dynamic ref for N >= 2, static refs for 0 and 1
     if (activeConditionIndex === 0) {
@@ -385,6 +489,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const isEditingJoinOperator = editingSelectorTarget?.target === 'join';
 
   const getJoinAnchorRef = (): React.RefObject<HTMLElement | null> => {
+    if (
+      groupEditingSelectorTarget?.target === 'join' &&
+      groupEditingSelectorTarget.joinIndex !== undefined
+    ) {
+      return getLazyBadgeRef(
+        getGroupJoinBadgeId(
+          groupEditingSelectorTarget.path,
+          groupEditingSelectorTarget.joinIndex
+        )
+      );
+    }
     // 1. EDIT existing join: use the specific join badge being edited
     if (
       isEditingJoinOperator &&
@@ -412,6 +527,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedFilterRef.current = null;
     setCurrentJoinOperator(undefined);
     setEditingSelectorTarget(null); // Clear all editing states
+    setGroupEditingSelectorTarget(null);
+    groupEditDraftRef.current = null;
   }, []);
 
   // Try to restore confirmed pattern from preservedSearchMode
@@ -427,6 +544,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       preservedFilterRef.current = null;
       setPreservedSearchMode(null);
+      setGroupEditingSelectorTarget(null);
+      groupEditDraftRef.current = null;
       return true;
     }
     return false;
@@ -468,11 +587,117 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     [clearAll, onChange]
   );
 
+  const getGroupEditBase = useCallback(() => {
+    return (
+      groupEditDraftRef.current ||
+      preservedSearchMode?.filterSearch?.filterGroup ||
+      searchMode.filterSearch?.filterGroup ||
+      null
+    );
+  }, [preservedSearchMode, searchMode.filterSearch]);
+
   const handleGroupEditStart = useCallback(
     (path: number[], field: 'value' | 'valueTo', currentValue: string) => {
       setEditingGroupBadge({ path, field, value: currentValue });
     },
     []
+  );
+
+  const handleGroupEditColumn = useCallback(
+    (path: number[]) => {
+      const group = getGroupEditBase();
+      if (!group) return;
+
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+
+      groupEditDraftRef.current = group;
+      setGroupEditingSelectorTarget({ path, target: 'column' });
+
+      onChange({
+        target: { value: '#' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    },
+    [
+      getGroupEditBase,
+      preservedSearchMode,
+      searchMode,
+      onChange,
+      setPreservedSearchMode,
+    ]
+  );
+
+  const handleGroupEditOperator = useCallback(
+    (path: number[]) => {
+      const group = getGroupEditBase();
+      if (!group) return;
+
+      const node = findGroupNodeAtPath(group, path);
+      if (!node || node.kind !== 'condition') return;
+
+      const columnField = node.field || node.column?.field;
+      if (!columnField) return;
+
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+
+      groupEditDraftRef.current = group;
+      setGroupEditingSelectorTarget({ path, target: 'operator' });
+
+      onChange({
+        target: {
+          value: PatternBuilder.columnWithOperatorSelector(columnField),
+        },
+      } as React.ChangeEvent<HTMLInputElement>);
+    },
+    [
+      getGroupEditBase,
+      preservedSearchMode,
+      searchMode,
+      onChange,
+      setPreservedSearchMode,
+    ]
+  );
+
+  const handleGroupEditJoin = useCallback(
+    (path: number[], joinIndex: number) => {
+      const group = getGroupEditBase();
+      if (!group) return;
+
+      const targetNode =
+        path.length === 0 ? group : findGroupNodeAtPath(group, path);
+      if (!targetNode || targetNode.kind !== 'group') return;
+
+      const firstCondition = findFirstConditionInGroup(targetNode);
+      if (!firstCondition) return;
+
+      if (!preservedSearchMode) {
+        setPreservedSearchMode(searchMode);
+      }
+
+      groupEditDraftRef.current = group;
+      setGroupEditingSelectorTarget({ path, target: 'join', joinIndex });
+
+      onChange({
+        target: {
+          value: PatternBuilder.withJoinSelector(
+            firstCondition.field || '',
+            firstCondition.operator,
+            firstCondition.value,
+            firstCondition.valueTo
+          ),
+        },
+      } as React.ChangeEvent<HTMLInputElement>);
+    },
+    [
+      getGroupEditBase,
+      preservedSearchMode,
+      searchMode,
+      onChange,
+      setPreservedSearchMode,
+    ]
   );
 
   const handleGroupInlineValueChange = useCallback((nextValue: string) => {
@@ -601,6 +826,122 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setEditingBadge,
     });
 
+  const handleGroupEditColumnSelect = useCallback(
+    (column: SearchColumn): boolean => {
+      const target = groupEditingSelectorTarget;
+      if (!target || target.target !== 'column') return false;
+
+      const baseGroup = getGroupEditBase();
+      if (!baseGroup) {
+        setGroupEditingSelectorTarget(null);
+        groupEditDraftRef.current = null;
+        return true;
+      }
+
+      const updatedGroup = updateGroupConditionColumn(
+        baseGroup,
+        target.path,
+        column
+      );
+      groupEditDraftRef.current = updatedGroup;
+
+      const node = findGroupNodeAtPath(updatedGroup, target.path);
+      if (!node || node.kind !== 'condition') {
+        setGroupEditingSelectorTarget(null);
+        groupEditDraftRef.current = null;
+        handleClearPreservedState();
+        return true;
+      }
+
+      if (isOperatorCompatibleWithColumn(column, node.operator)) {
+        applyGroupedPattern(updatedGroup);
+        handleClearPreservedState();
+        setGroupEditingSelectorTarget(null);
+        groupEditDraftRef.current = null;
+        return true;
+      }
+
+      setGroupEditingSelectorTarget({ path: target.path, target: 'operator' });
+      onChange({
+        target: {
+          value: PatternBuilder.columnWithOperatorSelector(column.field),
+        },
+      } as React.ChangeEvent<HTMLInputElement>);
+      return true;
+    },
+    [
+      groupEditingSelectorTarget,
+      getGroupEditBase,
+      applyGroupedPattern,
+      handleClearPreservedState,
+      onChange,
+    ]
+  );
+
+  const handleGroupEditOperatorSelect = useCallback(
+    (operator: FilterOperator): boolean => {
+      const target = groupEditingSelectorTarget;
+      if (!target || target.target !== 'operator') return false;
+
+      const baseGroup = getGroupEditBase();
+      if (!baseGroup) {
+        setGroupEditingSelectorTarget(null);
+        groupEditDraftRef.current = null;
+        return true;
+      }
+
+      const updatedGroup = updateGroupConditionOperator(
+        baseGroup,
+        target.path,
+        operator.value
+      );
+
+      applyGroupedPattern(updatedGroup);
+      handleClearPreservedState();
+      setGroupEditingSelectorTarget(null);
+      groupEditDraftRef.current = null;
+      return true;
+    },
+    [
+      groupEditingSelectorTarget,
+      getGroupEditBase,
+      applyGroupedPattern,
+      handleClearPreservedState,
+    ]
+  );
+
+  const handleGroupEditJoinSelect = useCallback(
+    (joinOp: JoinOperator): boolean => {
+      const target = groupEditingSelectorTarget;
+      if (!target || target.target !== 'join') return false;
+
+      const baseGroup = getGroupEditBase();
+      if (!baseGroup) {
+        setGroupEditingSelectorTarget(null);
+        groupEditDraftRef.current = null;
+        return true;
+      }
+
+      const updatedGroup = updateGroupJoinAtPath(
+        baseGroup,
+        target.path,
+        joinOp.value.toUpperCase() as 'AND' | 'OR'
+      );
+
+      applyGroupedPattern(updatedGroup);
+      handleClearPreservedState();
+      setGroupEditingSelectorTarget(null);
+      groupEditDraftRef.current = null;
+      return true;
+    },
+    [
+      groupEditingSelectorTarget,
+      getGroupEditBase,
+      applyGroupedPattern,
+      handleClearPreservedState,
+    ]
+  );
+
   const handleGroupColumnSelect = useCallback(
     (column: SearchColumn) => {
       const newValue = replaceTrailingHash(value, `#${column.field} #`);
@@ -627,35 +968,59 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleColumnSelectWithGroups = useCallback(
     (column: SearchColumn) => {
+      if (handleGroupEditColumnSelect(column)) {
+        return;
+      }
       if (isGroupingActive) {
         handleGroupColumnSelect(column);
         return;
       }
       handleColumnSelect(column);
     },
-    [isGroupingActive, handleGroupColumnSelect, handleColumnSelect]
+    [
+      isGroupingActive,
+      handleGroupEditColumnSelect,
+      handleGroupColumnSelect,
+      handleColumnSelect,
+    ]
   );
 
   const handleOperatorSelectWithGroups = useCallback(
     (operator: FilterOperator) => {
+      if (handleGroupEditOperatorSelect(operator)) {
+        return;
+      }
       if (isGroupingActive) {
         handleGroupOperatorSelect(operator);
         return;
       }
       handleOperatorSelect(operator);
     },
-    [isGroupingActive, handleGroupOperatorSelect, handleOperatorSelect]
+    [
+      isGroupingActive,
+      handleGroupEditOperatorSelect,
+      handleGroupOperatorSelect,
+      handleOperatorSelect,
+    ]
   );
 
   const handleJoinOperatorSelectWithGroups = useCallback(
     (joinOp: JoinOperator) => {
+      if (handleGroupEditJoinSelect(joinOp)) {
+        return;
+      }
       if (isGroupingActive) {
         handleGroupJoinSelect(joinOp);
         return;
       }
       handleJoinOperatorSelect(joinOp);
     },
-    [isGroupingActive, handleGroupJoinSelect, handleJoinOperatorSelect]
+    [
+      isGroupingActive,
+      handleGroupEditJoinSelect,
+      handleGroupJoinSelect,
+      handleJoinOperatorSelect,
+    ]
   );
 
   // Handler for badge count changes from SearchBadge
@@ -2255,6 +2620,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               editValueN={editValueN}
               onHoverChange={handleHoverChange}
               preservedSearchMode={preservedSearchMode}
+              preserveBadgesOnJoinSelector={
+                groupEditingSelectorTarget?.target === 'join'
+              }
               editingBadge={editingBadge}
               onInlineValueChange={handleInlineValueChange}
               onInlineEditComplete={handleInlineEditComplete}
@@ -2269,6 +2637,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onGroupInlineValueChange={handleGroupInlineValueChange}
               onGroupInlineEditComplete={handleGroupInlineEditComplete}
               onGroupEditStart={handleGroupEditStart}
+              onGroupEditColumn={handleGroupEditColumn}
+              onGroupEditOperator={handleGroupEditOperator}
+              onGroupEditJoin={handleGroupEditJoin}
               onGroupClearCondition={handleGroupClearCondition}
               onGroupClearGroup={handleGroupClearGroup}
               onGroupTokenClear={handleGroupTokenClear}

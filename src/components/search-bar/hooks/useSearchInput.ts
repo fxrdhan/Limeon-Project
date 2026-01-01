@@ -159,6 +159,25 @@ export const useSearchInput = ({
     [getJoinRef]
   );
 
+  const getLazyBadgeRef = useCallback(
+    (badgeId: string): React.RefObject<HTMLDivElement | null> => {
+      const cacheKey = `badge-${badgeId}`;
+      if (lazyRefsCache.current.has(cacheKey)) {
+        return lazyRefsCache.current.get(cacheKey)!;
+      }
+
+      const lazyRef = {
+        get current() {
+          return getBadgeRef(badgeId);
+        },
+      } as React.RefObject<HTMLDivElement | null>;
+
+      lazyRefsCache.current.set(cacheKey, lazyRef);
+      return lazyRef;
+    },
+    [getBadgeRef]
+  );
+
   const operatorSearchTerm = useMemo(
     () => getOperatorSearchTerm(value),
     [value]
@@ -999,5 +1018,6 @@ export const useSearchInput = ({
     getLazyColumnRef,
     getLazyOperatorRef,
     getLazyJoinRef,
+    getLazyBadgeRef,
   };
 };

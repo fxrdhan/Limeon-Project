@@ -53,6 +53,9 @@ interface GroupBadgeHandlers {
     field: 'value' | 'valueTo',
     value: string
   ) => void;
+  onEditColumn?: (path: number[]) => void;
+  onEditOperator?: (path: number[]) => void;
+  onEditJoin?: (path: number[], joinIndex: number) => void;
   onClearCondition?: (path: number[]) => void;
   onClearGroup?: (path: number[]) => void;
 }
@@ -137,10 +140,34 @@ const buildBadgesFromCondition = (
   const operatorLabel = condition.column
     ? getOperatorLabelForColumn(condition.column, condition.operator)
     : condition.operator;
+  const onEditColumn = groupHandlers?.onEditColumn
+    ? () => groupHandlers.onEditColumn?.(path)
+    : undefined;
+  const onEditOperator = groupHandlers?.onEditOperator
+    ? () => groupHandlers.onEditOperator?.(path)
+    : undefined;
 
   const badges: BadgeConfig[] = [
-    createStaticBadge(`condition-${key}-column`, 'column', columnLabel),
-    createStaticBadge(`condition-${key}-operator`, 'operator', operatorLabel),
+    createStaticBadge(
+      `condition-${key}-column`,
+      'column',
+      columnLabel,
+      undefined,
+      {
+        onEdit: onEditColumn,
+        canEdit: !!onEditColumn,
+      }
+    ),
+    createStaticBadge(
+      `condition-${key}-operator`,
+      'operator',
+      operatorLabel,
+      undefined,
+      {
+        onEdit: onEditOperator,
+        canEdit: !!onEditOperator,
+      }
+    ),
   ];
 
   if (condition.operator === 'inRange') {
@@ -281,8 +308,20 @@ const buildBadgesFromGroup = (
     }
 
     if (index < group.nodes.length - 1) {
+      const onEditJoin = groupHandlers?.onEditJoin
+        ? () => groupHandlers.onEditJoin?.(path, index)
+        : undefined;
       badges.push(
-        createStaticBadge(`join-${pathKey}-${index}`, 'join', group.join)
+        createStaticBadge(
+          `join-${pathKey}-${index}`,
+          'join',
+          group.join,
+          undefined,
+          {
+            onEdit: onEditJoin,
+            canEdit: !!onEditJoin,
+          }
+        )
       );
     }
   });
