@@ -2454,6 +2454,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Calculate default selected operator index when in edit mode
   const defaultOperatorIndex = useMemo(() => {
+    if (groupEditingSelectorTarget?.target === 'operator') {
+      const baseGroup =
+        preservedSearchMode?.filterSearch?.filterGroup ||
+        searchMode.filterSearch?.filterGroup ||
+        null;
+      const node = baseGroup
+        ? findGroupNodeAtPath(baseGroup, groupEditingSelectorTarget.path)
+        : undefined;
+      if (node?.kind === 'condition') {
+        const index = operators.findIndex(op => op.value === node.operator);
+        return index >= 0 ? index : undefined;
+      }
+    }
+
     // N-condition support: Check if editing condition N's operator (N >= 2)
     const editingIdx = searchMode.activeConditionIndex;
     if (
@@ -2498,14 +2512,35 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
     return undefined;
   }, [
+    groupEditingSelectorTarget,
     preservedSearchMode,
     isEditingSecondOperator,
     operators,
     searchMode.activeConditionIndex,
+    searchMode.filterSearch,
   ]);
 
   // Calculate default selected column index when in edit mode
   const defaultColumnIndex = useMemo(() => {
+    if (groupEditingSelectorTarget?.target === 'column') {
+      const baseGroup =
+        preservedSearchMode?.filterSearch?.filterGroup ||
+        searchMode.filterSearch?.filterGroup ||
+        null;
+      const node = baseGroup
+        ? findGroupNodeAtPath(baseGroup, groupEditingSelectorTarget.path)
+        : undefined;
+      if (node?.kind === 'condition') {
+        const columnField = node.field || node.column?.field;
+        if (columnField) {
+          const index = sortedColumns.findIndex(
+            col => col.field === columnField
+          );
+          return index >= 0 ? index : undefined;
+        }
+      }
+    }
+
     // N-condition support: Check if editing condition N's column (N >= 2)
     const editingIdx = searchMode.activeConditionIndex;
     if (
@@ -2558,10 +2593,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
     return undefined;
   }, [
+    groupEditingSelectorTarget,
     preservedSearchMode,
     sortedColumns,
     isEditingSecondColumnState,
     searchMode.activeConditionIndex,
+    searchMode.filterSearch,
   ]);
 
   // Determine if icon should be on the left (active state) // Show active animated mode when typing or focused filters exist
