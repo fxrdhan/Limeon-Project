@@ -55,3 +55,6 @@ GEMINI.md
 image.png
 readme-local.md
 .yarn/install-state.gz
+
+# virtual environment
+.venv
