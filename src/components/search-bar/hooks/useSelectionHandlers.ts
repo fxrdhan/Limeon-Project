@@ -636,7 +636,6 @@ export function useSelectionHandlers(
         return;
       }
 
-      console.log('[DEBUG] handleJoinOperatorSelect - newValue:', newValue);
       setFilterValue(newValue, onChange, inputRef);
 
       setTimeout(() => {
