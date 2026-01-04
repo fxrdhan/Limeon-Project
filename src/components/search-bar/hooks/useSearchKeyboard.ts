@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { KEY_CODES } from '../constants';
 import { EnhancedSearchState, FilterGroup } from '../types';
 import {
@@ -26,6 +26,26 @@ const deleteGroupedPartialTail = (input: string): string | null => {
   const base = stripTrailingConfirmation(input);
   const normalized = base.replace(/\s+/g, ' ').trimEnd();
   if (!normalized) return null;
+
+  // When a selector is open, patterns may end with a trailing "#" marker that is not
+  // rendered as a badge. Treat it as invisible and delete the previous meaningful
+  // token (e.g. "#(") instead of getting "stuck" on an unchanged UI.
+  if (normalized.endsWith('#')) {
+    const withoutMarker = base.replace(/\s*#\s*$/, '').trimEnd();
+    if (withoutMarker !== base) {
+      return deleteGroupedPartialTail(withoutMarker) ?? withoutMarker;
+    }
+  }
+
+  if (normalized.endsWith('#(') || normalized.endsWith('#)')) {
+    const tokenType = normalized.endsWith('#(') ? 'groupOpen' : 'groupClose';
+    const tokenCount = (
+      input.match(tokenType === 'groupOpen' ? /#\(/g : /#\)/g) || []
+    ).length;
+    if (tokenCount > 0) {
+      return removeGroupTokenAtIndex(input, tokenType, tokenCount - 1);
+    }
+  }
 
   const joinTailMatch = normalized.match(/^(.*)\s+#(?:and|or)\s*(?:#\s*)?$/i);
   if (joinTailMatch) {
@@ -121,6 +141,62 @@ export const useSearchKeyboard = ({
   editConditionValue,
   clearConditionPart,
 }: UseSearchKeyboardProps) => {
+  // When selectors are open, keyboard focus moves away from the main input.
+  // Capture Delete globally so users can still delete trailing pattern tokens (e.g. "#(").
+  useEffect(() => {
+    const isAnySelectorOpen =
+      searchMode.showColumnSelector ||
+      searchMode.showOperatorSelector ||
+      searchMode.showJoinOperatorSelector;
+
+    if (!isAnySelectorOpen) return;
+
+    const onGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== KEY_CODES.DELETE) return;
+
+      if (searchMode.showColumnSelector) {
+        const trailingJoinWithHash = value.match(/(.*)\s+#(?:and|or)\s+#\s*$/i);
+        const trailingJoinNoHash = value.match(/(.*)\s+#(?:and|or)\s*$/i);
+        const trailingJoinMatch = trailingJoinWithHash || trailingJoinNoHash;
+
+        if (trailingJoinMatch) {
+          e.preventDefault();
+          e.stopPropagation();
+          const baseFilter = trailingJoinMatch[1].trimEnd();
+          const newValue = baseFilter ? `${baseFilter}##` : '';
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+      }
+
+      if (value.includes('#(') || value.includes('#)')) {
+        const nextValue = deleteGroupedPartialTail(value);
+        if (nextValue !== null && nextValue !== value) {
+          e.preventDefault();
+          e.stopPropagation();
+          onChange({
+            target: { value: nextValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onGlobalKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', onGlobalKeyDown, {
+        capture: true,
+      });
+    };
+  }, [
+    onChange,
+    searchMode.showColumnSelector,
+    searchMode.showJoinOperatorSelector,
+    searchMode.showOperatorSelector,
+    value,
+  ]);
+
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       try {
@@ -142,28 +218,8 @@ export const useSearchKeyboard = ({
           e.preventDefault();
           e.stopPropagation();
 
-          if (value.includes('#(') || value.includes('#)')) {
-            console.log('[SearchKeyboard] group key', {
-              key: e.key,
-              value,
-              inputValue: e.currentTarget.value,
-              isFilterMode: searchMode.isFilterMode,
-              partialJoin: searchMode.partialJoin,
-              activeConditionIndex: searchMode.activeConditionIndex,
-              showColumnSelector: searchMode.showColumnSelector,
-              showOperatorSelector: searchMode.showOperatorSelector,
-              showJoinOperatorSelector: searchMode.showJoinOperatorSelector,
-              filterOperator: searchMode.filterSearch?.operator,
-              filterValue: searchMode.filterSearch?.value,
-              conditionsCount: searchMode.filterSearch?.conditions?.length,
-            });
-          }
-
           if (e.key === '(') {
             const newValue = insertGroupOpenToken(value);
-            if (value.includes('#(') || value.includes('#)')) {
-              console.log('[SearchKeyboard] group open result', { newValue });
-            }
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -182,12 +238,6 @@ export const useSearchKeyboard = ({
 
           const newValue = insertGroupCloseToken(baseValue);
           if (newValue) {
-            if (value.includes('#(') || value.includes('#)')) {
-              console.log('[SearchKeyboard] group close result', {
-                baseValue,
-                newValue,
-              });
-            }
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);

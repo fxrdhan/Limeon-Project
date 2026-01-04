@@ -530,25 +530,6 @@ export const useSearchInput = ({
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
-      const shouldLog = value.includes('#(') || value.includes('#)');
-
-      if (shouldLog) {
-        console.log('[SearchInput] change', {
-          inputValue,
-          value,
-          isFilterMode: searchMode.isFilterMode,
-          partialJoin: searchMode.partialJoin,
-          activeConditionIndex: searchMode.activeConditionIndex,
-          showColumnSelector: searchMode.showColumnSelector,
-          showOperatorSelector: searchMode.showOperatorSelector,
-          showJoinOperatorSelector: searchMode.showJoinOperatorSelector,
-          selectedColumn: searchMode.selectedColumn?.field,
-          filterOperator: searchMode.filterSearch?.operator,
-          filterValue: searchMode.filterSearch?.value,
-          conditionsCount: searchMode.filterSearch?.conditions?.length,
-          hasFilterGroup: !!searchMode.filterSearch?.filterGroup,
-        });
-      }
 
       if (searchMode.isFilterMode && searchMode.filterSearch) {
         // Calculate early: Are we building condition 3+ (index >= 2)?
@@ -822,13 +803,6 @@ export const useSearchInput = ({
           // Keep preserved state to maintain second operator badge for Step 6
           // DO NOT call onClearPreservedState?.() - needed for useSearchKeyboard.ts handler
 
-          if (shouldLog) {
-            console.log('[SearchInput] partialJoin empty value', {
-              operatorName,
-              basePattern,
-            });
-          }
-
           onChange({
             target: { value: basePattern },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -848,13 +822,6 @@ export const useSearchInput = ({
             const newValue = inputValue
               ? `${basePattern} ${inputValue}`
               : basePattern;
-            if (shouldLog) {
-              console.log('[SearchInput] partialJoin inRange valueTo', {
-                operatorName,
-                basePattern,
-                newValue,
-              });
-            }
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -864,16 +831,6 @@ export const useSearchInput = ({
           const operatorBase = getBasePatternFromToken(`#${operatorName}`);
           if (operatorBase) {
             const newValue = `${operatorBase} ${activeCondN.value} #to ${inputValue}`;
-            if (shouldLog) {
-              console.log(
-                '[SearchInput] partialJoin inRange valueTo fallback',
-                {
-                  operatorName,
-                  operatorBase,
-                  newValue,
-                }
-              );
-            }
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -888,13 +845,6 @@ export const useSearchInput = ({
             const newValue = inputValue
               ? `${basePattern} ${inputValue}`
               : basePattern;
-            if (shouldLog) {
-              console.log('[SearchInput] partialJoin inRange valueTo edit', {
-                operatorName,
-                basePattern,
-                newValue,
-              });
-            }
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -904,13 +854,6 @@ export const useSearchInput = ({
           const operatorBase = getBasePatternFromToken(`#${operatorName}`);
           if (operatorBase && activeCondN.value) {
             const newValue = `${operatorBase} ${activeCondN.value} #to ${inputValue}`;
-            if (shouldLog) {
-              console.log('[SearchInput] partialJoin inRange edit fallback', {
-                operatorName,
-                operatorBase,
-                newValue,
-              });
-            }
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -928,14 +871,6 @@ export const useSearchInput = ({
         const newValue = inputValue
           ? `${basePattern} ${inputValue}`
           : basePattern;
-
-        if (shouldLog) {
-          console.log('[SearchInput] partialJoin value update', {
-            operatorName,
-            basePattern,
-            newValue,
-          });
-        }
 
         onChange({
           target: { value: newValue },

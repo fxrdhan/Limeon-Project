@@ -3,6 +3,7 @@ import { EnhancedSearchState, SearchColumn, FilterSearch } from '../types';
 import { parseSearchValue } from '../utils/searchUtils';
 import { SEARCH_CONSTANTS } from '../constants';
 import { isFilterSearchValid } from '../utils/validationUtils';
+import { countGroupDepth } from '../utils/groupPatternUtils';
 
 interface UseSearchStateProps {
   value: string;
@@ -47,21 +48,19 @@ export const useSearchState = ({
   }, []);
 
   useEffect(() => {
-    const shouldLog = value.includes('#(') || value.includes('#)');
-    if (shouldLog) {
-      console.log('[SearchState] parsed', {
-        value,
-        isFilterMode: searchMode.isFilterMode,
-        showColumnSelector: searchMode.showColumnSelector,
-        showOperatorSelector: searchMode.showOperatorSelector,
-        showJoinOperatorSelector: searchMode.showJoinOperatorSelector,
-        partialJoin: searchMode.partialJoin,
-        activeConditionIndex: searchMode.activeConditionIndex,
-        filterOperator: searchMode.filterSearch?.operator,
-        filterValue: searchMode.filterSearch?.value,
-        conditionsCount: searchMode.filterSearch?.conditions?.length,
-        hasFilterGroup: !!searchMode.filterSearch?.filterGroup,
-      });
+    const hasGroupTokens = value.includes('#(') || value.includes('#)');
+
+    // If user is building grouped filters but parentheses are not balanced yet,
+    // do not apply (or clear) any filter to AG Grid. Wait until the group is closed.
+    // This prevents partially typed grouped expressions from being flattened and
+    // incorrectly applied (e.g., OR being coerced into AND).
+    if (hasGroupTokens && countGroupDepth(value) !== 0) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      prevValueRef.current = value;
+      return;
     }
 
     if (value === '' || value.trim() === '') {
