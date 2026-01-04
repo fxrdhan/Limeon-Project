@@ -1,11 +1,87 @@
 import { useCallback } from 'react';
 import { KEY_CODES } from '../constants';
-import { EnhancedSearchState } from '../types';
+import { EnhancedSearchState, FilterGroup } from '../types';
 import {
   insertGroupCloseToken,
   insertGroupOpenToken,
+  removeGroupTokenAtIndex,
 } from '../utils/groupPatternUtils';
 import { PatternBuilder } from '../utils/PatternBuilder';
+
+const stripTrailingConfirmation = (input: string): string => {
+  const trimmed = input.trimEnd();
+  return trimmed.endsWith('##') ? trimmed.slice(0, -2).trimEnd() : trimmed;
+};
+
+const ensureTrailingHash = (input: string): string => {
+  const trimmed = input.trimEnd();
+  if (!trimmed) return '#';
+  return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
+};
+
+const deleteGroupedPartialTail = (input: string): string | null => {
+  const hasGroupTokens = input.includes('#(') || input.includes('#)');
+  if (!hasGroupTokens) return null;
+
+  const base = stripTrailingConfirmation(input);
+  const normalized = base.replace(/\s+/g, ' ').trimEnd();
+  if (!normalized) return null;
+
+  const joinTailMatch = normalized.match(/^(.*)\s+#(?:and|or)\s*(?:#\s*)?$/i);
+  if (joinTailMatch) {
+    const withoutJoin = joinTailMatch[1]?.trimEnd() ?? '';
+    return withoutJoin;
+  }
+
+  // Delete trailing value segment (anything after the last hash token)
+  const trailingValueMatch = normalized.match(
+    /^(.*#(?![()])[^\s#]+)\s+([^#]+)$/
+  );
+  if (trailingValueMatch) {
+    return `${trailingValueMatch[1]} `;
+  }
+
+  // Delete trailing hash token (operator/column/etc) and go back to selector state.
+  const trailingTokenMatch = normalized.match(/^(.*)\s+#(?![()])[^\s#]+\s*$/);
+  if (trailingTokenMatch) {
+    const prefix = trailingTokenMatch[1]?.trimEnd() ?? '';
+    return ensureTrailingHash(prefix);
+  }
+
+  return null;
+};
+
+const findLastConditionPath = (
+  group: FilterGroup,
+  basePath: number[] = []
+): number[] | null => {
+  for (let i = group.nodes.length - 1; i >= 0; i -= 1) {
+    const node = group.nodes[i];
+    if (node.kind === 'condition') {
+      return [...basePath, i];
+    }
+    const nestedPath = findLastConditionPath(node, [...basePath, i]);
+    if (nestedPath) return nestedPath;
+  }
+  return null;
+};
+
+const removeGroupNodeAtPath = (
+  group: FilterGroup,
+  path: number[]
+): FilterGroup => {
+  if (path.length === 0) return group;
+  const [index, ...rest] = path;
+  const nodes = group.nodes.flatMap((node, idx) => {
+    if (idx !== index) return [node];
+    if (rest.length === 0) return [];
+    if (node.kind !== 'group') return [node];
+    const updatedChild = removeGroupNodeAtPath(node, rest);
+    if (updatedChild.nodes.length === 0) return [];
+    return [{ ...node, nodes: updatedChild.nodes }];
+  });
+  return { ...group, nodes };
+};
 
 // Scalable type for edit targets
 type EditValueTarget = 'value' | 'valueTo';
@@ -300,6 +376,119 @@ export const useSearchKeyboard = ({
         // DELETE key: Used for badge deletion (works even when modal is open)
         // This is separate from Backspace which is used for modal internal search
         if (e.key === KEY_CODES.DELETE) {
+          if (
+            searchMode.showColumnSelector &&
+            (value.includes('#(') || value.includes('#)'))
+          ) {
+            const trimmedValue = value.trimEnd();
+            const lastTokenIsOpen = trimmedValue.endsWith('#(');
+            const lastTokenIsClose = trimmedValue.endsWith('#)');
+            const tokenType = lastTokenIsOpen
+              ? 'groupOpen'
+              : lastTokenIsClose
+                ? 'groupClose'
+                : null;
+
+            if (tokenType) {
+              const tokenCount = (
+                trimmedValue.match(
+                  tokenType === 'groupOpen' ? /#\(/g : /#\)/g
+                ) || []
+              ).length;
+
+              if (tokenCount > 0) {
+                e.preventDefault();
+                const nextValue = removeGroupTokenAtIndex(
+                  value,
+                  tokenType,
+                  tokenCount - 1
+                );
+                onChange({
+                  target: { value: nextValue },
+                } as React.ChangeEvent<HTMLInputElement>);
+                return;
+              }
+            }
+          }
+
+          if (searchMode.showColumnSelector) {
+            const trailingJoinWithHash = value.match(
+              /(.*)\s+#(?:and|or)\s+#\s*$/i
+            );
+            const trailingJoinNoHash = value.match(/(.*)\s+#(?:and|or)\s*$/i);
+            const trailingJoinMatch =
+              trailingJoinWithHash || trailingJoinNoHash;
+
+            if (trailingJoinMatch) {
+              e.preventDefault();
+              const baseFilter = trailingJoinMatch[1].trimEnd();
+              const newValue = baseFilter ? `${baseFilter}##` : '';
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+              return;
+            }
+          }
+
+          if (value.includes('#)')) {
+            const trimmedValue = value.trimEnd();
+            const hasConfirmation = trimmedValue.endsWith('##');
+            const baseValue = hasConfirmation
+              ? trimmedValue.slice(0, -2).trimEnd()
+              : trimmedValue;
+
+            if (baseValue.endsWith('#)')) {
+              const tokenCount = (value.match(/#\)/g) || []).length;
+              if (tokenCount > 0) {
+                e.preventDefault();
+                const nextValue = removeGroupTokenAtIndex(
+                  value,
+                  'groupClose',
+                  tokenCount - 1
+                );
+                onChange({
+                  target: { value: nextValue },
+                } as React.ChangeEvent<HTMLInputElement>);
+                return;
+              }
+            }
+          }
+
+          if (
+            searchMode.isFilterMode &&
+            searchMode.filterSearch?.filterGroup &&
+            searchMode.filterSearch.isConfirmed
+          ) {
+            const group = searchMode.filterSearch.filterGroup;
+            const lastPath = findLastConditionPath(group);
+            if (lastPath) {
+              e.preventDefault();
+              const updatedGroup = removeGroupNodeAtPath(group, lastPath);
+              const newValue =
+                updatedGroup.nodes.length > 0
+                  ? PatternBuilder.buildGroupedPattern(updatedGroup, true)
+                  : '';
+              onChange({
+                target: { value: newValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+              return;
+            }
+          }
+
+          if (
+            (value.includes('#(') || value.includes('#)')) &&
+            !searchMode.filterSearch?.filterGroup
+          ) {
+            const nextValue = deleteGroupedPartialTail(value);
+            if (nextValue !== null && nextValue !== value) {
+              e.preventDefault();
+              onChange({
+                target: { value: nextValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+              return;
+            }
+          }
+
           // Delete on confirmed multi-condition filter: Enter edit mode for the last condition's valueTo first
           if (
             searchMode.isFilterMode &&
@@ -323,7 +512,10 @@ export const useSearchKeyboard = ({
             const lastCondition =
               partialConditions[lastIdx] || conditions[lastIdx];
 
-            if (lastIdx >= 0 && lastCondition && clearConditionPart) {
+            if (lastIdx >= 0 && lastCondition) {
+              const hasGroupTokens =
+                value.includes('#(') || value.includes('#)');
+
               // 1. For Between operator with valueTo: Enter edit mode for valueTo first
               // [FIX] Use editConditionValue to enter edit mode instead of clearConditionPart
               if (
@@ -332,7 +524,7 @@ export const useSearchKeyboard = ({
               ) {
                 if (editConditionValue) {
                   editConditionValue(lastIdx, 'valueTo');
-                } else {
+                } else if (clearConditionPart) {
                   clearConditionPart(lastIdx, 'valueTo');
                 }
                 return;
@@ -346,7 +538,28 @@ export const useSearchKeyboard = ({
                   editConditionValue
                 ) {
                   editConditionValue(lastIdx, 'value');
-                } else {
+                } else if (hasGroupTokens && lastCondition.operator) {
+                  const trimmedValue = value.trimEnd();
+                  const withoutConfirmation = trimmedValue.endsWith('##')
+                    ? trimmedValue.slice(0, -2).trimEnd()
+                    : trimmedValue;
+
+                  const opToken = `#${lastCondition.operator}`;
+                  const lowerValue = withoutConfirmation.toLowerCase();
+                  const lowerToken = opToken.toLowerCase();
+                  const tokenIndex = lowerValue.lastIndexOf(lowerToken);
+
+                  if (tokenIndex !== -1) {
+                    const newValue = `${withoutConfirmation.slice(
+                      0,
+                      tokenIndex + opToken.length
+                    )} `;
+                    onChange({
+                      target: { value: newValue },
+                    } as React.ChangeEvent<HTMLInputElement>);
+                    return;
+                  }
+                } else if (clearConditionPart) {
                   clearConditionPart(lastIdx, 'value');
                 }
                 return;
@@ -354,13 +567,13 @@ export const useSearchKeyboard = ({
 
               // 3. Delete operator if it exists
               if (lastCondition.operator) {
-                clearConditionPart(lastIdx, 'operator');
+                clearConditionPart?.(lastIdx, 'operator');
                 return;
               }
 
               // 4. Delete column if it exists
               if (lastCondition.column) {
-                clearConditionPart(lastIdx, 'column');
+                clearConditionPart?.(lastIdx, 'column');
                 return;
               }
             }
@@ -434,6 +647,24 @@ export const useSearchKeyboard = ({
             !searchMode.isFilterMode
           ) {
             e.preventDefault();
+
+            const hasGroupTokens = value.includes('#(') || value.includes('#)');
+            if (hasGroupTokens) {
+              const escapedOp = currentOp.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&'
+              );
+              const opRegex = new RegExp(`#${escapedOp}\\s*$`, 'i');
+              if (opRegex.test(value)) {
+                const newValue = value
+                  .replace(opRegex, '#')
+                  .replace(/\s+$/, ' ');
+                onChange({
+                  target: { value: newValue },
+                } as React.ChangeEvent<HTMLInputElement>);
+                return;
+              }
+            }
 
             // Use PatternBuilder to reconstruct the pattern up to the current column, then add trailing '#'
             // This ensures the operator selector opens for the current condition.
@@ -532,6 +763,28 @@ export const useSearchKeyboard = ({
               searchMode.activeConditionIndex > 0
             ) {
               e.preventDefault();
+
+              const hasGroupTokens =
+                value.includes('#(') || value.includes('#)');
+              if (hasGroupTokens && searchMode.selectedColumn?.field) {
+                const escapedField = searchMode.selectedColumn.field.replace(
+                  /[.*+?^${}()|[\]\\]/g,
+                  '\\$&'
+                );
+                const columnRegex = new RegExp(
+                  `#${escapedField}\\s*#\\s*$`,
+                  'i'
+                );
+                if (columnRegex.test(value)) {
+                  const newValue = value
+                    .replace(columnRegex, '#')
+                    .replace(/\s+$/, ' ');
+                  onChange({
+                    target: { value: newValue },
+                  } as React.ChangeEvent<HTMLInputElement>);
+                  return;
+                }
+              }
 
               // Go back to column selector while preserving the join badge
               // Pattern: ...[Join][Column]# -> ...[Join]#
