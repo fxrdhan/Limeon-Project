@@ -51,7 +51,7 @@
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "compressorjs": "^1.2.1",
-    "framer-motion": "^12.23.26",
+    "framer-motion": "^12.25.0",
     "fuzzysort": "^3.1.0",
     "google-auth-library": "^10.5.0",
     "googleapis": "^166.0.0",
