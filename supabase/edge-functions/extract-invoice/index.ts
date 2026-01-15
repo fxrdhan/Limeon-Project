@@ -158,12 +158,25 @@ function validateFile(file) {
     valid: true,
   };
 }
+class GeminiApiError extends Error {
+  status;
+  code;
+  raw;
+
+  constructor(message, status, code, raw) {
+    super(message);
+    this.name = "GeminiApiError";
+    this.status = status;
+    this.code = code;
+    this.raw = raw;
+  }
+}
 async function getGeminiResponse(imageBase64, mimeType, prompt) {
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
   if (!GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not set");
   }
-  const MODEL_ID = "gemini-2.0-flash";
+  const MODEL_ID = "gemini-2.5-flash-lite";
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${GEMINI_API_KEY}`;
   const requestBody = {
     contents: [
@@ -219,7 +232,38 @@ async function getGeminiResponse(imageBase64, mimeType, prompt) {
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`❌ Gemini API error ${response.status}:`, errorText);
-    throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+
+    let parsedError = null;
+    try {
+      parsedError = JSON.parse(errorText);
+    } catch {
+      // ignore
+    }
+
+    const upstreamMessage =
+      parsedError?.error?.message ||
+      parsedError?.message ||
+      (typeof errorText === "string" ? errorText : "");
+
+    if (
+      response.status === 403 &&
+      typeof upstreamMessage === "string" &&
+      upstreamMessage.toLowerCase().includes("reported as leaked")
+    ) {
+      throw new GeminiApiError(
+        "Kunci API Gemini dinonaktifkan karena terdeteksi bocor. Gunakan API key baru dan update secret GEMINI_API_KEY di Supabase.",
+        response.status,
+        "GEMINI_API_KEY_REPORTED_LEAKED",
+        parsedError ?? errorText,
+      );
+    }
+
+    throw new GeminiApiError(
+      `Gemini API error ${response.status}: ${upstreamMessage}`,
+      response.status,
+      parsedError?.error?.status || parsedError?.error?.code,
+      parsedError ?? errorText,
+    );
   }
   const responseData = await response.json();
   console.log("✅ Gemini API response received");
@@ -496,6 +540,11 @@ serve(async (req) => {
         );
       } catch (error) {
         console.error("❌ Processing error:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isLeakedKeyError =
+          error instanceof GeminiApiError &&
+          error.code === "GEMINI_API_KEY_REPORTED_LEAKED";
+
         await reportMetric(
           {
             timestamp,
@@ -504,14 +553,33 @@ serve(async (req) => {
             status: "error",
             fileSize,
             fileName: imageIdentifier,
-            errorMessage: error.message,
+            errorMessage,
           },
           supabase,
         );
+
+        if (isLeakedKeyError) {
+          return new Response(
+            JSON.stringify({
+              error: "Konfigurasi Gemini API bermasalah",
+              details: errorMessage,
+              code: "GEMINI_API_KEY_REPORTED_LEAKED",
+              tip: "Buat API key baru dan update secret GEMINI_API_KEY di Supabase, lalu deploy ulang Edge Function.",
+            }),
+            {
+              status: 503,
+              headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
         return new Response(
           JSON.stringify({
             error: "Terjadi kesalahan saat memproses gambar",
-            details: error.message,
+            details: errorMessage,
             tip: "Coba lagi dengan gambar yang lebih kecil atau format yang berbeda",
           }),
           {
