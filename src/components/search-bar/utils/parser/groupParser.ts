@@ -191,13 +191,14 @@ const parseGroupedFilter = (
   indexRef.value += 1;
 
   const sequence = parseGroupedSequence(tokens, columns, indexRef, true);
-  if (!sequence || !sequence.isClosed) return null;
+  if (!sequence) return null;
 
   return {
     kind: 'group',
     join: sequence.join || 'AND',
     nodes: sequence.nodes,
     isExplicit: true,
+    isClosed: sequence.isClosed,
   };
 };
 
