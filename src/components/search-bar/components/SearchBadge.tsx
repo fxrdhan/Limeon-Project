@@ -1,71 +1,9 @@
-import { AnimatePresence, motion } from 'motion/react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import { EnhancedSearchState } from '../types';
 import { BadgeConfig } from '../types/badge';
 import { tokenizeGroupPattern } from '../utils/groupPatternUtils';
 import Badge from './Badge';
-
-// Bouncy spring animation config
-// Now works without "jumping" bug thanks to:
-// - Consistent badge IDs (existing badges don't re-animate)
-// - mode="popLayout" (exiting badges immediately leave layout flow)
-// - layout prop (remaining badges smoothly reposition)
-const badgeVariants = {
-  initial: {
-    opacity: 0,
-    scale: 0.5,
-    y: -8,
-  },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 400,
-      damping: 22,
-      mass: 0.8,
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.3,
-    y: -12,
-    transition: {
-      duration: 0.2,
-      ease: 'easeOut' as const,
-    },
-  },
-};
-
-// Parentheses badges should feel “snappy”, not bouncy, because they’re often
-// added/removed during typing (and the spring reads like a re-render bounce).
-const parenVariants = {
-  initial: {
-    opacity: 0,
-    scale: 0.96,
-    y: 0,
-  },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      duration: 0.12,
-      ease: 'easeOut' as const,
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.96,
-    y: 0,
-    transition: {
-      duration: 0.12,
-      ease: 'easeOut' as const,
-    },
-  },
-};
 
 // Scalable handler type for N-condition support
 type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
@@ -397,65 +335,32 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     return false;
   };
 
-  // Force re-render of all badges on hover so layout animations can run on siblings
-  const [hoverTick, setHoverTick] = useState(0);
-  const handleBadgeHoverChange = useCallback(() => {
-    setHoverTick(prev => prev + 1);
-  }, []);
-
-  // Always render container so AnimatePresence can handle exit animations
-  // Use overflow-visible to allow exit animations to be visible (not clipped)
+  // Render as `contents` so the input stays in the same flex flow as badges.
   return (
     <div
       ref={badgesContainerRef}
       className="contents"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      data-hover-tick={hoverTick}
     >
-      <AnimatePresence mode="popLayout">
-        {finalBadges.map(badge => {
-          // Callback ref that updates the dynamic ref map for N-condition support
-          const handleRef = (element: HTMLDivElement | null) => {
-            setBadgeRef?.(badge.id, element);
-          };
+      {finalBadges.map(badge => {
+        // Callback ref that updates the dynamic ref map for N-condition support
+        const handleRef = (element: HTMLDivElement | null) => {
+          setBadgeRef?.(badge.id, element);
+        };
 
-          // Add glow state based on selector being open
-          const shouldGlow = getBadgeGlowState(badge.id);
-          const badgeWithGlow = shouldGlow
-            ? { ...badge, isSelected: true }
-            : badge;
-          const badgeWithHover = {
-            ...badgeWithGlow,
-            onHoverChange: handleBadgeHoverChange,
-          };
+        // Add glow state based on selector being open
+        const shouldGlow = getBadgeGlowState(badge.id);
+        const badgeWithGlow = shouldGlow
+          ? { ...badge, isSelected: true }
+          : badge;
 
-          return (
-            <motion.div
-              key={badge.id}
-              ref={handleRef}
-              layout="position"
-              transition={{
-                layout: {
-                  type: 'tween',
-                  duration: 0.18,
-                  ease: 'easeOut',
-                },
-              }}
-              variants={
-                badge.type === 'groupOpen' || badge.type === 'groupClose'
-                  ? parenVariants
-                  : badgeVariants
-              }
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <Badge config={badgeWithHover} />
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+        return (
+          <div key={badge.id} ref={handleRef}>
+            <Badge config={badgeWithGlow} />
+          </div>
+        );
+      })}
     </div>
   );
 };

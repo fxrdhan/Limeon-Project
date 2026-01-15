@@ -484,7 +484,7 @@ function getJoinBadgeHandlers(
 
 /**
  * Get badge ID for value badges.
- * Uses consistent index-based IDs for AnimatePresence compatibility.
+ * Uses consistent index-based IDs for stable rendering.
  * Format: condition-{index}-value or condition-{index}-value-{from|to}
  */
 function getValueBadgeId(
