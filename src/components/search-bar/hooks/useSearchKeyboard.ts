@@ -19,6 +19,98 @@ const ensureTrailingHash = (input: string): string => {
   return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
 };
 
+const collapsePatternWhitespace = (input: string): string => {
+  return input.replace(/\s{2,}/g, ' ').trimStart();
+};
+
+/**
+ * Deletes exactly 1 "badge unit" from the end of a raw pattern string.
+ *
+ * Badge units map to tokens users see:
+ * - `#(` / `#)` → "(" / ")"
+ * - `#and` / `#or` → join badge
+ * - `#field` / `#operator` → column/operator badges
+ * - trailing value segment → value badge
+ *
+ * Confirmation marker `##` is not a badge and is always stripped during deletion
+ * to avoid re-applying filters while the user is editing via Delete key.
+ */
+const deleteLastBadgeUnit = (input: string): string => {
+  const hasConfirmation = input.trimEnd().endsWith('##');
+  const base = stripTrailingConfirmation(input);
+  let working = base.trimEnd();
+  if (!working) return '';
+
+  // If selector markers exist, remove them first (invisible badge).
+  if (working.endsWith('#')) {
+    working = working.replace(/\s*#\s*$/, '').trimEnd();
+    if (!working) return '';
+  }
+
+  const finalize = (next: string): string => {
+    let result = collapsePatternWhitespace(next);
+    const trimmedEnd = result.trimEnd();
+    if (!trimmedEnd) return '';
+
+    // Ensure join tokens are not merged into the previous value during partial deletion.
+    // The parser needs at least one trailing whitespace after `#and/#or` to recognize the join.
+    if (/#(?:and|or)$/i.test(trimmedEnd)) {
+      result = `${trimmedEnd} `;
+    } else {
+      result = trimmedEnd;
+    }
+
+    const resultTrimmed = result.trimEnd();
+
+    // Preserve confirmation marker if it was present and it's safe to keep it separated.
+    // NOTE: Never append `##` after arbitrary hash-tokens like `#contains`, because it would become
+    // `#contains##` and break tokenization/parse. It's only safe after:
+    // - a value segment (doesn't start with '#')
+    // - group close token (`#)`) which tokenizes as `#)` + `##`
+    if (hasConfirmation && resultTrimmed) {
+      if (resultTrimmed.endsWith('#)')) {
+        return `${resultTrimmed}##`;
+      }
+
+      const endsWithHashToken = /(?:^|\s)#[^\s#]+$/.test(resultTrimmed);
+      if (!endsWithHashToken) {
+        return `${resultTrimmed}##`;
+      }
+    }
+
+    return result;
+  };
+
+  // 1) Group close/open tokens as explicit badges.
+  if (working.endsWith('#)')) {
+    return finalize(working.replace(/\s*#\)\s*$/, ''));
+  }
+  if (working.endsWith('#(')) {
+    return finalize(working.replace(/\s*#\(\s*$/, ''));
+  }
+
+  // 2) Trailing hash token (column/operator/join/etc).
+  const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
+  if (trailingTokenMatch) {
+    return finalize(working.replace(/(?:^|\s)#[^\s#]+$/, ''));
+  }
+
+  // 3) Trailing value segment (anything after the last hash token).
+  const tokenRegex = /#\(|#\)|#[^\s#]+/g;
+  let lastToken: RegExpExecArray | null = null;
+  let match: RegExpExecArray | null;
+  while ((match = tokenRegex.exec(working)) !== null) {
+    lastToken = match;
+  }
+  if (!lastToken) {
+    return '';
+  }
+
+  const cutIndex = lastToken.index + lastToken[0].length;
+  const prefix = working.slice(0, cutIndex).trimEnd();
+  return finalize(prefix);
+};
+
 const deleteGroupedPartialTail = (input: string): string | null => {
   const hasGroupTokens = input.includes('#(') || input.includes('#)');
   if (!hasGroupTokens) return null;
@@ -174,6 +266,20 @@ export const useSearchKeyboard = ({
       if (value.includes('#(') || value.includes('#)')) {
         const nextValue = deleteGroupedPartialTail(value);
         if (nextValue !== null && nextValue !== value) {
+          e.preventDefault();
+          e.stopPropagation();
+          onChange({
+            target: { value: nextValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+      }
+
+      // Fallback: when a selector is open and focus is away from the input,
+      // allow Delete to remove one badge unit from the end of the pattern.
+      if (value.trimStart().startsWith('#')) {
+        const nextValue = deleteLastBadgeUnit(value);
+        if (nextValue !== value) {
           e.preventDefault();
           e.stopPropagation();
           onChange({
@@ -426,6 +532,21 @@ export const useSearchKeyboard = ({
         // DELETE key: Used for badge deletion (works even when modal is open)
         // This is separate from Backspace which is used for modal internal search
         if (e.key === KEY_CODES.DELETE) {
+          // Sequential badge deletion in pattern/badge mode:
+          // Delete removes exactly 1 badge from the far-right each press.
+          if (value.trimStart().startsWith('#')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const nextValue = deleteLastBadgeUnit(value);
+            if (nextValue !== value) {
+              onChange({
+                target: { value: nextValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+            return;
+          }
+
           if (
             searchMode.showColumnSelector &&
             (value.includes('#(') || value.includes('#)'))

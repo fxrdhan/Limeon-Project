@@ -146,6 +146,9 @@ const buildBadgesFromCondition = (
   const onEditOperator = groupHandlers?.onEditOperator
     ? () => groupHandlers.onEditOperator?.(path)
     : undefined;
+  const onDeleteCondition = groupHandlers?.onClearCondition
+    ? () => groupHandlers.onClearCondition?.(path)
+    : undefined;
 
   const badges: BadgeConfig[] = [
     createStaticBadge(
@@ -154,6 +157,8 @@ const buildBadgesFromCondition = (
       columnLabel,
       undefined,
       {
+        onClear: onDeleteCondition,
+        canClear: !!onDeleteCondition,
         onEdit: onEditColumn,
         canEdit: !!onEditColumn,
       }
@@ -164,6 +169,8 @@ const buildBadgesFromCondition = (
       operatorLabel,
       undefined,
       {
+        onClear: onDeleteCondition,
+        canClear: !!onDeleteCondition,
         onEdit: onEditOperator,
         canEdit: !!onEditOperator,
       }

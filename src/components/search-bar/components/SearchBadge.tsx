@@ -39,6 +39,34 @@ const badgeVariants = {
   },
 };
 
+// Parentheses badges should feel “snappy”, not bouncy, because they’re often
+// added/removed during typing (and the spring reads like a re-render bounce).
+const parenVariants = {
+  initial: {
+    opacity: 0,
+    scale: 0.96,
+    y: 0,
+  },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      duration: 0.12,
+      ease: 'easeOut' as const,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.96,
+    y: 0,
+    transition: {
+      duration: 0.12,
+      ease: 'easeOut' as const,
+    },
+  },
+};
+
 // Scalable handler type for N-condition support
 type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
 
@@ -414,7 +442,11 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
                   ease: 'easeOut',
                 },
               }}
-              variants={badgeVariants}
+              variants={
+                badge.type === 'groupOpen' || badge.type === 'groupClose'
+                  ? parenVariants
+                  : badgeVariants
+              }
               initial="initial"
               animate="animate"
               exit="exit"
