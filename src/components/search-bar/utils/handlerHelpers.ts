@@ -113,7 +113,7 @@ export function extractMultiConditionPreservation(
     // Extract all conditions from confirmed filter
     filter.conditions.forEach((cond, index) => {
       conditions.push({
-        field: cond.field || filter.field,
+        field: cond.field || cond.column?.field || filter.field,
         operator: cond.operator,
         value: cond.value,
         valueTo: cond.valueTo,
@@ -146,7 +146,7 @@ export function extractMultiConditionPreservation(
         const partial = partialConditions[i];
         if (partial.operator) {
           conditions.push({
-            field: partial.field,
+            field: partial.field || partial.column?.field,
             operator: partial.operator,
             value: partial.value,
             valueTo: partial.valueTo,
@@ -195,7 +195,7 @@ export function extractMultiConditionPreservation(
       const partialCond = partialConditions[i];
       if (partialCond) {
         conditions.push({
-          field: partialCond.field,
+          field: partialCond.field || partialCond.column?.field,
           operator: partialCond.operator,
           value: partialCond.value,
           valueTo: partialCond.valueTo,

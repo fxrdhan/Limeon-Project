@@ -45,7 +45,11 @@ import {
 } from './utils/operatorUtils';
 import { PatternBuilder } from './utils/PatternBuilder';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
-import { buildColumnValue, findColumn } from './utils/searchUtils';
+import {
+  buildColumnValue,
+  findColumn,
+  parseSearchValue,
+} from './utils/searchUtils';
 
 const updateGroupConditionValue = (
   group: FilterGroup,
@@ -241,6 +245,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const memoizedColumns = useMemo(() => columns, [columns]);
+  // Keep a synchronous reference to the latest raw pattern value so rapid key presses
+  // (before React/parent state re-renders) still step back one badge at a time.
+  const latestValueRef = useRef(value);
+  useEffect(() => {
+    latestValueRef.current = value;
+  }, [value]);
 
   // Ref to store preserved filter when editing column/operator
   // Uses PreservedFilter type which supports N conditions via conditions[] array
@@ -249,6 +259,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // State to preserve searchMode during edit (to keep badges visible)
   const [preservedSearchMode, setPreservedSearchMode] =
     useState<EnhancedSearchState | null>(null);
+  const latestPreservedSearchModeRef = useRef<EnhancedSearchState | null>(null);
+  useEffect(() => {
+    latestPreservedSearchModeRef.current = preservedSearchMode;
+  }, [preservedSearchMode]);
   const groupEditDraftRef = useRef<FilterGroup | null>(null);
   const [groupEditingSelectorTarget, setGroupEditingSelectorTarget] = useState<{
     path: number[];
@@ -262,6 +276,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     conditionIndex: number; // 0 = first, 1 = second, etc.
     target: 'column' | 'operator' | 'join';
   } | null>(null);
+  const latestEditingSelectorTargetRef = useRef<{
+    conditionIndex: number;
+    target: 'column' | 'operator' | 'join';
+  } | null>(null);
+  useEffect(() => {
+    latestEditingSelectorTargetRef.current = editingSelectorTarget;
+  }, [editingSelectorTarget]);
 
   // ============ Derived Helpers for N-Condition Editing ============
   // Check if editing column/operator at specific index
@@ -524,9 +545,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Clear preserved state - used to reset edit mode and badge visibility
   const handleClearPreservedState = useCallback(() => {
     setPreservedSearchMode(null);
+    latestPreservedSearchModeRef.current = null;
     preservedFilterRef.current = null;
     setCurrentJoinOperator(undefined);
     setEditingSelectorTarget(null); // Clear all editing states
+    latestEditingSelectorTargetRef.current = null;
     setGroupEditingSelectorTarget(null);
     groupEditDraftRef.current = null;
   }, []);
@@ -2024,6 +2047,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Only apply reconstruction logic for real input-driven events coming
+      // from the EnhancedSearchBar input element.
+      //
+      // Internal handlers (Delete key badge removal, selector picks, etc.) call
+      // `onChange` with a lightweight `{ target: { value } }` object. Those
+      // programmatic updates must pass through unchanged; otherwise this
+      // reconstruction can corrupt multi-condition patterns.
+      if (!(e.target instanceof HTMLInputElement)) {
+        onChange(e);
+        return;
+      }
+
       const inputValue = e.target.value;
       if (
         inputValue.includes('#(') ||
@@ -2198,6 +2233,334 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     [onChange, searchMode, setPreservedSearchMode]
   );
 
+  const handleStepBackDelete = useCallback((): boolean => {
+    const liveValue = latestValueRef.current;
+    const liveSearchMode = parseSearchValue(liveValue, memoizedColumns);
+    const liveEditingTarget =
+      latestEditingSelectorTargetRef.current ?? editingSelectorTarget;
+
+    const isAnySelectorOpen =
+      liveSearchMode.showColumnSelector ||
+      liveSearchMode.showOperatorSelector ||
+      liveSearchMode.showJoinOperatorSelector;
+
+    const setValue = (nextValue: string) => {
+      latestValueRef.current = nextValue;
+      onChange({
+        target: { value: nextValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+    };
+
+    const preserveFromPattern = (pattern: string) => {
+      const preserved = parseSearchValue(pattern, memoizedColumns);
+      setPreservedSearchMode(preserved);
+      latestPreservedSearchModeRef.current = preserved;
+      preservedFilterRef.current = extractMultiConditionPreservation(preserved);
+      return preserved;
+    };
+
+    // del-1: confirmed multi-condition → remove last value, open operator selector
+    {
+      const filter = liveSearchMode.filterSearch;
+      if (
+        !isAnySelectorOpen &&
+        liveSearchMode.isFilterMode &&
+        filter?.isConfirmed &&
+        filter.isMultiCondition &&
+        filter.conditions &&
+        filter.conditions.length >= 2
+      ) {
+        const conditions = filter.conditions;
+        const joins =
+          filter.joins ?? (filter.joinOperator ? [filter.joinOperator] : []);
+        const lastIndex = conditions.length - 1;
+
+        const getCondField = (cond: (typeof conditions)[number]) =>
+          cond.field || cond.column?.field || filter.field;
+
+        const preservedPattern = PatternBuilder.buildNConditions(
+          conditions.map((cond, idx) =>
+            idx === lastIndex
+              ? {
+                  field: getCondField(cond),
+                  operator: cond.operator,
+                }
+              : {
+                  field: getCondField(cond),
+                  operator: cond.operator,
+                  value: cond.value,
+                  valueTo: cond.valueTo,
+                }
+          ),
+          joins,
+          true,
+          filter.field,
+          { confirmed: false, openSelector: false }
+        );
+
+        preserveFromPattern(preservedPattern);
+        const nextTarget = {
+          conditionIndex: lastIndex,
+          target: 'operator',
+        } as const;
+        latestEditingSelectorTargetRef.current = nextTarget;
+        setEditingSelectorTarget(nextTarget);
+        setCurrentJoinOperator(undefined);
+
+        const uiPattern = PatternBuilder.buildWithSelectorOpen(
+          conditions.map(cond => ({
+            field: getCondField(cond),
+            operator: cond.operator,
+            value: cond.value,
+            valueTo: cond.valueTo,
+          })),
+          joins,
+          true,
+          filter.field,
+          'operator',
+          lastIndex
+        );
+
+        setValue(uiPattern);
+        return true;
+      }
+    }
+
+    // del-2 / del-6: operator selector open → remove operator, open column selector
+    if (
+      liveSearchMode.showOperatorSelector &&
+      liveEditingTarget?.target === 'operator'
+    ) {
+      const conditionIndex = liveEditingTarget.conditionIndex;
+
+      // del-2: remove operator for condition[1+], open column selector for that condition
+      if (conditionIndex > 0) {
+        const baseState =
+          latestPreservedSearchModeRef.current ?? liveSearchMode;
+        const preservation = extractMultiConditionPreservation(baseState);
+        if (!preservation || preservation.conditions.length <= conditionIndex) {
+          return false;
+        }
+
+        const joins = preservation.joins;
+        const joinOp = joins[conditionIndex - 1] || 'AND';
+        const defaultField =
+          preservation.conditions[0]?.field ||
+          liveSearchMode.filterSearch?.field ||
+          '';
+        const fieldFallback =
+          liveSearchMode.selectedColumn?.field ||
+          preservation.conditions[conditionIndex]?.field ||
+          defaultField;
+
+        const preservedPattern = PatternBuilder.buildNConditions(
+          preservation.conditions.map((cond, idx) =>
+            idx === conditionIndex
+              ? {
+                  field: cond.field || fieldFallback,
+                }
+              : {
+                  field: cond.field || defaultField,
+                  operator: cond.operator,
+                  value: cond.value,
+                  valueTo: cond.valueTo,
+                }
+          ),
+          joins,
+          true,
+          defaultField,
+          { confirmed: false, openSelector: false }
+        );
+
+        preserveFromPattern(preservedPattern);
+        const nextTarget = { conditionIndex, target: 'column' } as const;
+        latestEditingSelectorTargetRef.current = nextTarget;
+        setEditingSelectorTarget(nextTarget);
+        setCurrentJoinOperator(undefined);
+
+        const basePattern = PatternBuilder.buildNConditions(
+          preservation.conditions.slice(0, conditionIndex).map(cond => ({
+            field: cond.field,
+            operator: cond.operator,
+            value: cond.value,
+            valueTo: cond.valueTo,
+          })),
+          joins.slice(0, Math.max(0, conditionIndex - 1)),
+          true,
+          defaultField,
+          { confirmed: false, openSelector: false }
+        );
+
+        setValue(`${basePattern} #${joinOp.toLowerCase()} #`);
+        return true;
+      }
+
+      // del-6: remove operator for condition[0], open column selector
+      if (conditionIndex === 0) {
+        const filter = (latestPreservedSearchModeRef.current ?? liveSearchMode)
+          .filterSearch;
+        if (!filter) return false;
+
+        preserveFromPattern(`#${filter.field}`);
+        const nextTarget = { conditionIndex: 0, target: 'column' } as const;
+        latestEditingSelectorTargetRef.current = nextTarget;
+        setEditingSelectorTarget(nextTarget);
+        setCurrentJoinOperator(undefined);
+        setValue('#');
+        return true;
+      }
+    }
+
+    // del-3 / del-7: column selector open → remove column, open join selector (or clear all)
+    if (
+      liveSearchMode.showColumnSelector &&
+      liveEditingTarget?.target === 'column'
+    ) {
+      const conditionIndex = liveEditingTarget.conditionIndex;
+
+      // del-3: remove condition[1+] column, open join selector for the preceding join
+      if (conditionIndex > 0) {
+        const baseState =
+          latestPreservedSearchModeRef.current ?? liveSearchMode;
+        const preservation = extractMultiConditionPreservation(baseState);
+        if (!preservation) return false;
+
+        const joinIndex = conditionIndex - 1;
+        const joinOp = preservation.joins[joinIndex] || 'AND';
+        const defaultField =
+          preservation.conditions[0]?.field ||
+          liveSearchMode.filterSearch?.field ||
+          '';
+        const joinAnchorConditions = preservation.conditions.slice(
+          0,
+          joinIndex + 1
+        );
+        if (
+          joinAnchorConditions.length === 0 ||
+          joinAnchorConditions.some(c => !c.field || !c.operator || !c.value)
+        ) {
+          return false;
+        }
+
+        // Preserve badges up to condition[joinIndex] and keep the join badge visible.
+        // We intentionally preserve a trailing "#${joinOp} #" so the Join selector can anchor below the join badge.
+        const preservedBase = PatternBuilder.buildNConditions(
+          joinAnchorConditions.map(cond => ({
+            field: cond.field,
+            operator: cond.operator,
+            value: cond.value,
+            valueTo: cond.valueTo,
+          })),
+          preservation.joins.slice(0, joinIndex),
+          preservation.isMultiColumn || false,
+          defaultField,
+          { confirmed: false, openSelector: false }
+        );
+        const preservedPattern = `${preservedBase} #${joinOp.toLowerCase()} #`;
+
+        preserveFromPattern(preservedPattern);
+        const nextTarget = {
+          conditionIndex: joinIndex,
+          target: 'join',
+        } as const;
+        latestEditingSelectorTargetRef.current = nextTarget;
+        setEditingSelectorTarget(nextTarget);
+        setCurrentJoinOperator(joinOp);
+
+        // Open join selector (no join badge in the input value; preservedSearchMode keeps it visible).
+        const uiPattern = PatternBuilder.withJoinSelectorAtIndex(
+          joinAnchorConditions.map(cond => ({
+            field: cond.field,
+            operator: cond.operator!,
+            value: cond.value!,
+            valueTo: cond.valueTo,
+          })),
+          preservation.joins.slice(0, joinIndex),
+          preservation.isMultiColumn || false,
+          defaultField,
+          joinIndex
+        );
+        setValue(uiPattern);
+        return true;
+      }
+
+      // del-7: remove condition[0] column, clear everything
+      if (conditionIndex === 0) {
+        handleClearPreservedState();
+        setValue('');
+        return true;
+      }
+    }
+
+    // del-4: join selector open → remove join, return to confirmed conditions up to the join
+    if (
+      liveSearchMode.showJoinOperatorSelector &&
+      liveEditingTarget?.target === 'join'
+    ) {
+      const joinIndex = liveEditingTarget.conditionIndex;
+      const baseState = latestPreservedSearchModeRef.current ?? liveSearchMode;
+      const preservation = extractMultiConditionPreservation(baseState);
+      if (!preservation) return false;
+
+      const defaultField =
+        preservation.conditions[0]?.field ||
+        liveSearchMode.filterSearch?.field ||
+        '';
+      const targetConditions = preservation.conditions.slice(0, joinIndex + 1);
+      if (
+        joinIndex < 0 ||
+        targetConditions.length === 0 ||
+        targetConditions.some(c => !c.field || !c.operator || !c.value)
+      ) {
+        return false;
+      }
+
+      handleClearPreservedState();
+
+      const confirmedPattern = PatternBuilder.confirmedUpToIndex(
+        targetConditions.map(cond => ({
+          field: cond.field,
+          operator: cond.operator!,
+          value: cond.value!,
+          valueTo: cond.valueTo,
+        })),
+        preservation.joins,
+        preservation.isMultiColumn || false,
+        defaultField,
+        joinIndex
+      );
+
+      setValue(confirmedPattern);
+      return true;
+    }
+
+    // del-5: confirmed single condition → remove value, open operator selector
+    if (
+      !isAnySelectorOpen &&
+      liveSearchMode.isFilterMode &&
+      liveSearchMode.filterSearch?.isConfirmed &&
+      !liveSearchMode.filterSearch.isMultiCondition
+    ) {
+      const filter = liveSearchMode.filterSearch;
+
+      preserveFromPattern(`#${filter.field} #${filter.operator}`);
+      const nextTarget = { conditionIndex: 0, target: 'operator' } as const;
+      latestEditingSelectorTargetRef.current = nextTarget;
+      setEditingSelectorTarget(nextTarget);
+      setCurrentJoinOperator(undefined);
+      setValue(`#${filter.field} #`);
+      return true;
+    }
+
+    return false;
+  }, [
+    handleClearPreservedState,
+    memoizedColumns,
+    onChange,
+    setPreservedSearchMode,
+    editingSelectorTarget,
+  ]);
+
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
     searchMode,
@@ -2208,6 +2571,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseOperatorSelector,
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
+    onStepBackDelete: handleStepBackDelete,
     editConditionValue: editValueN,
     clearConditionPart,
     clearJoin,
@@ -2469,14 +2833,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
 
     // N-condition support: Check if editing condition N's operator (N >= 2)
-    const editingIdx = searchMode.activeConditionIndex;
-    if (
-      editingIdx !== undefined &&
-      editingIdx >= 2 &&
-      preservedSearchMode?.filterSearch?.conditions?.[editingIdx]
-    ) {
+    // In edit mode we often preserve the Nth condition in `partialConditions`
+    // (because it may not be part of `filterSearch.conditions` yet).
+    const editingIdx =
+      editingSelectorTarget?.target === 'operator'
+        ? editingSelectorTarget.conditionIndex
+        : searchMode.activeConditionIndex;
+    if (editingIdx !== undefined && editingIdx >= 2) {
       const condNOperator =
-        preservedSearchMode.filterSearch.conditions[editingIdx].operator;
+        preservedSearchMode?.filterSearch?.conditions?.[editingIdx]?.operator ??
+        preservedSearchMode?.partialConditions?.[editingIdx]?.operator;
       if (condNOperator) {
         const index = operators.findIndex(op => op.value === condNOperator);
         return index >= 0 ? index : undefined;
@@ -2516,6 +2882,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedSearchMode,
     isEditingSecondOperator,
     operators,
+    editingSelectorTarget,
     searchMode.activeConditionIndex,
     searchMode.filterSearch,
   ]);
@@ -2542,14 +2909,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
 
     // N-condition support: Check if editing condition N's column (N >= 2)
-    const editingIdx = searchMode.activeConditionIndex;
-    if (
-      editingIdx !== undefined &&
-      editingIdx >= 2 &&
-      preservedSearchMode?.filterSearch?.conditions?.[editingIdx]
-    ) {
+    // In edit mode we often preserve the Nth condition in `partialConditions`
+    // (because it may not be part of `filterSearch.conditions` yet).
+    const editingIdx =
+      editingSelectorTarget?.target === 'column'
+        ? editingSelectorTarget.conditionIndex
+        : searchMode.activeConditionIndex;
+    if (editingIdx !== undefined && editingIdx >= 2) {
       const condNColumnField =
-        preservedSearchMode.filterSearch.conditions[editingIdx].field;
+        preservedSearchMode?.filterSearch?.conditions?.[editingIdx]?.field ??
+        preservedSearchMode?.partialConditions?.[editingIdx]?.column?.field ??
+        preservedSearchMode?.partialConditions?.[editingIdx]?.field;
       if (condNColumnField) {
         const index = sortedColumns.findIndex(
           col => col.field === condNColumnField
@@ -2597,6 +2967,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     preservedSearchMode,
     sortedColumns,
     isEditingSecondColumnState,
+    editingSelectorTarget,
     searchMode.activeConditionIndex,
     searchMode.filterSearch,
   ]);
@@ -2658,7 +3029,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onHoverChange={handleHoverChange}
               preservedSearchMode={preservedSearchMode}
               preserveBadgesOnJoinSelector={
-                groupEditingSelectorTarget?.target === 'join'
+                groupEditingSelectorTarget?.target === 'join' ||
+                editingSelectorTarget?.target === 'join'
               }
               editingBadge={editingBadge}
               onInlineValueChange={handleInlineValueChange}

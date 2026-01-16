@@ -208,6 +208,7 @@ interface UseSearchKeyboardProps {
   handleCloseOperatorSelector: () => void;
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
+  onStepBackDelete?: () => boolean;
   // Scalable handlers for N-condition support
   editConditionValue?: (
     conditionIndex: number,
@@ -230,6 +231,7 @@ export const useSearchKeyboard = ({
   handleCloseOperatorSelector,
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
+  onStepBackDelete,
   editConditionValue,
   clearConditionPart,
 }: UseSearchKeyboardProps) => {
@@ -246,6 +248,27 @@ export const useSearchKeyboard = ({
     const onGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key !== KEY_CODES.DELETE) return;
 
+      if (onStepBackDelete?.()) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      if (searchMode.showJoinOperatorSelector) {
+        e.preventDefault();
+        e.stopPropagation();
+        const trimmedValue = value.replace(/\s+#\s*$/, '').trimEnd();
+        const newValue = trimmedValue
+          ? trimmedValue.endsWith('##')
+            ? trimmedValue
+            : `${trimmedValue}##`
+          : '';
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+        return;
+      }
+
       if (searchMode.showColumnSelector) {
         const trailingJoinWithHash = value.match(/(.*)\s+#(?:and|or)\s+#\s*$/i);
         const trailingJoinNoHash = value.match(/(.*)\s+#(?:and|or)\s*$/i);
@@ -255,7 +278,9 @@ export const useSearchKeyboard = ({
           e.preventDefault();
           e.stopPropagation();
           const baseFilter = trailingJoinMatch[1].trimEnd();
-          const newValue = baseFilter ? `${baseFilter}##` : '';
+          // Step back from “choosing next column” to “choosing join operator”.
+          // Pattern: ... [Value] #and #  -> ... [Value] #
+          const newValue = baseFilter ? ensureTrailingHash(baseFilter) : '';
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -297,6 +322,7 @@ export const useSearchKeyboard = ({
     };
   }, [
     onChange,
+    onStepBackDelete,
     searchMode.showColumnSelector,
     searchMode.showJoinOperatorSelector,
     searchMode.showOperatorSelector,
@@ -532,97 +558,10 @@ export const useSearchKeyboard = ({
         // DELETE key: Used for badge deletion (works even when modal is open)
         // This is separate from Backspace which is used for modal internal search
         if (e.key === KEY_CODES.DELETE) {
-          // Sequential badge deletion in pattern/badge mode:
-          // Delete removes exactly 1 badge from the far-right each press.
-          if (value.trimStart().startsWith('#')) {
+          if (onStepBackDelete?.()) {
             e.preventDefault();
             e.stopPropagation();
-
-            const nextValue = deleteLastBadgeUnit(value);
-            if (nextValue !== value) {
-              onChange({
-                target: { value: nextValue },
-              } as React.ChangeEvent<HTMLInputElement>);
-            }
             return;
-          }
-
-          if (
-            searchMode.showColumnSelector &&
-            (value.includes('#(') || value.includes('#)'))
-          ) {
-            const trimmedValue = value.trimEnd();
-            const lastTokenIsOpen = trimmedValue.endsWith('#(');
-            const lastTokenIsClose = trimmedValue.endsWith('#)');
-            const tokenType = lastTokenIsOpen
-              ? 'groupOpen'
-              : lastTokenIsClose
-                ? 'groupClose'
-                : null;
-
-            if (tokenType) {
-              const tokenCount = (
-                trimmedValue.match(
-                  tokenType === 'groupOpen' ? /#\(/g : /#\)/g
-                ) || []
-              ).length;
-
-              if (tokenCount > 0) {
-                e.preventDefault();
-                const nextValue = removeGroupTokenAtIndex(
-                  value,
-                  tokenType,
-                  tokenCount - 1
-                );
-                onChange({
-                  target: { value: nextValue },
-                } as React.ChangeEvent<HTMLInputElement>);
-                return;
-              }
-            }
-          }
-
-          if (searchMode.showColumnSelector) {
-            const trailingJoinWithHash = value.match(
-              /(.*)\s+#(?:and|or)\s+#\s*$/i
-            );
-            const trailingJoinNoHash = value.match(/(.*)\s+#(?:and|or)\s*$/i);
-            const trailingJoinMatch =
-              trailingJoinWithHash || trailingJoinNoHash;
-
-            if (trailingJoinMatch) {
-              e.preventDefault();
-              const baseFilter = trailingJoinMatch[1].trimEnd();
-              const newValue = baseFilter ? `${baseFilter}##` : '';
-              onChange({
-                target: { value: newValue },
-              } as React.ChangeEvent<HTMLInputElement>);
-              return;
-            }
-          }
-
-          if (value.includes('#)')) {
-            const trimmedValue = value.trimEnd();
-            const hasConfirmation = trimmedValue.endsWith('##');
-            const baseValue = hasConfirmation
-              ? trimmedValue.slice(0, -2).trimEnd()
-              : trimmedValue;
-
-            if (baseValue.endsWith('#)')) {
-              const tokenCount = (value.match(/#\)/g) || []).length;
-              if (tokenCount > 0) {
-                e.preventDefault();
-                const nextValue = removeGroupTokenAtIndex(
-                  value,
-                  'groupClose',
-                  tokenCount - 1
-                );
-                onChange({
-                  target: { value: nextValue },
-                } as React.ChangeEvent<HTMLInputElement>);
-                return;
-              }
-            }
           }
 
           if (
@@ -646,6 +585,84 @@ export const useSearchKeyboard = ({
             }
           }
 
+          // When join selector is open, Delete cancels join selection and restores confirmation.
+          // Pattern: #field #op value # -> #field #op value##
+          if (searchMode.showJoinOperatorSelector) {
+            e.preventDefault();
+            e.stopPropagation();
+            const trimmedValue = value.replace(/\s+#\s*$/, '').trimEnd();
+            if (!trimmedValue) {
+              onChange({
+                target: { value: '' },
+              } as React.ChangeEvent<HTMLInputElement>);
+              return;
+            }
+            onChange({
+              target: {
+                value: trimmedValue.endsWith('##')
+                  ? trimmedValue
+                  : `${trimmedValue}##`,
+              },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+
+          // Confirmed single-condition: step back to operator selection (or enter in-badge edit for inRange).
+          // This must run BEFORE the generic pattern deletion to keep behavior consistent.
+          if (
+            searchMode.isFilterMode &&
+            searchMode.filterSearch?.isConfirmed &&
+            !searchMode.filterSearch?.isMultiCondition
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (
+              searchMode.filterSearch.operator === 'inRange' &&
+              searchMode.filterSearch.valueTo
+            ) {
+              if (editConditionValue) {
+                editConditionValue(0, 'valueTo');
+              } else if (clearConditionPart) {
+                clearConditionPart(0, 'valueTo');
+              }
+              return;
+            }
+
+            if (
+              searchMode.filterSearch.operator === 'inRange' &&
+              searchMode.filterSearch.value
+            ) {
+              if (editConditionValue) {
+                editConditionValue(0, 'value');
+              } else if (clearConditionPart) {
+                clearConditionPart(0, 'value');
+              }
+              return;
+            }
+
+            const field = searchMode.filterSearch.field;
+            onChange({
+              target: { value: `#${field} #` },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
+          }
+
+          // Sequential badge deletion in pattern/badge mode:
+          // Delete removes exactly 1 badge from the far-right each press.
+          if (value.trimStart().startsWith('#')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const nextValue = deleteLastBadgeUnit(value);
+            if (nextValue !== value) {
+              onChange({
+                target: { value: nextValue },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+            return;
+          }
+
           if (
             (value.includes('#(') || value.includes('#)')) &&
             !searchMode.filterSearch?.filterGroup
@@ -658,135 +675,6 @@ export const useSearchKeyboard = ({
               } as React.ChangeEvent<HTMLInputElement>);
               return;
             }
-          }
-
-          // Delete on confirmed multi-condition filter: Enter edit mode for the last condition's valueTo first
-          if (
-            searchMode.isFilterMode &&
-            searchMode.filterSearch?.isConfirmed &&
-            searchMode.filterSearch?.isMultiCondition
-          ) {
-            e.preventDefault();
-            const conditions = searchMode.filterSearch.conditions || [];
-
-            // FIX: For partial patterns where user is typing a new condition,
-            // partialConditions may have more elements than conditions.
-            // Use the actual count of all conditions (including the one being typed).
-            const partialConditions = searchMode.partialConditions || [];
-            const totalConditions = Math.max(
-              conditions.length,
-              partialConditions.length
-            );
-            const lastIdx = totalConditions - 1;
-
-            // Get the last condition from either partialConditions or conditions
-            const lastCondition =
-              partialConditions[lastIdx] || conditions[lastIdx];
-
-            if (lastIdx >= 0 && lastCondition) {
-              const hasGroupTokens =
-                value.includes('#(') || value.includes('#)');
-
-              // 1. For Between operator with valueTo: Enter edit mode for valueTo first
-              // [FIX] Use editConditionValue to enter edit mode instead of clearConditionPart
-              if (
-                lastCondition.operator === 'inRange' &&
-                lastCondition.valueTo
-              ) {
-                if (editConditionValue) {
-                  editConditionValue(lastIdx, 'valueTo');
-                } else if (clearConditionPart) {
-                  clearConditionPart(lastIdx, 'valueTo');
-                }
-                return;
-              }
-
-              // 2. Delete value if it exists and is non-empty
-              // [FIX] For Between operator, enter edit mode for value
-              if (lastCondition.value && lastCondition.value.trim() !== '') {
-                if (
-                  lastCondition.operator === 'inRange' &&
-                  editConditionValue
-                ) {
-                  editConditionValue(lastIdx, 'value');
-                } else if (hasGroupTokens && lastCondition.operator) {
-                  const trimmedValue = value.trimEnd();
-                  const withoutConfirmation = trimmedValue.endsWith('##')
-                    ? trimmedValue.slice(0, -2).trimEnd()
-                    : trimmedValue;
-
-                  const opToken = `#${lastCondition.operator}`;
-                  const lowerValue = withoutConfirmation.toLowerCase();
-                  const lowerToken = opToken.toLowerCase();
-                  const tokenIndex = lowerValue.lastIndexOf(lowerToken);
-
-                  if (tokenIndex !== -1) {
-                    const newValue = `${withoutConfirmation.slice(
-                      0,
-                      tokenIndex + opToken.length
-                    )} `;
-                    onChange({
-                      target: { value: newValue },
-                    } as React.ChangeEvent<HTMLInputElement>);
-                    return;
-                  }
-                } else if (clearConditionPart) {
-                  clearConditionPart(lastIdx, 'value');
-                }
-                return;
-              }
-
-              // 3. Delete operator if it exists
-              if (lastCondition.operator) {
-                clearConditionPart?.(lastIdx, 'operator');
-                return;
-              }
-
-              // 4. Delete column if it exists
-              if (lastCondition.column) {
-                clearConditionPart?.(lastIdx, 'column');
-                return;
-              }
-            }
-          }
-
-          // Delete on confirmed single-condition filter: Enter in-badge edit mode
-          if (
-            searchMode.isFilterMode &&
-            searchMode.filterSearch?.isConfirmed &&
-            !searchMode.filterSearch?.isMultiCondition
-          ) {
-            e.preventDefault();
-            // For Between (inRange) operator with valueTo, enter edit mode for valueTo
-            // [FIX] Use editConditionValue to enter edit mode instead of clearConditionPart
-            if (
-              searchMode.filterSearch.operator === 'inRange' &&
-              searchMode.filterSearch.valueTo
-            ) {
-              if (editConditionValue) {
-                editConditionValue(0, 'valueTo');
-              } else if (clearConditionPart) {
-                clearConditionPart(0, 'valueTo');
-              }
-              return;
-            }
-            // For Between operator with only value (no valueTo), enter edit mode for value
-            if (
-              searchMode.filterSearch.operator === 'inRange' &&
-              searchMode.filterSearch.value
-            ) {
-              if (editConditionValue) {
-                editConditionValue(0, 'value');
-              } else if (clearConditionPart) {
-                clearConditionPart(0, 'value');
-              }
-              return;
-            }
-            // For other operators, delete the first/only value
-            if (clearConditionPart) {
-              clearConditionPart(0, 'value');
-            }
-            return;
           }
 
           // Delete on Between operator waiting for valueTo: Enter edit mode for first value
@@ -1055,6 +943,7 @@ export const useSearchKeyboard = ({
       handleCloseOperatorSelector,
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
+      onStepBackDelete,
       editConditionValue,
       clearConditionPart,
     ]
