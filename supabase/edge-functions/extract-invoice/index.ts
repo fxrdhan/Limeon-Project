@@ -158,6 +158,21 @@ function validateFile(file) {
     valid: true,
   };
 }
+
+// Sanitize error messages to prevent stack trace exposure
+function sanitizeErrorMessage(error: unknown): string {
+  if (error instanceof GeminiApiError) {
+    // GeminiApiError messages are already user-friendly
+    return error.message;
+  }
+  if (error instanceof Error) {
+    // Only return the first line of the error message to avoid stack traces
+    const firstLine = error.message.split('\n')[0];
+    // Remove file paths and line numbers that might leak internal structure
+    return firstLine.replace(/\s*at\s+.*$/g, '').trim() || 'An unexpected error occurred';
+  }
+  return 'An unexpected error occurred';
+}
 class GeminiApiError extends Error {
   status;
   code;
@@ -540,7 +555,8 @@ serve(async (req) => {
         );
       } catch (error) {
         console.error("❌ Processing error:", error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const rawErrorMessage = error instanceof Error ? error.message : String(error);
+        const safeErrorMessage = sanitizeErrorMessage(error);
         const isLeakedKeyError =
           error instanceof GeminiApiError &&
           error.code === "GEMINI_API_KEY_REPORTED_LEAKED";
@@ -553,7 +569,7 @@ serve(async (req) => {
             status: "error",
             fileSize,
             fileName: imageIdentifier,
-            errorMessage,
+            errorMessage: rawErrorMessage, // Keep raw message for internal logging
           },
           supabase,
         );
@@ -562,7 +578,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               error: "Konfigurasi Gemini API bermasalah",
-              details: errorMessage,
+              details: safeErrorMessage,
               code: "GEMINI_API_KEY_REPORTED_LEAKED",
               tip: "Buat API key baru dan update secret GEMINI_API_KEY di Supabase, lalu deploy ulang Edge Function.",
             }),
@@ -579,7 +595,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             error: "Terjadi kesalahan saat memproses gambar",
-            details: errorMessage,
+            details: safeErrorMessage,
             tip: "Coba lagi dengan gambar yang lebih kecil atau format yang berbeda",
           }),
           {
@@ -611,7 +627,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        details: error.message,
+        details: "An unexpected error occurred. Please try again later.",
       }),
       {
         status: 500,

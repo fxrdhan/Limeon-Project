@@ -8,4 +8,5 @@ CREATE TABLE public.item_types (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   code character varying(50)
-);
+);ALTER TABLE public.item_types ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read item_types" ON public.item_types FOR SELECT USING (auth.role() = 'authenticated');

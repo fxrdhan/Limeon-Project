@@ -9,4 +9,5 @@ CREATE TABLE public.customer_level_discounts (
   discount_rules jsonb,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.customer_level_discounts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read customer_level_discounts" ON public.customer_level_discounts FOR SELECT USING (auth.role() = 'authenticated');

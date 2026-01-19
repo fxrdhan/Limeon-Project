@@ -20,4 +20,5 @@ CREATE TABLE public.purchases (
   is_vat_included boolean DEFAULT true,
   customer_name character varying(150),
   customer_address text
-);
+);ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read purchases" ON public.purchases FOR SELECT USING (auth.role() = 'authenticated');

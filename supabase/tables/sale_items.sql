@@ -10,4 +10,5 @@ CREATE TABLE public.sale_items (
   subtotal numeric NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.sale_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read sale_items" ON public.sale_items FOR SELECT USING (auth.role() = 'authenticated');

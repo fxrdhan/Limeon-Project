@@ -9,4 +9,5 @@ CREATE TABLE public.item_packages (
   description text,
   code character varying(50),
   nci_code character varying(50)
-);
+);ALTER TABLE public.item_packages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read item_packages" ON public.item_packages FOR SELECT USING (auth.role() = 'authenticated');

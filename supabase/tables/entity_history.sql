@@ -13,4 +13,5 @@ CREATE TABLE public.entity_history (
   changed_fields jsonb,
   change_description text,
   CONSTRAINT entity_history_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES public.users(id) ON DELETE SET NULL
-);
+);ALTER TABLE public.entity_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read entity_history" ON public.entity_history FOR SELECT USING (auth.role() = 'authenticated');

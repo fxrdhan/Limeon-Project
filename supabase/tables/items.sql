@@ -24,4 +24,5 @@ CREATE TABLE public.items (
   manufacturer character varying(100),
   dosage_id uuid,
   package_id uuid NOT NULL
-);
+);ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read items" ON public.items FOR SELECT USING (auth.role() = 'authenticated');

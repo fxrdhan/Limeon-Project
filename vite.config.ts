@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
 import viteCompression from 'vite-plugin-compression';
 
 // https://vite.dev/config/
@@ -29,10 +29,6 @@ export default defineConfig({
   },
   server: {
     host: true, // Expose to network
-    fs: {
-      // Allow serving files from one level up from the project root
-      allow: ['..'],
-    },
   },
   build: {
     rollupOptions: {

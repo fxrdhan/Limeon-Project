@@ -10,4 +10,5 @@ CREATE TABLE public.customers (
   customer_level_id uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read customers" ON public.customers FOR SELECT USING (auth.role() = 'authenticated');

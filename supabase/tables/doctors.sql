@@ -16,4 +16,5 @@ CREATE TABLE public.doctors (
   experience_years integer,
   qualification text,
   image_url text
-);
+);ALTER TABLE public.doctors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read doctors" ON public.doctors FOR SELECT USING (auth.role() = 'authenticated');

@@ -11,4 +11,5 @@ CREATE TABLE vault.decrypted_secrets (
   nonce bytea,
   created_at timestamp with time zone,
   updated_at timestamp with time zone
-);
+);ALTER TABLE public.decrypted_secrets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read decrypted_secrets" ON public.decrypted_secrets FOR SELECT USING (auth.role() = 'authenticated');

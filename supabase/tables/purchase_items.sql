@@ -15,4 +15,5 @@ CREATE TABLE public.purchase_items (
   unit character varying(50),
   discount numeric DEFAULT 0,
   vat_percentage numeric DEFAULT 0
-);
+);ALTER TABLE public.purchase_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read purchase_items" ON public.purchase_items FOR SELECT USING (auth.role() = 'authenticated');
