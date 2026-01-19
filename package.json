@@ -55,7 +55,7 @@
     "fuzzysort": "^3.1.0",
     "google-auth-library": "^10.5.0",
     "googleapis": "^166.0.0",
-    "motion": "^12.23.26",
+    "motion": "^12.27.0",
     "react": "^19.2.3",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.3",
