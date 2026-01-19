@@ -10,4 +10,5 @@ CREATE TABLE public.users (
   updated_at timestamp with time zone DEFAULT now(),
   profilephoto text,
   profilephoto_path text
-);
+);ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read users" ON public.users FOR SELECT USING (auth.role() = 'authenticated');

@@ -8,4 +8,5 @@ CREATE TABLE public.item_units (
   description text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.item_units ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read item_units" ON public.item_units FOR SELECT USING (auth.role() = 'authenticated');

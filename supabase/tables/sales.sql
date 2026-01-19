@@ -12,4 +12,5 @@ CREATE TABLE public.sales (
   created_by uuid,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read sales" ON public.sales FOR SELECT USING (auth.role() = 'authenticated');

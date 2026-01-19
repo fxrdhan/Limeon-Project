@@ -8,4 +8,5 @@ CREATE TABLE public.item_manufacturers (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   address text
-);
+);ALTER TABLE public.item_manufacturers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read item_manufacturers" ON public.item_manufacturers FOR SELECT USING (auth.role() = 'authenticated');

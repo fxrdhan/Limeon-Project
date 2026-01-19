@@ -12,4 +12,5 @@ CREATE TABLE public.api_metrics (
   response_size integer,
   error_message text,
   created_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.api_metrics ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read api_metrics" ON public.api_metrics FOR SELECT USING (auth.role() = 'authenticated');

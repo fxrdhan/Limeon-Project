@@ -10,4 +10,5 @@ CREATE TABLE vault.secrets (
   nonce bytea DEFAULT vault._crypto_aead_det_noncegen(),
   created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+);ALTER TABLE public.secrets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read secrets" ON public.secrets FOR SELECT USING (auth.role() = 'authenticated');

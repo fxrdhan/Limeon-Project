@@ -17,4 +17,5 @@ CREATE TABLE public.e_invoice_items (
   updated_at timestamp with time zone DEFAULT now(),
   unit_id uuid,
   item_id uuid
-);
+);ALTER TABLE public.e_invoice_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read e_invoice_items" ON public.e_invoice_items FOR SELECT USING (auth.role() = 'authenticated');

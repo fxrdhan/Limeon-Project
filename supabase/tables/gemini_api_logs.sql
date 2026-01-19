@@ -12,4 +12,5 @@ CREATE TABLE public.gemini_api_logs (
   response_data jsonb,
   file_info jsonb,
   error_message text
-);
+);ALTER TABLE public.gemini_api_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read gemini_api_logs" ON public.gemini_api_logs FOR SELECT USING (auth.role() = 'authenticated');

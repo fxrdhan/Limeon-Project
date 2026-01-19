@@ -11,4 +11,5 @@ CREATE TABLE public.suppliers (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   image_url text
-);
+);ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read suppliers" ON public.suppliers FOR SELECT USING (auth.role() = 'authenticated');

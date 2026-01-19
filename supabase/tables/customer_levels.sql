@@ -8,4 +8,5 @@ CREATE TABLE public.customer_levels (
   description text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.customer_levels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read customer_levels" ON public.customer_levels FOR SELECT USING (auth.role() = 'authenticated');

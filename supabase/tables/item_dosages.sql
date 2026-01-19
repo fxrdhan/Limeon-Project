@@ -9,4 +9,5 @@ CREATE TABLE public.item_dosages (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   nci_code character varying(20)
-);
+);ALTER TABLE public.item_dosages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read item_dosages" ON public.item_dosages FOR SELECT USING (auth.role() = 'authenticated');

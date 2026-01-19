@@ -12,4 +12,5 @@ CREATE TABLE public.patients (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   image_url text
-);
+);ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read patients" ON public.patients FOR SELECT USING (auth.role() = 'authenticated');

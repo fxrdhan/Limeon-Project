@@ -12,4 +12,5 @@ CREATE TABLE public.company_profiles (
   pharmacist_name character varying(100),
   pharmacist_license character varying(50),
   updated_at timestamp with time zone DEFAULT now()
-);
+);ALTER TABLE public.company_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to read company_profiles" ON public.company_profiles FOR SELECT USING (auth.role() = 'authenticated');
