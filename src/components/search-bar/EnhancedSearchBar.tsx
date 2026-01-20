@@ -594,6 +594,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onClearSearch,
     setEditingSelectorTarget,
     setEditingBadge,
+    setCurrentJoinOperator,
   });
 
   const applyGroupedPattern = useCallback(
@@ -2236,13 +2237,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const handleStepBackDelete = useCallback((): boolean => {
     const liveValue = latestValueRef.current;
     const liveSearchMode = parseSearchValue(liveValue, memoizedColumns);
-    const liveEditingTarget =
-      latestEditingSelectorTargetRef.current ?? editingSelectorTarget;
-
-    const isAnySelectorOpen =
-      liveSearchMode.showColumnSelector ||
-      liveSearchMode.showOperatorSelector ||
-      liveSearchMode.showJoinOperatorSelector;
+    const trimmedValue = liveValue.trimEnd();
 
     const setValue = (nextValue: string) => {
       latestValueRef.current = nextValue;
@@ -2251,315 +2246,84 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       } as React.ChangeEvent<HTMLInputElement>);
     };
 
-    const preserveFromPattern = (pattern: string) => {
-      const preserved = parseSearchValue(pattern, memoizedColumns);
-      setPreservedSearchMode(preserved);
-      latestPreservedSearchModeRef.current = preserved;
-      preservedFilterRef.current = extractMultiConditionPreservation(preserved);
-      return preserved;
+    if (!trimmedValue.startsWith('#')) {
+      return false;
+    }
+
+    if (
+      liveSearchMode.filterSearch?.filterGroup &&
+      liveSearchMode.filterSearch.isConfirmed
+    ) {
+      return false;
+    }
+
+    const stripConfirmation = (input: string): string => {
+      const cleaned = input.trimEnd();
+      return cleaned.endsWith('##') ? cleaned.slice(0, -2).trimEnd() : cleaned;
     };
 
-    // del-1: confirmed multi-condition → remove last value, open operator selector
-    {
-      const filter = liveSearchMode.filterSearch;
-      if (
-        !isAnySelectorOpen &&
-        liveSearchMode.isFilterMode &&
-        filter?.isConfirmed &&
-        filter.isMultiCondition &&
-        filter.conditions &&
-        filter.conditions.length >= 2
-      ) {
-        const conditions = filter.conditions;
-        const joins =
-          filter.joins ?? (filter.joinOperator ? [filter.joinOperator] : []);
-        const lastIndex = conditions.length - 1;
+    const collapseWhitespace = (input: string): string => {
+      return input.replace(/\s{2,}/g, ' ').trimStart();
+    };
 
-        const getCondField = (cond: (typeof conditions)[number]) =>
-          cond.field || cond.column?.field || filter.field;
+    let working = stripConfirmation(trimmedValue);
+    if (!working) return false;
 
-        const preservedPattern = PatternBuilder.buildNConditions(
-          conditions.map((cond, idx) =>
-            idx === lastIndex
-              ? {
-                  field: getCondField(cond),
-                  operator: cond.operator,
-                }
-              : {
-                  field: getCondField(cond),
-                  operator: cond.operator,
-                  value: cond.value,
-                  valueTo: cond.valueTo,
-                }
-          ),
-          joins,
-          true,
-          filter.field,
-          { confirmed: false, openSelector: false }
-        );
-
-        preserveFromPattern(preservedPattern);
-        const nextTarget = {
-          conditionIndex: lastIndex,
-          target: 'operator',
-        } as const;
-        latestEditingSelectorTargetRef.current = nextTarget;
-        setEditingSelectorTarget(nextTarget);
-        setCurrentJoinOperator(undefined);
-
-        const uiPattern = PatternBuilder.buildWithSelectorOpen(
-          conditions.map(cond => ({
-            field: getCondField(cond),
-            operator: cond.operator,
-            value: cond.value,
-            valueTo: cond.valueTo,
-          })),
-          joins,
-          true,
-          filter.field,
-          'operator',
-          lastIndex
-        );
-
-        setValue(uiPattern);
-        return true;
-      }
+    if (working.endsWith('#')) {
+      working = working.replace(/\s*#\s*$/, '').trimEnd();
     }
 
-    // del-2 / del-6: operator selector open → remove operator, open column selector
-    if (
-      liveSearchMode.showOperatorSelector &&
-      liveEditingTarget?.target === 'operator'
-    ) {
-      const conditionIndex = liveEditingTarget.conditionIndex;
+    const isGroupToken = /#\(|#\)$/.test(working);
+    const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
+    const trailingToken = trailingTokenMatch?.[0]?.trim() ?? '';
+    const shouldOpenSelector =
+      !!trailingTokenMatch &&
+      !isGroupToken &&
+      trailingToken.toLowerCase() !== '#to';
 
-      // del-2: remove operator for condition[1+], open column selector for that condition
-      if (conditionIndex > 0) {
-        const baseState =
-          latestPreservedSearchModeRef.current ?? liveSearchMode;
-        const preservation = extractMultiConditionPreservation(baseState);
-        if (!preservation || preservation.conditions.length <= conditionIndex) {
-          return false;
-        }
-
-        const joins = preservation.joins;
-        const joinOp = joins[conditionIndex - 1] || 'AND';
-        const defaultField =
-          preservation.conditions[0]?.field ||
-          liveSearchMode.filterSearch?.field ||
-          '';
-        const fieldFallback =
-          liveSearchMode.selectedColumn?.field ||
-          preservation.conditions[conditionIndex]?.field ||
-          defaultField;
-
-        const preservedPattern = PatternBuilder.buildNConditions(
-          preservation.conditions.map((cond, idx) =>
-            idx === conditionIndex
-              ? {
-                  field: cond.field || fieldFallback,
-                }
-              : {
-                  field: cond.field || defaultField,
-                  operator: cond.operator,
-                  value: cond.value,
-                  valueTo: cond.valueTo,
-                }
-          ),
-          joins,
-          true,
-          defaultField,
-          { confirmed: false, openSelector: false }
-        );
-
-        preserveFromPattern(preservedPattern);
-        const nextTarget = { conditionIndex, target: 'column' } as const;
-        latestEditingSelectorTargetRef.current = nextTarget;
-        setEditingSelectorTarget(nextTarget);
-        setCurrentJoinOperator(undefined);
-
-        const basePattern = PatternBuilder.buildNConditions(
-          preservation.conditions.slice(0, conditionIndex).map(cond => ({
-            field: cond.field,
-            operator: cond.operator,
-            value: cond.value,
-            valueTo: cond.valueTo,
-          })),
-          joins.slice(0, Math.max(0, conditionIndex - 1)),
-          true,
-          defaultField,
-          { confirmed: false, openSelector: false }
-        );
-
-        setValue(`${basePattern} #${joinOp.toLowerCase()} #`);
-        return true;
+    if (working.endsWith('#)')) {
+      working = working.replace(/\s*#\)\s*$/, '').trimEnd();
+    } else if (working.endsWith('#(')) {
+      working = working.replace(/\s*#\(\s*$/, '').trimEnd();
+    } else if (trailingTokenMatch) {
+      working = working.replace(/(?:^|\s)#[^\s#]+$/, '').trimEnd();
+    } else {
+      const tokenRegex = /#\(|#\)|#[^\s#]+/g;
+      let lastToken: RegExpExecArray | null = null;
+      let match: RegExpExecArray | null;
+      while ((match = tokenRegex.exec(working)) !== null) {
+        lastToken = match;
       }
-
-      // del-6: remove operator for condition[0], open column selector
-      if (conditionIndex === 0) {
-        const filter = (latestPreservedSearchModeRef.current ?? liveSearchMode)
-          .filterSearch;
-        if (!filter) return false;
-
-        preserveFromPattern(`#${filter.field}`);
-        const nextTarget = { conditionIndex: 0, target: 'column' } as const;
-        latestEditingSelectorTargetRef.current = nextTarget;
-        setEditingSelectorTarget(nextTarget);
-        setCurrentJoinOperator(undefined);
-        setValue('#');
-        return true;
-      }
+      if (!lastToken) return false;
+      const cutIndex = lastToken.index + lastToken[0].length;
+      working = working.slice(0, cutIndex).trimEnd();
     }
 
-    // del-3 / del-7: column selector open → remove column, open join selector (or clear all)
-    if (
-      liveSearchMode.showColumnSelector &&
-      liveEditingTarget?.target === 'column'
-    ) {
-      const conditionIndex = liveEditingTarget.conditionIndex;
+    let nextValue = collapseWhitespace(working);
+    const trimmedNext = nextValue.trimEnd();
 
-      // del-3: remove condition[1+] column, open join selector for the preceding join
-      if (conditionIndex > 0) {
-        const baseState =
-          latestPreservedSearchModeRef.current ?? liveSearchMode;
-        const preservation = extractMultiConditionPreservation(baseState);
-        if (!preservation) return false;
-
-        const joinIndex = conditionIndex - 1;
-        const joinOp = preservation.joins[joinIndex] || 'AND';
-        const defaultField =
-          preservation.conditions[0]?.field ||
-          liveSearchMode.filterSearch?.field ||
-          '';
-        const joinAnchorConditions = preservation.conditions.slice(
-          0,
-          joinIndex + 1
-        );
-        if (
-          joinAnchorConditions.length === 0 ||
-          joinAnchorConditions.some(c => !c.field || !c.operator || !c.value)
-        ) {
-          return false;
-        }
-
-        // Preserve badges up to condition[joinIndex] and keep the join badge visible.
-        // We intentionally preserve a trailing "#${joinOp} #" so the Join selector can anchor below the join badge.
-        const preservedBase = PatternBuilder.buildNConditions(
-          joinAnchorConditions.map(cond => ({
-            field: cond.field,
-            operator: cond.operator,
-            value: cond.value,
-            valueTo: cond.valueTo,
-          })),
-          preservation.joins.slice(0, joinIndex),
-          preservation.isMultiColumn || false,
-          defaultField,
-          { confirmed: false, openSelector: false }
-        );
-        const preservedPattern = `${preservedBase} #${joinOp.toLowerCase()} #`;
-
-        preserveFromPattern(preservedPattern);
-        const nextTarget = {
-          conditionIndex: joinIndex,
-          target: 'join',
-        } as const;
-        latestEditingSelectorTargetRef.current = nextTarget;
-        setEditingSelectorTarget(nextTarget);
-        setCurrentJoinOperator(joinOp);
-
-        // Open join selector (no join badge in the input value; preservedSearchMode keeps it visible).
-        const uiPattern = PatternBuilder.withJoinSelectorAtIndex(
-          joinAnchorConditions.map(cond => ({
-            field: cond.field,
-            operator: cond.operator!,
-            value: cond.value!,
-            valueTo: cond.valueTo,
-          })),
-          preservation.joins.slice(0, joinIndex),
-          preservation.isMultiColumn || false,
-          defaultField,
-          joinIndex
-        );
-        setValue(uiPattern);
-        return true;
+    if (shouldOpenSelector) {
+      if (!trimmedNext) {
+        nextValue = '#';
+      } else if (!trimmedNext.endsWith('#')) {
+        nextValue = `${trimmedNext} #`;
+      } else {
+        nextValue = trimmedNext;
       }
-
-      // del-7: remove condition[0] column, clear everything
-      if (conditionIndex === 0) {
-        handleClearPreservedState();
-        setValue('');
-        return true;
-      }
+    } else if (trimmedNext !== nextValue) {
+      nextValue = trimmedNext;
     }
 
-    // del-4: join selector open → remove join, return to confirmed conditions up to the join
-    if (
-      liveSearchMode.showJoinOperatorSelector &&
-      liveEditingTarget?.target === 'join'
-    ) {
-      const joinIndex = liveEditingTarget.conditionIndex;
-      const baseState = latestPreservedSearchModeRef.current ?? liveSearchMode;
-      const preservation = extractMultiConditionPreservation(baseState);
-      if (!preservation) return false;
-
-      const defaultField =
-        preservation.conditions[0]?.field ||
-        liveSearchMode.filterSearch?.field ||
-        '';
-      const targetConditions = preservation.conditions.slice(0, joinIndex + 1);
-      if (
-        joinIndex < 0 ||
-        targetConditions.length === 0 ||
-        targetConditions.some(c => !c.field || !c.operator || !c.value)
-      ) {
-        return false;
-      }
-
-      handleClearPreservedState();
-
-      const confirmedPattern = PatternBuilder.confirmedUpToIndex(
-        targetConditions.map(cond => ({
-          field: cond.field,
-          operator: cond.operator!,
-          value: cond.value!,
-          valueTo: cond.valueTo,
-        })),
-        preservation.joins,
-        preservation.isMultiColumn || false,
-        defaultField,
-        joinIndex
-      );
-
-      setValue(confirmedPattern);
-      return true;
+    if (nextValue === liveValue) {
+      return false;
     }
 
-    // del-5: confirmed single condition → remove value, open operator selector
-    if (
-      !isAnySelectorOpen &&
-      liveSearchMode.isFilterMode &&
-      liveSearchMode.filterSearch?.isConfirmed &&
-      !liveSearchMode.filterSearch.isMultiCondition
-    ) {
-      const filter = liveSearchMode.filterSearch;
-
-      preserveFromPattern(`#${filter.field} #${filter.operator}`);
-      const nextTarget = { conditionIndex: 0, target: 'operator' } as const;
-      latestEditingSelectorTargetRef.current = nextTarget;
-      setEditingSelectorTarget(nextTarget);
-      setCurrentJoinOperator(undefined);
-      setValue(`#${filter.field} #`);
-      return true;
-    }
+    handleClearPreservedState();
+    setValue(nextValue);
+    return true;
 
     return false;
-  }, [
-    handleClearPreservedState,
-    memoizedColumns,
-    onChange,
-    setPreservedSearchMode,
-    editingSelectorTarget,
-  ]);
+  }, [handleClearPreservedState, memoizedColumns, onChange]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
