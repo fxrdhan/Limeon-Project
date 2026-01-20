@@ -48,6 +48,9 @@ GEMINI.md
 # MCP configuration (contains sensitive tokens)
 .mcp.json
 
+# opencode
+opencode.json
+
 # Playwright MCP snapshots (auto-generated logs)
 .playwright-mcp/
 

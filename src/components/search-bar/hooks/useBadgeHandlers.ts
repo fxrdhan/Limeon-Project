@@ -58,6 +58,8 @@ export interface UseBadgeHandlersProps {
       value: string;
     } | null
   ) => void;
+  /** Set current join operator for selector highlighting */
+  setCurrentJoinOperator?: (operator: 'AND' | 'OR' | undefined) => void;
 }
 
 export interface BadgeHandlersReturn {
@@ -92,6 +94,7 @@ export function useBadgeHandlers(
     onClearSearch,
     setEditingSelectorTarget,
     setEditingBadge,
+    setCurrentJoinOperator,
   } = props;
 
   // ============ Helper: Get effective state ============
@@ -387,6 +390,8 @@ export function useBadgeHandlers(
       }
 
       const isMultiColumn = filter.isMultiColumn || false;
+      const activeJoin = joins[joinIndex] || filter.joinOperator || 'AND';
+      setCurrentJoinOperator?.(activeJoin);
 
       // Build pattern with conditions 0 to Index, then add trailing # for join selector
       const newValue = PatternBuilder.buildNConditions(
@@ -399,7 +404,14 @@ export function useBadgeHandlers(
 
       setFilterValue(newValue, onChange, inputRef);
     },
-    [getEffectiveState, onClearPreservedState, clearAll, onChange, inputRef]
+    [
+      getEffectiveState,
+      onClearPreservedState,
+      clearAll,
+      onChange,
+      inputRef,
+      setCurrentJoinOperator,
+    ]
   );
 
   // ============ EDIT HANDLERS ============
@@ -612,6 +624,8 @@ export function useBadgeHandlers(
         setPreservedSearchMode(searchMode);
       }
 
+      setEditingSelectorTarget?.({ conditionIndex: joinIndex, target: 'join' });
+
       preservedFilterRef.current = extractMultiConditionPreservation(state);
 
       const filter = state.filterSearch;
@@ -673,6 +687,8 @@ export function useBadgeHandlers(
       }
 
       const isMultiColumn = filter.isMultiColumn || false;
+      const activeJoin = joins[joinIndex] || filter.joinOperator || 'AND';
+      setCurrentJoinOperator?.(activeJoin);
 
       // Build pattern with join selector open at specified index
       const newValue = PatternBuilder.withJoinSelectorAtIndex(
@@ -693,6 +709,8 @@ export function useBadgeHandlers(
       preservedFilterRef,
       onChange,
       inputRef,
+      setCurrentJoinOperator,
+      setEditingSelectorTarget,
     ]
   );
 
