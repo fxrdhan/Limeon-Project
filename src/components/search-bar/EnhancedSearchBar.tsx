@@ -867,6 +867,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setPreservedSearchMode,
       preservedFilterRef,
       memoizedColumns,
+      editingSelectorTarget,
       isEditingSecondOperator,
       setIsEditingSecondOperator,
       setEditingBadge,
@@ -2591,6 +2592,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Restricted join operators to ensure consistency (all AND or all OR)
   const restrictedJoinOperators = useMemo(() => {
+    // When editing an existing join badge (confirmed pattern), we intentionally
+    // allow both operators. The selected value will be applied to all joins.
+    const isEditingJoinSelector =
+      searchMode.showJoinOperatorSelector &&
+      (isEditingJoinOperator || groupEditingSelectorTarget?.target === 'join');
+    if (isEditingJoinSelector) {
+      return JOIN_OPERATORS;
+    }
+
     if (searchMode.showJoinOperatorSelector && activeGroupState.depth > 0) {
       if (activeGroupState.join) {
         return JOIN_OPERATORS.filter(
@@ -2628,6 +2638,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.showJoinOperatorSelector,
     activeGroupState.depth,
     activeGroupState.join,
+    isEditingJoinOperator,
+    groupEditingSelectorTarget,
   ]);
 
   const getPlaceholder = () => {

@@ -56,6 +56,10 @@ export interface SelectionHandlersProps {
   setPreservedSearchMode: (mode: EnhancedSearchState | null) => void;
   preservedFilterRef: RefObject<PreservedFilter | null>;
   memoizedColumns: SearchColumn[];
+  editingSelectorTarget: {
+    conditionIndex: number;
+    target: 'column' | 'operator' | 'join';
+  } | null;
   isEditingSecondOperator: boolean;
   setIsEditingSecondOperator: (editing: boolean) => void;
   setEditingBadge: (badge: EditingBadgeState | null) => void;
@@ -83,6 +87,7 @@ export function useSelectionHandlers(
     setPreservedSearchMode,
     preservedFilterRef,
     memoizedColumns,
+    editingSelectorTarget,
     isEditingSecondOperator,
     setIsEditingSecondOperator,
     setEditingBadge,
@@ -523,7 +528,7 @@ export function useSelectionHandlers(
     (joinOp: JoinOperator) => {
       const preserved = preservedFilterRef.current;
       const joinOperator = joinOp.value.toUpperCase() as 'AND' | 'OR';
-      const editingJoinIndex = searchMode.editingJoinIndex;
+      const isEditingJoin = editingSelectorTarget?.target === 'join';
 
       let newValue: string;
 
@@ -549,13 +554,22 @@ export function useSelectionHandlers(
         const defaultField = conditions[0]?.field || '';
         const isMultiColumn = preserved.isMultiColumn || false;
 
-        const newJoins: ('AND' | 'OR')[] = [...(preserved.joins || [])];
-        const targetJoinIndex = editingJoinIndex ?? 0;
+        // Join operator is intentionally uniform across all conditions.
+        // When editing any join badge, apply the selected join to ALL joins.
+        const joinCount = Math.max(conditions.length - 1, 0);
+        const newJoins: ('AND' | 'OR')[] = isEditingJoin
+          ? Array(joinCount).fill(joinOperator)
+          : [...(preserved.joins || [])];
 
-        while (newJoins.length <= targetJoinIndex) {
-          newJoins.push('AND');
+        // If we are not in edit-join mode, ensure the join array is long enough
+        // to represent the join being built.
+        if (!isEditingJoin) {
+          const targetJoinIndex = joinCount > 0 ? joinCount - 1 : 0;
+          while (newJoins.length <= targetJoinIndex) {
+            newJoins.push('AND');
+          }
+          newJoins[targetJoinIndex] = joinOperator;
         }
-        newJoins[targetJoinIndex] = joinOperator;
 
         const allConditionsComplete = conditions.every(
           c => c.value && c.value.trim() !== ''
@@ -642,7 +656,14 @@ export function useSelectionHandlers(
         inputRef?.current?.focus();
       }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
-    [onChange, inputRef, searchMode, preservedFilterRef, setPreservedSearchMode]
+    [
+      onChange,
+      inputRef,
+      searchMode,
+      preservedFilterRef,
+      setPreservedSearchMode,
+      editingSelectorTarget,
+    ]
   );
 
   return {
