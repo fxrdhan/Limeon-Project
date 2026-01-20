@@ -248,6 +248,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Keep a synchronous reference to the latest raw pattern value so rapid key presses
   // (before React/parent state re-renders) still step back one badge at a time.
   const latestValueRef = useRef(value);
+  // Carry confirmation intent across consecutive Delete presses.
+  // This lets users step back through a confirmed expression and end up with a
+  // still-confirmed prefix once they finish deleting trailing badges.
+  const deleteConfirmationCarryRef = useRef(false);
   useEffect(() => {
     latestValueRef.current = value;
   }, [value]);
@@ -2125,6 +2129,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         return;
       }
 
+      // Any real typing/paste resets the "carry" from a delete session.
+      deleteConfirmationCarryRef.current = false;
+
       const inputValue = e.target.value;
       if (
         inputValue.includes('#(') ||
@@ -2323,7 +2330,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // useSearchState already prevents applying filters while parentheses are unbalanced.
     }
 
-    const hasConfirmation = trimmedValue.endsWith('##');
+    const hasConfirmation =
+      deleteConfirmationCarryRef.current || trimmedValue.endsWith('##');
 
     const stripConfirmation = (input: string): string => {
       const cleaned = input.trimEnd();
@@ -2368,6 +2376,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const trimmedNext = next.trimEnd();
       if (!trimmedNext) return '';
 
+      if (trimmedNext.endsWith('#)')) {
+        return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
+      }
+
       // Only restore confirmation when the pattern ends with a value segment.
       // Never append after a hash token (e.g. "#contains") because it would break parsing.
       const endsWithHashToken = /(?:^|\s)#[^\s#]+$/.test(trimmedNext);
@@ -2384,6 +2396,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (nextValue === liveValue) return false;
       handleClearPreservedState();
       setValue(nextValue);
+      deleteConfirmationCarryRef.current = nextValue
+        .trimStart()
+        .startsWith('#');
       return true;
     }
 
@@ -2392,6 +2407,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (nextValue === liveValue) return false;
       handleClearPreservedState();
       setValue(nextValue);
+      deleteConfirmationCarryRef.current = nextValue
+        .trimStart()
+        .startsWith('#');
       return true;
     }
 
@@ -2402,6 +2420,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const tokenLower = trailingToken.toLowerCase();
       const removed = working.replace(/(?:^|\s)#[^\s#]+$/, '').trimEnd();
 
+      // Deleting a join badge should behave like removing that badge only,
+      // not like opening a selector.
+      if (tokenLower === '#and' || tokenLower === '#or') {
+        const nextValue = maybeRestoreConfirmation(finalize(removed));
+        if (nextValue === liveValue) return false;
+        handleClearPreservedState();
+        setValue(nextValue);
+        deleteConfirmationCarryRef.current = nextValue
+          .trimStart()
+          .startsWith('#');
+        return true;
+      }
+
       // For #to we don't open a selector; it's just a delimiter.
       const shouldOpenSelector = tokenLower !== '#to';
       const nextValue = shouldOpenSelector
@@ -2411,6 +2442,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (nextValue === liveValue) return false;
       handleClearPreservedState();
       setValue(nextValue);
+      deleteConfirmationCarryRef.current = nextValue
+        .trimStart()
+        .startsWith('#');
       return true;
     }
 
@@ -2432,6 +2466,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (nextValue === liveValue) return false;
     handleClearPreservedState();
     setValue(nextValue);
+    deleteConfirmationCarryRef.current = nextValue.trimStart().startsWith('#');
     return true;
   }, [handleClearPreservedState, memoizedColumns, onChange]);
 
