@@ -51,6 +51,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
 
   const getSearchIconColor = () => {
     if (currentIcon === 'error') return '#EF4444';
+    if (currentIcon === 'hash-purple') return '#A855F7'; // text-purple-500
     if (currentIcon === 'hash-dynamic') return '#A855F7'; // text-purple-500
     if (currentIcon === 'filter' || searchMode.isFilterMode) return '#3B82F6'; // text-blue-500
 

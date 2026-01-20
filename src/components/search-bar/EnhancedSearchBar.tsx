@@ -2932,9 +2932,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   ? 'border-purple-300 ring-3 ring-purple-100 focus-within:border-purple-500 focus-within:ring-3 focus-within:ring-purple-100'
                   : searchMode.isFilterMode && searchMode.filterSearch
                     ? 'border-blue-300 ring-3 ring-blue-100 focus-within:border-blue-500 focus-within:ring-3 focus-within:ring-blue-100'
-                    : searchMode.showColumnSelector
-                      ? 'border-purple-300 ring-3 ring-purple-100 focus-within:border-purple-500 focus-within:ring-3 focus-within:ring-purple-100'
-                      : 'border-gray-300 focus-within:border-primary focus-within:ring-3 focus-within:ring-emerald-200'
+                    : searchMode.showOperatorSelector ||
+                        searchMode.showJoinOperatorSelector ||
+                        !!searchMode.partialJoin
+                      ? 'border-blue-300 ring-3 ring-blue-100 focus-within:border-blue-500 focus-within:ring-3 focus-within:ring-blue-100'
+                      : searchMode.showColumnSelector
+                        ? 'border-purple-300 ring-3 ring-purple-100 focus-within:border-purple-500 focus-within:ring-3 focus-within:ring-purple-100'
+                        : 'border-gray-300 focus-within:border-primary focus-within:ring-3 focus-within:ring-emerald-200'
             }`}
           >
             <SearchBadge
