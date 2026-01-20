@@ -86,6 +86,8 @@ export interface BadgeConfig {
   onFocusInput?: () => void;
   // Hover state hook to trigger layout re-measurement
   onHoverChange?: (isHovered: boolean) => void;
+  // Trigger search bar error state for invalid values
+  onInvalidValue?: () => void;
   // Keyboard navigation selection
   isSelected?: boolean; // Whether badge is selected via keyboard navigation
   // Column type for value validation (only for value badges)

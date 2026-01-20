@@ -22,6 +22,7 @@ interface SearchBadgeProps {
   editJoin: (joinIndex: number) => void;
   editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
   onHoverChange?: (isHovered: boolean) => void;
+  onInvalidValue?: () => void;
   preservedSearchMode?: EnhancedSearchState | null;
   preserveBadgesOnJoinSelector?: boolean;
   // Inline editing props
@@ -82,6 +83,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   editJoin,
   editValueN,
   onHoverChange,
+  onInvalidValue,
   preservedSearchMode,
   preserveBadgesOnJoinSelector,
   editingBadge,
@@ -354,10 +356,13 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
         const badgeWithGlow = shouldGlow
           ? { ...badge, isSelected: true }
           : badge;
+        const badgeWithErrorHandler = onInvalidValue
+          ? { ...badgeWithGlow, onInvalidValue }
+          : badgeWithGlow;
 
         return (
           <div key={badge.id} ref={handleRef}>
-            <Badge config={badgeWithGlow} />
+            <Badge config={badgeWithErrorHandler} />
           </div>
         );
       })}

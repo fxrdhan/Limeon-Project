@@ -65,6 +65,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Trigger shake animation for validation error
   const triggerShake = () => {
     setIsShaking(true);
+    config.onInvalidValue?.();
     setTimeout(() => setIsShaking(false), 400);
   };
 
@@ -224,6 +225,19 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const isValueBadge = config.type === 'value' || config.type === 'valueTo';
   const hasInvalidValue =
     isValueBadge && !isEditing && !validateValue(config.label);
+  const lastInvalidLabelRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (hasInvalidValue && config.onInvalidValue) {
+      if (lastInvalidLabelRef.current !== config.label) {
+        config.onInvalidValue();
+        lastInvalidLabelRef.current = config.label;
+      }
+      return;
+    }
+
+    lastInvalidLabelRef.current = null;
+  }, [hasInvalidValue, config.label, config.onInvalidValue, config]);
 
   // Glow effect - red for invalid/shaking, otherwise badge type color
   const errorGlow =

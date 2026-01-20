@@ -340,6 +340,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const [previewOperator, setPreviewOperator] = useState<
     import('./types').FilterOperator | null
   >(null);
+  const [showInputError, setShowInputError] = useState(false);
 
   // Ref to store current badges for Ctrl+E edit action
   const badgesRef = useRef<import('./types/badge').BadgeConfig[]>([]);
@@ -352,6 +353,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     type: 'column' | 'operator' | 'join' | 'partial';
     originalPattern: string;
   } | null>(null);
+  const inputErrorTimeoutRef = useRef<number | null>(null);
 
   const { searchMode } = useSearchState({
     value,
@@ -360,6 +362,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onFilterSearch,
     isEditMode: preservedSearchMode !== null, // In edit mode when preserving badges
   });
+
+  const triggerInputError = useCallback(() => {
+    if (inputErrorTimeoutRef.current !== null) {
+      window.clearTimeout(inputErrorTimeoutRef.current);
+    }
+    setShowInputError(true);
+    inputErrorTimeoutRef.current = window.setTimeout(() => {
+      setShowInputError(false);
+      inputErrorTimeoutRef.current = null;
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (inputErrorTimeoutRef.current !== null) {
+        window.clearTimeout(inputErrorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const hasGroupTokens = useMemo(
     () => value.includes('#(') || value.includes('#)'),
@@ -1331,6 +1352,36 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   ]);
 
   const handleCloseOperatorSelector = useCallback(() => {
+    if (
+      editingSelectorTarget?.target === 'operator' &&
+      preservedSearchMode?.filterSearch &&
+      !preservedSearchMode.filterSearch.isConfirmed
+    ) {
+      const preservation =
+        extractMultiConditionPreservation(preservedSearchMode);
+      if (preservation) {
+        const newValue = PatternBuilder.buildNConditions(
+          preservation.conditions,
+          preservation.joins,
+          preservation.isMultiColumn || false,
+          preservedSearchMode.filterSearch.field,
+          { confirmed: false, openSelector: false }
+        );
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        const columnName = preservedSearchMode.filterSearch.field;
+        const newValue = buildColumnValue(columnName, 'plain');
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+
+      handleClearPreservedState();
+      return;
+    }
+
     // If in edit mode, restore the original pattern instead of clearing
     if (tryRestorePreservedPattern()) return;
 
@@ -1365,6 +1416,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     onChange,
     onClearSearch,
     tryRestorePreservedPattern,
+    editingSelectorTarget,
+    preservedSearchMode,
+    handleClearPreservedState,
   ]);
 
   const handleCloseJoinOperatorSelector = useCallback(() => {
@@ -2346,6 +2400,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseJoinOperatorSelector,
     onClearPreservedState: handleClearPreservedState,
     onStepBackDelete: handleStepBackDelete,
+    onInvalidGroupOpen: triggerInputError,
     editConditionValue: editValueN,
     clearConditionPart,
     clearJoin,
@@ -2769,13 +2824,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             searchMode={searchMode}
             searchState={searchState}
             displayValue={displayValue}
+            showError={showInputError}
           />
 
           <div
             className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg overflow-hidden ${
               shouldShowLeftIcon ? 'pl-1.5' : 'pl-9'
             } ${
-              searchState === 'not-found'
+              showInputError || searchState === 'not-found'
                 ? 'border-danger focus-within:border-danger focus-within:ring-3 focus-within:ring-red-100'
                 : searchMode.isFilterMode &&
                     searchMode.filterSearch &&
@@ -2801,6 +2857,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               editJoin={editJoin}
               editValueN={editValueN}
               onHoverChange={handleHoverChange}
+              onInvalidValue={triggerInputError}
               preservedSearchMode={preservedSearchMode}
               preserveBadgesOnJoinSelector={
                 groupEditingSelectorTarget?.target === 'join' ||

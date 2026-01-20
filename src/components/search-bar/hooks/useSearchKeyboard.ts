@@ -209,6 +209,7 @@ interface UseSearchKeyboardProps {
   handleCloseJoinOperatorSelector?: () => void;
   onClearPreservedState?: () => void;
   onStepBackDelete?: () => boolean;
+  onInvalidGroupOpen?: () => void;
   // Scalable handlers for N-condition support
   editConditionValue?: (
     conditionIndex: number,
@@ -232,6 +233,7 @@ export const useSearchKeyboard = ({
   handleCloseJoinOperatorSelector,
   onClearPreservedState,
   onStepBackDelete,
+  onInvalidGroupOpen,
   editConditionValue,
   clearConditionPart,
 }: UseSearchKeyboardProps) => {
@@ -346,11 +348,17 @@ export const useSearchKeyboard = ({
           searchMode.showJoinOperatorSelector ||
           searchMode.isFilterMode;
 
+        const canInsertGroupOpen = /#(?:and|or)\s+#\s*$/i.test(value.trimEnd());
+
         if ((e.key === '(' || e.key === ')') && isPatternMode) {
           e.preventDefault();
           e.stopPropagation();
 
           if (e.key === '(') {
+            if (!canInsertGroupOpen) {
+              onInvalidGroupOpen?.();
+              return;
+            }
             const newValue = insertGroupOpenToken(value);
             onChange({
               target: { value: newValue },
@@ -944,6 +952,7 @@ export const useSearchKeyboard = ({
       handleCloseJoinOperatorSelector,
       onClearPreservedState,
       onStepBackDelete,
+      onInvalidGroupOpen,
       editConditionValue,
       clearConditionPart,
     ]

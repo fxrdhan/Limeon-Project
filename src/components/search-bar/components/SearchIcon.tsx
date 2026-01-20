@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
+import { FaTimes } from 'react-icons/fa';
 import { LuFilter, LuHash, LuSearch } from 'react-icons/lu';
 import { SearchState } from '../constants';
 import { EnhancedSearchState } from '../types';
@@ -8,16 +9,19 @@ interface SearchIconProps {
   searchMode: EnhancedSearchState;
   searchState: SearchState;
   displayValue: string;
+  showError?: boolean;
 }
 
 const SearchIcon: React.FC<SearchIconProps> = ({
   searchMode,
   searchState,
   displayValue,
+  showError = false,
 }) => {
   // Consolidated active state determination
   // If it should show ANY icon other than the default Search icon, it is "Active"
   const currentIcon = (() => {
+    if (showError) return 'error';
     if (searchMode.showColumnSelector) return 'hash-purple';
     if (
       searchMode.isFilterMode &&
@@ -46,6 +50,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     !isDefaultIcon || (!!displayValue && !displayValue.startsWith('#'));
 
   const getSearchIconColor = () => {
+    if (currentIcon === 'error') return '#EF4444';
     if (currentIcon === 'hash-dynamic') return '#A855F7'; // text-purple-500
     if (currentIcon === 'filter' || searchMode.isFilterMode) return '#3B82F6'; // text-blue-500
 
@@ -70,6 +75,8 @@ const SearchIcon: React.FC<SearchIconProps> = ({
         return <LuHash className="transition-colors duration-300" />;
       case 'filter':
         return <LuFilter className="transition-colors duration-300" />;
+      case 'error':
+        return <FaTimes className="transition-colors duration-300" />;
       default:
         return <LuSearch className="transition-colors duration-300" />;
     }
