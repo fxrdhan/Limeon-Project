@@ -2323,6 +2323,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // useSearchState already prevents applying filters while parentheses are unbalanced.
     }
 
+    const hasConfirmation = trimmedValue.endsWith('##');
+
     const stripConfirmation = (input: string): string => {
       const cleaned = input.trimEnd();
       return cleaned.endsWith('##') ? cleaned.slice(0, -2).trimEnd() : cleaned;
@@ -2361,9 +2363,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return trimmedEnd;
     };
 
+    const maybeRestoreConfirmation = (next: string): string => {
+      if (!hasConfirmation) return next;
+      const trimmedNext = next.trimEnd();
+      if (!trimmedNext) return '';
+
+      // Only restore confirmation when the pattern ends with a value segment.
+      // Never append after a hash token (e.g. "#contains") because it would break parsing.
+      const endsWithHashToken = /(?:^|\s)#[^\s#]+$/.test(trimmedNext);
+      if (endsWithHashToken) return trimmedNext;
+
+      return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
+    };
+
     // 1) Group tokens as explicit badges.
     if (working.endsWith('#)')) {
-      const nextValue = finalize(working.replace(/\s*#\)\s*$/, ''));
+      const nextValue = maybeRestoreConfirmation(
+        finalize(working.replace(/\s*#\)\s*$/, ''))
+      );
       if (nextValue === liveValue) return false;
       handleClearPreservedState();
       setValue(nextValue);
