@@ -507,7 +507,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // 3. preservedSearchMode?.filterSearch?.joinOperator - exists when editing complete multi-condition
   // 4. preservedSearchMode?.filterSearch?.isMultiCondition - alternative signal for edit mode
   // Detect if specifically editing an existing join badge
-  const isEditingJoinOperator = editingSelectorTarget?.target === 'join';
+  const isEditingJoinOperator =
+    editingSelectorTarget?.target === 'join' && preservedSearchMode !== null;
 
   const getJoinAnchorRef = (): React.RefObject<HTMLElement | null> => {
     if (
@@ -1370,6 +1371,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // If in edit mode, restore the original pattern instead of clearing
     if (tryRestorePreservedPattern()) {
       setCurrentJoinOperator(undefined);
+      setEditingSelectorTarget(null);
       return;
     }
 
@@ -1389,7 +1391,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         target: { value: trimmedValue },
       } as React.ChangeEvent<HTMLInputElement>);
     }
-  }, [value, onChange, tryRestorePreservedPattern]);
+    setCurrentJoinOperator(undefined);
+    setEditingSelectorTarget(null);
+  }, [
+    value,
+    onChange,
+    tryRestorePreservedPattern,
+    setCurrentJoinOperator,
+    setEditingSelectorTarget,
+  ]);
 
   // Handle inline value change (user typing in inline input)
   const handleInlineValueChange = useCallback((newValue: string) => {
