@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
-import { FaTimes } from 'react-icons/fa';
-import { LuFilter, LuHash, LuSearch } from 'react-icons/lu';
+import { CgFilters } from 'react-icons/cg';
+import { LuFilter, LuFilterX, LuHash, LuSearch } from 'react-icons/lu';
 import { SearchState } from '../constants';
 import { EnhancedSearchState } from '../types';
 
@@ -23,6 +23,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   const currentIcon = (() => {
     if (showError) return 'error';
     if (searchMode.showColumnSelector) return 'hash-purple';
+    if (searchMode.showJoinOperatorSelector) return 'filters-join';
     if (
       searchMode.isFilterMode &&
       searchMode.filterSearch?.operator === 'contains' &&
@@ -34,7 +35,6 @@ const SearchIcon: React.FC<SearchIconProps> = ({
       searchMode.filterSearch?.isExplicitOperator ||
       searchMode.filterSearch?.isMultiCondition ||
       (searchMode.showOperatorSelector && searchMode.selectedColumn) ||
-      searchMode.showJoinOperatorSelector ||
       searchMode.partialJoin ||
       searchMode.partialConditions?.[1]?.operator
     )
@@ -53,6 +53,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     if (currentIcon === 'error') return '#EF4444';
     if (currentIcon === 'hash-purple') return '#A855F7'; // text-purple-500
     if (currentIcon === 'hash-dynamic') return '#A855F7'; // text-purple-500
+    if (currentIcon === 'filters-join') return '#F97316'; // text-orange-500
     if (currentIcon === 'filter' || searchMode.isFilterMode) return '#3B82F6'; // text-blue-500
 
     switch (searchState) {
@@ -74,10 +75,12 @@ const SearchIcon: React.FC<SearchIconProps> = ({
       case 'hash-purple':
       case 'hash-dynamic':
         return <LuHash className="transition-colors duration-300" />;
+      case 'filters-join':
+        return <CgFilters className="transition-colors duration-300" />;
       case 'filter':
         return <LuFilter className="transition-colors duration-300" />;
       case 'error':
-        return <FaTimes className="transition-colors duration-300" />;
+        return <LuFilterX className="transition-colors duration-300" />;
       default:
         return <LuSearch className="transition-colors duration-300" />;
     }
