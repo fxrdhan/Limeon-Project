@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { KEY_CODES } from '../constants';
-import { EnhancedSearchState, FilterGroup } from '../types';
+import { EnhancedSearchState } from '../types';
 import {
   insertGroupCloseToken,
   insertGroupOpenToken,
@@ -163,37 +163,8 @@ const deleteGroupedPartialTail = (input: string): string | null => {
   return null;
 };
 
-const findLastConditionPath = (
-  group: FilterGroup,
-  basePath: number[] = []
-): number[] | null => {
-  for (let i = group.nodes.length - 1; i >= 0; i -= 1) {
-    const node = group.nodes[i];
-    if (node.kind === 'condition') {
-      return [...basePath, i];
-    }
-    const nestedPath = findLastConditionPath(node, [...basePath, i]);
-    if (nestedPath) return nestedPath;
-  }
-  return null;
-};
-
-const removeGroupNodeAtPath = (
-  group: FilterGroup,
-  path: number[]
-): FilterGroup => {
-  if (path.length === 0) return group;
-  const [index, ...rest] = path;
-  const nodes = group.nodes.flatMap((node, idx) => {
-    if (idx !== index) return [node];
-    if (rest.length === 0) return [];
-    if (node.kind !== 'group') return [node];
-    const updatedChild = removeGroupNodeAtPath(node, rest);
-    if (updatedChild.nodes.length === 0) return [];
-    return [{ ...node, nodes: updatedChild.nodes }];
-  });
-  return { ...group, nodes };
-};
+// NOTE: We intentionally do not mutate FilterGroup objects for Delete key handling.
+// Delete behaves as a pure "remove 1 badge" operation, driven by the raw pattern string.
 
 // Scalable type for edit targets
 type EditValueTarget = 'value' | 'valueTo';
@@ -570,27 +541,6 @@ export const useSearchKeyboard = ({
             e.preventDefault();
             e.stopPropagation();
             return;
-          }
-
-          if (
-            searchMode.isFilterMode &&
-            searchMode.filterSearch?.filterGroup &&
-            searchMode.filterSearch.isConfirmed
-          ) {
-            const group = searchMode.filterSearch.filterGroup;
-            const lastPath = findLastConditionPath(group);
-            if (lastPath) {
-              e.preventDefault();
-              const updatedGroup = removeGroupNodeAtPath(group, lastPath);
-              const newValue =
-                updatedGroup.nodes.length > 0
-                  ? PatternBuilder.buildGroupedPattern(updatedGroup, true)
-                  : '';
-              onChange({
-                target: { value: newValue },
-              } as React.ChangeEvent<HTMLInputElement>);
-              return;
-            }
           }
 
           // When join selector is open, Delete cancels join selection and restores confirmation.

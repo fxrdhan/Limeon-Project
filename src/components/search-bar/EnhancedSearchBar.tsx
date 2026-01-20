@@ -2319,7 +2319,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       liveSearchMode.filterSearch?.filterGroup &&
       liveSearchMode.filterSearch.isConfirmed
     ) {
-      return false;
+      // For grouped patterns we still support step-back delete (1 press = 1 badge).
+      // useSearchState already prevents applying filters while parentheses are unbalanced.
     }
 
     const stripConfirmation = (input: string): string => {
@@ -2331,63 +2332,90 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return input.replace(/\s{2,}/g, ' ').trimStart();
     };
 
-    let working = stripConfirmation(trimmedValue);
+    const ensureTrailingHash = (input: string): string => {
+      const trimmed = input.trimEnd();
+      if (!trimmed) return '#';
+      return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
+    };
+
+    // Delete exactly 1 badge unit from the end. Group tokens (#( / #)) are
+    // treated like normal badges (no auto-inserting #)).
+    let working = stripConfirmation(trimmedValue).trimEnd();
     if (!working) return false;
 
+    // Remove trailing selector marker first (invisible, not a badge).
     if (working.endsWith('#')) {
       working = working.replace(/\s*#\s*$/, '').trimEnd();
     }
 
-    const isGroupToken = /#\(|#\)$/.test(working);
-    const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
-    const trailingToken = trailingTokenMatch?.[0]?.trim() ?? '';
-    const shouldOpenSelector =
-      !!trailingTokenMatch &&
-      !isGroupToken &&
-      trailingToken.toLowerCase() !== '#to';
+    const finalize = (next: string): string => {
+      const collapsed = collapseWhitespace(next);
+      const trimmedEnd = collapsed.trimEnd();
+      if (!trimmedEnd) return '';
 
+      // Keep a whitespace after join tokens so they don't merge into values.
+      if (/#(?:and|or)$/i.test(trimmedEnd)) {
+        return `${trimmedEnd} `;
+      }
+
+      return trimmedEnd;
+    };
+
+    // 1) Group tokens as explicit badges.
     if (working.endsWith('#)')) {
-      working = working.replace(/\s*#\)\s*$/, '').trimEnd();
-    } else if (working.endsWith('#(')) {
-      working = working.replace(/\s*#\(\s*$/, '').trimEnd();
-    } else if (trailingTokenMatch) {
-      working = working.replace(/(?:^|\s)#[^\s#]+$/, '').trimEnd();
-    } else {
-      const tokenRegex = /#\(|#\)|#[^\s#]+/g;
-      let lastToken: RegExpExecArray | null = null;
-      let match: RegExpExecArray | null;
-      while ((match = tokenRegex.exec(working)) !== null) {
-        lastToken = match;
-      }
-      if (!lastToken) return false;
-      const cutIndex = lastToken.index + lastToken[0].length;
-      working = working.slice(0, cutIndex).trimEnd();
+      const nextValue = finalize(working.replace(/\s*#\)\s*$/, ''));
+      if (nextValue === liveValue) return false;
+      handleClearPreservedState();
+      setValue(nextValue);
+      return true;
     }
 
-    let nextValue = collapseWhitespace(working);
-    const trimmedNext = nextValue.trimEnd();
-
-    if (shouldOpenSelector) {
-      if (!trimmedNext) {
-        nextValue = '#';
-      } else if (!trimmedNext.endsWith('#')) {
-        nextValue = `${trimmedNext} #`;
-      } else {
-        nextValue = trimmedNext;
-      }
-    } else if (trimmedNext !== nextValue) {
-      nextValue = trimmedNext;
+    if (working.endsWith('#(')) {
+      const nextValue = finalize(working.replace(/\s*#\(\s*$/, ''));
+      if (nextValue === liveValue) return false;
+      handleClearPreservedState();
+      setValue(nextValue);
+      return true;
     }
 
-    if (nextValue === liveValue) {
-      return false;
+    // 2) Trailing hash token (column/operator/join/etc).
+    const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
+    if (trailingTokenMatch) {
+      const trailingToken = trailingTokenMatch[0].trim();
+      const tokenLower = trailingToken.toLowerCase();
+      const removed = working.replace(/(?:^|\s)#[^\s#]+$/, '').trimEnd();
+
+      // For #to we don't open a selector; it's just a delimiter.
+      const shouldOpenSelector = tokenLower !== '#to';
+      const nextValue = shouldOpenSelector
+        ? ensureTrailingHash(finalize(removed))
+        : finalize(removed);
+
+      if (nextValue === liveValue) return false;
+      handleClearPreservedState();
+      setValue(nextValue);
+      return true;
     }
 
+    // 3) Trailing value segment (delete value only).
+    const tokenRegex = /#\(|#\)|#[^\s#]+/g;
+    let lastToken: RegExpExecArray | null = null;
+    let match: RegExpExecArray | null;
+    while ((match = tokenRegex.exec(working)) !== null) {
+      lastToken = match;
+    }
+    if (!lastToken) return false;
+
+    const cutIndex = lastToken.index + lastToken[0].length;
+    const prefix = working.slice(0, cutIndex).trimEnd();
+
+    // Ensure operators keep a trailing space so the next typed characters become the value.
+    const finalizedPrefix = finalize(prefix);
+    const nextValue = finalizedPrefix ? `${finalizedPrefix} ` : '';
+    if (nextValue === liveValue) return false;
     handleClearPreservedState();
     setValue(nextValue);
     return true;
-
-    return false;
   }, [handleClearPreservedState, memoizedColumns, onChange]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
