@@ -57,6 +57,9 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
             exit="exit"
             transition={{ duration: 0.15 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Item modal"
             onClick={e => {
               if (e.target === e.currentTarget && !isClosing) {
                 onBackdropClick();

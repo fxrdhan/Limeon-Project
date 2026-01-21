@@ -31,6 +31,7 @@ import {
 } from './types';
 import {
   PreservedFilter,
+  PreservedCondition,
   extractMultiConditionPreservation,
   setFilterValue,
 } from './utils/handlerHelpers';
@@ -45,6 +46,7 @@ import {
 } from './utils/operatorUtils';
 import { PatternBuilder } from './utils/PatternBuilder';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
+import { isFilterSearchValid } from './utils/validationUtils';
 import {
   buildColumnValue,
   findColumn,
@@ -359,12 +361,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   } | null>(null);
   const inputErrorTimeoutRef = useRef<number | null>(null);
 
+  // ============ Insert-In-The-Middle (Value Badge Plus) ============
+  // When user clicks the plus icon on a value badge, we temporarily truncate
+  // the tail (join+conditions to the right), let user build a new condition,
+  // then re-attach the tail after the new condition is confirmed.
+  const insertTailRef = useRef<{
+    afterConditionIndex: number;
+    tailConditions: PreservedCondition[];
+    tailJoins: ('AND' | 'OR')[];
+    defaultField: string;
+    isMultiColumn: boolean;
+  } | null>(null);
+  const [isInsertFlowActive, setIsInsertFlowActive] = useState(false);
+
   const { searchMode } = useSearchState({
     value,
     columns: memoizedColumns,
     onGlobalSearch,
     onFilterSearch,
     isEditMode: preservedSearchMode !== null, // In edit mode when preserving badges
+    suspendFilterUpdates: isInsertFlowActive,
   });
 
   const triggerInputError = useCallback(() => {
@@ -622,6 +638,149 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setEditingBadge,
     setCurrentJoinOperator,
   });
+
+  const handleInsertConditionAfter = useCallback(
+    (conditionIndex: number) => {
+      const stateToUse = preservedSearchMode || searchMode;
+      const filter = stateToUse.filterSearch;
+
+      if (!filter || !filter.isConfirmed) return;
+      if (filter.filterGroup) return;
+
+      const preservation = extractMultiConditionPreservation(stateToUse);
+      if (!preservation) return;
+
+      const conditions = preservation.conditions;
+      const joins = preservation.joins;
+
+      // Only meaningful if there is a tail to the right.
+      if (conditionIndex < 0 || conditionIndex >= conditions.length - 1) {
+        return;
+      }
+
+      const prefixConditions = conditions.slice(0, conditionIndex + 1);
+      const prefixJoins = joins.slice(0, conditionIndex);
+      const tailConditions = conditions.slice(conditionIndex + 1);
+      const tailJoins = joins.slice(conditionIndex);
+
+      const defaultField = prefixConditions[0]?.field || filter.field;
+
+      // Store tail for later re-attach.
+      insertTailRef.current = {
+        afterConditionIndex: conditionIndex,
+        tailConditions,
+        tailJoins,
+        defaultField,
+        isMultiColumn: preservation.isMultiColumn || false,
+      };
+
+      // Keep grid filter unchanged while user is inserting.
+      setIsInsertFlowActive(true);
+
+      // Close inline edit + clear keyboard selection for predictable UX.
+      setEditingBadge(null);
+      setSelectedBadgeIndex(null);
+      interruptedSelectorRef.current = null;
+
+      const newValue = PatternBuilder.buildNConditions(
+        prefixConditions.map(c => ({
+          field: c.field,
+          operator: c.operator || '',
+          value: c.value || '',
+          valueTo: c.valueTo,
+        })),
+        prefixJoins,
+        preservation.isMultiColumn || false,
+        defaultField,
+        {
+          confirmed: false,
+          openSelector: true, // open join selector
+        }
+      );
+
+      // Switch to join selector at the insertion point.
+      setFilterValue(newValue, onChange, inputRef);
+    },
+    [
+      preservedSearchMode,
+      searchMode,
+      inputRef,
+      onChange,
+      setEditingBadge,
+      setSelectedBadgeIndex,
+    ]
+  );
+
+  // When the inserted condition is confirmed (value ends with ## and is valid),
+  // re-attach the previously hidden tail.
+  useEffect(() => {
+    if (!isInsertFlowActive) return;
+    const tail = insertTailRef.current;
+    if (!tail) return;
+
+    // Cancellation: if user clears or leaves hashtag mode, drop the insert flow so
+    // SearchState can resume normal grid sync.
+    const trimmed = value.trim();
+    if (!trimmed || !trimmed.startsWith('#')) {
+      insertTailRef.current = null;
+      requestAnimationFrame(() => setIsInsertFlowActive(false));
+      return;
+    }
+
+    // Only finalize once the user has fully confirmed a filter (no selectors open).
+    if (
+      searchMode.showColumnSelector ||
+      searchMode.showOperatorSelector ||
+      searchMode.showJoinOperatorSelector
+    ) {
+      return;
+    }
+
+    if (!searchMode.isFilterMode || !searchMode.filterSearch?.isConfirmed) {
+      return;
+    }
+
+    if (!isFilterSearchValid(searchMode.filterSearch)) {
+      return;
+    }
+
+    const preservation = extractMultiConditionPreservation(searchMode);
+    if (!preservation) return;
+
+    const mergedConditions = [
+      ...preservation.conditions,
+      ...tail.tailConditions,
+    ];
+    const mergedJoins = [...preservation.joins, ...tail.tailJoins];
+
+    const firstField = mergedConditions[0]?.field || tail.defaultField;
+    const mergedIsMultiColumn =
+      tail.isMultiColumn ||
+      mergedConditions.some((cond, idx) =>
+        idx === 0
+          ? false
+          : cond.field !== undefined && cond.field !== firstField
+      );
+
+    const finalValue = PatternBuilder.buildNConditions(
+      mergedConditions.map(c => ({
+        field: c.field,
+        operator: c.operator || '',
+        value: c.value || '',
+        valueTo: c.valueTo,
+      })),
+      mergedJoins,
+      mergedIsMultiColumn,
+      firstField,
+      { confirmed: true }
+    );
+
+    insertTailRef.current = null;
+    // Avoid triggering a cascading render synchronously inside the effect.
+    requestAnimationFrame(() => setIsInsertFlowActive(false));
+
+    setFilterValue(finalValue, onChange, inputRef);
+  }, [isInsertFlowActive, value, searchMode, onChange, inputRef]);
 
   const applyGroupedPattern = useCallback(
     (group: FilterGroup) => {
@@ -2953,6 +3112,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               editConditionPart={editConditionPart}
               editJoin={editJoin}
               editValueN={editValueN}
+              insertConditionAfter={handleInsertConditionAfter}
               onHoverChange={handleHoverChange}
               onInvalidValue={triggerInputError}
               preservedSearchMode={preservedSearchMode}

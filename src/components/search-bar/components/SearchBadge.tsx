@@ -21,6 +21,7 @@ interface SearchBadgeProps {
   editConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
   editJoin: (joinIndex: number) => void;
   editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
+  insertConditionAfter?: (conditionIndex: number) => void;
   onHoverChange?: (isHovered: boolean) => void;
   onInvalidValue?: () => void;
   preservedSearchMode?: EnhancedSearchState | null;
@@ -82,6 +83,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   editConditionPart,
   editJoin,
   editValueN,
+  insertConditionAfter,
   onHoverChange,
   onInvalidValue,
   preservedSearchMode,
@@ -127,6 +129,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       editConditionPart,
       editJoin,
       editValueN,
+      insertConditionAfter,
     },
     editingBadge && onInlineValueChange && onInlineEditComplete
       ? {

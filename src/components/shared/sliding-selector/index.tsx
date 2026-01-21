@@ -33,6 +33,9 @@ export interface SlidingSelectorProps<T = unknown> {
   // Additional props
   className?: string;
   disabled?: boolean;
+
+  // Focus & state coordination (optional)
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
 const ANIMATION_PRESETS = {
@@ -96,6 +99,7 @@ export const SlidingSelector = <T,>({
   animationPreset = 'smooth',
   className,
   disabled = false,
+  onExpandedChange,
 }: SlidingSelectorProps<T>) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isMouseOver, setIsMouseOver] = useState(false);
@@ -107,6 +111,11 @@ export const SlidingSelector = <T,>({
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
+
+  // Notify parent whenever expanded state changes
+  useEffect(() => {
+    onExpandedChange?.(isExpanded);
+  }, [isExpanded, onExpandedChange]);
 
   // Auto-collapse logic - don't collapse if keyboard navigating
   useEffect(() => {
@@ -186,6 +195,24 @@ export const SlidingSelector = <T,>({
       setIsExpanded(prev => !prev);
     }
   }, [collapsible]);
+
+  // When expanding via toggle button, move focus to the active tab
+  useEffect(() => {
+    if (!collapsible) return;
+    if (!isExpanded) return;
+
+    // Only force focus when expanded via explicit toggle (not hover focus effect)
+    if (!expandOnHover) {
+      const activeIndex = options.findIndex(opt => opt.key === activeKey);
+      if (activeIndex >= 0) {
+        const timer = setTimeout(() => {
+          buttonRefs.current[activeIndex]?.focus();
+          setFocusedIndex(activeIndex);
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [activeKey, collapsible, expandOnHover, isExpanded, options]);
 
   // Keyboard navigation handler - Tab keys directly change page
   // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange

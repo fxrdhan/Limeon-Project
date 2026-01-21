@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiEdit2 } from 'react-icons/fi';
 import { LuX } from 'react-icons/lu';
-import { PiTrashSimpleBold } from 'react-icons/pi';
+import { PiPlusCircleBold, PiTrashSimpleBold } from 'react-icons/pi';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 import { validateFilterValue } from '../utils/validationUtils';
 
@@ -261,8 +261,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     isShaking || hasInvalidValue ? '!bg-rose-200 !text-rose-800' : '';
   const wantsEditButton = isEditing || isSelected || isHovered;
   const wantsDeleteButton = !isEditing && (isSelected || isHovered);
+  const wantsInsertButton =
+    !isEditing && !!config.canInsert && (isSelected || isHovered);
   const [editIconVisible, setEditIconVisible] = useState(wantsEditButton);
   const [deleteIconVisible, setDeleteIconVisible] = useState(wantsDeleteButton);
+  const [insertIconVisible, setInsertIconVisible] = useState(wantsInsertButton);
 
   useEffect(() => {
     if (wantsEditButton) {
@@ -294,9 +297,26 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
     return () => clearTimeout(timeoutId);
   }, [wantsDeleteButton, onHoverChange]);
 
+  useEffect(() => {
+    if (wantsInsertButton) {
+      const rafId = requestAnimationFrame(() => {
+        onHoverChange?.(true);
+        setInsertIconVisible(true);
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+    const timeoutId = setTimeout(() => {
+      onHoverChange?.(false);
+      setInsertIconVisible(false);
+    }, 120);
+    return () => clearTimeout(timeoutId);
+  }, [wantsInsertButton, onHoverChange]);
+
   const showEditButtonSpace = wantsEditButton || editIconVisible;
   const showDeleteButtonSpace = wantsDeleteButton || deleteIconVisible;
-  const wantsAnyButtons = wantsEditButton || wantsDeleteButton;
+  const showInsertButtonSpace = wantsInsertButton || insertIconVisible;
+  const wantsAnyButtons =
+    wantsEditButton || wantsDeleteButton || wantsInsertButton;
   const badgeTransform = wantsAnyButtons ? 'scaleX(1.02)' : 'scaleX(1)';
 
   return (
@@ -412,6 +432,33 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 type="button"
               >
                 <PiTrashSimpleBold className="w-3.5 h-3.5 flex-shrink-0" />
+              </button>
+            </div>
+          )}
+
+          {/* Insert button (Plus) - only enabled for eligible value badges */}
+          {!isEditing && config.canInsert && config.onInsert && (
+            <div
+              className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ${
+                showInsertButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
+              }`}
+            >
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  e.currentTarget.blur();
+                  config.onInsert?.();
+                }}
+                onMouseDown={e => e.stopPropagation()}
+                className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                  insertIconVisible
+                    ? 'opacity-100 translate-x-0'
+                    : 'pointer-events-none opacity-0 -translate-x-1'
+                }`}
+                type="button"
+                title="Tambah kondisi"
+              >
+                <PiPlusCircleBold className="w-4 h-4 flex-shrink-0" />
               </button>
             </div>
           )}

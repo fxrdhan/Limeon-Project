@@ -23,6 +23,8 @@ interface BadgeHandlers {
   editJoin: (joinIndex: number) => void;
   /** Edit value badge at given index (triggers inline editing) */
   editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
+  /** Insert a new condition after a given condition (only meaningful when there is a tail) */
+  insertConditionAfter?: (conditionIndex: number) => void;
 }
 
 interface InlineEditingProps {
@@ -615,6 +617,34 @@ export const useBadgeBuilder = (
       isMultiCondition &&
       filter.conditions
     ) {
+      const attachInsertAfter = (
+        badge: BadgeConfig,
+        conditionIndex: number,
+        badgeType: 'value' | 'valueTo'
+      ): BadgeConfig => {
+        // Insert should appear on the last value badge of a condition:
+        // - normal operators: `value`
+        // - Between/inRange: `valueTo`
+        const condition = filter.conditions?.[conditionIndex];
+        const isBetween = condition?.operator === 'inRange';
+        const isLastValueBadge = isBetween
+          ? badgeType === 'valueTo'
+          : badgeType === 'value';
+
+        const canInsert =
+          isLastValueBadge &&
+          !!handlers.insertConditionAfter &&
+          !!filter.isConfirmed &&
+          conditionIndex < filter.conditions!.length - 1;
+
+        if (!canInsert) return badge;
+        return {
+          ...badge,
+          canInsert: true,
+          onInsert: () => handlers.insertConditionAfter?.(conditionIndex),
+        };
+      };
+
       filter.conditions.forEach((condition, index) => {
         const conditionColumn = condition.column || filter.column;
         const conditionColumnType = conditionColumn.type;
@@ -664,6 +694,8 @@ export const useBadgeBuilder = (
           if (isBetween) {
             // Value-from
             badges.push(
+              // For Between, the "last value" of the condition is the valueTo badge.
+              // Insert (plus) should appear on valueTo (if present), not on the from-value.
               createValueBadgeConfig(
                 getValueBadgeId(index, false, true),
                 condition.value,
@@ -677,25 +709,33 @@ export const useBadgeBuilder = (
             // Value-to
             if (condition.valueTo) {
               badges.push(
-                createValueBadgeConfig(
-                  getValueBadgeId(index, true, true),
-                  condition.valueTo,
-                  'valueTo',
-                  getValueBadgeHandlers(handlers, index, true),
-                  conditionColumnType,
-                  getValueBadgeInlineProps(inlineEditingProps, index, true)
+                attachInsertAfter(
+                  createValueBadgeConfig(
+                    getValueBadgeId(index, true, true),
+                    condition.valueTo,
+                    'valueTo',
+                    getValueBadgeHandlers(handlers, index, true),
+                    conditionColumnType,
+                    getValueBadgeInlineProps(inlineEditingProps, index, true)
+                  ),
+                  index,
+                  'valueTo'
                 )
               );
             }
           } else {
             badges.push(
-              createValueBadgeConfig(
-                getValueBadgeId(index, false, false),
-                condition.value,
-                'value',
-                getValueBadgeHandlers(handlers, index, false),
-                conditionColumnType,
-                getValueBadgeInlineProps(inlineEditingProps, index, false)
+              attachInsertAfter(
+                createValueBadgeConfig(
+                  getValueBadgeId(index, false, false),
+                  condition.value,
+                  'value',
+                  getValueBadgeHandlers(handlers, index, false),
+                  conditionColumnType,
+                  getValueBadgeInlineProps(inlineEditingProps, index, false)
+                ),
+                index,
+                'value'
               )
             );
           }

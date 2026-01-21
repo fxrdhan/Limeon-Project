@@ -133,6 +133,16 @@ input[type='number'] {
   transition: background-color 0.8s ease-out !important;
 }
 
+/*
+ * Hide AG Grid Advanced Filter UI bar.
+ * We keep `enableAdvancedFilter` enabled because we rely on the API
+ * (`setAdvancedFilterModel`) for our custom SearchBar, but the built-in bar
+ * steals focus on page/tab navigation and confuses users.
+ */
+.ag-advanced-filter-header {
+  display: none !important;
+}
+
 /* Utility: Hide scrollbar but keep scroll functionality */
 .scrollbar-hide {
   /* Hide scrollbar for Chrome, Safari and Opera */

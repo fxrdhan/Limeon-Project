@@ -234,7 +234,28 @@ const ItemModal: React.FC<ItemModalProps> = ({
   useEffect(() => {
     if (isOpen && !loading) {
       const timer = setTimeout(() => {
-        nameInputRef.current?.focus();
+        // Prefer explicit ref when available.
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+          return;
+        }
+
+        // Fallback: focus first input inside the modal.
+        const dialog = document.querySelector(
+          '[role="dialog"][aria-modal="true"]'
+        );
+        const nameInput = dialog?.querySelector<HTMLInputElement>(
+          'input[name="name"]:not([disabled])'
+        );
+        if (nameInput) {
+          nameInput.focus();
+          return;
+        }
+
+        const firstField = dialog?.querySelector<HTMLElement>(
+          'input:not([disabled]), textarea:not([disabled]), select:not([disabled])'
+        );
+        firstField?.focus();
       }, 0);
       return () => clearTimeout(timer);
     }

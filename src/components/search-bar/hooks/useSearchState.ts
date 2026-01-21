@@ -11,6 +11,7 @@ interface UseSearchStateProps {
   onGlobalSearch?: (term: string) => void;
   onFilterSearch?: (filter: FilterSearch | null) => void;
   isEditMode?: boolean; // Flag to indicate if in edit mode (preserving filter during column/operator edit)
+  suspendFilterUpdates?: boolean; // Hard block filter/global search callbacks (used for insert-in-middle flow)
 }
 
 export const useSearchState = ({
@@ -19,6 +20,7 @@ export const useSearchState = ({
   onGlobalSearch,
   onFilterSearch,
   isEditMode = false,
+  suspendFilterUpdates = false,
 }: UseSearchStateProps) => {
   // Derive searchMode from value instead of using state + effect
   const searchMode = useMemo<EnhancedSearchState>(() => {
@@ -49,6 +51,16 @@ export const useSearchState = ({
 
   useEffect(() => {
     const hasGroupTokens = value.includes('#(') || value.includes('#)');
+
+    // Explicit suspension (used when we want UI to evolve but keep AG Grid filter unchanged).
+    if (suspendFilterUpdates) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      prevValueRef.current = value;
+      return;
+    }
 
     // If user is building grouped filters but parentheses are not balanced yet,
     // do not apply (or clear) any filter to AG Grid. Wait until the group is closed.
@@ -131,7 +143,14 @@ export const useSearchState = ({
     }
 
     prevValueRef.current = value;
-  }, [value, columns, debouncedFilterUpdate, searchMode, isEditMode]);
+  }, [
+    value,
+    columns,
+    debouncedFilterUpdate,
+    searchMode,
+    isEditMode,
+    suspendFilterUpdates,
+  ]);
 
   useEffect(() => {
     return () => {
