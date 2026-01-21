@@ -29,7 +29,7 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
     isOpen,
   });
 
-  const { showOverlay, setShowOverlay } = useOverlayVisibility({
+  const { showOverlay } = useOverlayVisibility({
     showError,
     hasAutoHidden,
     error,
@@ -44,7 +44,6 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
     autoHideDelay,
     hasAutoHidden,
     onAutoHide,
-    setShowOverlay,
   });
 
   if (!error || !position) {

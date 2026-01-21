@@ -8,7 +8,6 @@ interface UseAutoHideProps {
   autoHideDelay?: number;
   hasAutoHidden: boolean;
   onAutoHide?: () => void;
-  setShowOverlay: (show: boolean) => void;
 }
 
 export const useAutoHide = ({
@@ -18,7 +17,6 @@ export const useAutoHide = ({
   autoHideDelay = DEFAULT_AUTO_HIDE_DELAY,
   hasAutoHidden,
   onAutoHide,
-  setShowOverlay,
 }: UseAutoHideProps) => {
   const autoHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -31,7 +29,6 @@ export const useAutoHide = ({
       !hasAutoHidden
     ) {
       autoHideTimeoutRef.current = setTimeout(() => {
-        setShowOverlay(false);
         onAutoHide?.();
       }, autoHideDelay);
     }
@@ -42,15 +39,7 @@ export const useAutoHide = ({
         autoHideTimeoutRef.current = null;
       }
     };
-  }, [
-    showOverlay,
-    error,
-    autoHide,
-    autoHideDelay,
-    hasAutoHidden,
-    onAutoHide,
-    setShowOverlay,
-  ]);
+  }, [showOverlay, error, autoHide, autoHideDelay, hasAutoHidden, onAutoHide]);
 
   return autoHideTimeoutRef;
 };
