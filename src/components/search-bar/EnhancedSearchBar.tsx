@@ -751,7 +751,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       ...preservation.conditions,
       ...tail.tailConditions,
     ];
-    const mergedJoins = [...preservation.joins, ...tail.tailJoins];
+    // Join operator in this feature is intentionally uniform across all conditions.
+    // Insertion flow can temporarily create a mixed join array (e.g. [OR, AND])
+    // because we hide the tail and then re-attach it. That breaks UX because:
+    // - badges show mixed joins, but
+    // - Advanced Filter application uses a single join operator for the whole model.
+    //
+    // So when an insertion chooses a join operator, we normalize ALL joins to that value.
+    const insertionJoin =
+      preservation.joins[preservation.joins.length - 1] ||
+      tail.tailJoins[0] ||
+      'AND';
+
+    const mergedJoins = Array(Math.max(mergedConditions.length - 1, 0)).fill(
+      insertionJoin
+    ) as ('AND' | 'OR')[];
 
     const firstField = mergedConditions[0]?.field || tail.defaultField;
     const mergedIsMultiColumn =
