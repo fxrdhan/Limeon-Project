@@ -6,6 +6,7 @@ import ToastTester from '@/components/ToastTester';
 import {
   cleanupLegacyGridStates,
   hasLegacyKeys,
+  migrateGridStatesToSessionStorage,
 } from '@/features/shared/utils/gridStateManager';
 import MainLayout from '@/layout/main';
 import Login from '@/pages/auth/login';
@@ -45,6 +46,11 @@ function App() {
         // Auto-cleanup successful
       }
     }
+  }, []);
+
+  // Migrate grid_state_* keys to sessionStorage (session-scoped grid state)
+  useEffect(() => {
+    migrateGridStatesToSessionStorage();
   }, []);
 
   // Show loading while auth is initializing

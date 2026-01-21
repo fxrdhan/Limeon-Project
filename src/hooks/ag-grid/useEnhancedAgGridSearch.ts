@@ -210,7 +210,7 @@ export const useEnhancedAgGridSearch = (
     setGlobalSearch('');
     setTargetedSearch(null);
     // Deliberately NOT calling gridRef.onFilterChanged() or onDebouncedSearchChange
-    // This preserves grid filters which are managed separately via localStorage
+    // This preserves grid filters which are managed separately via sessionStorage
   }, [setSearch]);
 
   return {

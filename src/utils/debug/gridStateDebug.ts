@@ -94,12 +94,12 @@ export const logTabSwitch = (
 };
 
 /**
- * Inspect all saved grid states in localStorage
+ * Inspect all saved grid states in sessionStorage
  */
 export const inspectAllGridStates = (): void => {
-  console.group('📦 All Grid States in localStorage');
+  console.group('📦 All Grid States in sessionStorage');
 
-  const gridStateKeys = Object.keys(localStorage).filter(key =>
+  const gridStateKeys = Object.keys(sessionStorage).filter(key =>
     key.startsWith('grid_state_')
   );
 
@@ -111,7 +111,7 @@ export const inspectAllGridStates = (): void => {
 
   gridStateKeys.forEach(key => {
     const tableType = key.replace('grid_state_', '');
-    const state = localStorage.getItem(key);
+    const state = sessionStorage.getItem(key);
 
     if (!state) {
       console.log(`❌ ${tableType}: Empty`);
@@ -197,11 +197,11 @@ export const compareGridStates = (
  * Clear all grid states (useful for testing)
  */
 export const clearAllGridStates = (): void => {
-  const gridStateKeys = Object.keys(localStorage).filter(key =>
+  const gridStateKeys = Object.keys(sessionStorage).filter(key =>
     key.startsWith('grid_state_')
   );
 
-  gridStateKeys.forEach(key => localStorage.removeItem(key));
+  gridStateKeys.forEach(key => sessionStorage.removeItem(key));
 
   console.log(`🗑️  Cleared ${gridStateKeys.length} grid states`);
 };
@@ -210,7 +210,7 @@ export const clearAllGridStates = (): void => {
  * Export current grid states to JSON file
  */
 export const exportGridStates = (): void => {
-  const gridStateKeys = Object.keys(localStorage).filter(key =>
+  const gridStateKeys = Object.keys(sessionStorage).filter(key =>
     key.startsWith('grid_state_')
   );
 
@@ -218,7 +218,7 @@ export const exportGridStates = (): void => {
 
   gridStateKeys.forEach(key => {
     const tableType = key.replace('grid_state_', '');
-    const state = localStorage.getItem(key);
+    const state = sessionStorage.getItem(key);
     if (state) {
       try {
         states[tableType] = JSON.parse(state);

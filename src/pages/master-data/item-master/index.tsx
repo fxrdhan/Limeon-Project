@@ -22,11 +22,13 @@ import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 import { useItemsManagement } from '@/hooks/data/useItemsManagement';
 import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
+import { restoreConfirmedPattern } from '@/components/search-bar/utils/patternRestoration';
 import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
+import { deriveSearchPatternFromGridState } from './utils/advancedFilterToSearchPattern';
 
 // Entity management hooks
 import {
@@ -113,6 +115,44 @@ const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
 
 // Session storage key for last visited tab
 const LAST_TAB_SESSION_KEY = 'item_master_last_tab';
+
+const ITEM_MASTER_SEARCH_SESSION_PREFIX = 'item_master_search_';
+
+const getItemMasterSearchSessionKey = (tab: MasterDataType): string => {
+  return `${ITEM_MASTER_SEARCH_SESSION_PREFIX}${tab}`;
+};
+
+const readGridStateForTab = (tab: MasterDataType): unknown | null => {
+  const storageKey = `grid_state_${tab}`;
+
+  try {
+    const sessionState = sessionStorage.getItem(storageKey);
+    if (sessionState) {
+      return JSON.parse(sessionState);
+    }
+  } catch {
+    // ignore
+  }
+
+  // 🔁 Migration: older versions stored in localStorage.
+  try {
+    const legacyState = localStorage.getItem(storageKey);
+    if (!legacyState) return null;
+    try {
+      sessionStorage.setItem(storageKey, legacyState);
+    } catch {
+      // ignore
+    }
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // ignore
+    }
+    return JSON.parse(legacyState);
+  } catch {
+    return null;
+  }
+};
 
 // Session storage utility
 const saveLastTabToSession = (tab: MasterDataType): void => {
@@ -415,7 +455,7 @@ const ItemMasterNew = memo(() => {
     (filterSearch: FilterSearch | null) => {
       // 🔒 Block grid filter changes during tab switching
       // SearchBar will call this with null when clearing, but we want to preserve grid filters
-      if (isTabSwitchingRef.current) {
+      if (isTabSwitchingRef.current && !filterSearch) {
         return;
       }
 
@@ -429,31 +469,40 @@ const ItemMasterNew = memo(() => {
 
       // Apply the Advanced Filter model
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
+
+      // Persist confirmed badge pattern per tab (session only)
+      try {
+        const sessionKey = getItemMasterSearchSessionKey('items');
+        if (!filterSearch) {
+          sessionStorage.removeItem(sessionKey);
+        } else if (filterSearch.isConfirmed) {
+          sessionStorage.setItem(
+            sessionKey,
+            restoreConfirmedPattern({
+              ...filterSearch,
+              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
+            } as unknown as import('@/components/search-bar/types').FilterSearch)
+          );
+        }
+      } catch {
+        // ignore
+      }
     },
     [unifiedGridApi]
   );
 
-  // Get search columns for items - filtered and ordered based on AG Grid visibility & ordering
+  // Get search columns for items - ordered based on AG Grid visibility & ordering.
+  // Keep hidden columns at the end so filters can be restored even if a column is hidden.
   const orderedSearchColumns = useMemo(() => {
-    const allColumns = getOrderedSearchColumnsByEntity('items', []);
-
-    // If no visible columns tracked yet, return all columns
-    if (visibleColumns.length === 0) return allColumns;
-
-    // Filter only visible columns and sort by grid order
-    const visibleSearchColumns = allColumns.filter(col =>
-      visibleColumns.includes(col.field)
+    return getOrderedSearchColumnsByEntity(
+      'items',
+      visibleColumns.length > 0 ? visibleColumns : undefined
     );
-
-    return visibleSearchColumns.sort((a, b) => {
-      const indexA = visibleColumns.indexOf(a.field);
-      const indexB = visibleColumns.indexOf(b.field);
-      return indexA - indexB;
-    });
   }, [visibleColumns]);
 
   const {
     search: itemSearch,
+    setSearch: setItemSearch,
     onGridReady: itemOnGridReady,
     isExternalFilterPresent: itemIsExternalFilterPresent,
     doesExternalFilterPass: itemDoesExternalFilterPass,
@@ -542,18 +591,8 @@ const ItemMasterNew = memo(() => {
     // If no visible columns tracked yet, return all columns
     if (visibleColumns.length === 0) return allColumns;
 
-    // Filter only visible columns and sort by grid order
-    const visibleSearchColumns = allColumns.filter(col => {
-      // Entity columns are prefixed (e.g., "categories.code")
-      // Check both the full field and the base field name
-      const baseField = col.field.split('.').pop() || col.field;
-      return (
-        visibleColumns.includes(col.field) ||
-        visibleColumns.some(vc => vc.endsWith(`.${baseField}`))
-      );
-    });
-
-    return visibleSearchColumns.sort((a, b) => {
+    // Sort by grid order, keeping hidden columns at the end.
+    return [...allColumns].sort((a, b) => {
       const getIndex = (field: string) => {
         const baseField = field.split('.').pop() || field;
         const exactIndex = visibleColumns.indexOf(field);
@@ -574,7 +613,11 @@ const ItemMasterNew = memo(() => {
   const handleEntityFilterSearch = useCallback(
     (filterSearch: FilterSearch | null) => {
       // 🔒 Block grid filter changes during tab switching
-      if (isTabSwitchingRef.current) {
+      if (isTabSwitchingRef.current && !filterSearch) {
+        return;
+      }
+
+      if (activeTab === 'items') {
         return;
       }
 
@@ -588,12 +631,31 @@ const ItemMasterNew = memo(() => {
 
       // Apply the Advanced Filter model
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
+
+      // Persist confirmed badge pattern per tab (session only)
+      try {
+        const sessionKey = getItemMasterSearchSessionKey(activeTab);
+        if (!filterSearch) {
+          sessionStorage.removeItem(sessionKey);
+        } else if (filterSearch.isConfirmed) {
+          sessionStorage.setItem(
+            sessionKey,
+            restoreConfirmedPattern({
+              ...filterSearch,
+              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
+            } as unknown as import('@/components/search-bar/types').FilterSearch)
+          );
+        }
+      } catch {
+        // ignore
+      }
     },
-    [unifiedGridApi]
+    [activeTab, unifiedGridApi]
   );
 
   const {
     search: entitySearch,
+    setSearch: setEntitySearch,
     onGridReady: entityOnGridReady,
     isExternalFilterPresent: entityIsExternalFilterPresent,
     doesExternalFilterPass: entityDoesExternalFilterPass,
@@ -608,6 +670,42 @@ const ItemMasterNew = memo(() => {
     onClear: () => entityManager.handleSearch(''),
     onFilterSearch: handleEntityFilterSearch,
   });
+
+  // Restore SearchBar badge UI per tab (session-scoped)
+  // Priority: explicit saved pattern → derive from grid_state_{tab}.advancedFilterModel
+  useEffect(() => {
+    const setSearch = activeTab === 'items' ? setItemSearch : setEntitySearch;
+    const sessionKey = getItemMasterSearchSessionKey(activeTab);
+
+    let savedPattern: string | null = null;
+    try {
+      savedPattern = sessionStorage.getItem(sessionKey);
+    } catch {
+      // ignore
+    }
+
+    if (savedPattern && savedPattern.trim() !== '') {
+      setSearch(savedPattern);
+      return;
+    }
+
+    const gridState = readGridStateForTab(activeTab);
+    const derivedPattern = gridState
+      ? deriveSearchPatternFromGridState(gridState)
+      : null;
+
+    if (derivedPattern) {
+      try {
+        sessionStorage.setItem(sessionKey, derivedPattern);
+      } catch {
+        // ignore
+      }
+      setSearch(derivedPattern);
+      return;
+    }
+
+    setSearch('');
+  }, [activeTab, setEntitySearch, setItemSearch]);
 
   // Cleanup grid API reference and pending tab changes on unmount
   useEffect(() => {
