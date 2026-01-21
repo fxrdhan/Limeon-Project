@@ -7,7 +7,7 @@ import type {
   DBPackageConversion,
   PackageConversion,
 } from '../../../shared/types';
-import type { UnitData } from '@/types/database';
+import type { ItemPackage } from '@/types/database';
 
 interface UseItemDataProps {
   formState: {
@@ -17,7 +17,7 @@ interface UseItemDataProps {
     setInitialPackageConversions: (conversions: PackageConversion[]) => void;
     setDisplayBasePrice: (price: string) => void;
     setDisplaySellPrice: (price: string) => void;
-    units: UnitData[];
+    packages: ItemPackage[];
   };
   packageConversionHook: {
     setBaseUnit: (unit: string) => void;
@@ -102,7 +102,7 @@ export const useItemData = ({
         );
         const mappedConversions = mapPackageConversions(
           parsedConversionsFromDB,
-          formState.units
+          formState.packages
         );
         formState.setInitialPackageConversions(mappedConversions);
 
@@ -113,7 +113,7 @@ export const useItemData = ({
         // Initialize package conversion hook
         initializePackageConversions(
           itemData,
-          formState.units,
+          formState.packages,
           packageConversionHook
         );
       } catch (error) {
@@ -156,14 +156,14 @@ function parsePackageConversions(
  */
 function mapPackageConversions(
   conversions: DBPackageConversion[],
-  units: UnitData[]
+  packages: ItemPackage[]
 ): PackageConversion[] {
   if (!Array.isArray(conversions)) return [];
 
   return conversions.map((conv: DBPackageConversion) => {
     const unitDetail =
-      units.find(u => u.id === conv.to_unit_id) ||
-      units.find(u => u.name === conv.unit_name);
+      packages.find(pkg => pkg.id === conv.to_unit_id) ||
+      packages.find(pkg => pkg.name === conv.unit_name);
 
     return {
       id:
@@ -186,7 +186,7 @@ function mapPackageConversions(
  */
 function initializePackageConversions(
   itemData: Record<string, unknown>,
-  units: UnitData[],
+  packages: ItemPackage[],
   packageConversionHook: UseItemDataProps['packageConversionHook']
 ): void {
   // Set base unit and prices
@@ -206,7 +206,7 @@ function initializePackageConversions(
   if (!Array.isArray(conversions)) return;
 
   for (const conv of conversions) {
-    const unitDetail = units.find(u => u.name === conv.unit_name);
+    const unitDetail = packages.find(pkg => pkg.name === conv.unit_name);
 
     if (unitDetail && typeof conv.conversion_rate === 'number') {
       // Add conversion with valid unit
@@ -227,7 +227,7 @@ function initializePackageConversions(
         `Unit dengan nama "${conv.unit_name}" tidak ditemukan di daftar unit utama. Menggunakan placeholder.`
       );
 
-      const placeholderUnit: UnitData = {
+      const placeholderUnit: ItemPackage = {
         id:
           conv.to_unit_id ||
           `temp_id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
