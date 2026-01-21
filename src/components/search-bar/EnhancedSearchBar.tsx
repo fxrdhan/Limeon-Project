@@ -246,6 +246,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   onFilterSearch,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const memoizedColumns = useMemo(() => columns, [columns]);
   // Keep a synchronous reference to the latest raw pattern value so rapid key presses
   // (before React/parent state re-renders) still step back one badge at a time.
@@ -1266,6 +1267,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     },
     []
   );
+
+  const scrollBadgesToEnd = useCallback(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    el.scrollLeft = el.scrollWidth;
+  }, []);
+
+  useEffect(() => {
+    if (selectedBadgeIndex !== null) return;
+    if (editingBadge || editingGroupBadge) return;
+    const inputEl = inputRef?.current;
+    if (!inputEl) return;
+    if (document.activeElement !== inputEl) return;
+    requestAnimationFrame(scrollBadgesToEnd);
+  }, [
+    value,
+    selectedBadgeIndex,
+    editingBadge,
+    editingGroupBadge,
+    inputRef,
+    scrollBadgesToEnd,
+  ]);
 
   // Handler for Ctrl+E (left) and Ctrl+Shift+E (right) to edit badge
   const handleBadgeEdit = useCallback(
@@ -3093,7 +3116,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           />
 
           <div
-            className={`relative flex-1 flex flex-wrap items-center gap-1.5 p-1.5 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg overflow-hidden ${
+            ref={scrollAreaRef}
+            className={`relative flex-1 min-w-0 flex flex-nowrap items-center gap-1.5 p-1.5 min-h-[46px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg overflow-x-auto overflow-y-hidden scrollbar-hide ${
               shouldShowLeftIcon ? 'pl-1.5' : 'pl-9'
             } ${
               showInputError || searchState === 'not-found'
