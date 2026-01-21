@@ -206,7 +206,9 @@ function initializePackageConversions(
   if (!Array.isArray(conversions)) return;
 
   for (const conv of conversions) {
-    const unitDetail = packages.find(pkg => pkg.name === conv.unit_name);
+    const unitDetail =
+      packages.find(pkg => pkg.id === conv.to_unit_id) ||
+      packages.find(pkg => pkg.name === conv.unit_name);
 
     if (unitDetail && typeof conv.conversion_rate === 'number') {
       // Add conversion with valid unit
@@ -223,9 +225,11 @@ function initializePackageConversions(
       });
     } else if (typeof conv.conversion_rate === 'number') {
       // Add conversion with placeholder unit
-      console.warn(
-        `Unit dengan nama "${conv.unit_name}" tidak ditemukan di daftar unit utama. Menggunakan placeholder.`
-      );
+      if (packages.length > 0) {
+        console.warn(
+          `Kemasan dengan nama "${conv.unit_name}" tidak ditemukan di daftar kemasan. Menggunakan placeholder.`
+        );
+      }
 
       const placeholderUnit: ItemPackage = {
         id:

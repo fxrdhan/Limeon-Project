@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
 
 import { usePackageConversion } from '../utils/usePackageConversion';
 import { formatDateTime } from '@/lib/formatters';
@@ -228,9 +229,72 @@ export const useAddItemForm = ({
       formState.setSaving(true);
 
       try {
+        let conversionsForSave = packageConversionHook.conversions;
+        const pendingConversion =
+          packageConversionHook.packageConversionFormData;
+
+        if (
+          pendingConversion.unit?.trim() &&
+          pendingConversion.conversion_rate > 0
+        ) {
+          const selectedUnit = packageConversionHook.availableUnits.find(
+            unit => unit.name === pendingConversion.unit
+          );
+
+          if (!selectedUnit) {
+            toast.error('Kemasan tidak valid!');
+            return;
+          }
+
+          if (
+            packageConversionHook.baseUnit &&
+            selectedUnit.name === packageConversionHook.baseUnit
+          ) {
+            toast.error(
+              'Kemasan turunan tidak boleh sama dengan kemasan utama!'
+            );
+            return;
+          }
+
+          const existingUnit = packageConversionHook.conversions.find(
+            conversion => conversion.unit.name === selectedUnit.name
+          );
+
+          if (existingUnit) {
+            toast.error('Kemasan tersebut sudah ada dalam daftar!');
+            return;
+          }
+
+          const calculatedBasePrice =
+            packageConversionHook.basePrice > 0
+              ? packageConversionHook.basePrice /
+                pendingConversion.conversion_rate
+              : 0;
+          const calculatedSellPrice =
+            packageConversionHook.sellPrice > 0
+              ? packageConversionHook.sellPrice /
+                pendingConversion.conversion_rate
+              : 0;
+
+          conversionsForSave = [
+            ...packageConversionHook.conversions,
+            {
+              id: `${Date.now().toString()}-${Math.random()
+                .toString(36)
+                .slice(2, 9)}`,
+              unit: selectedUnit,
+              unit_name: selectedUnit.name,
+              to_unit_id: selectedUnit.id,
+              conversion_rate: pendingConversion.conversion_rate,
+              base_price: calculatedBasePrice,
+              sell_price: calculatedSellPrice,
+            },
+          ];
+        }
+
         await saveItemMutation.mutateAsync({
           formData: formState.formData,
-          conversions: packageConversionHook.conversions,
+          conversions: conversionsForSave,
           baseUnit: packageConversionHook.baseUnit,
           isEditMode: formState.isEditMode,
           itemId,
@@ -247,7 +311,11 @@ export const useAddItemForm = ({
     [
       formState,
       packageConversionHook.conversions,
+      packageConversionHook.packageConversionFormData,
+      packageConversionHook.availableUnits,
       packageConversionHook.baseUnit,
+      packageConversionHook.basePrice,
+      packageConversionHook.sellPrice,
       saveItemMutation,
       itemId,
       cache,

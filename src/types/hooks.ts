@@ -1,5 +1,5 @@
 import React from 'react';
-import { PackageConversion, UnitData } from './database';
+import { ItemPackage, PackageConversion } from './database';
 
 // Hook-related types
 export interface UsePackageConversionReturn {
@@ -29,7 +29,7 @@ export interface UsePackageConversionReturn {
   >;
   recalculateBasePrices: () => void;
   skipNextRecalculation: () => void;
-  availableUnits: UnitData[];
+  availableUnits: ItemPackage[];
   resetConversions: () => void;
   setConversions: React.Dispatch<React.SetStateAction<PackageConversion[]>>;
 }

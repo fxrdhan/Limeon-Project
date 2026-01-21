@@ -1,10 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
-import type {
-  PackageConversion,
-  UsePackageConversionReturn,
-  UnitData,
-} from '@/types';
+import type { PackageConversion, UsePackageConversionReturn } from '@/types';
+import type { ItemPackage } from '@/types/database';
 
 export const usePackageConversion = (): UsePackageConversionReturn => {
   const [baseUnit, setBaseUnit] = useState<string>('');
@@ -13,7 +10,7 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   const [packageConversions, setPackageConversions] = useState<
     PackageConversion[]
   >([]);
-  const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<ItemPackage[]>([]);
   const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
 
   const [packageConversionFormData, setPackageConversionFormData] = useState({

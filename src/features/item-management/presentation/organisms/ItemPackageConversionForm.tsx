@@ -13,7 +13,7 @@ import type {
   PackageConversion,
   PackageConversionLogicFormData,
 } from '../../shared/types';
-import type { UnitData } from '@/types/database';
+import type { ItemPackage } from '@/types/database';
 
 const DeleteButton = React.memo(
   ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
@@ -33,7 +33,7 @@ DeleteButton.displayName = 'DeleteButton';
 
 interface LocalItemPackageConversionManagerProps {
   baseUnit: string;
-  availableUnits: UnitData[];
+  availableUnits: ItemPackage[];
   conversions: PackageConversion[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;

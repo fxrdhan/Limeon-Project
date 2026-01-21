@@ -1,5 +1,5 @@
 // Business Entity Types
-import type { UnitData } from '@/types/database';
+import type { ItemPackage } from '@/types/database';
 export interface EntityData {
   id: string;
   code?: string;
@@ -25,7 +25,7 @@ export interface PackageConversion {
   id: string;
   unit_name: string;
   to_unit_id: string;
-  unit: UnitData;
+  unit: ItemPackage;
   conversion_rate: number;
   base_price: number;
   sell_price: number;

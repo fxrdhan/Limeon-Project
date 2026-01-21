@@ -3,11 +3,11 @@ import type {
   PackageConversion,
   PackageConversionLogicFormData,
 } from '../../../shared/types';
-import type { UnitData } from '@/types/database';
+import type { ItemPackage } from '@/types/database';
 
 interface ConversionLogicProps {
   conversions: PackageConversion[];
-  availableUnits: UnitData[];
+  availableUnits: ItemPackage[];
   formData: PackageConversionLogicFormData;
   addPackageConversion: (
     conversion: Omit<PackageConversion, 'id'> & {

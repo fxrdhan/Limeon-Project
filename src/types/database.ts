@@ -138,11 +138,7 @@ export interface PackageConversion {
   unit_name: string;
   to_unit_id: string;
   id: string;
-  unit: {
-    id: string;
-    code?: string;
-    name: string;
-  };
+  unit: ItemPackage;
   base_price: number;
   sell_price: number;
 }

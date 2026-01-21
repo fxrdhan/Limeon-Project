@@ -5,10 +5,10 @@ import type {
   PackageConversion,
   PackageConversionLogicFormData,
 } from '../../../shared/types';
-import type { UnitData } from '@/types/database';
+import type { ItemPackage } from '@/types/database';
 
 describe('useConversionLogic', () => {
-  const mockAvailableUnits: UnitData[] = [
+  const mockAvailableUnits: ItemPackage[] = [
     { id: 'unit-1', name: 'Strip' },
     { id: 'unit-2', name: 'Box' },
     { id: 'unit-3', name: 'Tablet' },
