@@ -1,6 +1,5 @@
 import React from 'react';
 import Input from '@/components/input';
-import FormSection from '@/components/form-section';
 import FormField from '@/components/form-field';
 import { PriceInput, MarginEditor } from '../atoms';
 import {
@@ -57,8 +56,13 @@ export default function ItemPricingForm({
   };
 
   return (
-    <FormSection title="Harga Pokok & Jual">
-      <div className="flex flex-col space-y-4">
+    <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="bg-white px-4 py-3 border-b border-slate-200">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Harga Pokok & Jual
+        </h2>
+      </div>
+      <div className="p-4 md:p-5 flex flex-col space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Kemasan Dasar">
             <Input
@@ -105,6 +109,6 @@ export default function ItemPricingForm({
           />
         </div>
       </div>
-    </FormSection>
+    </section>
   );
 }

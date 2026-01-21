@@ -122,20 +122,18 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     }, [codeGeneration.generatedCode, formData.code, onFieldChange]);
 
     return (
-      <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
-        <div className="bg-gray-100 p-3 border-b-2 border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Data Umum</h2>
-          <div className="text-sm text-gray-600 bg-white px-2 py-1 rounded">
+      <div className="rounded-xl border border-slate-200 bg-white mb-6 overflow-hidden">
+        <div className="bg-white px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+            Data Umum
+          </h2>
+          <div className="text-xs text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-full">
             {codeGeneration.generatedCode || formData.code || 'Auto-generated'}
           </div>
         </div>
-        <div className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <FormField
-              label="Nama Item"
-              className="md:col-span-5"
-              required={true}
-            >
+        <div className="p-4 md:p-5 space-y-5">
+          <div className="flex flex-col gap-4">
+            <FormField label="Nama Item" required={true}>
               <Input
                 name="name"
                 ref={ref}
@@ -153,7 +151,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField label="Barcode" className="md:col-span-2">
+            <FormField label="Barcode">
               <Input
                 name="barcode"
                 value={formData.barcode}
@@ -165,70 +163,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField
-              label="Jenis Produk"
-              className="md:col-span-2"
-              required={true}
-            >
-              <Dropdown
-                name="is_medicine"
-                tabIndex={3}
-                value={formData.is_medicine ? 'obat' : 'non-obat'}
-                onChange={value => {
-                  if (value === 'obat') {
-                    onFieldChange('is_medicine', true);
-                  } else {
-                    onFieldChange('is_medicine', false);
-                    onFieldChange('has_expiry_date', false);
-                  }
-                }}
-                options={[
-                  { id: 'obat', name: 'Obat' },
-                  { id: 'non-obat', name: 'Non-Obat' },
-                ]}
-                withRadio
-                searchList={false}
-                disabled={disabled}
-              />
-            </FormField>
-
-            <FormField label="Nilai" className="md:col-span-1">
-              <Input
-                name="quantity"
-                type="number"
-                value={formData.quantity.toString()}
-                tabIndex={4}
-                onChange={onChange}
-                className="w-full"
-                placeholder="Masukkan nilai"
-                min="0"
-                step="1"
-                readOnly={disabled}
-              />
-            </FormField>
-
-            <FormField label="Satuan" className="md:col-span-2">
-              {loading && units.length === 0 ? (
-                <Input value="Memuat satuan..." readOnly disabled />
-              ) : (
-                <Dropdown
-                  name="unit_id"
-                  tabIndex={5}
-                  value={formData.unit_id}
-                  onChange={value => onDropdownChange('unit_id', value)}
-                  options={units}
-                  placeholder="Pilih Satuan"
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedUnitDetailFetcher}
-                  disabled={disabled}
-                />
-              )}
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <FormField label="Produsen" className="md:col-span-1">
+            <FormField label="Produsen">
               {loading && manufacturers.length === 0 ? (
                 <Input value="Memuat produsen..." readOnly disabled />
               ) : (
@@ -298,6 +233,65 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               )}
             </FormField>
 
+            <FormField label="Tipe Produk" required={true}>
+              <Dropdown
+                name="is_medicine"
+                tabIndex={3}
+                value={formData.is_medicine ? 'obat' : 'non-obat'}
+                onChange={value => {
+                  if (value === 'obat') {
+                    onFieldChange('is_medicine', true);
+                  } else {
+                    onFieldChange('is_medicine', false);
+                    onFieldChange('has_expiry_date', false);
+                  }
+                }}
+                options={[
+                  { id: 'obat', name: 'Obat' },
+                  { id: 'non-obat', name: 'Non-Obat' },
+                ]}
+                withRadio
+                searchList={false}
+                disabled={disabled}
+              />
+            </FormField>
+
+            <FormField label="Nilai">
+              <Input
+                name="quantity"
+                type="number"
+                value={formData.quantity.toString()}
+                tabIndex={4}
+                onChange={onChange}
+                className="w-full"
+                placeholder="Masukkan nilai"
+                min="0"
+                step="1"
+                readOnly={disabled}
+              />
+            </FormField>
+
+            <FormField label="Satuan">
+              {loading && units.length === 0 ? (
+                <Input value="Memuat satuan..." readOnly disabled />
+              ) : (
+                <Dropdown
+                  name="unit_id"
+                  tabIndex={5}
+                  value={formData.unit_id}
+                  onChange={value => onDropdownChange('unit_id', value)}
+                  options={units}
+                  placeholder="Pilih Satuan"
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedUnitDetailFetcher}
+                  disabled={disabled}
+                />
+              )}
+            </FormField>
+          </div>
+
+          <div className="flex flex-col gap-4">
             <FormField label="Kemasan" required={true}>
               {loading && packages.length === 0 ? (
                 <Input value="Memuat kemasan..." readOnly disabled />

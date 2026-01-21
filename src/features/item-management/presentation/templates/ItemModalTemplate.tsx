@@ -73,7 +73,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="rounded-xl bg-white shadow-xl w-[75vw] max-h-[90vh] flex flex-col"
+              className="rounded-2xl bg-white shadow-xl w-[75vw] max-h-[90vh] flex flex-col border border-slate-200"
               onClick={e => e.stopPropagation()}
             >
               <motion.div
@@ -98,7 +98,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                 className="flex-1 flex flex-col min-h-0"
               >
                 <div className="flex-1 overflow-y-auto">
-                  <div className="px-6 py-1">
+                  <div className="px-6 py-2">
                     {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
                     {!children.settingsForm &&
                     !children.pricingForm &&
@@ -110,33 +110,23 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                       </div>
                     ) : (
                       // Standard form layout
-                      <>
-                        <div className="flex flex-col md:flex-row gap-6">
-                          <div className="w-full md:w-4/5">
-                            {children.basicInfo}
-                            {children.categoryForm && children.categoryForm}
-                          </div>
-
-                          <div className="w-full md:w-1/4">
-                            {children.settingsForm}
-                          </div>
+                      <div className="flex flex-col md:flex-row gap-5">
+                        <div className="w-full md:w-1/2">
+                          {children.basicInfo}
+                          {children.categoryForm && children.categoryForm}
                         </div>
 
-                        <div className="flex flex-col md:flex-row gap-6">
-                          <div className="w-full md:w-1/4">
-                            {children.pricingForm}
-                          </div>
-
-                          <div className="w-full md:w-3/4">
-                            {children.packageConversionManager}
-                          </div>
+                        <div className="w-full md:w-1/2 flex flex-col gap-5">
+                          {children.pricingForm}
+                          {children.settingsForm}
+                          {children.packageConversionManager}
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                <CardFooter className="sticky bottom-0 z-10 py-6! px-6!">
+                <CardFooter className="sticky bottom-0 z-10 py-6! px-6! border-t border-slate-200 bg-white">
                   <FormAction
                     onCancel={formAction.onCancel}
                     onDelete={formAction.onDelete}

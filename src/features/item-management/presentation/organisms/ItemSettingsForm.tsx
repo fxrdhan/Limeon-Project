@@ -1,7 +1,6 @@
 import { forwardRef } from 'react';
 import Dropdown from '@/components/dropdown';
 import Checkbox from '@/components/checkbox';
-import FormSection from '@/components/form-section';
 import FormField from '@/components/form-field';
 import { MinStockEditor } from '../atoms';
 import FefoTooltip from '../molecules/FefoTooltip';
@@ -40,8 +39,13 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     ref
   ) => {
     return (
-      <FormSection title="Pengaturan Tambahan">
-        <div className="grid grid-cols-1 gap-6">
+      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <div className="bg-white px-4 py-3 border-b border-slate-200">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+            Pengaturan Tambahan
+          </h2>
+        </div>
+        <div className="p-4 md:p-5 grid grid-cols-1 gap-6">
           <FormField label="Status" required={true}>
             <Dropdown
               name="is_active"
@@ -88,13 +92,13 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
               }
               className="py-1"
             />
-            <div className="mt-1 text-sm text-gray-500 flex items-center">
+            <div className="mt-1 text-sm text-slate-500 flex items-center">
               Akan digunakan metode FEFO
               <FefoTooltip />
             </div>
           </div>
         </div>
-      </FormSection>
+      </section>
     );
   }
 );
