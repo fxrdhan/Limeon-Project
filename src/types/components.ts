@@ -39,6 +39,7 @@ export interface DropdownProps {
   onAddNew?: (searchTerm?: string) => void;
   withRadio?: boolean;
   searchList?: boolean;
+  autoScrollOnOpen?: boolean;
   validate?: boolean;
   showValidationOnBlur?: boolean;
   validationAutoHide?: boolean;

@@ -6,6 +6,7 @@ interface UseScrollManagementProps {
   applyOpenStyles: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
+  autoScrollOnOpen: boolean;
 }
 
 export const useScrollManagement = ({
@@ -13,6 +14,7 @@ export const useScrollManagement = ({
   applyOpenStyles,
   filteredOptions,
   optionsContainerRef,
+  autoScrollOnOpen,
 }: UseScrollManagementProps) => {
   const [scrollState, setScrollState] = useState({
     isScrollable: false,
@@ -74,6 +76,7 @@ export const useScrollManagement = ({
 
   // Initial scroll ONLY when dropdown first opens with smooth animation
   useEffect(() => {
+    if (!autoScrollOnOpen) return;
     if (isOpen && applyOpenStyles && !hasInitialScrolled) {
       if (optionsContainerRef.current && filteredOptions.length > 0) {
         // Delay the scroll animation slightly to allow portal to render
@@ -111,6 +114,7 @@ export const useScrollManagement = ({
 
     // State auto-resets when component remounts or isOpen changes
   }, [
+    autoScrollOnOpen,
     isOpen,
     applyOpenStyles,
     hasInitialScrolled,

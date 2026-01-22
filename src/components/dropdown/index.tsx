@@ -29,6 +29,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     placeholder = '-- Pilih --',
     onAddNew,
     searchList = true,
+    autoScrollOnOpen = false,
     tabIndex,
     required = false,
     disabled = false,
@@ -250,6 +251,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     applyOpenStyles,
     filteredOptions,
     optionsContainerRef,
+    autoScrollOnOpen,
   });
 
   // Use hover detail hook
