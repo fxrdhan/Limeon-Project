@@ -78,7 +78,7 @@ export default function ItemPricingForm({
             name="base_price"
             value={displayBasePrice}
             onChange={handleBasePriceChange}
-            tabIndex={13}
+            tabIndex={12}
             validationSchema={basePriceSchema}
             required={true}
             readOnly={disabled}
@@ -90,6 +90,7 @@ export default function ItemPricingForm({
             isEditing={marginEditing.isEditing}
             marginPercentage={marginEditing.percentage}
             calculatedMargin={calculatedMargin}
+            tabIndex={13}
             onStartEdit={onStartEditMargin}
             onStopEdit={onStopEditMargin}
             onChange={onMarginInputChange}
@@ -102,7 +103,7 @@ export default function ItemPricingForm({
             name="sell_price"
             value={displaySellPrice}
             onChange={onSellPriceChange}
-            tabIndex={15}
+            tabIndex={14}
             validationSchema={sellPriceComparisonSchema(displayBasePrice)}
             required={true}
             readOnly={disabled}

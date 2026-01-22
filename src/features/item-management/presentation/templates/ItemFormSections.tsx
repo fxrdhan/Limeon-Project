@@ -14,6 +14,7 @@ import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 // Child components
 import { ItemFormHeader } from '../molecules';
 import ItemBasicInfoForm from '../organisms/ItemBasicInfoForm';
+import ItemAdditionalInfoForm from '../organisms/ItemAdditionalInfoForm';
 import ItemSettingsForm from '../organisms/ItemSettingsForm';
 import ItemPricingForm from '../organisms/ItemPricingForm';
 import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm';
@@ -57,15 +58,14 @@ const FormHeader: React.FC<{
   );
 };
 
-// Basic Info Section
+// Basic Info (Required) Section
 // eslint-disable-next-line react-refresh/only-export-components
-const BasicInfoSection: React.FC = () => {
+const BasicInfoRequiredSection: React.FC = () => {
   const {
     formData,
     categories,
     types,
     packages,
-    units,
     dosages,
     manufacturers,
     loading,
@@ -106,13 +106,6 @@ const BasicInfoSection: React.FC = () => {
     description: pkg.description,
     updated_at: pkg.updated_at,
   }));
-  const transformedUnits = units.map(unit => ({
-    id: unit.id,
-    name: unit.name,
-    code: unit.code,
-    description: unit.description,
-    updated_at: unit.updated_at,
-  }));
   const transformedDosages = dosages.map(dosage => ({
     id: dosage.id,
     name: dosage.name,
@@ -136,10 +129,6 @@ const BasicInfoSection: React.FC = () => {
       });
     } else if (field === 'is_medicine') {
       updateFormData({ is_medicine: value as boolean });
-    } else if (field === 'is_active') {
-      updateFormData({ is_active: value as boolean });
-    } else if (field === 'has_expiry_date') {
-      updateFormData({ has_expiry_date: value as boolean });
     } else if (field === 'code') {
       updateFormData({ code: value as string });
     }
@@ -157,8 +146,6 @@ const BasicInfoSection: React.FC = () => {
       if (selectedPackage) {
         packageConversionHook.setBaseUnit(selectedPackage.name);
       }
-    } else if (field === 'unit_id') {
-      updateFormData({ unit_id: value });
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
     } else if (field === 'manufacturer_id') {
@@ -173,20 +160,15 @@ const BasicInfoSection: React.FC = () => {
         code: formData.code || '',
         name: formData.name || '',
         manufacturer_id: formData.manufacturer_id || '',
-        barcode: formData.barcode || '',
         is_medicine: formData.is_medicine || false,
         category_id: formData.category_id || '',
         type_id: formData.type_id || '',
         package_id: formData.package_id || '',
         dosage_id: formData.dosage_id || '',
-        description: formData.description || '',
-        quantity: formData.quantity || 0,
-        unit_id: formData.unit_id || '',
       }}
       categories={transformedCategories}
       types={transformedTypes}
       packages={transformedPackages}
-      units={transformedUnits}
       dosages={transformedDosages}
       manufacturers={transformedManufacturers}
       loading={loading}
@@ -199,6 +181,45 @@ const BasicInfoSection: React.FC = () => {
       onAddNewUnit={handleAddNewUnit}
       onAddNewDosage={handleAddNewDosage}
       onAddNewManufacturer={handleAddNewManufacturer}
+    />
+  );
+};
+
+// Basic Info (Optional) Section
+// eslint-disable-next-line react-refresh/only-export-components
+const BasicInfoOptionalSection: React.FC = () => {
+  const { formData, units, loading, handleChange, updateFormData } =
+    useItemForm();
+  const { resetKey, isViewingOldVersion } = useItemUI();
+
+  const transformedUnits = units.map(unit => ({
+    id: unit.id,
+    name: unit.name,
+    code: unit.code,
+    description: unit.description,
+    updated_at: unit.updated_at,
+  }));
+
+  const handleDropdownChange = (field: string, value: string) => {
+    if (field === 'unit_id') {
+      updateFormData({ unit_id: value });
+    }
+  };
+
+  return (
+    <ItemAdditionalInfoForm
+      key={resetKey} // Force re-mount on reset to clear validation
+      formData={{
+        barcode: formData.barcode || '',
+        quantity: formData.quantity || 0,
+        unit_id: formData.unit_id || '',
+        description: formData.description || '',
+      }}
+      units={transformedUnits}
+      loading={loading}
+      disabled={isViewingOldVersion}
+      onChange={handleChange}
+      onDropdownChange={handleDropdownChange}
     />
   );
 };
@@ -359,7 +380,8 @@ const PackageConversionSection: React.FC = () => {
 // Compound component export
 export const ItemFormSections = {
   Header: FormHeader,
-  BasicInfo: BasicInfoSection,
+  BasicInfoRequired: BasicInfoRequiredSection,
+  BasicInfoOptional: BasicInfoOptionalSection,
   Settings: SettingsSection,
   Pricing: PricingSection,
   PackageConversion: PackageConversionSection,

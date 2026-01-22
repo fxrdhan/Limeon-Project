@@ -49,7 +49,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
           <FormField label="Status" required={true}>
             <Dropdown
               name="is_active"
-              tabIndex={10}
+              tabIndex={15}
               value={formData.is_active ? 'true' : 'false'}
               onChange={value => {
                 onFieldChange('is_active', value === 'true');
@@ -68,6 +68,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
             isEditing={minStockEditing.isEditing}
             minStockValue={minStockEditing.value}
             currentMinStock={formData.min_stock}
+            tabIndex={16}
             onStartEdit={onStartEditMinStock}
             onStopEdit={onStopEditMinStock}
             onChange={onMinStockChange}
@@ -82,7 +83,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
           >
             <Checkbox
               id="has_expiry_date"
-              tabIndex={12}
+              tabIndex={17}
               ref={ref}
               label="Memiliki Tanggal Kadaluarsa"
               checked={formData.has_expiry_date}

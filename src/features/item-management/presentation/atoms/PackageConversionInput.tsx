@@ -103,7 +103,9 @@ export default function PackageConversionInput({
               onKeyDown={handleKeyDown}
               readOnly={disabled}
             />
-            <div
+            <button
+              type="button"
+              tabIndex={tabIndex + 2}
               className={`absolute inset-y-0 right-0 flex items-center pr-3 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
                 isAddButtonActive ? 'text-primary' : 'text-gray-300'
               }`}
@@ -116,9 +118,11 @@ export default function PackageConversionInput({
               title={
                 disabled ? undefined : 'Tekan Enter atau klik untuk menambah'
               }
+              disabled={disabled}
+              aria-label="Tambah konversi kemasan"
             >
               <PiKeyReturnBold size={24} />
-            </div>
+            </button>
           </div>
         </FormField>
       </div>

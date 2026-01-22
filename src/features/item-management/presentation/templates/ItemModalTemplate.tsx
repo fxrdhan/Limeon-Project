@@ -12,7 +12,8 @@ interface ItemModalTemplateProps {
   onSubmit: (e: React.FormEvent) => void;
   children: {
     header: ReactNode;
-    basicInfo: ReactNode;
+    basicInfoRequired: ReactNode;
+    basicInfoOptional: ReactNode;
     categoryForm?: ReactNode;
     settingsForm: ReactNode;
     pricingForm: ReactNode;
@@ -105,18 +106,23 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     !children.packageConversionManager ? (
                       // Full-width layout for history mode
                       <div className="w-full">
-                        {children.basicInfo}
+                        {children.basicInfoRequired}
+                        {children.basicInfoOptional}
                         {children.categoryForm && children.categoryForm}
                       </div>
                     ) : (
                       // Standard form layout
                       <div className="flex flex-col md:flex-row gap-5">
-                        <div className="w-full md:w-1/2">
-                          {children.basicInfo}
+                        <div className="w-full md:w-[30%]">
+                          {children.basicInfoRequired}
                           {children.categoryForm && children.categoryForm}
                         </div>
 
-                        <div className="w-full md:w-1/2 flex flex-col gap-5">
+                        <div className="w-full md:w-[30%]">
+                          {children.basicInfoOptional}
+                        </div>
+
+                        <div className="w-full md:w-[40%] flex flex-col gap-5">
                           {children.pricingForm}
                           {children.settingsForm}
                           {children.packageConversionManager}
@@ -133,8 +139,8 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     isSaving={formAction.isSaving}
                     isDeleting={formAction.isDeleting}
                     isEditMode={formAction.isEditMode}
-                    cancelTabIndex={20}
-                    saveTabIndex={21}
+                    cancelTabIndex={22}
+                    saveTabIndex={23}
                     isDisabled={formAction.isDisabled}
                     saveText="Simpan"
                     updateText="Update"

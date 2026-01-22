@@ -398,7 +398,8 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
             itemId={itemId}
           />
         ),
-        basicInfo: <ItemFormSections.BasicInfo />,
+        basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
+        basicInfoOptional: <ItemFormSections.BasicInfoOptional />,
         settingsForm: <ItemFormSections.Settings />,
         pricingForm: <ItemFormSections.Pricing />,
         packageConversionManager: <ItemFormSections.PackageConversion />,

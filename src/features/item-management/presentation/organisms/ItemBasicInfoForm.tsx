@@ -1,12 +1,8 @@
-import { forwardRef, useMemo, useEffect, useRef, useState } from 'react';
+import { forwardRef, useMemo, useEffect } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
-import DescriptiveTextarea from '@/components/descriptive-textarea';
-import {
-  itemNameSchema,
-  itemQuantitySchema,
-} from '@/schemas/manual/itemValidation';
+import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { DropdownOption } from '@/types/components';
 import { useItemCodeGenerator } from '../../application/hooks/utils';
 import {
@@ -22,20 +18,15 @@ interface ItemBasicInfoFormProps {
     code: string;
     name: string;
     manufacturer_id: string;
-    barcode: string;
     is_medicine: boolean;
     category_id: string;
     type_id: string;
     package_id: string;
     dosage_id: string;
-    description: string;
-    quantity: number;
-    unit_id: string;
   };
   categories: DropdownOption[];
   types: DropdownOption[];
   packages: DropdownOption[];
-  units: DropdownOption[];
   dosages: DropdownOption[];
   manufacturers: DropdownOption[];
   loading: boolean;
@@ -59,7 +50,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       categories,
       types,
       packages,
-      units,
       dosages,
       manufacturers,
       loading,
@@ -75,10 +65,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     },
     ref
   ) => {
-    const quantityInputRef = useRef<HTMLInputElement>(null);
-    const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [quantityTouched, setQuantityTouched] = useState(false);
-
     // Generate item code based on selected values
     const codeGeneration = useItemCodeGenerator({
       categoryId: formData.category_id,
@@ -106,10 +92,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       return createOptimizedUnitDetailFetcher(packages);
     }, [packages]);
 
-    const optimizedUnitDetailFetcher = useMemo(() => {
-      return createOptimizedUnitDetailFetcher(units);
-    }, [units]);
-
     const optimizedDosageDetailFetcher = useMemo(() => {
       return createOptimizedDosageDetailFetcher(dosages);
     }, [dosages]);
@@ -127,15 +109,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
         onFieldChange('code', codeGeneration.generatedCode);
       }
     }, [codeGeneration.generatedCode, formData.code, onFieldChange]);
-
-    useEffect(() => {
-      return () => {
-        if (focusTimerRef.current) {
-          clearTimeout(focusTimerRef.current);
-          focusTimerRef.current = null;
-        }
-      };
-    }, []);
 
     return (
       <div className="rounded-xl border border-slate-200 bg-white mb-6 overflow-hidden">
@@ -167,25 +140,36 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField label="Barcode">
-              <Input
-                name="barcode"
-                value={formData.barcode}
+            <FormField label="Tipe Produk" required={true}>
+              <Dropdown
+                name="is_medicine"
                 tabIndex={2}
-                onChange={onChange}
-                className="w-full"
-                placeholder="Masukkan barcode item"
-                readOnly={disabled}
+                value={formData.is_medicine ? 'obat' : 'non-obat'}
+                onChange={value => {
+                  if (value === 'obat') {
+                    onFieldChange('is_medicine', true);
+                  } else {
+                    onFieldChange('is_medicine', false);
+                    onFieldChange('has_expiry_date', false);
+                  }
+                }}
+                options={[
+                  { id: 'obat', name: 'Obat' },
+                  { id: 'non-obat', name: 'Non-Obat' },
+                ]}
+                withRadio
+                searchList={false}
+                disabled={disabled}
               />
             </FormField>
 
-            <FormField label="Produsen">
+            <FormField label="Produsen" required={true}>
               {loading && manufacturers.length === 0 ? (
                 <Input value="Memuat produsen..." readOnly disabled />
               ) : (
                 <Dropdown
                   name="manufacturer_id"
-                  tabIndex={6}
+                  tabIndex={3}
                   value={formData.manufacturer_id}
                   onChange={value => onDropdownChange('manufacturer_id', value)}
                   options={manufacturers}
@@ -195,6 +179,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedManufacturerDetailFetcher}
                   disabled={disabled}
+                  required
+                  validate={true}
+                  showValidationOnBlur={true}
+                  validationAutoHide={true}
+                  validationAutoHideDelay={3000}
                 />
               )}
             </FormField>
@@ -205,7 +194,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="category_id"
-                  tabIndex={7}
+                  tabIndex={4}
                   value={formData.category_id}
                   onChange={value => onDropdownChange('category_id', value)}
                   options={categories}
@@ -230,7 +219,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="type_id"
-                  tabIndex={8}
+                  tabIndex={5}
                   value={formData.type_id}
                   onChange={value => onDropdownChange('type_id', value)}
                   options={types}
@@ -249,99 +238,13 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               )}
             </FormField>
 
-            <FormField label="Tipe Produk" required={true}>
-              <Dropdown
-                name="is_medicine"
-                tabIndex={3}
-                value={formData.is_medicine ? 'obat' : 'non-obat'}
-                onChange={value => {
-                  if (value === 'obat') {
-                    onFieldChange('is_medicine', true);
-                  } else {
-                    onFieldChange('is_medicine', false);
-                    onFieldChange('has_expiry_date', false);
-                  }
-                }}
-                options={[
-                  { id: 'obat', name: 'Obat' },
-                  { id: 'non-obat', name: 'Non-Obat' },
-                ]}
-                withRadio
-                searchList={false}
-                disabled={disabled}
-              />
-            </FormField>
-
-            <div className="flex flex-row gap-4">
-              {formData.unit_id ? (
-                <FormField label="Nilai" className="flex-[1]">
-                  <Input
-                    name="quantity"
-                    type="number"
-                    value={
-                      formData.quantity > 0 ? formData.quantity.toString() : ''
-                    }
-                    tabIndex={5}
-                    onChange={onChange}
-                    className="w-full"
-                    min="0"
-                    step="1"
-                    readOnly={disabled}
-                    validate={quantityTouched}
-                    validationSchema={itemQuantitySchema}
-                    showValidationOnBlur={true}
-                    validationAutoHide={true}
-                    validationAutoHideDelay={3000}
-                    ref={quantityInputRef}
-                    onFocus={() => setQuantityTouched(true)}
-                  />
-                </FormField>
-              ) : null}
-
-              <FormField
-                label="Satuan"
-                className={formData.unit_id ? 'flex-[9]' : 'flex-1'}
-              >
-                {loading && units.length === 0 ? (
-                  <Input value="Memuat satuan..." readOnly disabled />
-                ) : (
-                  <Dropdown
-                    name="unit_id"
-                    tabIndex={4}
-                    value={formData.unit_id}
-                    onChange={value => {
-                      setQuantityTouched(false);
-                      onDropdownChange('unit_id', value);
-
-                      if (!disabled && value) {
-                        if (focusTimerRef.current) {
-                          clearTimeout(focusTimerRef.current);
-                        }
-                        focusTimerRef.current = setTimeout(() => {
-                          quantityInputRef.current?.focus();
-                        }, 200);
-                      }
-                    }}
-                    options={units}
-                    placeholder="Pilih Satuan"
-                    enableHoverDetail={true}
-                    hoverDetailDelay={400}
-                    onFetchHoverDetail={optimizedUnitDetailFetcher}
-                    disabled={disabled}
-                  />
-                )}
-              </FormField>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
             <FormField label="Kemasan" required={true}>
               {loading && packages.length === 0 ? (
                 <Input value="Memuat kemasan..." readOnly disabled />
               ) : (
                 <Dropdown
                   name="package_id"
-                  tabIndex={9}
+                  tabIndex={6}
                   value={formData.package_id}
                   onChange={value => onDropdownChange('package_id', value)}
                   options={packages}
@@ -366,7 +269,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="dosage_id"
-                  tabIndex={10}
+                  tabIndex={7}
                   value={formData.dosage_id}
                   onChange={value => onDropdownChange('dosage_id', value)}
                   options={dosages}
@@ -384,19 +287,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 />
               )}
             </FormField>
-          </div>
-
-          <div>
-            <DescriptiveTextarea
-              label="Keterangan"
-              tabIndex={11}
-              name="description"
-              value={formData.description}
-              onChange={onChange}
-              placeholder="Masukkan keterangan atau deskripsi tambahan untuk item ini..."
-              expandOnClick={true}
-              readOnly={disabled}
-            />
           </div>
         </div>
       </div>

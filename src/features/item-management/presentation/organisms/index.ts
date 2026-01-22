@@ -3,6 +3,7 @@ export { default as EntityGrid, MasterDataGrid } from './EntityGrid';
 
 // Form organisms
 export { default as ItemBasicInfoForm } from './ItemBasicInfoForm';
+export { default as ItemAdditionalInfoForm } from './ItemAdditionalInfoForm';
 export { default as ItemPricingForm } from './ItemPricingForm';
 export { default as ItemSettingsForm } from './ItemSettingsForm';
 export { default as ItemPackageConversionForm } from './ItemPackageConversionForm';

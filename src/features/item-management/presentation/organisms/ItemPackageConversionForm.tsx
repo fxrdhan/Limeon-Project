@@ -20,7 +20,7 @@ const DeleteButton = React.memo(
     <Button
       variant="text-danger"
       size="sm"
-      tabIndex={19}
+      tabIndex={-1}
       onClick={onClick}
       disabled={disabled}
     >
@@ -88,7 +88,7 @@ export default function ItemPackageConversionManager({
             formData={formData}
             onFormDataChange={onFormDataChange}
             onAddConversion={onAddConversion}
-            tabIndex={16}
+            tabIndex={18}
             disabled={disabled}
           />
         </div>
