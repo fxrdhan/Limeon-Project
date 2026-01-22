@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import toast from 'react-hot-toast';
 import {
@@ -19,8 +20,13 @@ import ItemSettingsForm from '../organisms/ItemSettingsForm';
 import ItemPricingForm from '../organisms/ItemPricingForm';
 import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm';
 
+interface CollapsibleSectionProps {
+  isExpanded: boolean;
+  onExpand: () => void;
+}
+
 // Header Section
-// eslint-disable-next-line react-refresh/only-export-components
+
 const FormHeader: React.FC<{
   onReset?: () => void;
   onClose: () => void;
@@ -59,7 +65,7 @@ const FormHeader: React.FC<{
 };
 
 // Basic Info (Required) Section
-// eslint-disable-next-line react-refresh/only-export-components
+
 const BasicInfoRequiredSection: React.FC = () => {
   const {
     formData,
@@ -185,48 +191,12 @@ const BasicInfoRequiredSection: React.FC = () => {
   );
 };
 
-// Basic Info (Optional) Section
-// eslint-disable-next-line react-refresh/only-export-components
-const BasicInfoOptionalSection: React.FC = () => {
-  const { formData, units, loading, handleChange, updateFormData } =
-    useItemForm();
-  const { resetKey, isViewingOldVersion } = useItemUI();
-
-  const transformedUnits = units.map(unit => ({
-    id: unit.id,
-    name: unit.name,
-    code: unit.code,
-    description: unit.description,
-    updated_at: unit.updated_at,
-  }));
-
-  const handleDropdownChange = (field: string, value: string) => {
-    if (field === 'unit_id') {
-      updateFormData({ unit_id: value });
-    }
-  };
-
-  return (
-    <ItemAdditionalInfoForm
-      key={resetKey} // Force re-mount on reset to clear validation
-      formData={{
-        barcode: formData.barcode || '',
-        quantity: formData.quantity || 0,
-        unit_id: formData.unit_id || '',
-        description: formData.description || '',
-      }}
-      units={transformedUnits}
-      loading={loading}
-      disabled={isViewingOldVersion}
-      onChange={handleChange}
-      onDropdownChange={handleDropdownChange}
-    />
-  );
-};
-
 // Settings Section
-// eslint-disable-next-line react-refresh/only-export-components
-const SettingsSection: React.FC = () => {
+
+const SettingsSection: React.FC<CollapsibleSectionProps> = ({
+  isExpanded,
+  onExpand,
+}) => {
   const { formData, updateFormData } = useItemForm();
   const { isViewingOldVersion } = useItemUI();
 
@@ -266,6 +236,8 @@ const SettingsSection: React.FC = () => {
         isEditing: minStockEditor.isEditing,
         value: minStockEditor.value,
       }}
+      isExpanded={isExpanded}
+      onExpand={onExpand}
       disabled={isViewingOldVersion}
       onFieldChange={handleFieldChange}
       onStartEditMinStock={minStockEditor.startEditing}
@@ -277,8 +249,11 @@ const SettingsSection: React.FC = () => {
 };
 
 // Pricing Section
-// eslint-disable-next-line react-refresh/only-export-components
-const PricingSection: React.FC = () => {
+
+const PricingSection: React.FC<CollapsibleSectionProps> = ({
+  isExpanded,
+  onExpand,
+}) => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
@@ -325,6 +300,8 @@ const PricingSection: React.FC = () => {
         percentage: marginEditor.value,
       }}
       calculatedMargin={calcMargin || 0}
+      isExpanded={isExpanded}
+      onExpand={onExpand}
       disabled={isViewingOldVersion}
       onBasePriceChange={handleChange}
       onSellPriceChange={handleSellPriceChange}
@@ -338,8 +315,11 @@ const PricingSection: React.FC = () => {
 };
 
 // Package Conversion Section
-// eslint-disable-next-line react-refresh/only-export-components
-const PackageConversionSection: React.FC = () => {
+
+const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
+  isExpanded,
+  onExpand,
+}) => {
   const { packageConversionHook } = useItemPrice();
   const { resetKey, isViewingOldVersion } = useItemUI();
 
@@ -369,10 +349,54 @@ const PackageConversionSection: React.FC = () => {
       availableUnits={packageConversionHook.availableUnits}
       conversions={packageConversionHook.conversions}
       formData={packageConversionHook.packageConversionFormData}
+      isExpanded={isExpanded}
+      onExpand={onExpand}
       disabled={isViewingOldVersion}
       onFormDataChange={packageConversionHook.setPackageConversionFormData}
       onAddConversion={handleAddConversion}
       onRemoveConversion={packageConversionHook.removePackageConversion}
+    />
+  );
+};
+
+const BasicInfoOptionalSection: React.FC<CollapsibleSectionProps> = ({
+  isExpanded,
+  onExpand,
+}) => {
+  const { formData, units, loading, handleChange, updateFormData } =
+    useItemForm();
+  const { resetKey, isViewingOldVersion } = useItemUI();
+
+  const transformedUnits = units.map(unit => ({
+    id: unit.id,
+    name: unit.name,
+    code: unit.code,
+    description: unit.description,
+    updated_at: unit.updated_at,
+  }));
+
+  const handleDropdownChange = (field: string, value: string) => {
+    if (field === 'unit_id') {
+      updateFormData({ unit_id: value });
+    }
+  };
+
+  return (
+    <ItemAdditionalInfoForm
+      key={resetKey} // Force re-mount on reset to clear validation
+      formData={{
+        barcode: formData.barcode || '',
+        quantity: formData.quantity || 0,
+        unit_id: formData.unit_id || '',
+        description: formData.description || '',
+      }}
+      units={transformedUnits}
+      loading={loading}
+      isExpanded={isExpanded}
+      onExpand={onExpand}
+      disabled={isViewingOldVersion}
+      onChange={handleChange}
+      onDropdownChange={handleDropdownChange}
     />
   );
 };

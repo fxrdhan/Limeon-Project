@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
+import { FaChevronDown } from 'react-icons/fa';
+import { AnimatePresence, motion } from 'motion/react';
 import { ColDef, ColGroupDef } from 'ag-grid-community';
 import Button from '@/components/button';
 import { PackageConversionInput } from '../atoms';
@@ -32,6 +34,8 @@ const DeleteButton = React.memo(
 DeleteButton.displayName = 'DeleteButton';
 
 interface LocalItemPackageConversionManagerProps {
+  isExpanded?: boolean;
+  onExpand?: () => void;
   baseUnit: string;
   availableUnits: ItemPackage[];
   conversions: PackageConversion[];
@@ -43,6 +47,8 @@ interface LocalItemPackageConversionManagerProps {
 }
 
 export default function ItemPackageConversionManager({
+  isExpanded = true,
+  onExpand,
   baseUnit,
   availableUnits,
   conversions,
@@ -75,89 +81,116 @@ export default function ItemPackageConversionManager({
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="bg-white px-4 py-3 border-b border-slate-200">
+      <div
+        className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
+        onClick={() => onExpand?.()}
+      >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           Konversi Kemasan
         </h2>
+        <FaChevronDown
+          size={12}
+          className={`text-slate-500 transition-transform duration-200 ${
+            isExpanded ? 'rotate-180' : ''
+          }`}
+        />
       </div>
-      <div className="p-4 md:p-5 flex flex-col gap-4">
-        <div className="w-full">
-          <PackageConversionInput
-            baseUnit={baseUnit}
-            availableUnits={filteredAvailableUnits}
-            formData={formData}
-            onFormDataChange={onFormDataChange}
-            onAddConversion={onAddConversion}
-            tabIndex={18}
-            disabled={disabled}
-          />
-        </div>
-        {filteredConversions.length > 0 ? (
-          <div className="w-full flex flex-col">
-            <div className="overflow-hidden" style={{ height: '130px' }}>
-              <DataGrid
-                ref={gridRef}
-                disableFiltering={true}
-                rowData={filteredConversions}
-                columnDefs={
-                  [
-                    createTextColumn({
-                      field: 'unit.name',
-                      headerName: 'Turunan',
-                      minWidth: 100,
-                      flex: 1,
-                    }),
-                    createTextColumn({
-                      field: 'conversion_rate',
-                      headerName: 'Konversi',
-                      minWidth: 140,
-                      flex: 2,
-                      cellStyle: { textAlign: 'center' },
-                    }),
-                    createCurrencyColumn({
-                      field: 'base_price',
-                      headerName: 'H. Pokok',
-                      minWidth: 100,
-                      flex: 1,
-                    }),
-                    createCurrencyColumn({
-                      field: 'sell_price',
-                      headerName: 'H. Jual',
-                      minWidth: 100,
-                      flex: 1,
-                    }),
-                    {
-                      field: 'actions',
-                      headerName: '',
-                      minWidth: 80,
-                      maxWidth: 80,
-                      sortable: false,
-                      resizable: false,
-                      cellStyle: { textAlign: 'center' },
-                      cellRenderer: (params: { data?: { id: string } }) =>
-                        params.data ? (
-                          <DeleteButton
-                            onClick={() => onRemoveConversion(params.data!.id)}
-                            disabled={disabled}
-                          />
-                        ) : null,
-                    },
-                  ] as (ColDef | ColGroupDef)[]
-                }
-                domLayout="normal"
-                overlayNoRowsTemplate="<span class='text-slate-500'>Belum ada data konversi</span>"
-                rowClass=""
-                suppressMovableColumns={true}
-                cellSelection={false}
-                rowSelection={undefined}
-                sizeColumnsToFit={true}
-                className="ag-theme-quartz h-full"
-                style={{ height: '100%' }}
-              />
+
+      <AnimatePresence initial={false}>
+        {isExpanded ? (
+          <motion.div
+            key="conversion-content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="p-4 md:p-5 flex flex-col gap-4">
+              <div className="w-full">
+                <PackageConversionInput
+                  baseUnit={baseUnit}
+                  availableUnits={filteredAvailableUnits}
+                  formData={formData}
+                  onFormDataChange={onFormDataChange}
+                  onAddConversion={onAddConversion}
+                  tabIndex={18}
+                  disabled={disabled}
+                />
+              </div>
+              {filteredConversions.length > 0 ? (
+                <div className="w-full flex flex-col">
+                  <div className="overflow-hidden" style={{ height: '130px' }}>
+                    <DataGrid
+                      ref={gridRef}
+                      disableFiltering={true}
+                      rowData={filteredConversions}
+                      columnDefs={
+                        [
+                          createTextColumn({
+                            field: 'unit.name',
+                            headerName: 'Turunan',
+                            minWidth: 100,
+                            flex: 1,
+                          }),
+                          createTextColumn({
+                            field: 'conversion_rate',
+                            headerName: 'Konversi',
+                            minWidth: 140,
+                            flex: 2,
+                            cellStyle: { textAlign: 'center' },
+                          }),
+                          createCurrencyColumn({
+                            field: 'base_price',
+                            headerName: 'H. Pokok',
+                            minWidth: 100,
+                            flex: 1,
+                          }),
+                          createCurrencyColumn({
+                            field: 'sell_price',
+                            headerName: 'H. Jual',
+                            minWidth: 100,
+                            flex: 1,
+                          }),
+                          {
+                            field: 'actions',
+                            headerName: '',
+                            minWidth: 80,
+                            maxWidth: 80,
+                            sortable: false,
+                            resizable: false,
+                            cellStyle: { textAlign: 'center' },
+                            cellRenderer: (params: {
+                              data?: { id: string };
+                            }) =>
+                              params.data ? (
+                                <DeleteButton
+                                  onClick={() =>
+                                    onRemoveConversion(params.data!.id)
+                                  }
+                                  disabled={disabled}
+                                />
+                              ) : null,
+                          },
+                        ] as (ColDef | ColGroupDef)[]
+                      }
+                      domLayout="normal"
+                      overlayNoRowsTemplate="<span class='text-slate-500'>Belum ada data konversi</span>"
+                      rowClass=""
+                      suppressMovableColumns={true}
+                      cellSelection={false}
+                      rowSelection={undefined}
+                      sizeColumnsToFit={true}
+                      className="ag-theme-quartz h-full"
+                      style={{ height: '100%' }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </div>
+          </motion.div>
         ) : null}
-      </div>
+      </AnimatePresence>
     </section>
   );
 }

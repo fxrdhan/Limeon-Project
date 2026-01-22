@@ -74,7 +74,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="rounded-2xl bg-white shadow-xl w-[75vw] max-h-[90vh] flex flex-col border border-slate-200"
+              className="rounded-2xl bg-white shadow-xl w-[60vw] max-h-[90vh] flex flex-col border border-slate-200"
               onClick={e => e.stopPropagation()}
             >
               <motion.div
@@ -113,17 +113,14 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     ) : (
                       // Standard form layout
                       <div className="flex flex-col md:flex-row gap-5">
-                        <div className="w-full md:w-[30%]">
+                        <div className="w-full md:w-[40%]">
                           {children.basicInfoRequired}
                           {children.categoryForm && children.categoryForm}
                         </div>
 
-                        <div className="w-full md:w-[30%] flex flex-col gap-5">
+                        <div className="w-full md:w-[60%] flex flex-col gap-5">
                           {children.basicInfoOptional}
                           {children.settingsForm}
-                        </div>
-
-                        <div className="w-full md:w-[40%] flex flex-col gap-5">
                           {children.pricingForm}
                           {children.packageConversionManager}
                         </div>

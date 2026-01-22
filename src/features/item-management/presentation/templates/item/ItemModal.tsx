@@ -383,6 +383,15 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   const form = useItemForm();
   const actions = useItemActions();
 
+  type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
+  const [openSection, setOpenSection] = useState<AccordionSection | null>(
+    'additional'
+  );
+
+  const toggleSection = useCallback((section: AccordionSection) => {
+    setOpenSection(prev => (prev === section ? null : section));
+  }, []);
+
   // Single form mode rendering
   return (
     <ItemModalTemplate
@@ -399,10 +408,30 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
           />
         ),
         basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
-        basicInfoOptional: <ItemFormSections.BasicInfoOptional />,
-        settingsForm: <ItemFormSections.Settings />,
-        pricingForm: <ItemFormSections.Pricing />,
-        packageConversionManager: <ItemFormSections.PackageConversion />,
+        basicInfoOptional: (
+          <ItemFormSections.BasicInfoOptional
+            isExpanded={openSection === 'additional'}
+            onExpand={() => toggleSection('additional')}
+          />
+        ),
+        settingsForm: (
+          <ItemFormSections.Settings
+            isExpanded={openSection === 'settings'}
+            onExpand={() => toggleSection('settings')}
+          />
+        ),
+        pricingForm: (
+          <ItemFormSections.Pricing
+            isExpanded={openSection === 'pricing'}
+            onExpand={() => toggleSection('pricing')}
+          />
+        ),
+        packageConversionManager: (
+          <ItemFormSections.PackageConversion
+            isExpanded={openSection === 'conversion'}
+            onExpand={() => toggleSection('conversion')}
+          />
+        ),
         modals: <ItemModalContainer />,
       }}
       formAction={{

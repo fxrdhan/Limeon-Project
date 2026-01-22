@@ -1,4 +1,6 @@
 import React from 'react';
+import { FaChevronDown } from 'react-icons/fa';
+import { AnimatePresence, motion } from 'motion/react';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import { PriceInput, MarginEditor } from '../atoms';
@@ -8,6 +10,8 @@ import {
 } from '@/schemas/manual/itemValidation';
 
 interface ItemPricingFormProps {
+  isExpanded?: boolean;
+  onExpand?: () => void;
   formData: {
     base_price: number;
     sell_price: number;
@@ -31,6 +35,8 @@ interface ItemPricingFormProps {
 }
 
 export default function ItemPricingForm({
+  isExpanded = true,
+  onExpand,
   formData,
   displayBasePrice,
   displaySellPrice,
@@ -57,59 +63,82 @@ export default function ItemPricingForm({
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="bg-white px-4 py-3 border-b border-slate-200">
+      <div
+        className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
+        onClick={() => onExpand?.()}
+      >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           Harga Pokok & Jual
         </h2>
+        <FaChevronDown
+          size={12}
+          className={`text-slate-500 transition-transform duration-200 ${
+            isExpanded ? 'rotate-180' : ''
+          }`}
+        />
       </div>
-      <div className="p-4 md:p-5 flex flex-col space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="Kemasan Dasar">
-            <Input
-              type="text"
-              value={baseUnit}
-              readOnly={true}
-              className="w-full"
-            />
-          </FormField>
 
-          <PriceInput
-            label="Harga Pokok"
-            name="base_price"
-            value={displayBasePrice}
-            onChange={handleBasePriceChange}
-            tabIndex={12}
-            validationSchema={basePriceSchema}
-            required={true}
-            readOnly={disabled}
-          />
-        </div>
+      <AnimatePresence initial={false}>
+        {isExpanded ? (
+          <motion.div
+            key="pricing-content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="p-4 md:p-5 flex flex-col space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Kemasan Dasar">
+                  <Input
+                    type="text"
+                    value={baseUnit}
+                    readOnly={true}
+                    className="w-full"
+                  />
+                </FormField>
 
-        <div className="grid grid-cols-2 gap-6 focus:outline-hidden">
-          <MarginEditor
-            isEditing={marginEditing.isEditing}
-            marginPercentage={marginEditing.percentage}
-            calculatedMargin={calculatedMargin}
-            tabIndex={13}
-            onStartEdit={onStartEditMargin}
-            onStopEdit={onStopEditMargin}
-            onChange={onMarginInputChange}
-            onKeyDown={onMarginKeyDown}
-            disabled={disabled}
-          />
+                <PriceInput
+                  label="Harga Pokok"
+                  name="base_price"
+                  value={displayBasePrice}
+                  onChange={handleBasePriceChange}
+                  tabIndex={12}
+                  validationSchema={basePriceSchema}
+                  required={true}
+                  readOnly={disabled}
+                />
+              </div>
 
-          <PriceInput
-            label="Harga Jual"
-            name="sell_price"
-            value={displaySellPrice}
-            onChange={onSellPriceChange}
-            tabIndex={14}
-            validationSchema={sellPriceComparisonSchema(displayBasePrice)}
-            required={true}
-            readOnly={disabled}
-          />
-        </div>
-      </div>
+              <div className="grid grid-cols-2 gap-6 focus:outline-hidden">
+                <MarginEditor
+                  isEditing={marginEditing.isEditing}
+                  marginPercentage={marginEditing.percentage}
+                  calculatedMargin={calculatedMargin}
+                  tabIndex={13}
+                  onStartEdit={onStartEditMargin}
+                  onStopEdit={onStopEditMargin}
+                  onChange={onMarginInputChange}
+                  onKeyDown={onMarginKeyDown}
+                  disabled={disabled}
+                />
+
+                <PriceInput
+                  label="Harga Jual"
+                  name="sell_price"
+                  value={displaySellPrice}
+                  onChange={onSellPriceChange}
+                  tabIndex={14}
+                  validationSchema={sellPriceComparisonSchema(displayBasePrice)}
+                  required={true}
+                  readOnly={disabled}
+                />
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
