@@ -118,13 +118,13 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                           {children.categoryForm && children.categoryForm}
                         </div>
 
-                        <div className="w-full md:w-[30%]">
+                        <div className="w-full md:w-[30%] flex flex-col gap-5">
                           {children.basicInfoOptional}
+                          {children.settingsForm}
                         </div>
 
                         <div className="w-full md:w-[40%] flex flex-col gap-5">
                           {children.pricingForm}
-                          {children.settingsForm}
                           {children.packageConversionManager}
                         </div>
                       </div>
