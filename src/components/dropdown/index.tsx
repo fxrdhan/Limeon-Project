@@ -248,7 +248,6 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   // Use scroll management hook
   const { scrollState, checkScroll } = useScrollManagement({
     isOpen,
-    applyOpenStyles,
     filteredOptions,
     optionsContainerRef,
     autoScrollOnOpen,

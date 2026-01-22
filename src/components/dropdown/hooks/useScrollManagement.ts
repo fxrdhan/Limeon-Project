@@ -1,9 +1,14 @@
-import { useState, useCallback, useEffect, RefObject } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  RefObject,
+} from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
 
 interface UseScrollManagementProps {
   isOpen: boolean;
-  applyOpenStyles: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoScrollOnOpen: boolean;
@@ -11,7 +16,6 @@ interface UseScrollManagementProps {
 
 export const useScrollManagement = ({
   isOpen,
-  applyOpenStyles,
   filteredOptions,
   optionsContainerRef,
   autoScrollOnOpen,
@@ -74,48 +78,43 @@ export const useScrollManagement = ({
   // Keyboard navigation scrolling is now handled directly in useKeyboardNavigation
   // This effect is intentionally removed to prevent conflicts
 
-  // Initial scroll ONLY when dropdown first opens with smooth animation
-  useEffect(() => {
+  // Initial scroll ONLY when dropdown first opens
+  useLayoutEffect(() => {
     if (!autoScrollOnOpen) return;
-    if (isOpen && applyOpenStyles && !hasInitialScrolled) {
-      if (optionsContainerRef.current && filteredOptions.length > 0) {
-        // Delay the scroll animation slightly to allow portal to render
-        const scrollTimer = setTimeout(() => {
-          if (optionsContainerRef.current) {
-            const container = optionsContainerRef.current;
-            const optionElements =
-              container.querySelectorAll('[role="option"]');
+    if (!isOpen || hasInitialScrolled) return;
+    if (!optionsContainerRef.current || filteredOptions.length === 0) return;
 
-            // Find the highlighted/selected option using aria-selected or current highlight classes
-            const highlightedElement =
-              Array.from(optionElements).find(
-                el => el.getAttribute('aria-selected') === 'true'
-              ) ||
-              Array.from(optionElements).find(
-                el =>
-                  el.classList.contains('bg-slate-300/50') ||
-                  el.classList.contains('bg-slate-300/30')
-              );
+    const container = optionsContainerRef.current;
+    const optionElements = container.querySelectorAll('[role="option"]');
 
-            if (highlightedElement) {
-              (highlightedElement as HTMLElement).scrollIntoView({
-                block: 'nearest',
-                behavior: 'auto',
-              });
-            }
-          }
-          setHasInitialScrolled(true);
-        }, 100); // Small delay for portal render
+    // Find the highlighted/selected option using aria-selected or current highlight classes
+    const highlightedElement =
+      Array.from(optionElements).find(
+        el => el.getAttribute('aria-selected') === 'true'
+      ) ||
+      Array.from(optionElements).find(
+        el =>
+          el.classList.contains('bg-slate-300/50') ||
+          el.classList.contains('bg-slate-300/30')
+      );
 
-        return () => clearTimeout(scrollTimer);
-      }
+    if (highlightedElement) {
+      const element = highlightedElement as HTMLElement;
+      const containerHeight = container.clientHeight;
+      const maxScrollTop = container.scrollHeight - containerHeight;
+      const padding = 12;
+      const targetScrollTop = Math.min(
+        maxScrollTop,
+        Math.max(0, element.offsetTop - padding)
+      );
+      container.scrollTop = targetScrollTop;
     }
-
-    // State auto-resets when component remounts or isOpen changes
+    requestAnimationFrame(() => {
+      setHasInitialScrolled(true);
+    });
   }, [
     autoScrollOnOpen,
     isOpen,
-    applyOpenStyles,
     hasInitialScrolled,
     filteredOptions.length,
     optionsContainerRef,

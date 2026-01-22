@@ -37,7 +37,6 @@ export interface UseFocusManagementProps {
 
 export interface UseScrollManagementProps {
   isOpen: boolean;
-  applyOpenStyles: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoScrollOnOpen: boolean;
