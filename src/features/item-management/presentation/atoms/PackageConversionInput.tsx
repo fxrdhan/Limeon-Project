@@ -91,7 +91,11 @@ export default function PackageConversionInput({
             <Input
               name="conversion_rate"
               tabIndex={tabIndex + 1}
-              value={formData.conversion_rate?.toString() || ''}
+              value={
+                formData.conversion_rate > 0
+                  ? formData.conversion_rate.toString()
+                  : ''
+              }
               onChange={handleConversionChange}
               type="number"
               min={formData.unit ? '1' : undefined}

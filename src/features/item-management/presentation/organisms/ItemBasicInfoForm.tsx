@@ -3,7 +3,10 @@ import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
-import { itemNameSchema } from '@/schemas/manual/itemValidation';
+import {
+  itemNameSchema,
+  itemQuantitySchema,
+} from '@/schemas/manual/itemValidation';
 import type { DropdownOption } from '@/types/components';
 import { useItemCodeGenerator } from '../../application/hooks/utils';
 import {
@@ -256,39 +259,52 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField label="Nilai">
-              <Input
-                name="quantity"
-                type="number"
-                value={formData.quantity.toString()}
-                tabIndex={4}
-                onChange={onChange}
-                className="w-full"
-                placeholder="Masukkan nilai"
-                min="0"
-                step="1"
-                readOnly={disabled}
-              />
-            </FormField>
+            <div className="flex flex-row gap-4">
+              {formData.unit_id ? (
+                <FormField label="Nilai" className="flex-[1]">
+                  <Input
+                    name="quantity"
+                    type="number"
+                    value={
+                      formData.quantity > 0 ? formData.quantity.toString() : ''
+                    }
+                    tabIndex={5}
+                    onChange={onChange}
+                    className="w-full"
+                    min="0"
+                    step="1"
+                    readOnly={disabled}
+                    validate={true}
+                    validationSchema={itemQuantitySchema}
+                    showValidationOnBlur={true}
+                    validationAutoHide={true}
+                    validationAutoHideDelay={3000}
+                  />
+                </FormField>
+              ) : null}
 
-            <FormField label="Satuan">
-              {loading && units.length === 0 ? (
-                <Input value="Memuat satuan..." readOnly disabled />
-              ) : (
-                <Dropdown
-                  name="unit_id"
-                  tabIndex={5}
-                  value={formData.unit_id}
-                  onChange={value => onDropdownChange('unit_id', value)}
-                  options={units}
-                  placeholder="Pilih Satuan"
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedUnitDetailFetcher}
-                  disabled={disabled}
-                />
-              )}
-            </FormField>
+              <FormField
+                label="Satuan"
+                className={formData.unit_id ? 'flex-[9]' : 'flex-1'}
+              >
+                {loading && units.length === 0 ? (
+                  <Input value="Memuat satuan..." readOnly disabled />
+                ) : (
+                  <Dropdown
+                    name="unit_id"
+                    tabIndex={4}
+                    value={formData.unit_id}
+                    onChange={value => onDropdownChange('unit_id', value)}
+                    options={units}
+                    placeholder="Pilih Satuan"
+                    enableHoverDetail={true}
+                    hoverDetailDelay={400}
+                    onFetchHoverDetail={optimizedUnitDetailFetcher}
+                    disabled={disabled}
+                  />
+                )}
+              </FormField>
+            </div>
           </div>
 
           <div className="flex flex-col gap-4">

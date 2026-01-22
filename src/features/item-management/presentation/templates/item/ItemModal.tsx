@@ -23,6 +23,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
   onClose,
   itemId,
+  initialItemData,
   initialSearchQuery,
   isClosing,
   setIsClosing,
@@ -34,6 +35,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
   // Main data hook - this is the orchestrator
   const handlers = useAddItemPageHandlers({
     itemId,
+    initialItemData,
     initialSearchQuery,
     onClose,
     expiryCheckboxRef,

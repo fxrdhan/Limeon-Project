@@ -7,7 +7,7 @@ import type {
   DBPackageConversion,
   PackageConversion,
 } from '../../../shared/types';
-import type { ItemPackage } from '@/types/database';
+import type { Item, ItemPackage } from '@/types/database';
 
 interface UseItemDataProps {
   formState: {
@@ -27,6 +27,7 @@ interface UseItemDataProps {
     conversions: PackageConversion[];
     removePackageConversion: (id: string) => void;
     addPackageConversion: (conversion: PackageConversion) => void;
+    setConversions: (conversions: PackageConversion[]) => void;
   };
 }
 
@@ -40,6 +41,80 @@ export const useItemData = ({
   formState,
   packageConversionHook,
 }: UseItemDataProps) => {
+  const hydrateItemData = useCallback(
+    (itemData: Record<string, unknown> | Item) => {
+      const itemRecord = itemData as Record<string, unknown>;
+      const manufacturerId =
+        (itemRecord.manufacturer_id as string) ||
+        ((itemRecord.manufacturer as { id?: string } | undefined)?.id ?? '');
+
+      const fetchedFormData: ItemFormData = {
+        code: (itemRecord.code as string) || '',
+        name: (itemRecord.name as string) || '',
+        manufacturer_id: manufacturerId,
+        type_id: (itemRecord.type_id as string) || '',
+        category_id: (itemRecord.category_id as string) || '',
+        package_id: (itemRecord.package_id as string) || '',
+        dosage_id: (itemRecord.dosage_id as string) || '',
+        barcode: (itemRecord.barcode as string) || '',
+        description: (itemRecord.description as string) || '',
+        base_price: (itemRecord.base_price as number) || 0,
+        sell_price: (itemRecord.sell_price as number) || 0,
+        min_stock: (itemRecord.min_stock as number) || 10,
+        is_active:
+          itemRecord.is_active !== undefined
+            ? (itemRecord.is_active as boolean)
+            : true,
+        is_medicine:
+          itemRecord.is_medicine !== undefined
+            ? (itemRecord.is_medicine as boolean)
+            : true,
+        has_expiry_date:
+          itemRecord.has_expiry_date !== undefined
+            ? (itemRecord.has_expiry_date as boolean)
+            : false,
+        quantity: (itemRecord.quantity as number) || 0,
+        unit_id: (itemRecord.unit_id as string) || '',
+        updated_at: itemRecord.updated_at as string | null | undefined,
+      };
+
+      formState.setFormData(fetchedFormData);
+      formState.setInitialFormData(fetchedFormData);
+
+      const parsedConversionsFromData = parsePackageConversions(
+        itemRecord.package_conversions
+      );
+      const hasUnitDetail = parsedConversionsFromData.every(conversion => {
+        return (
+          typeof conversion === 'object' &&
+          conversion !== null &&
+          'unit' in conversion &&
+          Boolean((conversion as PackageConversion).unit)
+        );
+      });
+
+      const mappedConversions = hasUnitDetail
+        ? (parsedConversionsFromData as PackageConversion[])
+        : mapPackageConversions(parsedConversionsFromData, formState.packages);
+
+      formState.setInitialPackageConversions(mappedConversions);
+      formState.setDisplayBasePrice(
+        formatRupiah(fetchedFormData.base_price || 0)
+      );
+      formState.setDisplaySellPrice(
+        formatRupiah(fetchedFormData.sell_price || 0)
+      );
+
+      const baseUnit = (itemRecord.base_unit as string) || '';
+      packageConversionHook.setBaseUnit(baseUnit);
+      packageConversionHook.setBasePrice(fetchedFormData.base_price || 0);
+      packageConversionHook.setSellPrice(fetchedFormData.sell_price || 0);
+      packageConversionHook.skipNextRecalculation();
+      packageConversionHook.setConversions(mappedConversions);
+    },
+    [formState, packageConversionHook]
+  );
+
   const fetchItemData = useCallback(
     async (id: string) => {
       try {
@@ -62,60 +137,7 @@ export const useItemData = ({
         if (itemError) throw itemError;
         if (!itemData) throw new Error('Item tidak ditemukan');
 
-        // Use manufacturer_id directly - no reverse lookup needed!
-        const manufacturerId = itemData.manufacturer_id || '';
-
-        // Transform database data to form data structure
-        const fetchedFormData: ItemFormData = {
-          code: itemData.code || '',
-          name: itemData.name || '',
-          manufacturer_id: manufacturerId,
-          type_id: itemData.type_id || '',
-          category_id: itemData.category_id || '',
-          package_id: itemData.package_id || '',
-          dosage_id: itemData.dosage_id || '',
-          barcode: itemData.barcode || '',
-          description: itemData.description || '',
-          base_price: itemData.base_price || 0,
-          sell_price: itemData.sell_price || 0,
-          min_stock: itemData.min_stock || 10,
-          is_active:
-            itemData.is_active !== undefined ? itemData.is_active : true,
-          is_medicine:
-            itemData.is_medicine !== undefined ? itemData.is_medicine : true,
-          has_expiry_date:
-            itemData.has_expiry_date !== undefined
-              ? itemData.has_expiry_date
-              : false,
-          quantity: itemData.quantity || 0,
-          unit_id: itemData.unit_id || '',
-          updated_at: itemData.updated_at,
-        };
-
-        // Set form data
-        formState.setFormData(fetchedFormData);
-        formState.setInitialFormData(fetchedFormData);
-
-        // Process package conversions for initial state
-        const parsedConversionsFromDB = parsePackageConversions(
-          itemData.package_conversions
-        );
-        const mappedConversions = mapPackageConversions(
-          parsedConversionsFromDB,
-          formState.packages
-        );
-        formState.setInitialPackageConversions(mappedConversions);
-
-        // Set display prices
-        formState.setDisplayBasePrice(formatRupiah(itemData.base_price || 0));
-        formState.setDisplaySellPrice(formatRupiah(itemData.sell_price || 0));
-
-        // Initialize package conversion hook
-        initializePackageConversions(
-          itemData,
-          formState.packages,
-          packageConversionHook
-        );
+        hydrateItemData(itemData as Record<string, unknown>);
       } catch (error) {
         console.error('Error fetching item data:', error);
         toast.error('Gagal memuat data item. Silakan coba lagi.');
@@ -123,11 +145,12 @@ export const useItemData = ({
         formState.setLoading(false);
       }
     },
-    [formState, packageConversionHook]
+    [formState, hydrateItemData]
   );
 
   return {
     fetchItemData,
+    hydrateItemData,
   };
 };
 
@@ -184,71 +207,3 @@ function mapPackageConversions(
 /**
  * Initialize package conversion hook with database data
  */
-function initializePackageConversions(
-  itemData: Record<string, unknown>,
-  packages: ItemPackage[],
-  packageConversionHook: UseItemDataProps['packageConversionHook']
-): void {
-  // Set base unit and prices
-  packageConversionHook.setBaseUnit((itemData.base_unit as string) || '');
-  packageConversionHook.setBasePrice((itemData.base_price as number) || 0);
-  packageConversionHook.setSellPrice((itemData.sell_price as number) || 0);
-  packageConversionHook.skipNextRecalculation();
-
-  // Clear existing conversions
-  const currentConversions = [...packageConversionHook.conversions];
-  for (const conv of currentConversions) {
-    packageConversionHook.removePackageConversion(conv.id);
-  }
-
-  // Parse and add new conversions
-  const conversions = parsePackageConversions(itemData.package_conversions);
-  if (!Array.isArray(conversions)) return;
-
-  for (const conv of conversions) {
-    const unitDetail =
-      packages.find(pkg => pkg.id === conv.to_unit_id) ||
-      packages.find(pkg => pkg.name === conv.unit_name);
-
-    if (unitDetail && typeof conv.conversion_rate === 'number') {
-      // Add conversion with valid unit
-      packageConversionHook.addPackageConversion({
-        id:
-          conv.id ||
-          `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
-        to_unit_id: unitDetail.id,
-        unit_name: unitDetail.name,
-        unit: { id: unitDetail.id, name: unitDetail.name },
-        conversion_rate: conv.conversion_rate || 0,
-        base_price: conv.base_price || 0,
-        sell_price: conv.sell_price || 0,
-      });
-    } else if (typeof conv.conversion_rate === 'number') {
-      // Add conversion with placeholder unit
-      if (packages.length > 0) {
-        console.warn(
-          `Kemasan dengan nama "${conv.unit_name}" tidak ditemukan di daftar kemasan. Menggunakan placeholder.`
-        );
-      }
-
-      const placeholderUnit: ItemPackage = {
-        id:
-          conv.to_unit_id ||
-          `temp_id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: conv.unit_name || 'Unknown Unit',
-      };
-
-      packageConversionHook.addPackageConversion({
-        id:
-          conv.id ||
-          `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
-        to_unit_id: placeholderUnit.id,
-        unit_name: placeholderUnit.name,
-        unit: placeholderUnit,
-        conversion_rate: conv.conversion_rate || 0,
-        base_price: conv.base_price || 0,
-        sell_price: conv.sell_price || 0,
-      });
-    }
-  }
-}

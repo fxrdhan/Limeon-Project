@@ -36,6 +36,12 @@ export const sellPriceSchema = z.string().refine(value => {
   return !isNaN(numValue) && numValue > 0;
 }, 'Harga jual harus lebih dari 0');
 
+// Schema untuk validasi nilai item (harus lebih dari 0)
+export const itemQuantitySchema = z.string().refine(value => {
+  const numValue = parseFloat(value);
+  return !isNaN(numValue) && numValue > 0;
+}, 'Nilai harus lebih dari 0');
+
 // Utility function untuk parse currency string ke number
 const parseCurrencyString = (value: string): number => {
   const cleanValue = value

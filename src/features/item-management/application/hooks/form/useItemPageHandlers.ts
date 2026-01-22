@@ -13,6 +13,7 @@ import { useAddItemRefs } from '../ui/useRefs';
 
 export const useAddItemPageHandlers = ({
   itemId,
+  initialItemData,
   initialSearchQuery,
   onClose,
   expiryCheckboxRef,
@@ -20,6 +21,7 @@ export const useAddItemPageHandlers = ({
 }: AddItemPageHandlersProps) => {
   const addItemForm = useAddItemForm({
     itemId,
+    initialItemData,
     initialSearchQuery,
     onClose,
     refetchItems,

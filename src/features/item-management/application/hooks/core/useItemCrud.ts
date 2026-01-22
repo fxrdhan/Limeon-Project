@@ -33,6 +33,7 @@ import type {
 
 export const useAddItemForm = ({
   itemId,
+  initialItemData,
   initialSearchQuery,
   onClose,
   refetchItems,
@@ -145,6 +146,9 @@ export const useAddItemForm = ({
 
     if (itemId) {
       formState.setIsEditMode(true);
+      if (initialItemData && initialItemData.id === itemId) {
+        itemData.hydrateItemData(initialItemData);
+      }
       itemData.fetchItemData(itemId);
       cache.clearCache();
     } else {

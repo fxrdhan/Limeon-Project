@@ -214,6 +214,9 @@ const ItemMasterNew = memo(() => {
   const [editingItemId, setEditingItemId] = useState<string | undefined>(
     undefined
   );
+  const [editingItemData, setEditingItemData] = useState<
+    ItemDataType | undefined
+  >(undefined);
   const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
     string | undefined
   >(undefined);
@@ -397,8 +400,9 @@ const ItemMasterNew = memo(() => {
 
   // Memoize modal handlers
   const openAddItemModal = useCallback(
-    (itemId?: string, searchQuery?: string) => {
-      setEditingItemId(itemId);
+    (item?: ItemDataType, searchQuery?: string) => {
+      setEditingItemId(item?.id);
+      setEditingItemData(item);
       setCurrentSearchQueryForModal(searchQuery);
       setIsItemModalClosing(false);
       setIsAddItemModalOpen(true);
@@ -413,6 +417,7 @@ const ItemMasterNew = memo(() => {
       setIsAddItemModalOpen(false);
       setIsItemModalClosing(false);
       setEditingItemId(undefined);
+      setEditingItemData(undefined);
       setCurrentSearchQueryForModal(undefined);
     }, 100);
   }, []);
@@ -420,21 +425,24 @@ const ItemMasterNew = memo(() => {
   // Memoize item handlers
   const handleItemEdit = useCallback(
     (item: ItemDataType) => {
-      openAddItemModal(item.id);
+      openAddItemModal(item);
     },
     [openAddItemModal]
   );
 
   const handleItemSelect = useCallback(
-    (itemId: string) => {
-      openAddItemModal(itemId);
+    (item: { id: string }) => {
+      const selectedItem = (itemsManagement.allData as ItemDataType[]).find(
+        dataItem => dataItem.id === item.id
+      );
+      openAddItemModal(selectedItem);
     },
-    [openAddItemModal]
+    [itemsManagement.allData, openAddItemModal]
   );
 
   const handleAddItem = useCallback(
-    (itemId?: string, searchQuery?: string) => {
-      openAddItemModal(itemId, searchQuery);
+    (_itemId?: string, searchQuery?: string) => {
+      openAddItemModal(undefined, searchQuery);
     },
     [openAddItemModal]
   );
@@ -1151,9 +1159,7 @@ const ItemMasterNew = memo(() => {
                   : undefined
               }
               onItemSelect={
-                activeTab === 'items'
-                  ? (item: { id: string }) => handleItemSelect(item.id)
-                  : undefined
+                activeTab === 'items' ? handleItemSelect : undefined
               }
               gridApi={unifiedGridApi}
               exportFilename={
@@ -1237,6 +1243,7 @@ const ItemMasterNew = memo(() => {
           isOpen={isAddItemModalOpen}
           onClose={closeAddItemModal}
           itemId={editingItemId}
+          initialItemData={editingItemData}
           initialSearchQuery={currentSearchQueryForModal}
           isClosing={isItemModalClosing}
           setIsClosing={setIsItemModalClosing}
