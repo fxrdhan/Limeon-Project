@@ -29,7 +29,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     placeholder = '-- Pilih --',
     onAddNew,
     searchList = true,
-    autoScrollOnOpen = false,
+    autoScrollOnOpen = true,
     tabIndex,
     required = false,
     disabled = false,

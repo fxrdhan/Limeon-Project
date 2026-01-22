@@ -98,10 +98,9 @@ export const useScrollManagement = ({
               );
 
             if (highlightedElement) {
-              // Use smooth scrolling behavior
               (highlightedElement as HTMLElement).scrollIntoView({
                 block: 'nearest',
-                behavior: 'smooth',
+                behavior: 'auto',
               });
             }
           }
