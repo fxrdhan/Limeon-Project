@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useEffect } from 'react';
+import { forwardRef, useMemo, useEffect, useRef, useState } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
@@ -75,6 +75,10 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     },
     ref
   ) => {
+    const quantityInputRef = useRef<HTMLInputElement>(null);
+    const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [quantityTouched, setQuantityTouched] = useState(false);
+
     // Generate item code based on selected values
     const codeGeneration = useItemCodeGenerator({
       categoryId: formData.category_id,
@@ -123,6 +127,15 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
         onFieldChange('code', codeGeneration.generatedCode);
       }
     }, [codeGeneration.generatedCode, formData.code, onFieldChange]);
+
+    useEffect(() => {
+      return () => {
+        if (focusTimerRef.current) {
+          clearTimeout(focusTimerRef.current);
+          focusTimerRef.current = null;
+        }
+      };
+    }, []);
 
     return (
       <div className="rounded-xl border border-slate-200 bg-white mb-6 overflow-hidden">
@@ -274,11 +287,13 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                     min="0"
                     step="1"
                     readOnly={disabled}
-                    validate={true}
+                    validate={quantityTouched}
                     validationSchema={itemQuantitySchema}
                     showValidationOnBlur={true}
                     validationAutoHide={true}
                     validationAutoHideDelay={3000}
+                    ref={quantityInputRef}
+                    onFocus={() => setQuantityTouched(true)}
                   />
                 </FormField>
               ) : null}
@@ -294,7 +309,19 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                     name="unit_id"
                     tabIndex={4}
                     value={formData.unit_id}
-                    onChange={value => onDropdownChange('unit_id', value)}
+                    onChange={value => {
+                      setQuantityTouched(false);
+                      onDropdownChange('unit_id', value);
+
+                      if (!disabled && value) {
+                        if (focusTimerRef.current) {
+                          clearTimeout(focusTimerRef.current);
+                        }
+                        focusTimerRef.current = setTimeout(() => {
+                          quantityInputRef.current?.focus();
+                        }, 200);
+                      }
+                    }}
                     options={units}
                     placeholder="Pilih Satuan"
                     enableHoverDetail={true}

@@ -731,8 +731,20 @@ const ItemMasterNew = memo(() => {
   // Auto-focus searchbar on keyboard input (text only)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isAnyModalOpen =
+        isAddItemModalOpen ||
+        entityManager.isAddModalOpen ||
+        entityManager.isEditModalOpen;
+      const activeDialog = document.querySelector(
+        '[role="dialog"][aria-modal="true"]'
+      );
+      if (isAnyModalOpen || activeDialog) return;
+
       // Check if user is already typing in an input/textarea/select
       const target = e.target as HTMLElement;
+      if (target.closest('[role="dialog"][aria-modal="true"]')) {
+        return;
+      }
       const isInputFocused =
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
@@ -767,17 +779,39 @@ const ItemMasterNew = memo(() => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [
+    entityManager.isAddModalOpen,
+    entityManager.isEditModalOpen,
+    isAddItemModalOpen,
+  ]);
 
   // Auto-focus SearchBar on initial mount and tab (sub-page) changes.
   // We intentionally prefer focusing our SearchBar over AG Grid internals.
   useEffect(() => {
     if (isTabSelectorExpanded) return;
 
+    const isAnyModalOpen =
+      isAddItemModalOpen ||
+      entityManager.isAddModalOpen ||
+      entityManager.isEditModalOpen;
+    if (isAnyModalOpen) return;
+
     let cancelled = false;
     let attempts = 0;
 
     const focusSearch = (): boolean => {
+      if (
+        isAddItemModalOpen ||
+        entityManager.isAddModalOpen ||
+        entityManager.isEditModalOpen
+      ) {
+        return false;
+      }
+      const activeDialog = document.querySelector(
+        '[role="dialog"][aria-modal="true"]'
+      );
+      if (activeDialog) return false;
+
       const input = searchInputRef.current;
       if (!input) return false;
 
@@ -814,7 +848,13 @@ const ItemMasterNew = memo(() => {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [activeTab, isTabSelectorExpanded]);
+  }, [
+    activeTab,
+    entityManager.isAddModalOpen,
+    entityManager.isEditModalOpen,
+    isAddItemModalOpen,
+    isTabSelectorExpanded,
+  ]);
 
   // Keep focus on SearchBar when clicking non-input UI.
   // This makes the page feel "type-to-search" by default.
