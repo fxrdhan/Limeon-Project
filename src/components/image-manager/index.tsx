@@ -52,6 +52,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const getBorderRadiusClass = () => {
     switch (shape) {
+      case 'rounded':
+        return 'rounded-lg';
       case 'rounded-sm':
         return 'rounded-md';
       case 'square':

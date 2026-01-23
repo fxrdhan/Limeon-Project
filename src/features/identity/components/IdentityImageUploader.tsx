@@ -86,7 +86,7 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={displayImageUrl}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-gray-200`}
         />
       );
     }
@@ -94,7 +94,7 @@ const IdentityImageUploader: React.FC = () => {
     if (mode === 'add') {
       return (
         <div
-          className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-gray-300 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors`}
+          className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-gray-300 rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors`}
         >
           <div className="text-center p-4">
             <p className="text-sm font-medium text-gray-600">
@@ -111,7 +111,7 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={defaultImageUrl}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-gray-200`}
         />
       );
     }
@@ -121,14 +121,14 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={imagePlaceholder}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-gray-200`}
         />
       );
     }
 
     return (
       <div
-        className={`w-full ${aspectRatioClass} flex items-center justify-center border border-gray-200 rounded-md bg-gray-50`}
+        className={`w-full ${aspectRatioClass} flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50`}
       >
         <div className="text-center p-4">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
