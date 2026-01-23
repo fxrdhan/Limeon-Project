@@ -19,6 +19,7 @@ import {
   RowApiModule,
   RowStyleModule,
   TextFilterModule,
+  TextEditorModule,
   themeQuartz,
   TooltipModule,
   ValidationModule,
@@ -63,6 +64,7 @@ export const setupAgGrid = () => {
     ValidationModule,
     RowApiModule,
     LocaleModule,
+    TextEditorModule,
     // Enterprise modules
     RowSelectionModule,
     RowGroupingModule,

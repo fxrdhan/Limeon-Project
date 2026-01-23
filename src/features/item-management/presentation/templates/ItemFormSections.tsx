@@ -1,6 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
+import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.css';
+import { supabase } from '@/lib/supabase';
+import { compressImageIfNeeded } from '@/utils/image';
+import { StorageService } from '@/utils/storage';
 import {
   useItemForm,
   useItemModal,
@@ -19,10 +25,16 @@ import ItemAdditionalInfoForm from '../organisms/ItemAdditionalInfoForm';
 import ItemSettingsForm from '../organisms/ItemSettingsForm';
 import ItemPricingForm from '../organisms/ItemPricingForm';
 import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm';
+import ImageUploader from '@/components/image-manager';
+import Button from '@/components/button';
 
 interface CollapsibleSectionProps {
   isExpanded: boolean;
   onExpand: () => void;
+}
+
+interface OptionalSectionProps extends CollapsibleSectionProps {
+  itemId?: string;
 }
 
 // Header Section
@@ -369,13 +381,63 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   );
 };
 
-const BasicInfoOptionalSection: React.FC<CollapsibleSectionProps> = ({
+const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   isExpanded,
   onExpand,
+  itemId,
 }) => {
   const { formData, units, loading, handleChange, updateFormData } =
     useItemForm();
   const { resetKey, isViewingOldVersion } = useItemUI();
+  const [imageSlots, setImageSlots] = useState(
+    Array.from({ length: 4 }, () => ({ url: '', path: '' }))
+  );
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [cropState, setCropState] = useState<{
+    slotIndex: number;
+    file: File;
+    previewUrl: string;
+  } | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const cropperRef = useRef<Cropper | null>(null);
+  const cropperImageRef = useRef<HTMLImageElement | null>(null);
+
+  const bucketName = 'item_images';
+  const maxFileSizeBytes = 500 * 1024 * 1024;
+  const maxFileSizeLabel = '500MB';
+
+  const openCropper = useCallback((slotIndex: number, file: File) => {
+    const previewUrlValue = URL.createObjectURL(file);
+    setCropState({ slotIndex, file, previewUrl: previewUrlValue });
+  }, []);
+
+  const closeCropper = useCallback(() => {
+    if (cropState?.previewUrl) {
+      URL.revokeObjectURL(cropState.previewUrl);
+    }
+    setCropState(null);
+  }, [cropState]);
+
+  useEffect(() => {
+    if (!cropState || !cropperImageRef.current) return;
+
+    const cropperInstance = new Cropper(cropperImageRef.current, {
+      aspectRatio: 1,
+      viewMode: 1,
+      autoCropArea: 1,
+      background: false,
+      responsive: true,
+      guides: true,
+    });
+
+    cropperRef.current = cropperInstance;
+
+    return () => {
+      cropperInstance.destroy();
+      cropperRef.current = null;
+    };
+  }, [cropState]);
 
   const transformedUnits = units.map(unit => ({
     id: unit.id,
@@ -385,29 +447,314 @@ const BasicInfoOptionalSection: React.FC<CollapsibleSectionProps> = ({
     updated_at: unit.updated_at,
   }));
 
+  useEffect(() => {
+    if (!itemId) return;
+
+    let isMounted = true;
+
+    const loadItemImages = async () => {
+      setIsLoadingImages(true);
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .list(`items/${itemId}`, {
+          limit: 20,
+          sortBy: { column: 'name', order: 'asc' },
+        });
+
+      if (!isMounted) return;
+
+      if (error) {
+        toast.error('Gagal memuat gambar item.');
+        setImageSlots(Array.from({ length: 4 }, () => ({ url: '', path: '' })));
+        setIsLoadingImages(false);
+        return;
+      }
+
+      const nextSlots = Array.from({ length: 4 }, () => ({
+        url: '',
+        path: '',
+      }));
+
+      data?.forEach(file => {
+        const match = file.name.match(/^slot-(\d)$/);
+        if (!match) return;
+        const slotIndex = Number(match[1]);
+        if (Number.isNaN(slotIndex) || slotIndex < 0 || slotIndex > 3) return;
+        const path = `items/${itemId}/${file.name}`;
+        nextSlots[slotIndex] = {
+          path,
+          url: StorageService.getPublicUrl(bucketName, path),
+        };
+      });
+
+      setImageSlots(nextSlots);
+      setIsLoadingImages(false);
+    };
+
+    loadItemImages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [bucketName, itemId]);
+
   const handleDropdownChange = (field: string, value: string) => {
     if (field === 'unit_id') {
       updateFormData({ unit_id: value });
     }
   };
 
+  const getImageDimensions = useCallback((file: File) => {
+    return new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({ width: image.width, height: image.height });
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Gagal memuat gambar.'));
+      };
+      image.src = objectUrl;
+    });
+  }, []);
+
+  const processAndUploadImage = useCallback(
+    async (slotIndex: number, file: File) => {
+      if (!itemId) {
+        toast.error('Simpan item terlebih dahulu sebelum mengunggah gambar.');
+        return;
+      }
+
+      try {
+        const compressed = await compressImageIfNeeded(file);
+        const normalizedFile =
+          compressed instanceof File
+            ? compressed
+            : new File([compressed], file.name, {
+                type: compressed.type || file.type,
+                lastModified: Date.now(),
+              });
+
+        if (normalizedFile.size > maxFileSizeBytes) {
+          toast.error(`Ukuran gambar maksimal ${maxFileSizeLabel}.`);
+          return;
+        }
+
+        const path = `items/${itemId}/slot-${slotIndex}`;
+        const { error } = await supabase.storage
+          .from(bucketName)
+          .upload(path, normalizedFile, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: normalizedFile.type,
+          });
+
+        if (error) {
+          toast.error('Gagal mengunggah gambar.');
+          return;
+        }
+
+        const publicUrl = StorageService.getPublicUrl(bucketName, path);
+        setImageSlots(prevSlots =>
+          prevSlots.map((slot, index) =>
+            index === slotIndex ? { path, url: publicUrl } : slot
+          )
+        );
+      } catch {
+        toast.error('Gagal memproses gambar.');
+      }
+    },
+    [bucketName, itemId, maxFileSizeBytes, maxFileSizeLabel]
+  );
+
+  const handleImageUpload = useCallback(
+    async (slotIndex: number, file: File) => {
+      if (!itemId) {
+        toast.error('Simpan item terlebih dahulu sebelum mengunggah gambar.');
+        return;
+      }
+
+      try {
+        const { width, height } = await getImageDimensions(file);
+        if (width !== height) {
+          openCropper(slotIndex, file);
+          return;
+        }
+      } catch {
+        toast.error('Gagal membaca ukuran gambar.');
+        return;
+      }
+
+      await processAndUploadImage(slotIndex, file);
+    },
+    [getImageDimensions, itemId, openCropper, processAndUploadImage]
+  );
+
+  const handleCropConfirm = useCallback(async () => {
+    if (!cropState || !cropperRef.current) return;
+    setIsCropping(true);
+
+    try {
+      const canvas = cropperRef.current.getCroppedCanvas({
+        width: 1024,
+        height: 1024,
+        imageSmoothingQuality: 'high',
+      });
+
+      const mimeType = cropState.file.type || 'image/jpeg';
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          result => {
+            if (result) resolve(result);
+            else reject(new Error('Gagal memproses gambar.'));
+          },
+          mimeType,
+          0.9
+        );
+      });
+
+      const croppedFile = new File([blob], cropState.file.name, {
+        type: blob.type,
+        lastModified: Date.now(),
+      });
+
+      const targetSlot = cropState.slotIndex;
+      closeCropper();
+      await processAndUploadImage(targetSlot, croppedFile);
+    } catch {
+      toast.error('Gagal memproses gambar.');
+    } finally {
+      setIsCropping(false);
+    }
+  }, [closeCropper, cropState, processAndUploadImage]);
+
+  const handleImageDelete = useCallback(
+    async (slotIndex: number) => {
+      const targetSlot = imageSlots[slotIndex];
+      if (!targetSlot?.path) return;
+
+      try {
+        await StorageService.deleteFile(bucketName, targetSlot.path);
+        setImageSlots(prevSlots =>
+          prevSlots.map((slot, index) =>
+            index === slotIndex ? { path: '', url: '' } : slot
+          )
+        );
+      } catch (deleteError) {
+        console.error(deleteError);
+        toast.error('Gagal menghapus gambar.');
+      }
+    },
+    [bucketName, imageSlots]
+  );
+
   return (
-    <ItemAdditionalInfoForm
-      key={resetKey} // Force re-mount on reset to clear validation
-      formData={{
-        barcode: formData.barcode || '',
-        quantity: formData.quantity || 0,
-        unit_id: formData.unit_id || '',
-        description: formData.description || '',
-      }}
-      units={transformedUnits}
-      loading={loading}
-      isExpanded={isExpanded}
-      onExpand={onExpand}
-      disabled={isViewingOldVersion}
-      onChange={handleChange}
-      onDropdownChange={handleDropdownChange}
-    />
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-4 gap-3">
+        {imageSlots.map((slot, index) => (
+          <ImageUploader
+            key={`item-image-${index}`}
+            id={`item-image-${index}`}
+            shape="rounded"
+            hasImage={Boolean(slot.url)}
+            disabled={isViewingOldVersion || !itemId || isLoadingImages}
+            onImageUpload={file => handleImageUpload(index, file)}
+            onImageDelete={() => handleImageDelete(index)}
+            className="w-full"
+            validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
+          >
+            {slot.url ? (
+              <img
+                src={slot.url}
+                alt={`Item image ${index + 1}`}
+                className="aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in"
+                onClick={event => {
+                  event.stopPropagation();
+                  setPreviewUrl(slot.url);
+                }}
+              />
+            ) : (
+              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400">
+                {itemId ? 'Unggah' : 'Simpan dulu'}
+              </div>
+            )}
+          </ImageUploader>
+        ))}
+      </div>
+      {previewUrl &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setPreviewUrl(null)}
+          >
+            <div className="max-h-[90vh] max-w-[90vw] p-3">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-xl"
+                onClick={event => event.stopPropagation()}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
+      {cropState &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="w-[90vw] max-w-[560px] rounded-2xl bg-white p-5 shadow-xl">
+              <div className="text-base font-semibold text-slate-800 mb-3">
+                Crop gambar (1:1)
+              </div>
+              <div className="w-full h-[320px] bg-slate-50 rounded-xl overflow-hidden">
+                <img
+                  ref={cropperImageRef}
+                  src={cropState.previewUrl}
+                  alt="Crop"
+                  className="max-h-[320px] w-full object-contain"
+                />
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="text"
+                  size="sm"
+                  onClick={closeCropper}
+                  disabled={isCropping}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleCropConfirm}
+                  isLoading={isCropping}
+                >
+                  Simpan
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      <ItemAdditionalInfoForm
+        key={resetKey} // Force re-mount on reset to clear validation
+        formData={{
+          barcode: formData.barcode || '',
+          quantity: formData.quantity || 0,
+          unit_id: formData.unit_id || '',
+          description: formData.description || '',
+        }}
+        units={transformedUnits}
+        loading={loading}
+        isExpanded={isExpanded}
+        onExpand={onExpand}
+        disabled={isViewingOldVersion}
+        onChange={handleChange}
+        onDropdownChange={handleDropdownChange}
+      />
+    </div>
   );
 };
 

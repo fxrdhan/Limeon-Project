@@ -468,6 +468,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
           <ItemFormSections.BasicInfoOptional
             isExpanded={activeSection === 'additional'}
             onExpand={() => toggleSection('additional')}
+            itemId={itemId}
           />
         ),
         settingsForm: (
