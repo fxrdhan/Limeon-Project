@@ -393,10 +393,16 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   const form = useItemForm();
   const price = useItemPrice();
   const actions = useItemActions();
+  const isEditSession = Boolean(itemId);
+  const hasEditData =
+    isEditSession &&
+    (Boolean(form.formData.code?.trim()) ||
+      Boolean(form.formData.name?.trim()) ||
+      Boolean(form.formData.updated_at));
 
   type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
   const [openSection, setOpenSection] = useState<AccordionSection | null>(() =>
-    ui.isEditMode ? null : 'additional'
+    isEditSession ? null : 'additional'
   );
   const [hasUserToggled, setHasUserToggled] = useState(false);
 
@@ -404,8 +410,8 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
     setHasUserToggled(true);
     setOpenSection(prev => (prev === section ? null : section));
   }, []);
-  const autoOpenSection = useMemo<AccordionSection>(() => {
-    if (!ui.isEditMode || form.loading) return 'additional';
+  const autoOpenSection = useMemo<AccordionSection | null>(() => {
+    if (!hasEditData || form.loading) return null;
 
     const hasAdditionalInfo =
       Boolean(form.formData.barcode?.trim()) ||
@@ -431,7 +437,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
             ? 'pricing'
             : 'additional';
   }, [
-    ui.isEditMode,
+    hasEditData,
     form.loading,
     form.formData.barcode,
     form.formData.description,
@@ -446,7 +452,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   ]);
 
   const activeSection: AccordionSection | null =
-    ui.isEditMode && !hasUserToggled ? autoOpenSection : openSection;
+    isEditSession && !hasUserToggled ? autoOpenSection : openSection;
 
   // Single form mode rendering
   return (
