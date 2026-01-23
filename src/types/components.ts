@@ -203,6 +203,7 @@ export interface ImageUploaderProps {
   loadingIcon?: React.ReactNode;
   defaultIcon?: React.ReactNode;
   shape?: 'rounded' | 'rounded-sm' | 'square' | 'full';
+  interaction?: 'menu' | 'direct';
 }
 
 export interface DescriptiveTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {

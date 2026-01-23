@@ -17,6 +17,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   disabled = false,
   loadingIcon = <ClipLoader color="#ffffff" size={20} loading={true} />,
   shape = 'full',
+  interaction = 'menu',
 }) => {
   const [isHoveringContainer, setIsHoveringContainer] = useState(false);
   const [isHoveringPopup, setIsHoveringPopup] = useState(false);
@@ -32,8 +33,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Use explicit hasImage prop instead of trying to detect from children
 
+  const isDirect = interaction === 'direct';
+
   // Combined hover and focus state
   const isVisible = isHoveringContainer || isHoveringPopup || isFocused;
+  const shouldShowPopup = !isDirect || hasImage;
 
   // Function to close the portal
   const closePortal = () => {
@@ -112,6 +116,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       fileInputRef.current.click();
     }
   }, [disabled, isUploading, isDeleting]);
+
+  const handleContainerClick = useCallback(() => {
+    if (!isDirect) return;
+    handleUploadClick();
+  }, [handleUploadClick, isDirect]);
 
   const getPopupOptions = useCallback(() => {
     const options = [];
@@ -298,6 +307,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         className={`relative group ${className} ${getBorderRadiusClass()} overflow-hidden cursor-pointer`}
         onMouseEnter={() => handleMouseEnter('container')}
         onMouseLeave={() => handleMouseLeave('container')}
+        onClick={handleContainerClick}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         tabIndex={0}
@@ -327,7 +337,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       </div>
 
       {/* Mini popup modal rendered via Portal */}
-      {isVisible &&
+      {shouldShowPopup &&
+        isVisible &&
         !disabled &&
         !isUploading &&
         !isDeleting &&

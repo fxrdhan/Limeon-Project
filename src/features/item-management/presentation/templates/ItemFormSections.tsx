@@ -843,6 +843,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             shape="rounded"
             hasImage={Boolean(slot.url)}
             disabled={isViewingOldVersion || !itemId || isLoadingImages}
+            interaction="direct"
             onImageUpload={file => handleImageUpload(index, file)}
             onImageDelete={() => handleImageDelete(index)}
             className="w-full"
