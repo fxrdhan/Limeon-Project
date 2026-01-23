@@ -1,5 +1,11 @@
 import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
@@ -7,6 +13,7 @@ import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext
 import {
   useItemActions,
   useItemForm,
+  useItemPrice,
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
 import type {
@@ -372,7 +379,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   return (
     <ItemManagementProvider value={contextValue}>
-      <ItemManagementContent itemId={itemId} />
+      <ItemManagementContent
+        key={isOpen ? `open-${itemId ?? 'new'}` : 'closed'}
+        itemId={itemId}
+      />
     </ItemManagementProvider>
   );
 };
@@ -381,16 +391,62 @@ const ItemModal: React.FC<ItemModalProps> = ({
 const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   const ui = useItemUI();
   const form = useItemForm();
+  const price = useItemPrice();
   const actions = useItemActions();
 
   type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
-  const [openSection, setOpenSection] = useState<AccordionSection | null>(
-    'additional'
+  const [openSection, setOpenSection] = useState<AccordionSection | null>(() =>
+    ui.isEditMode ? null : 'additional'
   );
+  const [hasUserToggled, setHasUserToggled] = useState(false);
 
   const toggleSection = useCallback((section: AccordionSection) => {
+    setHasUserToggled(true);
     setOpenSection(prev => (prev === section ? null : section));
   }, []);
+  const autoOpenSection = useMemo<AccordionSection>(() => {
+    if (!ui.isEditMode || form.loading) return 'additional';
+
+    const hasAdditionalInfo =
+      Boolean(form.formData.barcode?.trim()) ||
+      Boolean(form.formData.description?.trim()) ||
+      Boolean(form.formData.unit_id) ||
+      (form.formData.quantity ?? 0) > 0;
+    const hasConversion = price.packageConversionHook.conversions.length > 0;
+    const hasSettings =
+      form.formData.is_active === false ||
+      form.formData.has_expiry_date === true ||
+      (form.formData.min_stock ?? 10) !== 10;
+    const hasPricing =
+      (form.formData.base_price ?? 0) > 0 ||
+      (form.formData.sell_price ?? 0) > 0;
+
+    return hasAdditionalInfo
+      ? 'additional'
+      : hasConversion
+        ? 'conversion'
+        : hasSettings
+          ? 'settings'
+          : hasPricing
+            ? 'pricing'
+            : 'additional';
+  }, [
+    ui.isEditMode,
+    form.loading,
+    form.formData.barcode,
+    form.formData.description,
+    form.formData.unit_id,
+    form.formData.quantity,
+    form.formData.is_active,
+    form.formData.has_expiry_date,
+    form.formData.min_stock,
+    form.formData.base_price,
+    form.formData.sell_price,
+    price.packageConversionHook.conversions.length,
+  ]);
+
+  const activeSection: AccordionSection | null =
+    ui.isEditMode && !hasUserToggled ? autoOpenSection : openSection;
 
   // Single form mode rendering
   return (
@@ -410,25 +466,25 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
         basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
         basicInfoOptional: (
           <ItemFormSections.BasicInfoOptional
-            isExpanded={openSection === 'additional'}
+            isExpanded={activeSection === 'additional'}
             onExpand={() => toggleSection('additional')}
           />
         ),
         settingsForm: (
           <ItemFormSections.Settings
-            isExpanded={openSection === 'settings'}
+            isExpanded={activeSection === 'settings'}
             onExpand={() => toggleSection('settings')}
           />
         ),
         pricingForm: (
           <ItemFormSections.Pricing
-            isExpanded={openSection === 'pricing'}
+            isExpanded={activeSection === 'pricing'}
             onExpand={() => toggleSection('pricing')}
           />
         ),
         packageConversionManager: (
           <ItemFormSections.PackageConversion
-            isExpanded={openSection === 'conversion'}
+            isExpanded={activeSection === 'conversion'}
             onExpand={() => toggleSection('conversion')}
           />
         ),
