@@ -410,11 +410,28 @@ const ItemManagementContent: React.FC<{
     isEditSession ? null : 'additional'
   );
   const [hasUserToggled, setHasUserToggled] = useState(false);
+  const [isStackHovering, setIsStackHovering] = useState(false);
+  const [isStackTransitioning, setIsStackTransitioning] = useState(false);
+  const [lastOpenSection, setLastOpenSection] =
+    useState<AccordionSection | null>(isEditSession ? null : 'additional');
+  const hoverTimerRef = useRef<number | null>(null);
+  const updateOpenSection = useCallback(
+    (nextSection: AccordionSection | null) => {
+      setOpenSection(nextSection);
+      if (nextSection) {
+        setLastOpenSection(nextSection);
+      }
+    },
+    []
+  );
 
-  const toggleSection = useCallback((section: AccordionSection) => {
-    setHasUserToggled(true);
-    setOpenSection(prev => (prev === section ? null : section));
-  }, []);
+  const toggleSection = useCallback(
+    (section: AccordionSection) => {
+      setHasUserToggled(true);
+      updateOpenSection(openSection === section ? null : section);
+    },
+    [openSection, updateOpenSection]
+  );
   const autoOpenSection = useMemo<AccordionSection | null>(() => {
     if (!hasEditData || form.loading) return null;
 
@@ -486,6 +503,11 @@ const ItemManagementContent: React.FC<{
   }, [autoOpenSection, hasUserToggled, isEditSession, openSection, ui.isOpen]);
 
   const activeSection: AccordionSection | null = openSection;
+  const effectiveSection = isStackHovering
+    ? null
+    : isStackTransitioning
+      ? lastOpenSection
+      : activeSection;
 
   const sectionOrder: AccordionSection[] = [
     'additional',
@@ -493,11 +515,17 @@ const ItemManagementContent: React.FC<{
     'pricing',
     'conversion',
   ];
-  const activeIndex = activeSection ? sectionOrder.indexOf(activeSection) : -1;
+  const activeIndex = effectiveSection
+    ? sectionOrder.indexOf(effectiveSection)
+    : -1;
 
   const getStackClasses = (section: AccordionSection) => {
     const index = sectionOrder.indexOf(section);
     if (index === -1) return '';
+
+    if (isStackHovering) {
+      return index === 0 ? '' : 'mt-5';
+    }
 
     if (index === 0 && activeIndex === -1) return '';
 
@@ -517,6 +545,7 @@ const ItemManagementContent: React.FC<{
   };
 
   const getStackWrapperStyle = (section: AccordionSection) => {
+    if (isStackHovering) return undefined;
     const index = sectionOrder.indexOf(section);
     if (index === -1 || activeIndex === -1) return undefined;
     if (index === activeIndex) return { zIndex: 30 };
@@ -526,6 +555,7 @@ const ItemManagementContent: React.FC<{
   };
 
   const getStackStyle = (section: AccordionSection) => {
+    if (isStackHovering) return undefined;
     const index = sectionOrder.indexOf(section);
     if (index === -1 || activeIndex === -1 || index === activeIndex) {
       return undefined;
@@ -549,6 +579,49 @@ const ItemManagementContent: React.FC<{
     style: getStackStyle(section),
   });
 
+  const handleStackMouseEnter = useCallback(() => {
+    if (isStackHovering || isStackTransitioning) return;
+    if (openSection) {
+      setLastOpenSection(openSection);
+    }
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+    }
+    setIsStackTransitioning(true);
+    setOpenSection(null);
+    hoverTimerRef.current = window.setTimeout(() => {
+      setIsStackTransitioning(false);
+      setIsStackHovering(true);
+      hoverTimerRef.current = null;
+    }, 220);
+  }, [isStackHovering, isStackTransitioning, openSection]);
+
+  const handleStackMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setIsStackHovering(false);
+    setIsStackTransitioning(false);
+    const restoreSection =
+      lastOpenSection || (isEditSession ? autoOpenSection : 'additional');
+    if (restoreSection) {
+      requestAnimationFrame(() => {
+        updateOpenSection(restoreSection);
+      });
+    }
+  }, [autoOpenSection, isEditSession, lastOpenSection, updateOpenSection]);
+
+  useEffect(
+    () => () => {
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+    },
+    []
+  );
+
   // Single form mode rendering
   return (
     <ItemModalTemplate
@@ -556,6 +629,10 @@ const ItemManagementContent: React.FC<{
       isClosing={ui.isClosing}
       onBackdropClick={ui.handleBackdropClick}
       onSubmit={form.handleSubmit}
+      rightColumnProps={{
+        onMouseEnter: handleStackMouseEnter,
+        onMouseLeave: handleStackMouseLeave,
+      }}
       children={{
         header: (
           <ItemFormSections.Header
@@ -571,7 +648,7 @@ const ItemManagementContent: React.FC<{
             style={getStackWrapperStyle('additional')}
           >
             <ItemFormSections.BasicInfoOptional
-              isExpanded={activeSection === 'additional'}
+              isExpanded={!isStackHovering && activeSection === 'additional'}
               onExpand={() => toggleSection('additional')}
               itemId={itemId}
               stackClassName={getStackEffect('additional').className}
@@ -585,7 +662,7 @@ const ItemManagementContent: React.FC<{
             style={getStackWrapperStyle('settings')}
           >
             <ItemFormSections.Settings
-              isExpanded={activeSection === 'settings'}
+              isExpanded={!isStackHovering && activeSection === 'settings'}
               onExpand={() => toggleSection('settings')}
               stackClassName={getStackEffect('settings').className}
               stackStyle={getStackEffect('settings').style}
@@ -598,7 +675,7 @@ const ItemManagementContent: React.FC<{
             style={getStackWrapperStyle('pricing')}
           >
             <ItemFormSections.Pricing
-              isExpanded={activeSection === 'pricing'}
+              isExpanded={!isStackHovering && activeSection === 'pricing'}
               onExpand={() => toggleSection('pricing')}
               stackClassName={getStackEffect('pricing').className}
               stackStyle={getStackEffect('pricing').style}
@@ -611,7 +688,7 @@ const ItemManagementContent: React.FC<{
             style={getStackWrapperStyle('conversion')}
           >
             <ItemFormSections.PackageConversion
-              isExpanded={activeSection === 'conversion'}
+              isExpanded={!isStackHovering && activeSection === 'conversion'}
               onExpand={() => toggleSection('conversion')}
               stackClassName={getStackEffect('conversion').className}
               stackStyle={getStackEffect('conversion').style}

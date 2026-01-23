@@ -10,6 +10,7 @@ interface ItemModalTemplateProps {
   isClosing: boolean;
   onBackdropClick: () => void;
   onSubmit: (e: React.FormEvent) => void;
+  rightColumnProps?: React.HTMLAttributes<HTMLDivElement>;
   children: {
     header: ReactNode;
     basicInfoRequired: ReactNode;
@@ -31,7 +32,17 @@ interface ItemModalTemplateProps {
 }
 
 const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
-  ({ isOpen, isClosing, onBackdropClick, onSubmit, children, formAction }) => {
+  ({
+    isOpen,
+    isClosing,
+    onBackdropClick,
+    onSubmit,
+    rightColumnProps,
+    children,
+    formAction,
+  }) => {
+    const { className: rightColumnClassName, ...restRightColumnProps } =
+      rightColumnProps || {};
     const backdropVariants = {
       hidden: { opacity: 0 },
       visible: { opacity: 1 },
@@ -98,7 +109,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                 onSubmit={onSubmit}
                 className="flex-1 flex flex-col min-h-0"
               >
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto scrollbar-hide">
                   <div className="px-6 py-2">
                     {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
                     {!children.settingsForm &&
@@ -118,7 +129,10 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                           {children.categoryForm && children.categoryForm}
                         </div>
 
-                        <div className="w-full md:w-[60%] flex flex-col gap-0">
+                        <div
+                          className={`w-full md:w-[60%] flex flex-col gap-0 ${rightColumnClassName || ''}`}
+                          {...restRightColumnProps}
+                        >
                           {children.basicInfoOptional}
                           {children.settingsForm}
                           {children.pricingForm}
