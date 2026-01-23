@@ -7,6 +7,7 @@ export interface DBItemWithRelations {
   name: string;
   code?: string;
   barcode?: string | null;
+  image_urls?: string[] | null;
   manufacturer?: string; // Legacy fallback
   base_price: number;
   sell_price: number;

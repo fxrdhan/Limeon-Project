@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { configurePersistence } from './lib/queryPersistence';
+import { preloadCachedImages } from './utils/imageCache';
 import './fonts.css'; // AG Grid font weight customization
 import './output.css';
 
@@ -47,6 +48,8 @@ const initializeApp = async () => {
       error
     );
   }
+
+  preloadCachedImages();
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

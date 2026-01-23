@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { useEffect } from 'react';
+import { preloadImage, setCachedImage } from '@/utils/imageCache';
 import { masterDataService } from '@/services/api/masterData.service';
 import toast from 'react-hot-toast';
 import type {
@@ -403,7 +405,7 @@ export const useItemUnitMutations = () => {
 
 // Supplier Hooks
 export const useSuppliers = (options?: { enabled?: boolean }) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: QueryKeys.masterData.suppliers.list(),
     queryFn: async () => {
       const result = await masterDataService.suppliers.getActiveSuppliers();
@@ -414,6 +416,17 @@ export const useSuppliers = (options?: { enabled?: boolean }) => {
     staleTime: 0,
     gcTime: 0,
   });
+
+  useEffect(() => {
+    (query.data || []).forEach(supplier => {
+      if (!supplier.id || !supplier.image_url) return;
+      const cacheKey = `identity:${supplier.id}`;
+      setCachedImage(cacheKey, supplier.image_url);
+      preloadImage(supplier.image_url);
+    });
+  }, [query.data]);
+
+  return query;
 };
 
 export const useSupplier = (id: string, options?: { enabled?: boolean }) => {

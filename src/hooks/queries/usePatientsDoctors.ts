@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { useEffect } from 'react';
+import { preloadImage, setCachedImage } from '@/utils/imageCache';
 import {
   patientsService,
   doctorsService,
@@ -8,7 +10,7 @@ import type { Patient, Doctor } from '@/types/database';
 
 // Patient Hooks
 export const usePatients = (options?: { enabled?: boolean }) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: QueryKeys.patients.list(),
     queryFn: async () => {
       const result = await patientsService.getActivePatients();
@@ -17,6 +19,17 @@ export const usePatients = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
   });
+
+  useEffect(() => {
+    (query.data || []).forEach(patient => {
+      if (!patient.id || !patient.image_url) return;
+      const cacheKey = `identity:${patient.id}`;
+      setCachedImage(cacheKey, patient.image_url);
+      preloadImage(patient.image_url);
+    });
+  }, [query.data]);
+
+  return query;
 };
 
 export const usePatient = (id: string, options?: { enabled?: boolean }) => {
@@ -141,7 +154,7 @@ export const usePatientMutations = () => {
 
 // Doctor Hooks
 export const useDoctors = (options?: { enabled?: boolean }) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: QueryKeys.doctors.list(),
     queryFn: async () => {
       const result = await doctorsService.getActiveDoctors();
@@ -150,6 +163,17 @@ export const useDoctors = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
   });
+
+  useEffect(() => {
+    (query.data || []).forEach(doctor => {
+      if (!doctor.id || !doctor.image_url) return;
+      const cacheKey = `identity:${doctor.id}`;
+      setCachedImage(cacheKey, doctor.image_url);
+      preloadImage(doctor.image_url);
+    });
+  }, [query.data]);
+
+  return query;
 };
 
 export const useDoctor = (id: string, options?: { enabled?: boolean }) => {

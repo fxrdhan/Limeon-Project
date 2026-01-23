@@ -1,11 +1,24 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
 import { supabase } from '@/lib/supabase';
 import { compressImageIfNeeded } from '@/utils/image';
+import {
+  cacheImageBlob,
+  getCachedImageSet,
+  getCachedImageBlobUrl,
+  preloadImages,
+  setCachedImageSet,
+} from '@/utils/imageCache';
 import { StorageService } from '@/utils/storage';
 import {
   useItemForm,
@@ -394,6 +407,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   );
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [displayUrls, setDisplayUrls] = useState<string[]>([]);
   const [cropState, setCropState] = useState<{
     slotIndex: number;
     file: File;
@@ -406,6 +420,11 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const bucketName = 'item_images';
   const maxFileSizeBytes = 500 * 1024 * 1024;
   const maxFileSizeLabel = '500MB';
+  const cacheKey = itemId ? `item-images:${itemId}` : null;
+  const formImageUrls = useMemo(
+    () => (Array.isArray(formData.image_urls) ? formData.image_urls : []),
+    [formData.image_urls]
+  );
 
   const openCropper = useCallback((slotIndex: number, file: File) => {
     const reader = new FileReader();
@@ -475,8 +494,90 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     updated_at: unit.updated_at,
   }));
 
+  const buildSlotsFromUrls = useCallback(
+    (urls: string[]) =>
+      Array.from({ length: 4 }, (_, index) => {
+        const url = urls[index] || '';
+        return {
+          url,
+          path: url && itemId ? `items/${itemId}/slot-${index}` : '',
+        };
+      }),
+    [itemId]
+  );
+
+  const updateImageCache = useCallback(
+    (slots: Array<{ url: string }>) => {
+      if (!cacheKey) return;
+      const urls = slots.map(slot => slot.url);
+      setCachedImageSet(cacheKey, urls);
+      preloadImages(urls.filter(Boolean));
+    },
+    [cacheKey]
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveDisplayUrls = async () => {
+      const results = await Promise.all(
+        imageSlots.map(async slot => {
+          if (!slot.url) return '';
+          if (!slot.url.startsWith('http')) return slot.url;
+          const cachedBlobUrl = await getCachedImageBlobUrl(slot.url);
+          if (cachedBlobUrl) return cachedBlobUrl;
+          const blobUrl = await cacheImageBlob(slot.url);
+          return blobUrl || slot.url;
+        })
+      );
+
+      if (isActive) {
+        setDisplayUrls(results);
+      }
+    };
+
+    resolveDisplayUrls();
+
+    return () => {
+      isActive = false;
+    };
+  }, [imageSlots]);
+
+  const updateItemImagesInDatabase = useCallback(
+    async (urls: string[]) => {
+      if (!itemId) return;
+      await supabase
+        .from('items')
+        .update({ image_urls: urls })
+        .eq('id', itemId);
+      updateFormData({ image_urls: urls });
+    },
+    [itemId, updateFormData]
+  );
+
   useEffect(() => {
     if (!itemId) return;
+
+    const cachedUrls = cacheKey ? getCachedImageSet(cacheKey) : null;
+    if (cachedUrls) {
+      const nextSlots = buildSlotsFromUrls(cachedUrls);
+      setImageSlots(nextSlots);
+      preloadImages(cachedUrls.filter(Boolean));
+      setIsLoadingImages(false);
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    if (formImageUrls.length > 0) {
+      const nextSlots = buildSlotsFromUrls(formImageUrls);
+      setImageSlots(nextSlots);
+      updateImageCache(nextSlots);
+      setIsLoadingImages(false);
+      return;
+    }
 
     let isMounted = true;
 
@@ -516,6 +617,10 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       });
 
       setImageSlots(nextSlots);
+      updateImageCache(nextSlots);
+      await updateItemImagesInDatabase(
+        nextSlots.map(slot => slot.url).filter(Boolean)
+      );
       setIsLoadingImages(false);
     };
 
@@ -524,7 +629,16 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [bucketName, itemId]);
+  }, [
+    bucketName,
+    buildSlotsFromUrls,
+    cacheKey,
+    formImageUrls,
+    itemId,
+    loading,
+    updateImageCache,
+    updateItemImagesInDatabase,
+  ]);
 
   const handleDropdownChange = (field: string, value: string) => {
     if (field === 'unit_id') {
@@ -609,16 +723,28 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         }
 
         const publicUrl = StorageService.getPublicUrl(bucketName, path);
-        setImageSlots(prevSlots =>
-          prevSlots.map((slot, index) =>
+        setImageSlots(prevSlots => {
+          const nextSlots = prevSlots.map((slot, index) =>
             index === slotIndex ? { path, url: publicUrl } : slot
-          )
-        );
+          );
+          updateImageCache(nextSlots);
+          updateItemImagesInDatabase(
+            nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
+          );
+          return nextSlots;
+        });
       } catch {
         toast.error('Gagal memproses gambar.');
       }
     },
-    [bucketName, itemId, maxFileSizeBytes, maxFileSizeLabel]
+    [
+      bucketName,
+      itemId,
+      maxFileSizeBytes,
+      maxFileSizeLabel,
+      updateImageCache,
+      updateItemImagesInDatabase,
+    ]
   );
 
   const handleImageUpload = useCallback(
@@ -689,17 +815,22 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
       try {
         await StorageService.deleteFile(bucketName, targetSlot.path);
-        setImageSlots(prevSlots =>
-          prevSlots.map((slot, index) =>
+        setImageSlots(prevSlots => {
+          const nextSlots = prevSlots.map((slot, index) =>
             index === slotIndex ? { path: '', url: '' } : slot
-          )
-        );
+          );
+          updateImageCache(nextSlots);
+          updateItemImagesInDatabase(
+            nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
+          );
+          return nextSlots;
+        });
       } catch (deleteError) {
         console.error(deleteError);
         toast.error('Gagal menghapus gambar.');
       }
     },
-    [bucketName, imageSlots]
+    [bucketName, imageSlots, updateImageCache, updateItemImagesInDatabase]
   );
 
   return (
@@ -719,12 +850,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           >
             {slot.url ? (
               <img
-                src={slot.url}
+                src={displayUrls[index] || slot.url}
                 alt={`Item image ${index + 1}`}
                 className="aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in"
                 onClick={event => {
                   event.stopPropagation();
-                  setPreviewUrl(slot.url);
+                  setPreviewUrl(displayUrls[index] || slot.url);
                 }}
               />
             ) : (

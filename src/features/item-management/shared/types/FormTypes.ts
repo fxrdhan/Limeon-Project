@@ -11,6 +11,7 @@ export interface ItemFormData {
   dosage_id: string;
   barcode: string;
   description: string;
+  image_urls?: string[];
   base_price: number;
   sell_price: number;
   min_stock: number;

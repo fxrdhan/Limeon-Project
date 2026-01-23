@@ -32,6 +32,7 @@ export const useAddItemFormState = ({
     dosage_id: '',
     barcode: '',
     description: '',
+    image_urls: [],
     base_price: 0,
     sell_price: 0,
     min_stock: 10,

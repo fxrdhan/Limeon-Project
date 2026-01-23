@@ -50,6 +50,7 @@ export const prepareItemData = async (
     is_medicine: formData.is_medicine,
     base_unit: baseUnit,
     has_expiry_date: formData.has_expiry_date,
+    image_urls: formData.image_urls || [],
     package_conversions: conversions.map(uc => ({
       unit_name: uc.unit.name,
       to_unit_id: uc.to_unit_id,

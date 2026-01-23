@@ -119,6 +119,7 @@ export interface Item {
   manufacturer: { id?: string; code?: string | null; name: string };
   code?: string;
   barcode?: string | null;
+  image_urls?: string[] | null;
   base_price: number;
   sell_price: number;
   stock: number;
@@ -158,6 +159,7 @@ export interface DBItem {
   manufacturer_id?: string;
   code?: string;
   barcode?: string | null;
+  image_urls?: string[] | null;
   base_price: number;
   sell_price: number;
   stock: number;

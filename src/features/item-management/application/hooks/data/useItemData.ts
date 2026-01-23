@@ -58,6 +58,9 @@ export const useItemData = ({
         dosage_id: (itemRecord.dosage_id as string) || '',
         barcode: (itemRecord.barcode as string) || '',
         description: (itemRecord.description as string) || '',
+        image_urls: Array.isArray(itemRecord.image_urls)
+          ? (itemRecord.image_urls as string[])
+          : [],
         base_price: (itemRecord.base_price as number) || 0,
         sell_price: (itemRecord.sell_price as number) || 0,
         min_stock: (itemRecord.min_stock as number) || 10,

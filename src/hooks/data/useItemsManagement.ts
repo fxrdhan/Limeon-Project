@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useItems } from '@/hooks/queries/useItems';
 import { fuzzyMatch, getScore } from '@/utils/search';
+import { useEffect } from 'react';
 import type { Item } from '@/types/database';
+import { preloadImages, setCachedImageSet } from '@/utils/imageCache';
 
 /**
  * Items Management Hook - Focused and Simple
@@ -45,6 +47,15 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     enabled,
     orderBy: { column: 'name', ascending: true },
   });
+
+  useEffect(() => {
+    (allData as Item[]).forEach(item => {
+      if (!item.id || !Array.isArray(item.image_urls)) return;
+      const cacheKey = `item-images:${item.id}`;
+      setCachedImageSet(cacheKey, item.image_urls);
+      preloadImages(item.image_urls.filter(Boolean));
+    });
+  }, [allData]);
 
   // Filter items based on search query
   const filteredData = useMemo(() => {

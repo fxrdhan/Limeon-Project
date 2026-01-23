@@ -1,8 +1,15 @@
 import React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ImageUploader from '@/components/image-manager';
 import { FaPencilAlt } from 'react-icons/fa';
 import { ClipLoader } from 'react-spinners';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
+import {
+  cacheImageBlob,
+  getCachedImage,
+  getCachedImageBlobUrl,
+  setCachedImage,
+} from '@/utils/imageCache';
 
 const IdentityImageUploader: React.FC = () => {
   const {
@@ -22,12 +29,62 @@ const IdentityImageUploader: React.FC = () => {
 
   const aspectRatioClass =
     imageAspectRatio === 'square' ? 'aspect-square' : 'aspect-video';
+  const cacheKey = useMemo(() => {
+    const entityId = localData?.id ? String(localData.id) : null;
+    return entityId ? `identity:${entityId}` : null;
+  }, [localData?.id]);
+  const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
+  const cachedImageUrl = cacheKey ? getCachedImage(cacheKey) : null;
+  const sourceImageUrl =
+    currentImageUrl || cachedImageUrl || defaultImageUrl || null;
+
+  useEffect(() => {
+    if (!cacheKey || !currentImageUrl) return;
+    if (currentImageUrl.startsWith('http')) {
+      setCachedImage(cacheKey, currentImageUrl);
+    }
+  }, [cacheKey, currentImageUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveImage = async () => {
+      if (!sourceImageUrl) {
+        await Promise.resolve();
+        if (isActive) setDisplayImageUrl(null);
+        return;
+      }
+
+      if (!sourceImageUrl.startsWith('http')) {
+        await Promise.resolve();
+        if (isActive) setDisplayImageUrl(sourceImageUrl);
+        return;
+      }
+
+      const cachedBlobUrl = await getCachedImageBlobUrl(sourceImageUrl);
+      if (cachedBlobUrl) {
+        if (isActive) setDisplayImageUrl(cachedBlobUrl);
+        return;
+      }
+
+      const blobUrl = await cacheImageBlob(sourceImageUrl);
+      if (isActive) {
+        setDisplayImageUrl(blobUrl || sourceImageUrl);
+      }
+    };
+
+    void resolveImage();
+
+    return () => {
+      isActive = false;
+    };
+  }, [sourceImageUrl]);
 
   const renderImageContent = () => {
-    if (currentImageUrl) {
+    if (displayImageUrl) {
       return (
         <img
-          src={currentImageUrl}
+          src={displayImageUrl}
           alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
         />
