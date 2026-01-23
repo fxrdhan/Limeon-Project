@@ -12,6 +12,8 @@ import {
 interface ItemPricingFormProps {
   isExpanded?: boolean;
   onExpand?: () => void;
+  stackClassName?: string;
+  stackStyle?: React.CSSProperties;
   formData: {
     base_price: number;
     sell_price: number;
@@ -37,6 +39,8 @@ interface ItemPricingFormProps {
 export default function ItemPricingForm({
   isExpanded = true,
   onExpand,
+  stackClassName,
+  stackStyle,
   formData,
   displayBasePrice,
   displaySellPrice,
@@ -62,7 +66,10 @@ export default function ItemPricingForm({
   };
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <section
+      className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+      style={stackStyle}
+    >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
         onClick={() => onExpand?.()}

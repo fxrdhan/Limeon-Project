@@ -1,4 +1,11 @@
-import { useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useMemo,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { FaChevronDown } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'motion/react';
 import Input from '@/components/input';
@@ -12,6 +19,8 @@ import { createOptimizedUnitDetailFetcher } from '@/utils/optimizedCategoryDetai
 interface ItemAdditionalInfoFormProps {
   isExpanded?: boolean;
   onExpand?: () => void;
+  stackClassName?: string;
+  stackStyle?: CSSProperties;
   formData: {
     barcode: string;
     quantity: number;
@@ -30,6 +39,8 @@ interface ItemAdditionalInfoFormProps {
 const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
   isExpanded = true,
   onExpand,
+  stackClassName,
+  stackStyle,
   formData,
   units,
   loading,
@@ -94,7 +105,10 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
   }, []);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div
+      className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+      style={stackStyle}
+    >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
         onClick={() => onExpand?.()}

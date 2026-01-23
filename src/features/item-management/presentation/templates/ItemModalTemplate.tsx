@@ -118,7 +118,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                           {children.categoryForm && children.categoryForm}
                         </div>
 
-                        <div className="w-full md:w-[60%] flex flex-col gap-5">
+                        <div className="w-full md:w-[60%] flex flex-col gap-0">
                           {children.basicInfoOptional}
                           {children.settingsForm}
                           {children.pricingForm}

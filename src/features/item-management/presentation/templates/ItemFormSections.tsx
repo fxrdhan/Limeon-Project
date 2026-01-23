@@ -44,6 +44,8 @@ import Button from '@/components/button';
 interface CollapsibleSectionProps {
   isExpanded: boolean;
   onExpand: () => void;
+  stackClassName?: string;
+  stackStyle?: React.CSSProperties;
 }
 
 interface OptionalSectionProps extends CollapsibleSectionProps {
@@ -222,6 +224,8 @@ const BasicInfoRequiredSection: React.FC = () => {
 const SettingsSection: React.FC<CollapsibleSectionProps> = ({
   isExpanded,
   onExpand,
+  stackClassName,
+  stackStyle,
 }) => {
   const { formData, updateFormData } = useItemForm();
   const { isViewingOldVersion } = useItemUI();
@@ -264,6 +268,8 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
       }}
       isExpanded={isExpanded}
       onExpand={onExpand}
+      stackClassName={stackClassName}
+      stackStyle={stackStyle}
       disabled={isViewingOldVersion}
       onFieldChange={handleFieldChange}
       onStartEditMinStock={minStockEditor.startEditing}
@@ -279,6 +285,8 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
 const PricingSection: React.FC<CollapsibleSectionProps> = ({
   isExpanded,
   onExpand,
+  stackClassName,
+  stackStyle,
 }) => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
@@ -328,6 +336,8 @@ const PricingSection: React.FC<CollapsibleSectionProps> = ({
       calculatedMargin={calcMargin || 0}
       isExpanded={isExpanded}
       onExpand={onExpand}
+      stackClassName={stackClassName}
+      stackStyle={stackStyle}
       disabled={isViewingOldVersion}
       onBasePriceChange={handleChange}
       onSellPriceChange={handleSellPriceChange}
@@ -345,6 +355,8 @@ const PricingSection: React.FC<CollapsibleSectionProps> = ({
 const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   isExpanded,
   onExpand,
+  stackClassName,
+  stackStyle,
 }) => {
   const { packageConversionHook } = useItemPrice();
   const { resetKey, isViewingOldVersion } = useItemUI();
@@ -377,6 +389,8 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
       formData={packageConversionHook.packageConversionFormData}
       isExpanded={isExpanded}
       onExpand={onExpand}
+      stackClassName={stackClassName}
+      stackStyle={stackStyle}
       disabled={isViewingOldVersion}
       onFormDataChange={packageConversionHook.setPackageConversionFormData}
       onAddConversion={handleAddConversion}
@@ -398,6 +412,8 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   isExpanded,
   onExpand,
   itemId,
+  stackClassName,
+  stackStyle,
 }) => {
   const { formData, units, loading, handleChange, updateFormData } =
     useItemForm();
@@ -935,6 +951,8 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         loading={loading}
         isExpanded={isExpanded}
         onExpand={onExpand}
+        stackClassName={stackClassName}
+        stackStyle={stackStyle}
         disabled={isViewingOldVersion}
         onChange={handleChange}
         onDropdownChange={handleDropdownChange}

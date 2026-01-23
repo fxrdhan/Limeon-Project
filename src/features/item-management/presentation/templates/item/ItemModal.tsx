@@ -382,23 +382,28 @@ const ItemModal: React.FC<ItemModalProps> = ({
       <ItemManagementContent
         key={isOpen ? `open-${itemId ?? 'new'}` : 'closed'}
         itemId={itemId}
+        initialItemData={initialItemData}
       />
     </ItemManagementProvider>
   );
 };
 
 // Clean content component - only uses context
-const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
+const ItemManagementContent: React.FC<{
+  itemId?: string;
+  initialItemData?: ItemModalProps['initialItemData'];
+}> = ({ itemId, initialItemData }) => {
   const ui = useItemUI();
   const form = useItemForm();
   const price = useItemPrice();
   const actions = useItemActions();
   const isEditSession = Boolean(itemId);
+  const hasFormData =
+    Boolean(form.formData.code?.trim()) ||
+    Boolean(form.formData.name?.trim()) ||
+    Boolean(form.formData.updated_at);
   const hasEditData =
-    isEditSession &&
-    (Boolean(form.formData.code?.trim()) ||
-      Boolean(form.formData.name?.trim()) ||
-      Boolean(form.formData.updated_at));
+    isEditSession && (hasFormData || Boolean(initialItemData));
 
   type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
   const [openSection, setOpenSection] = useState<AccordionSection | null>(() =>
@@ -413,19 +418,45 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
   const autoOpenSection = useMemo<AccordionSection | null>(() => {
     if (!hasEditData || form.loading) return null;
 
+    const dataSource = (hasFormData ? form.formData : initialItemData) ?? null;
+    const barcode = (dataSource?.barcode || '') as string;
+    const description =
+      dataSource && 'description' in dataSource
+        ? ((dataSource.description as string) ?? '')
+        : '';
+    const unitId =
+      dataSource && 'unit_id' in dataSource
+        ? ((dataSource.unit_id as string) ?? '')
+        : '';
+    const quantity =
+      dataSource && 'quantity' in dataSource
+        ? ((dataSource.quantity as number) ?? 0)
+        : 0;
+    const basePrice = dataSource?.base_price ?? 0;
+    const sellPrice = dataSource?.sell_price ?? 0;
+    const fallbackConversions = Array.isArray(
+      (initialItemData as { package_conversions?: unknown[] } | undefined)
+        ?.package_conversions
+    )
+      ? (initialItemData as { package_conversions: unknown[] })
+          .package_conversions.length
+      : 0;
+    const conversionCount =
+      price.packageConversionHook.conversions.length || fallbackConversions;
+
     const hasAdditionalInfo =
-      Boolean(form.formData.barcode?.trim()) ||
-      Boolean(form.formData.description?.trim()) ||
-      Boolean(form.formData.unit_id) ||
-      (form.formData.quantity ?? 0) > 0;
-    const hasConversion = price.packageConversionHook.conversions.length > 0;
+      Boolean(barcode?.trim()) ||
+      Boolean(description?.trim()) ||
+      Boolean(unitId) ||
+      (quantity ?? 0) > 0;
+    const hasConversion = conversionCount > 0;
     const hasSettings =
-      form.formData.is_active === false ||
-      form.formData.has_expiry_date === true ||
-      (form.formData.min_stock ?? 10) !== 10;
-    const hasPricing =
-      (form.formData.base_price ?? 0) > 0 ||
-      (form.formData.sell_price ?? 0) > 0;
+      dataSource &&
+      'is_active' in dataSource &&
+      (dataSource.is_active === false ||
+        dataSource.has_expiry_date === true ||
+        (dataSource.min_stock ?? 10) !== 10);
+    const hasPricing = (basePrice ?? 0) > 0 || (sellPrice ?? 0) > 0;
 
     return hasAdditionalInfo
       ? 'additional'
@@ -438,21 +469,85 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
             : 'additional';
   }, [
     hasEditData,
+    hasFormData,
+    form.formData,
     form.loading,
-    form.formData.barcode,
-    form.formData.description,
-    form.formData.unit_id,
-    form.formData.quantity,
-    form.formData.is_active,
-    form.formData.has_expiry_date,
-    form.formData.min_stock,
-    form.formData.base_price,
-    form.formData.sell_price,
+    initialItemData,
     price.packageConversionHook.conversions.length,
   ]);
 
-  const activeSection: AccordionSection | null =
-    isEditSession && !hasUserToggled ? autoOpenSection : openSection;
+  useEffect(() => {
+    if (!isEditSession || hasUserToggled || !ui.isOpen) return;
+    if (openSection || !autoOpenSection) return;
+    const frameId = requestAnimationFrame(() => {
+      setOpenSection(autoOpenSection);
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [autoOpenSection, hasUserToggled, isEditSession, openSection, ui.isOpen]);
+
+  const activeSection: AccordionSection | null = openSection;
+
+  const sectionOrder: AccordionSection[] = [
+    'additional',
+    'settings',
+    'pricing',
+    'conversion',
+  ];
+  const activeIndex = activeSection ? sectionOrder.indexOf(activeSection) : -1;
+
+  const getStackClasses = (section: AccordionSection) => {
+    const index = sectionOrder.indexOf(section);
+    if (index === -1) return '';
+
+    if (index === 0 && activeIndex === -1) return '';
+
+    if (activeIndex === -1) {
+      return index === 0 ? '' : 'mt-5';
+    }
+
+    if (index === activeIndex) {
+      return index === 0 ? 'relative' : 'relative mt-4';
+    }
+
+    if (index < activeIndex) {
+      return index === 0 ? 'relative' : 'relative -mt-6';
+    }
+
+    return index === activeIndex + 1 ? 'relative mt-4' : 'relative -mt-6';
+  };
+
+  const getStackWrapperStyle = (section: AccordionSection) => {
+    const index = sectionOrder.indexOf(section);
+    if (index === -1 || activeIndex === -1) return undefined;
+    if (index === activeIndex) return { zIndex: 30 };
+
+    const depth = Math.abs(activeIndex - index);
+    return { zIndex: Math.max(1, 20 - depth) };
+  };
+
+  const getStackStyle = (section: AccordionSection) => {
+    const index = sectionOrder.indexOf(section);
+    if (index === -1 || activeIndex === -1 || index === activeIndex) {
+      return undefined;
+    }
+
+    const depth = Math.abs(activeIndex - index);
+    const blurAmount = Math.min(depth * 0.35, 1.2);
+    const opacityValue = Math.max(0.82, 1 - depth * 0.04);
+    const scaleValue = Math.max(0.98, 1 - depth * 0.01);
+
+    return {
+      filter: blurAmount ? `blur(${blurAmount}px)` : undefined,
+      opacity: opacityValue,
+      transform: `scale(${scaleValue})`,
+    };
+  };
+
+  const getStackEffect = (section: AccordionSection) => ({
+    className:
+      'origin-top transition-[transform,opacity,filter] duration-300 ease-out',
+    style: getStackStyle(section),
+  });
 
   // Single form mode rendering
   return (
@@ -471,29 +566,57 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
         ),
         basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
         basicInfoOptional: (
-          <ItemFormSections.BasicInfoOptional
-            isExpanded={activeSection === 'additional'}
-            onExpand={() => toggleSection('additional')}
-            itemId={itemId}
-          />
+          <div
+            className={getStackClasses('additional')}
+            style={getStackWrapperStyle('additional')}
+          >
+            <ItemFormSections.BasicInfoOptional
+              isExpanded={activeSection === 'additional'}
+              onExpand={() => toggleSection('additional')}
+              itemId={itemId}
+              stackClassName={getStackEffect('additional').className}
+              stackStyle={getStackEffect('additional').style}
+            />
+          </div>
         ),
         settingsForm: (
-          <ItemFormSections.Settings
-            isExpanded={activeSection === 'settings'}
-            onExpand={() => toggleSection('settings')}
-          />
+          <div
+            className={getStackClasses('settings')}
+            style={getStackWrapperStyle('settings')}
+          >
+            <ItemFormSections.Settings
+              isExpanded={activeSection === 'settings'}
+              onExpand={() => toggleSection('settings')}
+              stackClassName={getStackEffect('settings').className}
+              stackStyle={getStackEffect('settings').style}
+            />
+          </div>
         ),
         pricingForm: (
-          <ItemFormSections.Pricing
-            isExpanded={activeSection === 'pricing'}
-            onExpand={() => toggleSection('pricing')}
-          />
+          <div
+            className={getStackClasses('pricing')}
+            style={getStackWrapperStyle('pricing')}
+          >
+            <ItemFormSections.Pricing
+              isExpanded={activeSection === 'pricing'}
+              onExpand={() => toggleSection('pricing')}
+              stackClassName={getStackEffect('pricing').className}
+              stackStyle={getStackEffect('pricing').style}
+            />
+          </div>
         ),
         packageConversionManager: (
-          <ItemFormSections.PackageConversion
-            isExpanded={activeSection === 'conversion'}
-            onExpand={() => toggleSection('conversion')}
-          />
+          <div
+            className={getStackClasses('conversion')}
+            style={getStackWrapperStyle('conversion')}
+          >
+            <ItemFormSections.PackageConversion
+              isExpanded={activeSection === 'conversion'}
+              onExpand={() => toggleSection('conversion')}
+              stackClassName={getStackEffect('conversion').className}
+              stackStyle={getStackEffect('conversion').style}
+            />
+          </div>
         ),
         modals: <ItemModalContainer />,
       }}

@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, type CSSProperties } from 'react';
 import { FaChevronDown } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'motion/react';
 import Dropdown from '@/components/dropdown';
@@ -10,6 +10,8 @@ import FefoTooltip from '../molecules/FefoTooltip';
 interface ItemSettingsFormProps {
   isExpanded?: boolean;
   onExpand?: () => void;
+  stackClassName?: string;
+  stackStyle?: CSSProperties;
   formData: {
     is_active: boolean;
     is_medicine: boolean;
@@ -33,6 +35,8 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     {
       isExpanded = true,
       onExpand,
+      stackClassName,
+      stackStyle,
       formData,
       minStockEditing,
       onFieldChange,
@@ -45,7 +49,10 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     ref
   ) => {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <section
+        className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+        style={stackStyle}
+      >
         <div
           className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
           onClick={() => onExpand?.()}

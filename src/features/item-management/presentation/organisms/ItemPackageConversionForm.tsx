@@ -36,6 +36,8 @@ DeleteButton.displayName = 'DeleteButton';
 interface LocalItemPackageConversionManagerProps {
   isExpanded?: boolean;
   onExpand?: () => void;
+  stackClassName?: string;
+  stackStyle?: React.CSSProperties;
   baseUnit: string;
   availableUnits: ItemPackage[];
   conversions: PackageConversion[];
@@ -50,6 +52,8 @@ interface LocalItemPackageConversionManagerProps {
 export default function ItemPackageConversionManager({
   isExpanded = true,
   onExpand,
+  stackClassName,
+  stackStyle,
   baseUnit,
   availableUnits,
   conversions,
@@ -92,7 +96,10 @@ export default function ItemPackageConversionManager({
   }, [filteredConversions.length]);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <section
+      className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+      style={stackStyle}
+    >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
         onClick={() => onExpand?.()}
