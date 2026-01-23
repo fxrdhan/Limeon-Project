@@ -408,34 +408,62 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const maxFileSizeLabel = '500MB';
 
   const openCropper = useCallback((slotIndex: number, file: File) => {
-    const previewUrlValue = URL.createObjectURL(file);
-    setCropState({ slotIndex, file, previewUrl: previewUrlValue });
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCropState({ slotIndex, file, previewUrl: reader.result });
+      } else {
+        toast.error('Gagal memuat gambar untuk crop.');
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Gagal memuat gambar untuk crop.');
+    };
+    reader.readAsDataURL(file);
   }, []);
 
   const closeCropper = useCallback(() => {
-    if (cropState?.previewUrl) {
-      URL.revokeObjectURL(cropState.previewUrl);
-    }
     setCropState(null);
-  }, [cropState]);
+  }, []);
 
   useEffect(() => {
     if (!cropState || !cropperImageRef.current) return;
 
-    const cropperInstance = new Cropper(cropperImageRef.current, {
-      aspectRatio: 1,
-      viewMode: 1,
-      autoCropArea: 1,
-      background: false,
-      responsive: true,
-      guides: true,
-    });
+    let isCancelled = false;
 
-    cropperRef.current = cropperInstance;
+    const imageElement = cropperImageRef.current;
+
+    const initCropper = () => {
+      if (isCancelled || !imageElement) return;
+      const cropperInstance = new Cropper(imageElement, {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 1,
+        background: false,
+        responsive: true,
+        guides: true,
+      });
+
+      cropperRef.current = cropperInstance;
+    };
+
+    if (imageElement.complete) {
+      initCropper();
+    } else {
+      imageElement.onload = () => {
+        initCropper();
+      };
+    }
 
     return () => {
-      cropperInstance.destroy();
-      cropperRef.current = null;
+      isCancelled = true;
+      if (imageElement) {
+        imageElement.onload = null;
+      }
+      if (cropperRef.current) {
+        cropperRef.current.destroy();
+        cropperRef.current = null;
+      }
     };
   }, [cropState]);
 
@@ -506,17 +534,41 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   const getImageDimensions = useCallback((file: File) => {
     return new Promise<{ width: number; height: number }>((resolve, reject) => {
-      const image = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      image.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve({ width: image.width, height: image.height });
+      const fallbackToImage = () => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const image = new Image();
+          image.onload = () => {
+            resolve({ width: image.width, height: image.height });
+          };
+          image.onerror = () => {
+            reject(new Error('Gagal memuat gambar.'));
+          };
+          if (typeof reader.result === 'string') {
+            image.src = reader.result;
+          } else {
+            reject(new Error('Gagal memuat gambar.'));
+          }
+        };
+        reader.onerror = () => {
+          reject(new Error('Gagal memuat gambar.'));
+        };
+        reader.readAsDataURL(file);
       };
-      image.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('Gagal memuat gambar.'));
-      };
-      image.src = objectUrl;
+
+      if (typeof createImageBitmap === 'function') {
+        createImageBitmap(file)
+          .then(bitmap => {
+            resolve({ width: bitmap.width, height: bitmap.height });
+            if (typeof bitmap.close === 'function') {
+              bitmap.close();
+            }
+          })
+          .catch(fallbackToImage);
+        return;
+      }
+
+      fallbackToImage();
     });
   }, []);
 
@@ -713,6 +765,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                   src={cropState.previewUrl}
                   alt="Crop"
                   className="max-h-[320px] w-full object-contain"
+                  crossOrigin="anonymous"
                 />
               </div>
               <div className="mt-4 flex items-center justify-end gap-2">
