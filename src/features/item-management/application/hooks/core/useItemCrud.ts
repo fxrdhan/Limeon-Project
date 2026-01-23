@@ -215,6 +215,24 @@ export const useAddItemForm = ({
     packageConversionHook.setSellPrice(formState.formData.sell_price || 0);
   }, [formState.formData.sell_price, packageConversionHook]);
 
+  useEffect(() => {
+    if (!formState.isEditMode) return;
+    if (packageConversionHook.baseUnit) return;
+    if (!formState.formData.package_id) return;
+
+    const selectedPackage = formState.packages.find(
+      pkg => pkg.id === formState.formData.package_id
+    );
+    if (selectedPackage?.name) {
+      packageConversionHook.setBaseUnit(selectedPackage.name);
+    }
+  }, [
+    formState.isEditMode,
+    formState.formData.package_id,
+    formState.packages,
+    packageConversionHook,
+  ]);
+
   // Use mutations from the modular hook
   const {
     addCategoryMutation,
