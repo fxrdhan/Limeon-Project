@@ -79,7 +79,7 @@ const BasicInfoRequiredSection: React.FC = () => {
     updateFormData,
   } = useItemForm();
 
-  const { resetKey, isViewingOldVersion } = useItemUI();
+  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const { packageConversionHook } = useItemPrice();
 
   const {
@@ -162,6 +162,7 @@ const BasicInfoRequiredSection: React.FC = () => {
   return (
     <ItemBasicInfoForm
       key={resetKey} // Force re-mount on reset to clear validation
+      isEditMode={isEditMode}
       formData={{
         code: formData.code || '',
         name: formData.name || '',
@@ -355,6 +356,15 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
       onFormDataChange={packageConversionHook.setPackageConversionFormData}
       onAddConversion={handleAddConversion}
       onRemoveConversion={packageConversionHook.removePackageConversion}
+      onUpdateSellPrice={(id, sellPrice) =>
+        packageConversionHook.setConversions(prevConversions =>
+          prevConversions.map(conversion =>
+            conversion.id === id
+              ? { ...conversion, sell_price: sellPrice }
+              : conversion
+          )
+        )
+      }
     />
   );
 };

@@ -14,6 +14,7 @@ import {
 } from '@/utils/optimizedCategoryDetailFetcher';
 
 interface ItemBasicInfoFormProps {
+  isEditMode: boolean;
   formData: {
     code: string;
     name: string;
@@ -46,6 +47,7 @@ interface ItemBasicInfoFormProps {
 const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   (
     {
+      isEditMode,
       formData,
       categories,
       types,
@@ -102,13 +104,31 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
 
     // Update formData.code whenever the generated code changes
     useEffect(() => {
-      if (
-        codeGeneration.generatedCode &&
-        codeGeneration.generatedCode !== formData.code
-      ) {
+      if (!codeGeneration.generatedCode) return;
+
+      const shouldUpdateCode =
+        !isEditMode ||
+        !formData.code?.trim() ||
+        formData.code.includes('[XXX]') ||
+        formData.code.includes('-...');
+
+      if (shouldUpdateCode && codeGeneration.generatedCode !== formData.code) {
         onFieldChange('code', codeGeneration.generatedCode);
       }
-    }, [codeGeneration.generatedCode, formData.code, onFieldChange]);
+    }, [
+      codeGeneration.generatedCode,
+      formData.code,
+      isEditMode,
+      onFieldChange,
+    ]);
+
+    const displayCode =
+      isEditMode &&
+      formData.code?.trim() &&
+      !formData.code.includes('[XXX]') &&
+      !formData.code.includes('-...')
+        ? formData.code
+        : codeGeneration.generatedCode || formData.code || 'Auto-generated';
 
     return (
       <div className="rounded-xl border border-slate-200 bg-white mb-6 overflow-hidden">
@@ -117,7 +137,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             Data Umum
           </h2>
           <div className="text-xs text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-full">
-            {codeGeneration.generatedCode || formData.code || 'Auto-generated'}
+            {displayCode}
           </div>
         </div>
         <div className="p-4 md:p-5 space-y-5">

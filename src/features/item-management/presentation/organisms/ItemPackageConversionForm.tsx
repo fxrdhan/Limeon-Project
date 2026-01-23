@@ -43,6 +43,7 @@ interface LocalItemPackageConversionManagerProps {
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
   onRemoveConversion: (id: string) => void;
+  onUpdateSellPrice: (id: string, sellPrice: number) => void;
   disabled?: boolean;
 }
 
@@ -56,6 +57,7 @@ export default function ItemPackageConversionManager({
   onFormDataChange,
   onAddConversion,
   onRemoveConversion,
+  onUpdateSellPrice,
   disabled = false,
 }: LocalItemPackageConversionManagerProps) {
   const gridRef = useRef<DataGridRef>(null);
@@ -67,6 +69,16 @@ export default function ItemPackageConversionManager({
     (uc, index, self) =>
       index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
   );
+
+  const parseCurrencyValue = (value: unknown) => {
+    if (typeof value === 'number') return Math.max(0, value);
+    if (typeof value === 'string') {
+      const numeric = value.replace(/[^0-9]/g, '');
+      const parsed = Number(numeric);
+      return Math.max(0, Number.isNaN(parsed) ? 0 : parsed);
+    }
+    return 0;
+  };
 
   useEffect(() => {
     if (filteredConversions.length === 0) return;
@@ -146,12 +158,17 @@ export default function ItemPackageConversionManager({
                             minWidth: 100,
                             flex: 1,
                           }),
-                          createCurrencyColumn({
-                            field: 'sell_price',
-                            headerName: 'H. Jual',
-                            minWidth: 100,
-                            flex: 1,
-                          }),
+                          {
+                            ...createCurrencyColumn({
+                              field: 'sell_price',
+                              headerName: 'H. Jual',
+                              minWidth: 100,
+                              flex: 1,
+                            }),
+                            editable: !disabled,
+                            valueParser: params =>
+                              parseCurrencyValue(params.newValue),
+                          },
                           {
                             field: 'actions',
                             headerName: '',
@@ -180,6 +197,12 @@ export default function ItemPackageConversionManager({
                       suppressMovableColumns={true}
                       cellSelection={false}
                       rowSelection={undefined}
+                      onCellValueChanged={event => {
+                        if (event.colDef.field !== 'sell_price') return;
+                        if (!event.data) return;
+                        const nextValue = parseCurrencyValue(event.newValue);
+                        onUpdateSellPrice(event.data.id, nextValue);
+                      }}
                       sizeColumnsToFit={true}
                       className="ag-theme-quartz h-full"
                       style={{ height: '100%' }}
