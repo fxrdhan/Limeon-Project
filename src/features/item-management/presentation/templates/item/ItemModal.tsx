@@ -428,7 +428,15 @@ const ItemManagementContent: React.FC<{
   const toggleSection = useCallback(
     (section: AccordionSection) => {
       setHasUserToggled(true);
-      updateOpenSection(openSection === section ? null : section);
+      if (openSection === section) {
+        // User explicitly collapsed the expanded section; don't restore it on
+        // stack/unstack transitions.
+        setOpenSection(null);
+        setLastOpenSection(null);
+        return;
+      }
+
+      updateOpenSection(section);
     },
     [openSection, updateOpenSection]
   );
@@ -541,13 +549,14 @@ const ItemManagementContent: React.FC<{
     if (index === -1) return '';
 
     if (isStackHovering) {
-      return index === 0 ? '' : 'mt-5';
+      // Unstacked mode should look like a normal list, with tighter spacing.
+      return index === 0 ? '' : 'mt-3';
     }
 
     if (index === 0 && activeIndex === -1) return '';
 
     if (activeIndex === -1) {
-      return index === 0 ? '' : 'mt-5';
+      return index === 0 ? '' : 'mt-3';
     }
 
     if (index === activeIndex) {
@@ -596,7 +605,7 @@ const ItemManagementContent: React.FC<{
     style: getStackStyle(section),
   });
 
-  const handleStackMouseEnter = useCallback(() => {
+  const startStackCollapse = useCallback(() => {
     if (isStackHovering || isStackTransitioning) return;
     if (openSection) {
       setLastOpenSection(openSection);
@@ -605,6 +614,7 @@ const ItemManagementContent: React.FC<{
       window.clearTimeout(hoverTimerRef.current);
     }
     setIsStackTransitioning(true);
+    // Collapse the currently open section first, then switch to unstack mode.
     setOpenSection(null);
     hoverTimerRef.current = window.setTimeout(() => {
       setIsStackTransitioning(false);
@@ -613,21 +623,87 @@ const ItemManagementContent: React.FC<{
     }, 220);
   }, [isStackHovering, isStackTransitioning, openSection]);
 
-  const handleStackMouseLeave = useCallback(() => {
+  const restoreStack = useCallback(() => {
     if (hoverTimerRef.current) {
       window.clearTimeout(hoverTimerRef.current);
       hoverTimerRef.current = null;
     }
     setIsStackHovering(false);
     setIsStackTransitioning(false);
-    const restoreSection =
-      lastOpenSection || (isEditSession ? autoOpenSection : 'additional');
-    if (restoreSection) {
+    const restoreSection: AccordionSection | null =
+      openSection ??
+      lastOpenSection ??
+      (hasUserToggled ? null : isEditSession ? autoOpenSection : 'additional');
+
+    if (restoreSection !== null) {
       requestAnimationFrame(() => {
         updateOpenSection(restoreSection);
       });
     }
-  }, [autoOpenSection, isEditSession, lastOpenSection, updateOpenSection]);
+  }, [
+    autoOpenSection,
+    hasUserToggled,
+    isEditSession,
+    lastOpenSection,
+    openSection,
+    updateOpenSection,
+  ]);
+
+  const handleStackMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const isOverIgnore = Boolean(
+        target.closest('[data-stack-ignore="true"]')
+      );
+      const hoveredSectionEl = target.closest<HTMLElement>(
+        '[data-stack-section]'
+      );
+      const hoveredSectionRaw = hoveredSectionEl?.dataset.stackSection;
+      const hoveredSection: AccordionSection | null =
+        hoveredSectionRaw === 'additional' ||
+        hoveredSectionRaw === 'settings' ||
+        hoveredSectionRaw === 'pricing' ||
+        hoveredSectionRaw === 'conversion'
+          ? (hoveredSectionRaw as AccordionSection)
+          : null;
+
+      // Ignore regions (e.g. image uploader grid) should not participate in the
+      // stack/unstack behavior.
+      if (isOverIgnore) {
+        if (isStackHovering || isStackTransitioning) {
+          restoreStack();
+        }
+        return;
+      }
+
+      // Don't aggressively re-stack when moving between cards (gaps). We'll
+      // restore on container mouse leave instead.
+      if (!hoveredSection) {
+        return;
+      }
+
+      // Hover should only affect stacked cards. If the user is hovering the
+      // currently expanded card, keep the current state (do not unstack).
+      if (hoveredSection === activeSection) {
+        return;
+      }
+
+      startStackCollapse();
+    },
+    [
+      activeSection,
+      isStackHovering,
+      isStackTransitioning,
+      restoreStack,
+      startStackCollapse,
+    ]
+  );
+
+  const handleStackMouseLeave = useCallback(() => {
+    restoreStack();
+  }, [restoreStack]);
 
   useEffect(
     () => () => {
@@ -647,7 +723,7 @@ const ItemManagementContent: React.FC<{
       onBackdropClick={ui.handleBackdropClick}
       onSubmit={form.handleSubmit}
       rightColumnProps={{
-        onMouseEnter: handleStackMouseEnter,
+        onMouseMove: handleStackMouseMove,
         onMouseLeave: handleStackMouseLeave,
       }}
       children={{
@@ -661,11 +737,12 @@ const ItemManagementContent: React.FC<{
         basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
         basicInfoOptional: (
           <div
-            className={getStackClasses('additional')}
+            className={`${getStackClasses('additional')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('additional')}
+            data-stack-section="additional"
           >
             <ItemFormSections.BasicInfoOptional
-              isExpanded={!isStackHovering && activeSection === 'additional'}
+              isExpanded={activeSection === 'additional'}
               onExpand={() => toggleSection('additional')}
               itemId={itemId}
               stackClassName={getStackEffect('additional').className}
@@ -675,11 +752,12 @@ const ItemManagementContent: React.FC<{
         ),
         settingsForm: (
           <div
-            className={getStackClasses('settings')}
+            className={`${getStackClasses('settings')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('settings')}
+            data-stack-section="settings"
           >
             <ItemFormSections.Settings
-              isExpanded={!isStackHovering && activeSection === 'settings'}
+              isExpanded={activeSection === 'settings'}
               onExpand={() => toggleSection('settings')}
               stackClassName={getStackEffect('settings').className}
               stackStyle={getStackEffect('settings').style}
@@ -688,11 +766,12 @@ const ItemManagementContent: React.FC<{
         ),
         pricingForm: (
           <div
-            className={getStackClasses('pricing')}
+            className={`${getStackClasses('pricing')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('pricing')}
+            data-stack-section="pricing"
           >
             <ItemFormSections.Pricing
-              isExpanded={!isStackHovering && activeSection === 'pricing'}
+              isExpanded={activeSection === 'pricing'}
               onExpand={() => toggleSection('pricing')}
               stackClassName={getStackEffect('pricing').className}
               stackStyle={getStackEffect('pricing').style}
@@ -701,11 +780,12 @@ const ItemManagementContent: React.FC<{
         ),
         packageConversionManager: (
           <div
-            className={getStackClasses('conversion')}
+            className={`${getStackClasses('conversion')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('conversion')}
+            data-stack-section="conversion"
           >
             <ItemFormSections.PackageConversion
-              isExpanded={!isStackHovering && activeSection === 'conversion'}
+              isExpanded={activeSection === 'conversion'}
               onExpand={() => toggleSection('conversion')}
               stackClassName={getStackEffect('conversion').className}
               stackStyle={getStackEffect('conversion').style}

@@ -851,7 +851,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-3" data-stack-ignore="true">
         {imageSlots.map((slot, index) => (
           <ImageUploader
             key={`item-image-${index}`}

@@ -52,6 +52,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
       <section
         className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
         style={stackStyle}
+        data-stack-card="true"
       >
         <div
           className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"

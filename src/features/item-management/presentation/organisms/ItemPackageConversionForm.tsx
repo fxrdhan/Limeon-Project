@@ -1,8 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import { FaChevronDown } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'motion/react';
-import { ColDef, ColGroupDef } from 'ag-grid-community';
+import {
+  ColDef,
+  ColGroupDef,
+  type ColumnState,
+  type FirstDataRenderedEvent,
+} from 'ag-grid-community';
 import Button from '@/components/button';
 import { PackageConversionInput } from '../atoms';
 import {
@@ -65,6 +70,7 @@ export default function ItemPackageConversionManager({
   disabled = false,
 }: LocalItemPackageConversionManagerProps) {
   const gridRef = useRef<DataGridRef>(null);
+  const columnStateRef = useRef<ColumnState[] | null>(null);
   const filteredAvailableUnits = availableUnits
     .filter(unit => unit.name !== baseUnit)
     .filter(unit => !conversions.some(uc => uc.unit.name === unit.name));
@@ -84,21 +90,28 @@ export default function ItemPackageConversionManager({
     return 0;
   };
 
-  useEffect(() => {
-    if (filteredConversions.length === 0) return;
-    const api = gridRef.current?.api;
-    if (!api || api.isDestroyed()) return;
-    requestAnimationFrame(() => {
-      if (!api.isDestroyed()) {
-        api.autoSizeAllColumns();
+  const handleFirstDataRendered = useCallback(
+    (event: FirstDataRenderedEvent) => {
+      const api = event.api;
+      if (!api || api.isDestroyed()) return;
+
+      if (columnStateRef.current) {
+        api.applyColumnState({
+          state: columnStateRef.current,
+          applyOrder: true,
+        });
+        return;
       }
-    });
-  }, [filteredConversions.length]);
+      columnStateRef.current = api.getColumnState();
+    },
+    []
+  );
 
   return (
     <section
       className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
       style={stackStyle}
+      data-stack-card="true"
     >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
@@ -119,9 +132,9 @@ export default function ItemPackageConversionManager({
         {isExpanded ? (
           <motion.div
             key="conversion-content"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
@@ -144,34 +157,52 @@ export default function ItemPackageConversionManager({
                       ref={gridRef}
                       disableFiltering={true}
                       rowData={filteredConversions}
+                      onFirstDataRendered={handleFirstDataRendered}
+                      animateRows={false}
+                      suppressAnimationFrame={true}
+                      suppressColumnMoveAnimation={true}
                       columnDefs={
                         [
-                          createTextColumn({
-                            field: 'unit.name',
-                            headerName: 'Turunan',
-                            minWidth: 100,
-                            flex: 1,
-                          }),
-                          createTextColumn({
-                            field: 'conversion_rate',
-                            headerName: 'Konversi',
-                            minWidth: 140,
-                            flex: 2,
-                            cellStyle: { textAlign: 'center' },
-                          }),
-                          createCurrencyColumn({
-                            field: 'base_price',
-                            headerName: 'H. Pokok',
-                            minWidth: 100,
-                            flex: 1,
-                          }),
+                          {
+                            ...createTextColumn({
+                              field: 'unit.name',
+                              headerName: 'Turunan',
+                              minWidth: 130,
+                              maxWidth: 170,
+                            }),
+                            width: 140,
+                            suppressSizeToFit: true,
+                          },
+                          {
+                            ...createTextColumn({
+                              field: 'conversion_rate',
+                              headerName: 'Konversi',
+                              minWidth: 130,
+                              maxWidth: 180,
+                              cellStyle: { textAlign: 'center' },
+                            }),
+                            width: 140,
+                            suppressSizeToFit: true,
+                          },
+                          {
+                            ...createCurrencyColumn({
+                              field: 'base_price',
+                              headerName: 'H. Pokok',
+                              minWidth: 120,
+                              maxWidth: 170,
+                            }),
+                            width: 130,
+                            suppressSizeToFit: true,
+                          },
                           {
                             ...createCurrencyColumn({
                               field: 'sell_price',
                               headerName: 'H. Jual',
-                              minWidth: 100,
-                              flex: 1,
+                              minWidth: 120,
+                              maxWidth: 170,
                             }),
+                            width: 130,
+                            suppressSizeToFit: true,
                             editable: !disabled,
                             valueParser: params =>
                               parseCurrencyValue(params.newValue),
@@ -179,8 +210,10 @@ export default function ItemPackageConversionManager({
                           {
                             field: 'actions',
                             headerName: '',
-                            minWidth: 80,
-                            maxWidth: 80,
+                            minWidth: 64,
+                            maxWidth: 64,
+                            width: 64,
+                            suppressSizeToFit: true,
                             sortable: false,
                             resizable: false,
                             cellStyle: { textAlign: 'center' },
@@ -210,7 +243,6 @@ export default function ItemPackageConversionManager({
                         const nextValue = parseCurrencyValue(event.newValue);
                         onUpdateSellPrice(event.data.id, nextValue);
                       }}
-                      sizeColumnsToFit={true}
                       className="ag-theme-quartz h-full"
                       style={{ height: '100%' }}
                     />
