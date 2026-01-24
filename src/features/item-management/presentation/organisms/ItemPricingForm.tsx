@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FaChevronDown } from 'react-icons/fa';
+import { IoMenu } from 'react-icons/io5';
 import { AnimatePresence, motion } from 'motion/react';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
@@ -82,6 +84,13 @@ export default function ItemPricingForm({
   const [newLevelName, setNewLevelName] = useState('');
   const [newLevelPercentage, setNewLevelPercentage] = useState('100');
   const [newLevelDescription, setNewLevelDescription] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onBasePriceChange(e);
@@ -129,6 +138,47 @@ export default function ItemPricingForm({
 
     handleCancelAddLevel();
   };
+
+  const updateMenuPosition = useCallback(() => {
+    if (!menuButtonRef.current) return;
+    const rect = menuButtonRef.current.getBoundingClientRect();
+    const menuWidth = 190;
+    const left = Math.max(12, rect.right - menuWidth);
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    updateMenuPosition();
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target)) return;
+      if (menuButtonRef.current?.contains(target)) return;
+      setMenuOpen(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    const handleReposition = () => updateMenuPosition();
+
+    window.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      window.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [menuOpen, updateMenuPosition]);
 
   const renderLevelPricing = () => {
     if (!levelPricing) return null;
@@ -299,17 +349,34 @@ export default function ItemPricingForm({
     >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
-        onClick={() => onExpand?.()}
+        onClick={() => {
+          setMenuOpen(false);
+          onExpand?.();
+        }}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           Harga Pokok & Jual
         </h2>
-        <FaChevronDown
-          size={12}
-          className={`text-slate-500 transition-transform duration-200 ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-        />
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            ref={menuButtonRef}
+            className="p-1 text-slate-500 hover:text-slate-700"
+            onClick={event => {
+              event.stopPropagation();
+              if (disabled) return;
+              setMenuOpen(prev => !prev);
+            }}
+          >
+            <IoMenu size={16} />
+          </button>
+          <FaChevronDown
+            size={12}
+            className={`text-slate-500 transition-transform duration-200 ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+          />
+        </div>
       </div>
 
       <AnimatePresence initial={false}>
@@ -374,26 +441,44 @@ export default function ItemPricingForm({
                     readOnly={disabled}
                   />
                 </div>
-
-                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 flex items-center justify-between gap-3">
-                  <div className="text-xs text-slate-500">
-                    Atur harga khusus berdasarkan level pelanggan.
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={onShowLevelPricing}
-                    disabled={disabled || !onShowLevelPricing}
-                  >
-                    Atur Level
-                  </Button>
-                </div>
               </div>
             )}
           </motion.div>
         ) : null}
       </AnimatePresence>
+      {menuOpen && menuPosition
+        ? createPortal(
+            <div
+              className="fixed z-50"
+              style={{ top: menuPosition.top, left: menuPosition.left }}
+            >
+              <div
+                ref={menuRef}
+                className="w-[190px] rounded-lg border border-slate-200 bg-white shadow-lg p-1"
+              >
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                    showLevelPricing
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => {
+                    if (!onShowLevelPricing) return;
+                    onShowLevelPricing();
+                    setMenuOpen(false);
+                  }}
+                >
+                  Atur per-level
+                </button>
+                <div className="px-3 py-2 text-sm text-slate-400 cursor-not-allowed">
+                  Atur per-volume
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }
