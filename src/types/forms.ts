@@ -36,6 +36,7 @@ export interface PurchaseFormData {
 }
 
 export interface SaleFormData {
+  customer_id?: string;
   patient_id: string;
   doctor_id: string;
   payment_method: string;
@@ -44,6 +45,7 @@ export interface SaleFormData {
     quantity: number;
     price: number;
     subtotal: number;
+    unit_name?: string;
   }[];
 }
 

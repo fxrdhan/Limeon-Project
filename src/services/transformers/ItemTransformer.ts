@@ -71,6 +71,14 @@ export class ItemTransformer {
     const packageConversions = this.parsePackageConversions(
       dbItem.package_conversions
     );
+    const customerLevelDiscounts = Array.isArray(
+      dbItem.customer_level_discounts
+    )
+      ? dbItem.customer_level_discounts.map(discount => ({
+          customer_level_id: discount.customer_level_id,
+          discount_percentage: Number(discount.discount_percentage) || 0,
+        }))
+      : [];
 
     return {
       ...dbItem,
@@ -83,6 +91,7 @@ export class ItemTransformer {
       package_conversions: packageConversions,
       base_unit: dbItem.base_unit || '', // base_unit tetap dari field base_unit
       image_urls: Array.isArray(dbItem.image_urls) ? dbItem.image_urls : [],
+      customer_level_discounts: customerLevelDiscounts,
     };
   }
 
