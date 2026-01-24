@@ -11,8 +11,13 @@ import React, {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { FaGoogle } from 'react-icons/fa';
-import { TbCsv, TbJson, TbTableExport, TbTableFilled } from 'react-icons/tb';
+import {
+  TbBrandGoogle,
+  TbCsv,
+  TbJson,
+  TbTableExport,
+  TbTableFilled,
+} from 'react-icons/tb';
 
 interface ExportDropdownProps {
   gridApi: GridApi | null;
@@ -513,7 +518,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                       disabled={isGoogleSheetsLoading || isAuthenticating}
                       className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <FaGoogle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
+                      <TbBrandGoogle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
                       <span>
                         {isAuthenticating
                           ? 'Authenticating...'

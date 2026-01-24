@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
-import { LuFilter } from 'react-icons/lu';
-import { TbNumber12Small } from 'react-icons/tb';
-import { IoText } from 'react-icons/io5';
+import { TbFilter, TbNumber12Small, TbTypography } from 'react-icons/tb';
 import BaseSelector from './BaseSelector';
 import {
   SearchColumn,
@@ -25,9 +23,9 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       case 'currency':
         return <TbNumber12Small className="w-5 h-5" />;
       case 'date':
-        return <LuFilter className="w-4 h-4" />;
+        return <TbFilter className="w-4 h-4" />;
       default:
-        return <IoText className="w-4 h-4" />;
+        return <TbTypography className="w-4 h-4" />;
     }
   };
 

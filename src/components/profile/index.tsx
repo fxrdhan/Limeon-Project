@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import ImageUploader from '@/components/image-manager';
 import { useAuthStore } from '@/store/authStore';
 import { motion, AnimatePresence } from 'motion/react';
-import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog } from 'react-icons/fa';
+import { TbLogout, TbPencil, TbSettings, TbUserCircle } from 'react-icons/tb';
 
 const Profile = () => {
   const { user, logout } = useAuthStore();
@@ -105,7 +105,7 @@ const Profile = () => {
         {user?.name ? (
           user.name.charAt(0).toUpperCase()
         ) : (
-          <FaUserCircle
+          <TbUserCircle
             className={
               size === 'small'
                 ? 'text-base'
@@ -306,7 +306,7 @@ const Profile = () => {
                         }}
                         disabled={isUploading}
                         defaultIcon={
-                          <FaPencilAlt className="text-white text-sm" />
+                          <TbPencil className="text-white text-sm" />
                         }
                       >
                         <ProfileImage
@@ -340,14 +340,14 @@ const Profile = () => {
                   onClick={() => setPortalOpen(false)}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150 group"
                 >
-                  <FaCog className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+                  <TbSettings className="text-gray-400 group-hover:text-gray-600 transition-colors" />
                   <span>Pengaturan Profil</span>
                 </button>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
                 >
-                  <FaSignOutAlt className="text-red-500 group-hover:text-red-600 transition-colors" />
+                  <TbLogout className="text-red-500 group-hover:text-red-600 transition-colors" />
                   <span>Logout</span>
                 </button>
               </div>

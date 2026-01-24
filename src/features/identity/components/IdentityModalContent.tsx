@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaHistory, FaSpinner } from 'react-icons/fa';
+import { TbHistory, TbLoader2 } from 'react-icons/tb';
 import Button from '@/components/button';
 import IdentityImageUploader from './IdentityImageUploader';
 import IdentityFormField from './IdentityFormField';
@@ -27,7 +27,7 @@ const IdentityModalContent: React.FC = () => {
           <h2 className="text-xl font-semibold">{title}</h2>
           {mode === 'edit' && formattedUpdateAt !== '-' && (
             <span className="text-sm text-gray-500 italic flex items-center mt-1">
-              <FaHistory className="mr-1" size={12} />
+              <TbHistory className="mr-1" size={12} />
               {formattedUpdateAt}
             </span>
           )}
@@ -70,7 +70,7 @@ const IdentityModalContent: React.FC = () => {
           >
             {isSubmitting ? (
               <span className="flex items-center">
-                <FaSpinner className="animate-spin mr-2" />
+                <TbLoader2 className="animate-spin mr-2" />
                 Menyimpan...
               </span>
             ) : (

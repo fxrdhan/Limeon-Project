@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaQuestionCircle } from 'react-icons/fa';
+import { TbHelpCircle } from 'react-icons/tb';
 
 interface FefoTooltipProps {
   tooltipText?: string;
@@ -40,7 +40,7 @@ export default function FefoTooltip({
         onMouseLeave={handleMouseLeave}
         ref={iconRef}
       >
-        <FaQuestionCircle className="text-gray-400 cursor-help" size={14} />
+        <TbHelpCircle className="text-gray-400 cursor-help" size={14} />
       </div>
       {showTooltip &&
         tooltipPosition &&

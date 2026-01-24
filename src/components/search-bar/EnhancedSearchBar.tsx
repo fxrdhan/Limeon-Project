@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { LuSearch } from 'react-icons/lu';
+import { TbSearch } from 'react-icons/tb';
 import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
 import ColumnSelector from './components/selectors/ColumnSelector';
@@ -3213,7 +3213,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         {resultsCount !== undefined && searchState === 'found' && (
           <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-            <LuSearch className="w-3 h-3" />
+            <TbSearch className="w-3 h-3" />
             <span>{resultsCount} hasil ditemukan</span>
           </div>
         )}

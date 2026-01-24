@@ -2,14 +2,14 @@ import React from 'react';
 import PageTitle from '@/components/page-title';
 import { Line, Doughnut } from '@/components/charts/LazyCharts';
 import {
-  FaShoppingBag,
-  FaShoppingCart,
-  FaBoxes,
-  FaExclamationTriangle,
-  FaSync,
-  FaArrowUp,
-  FaArrowDown,
-} from 'react-icons/fa';
+  TbAlertTriangle,
+  TbArrowDown,
+  TbArrowUp,
+  TbBoxMultiple,
+  TbRefresh,
+  TbShoppingBag,
+  TbShoppingCart,
+} from 'react-icons/tb';
 import { Card } from '@/components/card';
 import Button from '@/components/button';
 
@@ -91,7 +91,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
           onClick={onRefresh}
           className="p-2"
         >
-          <FaSync className="h-4 w-4" />
+          <TbRefresh className="h-4 w-4" />
         </Button>
       )}
     </div>
@@ -190,7 +190,7 @@ const DashboardNew = () => {
           }}
           className="flex items-center gap-2"
         >
-          <FaSync className="h-4 w-4" />
+          <TbRefresh className="h-4 w-4" />
           Refresh All
         </Button>
       </div>
@@ -217,9 +217,9 @@ const DashboardNew = () => {
                 }`}
               >
                 {monthlyRevenueQuery.data.isIncrease ? (
-                  <FaArrowUp />
+                  <TbArrowUp />
                 ) : (
-                  <FaArrowDown />
+                  <TbArrowDown />
                 )}
                 <span className="font-semibold">
                   {formatPercentage(monthlyRevenueQuery.data.percentageChange)}
@@ -238,7 +238,7 @@ const DashboardNew = () => {
           value={
             statsQuery.data ? formatCurrency(statsQuery.data.totalSales) : 0
           }
-          icon={<FaShoppingBag className="h-6 w-6 text-white" />}
+          icon={<TbShoppingBag className="h-6 w-6 text-white" />}
           color="bg-blue-500"
           isLoading={statsQuery.isLoading}
         />
@@ -247,21 +247,21 @@ const DashboardNew = () => {
           value={
             statsQuery.data ? formatCurrency(statsQuery.data.totalPurchases) : 0
           }
-          icon={<FaShoppingCart className="h-6 w-6 text-white" />}
+          icon={<TbShoppingCart className="h-6 w-6 text-white" />}
           color="bg-green-500"
           isLoading={statsQuery.isLoading}
         />
         <StatsCard
           title="Total Obat"
           value={statsQuery.data ? statsQuery.data.totalMedicines : 0}
-          icon={<FaBoxes className="h-6 w-6 text-white" />}
+          icon={<TbBoxMultiple className="h-6 w-6 text-white" />}
           color="bg-purple-500"
           isLoading={statsQuery.isLoading}
         />
         <StatsCard
           title="Stok Menipis"
           value={statsQuery.data ? statsQuery.data.lowStockCount : 0}
-          icon={<FaExclamationTriangle className="h-6 w-6 text-white" />}
+          icon={<TbAlertTriangle className="h-6 w-6 text-white" />}
           color="bg-red-500"
           isLoading={statsQuery.isLoading}
         />
@@ -340,7 +340,7 @@ const DashboardNew = () => {
       {lowStockQuery.data && lowStockQuery.data.length > 0 && (
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <FaExclamationTriangle className="h-5 w-5 text-red-500" />
+            <TbAlertTriangle className="h-5 w-5 text-red-500" />
             <h3 className="text-lg font-semibold text-gray-900">
               Peringatan Stok Menipis
             </h3>
@@ -424,7 +424,7 @@ const DashboardNew = () => {
                         }`}
                       >
                         {transaction.type === 'sale' ? (
-                          <FaShoppingBag
+                          <TbShoppingBag
                             className={`h-4 w-4 ${
                               transaction.type === 'sale'
                                 ? 'text-green-600'
@@ -432,7 +432,7 @@ const DashboardNew = () => {
                             }`}
                           />
                         ) : (
-                          <FaShoppingCart className="h-4 w-4 text-blue-600" />
+                          <TbShoppingCart className="h-4 w-4 text-blue-600" />
                         )}
                       </div>
                       <div>

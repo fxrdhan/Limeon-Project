@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FaChevronDown } from 'react-icons/fa';
-import { IoMenu } from 'react-icons/io5';
+import { TbArrowBackUp, TbChevronDown, TbMenu2 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
@@ -196,16 +195,6 @@ export default function ItemPricingForm({
               Harga jual dasar: {formatRupiah(baseSellPrice)}
             </div>
           </div>
-          {onHideLevelPricing ? (
-            <Button
-              type="button"
-              variant="text"
-              size="sm"
-              onClick={onHideLevelPricing}
-            >
-              Kembali
-            </Button>
-          ) : null}
         </div>
 
         {levelPricing.isLoading ? (
@@ -264,9 +253,9 @@ export default function ItemPricingForm({
           </div>
         )}
 
-        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50">
           {isAddingLevel ? (
-            <div className="space-y-3">
+            <div className="space-y-3 p-4">
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Nama level">
                   <Input
@@ -321,20 +310,14 @@ export default function ItemPricingForm({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-slate-600">
-                Tambah level pelanggan baru dan atur persentasenya.
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={handleStartAddLevel}
-                disabled={disabled}
-              >
-                Tambah Level
-              </Button>
-            </div>
+            <button
+              type="button"
+              className="w-full px-4 py-3 text-left text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+              onClick={handleStartAddLevel}
+              disabled={disabled}
+            >
+              Tambah Level
+            </button>
           )}
         </div>
       </div>
@@ -358,24 +341,39 @@ export default function ItemPricingForm({
           Harga Pokok & Jual
         </h2>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            ref={menuButtonRef}
-            className="p-1 text-slate-500 hover:text-slate-700"
-            onClick={event => {
-              event.stopPropagation();
-              if (disabled) return;
-              setMenuOpen(prev => !prev);
-            }}
-          >
-            <IoMenu size={16} />
-          </button>
-          <FaChevronDown
-            size={12}
-            className={`text-slate-500 transition-transform duration-200 ${
-              isExpanded ? 'rotate-180' : ''
-            }`}
-          />
+          {isExpanded ? (
+            <button
+              type="button"
+              ref={menuButtonRef}
+              className="p-1 -ml-1 text-slate-500 hover:text-slate-700 cursor-pointer"
+              onClick={event => {
+                event.stopPropagation();
+                if (disabled) return;
+                setMenuOpen(prev => !prev);
+              }}
+            >
+              <TbMenu2 size={16} />
+            </button>
+          ) : null}
+          {showLevelPricing ? (
+            <button
+              type="button"
+              className="p-1 text-slate-500 hover:text-slate-700 cursor-pointer"
+              onClick={event => {
+                event.stopPropagation();
+                onHideLevelPricing?.();
+              }}
+            >
+              <TbArrowBackUp size={16} />
+            </button>
+          ) : (
+            <TbChevronDown
+              size={12}
+              className={`text-slate-500 transition-transform duration-200 ${
+                isExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          )}
         </div>
       </div>
 
@@ -446,11 +444,16 @@ export default function ItemPricingForm({
           </motion.div>
         ) : null}
       </AnimatePresence>
-      {menuOpen && menuPosition
-        ? createPortal(
-            <div
+      {createPortal(
+        <AnimatePresence>
+          {menuOpen && menuPosition ? (
+            <motion.div
               className="fixed z-50"
               style={{ top: menuPosition.top, left: menuPosition.left }}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
             >
               <div
                 ref={menuRef}
@@ -458,7 +461,7 @@ export default function ItemPricingForm({
               >
                 <button
                   type="button"
-                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors cursor-pointer ${
                     showLevelPricing
                       ? 'text-emerald-600 bg-emerald-50'
                       : 'text-slate-700 hover:bg-slate-100'
@@ -475,10 +478,11 @@ export default function ItemPricingForm({
                   Atur per-volume
                 </div>
               </div>
-            </div>,
-            document.body
-          )
-        : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>,
+        document.body
+      )}
     </section>
   );
 }

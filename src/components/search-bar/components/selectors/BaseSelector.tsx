@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { HiOutlineSparkles } from 'react-icons/hi2';
-import { LuSearch } from 'react-icons/lu';
+import { TbSearch, TbSparkles } from 'react-icons/tb';
 import fuzzysort from 'fuzzysort';
 import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
@@ -452,7 +451,7 @@ function BaseSelector<T>({
     if (internalSearchTerm) {
       return (
         <div className="flex items-center gap-2 text-xs text-gray-600">
-          <LuSearch className="w-3 h-3" />
+          <TbSearch className="w-3 h-3" />
           <span>
             Searching:{' '}
             <span
@@ -472,7 +471,7 @@ function BaseSelector<T>({
     }
     return (
       <div className="flex items-center gap-2 text-xs text-gray-600">
-        <HiOutlineSparkles className="w-3 h-3" />
+        <TbSparkles className="w-3 h-3" />
         <span>{config.headerText}</span>
       </div>
     );

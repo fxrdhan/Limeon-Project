@@ -2,7 +2,7 @@ import Button from '@/components/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/card';
-import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import { TbCheck, TbPencil, TbX } from 'react-icons/tb';
 import type { CompanyProfile, ProfileKey } from '@/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -120,7 +120,7 @@ const Profile = () => {
                 onClick={() => handleCancel(field)}
                 className="p-1 text-gray-500 hover:text-red-500"
               >
-                <FaTimes />
+                <TbX />
               </Button>
               <Button
                 variant="text"
@@ -133,7 +133,7 @@ const Profile = () => {
                 updateProfileMutation.variables?.field === field ? (
                   <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  <FaCheck />
+                  <TbCheck />
                 )}
               </Button>
             </div>
@@ -144,7 +144,7 @@ const Profile = () => {
               onClick={() => toggleEdit(field)}
               className="p-1 text-gray-500 hover:text-primary"
             >
-              <FaEdit />
+              <TbPencil />
             </Button>
           )}
         </div>

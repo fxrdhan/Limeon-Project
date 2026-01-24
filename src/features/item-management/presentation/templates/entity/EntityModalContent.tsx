@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Button from '@/components/button';
-import { FaHistory, FaArrowLeft } from 'react-icons/fa';
+import { TbArrowLeft, TbHistory } from 'react-icons/tb';
 import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
 import { EntityFormFields } from '../../molecules';
 import { HistoryListContent } from '../../organisms';
@@ -58,7 +58,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
             onClick={goBack}
             className="text-gray-600 hover:text-gray-800 p-1 flex items-center"
           >
-            <FaArrowLeft size={16} />
+            <TbArrowLeft size={16} />
           </Button>
         )}
         <h2 className="text-xl font-semibold">{getTitle()}</h2>
@@ -73,7 +73,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
             className="text-gray-500 hover:text-primary flex items-center transition-colors p-2"
             title={`Lihat riwayat perubahan ${entityName} (Terakhir diubah: ${formattedUpdateAt})`}
           >
-            <FaHistory size={16} />
+            <TbHistory size={16} />
           </Button>
         )}
       </div>

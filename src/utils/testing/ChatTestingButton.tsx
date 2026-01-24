@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { FaComments } from 'react-icons/fa';
+import { TbMessageDots } from 'react-icons/tb';
 import ChatPortal from '@/components/shared/chat-portal';
 
 /**
@@ -46,7 +46,7 @@ export function ChatTestingButton({
         className="fixed bottom-6 left-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-105 z-40"
         title="Test Chat"
       >
-        <FaComments className="w-5 h-5" />
+        <TbMessageDots className="w-5 h-5" />
       </button>
 
       {/* Chat Portal */}

@@ -15,7 +15,7 @@ import {
   RowClickedEvent,
 } from 'ag-grid-community';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FaPlus } from 'react-icons/fa';
+import { TbPlus } from 'react-icons/tb';
 // import { useLocation } from "react-router-dom";
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
 
@@ -220,7 +220,7 @@ const SupplierListNew = () => {
             className="flex items-center ml-4 mb-2"
             onClick={() => setIsAddModalOpen(true)}
           >
-            <FaPlus className="mr-2" />
+            <TbPlus className="mr-2" />
             Tambah Supplier Baru
           </Button>
         </div>

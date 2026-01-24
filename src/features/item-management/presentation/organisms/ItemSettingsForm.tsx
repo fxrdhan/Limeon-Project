@@ -1,5 +1,5 @@
 import { forwardRef, type CSSProperties } from 'react';
-import { FaChevronDown } from 'react-icons/fa';
+import { TbChevronDown } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Dropdown from '@/components/dropdown';
 import Checkbox from '@/components/checkbox';
@@ -61,7 +61,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
             Pengaturan Tambahan
           </h2>
-          <FaChevronDown
+          <TbChevronDown
             size={12}
             className={`text-slate-500 transition-transform duration-200 ${
               isExpanded ? 'rotate-180' : ''

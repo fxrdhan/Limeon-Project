@@ -3,7 +3,7 @@ import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import Calendar from '@/components/calendar';
 import Button from '@/components/button';
-import { FaPencilAlt, FaSave, FaBan } from 'react-icons/fa';
+import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 import type { FieldConfig } from '@/types';
 import type { CustomDateValueType } from '@/components/calendar/types';
@@ -45,7 +45,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
             className="text-gray-500 hover:text-red-500 p-1"
             title="Batal"
           >
-            <FaBan className="text-red-500 text-sm" />
+            <TbBan className="text-red-500 text-sm" />
           </Button>
           <Button
             variant="text"
@@ -58,7 +58,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
             {loadingField[field.key] ? (
               <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block"></span>
             ) : (
-              <FaSave className="text-green-500 text-sm" />
+              <TbDeviceFloppy className="text-green-500 text-sm" />
             )}
           </Button>
         </div>
@@ -73,7 +73,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
         className="text-gray-500 hover:text-gray-700 p-1"
         title="Edit"
       >
-        <FaPencilAlt className="text-primary text-sm" />
+        <TbPencil className="text-primary text-sm" />
       </Button>
     );
   };

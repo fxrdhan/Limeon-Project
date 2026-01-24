@@ -5,12 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import type { PurchaseData, PurchaseItem } from '@/types';
-import {
-  FaArrowLeft,
-  FaSearchPlus,
-  FaSearchMinus,
-  FaPrint,
-} from 'react-icons/fa';
+import { TbArrowLeft, TbPrinter, TbZoomIn, TbZoomOut } from 'react-icons/tb';
 
 const ViewPurchase = () => {
   const { id } = useParams<{ id: string }>();
@@ -149,7 +144,7 @@ const ViewPurchase = () => {
       <div className="text-center p-6">
         <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
         <Button onClick={() => navigate('/purchases')}>
-          <FaArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
+          <TbArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
         </Button>
       </div>
     );
@@ -167,7 +162,7 @@ const ViewPurchase = () => {
           onClick={() => navigate('/purchases')}
         >
           <div className="flex items-center">
-            <FaArrowLeft className="mr-2" /> <span>Kembali</span>
+            <TbArrowLeft className="mr-2" /> <span>Kembali</span>
           </div>
         </Button>
         <div className="flex items-center gap-2">
@@ -177,7 +172,7 @@ const ViewPurchase = () => {
             onClick={decreaseScale}
             title="Perkecil"
           >
-            <FaSearchMinus />
+            <TbZoomOut />
           </Button>
           <span className="mx-1 text-sm">{Math.round(scale * 100)}%</span>
           <Button
@@ -186,10 +181,10 @@ const ViewPurchase = () => {
             onClick={increaseScale}
             title="Perbesar"
           >
-            <FaSearchPlus />
+            <TbZoomIn />
           </Button>
           <Button onClick={openPrintableVersion} variant="primary">
-            <FaPrint className="mr-2" /> Print View
+            <TbPrinter className="mr-2" /> Print View
           </Button>
         </div>
       </div>

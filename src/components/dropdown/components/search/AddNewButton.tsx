@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaPlus } from 'react-icons/fa6';
+import { TbPlus } from 'react-icons/tb';
 import { getSearchIconColor } from '../../utils/dropdownUtils';
 
 interface AddNewButtonProps {
@@ -21,7 +21,7 @@ const AddNewButton: React.FC<AddNewButtonProps> = ({
   };
 
   return (
-    <FaPlus
+    <TbPlus
       className={`${iconColor} transition-all duration-300 ease-in-out cursor-pointer mr-1 ml-1 scale-150`}
       style={{ width: '16px', minWidth: '16px' }}
       onClick={handleClick}

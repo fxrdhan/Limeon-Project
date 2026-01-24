@@ -3,7 +3,7 @@ import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import { motion, AnimatePresence } from 'motion/react';
-import { IoChatbubblesSharp } from 'react-icons/io5';
+import { TbMessageDots } from 'react-icons/tb';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
@@ -364,7 +364,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                   className="absolute top-3 right-3 text-emerald-600"
                                   title="Click to chat with this user"
                                 >
-                                  <IoChatbubblesSharp size={18} />
+                                  <TbMessageDots size={18} />
                                 </motion.div>
                               )}
                           </AnimatePresence>

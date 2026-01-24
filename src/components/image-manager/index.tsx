@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { ImageUploaderProps } from '@/types';
 import { ClipLoader } from 'react-spinners';
-import { RxPencil2, RxTrash } from 'react-icons/rx';
-import { LuUpload } from 'react-icons/lu';
+import { TbEdit, TbTrash, TbUpload } from 'react-icons/tb';
 import Button from '@/components/button';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -130,21 +129,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (!hasImage) {
       options.push({
         label: 'Upload',
-        icon: <LuUpload className="w-4 h-4" />,
+        icon: <TbUpload className="w-4 h-4" />,
         action: handleUploadClick,
         disabled: isUploading || isDeleting,
       });
     } else {
       options.push({
         label: 'Edit',
-        icon: <RxPencil2 className="w-4 h-4" />,
+        icon: <TbEdit className="w-4 h-4" />,
         action: handleUploadClick,
         disabled: isUploading || isDeleting,
       });
       // Always show delete option when image exists
       options.push({
         label: 'Hapus',
-        icon: <RxTrash className="w-4 h-4" />,
+        icon: <TbTrash className="w-4 h-4" />,
         action: onImageDelete
           ? handleDeleteImage
           : () => {

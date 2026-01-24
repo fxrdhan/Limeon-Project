@@ -16,7 +16,7 @@ import {
   RowClickedEvent,
 } from 'ag-grid-community';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FaPlus } from 'react-icons/fa';
+import { TbPlus } from 'react-icons/tb';
 
 // Use the new modular architecture
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
@@ -261,7 +261,7 @@ const DoctorListNew = () => {
             className="flex items-center ml-4 mb-2"
             onClick={() => setIsAddModalOpen(true)}
           >
-            <FaPlus className="mr-2" />
+            <TbPlus className="mr-2" />
             Tambah Dokter Baru
           </Button>
         </div>

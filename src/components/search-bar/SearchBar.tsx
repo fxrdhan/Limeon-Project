@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { LuSearch } from 'react-icons/lu';
-import { PiKeyReturnBold } from 'react-icons/pi';
+import { TbArrowBack, TbSearch } from 'react-icons/tb';
 import { TableSearchProps } from './types';
 import { SEARCH_CONSTANTS } from './constants';
 
@@ -43,7 +42,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
   return (
     <div className={`mb-4 relative ${className}`}>
       <div className="flex items-center">
-        <LuSearch
+        <TbSearch
           className={`${getSearchIconColor()} transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
             hasValue
               ? 'opacity-100 transform translate-x-0 scale-150'
@@ -73,7 +72,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             onFocus={onFocus}
             onBlur={onBlur}
           />
-          <LuSearch
+          <TbSearch
             className={`absolute top-3.5 ${getSearchIconColor()} transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               hasValue
                 ? 'opacity-0 transform translate-x-2 left-3'
@@ -90,7 +89,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
           >
             {value}
           </span>
-          <PiKeyReturnBold
+          <TbArrowBack
             className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               searchState === 'not-found' && value
                 ? 'opacity-100 scale-150 translate-x-0'

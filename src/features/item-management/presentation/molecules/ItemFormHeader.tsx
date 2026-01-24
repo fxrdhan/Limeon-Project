@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FaUndoAlt, FaTimes } from 'react-icons/fa';
+import { TbArrowBackUp, TbX } from 'react-icons/tb';
 import { CardHeader, CardTitle } from '@/components/card';
 import Button from '@/components/button';
 import ItemHistoryPortal from './ItemHistoryPortal';
@@ -91,7 +91,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 className="text-gray-600 hover:text-orange-600 flex items-center"
                 title="Ctrl+Shift+R"
               >
-                <FaUndoAlt className="mr-1.5" size={12} /> Reset All
+                <TbArrowBackUp className="mr-1.5" size={12} /> Reset All
               </Button>
             )}
             <Button
@@ -105,7 +105,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
               className="p-2"
               title="Tutup"
             >
-              <FaTimes size={18} />
+              <TbX size={18} />
             </Button>
           </div>
         </CardHeader>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PiKeyReturnBold } from 'react-icons/pi';
+import { TbArrowBack } from 'react-icons/tb';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
@@ -121,7 +121,7 @@ export default function PackageConversionInput({
               disabled={disabled}
               aria-label="Tambah konversi kemasan"
             >
-              <PiKeyReturnBold size={24} />
+              <TbArrowBack size={24} />
             </button>
           </div>
         </FormField>

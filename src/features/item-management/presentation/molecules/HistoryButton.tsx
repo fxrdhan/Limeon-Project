@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from '@/components/button';
-import { FaHistory } from 'react-icons/fa';
+import { TbHistory } from 'react-icons/tb';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 
 interface HistoryButtonProps {
@@ -29,7 +29,7 @@ const HistoryButton: React.FC<HistoryButtonProps> = ({
       className={`text-gray-500 hover:text-gray-700 p-1 ${className}`}
       title={`Lihat riwayat perubahan ${entityName}`}
     >
-      <FaHistory size={16} />
+      <TbHistory size={16} />
     </Button>
   );
 };

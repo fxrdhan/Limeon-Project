@@ -1,6 +1,6 @@
 import React from 'react';
 import type { VersionData } from '../../shared/types/ItemTypes';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { TbUserCircle } from 'react-icons/tb';
 
 interface ComparisonHeaderProps {
   isDualMode: boolean;
@@ -18,7 +18,7 @@ const UserInfo: React.FC<{
     return (
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <span>Unknown</span>
-        <UserCircleIcon className="w-5 h-5" />
+        <TbUserCircle className="w-5 h-5" />
       </div>
     );
   }
@@ -33,7 +33,7 @@ const UserInfo: React.FC<{
           className="w-6 h-6 rounded-full object-cover border border-gray-300"
         />
       ) : (
-        <UserCircleIcon className="w-6 h-6 text-gray-400" />
+        <TbUserCircle className="w-6 h-6 text-gray-400" />
       )}
     </div>
   );

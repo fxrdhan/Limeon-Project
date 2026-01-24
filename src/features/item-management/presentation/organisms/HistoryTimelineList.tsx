@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useIsPresent } from 'motion/react';
 import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
-import { FaHistory } from 'react-icons/fa';
-import { IoArrowUndo } from 'react-icons/io5';
+import { TbArrowBackUp, TbHistory } from 'react-icons/tb';
 import { formatDateTime } from '@/lib/formatters';
 
 export interface HistoryItem {
@@ -196,7 +195,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
                 </span>
 
                 {/* Restore icon - hidden by default, fade in on hover */}
-                <IoArrowUndo
+                <TbArrowBackUp
                   className="
                     absolute inset-0 m-auto
                     opacity-0
@@ -577,7 +576,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     // Show empty state when no data and not loading
     return (
       <div className="p-6 text-center text-gray-500">
-        <FaHistory size={48} className="mx-auto mb-4 opacity-30" />
+        <TbHistory size={48} className="mx-auto mb-4 opacity-30" />
         <p>{emptyMessage}</p>
       </div>
     );

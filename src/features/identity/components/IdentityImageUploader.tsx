@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ImageUploader from '@/components/image-manager';
-import { FaPencilAlt } from 'react-icons/fa';
+import { TbPencil } from 'react-icons/tb';
 import { ClipLoader } from 'react-spinners';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 import {
@@ -164,7 +164,7 @@ const IdentityImageUploader: React.FC = () => {
           onImageDelete={handleImageDeleteInternal}
           disabled={isUploadingImage || mode !== 'add'}
           loadingIcon={<ClipLoader color="#ffffff" size={20} loading={true} />}
-          defaultIcon={<FaPencilAlt className="text-white text-lg" />}
+          defaultIcon={<TbPencil className="text-white text-lg" />}
         >
           {renderImageContent()}
         </ImageUploader>

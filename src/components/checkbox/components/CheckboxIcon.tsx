@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FaCheck } from 'react-icons/fa';
+import { TbCheck } from 'react-icons/tb';
 import classNames from 'classnames';
 import type { CheckboxIconProps } from '../types';
 
@@ -44,7 +44,7 @@ export const CheckboxIcon: React.FC<CheckboxIconProps> = ({
               delay: 0.1,
             }}
           >
-            <FaCheck
+            <TbCheck
               className="text-white"
               style={{ fontSize: '0.7rem', marginLeft: '-0.7px' }}
             />

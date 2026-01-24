@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FiEdit2 } from 'react-icons/fi';
-import { LuX } from 'react-icons/lu';
-import { PiPlusCircleBold, PiTrashSimpleBold } from 'react-icons/pi';
+import { TbCirclePlus, TbPencil, TbTrash, TbX } from 'react-icons/tb';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 import { validateFilterValue } from '../utils/validationUtils';
 
@@ -401,9 +399,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 type="button"
               >
                 {isEditing ? (
-                  <LuX className="w-3.5 h-3.5 flex-shrink-0" />
+                  <TbX className="w-3.5 h-3.5 flex-shrink-0" />
                 ) : (
-                  <FiEdit2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <TbPencil className="w-3.5 h-3.5 flex-shrink-0" />
                 )}
               </button>
             </div>
@@ -431,7 +429,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 }`}
                 type="button"
               >
-                <PiTrashSimpleBold className="w-3.5 h-3.5 flex-shrink-0" />
+                <TbTrash className="w-3.5 h-3.5 flex-shrink-0" />
               </button>
             </div>
           )}
@@ -458,7 +456,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 type="button"
                 title="Tambah kondisi"
               >
-                <PiPlusCircleBold className="w-4 h-4 flex-shrink-0" />
+                <TbCirclePlus className="w-4 h-4 flex-shrink-0" />
               </button>
             </div>
           )}

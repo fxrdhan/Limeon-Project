@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaClock, FaTools } from 'react-icons/fa';
+import { TbArrowLeft, TbClock, TbTools } from 'react-icons/tb';
 import Badge from '@/components/badge';
 
 interface ComingSoonProps {
@@ -32,10 +32,10 @@ const ComingSoon = ({
         <div className="flex justify-center">
           <div className="relative">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full flex items-center justify-center">
-              <FaTools className="w-10 h-10 text-blue-500" />
+              <TbTools className="w-10 h-10 text-blue-500" />
             </div>
             <div className="absolute -top-1 -right-1 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-              <FaClock className="w-4 h-4 text-orange-500" />
+              <TbClock className="w-4 h-4 text-orange-500" />
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ const ComingSoon = ({
             onClick={handleGoBack}
             className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 shadow-sm"
           >
-            <FaArrowLeft className="w-4 h-4" />
+            <TbArrowLeft className="w-4 h-4" />
             <span>{backButtonText}</span>
           </button>
         )}

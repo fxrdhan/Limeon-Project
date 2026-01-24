@@ -8,11 +8,7 @@ import { supabase } from '@/lib/supabase';
 import HistoryTimelineList from '../organisms/HistoryTimelineList';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
 import Button from '@/components/button';
-import {
-  ExclamationTriangleIcon,
-  ClockIcon,
-  ArrowUturnLeftIcon,
-} from '@heroicons/react/24/outline';
+import { TbAlertTriangle, TbArrowBackUp, TbClock } from 'react-icons/tb';
 
 interface HistoryItem {
   id: string;
@@ -283,7 +279,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
             >
               <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 z-10">
                 <div className="flex items-center gap-3 mb-4">
-                  <ArrowUturnLeftIcon className="w-6 h-6 text-blue-600" />
+                  <TbArrowBackUp className="w-6 h-6 text-blue-600" />
                   <h3 className="text-xl font-semibold">
                     Restore ke Versi {restoreTargetVersion}
                   </h3>
@@ -314,7 +310,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <ClockIcon className="w-5 h-5 text-blue-600" />
+                        <TbClock className="w-5 h-5 text-blue-600" />
                         <span className="font-semibold text-gray-900">
                           Soft Restore (Recommended)
                         </span>
@@ -346,7 +342,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
+                        <TbAlertTriangle className="w-5 h-5 text-red-600" />
                         <span className="font-semibold text-gray-900">
                           Hard Rollback (Destructive)
                         </span>
@@ -356,7 +352,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                         secara permanen.
                       </p>
                       <div className="flex items-start gap-2 text-xs text-red-700 bg-red-100 p-2 rounded">
-                        <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <TbAlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <span>
                           <strong>Peringatan:</strong> Aksi ini tidak dapat
                           dibatalkan!

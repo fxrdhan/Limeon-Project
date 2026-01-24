@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import type { ButtonProps, ButtonVariant, ButtonSize } from '@/types';
 import { isButtonVariant, isButtonSize } from '@/types';
 import React from 'react';
-import { AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { TbLoader2 } from 'react-icons/tb';
 import './style.scss';
 
 /**
@@ -81,7 +81,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <span className="button__spinner">
-            <AiOutlineLoading3Quarters className="animate-spin -ml-1 mr-2 h-4 w-4" />
+            <TbLoader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
             Loading...
           </span>
         ) : (

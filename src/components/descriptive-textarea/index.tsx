@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FaChevronDown } from 'react-icons/fa';
+import { TbChevronDown } from 'react-icons/tb';
 import classNames from 'classnames';
 import type { DescriptiveTextareaProps } from '@/types';
 
@@ -61,7 +61,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
           transition={hasInteracted ? { duration: 0.3 } : { duration: 0 }}
           className="transform"
         >
-          <FaChevronDown size={12} />
+          <TbChevronDown size={12} />
         </motion.div>
       </button>
       <AnimatePresence>

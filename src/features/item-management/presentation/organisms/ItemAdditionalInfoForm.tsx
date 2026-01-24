@@ -6,7 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from 'react';
-import { FaChevronDown } from 'react-icons/fa';
+import { TbChevronDown } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
@@ -117,7 +117,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           Info Tambahan
         </h2>
-        <FaChevronDown
+        <TbChevronDown
           size={12}
           className={`text-slate-500 transition-transform duration-200 ${
             isExpanded ? 'rotate-180' : ''

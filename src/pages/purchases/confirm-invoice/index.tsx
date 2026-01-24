@@ -18,7 +18,7 @@ import {
 } from '@/components/table';
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
+import { TbArrowLeft, TbCheck, TbClock, TbRefresh } from 'react-icons/tb';
 import {
   saveInvoiceToDatabase,
   regenerateInvoiceData,
@@ -206,7 +206,7 @@ const ConfirmInvoicePage = () => {
               <h3 className="text-lg font-medium">Data yang Diekstraksi:</h3>
               {processingTime && (
                 <div className="inline-flex items-center px-2.5 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <FaClock className="mr-1.5" />
+                  <TbClock className="mr-1.5" />
                   Data selesai diekstraksi dalam {processingTime}s
                 </div>
               )}
@@ -428,7 +428,7 @@ const ConfirmInvoicePage = () => {
           onClick={() => navigate('/purchases')}
         >
           <span className="flex items-center">
-            <FaArrowLeft className="mr-2" />
+            <TbArrowLeft className="mr-2" />
             <span>Kembali</span>
           </span>
         </Button>
@@ -441,7 +441,7 @@ const ConfirmInvoicePage = () => {
           className="mx-2"
           aria-live="polite"
         >
-          <FaRedo className="mr-2" />
+          <TbRefresh className="mr-2" />
           Generate Ulang
         </Button>
         <Button
@@ -452,7 +452,7 @@ const ConfirmInvoicePage = () => {
           className="bg-blue-600 hover:bg-blue-700 text-white"
           aria-live="polite"
         >
-          <FaCheck className="mr-2" />
+          <TbCheck className="mr-2" />
           Konfirmasi & Simpan
         </Button>
       </CardFooter>

@@ -7,7 +7,7 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { FaPlus } from 'react-icons/fa';
+import { TbPlus } from 'react-icons/tb';
 import Button from '@/components/button';
 import { SearchBar } from '@/components/search-bar';
 import type { ItemSearchBarProps, Item, ItemSearchBarRef } from '@/types';
@@ -430,7 +430,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
             size="sm"
             className="flex items-center whitespace-nowrap h-[42px]"
           >
-            <FaPlus className="mr-2" />
+            <TbPlus className="mr-2" />
             Tambah Item Baru
           </Button>
         </div>

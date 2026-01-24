@@ -1,15 +1,16 @@
 import {
-  FaHome,
-  FaDatabase,
-  FaBoxes,
-  FaShoppingCart,
-  FaShoppingBag,
-  FaHospital,
-  FaChartBar,
-  FaCog,
-  FaAngleDown,
-} from 'react-icons/fa';
-import { HiLockClosed, HiLockOpen } from 'react-icons/hi';
+  TbBoxMultiple,
+  TbChartBar,
+  TbChevronDown,
+  TbDatabase,
+  TbHome,
+  TbHospital,
+  TbLock,
+  TbLockOpen,
+  TbSettings,
+  TbShoppingBag,
+  TbShoppingCart,
+} from 'react-icons/tb';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo, useCallback, useEffect, useRef, JSX } from 'react';
@@ -31,7 +32,7 @@ interface SidebarProps {
 
 const LockToggleIcon = ({ isLocked }: { isLocked: boolean }) => (
   <div className="transition-all duration-200">
-    {isLocked ? <HiLockClosed /> : <HiLockOpen />}
+    {isLocked ? <TbLock /> : <TbLockOpen />}
   </div>
 );
 
@@ -66,12 +67,12 @@ const Sidebar = ({
       {
         name: 'Dashboard',
         path: '/',
-        icon: <FaHome className="text-lg" />,
+        icon: <TbHome className="text-lg" />,
       },
       {
         name: 'Master Data',
         path: '/master-data',
-        icon: <FaDatabase className="text-lg" />,
+        icon: <TbDatabase className="text-lg" />,
         children: [
           { name: 'Item Master', path: '/master-data/item-master' },
           { name: 'Supplier', path: '/master-data/suppliers' },
@@ -82,7 +83,7 @@ const Sidebar = ({
       {
         name: 'Persediaan',
         path: '/inventory',
-        icon: <FaBoxes className="text-lg" />,
+        icon: <TbBoxMultiple className="text-lg" />,
         children: [
           { name: 'Stok Obat', path: '/inventory/stock' },
           { name: 'Stok Opname', path: '/inventory/stock-opname' },
@@ -92,7 +93,7 @@ const Sidebar = ({
       {
         name: 'Pembelian',
         path: '/purchases',
-        icon: <FaShoppingCart className="text-lg" />,
+        icon: <TbShoppingCart className="text-lg" />,
         children: [
           { name: 'Daftar Pesanan Beli', path: '/purchases/orders' },
           { name: 'Daftar Pembelian', path: '/purchases' },
@@ -102,7 +103,7 @@ const Sidebar = ({
       {
         name: 'Penjualan',
         path: '/sales',
-        icon: <FaShoppingBag className="text-lg" />,
+        icon: <TbShoppingBag className="text-lg" />,
         children: [
           { name: 'Daftar Penjualan', path: '/sales' },
           { name: 'Tambah Penjualan', path: '/sales/create' },
@@ -111,7 +112,7 @@ const Sidebar = ({
       {
         name: 'Klinik',
         path: '/clinic',
-        icon: <FaHospital className="text-lg" />,
+        icon: <TbHospital className="text-lg" />,
         children: [
           { name: 'Daftar Pasien', path: '/clinic/patients' },
           { name: 'Antrian', path: '/clinic/queue' },
@@ -121,7 +122,7 @@ const Sidebar = ({
       {
         name: 'Laporan',
         path: '/reports',
-        icon: <FaChartBar className="text-lg" />,
+        icon: <TbChartBar className="text-lg" />,
         children: [
           { name: 'Penjualan', path: '/reports/sales' },
           { name: 'Pembelian', path: '/reports/purchases' },
@@ -131,7 +132,7 @@ const Sidebar = ({
       {
         name: 'Pengaturan',
         path: '/settings',
-        icon: <FaCog className="text-lg" />,
+        icon: <TbSettings className="text-lg" />,
         children: [
           { name: 'Profil', path: '/settings/profile' },
           { name: 'Pengguna', path: '/settings/users' },
@@ -465,7 +466,7 @@ const Sidebar = ({
                         }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                       >
-                        <FaAngleDown className="text-sm" />
+                        <TbChevronDown className="text-sm" />
                       </motion.div>
                     )}
                   </button>

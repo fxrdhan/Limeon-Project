@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { TbChevronLeft, TbChevronRight } from 'react-icons/tb';
 import Dropdown from '@/components/dropdown';
 import { MONTH_NAMES_ID } from '../constants';
 import type { CalendarHeaderProps } from '../types';
@@ -63,7 +63,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           className="calendar__nav-button"
           aria-label="Previous month"
         >
-          <FaChevronLeft size={12} />
+          <TbChevronLeft size={12} />
         </button>
 
         <button
@@ -71,7 +71,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           className="calendar__nav-button"
           aria-label="Next month"
         >
-          <FaChevronRight size={12} />
+          <TbChevronRight size={12} />
         </button>
       </div>
     </div>

@@ -18,7 +18,7 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import { FaPen } from 'react-icons/fa';
+import { TbPencil } from 'react-icons/tb';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 
@@ -215,7 +215,7 @@ export function GenericEditInPlace<T = unknown>({
           >
             {finalDisplayValue}
             {!disabled && (
-              <FaPen
+              <TbPencil
                 className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
                 size={14}
                 onClick={e => {

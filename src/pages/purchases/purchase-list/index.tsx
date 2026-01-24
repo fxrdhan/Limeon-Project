@@ -21,7 +21,7 @@ import { Card } from '@/components/card';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from 'react-icons/fa';
+import { TbEdit, TbEye, TbFileUpload, TbPlus, TbTrash } from 'react-icons/tb';
 import {
   useQuery,
   useMutation,
@@ -303,7 +303,7 @@ const PurchaseList = () => {
               onClick={() => setShowUploadPortal(true)}
               withGlow
             >
-              <FaFileUpload className="mr-2" />
+              <TbFileUpload className="mr-2" />
               Upload Faktur
             </Button>
             <Button
@@ -311,7 +311,7 @@ const PurchaseList = () => {
               withGlow
               onClick={() => setShowAddPurchasePortal(true)}
             >
-              <FaPlus className="mr-2" />
+              <TbPlus className="mr-2" />
               Tambah Pembelian Baru
             </Button>
           </div>
@@ -438,12 +438,12 @@ const PurchaseList = () => {
                         <div className="flex justify-center space-x-2">
                           <Link to={`/purchases/view/${purchase.id}`}>
                             <Button variant="primary" size="sm">
-                              <FaEye />
+                              <TbEye />
                             </Button>
                           </Link>
                           <Link to={`/purchases/edit/${purchase.id}`}>
                             <Button variant="secondary" size="sm">
-                              <FaEdit />
+                              <TbEdit />
                             </Button>
                           </Link>
                           <Button
@@ -459,7 +459,7 @@ const PurchaseList = () => {
                             deletePurchaseMutation.variables === purchase.id ? (
                               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
                             ) : (
-                              <FaTrash />
+                              <TbTrash />
                             )}
                           </Button>
                         </div>

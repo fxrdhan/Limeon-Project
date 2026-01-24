@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaMagnifyingGlass } from 'react-icons/fa6';
+import { TbSearch } from 'react-icons/tb';
 import { getSearchIconColor } from '../../utils/dropdownUtils';
 
 interface SearchIconProps {
@@ -28,7 +28,7 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     position === 'relative' ? { width: '16px', minWidth: '16px' } : undefined;
 
   return (
-    <FaMagnifyingGlass
+    <TbSearch
       className={`${baseClasses} ${positionClasses}`}
       size={position === 'absolute' ? 16 : undefined}
       style={sizeStyle}

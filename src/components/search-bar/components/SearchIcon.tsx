@@ -1,7 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
-import { CgFilters } from 'react-icons/cg';
-import { LuFilter, LuFilterX, LuHash, LuSearch } from 'react-icons/lu';
+import {
+  TbChartCircles,
+  TbFilter,
+  TbFilterX,
+  TbHash,
+  TbSearch,
+} from 'react-icons/tb';
 import { SearchState } from '../constants';
 import { EnhancedSearchState } from '../types';
 
@@ -74,15 +79,15 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     switch (currentIcon) {
       case 'hash-purple':
       case 'hash-dynamic':
-        return <LuHash className="transition-colors duration-300" />;
+        return <TbHash className="transition-colors duration-300" />;
       case 'filters-join':
-        return <CgFilters className="transition-colors duration-300" />;
+        return <TbChartCircles className="transition-colors duration-300" />;
       case 'filter':
-        return <LuFilter className="transition-colors duration-300" />;
+        return <TbFilter className="transition-colors duration-300" />;
       case 'error':
-        return <LuFilterX className="transition-colors duration-300" />;
+        return <TbFilterX className="transition-colors duration-300" />;
       default:
-        return <LuSearch className="transition-colors duration-300" />;
+        return <TbSearch className="transition-colors duration-300" />;
     }
   };
 

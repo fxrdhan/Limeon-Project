@@ -3,8 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { PiArrowCircleDownFill } from 'react-icons/pi';
-import { RiSendPlaneFill } from 'react-icons/ri';
+import { TbCircleArrowDownFilled, TbSend2 } from 'react-icons/tb';
 
 interface ChatMessage {
   id: string;
@@ -917,7 +916,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                       'radial-gradient(circle at center, white 30%, transparent 30%)',
                   }}
                 >
-                  <PiArrowCircleDownFill size={32} />
+                  <TbCircleArrowDownFilled size={32} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -940,7 +939,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                     onClick={handleSendMessage}
                     className="p-1 transition-colors whitespace-nowrap"
                   >
-                    <RiSendPlaneFill
+                    <TbSend2
                       size={28}
                       className="text-emerald-600 hover:text-primary"
                     />

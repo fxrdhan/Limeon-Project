@@ -2,13 +2,13 @@ import React, { useState, useCallback, useEffect, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  FaCheckCircle,
-  FaExclamationCircle,
-  FaExclamationTriangle,
-  FaInfoCircle,
-  FaTimes,
-  FaWifi,
-} from 'react-icons/fa';
+  TbAlertCircle,
+  TbAlertTriangle,
+  TbCircleCheck,
+  TbInfoCircle,
+  TbWifi,
+  TbX,
+} from 'react-icons/tb';
 import classNames from 'classnames';
 import type { AlertMessage, AlertItemProps } from '@/types';
 import { AlertContext } from './hooks';
@@ -16,12 +16,12 @@ import { AlertContext } from './hooks';
 const DEFAULT_DURATION = 5000; // 5 detik
 
 const typeIcons: Record<AlertMessage['type'], ReactNode> = {
-  success: <FaCheckCircle className="text-green-500" />,
-  error: <FaExclamationCircle className="text-red-500" />,
-  warning: <FaExclamationTriangle className="text-yellow-500" />,
-  info: <FaInfoCircle className="text-blue-500" />,
-  online: <FaWifi className="text-green-500" />,
-  offline: <FaWifi className="text-white" />,
+  success: <TbCircleCheck className="text-green-500" />,
+  error: <TbAlertCircle className="text-red-500" />,
+  warning: <TbAlertTriangle className="text-yellow-500" />,
+  info: <TbInfoCircle className="text-blue-500" />,
+  online: <TbWifi className="text-green-500" />,
+  offline: <TbWifi className="text-white" />,
 };
 
 const typeStyles: Record<AlertMessage['type'], string> = {
@@ -78,7 +78,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
         className="ml-4 p-1 rounded-md hover:bg-black/10 focus:outline-hidden focus:ring-2 focus:ring-current transition-colors text-inherit"
         aria-label="Tutup notifikasi"
       >
-        <FaTimes size={14} />
+        <TbX size={14} />
       </button>
     </motion.div>
   );

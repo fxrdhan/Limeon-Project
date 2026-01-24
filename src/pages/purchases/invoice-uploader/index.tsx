@@ -3,13 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/card';
-import {
-  FaUpload,
-  FaTimes,
-  FaImage,
-  FaSearchPlus,
-  FaSearchMinus,
-} from 'react-icons/fa';
+import { TbPhoto, TbUpload, TbX, TbZoomIn, TbZoomOut } from 'react-icons/tb';
 import { uploadAndExtractInvoice } from '@/services/invoiceExtractor';
 import { useInvoiceUploadStore } from '@/store/invoiceUploadStore';
 import { motion, AnimatePresence } from 'motion/react';
@@ -647,7 +641,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                     : {}
                                 }
                               >
-                                <FaUpload
+                                <TbUpload
                                   className={`mx-auto h-8 w-8 ${isHovering ? 'text-primary' : 'text-gray-600'} transition-all duration-300 ease-out`}
                                 />
                               </motion.div>
@@ -723,7 +717,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 </div>
                               ) : (
                                 <div className="h-16 w-16 rounded-md bg-gray-200 flex items-center justify-center shrink-0">
-                                  <FaImage className="h-8 w-8 text-gray-400" />
+                                  <TbPhoto className="h-8 w-8 text-gray-400" />
                                 </div>
                               );
                             })()}
@@ -762,7 +756,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                               type="button"
                               title="Hapus file"
                             >
-                              <FaTimes className="h-5 w-5 pointer-events-none" />
+                              <TbX className="h-5 w-5 pointer-events-none" />
                             </motion.button>
                           </motion.div>
                           <input
@@ -819,7 +813,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                     : {}
                                 }
                               >
-                                <FaUpload className="mr-2" />
+                                <TbUpload className="mr-2" />
                               </motion.div>
                               Ekspor Data
                             </Button>
@@ -912,11 +906,11 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                   }}
                   className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full flex items-center space-x-2"
                 >
-                  <FaSearchMinus className="text-gray-200" />
+                  <TbZoomOut className="text-gray-200" />
                   <div className="text-sm font-medium">
                     {Math.round(zoomLevel * 100)}%
                   </div>
-                  <FaSearchPlus className="text-gray-200" />
+                  <TbZoomIn className="text-gray-200" />
                 </motion.div>
               </motion.div>
             </motion.div>

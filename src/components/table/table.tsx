@@ -4,11 +4,11 @@ import { memo, useMemo, useRef, useState, useEffect } from 'react';
 import React from 'react';
 import { useTableHeight } from '@/hooks/ag-grid/useTableHeight';
 import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  ArrowsUpDownIcon,
-  MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
+  TbArrowsUpDown,
+  TbChevronDown,
+  TbChevronUp,
+  TbSearch,
+} from 'react-icons/tb';
 import { useContainerWidth } from '@/hooks/ui/useContainerWidth';
 import { calculateColumnWidths, sortData, filterData } from '@/utils/table';
 import type { ColumnConfig, SortState } from '@/types/table';
@@ -159,7 +159,7 @@ export const Table = memo(
 
         return (
           <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <TbSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={localValue}
@@ -581,16 +581,16 @@ export const TableHeader = ({
     if (!isColumnSortable) return null;
 
     if (!isCurrentlySorted) {
-      return <ArrowsUpDownIcon className="w-4 h-4 text-gray-400" />;
+      return <TbArrowsUpDown className="w-4 h-4 text-gray-400" />;
     }
 
     switch (sortState?.direction) {
       case 'asc':
-        return <ChevronUpIcon className="w-4 h-4 text-blue-600" />;
+        return <TbChevronUp className="w-4 h-4 text-blue-600" />;
       case 'desc':
-        return <ChevronDownIcon className="w-4 h-4 text-blue-600" />;
+        return <TbChevronDown className="w-4 h-4 text-blue-600" />;
       default:
-        return <ArrowsUpDownIcon className="w-4 h-4 text-gray-400" />;
+        return <TbArrowsUpDown className="w-4 h-4 text-gray-400" />;
     }
   };
 

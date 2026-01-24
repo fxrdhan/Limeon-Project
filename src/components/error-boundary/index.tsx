@@ -1,7 +1,7 @@
 import React, { Component, ReactNode } from 'react';
 import { Card } from '@/components/card';
 import Button from '@/components/button';
-import { FaExclamationTriangle, FaSync } from 'react-icons/fa';
+import { TbAlertTriangle, TbRefresh } from 'react-icons/tb';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -58,7 +58,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       return (
         <Card className="p-8 text-center max-w-2xl mx-auto mt-8">
           <div className="mb-6">
-            <FaExclamationTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <TbAlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Oops! Terjadi Kesalahan
             </h2>
@@ -74,7 +74,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               variant="primary"
               className="flex items-center gap-2"
             >
-              <FaSync className="h-4 w-4" />
+              <TbRefresh className="h-4 w-4" />
               Coba Lagi
             </Button>
 
@@ -149,7 +149,7 @@ export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
 }) => {
   const queryFallback = (
     <Card className="p-6 text-center">
-      <FaExclamationTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
+      <TbAlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
       <p className="text-gray-600 mb-4">{fallbackMessage}</p>
       <Button
         onClick={() => window.location.reload()}
@@ -157,7 +157,7 @@ export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
         size="sm"
         className="flex items-center gap-2 mx-auto"
       >
-        <FaSync className="h-4 w-4" />
+        <TbRefresh className="h-4 w-4" />
         Coba Lagi
       </Button>
     </Card>

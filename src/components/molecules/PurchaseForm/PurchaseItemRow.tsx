@@ -2,7 +2,7 @@ import React from 'react';
 import { TableRow, TableCell } from '@/components/table';
 import Button from '@/components/button';
 import Calendar from '@/components/calendar';
-import { FaTrash } from 'react-icons/fa';
+import { TbTrash } from 'react-icons/tb';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import type { PurchaseItem } from '@/types';
 import type { CustomDateValueType } from '@/components/calendar/types';
@@ -185,7 +185,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
           size="sm"
           onClick={() => onRemove(item.id)}
         >
-          <FaTrash />
+          <TbTrash />
         </Button>
       </TableCell>
     </TableRow>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCheck } from 'react-icons/fa6';
+import { TbCheck } from 'react-icons/tb';
 
 interface CheckboxIndicatorProps {
   isSelected: boolean;
@@ -20,7 +20,7 @@ const CheckboxIndicator: React.FC<CheckboxIndicatorProps> = ({
         } flex items-center justify-center transition-colors duration-150 ease-out`}
       >
         {isSelected && (
-          <FaCheck className="text-white text-[10px]" strokeWidth={2} />
+          <TbCheck className="text-white text-[10px]" strokeWidth={2} />
         )}
       </div>
     </div>

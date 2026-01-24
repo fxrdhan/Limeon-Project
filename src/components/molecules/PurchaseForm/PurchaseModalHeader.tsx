@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { TbX } from 'react-icons/tb';
 import Button from '@/components/button';
 import { CardHeader, CardTitle } from '@/components/card';
 
@@ -36,7 +36,7 @@ const PurchaseModalHeader: React.FC<PurchaseModalHeaderProps> = ({
           className="p-2"
           title="Tutup"
         >
-          <FaTimes size={18} />
+          <TbX size={18} />
         </Button>
       </div>
     </CardHeader>
