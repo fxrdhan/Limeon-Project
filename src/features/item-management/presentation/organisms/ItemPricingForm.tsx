@@ -226,8 +226,11 @@ export default function ItemPricingForm({
                     </div>
                   </div>
 
-                  <div className="mt-3">
-                    <FormField label="Diskon item (%)">
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="text-sm text-slate-700">
+                      Diskon item (%)
+                    </div>
+                    <div className="flex items-center gap-3">
                       <Input
                         type="number"
                         value={
@@ -244,8 +247,18 @@ export default function ItemPricingForm({
                         }
                         placeholder="0"
                         disabled={disabled}
+                        className="w-24"
                       />
-                    </FormField>
+                      <Input
+                        value={formatRupiah(
+                          (formData.sell_price || 0) *
+                            (1 - (discountValue || 0) / 100)
+                        )}
+                        readOnly
+                        disabled
+                        className="w-32"
+                      />
+                    </div>
                   </div>
                 </div>
               );
@@ -345,7 +358,7 @@ export default function ItemPricingForm({
             <button
               type="button"
               ref={menuButtonRef}
-              className="p-1 -ml-1 text-slate-500 hover:text-slate-700 cursor-pointer"
+              className="p-1 -ml-2 text-slate-500 hover:text-slate-700 cursor-pointer"
               onClick={event => {
                 event.stopPropagation();
                 if (disabled) return;
@@ -368,7 +381,7 @@ export default function ItemPricingForm({
             </button>
           ) : (
             <TbChevronDown
-              size={12}
+              size={16}
               className={`text-slate-500 transition-transform duration-200 ${
                 isExpanded ? 'rotate-180' : ''
               }`}

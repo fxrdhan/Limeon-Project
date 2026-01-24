@@ -120,7 +120,7 @@ export default function ItemPackageConversionManager({
           Konversi Kemasan
         </h2>
         <TbChevronDown
-          size={12}
+          size={16}
           className={`text-slate-500 transition-transform duration-200 ${
             isExpanded ? 'rotate-180' : ''
           }`}
