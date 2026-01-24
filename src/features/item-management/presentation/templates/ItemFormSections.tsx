@@ -29,6 +29,7 @@ import {
 } from '../../shared/contexts/useItemFormContext';
 import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
 import { usePackageConversionLogic } from '../../application/hooks/utils/useConversionLogic';
+import { useCustomerLevels } from '../../application/hooks/data';
 import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 
 // Child components
@@ -46,6 +47,11 @@ interface CollapsibleSectionProps {
   onExpand: () => void;
   stackClassName?: string;
   stackStyle?: React.CSSProperties;
+  itemId?: string;
+}
+
+interface PricingSectionProps extends CollapsibleSectionProps {
+  onLevelPricingToggle?: (isOpen: boolean) => void;
 }
 
 interface OptionalSectionProps extends CollapsibleSectionProps {
@@ -282,17 +288,36 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
 
 // Pricing Section
 
-const PricingSection: React.FC<CollapsibleSectionProps> = ({
+const PricingSection: React.FC<PricingSectionProps> = ({
   isExpanded,
   onExpand,
   stackClassName,
   stackStyle,
+  itemId,
+  onLevelPricingToggle,
 }) => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
 
-  const { resetKey, isViewingOldVersion } = useItemUI();
+  const {
+    levels,
+    isLoading: isCustomerLevelsLoading,
+    createLevel,
+  } = useCustomerLevels();
+  const [showLevelPricing, setShowLevelPricing] = useState(false);
+
+  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
+
+  useEffect(() => {
+    if (!isExpanded && showLevelPricing) {
+      setShowLevelPricing(false);
+    }
+  }, [isExpanded, showLevelPricing]);
+
+  useEffect(() => {
+    onLevelPricingToggle?.(showLevelPricing);
+  }, [onLevelPricingToggle, showLevelPricing]);
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: formData.base_price || 0,
@@ -319,6 +344,89 @@ const PricingSection: React.FC<CollapsibleSectionProps> = ({
     marginEditor.setValue((calcMargin || 0).toString());
   };
 
+  const customerLevelDiscounts = useMemo(
+    () =>
+      Array.isArray(formData.customer_level_discounts)
+        ? formData.customer_level_discounts
+        : [],
+    [formData.customer_level_discounts]
+  );
+
+  const discountByLevel = useMemo(() => {
+    const mapped: Record<string, number> = {};
+    customerLevelDiscounts.forEach(discount => {
+      if (!discount.customer_level_id) return;
+      mapped[discount.customer_level_id] =
+        Number(discount.discount_percentage) || 0;
+    });
+    return mapped;
+  }, [customerLevelDiscounts]);
+
+  const handleDiscountChange = useCallback(
+    async (levelId: string, value: string) => {
+      const trimmedValue = value.trim();
+      const parsedValue = trimmedValue
+        ? Number(trimmedValue.replace(',', '.'))
+        : 0;
+      const normalizedValue = Number.isNaN(parsedValue)
+        ? 0
+        : Math.min(Math.max(parsedValue, 0), 100);
+
+      const nextDiscounts = customerLevelDiscounts.filter(
+        discount => discount.customer_level_id !== levelId
+      );
+
+      if (trimmedValue !== '' && normalizedValue > 0) {
+        nextDiscounts.push({
+          customer_level_id: levelId,
+          discount_percentage: normalizedValue,
+        });
+      }
+
+      updateFormData({ customer_level_discounts: nextDiscounts });
+
+      if (!itemId || !isEditMode || isViewingOldVersion) {
+        return;
+      }
+
+      try {
+        if (trimmedValue === '' || normalizedValue <= 0) {
+          const { error } = await supabase
+            .from('customer_level_discounts')
+            .delete()
+            .eq('item_id', itemId)
+            .eq('customer_level_id', levelId);
+
+          if (error) throw error;
+          return;
+        }
+
+        const { error } = await supabase
+          .from('customer_level_discounts')
+          .upsert(
+            {
+              item_id: itemId,
+              customer_level_id: levelId,
+              discount_percentage: normalizedValue,
+            },
+            { onConflict: 'item_id,customer_level_id' }
+          );
+
+        if (error) throw error;
+      } catch (error) {
+        console.error('Error updating customer level discount:', error);
+        toast.error('Gagal memperbarui diskon level pelanggan.');
+      }
+    },
+    [
+      customerLevelDiscounts,
+      isEditMode,
+      isViewingOldVersion,
+      itemId,
+      updateFormData,
+    ]
+  );
+
   return (
     <ItemPricingForm
       key={resetKey} // Force re-mount on reset to clear validation
@@ -334,6 +442,21 @@ const PricingSection: React.FC<CollapsibleSectionProps> = ({
         percentage: marginEditor.value,
       }}
       calculatedMargin={calcMargin || 0}
+      showLevelPricing={showLevelPricing}
+      onShowLevelPricing={() => setShowLevelPricing(true)}
+      onHideLevelPricing={() => setShowLevelPricing(false)}
+      levelPricing={
+        showLevelPricing
+          ? {
+              levels,
+              isLoading: isCustomerLevelsLoading,
+              discountByLevel,
+              onDiscountChange: handleDiscountChange,
+              onCreateLevel: createLevel.mutateAsync,
+              isCreating: createLevel.isPending,
+            }
+          : undefined
+      }
       isExpanded={isExpanded}
       onExpand={onExpand}
       stackClassName={stackClassName}

@@ -412,6 +412,7 @@ const ItemManagementContent: React.FC<{
   const [hasUserToggled, setHasUserToggled] = useState(false);
   const [isStackHovering, setIsStackHovering] = useState(false);
   const [isStackTransitioning, setIsStackTransitioning] = useState(false);
+  const [isLevelPricingMode, setIsLevelPricingMode] = useState(false);
   const [lastOpenSection, setLastOpenSection] =
     useState<AccordionSection | null>(isEditSession ? null : 'additional');
   const hoverTimerRef = useRef<number | null>(null);
@@ -448,6 +449,21 @@ const ItemManagementContent: React.FC<{
       updateOpenSection(section);
     },
     [openSection, updateOpenSection]
+  );
+
+  const handleLevelPricingToggle = useCallback(
+    (isOpen: boolean) => {
+      setIsLevelPricingMode(isOpen);
+      if (!isOpen) return;
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      setIsStackHovering(false);
+      setIsStackTransitioning(false);
+      updateOpenSection('pricing');
+    },
+    [updateOpenSection]
   );
   const autoOpenSection = useMemo<AccordionSection | null>(() => {
     if (!hasEditData || form.loading) return null;
@@ -732,8 +748,12 @@ const ItemManagementContent: React.FC<{
       onBackdropClick={ui.handleBackdropClick}
       onSubmit={form.handleSubmit}
       rightColumnProps={{
-        onMouseMove: handleStackMouseMove,
-        onMouseLeave: handleStackMouseLeave,
+        ...(isLevelPricingMode
+          ? {}
+          : {
+              onMouseMove: handleStackMouseMove,
+              onMouseLeave: handleStackMouseLeave,
+            }),
       }}
       children={{
         header: (
@@ -744,7 +764,7 @@ const ItemManagementContent: React.FC<{
           />
         ),
         basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
-        basicInfoOptional: (
+        basicInfoOptional: !isLevelPricingMode ? (
           <div
             className={`${getStackClasses('additional')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('additional')}
@@ -758,8 +778,8 @@ const ItemManagementContent: React.FC<{
               stackStyle={getStackEffect('additional').style}
             />
           </div>
-        ),
-        settingsForm: (
+        ) : null,
+        settingsForm: !isLevelPricingMode ? (
           <div
             className={`${getStackClasses('settings')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('settings')}
@@ -772,22 +792,32 @@ const ItemManagementContent: React.FC<{
               stackStyle={getStackEffect('settings').style}
             />
           </div>
-        ),
+        ) : null,
         pricingForm: (
           <div
-            className={`${getStackClasses('pricing')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('pricing')}
+            className={`${isLevelPricingMode ? '' : getStackClasses('pricing')} transition-[margin] duration-200 ease-out`}
+            style={
+              isLevelPricingMode ? undefined : getStackWrapperStyle('pricing')
+            }
             data-stack-section="pricing"
           >
             <ItemFormSections.Pricing
               isExpanded={activeSection === 'pricing'}
               onExpand={() => toggleSection('pricing')}
-              stackClassName={getStackEffect('pricing').className}
-              stackStyle={getStackEffect('pricing').style}
+              itemId={itemId}
+              onLevelPricingToggle={handleLevelPricingToggle}
+              stackClassName={
+                isLevelPricingMode
+                  ? undefined
+                  : getStackEffect('pricing').className
+              }
+              stackStyle={
+                isLevelPricingMode ? undefined : getStackEffect('pricing').style
+              }
             />
           </div>
         ),
-        packageConversionManager: (
+        packageConversionManager: !isLevelPricingMode ? (
           <div
             className={`${getStackClasses('conversion')} transition-[margin] duration-200 ease-out`}
             style={getStackWrapperStyle('conversion')}
@@ -800,7 +830,7 @@ const ItemManagementContent: React.FC<{
               stackStyle={getStackEffect('conversion').style}
             />
           </div>
-        ),
+        ) : null,
         modals: <ItemModalContainer />,
       }}
       formAction={{

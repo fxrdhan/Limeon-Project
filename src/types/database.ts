@@ -78,6 +78,9 @@ export interface CustomerLevel {
   id: string;
   level_name: string;
   price_percentage: number;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string | null;
 }
 
 export interface CustomerLevelDiscount {

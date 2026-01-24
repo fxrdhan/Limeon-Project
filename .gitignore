@@ -39,6 +39,9 @@ coverage
 CLAUDE.md
 .agent/
 
+# supabase
+supabase/
+
 # gemini-cli settings
 .gemini/
 .geminiignore

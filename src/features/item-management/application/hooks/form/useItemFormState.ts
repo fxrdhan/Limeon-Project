@@ -42,6 +42,7 @@ export const useAddItemFormState = ({
     is_medicine: true,
     has_expiry_date: false,
     updated_at: null,
+    customer_level_discounts: [],
   });
 
   // Initial state tracking for dirty detection
@@ -223,18 +224,29 @@ export const useAddItemFormState = ({
       is_medicine: true,
       has_expiry_date: false,
       updated_at: null,
+      customer_level_discounts: [],
     };
 
-    setFormData(initialState);
-    setInitialFormData(initialState);
+    const normalizedInitialState = {
+      ...initialState,
+      customer_level_discounts:
+        initialState.customer_level_discounts ??
+        ([] as ItemFormData['customer_level_discounts']),
+    };
 
-    setDisplayBasePrice(formatRupiah(initialState.base_price || 0));
-    setDisplaySellPrice(formatRupiah(initialState.sell_price || 0));
+    setFormData(normalizedInitialState);
+    setInitialFormData(normalizedInitialState);
+
+    setDisplayBasePrice(formatRupiah(normalizedInitialState.base_price || 0));
+    setDisplaySellPrice(formatRupiah(normalizedInitialState.sell_price || 0));
 
     setMarginPercentage(
-      formatMarginPercentage(initialState.base_price, initialState.sell_price)
+      formatMarginPercentage(
+        normalizedInitialState.base_price,
+        normalizedInitialState.sell_price
+      )
     );
-    setMinStockValue(String(initialState.min_stock || 10));
+    setMinStockValue(String(normalizedInitialState.min_stock || 10));
   };
 
   /**

@@ -14,6 +14,7 @@
 
 import { supabase } from '@/lib/supabase';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
+import type { CustomerLevelDiscount } from '@/types/database';
 import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
 
 // ============================================================================
@@ -66,6 +67,60 @@ export const prepareItemData = async (
   }
 
   return baseData;
+};
+
+const normalizeCustomerLevelDiscounts = (
+  discounts?: CustomerLevelDiscount[]
+) => {
+  if (!Array.isArray(discounts)) return [];
+
+  const normalized = discounts
+    .filter(discount => discount.customer_level_id)
+    .map(discount => ({
+      customer_level_id: discount.customer_level_id,
+      discount_percentage: Math.max(
+        0,
+        Number(discount.discount_percentage) || 0
+      ),
+    }))
+    .filter(discount => discount.discount_percentage > 0);
+
+  const uniqueByLevel = new Map<string, CustomerLevelDiscount>();
+  normalized.forEach(discount => {
+    uniqueByLevel.set(discount.customer_level_id, discount);
+  });
+
+  return Array.from(uniqueByLevel.values());
+};
+
+const syncCustomerLevelDiscounts = async (
+  itemId: string,
+  discounts?: CustomerLevelDiscount[]
+) => {
+  if (!Array.isArray(discounts)) return;
+
+  const normalizedDiscounts = normalizeCustomerLevelDiscounts(discounts);
+
+  const { error: deleteError } = await supabase
+    .from('customer_level_discounts')
+    .delete()
+    .eq('item_id', itemId);
+
+  if (deleteError) throw deleteError;
+
+  if (!normalizedDiscounts.length) return;
+
+  const insertPayload = normalizedDiscounts.map(discount => ({
+    item_id: itemId,
+    customer_level_id: discount.customer_level_id,
+    discount_percentage: discount.discount_percentage,
+  }));
+
+  const { error: insertError } = await supabase
+    .from('customer_level_discounts')
+    .insert(insertPayload);
+
+  if (insertError) throw insertError;
 };
 
 /**
@@ -204,6 +259,10 @@ export const saveItemBusinessLogic = async ({
       .update(itemUpdateData)
       .eq('id', itemId);
     if (updateError) throw updateError;
+    await syncCustomerLevelDiscounts(
+      itemId,
+      finalFormData.customer_level_discounts
+    );
     return { action: 'update', itemId, code: finalFormData.code };
   } else {
     // Create new item
@@ -222,6 +281,10 @@ export const saveItemBusinessLogic = async ({
     if (!insertedItem) {
       throw new Error('Gagal mendapatkan ID item baru setelah insert.');
     }
+    await syncCustomerLevelDiscounts(
+      insertedItem.id,
+      finalFormData.customer_level_discounts
+    );
     return {
       action: 'create',
       itemId: insertedItem.id,

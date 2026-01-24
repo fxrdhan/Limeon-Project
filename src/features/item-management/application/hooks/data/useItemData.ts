@@ -7,7 +7,11 @@ import type {
   DBPackageConversion,
   PackageConversion,
 } from '../../../shared/types';
-import type { Item, ItemPackage } from '@/types/database';
+import type {
+  CustomerLevelDiscount,
+  Item,
+  ItemPackage,
+} from '@/types/database';
 
 interface UseItemDataProps {
   formState: {
@@ -48,6 +52,18 @@ export const useItemData = ({
         (itemRecord.manufacturer_id as string) ||
         ((itemRecord.manufacturer as { id?: string } | undefined)?.id ?? '');
 
+      const rawDiscounts = Array.isArray(itemRecord.customer_level_discounts)
+        ? (itemRecord.customer_level_discounts as CustomerLevelDiscount[])
+        : [];
+
+      const customerLevelDiscounts = rawDiscounts
+        .filter(discount => discount.customer_level_id)
+        .map(discount => ({
+          customer_level_id: discount.customer_level_id,
+          discount_percentage: Number(discount.discount_percentage) || 0,
+        }))
+        .filter(discount => discount.discount_percentage > 0);
+
       const fetchedFormData: ItemFormData = {
         code: (itemRecord.code as string) || '',
         name: (itemRecord.name as string) || '',
@@ -79,6 +95,7 @@ export const useItemData = ({
         quantity: (itemRecord.quantity as number) || 0,
         unit_id: (itemRecord.unit_id as string) || '',
         updated_at: itemRecord.updated_at as string | null | undefined,
+        customer_level_discounts: customerLevelDiscounts,
       };
 
       formState.setFormData(fetchedFormData);
@@ -131,7 +148,8 @@ export const useItemData = ({
           *, updated_at,
           package_conversions,
           manufacturer_id,
-          package_id
+          package_id,
+          customer_level_discounts (customer_level_id, discount_percentage)
         `
           )
           .eq('id', id)
