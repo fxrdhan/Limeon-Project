@@ -436,6 +436,15 @@ const ItemManagementContent: React.FC<{
         return;
       }
 
+      // If user expands a section while in unstack mode, immediately return to
+      // stacked mode (no need to wait for mouse leave).
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      setIsStackHovering(false);
+      setIsStackTransitioning(false);
+
       updateOpenSection(section);
     },
     [openSection, updateOpenSection]
