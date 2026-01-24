@@ -494,13 +494,30 @@ const ItemManagementContent: React.FC<{
   ]);
 
   useEffect(() => {
-    if (!isEditSession || hasUserToggled || !ui.isOpen) return;
+    if (
+      !isEditSession ||
+      hasUserToggled ||
+      !ui.isOpen ||
+      isStackHovering ||
+      isStackTransitioning
+    ) {
+      return;
+    }
     if (openSection || !autoOpenSection) return;
     const frameId = requestAnimationFrame(() => {
-      setOpenSection(autoOpenSection);
+      updateOpenSection(autoOpenSection);
     });
     return () => cancelAnimationFrame(frameId);
-  }, [autoOpenSection, hasUserToggled, isEditSession, openSection, ui.isOpen]);
+  }, [
+    autoOpenSection,
+    hasUserToggled,
+    isEditSession,
+    isStackHovering,
+    isStackTransitioning,
+    openSection,
+    ui.isOpen,
+    updateOpenSection,
+  ]);
 
   const activeSection: AccordionSection | null = openSection;
   const effectiveSection = isStackHovering
