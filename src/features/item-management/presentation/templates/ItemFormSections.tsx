@@ -376,7 +376,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
         discount => discount.customer_level_id !== levelId
       );
 
-      if (trimmedValue !== '' && normalizedValue > 0) {
+      if (trimmedValue !== '') {
         nextDiscounts.push({
           customer_level_id: levelId,
           discount_percentage: normalizedValue,
@@ -390,7 +390,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       }
 
       try {
-        if (trimmedValue === '' || normalizedValue <= 0) {
+        if (trimmedValue === '') {
           const { error } = await supabase
             .from('customer_level_discounts')
             .delete()

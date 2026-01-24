@@ -88,6 +88,9 @@ export default function ItemPricingForm({
     top: number;
     left: number;
   } | null>(null);
+  const [levelInputValues, setLevelInputValues] = useState<
+    Record<string, string>
+  >({});
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -208,7 +211,28 @@ export default function ItemPricingForm({
         ) : (
           <div className="space-y-3">
             {levelPricing.levels.map(level => {
-              const discountValue = levelPricing.discountByLevel[level.id] || 0;
+              const baselineDiscount = Math.max(
+                0,
+                100 - Number(level.price_percentage || 0)
+              );
+              const hasOverride = Object.prototype.hasOwnProperty.call(
+                levelPricing.discountByLevel,
+                level.id
+              );
+              const overrideDiscount =
+                levelPricing.discountByLevel[level.id] ?? 0;
+              const displayDiscount = hasOverride
+                ? overrideDiscount
+                : baselineDiscount;
+              const hasInputValue = Object.prototype.hasOwnProperty.call(
+                levelInputValues,
+                level.id
+              );
+              const inputValue = hasInputValue
+                ? levelInputValues[level.id]
+                : displayDiscount.toString();
+              const finalPrice =
+                (formData.sell_price || 0) * (1 - displayDiscount / 100);
 
               return (
                 <div
@@ -221,7 +245,7 @@ export default function ItemPricingForm({
                         {level.level_name}
                       </div>
                       <div className="text-xs text-slate-500">
-                        Diskon item {discountValue || 0}% dari harga jual
+                        Diskon item {displayDiscount}% dari harga jual
                       </div>
                     </div>
                   </div>
@@ -233,27 +257,42 @@ export default function ItemPricingForm({
                     <div className="flex items-center gap-3">
                       <Input
                         type="number"
-                        value={
-                          discountValue > 0 ? discountValue.toString() : ''
-                        }
+                        value={inputValue}
                         min={0}
                         max={100}
                         step={0.1}
-                        onChange={event =>
-                          levelPricing.onDiscountChange(
-                            level.id,
-                            event.target.value
-                          )
-                        }
+                        onChange={event => {
+                          const nextValue = event.target.value;
+                          setLevelInputValues(prev => ({
+                            ...prev,
+                            [level.id]: nextValue,
+                          }));
+                          levelPricing.onDiscountChange(level.id, nextValue);
+                        }}
+                        onBlur={() => {
+                          setLevelInputValues(prev => {
+                            if (
+                              !Object.prototype.hasOwnProperty.call(
+                                prev,
+                                level.id
+                              )
+                            ) {
+                              return prev;
+                            }
+                            if (prev[level.id] !== '') {
+                              return prev;
+                            }
+                            const next = { ...prev };
+                            delete next[level.id];
+                            return next;
+                          });
+                        }}
                         placeholder="0"
                         disabled={disabled}
                         className="w-24"
                       />
                       <Input
-                        value={formatRupiah(
-                          (formData.sell_price || 0) *
-                            (1 - (discountValue || 0) / 100)
-                        )}
+                        value={formatRupiah(finalPrice)}
                         readOnly
                         disabled
                         className="w-32"
@@ -374,6 +413,7 @@ export default function ItemPricingForm({
               className="p-1 text-slate-500 hover:text-slate-700 cursor-pointer"
               onClick={event => {
                 event.stopPropagation();
+                setLevelInputValues({});
                 onHideLevelPricing?.();
               }}
             >

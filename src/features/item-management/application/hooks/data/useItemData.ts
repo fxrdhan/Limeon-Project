@@ -61,8 +61,7 @@ export const useItemData = ({
         .map(discount => ({
           customer_level_id: discount.customer_level_id,
           discount_percentage: Number(discount.discount_percentage) || 0,
-        }))
-        .filter(discount => discount.discount_percentage > 0);
+        }));
 
       const fetchedFormData: ItemFormData = {
         code: (itemRecord.code as string) || '',

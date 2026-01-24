@@ -82,8 +82,7 @@ const normalizeCustomerLevelDiscounts = (
         0,
         Number(discount.discount_percentage) || 0
       ),
-    }))
-    .filter(discount => discount.discount_percentage > 0);
+    }));
 
   const uniqueByLevel = new Map<string, CustomerLevelDiscount>();
   normalized.forEach(discount => {
