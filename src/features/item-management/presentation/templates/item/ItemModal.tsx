@@ -67,6 +67,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
     handleChange,
     handleSubmit,
     updateFormData,
+    setInitialFormData,
+    setInitialPackageConversions,
     resetForm,
     isDirty,
 
@@ -190,14 +192,24 @@ const ItemModal: React.FC<ItemModalProps> = ({
         });
 
         packageConversionHook.setConversions(mappedConversions);
+        setInitialPackageConversions(mappedConversions);
       }
 
       if (Object.keys(restUpdates).length > 0) {
         // Apply updates that don't conflict with user input
         updateFormData(restUpdates);
+        setInitialFormData(prev =>
+          prev ? ({ ...prev, ...restUpdates } as typeof prev) : prev
+        );
       }
     },
-    [packageConversionHook, packages, updateFormData]
+    [
+      packageConversionHook,
+      packages,
+      setInitialFormData,
+      setInitialPackageConversions,
+      updateFormData,
+    ]
   );
 
   // Realtime for current item data with smart form sync

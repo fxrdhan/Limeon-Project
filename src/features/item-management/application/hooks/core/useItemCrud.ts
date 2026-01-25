@@ -410,6 +410,8 @@ export const useAddItemForm = ({
 
     // Utility functions
     updateFormData: formState.updateFormData,
+    setInitialFormData: formState.setInitialFormData,
+    setInitialPackageConversions: formState.setInitialPackageConversions,
     isDirty: userInteractions.isDirty,
     calculateProfitPercentage: pricingLogic.calculateProfitPercentage,
     calculateSellPriceFromMargin: pricingLogic.calculateSellPriceFromMargin,
