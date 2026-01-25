@@ -304,6 +304,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     levels,
     isLoading: isCustomerLevelsLoading,
     createLevel,
+    updateLevels,
+    deleteLevel,
   } = useCustomerLevels();
   const [showLevelPricing, setShowLevelPricing] = useState(false);
 
@@ -454,6 +456,10 @@ const PricingSection: React.FC<PricingSectionProps> = ({
               onDiscountChange: handleDiscountChange,
               onCreateLevel: createLevel.mutateAsync,
               isCreating: createLevel.isPending,
+              onUpdateLevels: updateLevels.mutateAsync,
+              isUpdating: updateLevels.isPending,
+              onDeleteLevel: deleteLevel.mutateAsync,
+              isDeleting: deleteLevel.isPending,
             }
           : undefined
       }

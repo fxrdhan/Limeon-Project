@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { TbArrowBackUp, TbChevronDown, TbMenu2 } from 'react-icons/tb';
+import {
+  TbArrowBack,
+  TbArrowBackUp,
+  TbChevronDown,
+  TbMenu2,
+  TbSettings,
+  TbTrash,
+} from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
@@ -51,6 +58,15 @@ interface ItemPricingFormProps {
       description?: string | null;
     }) => Promise<CustomerLevel>;
     isCreating: boolean;
+    onUpdateLevels: (
+      payload: { id: string; price_percentage: number }[]
+    ) => Promise<{ id: string; price_percentage: number }[]>;
+    isUpdating: boolean;
+    onDeleteLevel: (payload: {
+      id: string;
+      levels: CustomerLevel[];
+    }) => Promise<{ id: string }>;
+    isDeleting: boolean;
   };
   disabled?: boolean;
 }
@@ -88,11 +104,27 @@ export default function ItemPricingForm({
     top: number;
     left: number;
   } | null>(null);
+  const [baselineOpen, setBaselineOpen] = useState(false);
+  const [baselinePosition, setBaselinePosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [levelInputValues, setLevelInputValues] = useState<
     Record<string, string>
   >({});
+  const [baselineDrafts, setBaselineDrafts] = useState<Record<string, string>>(
+    {}
+  );
+  const [isSavingBaseline, setIsSavingBaseline] = useState(false);
+  const [baselineAddOpen, setBaselineAddOpen] = useState(false);
+  const [baselineNewName, setBaselineNewName] = useState('');
+  const [baselineNewDiscount, setBaselineNewDiscount] = useState('');
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const baselineButtonRef = useRef<HTMLButtonElement | null>(null);
+  const baselineRef = useRef<HTMLDivElement | null>(null);
+  const baselineNameInputRef = useRef<HTMLInputElement | null>(null);
+  const baselineDiscountInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onBasePriceChange(e);
@@ -141,6 +173,143 @@ export default function ItemPricingForm({
     handleCancelAddLevel();
   };
 
+  const openBaselineModal = () => {
+    if (!levelPricing) return;
+    if (baselineOpen) {
+      setBaselineOpen(false);
+      setBaselineAddOpen(false);
+      setBaselineNewName('');
+      setBaselineNewDiscount('');
+      return;
+    }
+    const drafts: Record<string, string> = {};
+    levelPricing.levels.forEach(level => {
+      const baselineDiscount = Math.max(
+        0,
+        100 - Number(level.price_percentage || 0)
+      );
+      drafts[level.id] = baselineDiscount.toString();
+    });
+    setBaselineDrafts(drafts);
+    setBaselineAddOpen(false);
+    setBaselineNewName('');
+    setBaselineNewDiscount('');
+    setMenuOpen(false);
+    setBaselineOpen(true);
+  };
+
+  const handleBaselineChange = (levelId: string, value: string) => {
+    setBaselineDrafts(prev => ({
+      ...prev,
+      [levelId]: value,
+    }));
+  };
+
+  const handleDeleteBaselineLevel = async (levelId: string) => {
+    if (!levelPricing) return;
+    if (levelPricing.isDeleting) return;
+
+    await levelPricing.onDeleteLevel({
+      id: levelId,
+      levels: levelPricing.levels,
+    });
+
+    setBaselineDrafts(prev => {
+      if (!Object.prototype.hasOwnProperty.call(prev, levelId)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[levelId];
+      return next;
+    });
+  };
+
+  const parsedNewBaselineDiscount = baselineNewDiscount.trim()
+    ? Number(baselineNewDiscount.replace(',', '.'))
+    : 0;
+  const normalizedNewBaselineDiscount = Number.isNaN(parsedNewBaselineDiscount)
+    ? 0
+    : Math.min(Math.max(parsedNewBaselineDiscount, 0), 100);
+  const canCreateBaselineLevel =
+    baselineNewDiscount.trim().length > 0 &&
+    !Number.isNaN(parsedNewBaselineDiscount);
+
+  const handleAddBaselineLevel = async () => {
+    if (!levelPricing) return;
+
+    if (!baselineAddOpen) {
+      setBaselineAddOpen(true);
+      setBaselineNewName('');
+      setBaselineNewDiscount('');
+      return;
+    }
+
+    if (!canCreateBaselineLevel || levelPricing.isCreating) return;
+
+    const placeholderName = `Level ${levelPricing.levels.length + 1}`;
+    const created = await levelPricing.onCreateLevel({
+      level_name: baselineNewName.trim() || placeholderName,
+      price_percentage: Math.max(0, 100 - normalizedNewBaselineDiscount),
+      description: null,
+    });
+
+    setBaselineDrafts(prev => ({
+      ...prev,
+      [created.id]: normalizedNewBaselineDiscount.toString(),
+    }));
+    setBaselineAddOpen(false);
+    setBaselineNewName('');
+    setBaselineNewDiscount('');
+  };
+
+  const isBaselineAddActive =
+    baselineAddOpen &&
+    canCreateBaselineLevel &&
+    !disabled &&
+    !levelPricing?.isCreating;
+
+  const handleSaveBaseline = async () => {
+    if (!levelPricing) return;
+    if (levelPricing.isUpdating) return;
+
+    const updates = levelPricing.levels
+      .map(level => {
+        const currentDiscount = Math.max(
+          0,
+          100 - Number(level.price_percentage || 0)
+        );
+        const rawValue = baselineDrafts[level.id] ?? currentDiscount.toString();
+        const parsedValue = rawValue.trim()
+          ? Number(rawValue.replace(',', '.'))
+          : 0;
+        const normalized = Number.isNaN(parsedValue)
+          ? 0
+          : Math.min(Math.max(parsedValue, 0), 100);
+        const nextPricePercentage = Math.max(0, 100 - normalized);
+
+        return {
+          id: level.id,
+          price_percentage: nextPricePercentage,
+          hasChange: Math.abs(normalized - currentDiscount) > 0.001,
+        };
+      })
+      .filter(update => update.hasChange)
+      .map(({ id, price_percentage }) => ({ id, price_percentage }));
+
+    if (!updates.length) {
+      setBaselineOpen(false);
+      return;
+    }
+
+    try {
+      setIsSavingBaseline(true);
+      await levelPricing.onUpdateLevels(updates);
+      setBaselineOpen(false);
+    } finally {
+      setIsSavingBaseline(false);
+    }
+  };
+
   const updateMenuPosition = useCallback(() => {
     if (!menuButtonRef.current) return;
     const rect = menuButtonRef.current.getBoundingClientRect();
@@ -182,6 +351,52 @@ export default function ItemPricingForm({
     };
   }, [menuOpen, updateMenuPosition]);
 
+  const updateBaselinePosition = useCallback(() => {
+    if (!baselineButtonRef.current) return;
+    const rect = baselineButtonRef.current.getBoundingClientRect();
+    const menuWidth = 260;
+    const left = Math.max(12, rect.right - menuWidth);
+    setBaselinePosition({
+      top: rect.bottom + 8,
+      left,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!baselineOpen) return;
+    updateBaselinePosition();
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (baselineRef.current?.contains(target)) return;
+      if (baselineButtonRef.current?.contains(target)) return;
+      setBaselineOpen(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setBaselineOpen(false);
+    };
+
+    const handleReposition = () => updateBaselinePosition();
+
+    window.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      window.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [baselineOpen, updateBaselinePosition]);
+
+  useEffect(() => {
+    if (!baselineOpen || !baselineAddOpen) return;
+    baselineNameInputRef.current?.focus();
+  }, [baselineAddOpen, baselineOpen]);
+
   const renderLevelPricing = () => {
     if (!levelPricing) return null;
 
@@ -198,6 +413,15 @@ export default function ItemPricingForm({
               Harga jual dasar: {formatRupiah(baseSellPrice)}
             </div>
           </div>
+          <button
+            type="button"
+            ref={baselineButtonRef}
+            className="p-1 text-slate-500 hover:text-slate-700 cursor-pointer"
+            onClick={openBaselineModal}
+            disabled={disabled}
+          >
+            <TbSettings size={16} />
+          </button>
         </div>
 
         {levelPricing.isLoading ? (
@@ -388,6 +612,10 @@ export default function ItemPricingForm({
           setMenuOpen(false);
           if (showLevelPricing) {
             setLevelInputValues({});
+            setBaselineOpen(false);
+            setBaselineAddOpen(false);
+            setBaselineNewName('');
+            setBaselineNewDiscount('');
             onHideLevelPricing?.();
             return;
           }
@@ -419,6 +647,10 @@ export default function ItemPricingForm({
               onClick={event => {
                 event.stopPropagation();
                 setLevelInputValues({});
+                setBaselineOpen(false);
+                setBaselineAddOpen(false);
+                setBaselineNewName('');
+                setBaselineNewDiscount('');
                 onHideLevelPricing?.();
               }}
             >
@@ -534,6 +766,168 @@ export default function ItemPricingForm({
                 </button>
                 <div className="px-3 py-2 text-sm text-slate-400 cursor-not-allowed">
                   Atur per-volume
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>,
+        document.body
+      )}
+      {createPortal(
+        <AnimatePresence>
+          {baselineOpen && baselinePosition && levelPricing ? (
+            <motion.div
+              className="fixed z-50"
+              style={{ top: baselinePosition.top, left: baselinePosition.left }}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              <div
+                ref={baselineRef}
+                className="w-[260px] rounded-lg border border-slate-200 bg-white shadow-lg"
+              >
+                <div className="px-3 py-2 border-b border-slate-200 text-sm font-semibold text-slate-700">
+                  Atur baseline
+                </div>
+                <div className="p-3 space-y-3">
+                  {levelPricing.levels.map(level => {
+                    const currentDiscount = Math.max(
+                      0,
+                      100 - Number(level.price_percentage || 0)
+                    );
+                    const value =
+                      baselineDrafts[level.id] ?? currentDiscount.toString();
+
+                    return (
+                      <div
+                        key={level.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <div className="text-sm font-medium text-slate-700 min-w-[72px] whitespace-nowrap">
+                          {level.level_name}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={value}
+                            min={0}
+                            max={100}
+                            step={0.1}
+                            onChange={event =>
+                              handleBaselineChange(level.id, event.target.value)
+                            }
+                            disabled={disabled}
+                            className="w-20 text-sm"
+                          />
+                          <button
+                            type="button"
+                            className={`text-slate-400 transition-colors ${
+                              disabled || levelPricing.isDeleting
+                                ? 'cursor-not-allowed'
+                                : 'hover:text-rose-500 cursor-pointer'
+                            }`}
+                            onClick={() => handleDeleteBaselineLevel(level.id)}
+                            disabled={disabled || levelPricing.isDeleting}
+                            aria-label="Hapus level"
+                          >
+                            <TbTrash size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {baselineAddOpen ? (
+                  <div className="px-3 pb-3">
+                    <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-2 space-y-2">
+                      <Input
+                        ref={baselineNameInputRef}
+                        value={baselineNewName}
+                        onChange={event =>
+                          setBaselineNewName(event.target.value)
+                        }
+                        placeholder={`Level ${levelPricing.levels.length + 1}`}
+                        disabled={disabled || levelPricing.isCreating}
+                        className="text-sm"
+                        onKeyDown={event => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            baselineDiscountInputRef.current?.focus();
+                          }
+                        }}
+                      />
+                      <div className="relative">
+                        <Input
+                          ref={baselineDiscountInputRef}
+                          type="number"
+                          value={baselineNewDiscount}
+                          min={0}
+                          max={100}
+                          step={0.1}
+                          onChange={event =>
+                            setBaselineNewDiscount(event.target.value)
+                          }
+                          onKeyDown={event => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              handleAddBaselineLevel();
+                            }
+                          }}
+                          placeholder="Diskon (%)"
+                          disabled={disabled || levelPricing.isCreating}
+                          className="text-sm pr-10"
+                        />
+                        <button
+                          type="button"
+                          className={`absolute inset-y-0 right-0 flex items-center pr-3 text-lg font-bold transition-colors duration-300 ${
+                            isBaselineAddActive
+                              ? 'text-primary cursor-pointer'
+                              : 'text-gray-300 cursor-not-allowed'
+                          }`}
+                          onClick={() => {
+                            if (isBaselineAddActive) {
+                              handleAddBaselineLevel();
+                            }
+                          }}
+                          title="Tekan Enter atau klik untuk menambah"
+                          disabled={!isBaselineAddActive}
+                          aria-label="Tambah level baseline"
+                        >
+                          <TbArrowBack size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between px-3 pb-3">
+                  <Button
+                    type="button"
+                    variant="text"
+                    size="sm"
+                    onClick={() => {
+                      if (!baselineAddOpen) {
+                        handleAddBaselineLevel();
+                        return;
+                      }
+                      setBaselineAddOpen(false);
+                      setBaselineNewName('');
+                      setBaselineNewDiscount('');
+                    }}
+                    disabled={disabled || isSavingBaseline}
+                  >
+                    {baselineAddOpen ? 'Batal' : 'Tambah'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSaveBaseline}
+                    isLoading={isSavingBaseline}
+                    disabled={isSavingBaseline || levelPricing.isUpdating}
+                  >
+                    Simpan
+                  </Button>
                 </div>
               </div>
             </motion.div>

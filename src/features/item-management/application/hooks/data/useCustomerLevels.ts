@@ -29,6 +29,17 @@ interface CreateCustomerLevelInput {
   description?: string | null;
 }
 
+interface UpdateCustomerLevelInput {
+  id: string;
+  price_percentage: number;
+  level_name?: string;
+}
+
+interface DeleteCustomerLevelInput {
+  id: string;
+  levels: CustomerLevel[];
+}
+
 const normalizeCustomerLevels = (levels: CustomerLevel[]) =>
   levels.map(level => ({
     ...level,
@@ -79,6 +90,92 @@ export const useCustomerLevels = () => {
     },
   });
 
+  const updateLevelsMutation = useMutation({
+    mutationFn: async (payload: UpdateCustomerLevelInput[]) => {
+      if (!payload.length) return [];
+
+      await Promise.all(
+        payload.map(async update => {
+          const { error } = await supabase
+            .from('customer_levels')
+            .update({
+              price_percentage: update.price_percentage,
+              level_name: update.level_name,
+            })
+            .eq('id', update.id);
+
+          if (error) {
+            throw error;
+          }
+        })
+      );
+
+      return payload;
+    },
+    onSuccess: () => {
+      toast.success('Baseline level berhasil diperbarui');
+      queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
+    },
+    onError: error => {
+      console.error('Error updating customer levels:', error);
+      toast.error('Gagal memperbarui baseline level.');
+    },
+  });
+
+  const deleteLevelMutation = useMutation({
+    mutationFn: async (payload: DeleteCustomerLevelInput) => {
+      const { id, levels } = payload;
+
+      const { error } = await supabase
+        .from('customer_levels')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      const remaining = levels.filter(level => level.id !== id);
+      const renameUpdates = remaining
+        .map((level, index) => {
+          const nextName = `Level ${index + 1}`;
+          if (level.level_name === nextName) return null;
+          return { id: level.id, level_name: nextName };
+        })
+        .filter(
+          (update): update is { id: string; level_name: string } =>
+            update !== null
+        );
+
+      if (!renameUpdates.length) {
+        return { id };
+      }
+
+      await Promise.all(
+        renameUpdates.map(async update => {
+          const { error: updateError } = await supabase
+            .from('customer_levels')
+            .update({ level_name: update.level_name })
+            .eq('id', update.id);
+
+          if (updateError) {
+            throw updateError;
+          }
+        })
+      );
+
+      return { id };
+    },
+    onSuccess: () => {
+      toast.success('Level pelanggan berhasil dihapus');
+      queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
+    },
+    onError: error => {
+      console.error('Error deleting customer level:', error);
+      toast.error('Gagal menghapus level pelanggan.');
+    },
+  });
+
   const seedDefaultsMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase
@@ -124,5 +221,7 @@ export const useCustomerLevels = () => {
     isError: levelsQuery.isError,
     error: levelsQuery.error,
     createLevel: createLevelMutation,
+    updateLevels: updateLevelsMutation,
+    deleteLevel: deleteLevelMutation,
   };
 };
