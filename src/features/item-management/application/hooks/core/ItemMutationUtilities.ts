@@ -42,6 +42,10 @@ export const prepareItemData = async (
     package_id: formData.package_id,
     base_price: formData.base_price,
     sell_price: formData.sell_price,
+    is_level_pricing_active:
+      formData.is_level_pricing_active !== undefined
+        ? formData.is_level_pricing_active
+        : true,
     min_stock: formData.min_stock,
     description: formData.description || null,
     is_active: formData.is_active,

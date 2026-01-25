@@ -449,9 +449,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
           ref={buttonRef}
           onClick={toggleDropdown}
           title="Export Data"
-          className="inline-flex items-center justify-center w-8 h-8 text-primary hover:text-primary/80 transition-colors duration-200 cursor-pointer"
+          className="group inline-flex items-center justify-center w-8 h-8 cursor-pointer"
         >
-          <TbTableExport className="h-8 w-8" />
+          <TbTableExport className="-translate-y-0.25 h-8 w-8 text-primary transition-colors duration-200 group-hover:text-primary/80" />
         </button>
 
         {/* Export Dropdown Portal */}

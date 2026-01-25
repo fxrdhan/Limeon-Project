@@ -55,8 +55,12 @@ export default defineConfig({
             return 'animations';
           }
 
-          // React core - most critical, load first
-          if (id.includes('react/') || id.includes('react-dom/')) {
+          // React core - keep together to avoid circular dependencies
+          if (
+            id.includes('react/') ||
+            id.includes('react-dom/') ||
+            id.includes('scheduler/')
+          ) {
             return 'react-vendor';
           }
 

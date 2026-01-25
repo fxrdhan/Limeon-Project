@@ -24,6 +24,7 @@ export interface DBItemWithRelations {
   item_packages?: { id: string; code?: string; name: string } | null;
   item_dosages?: { id: string; code?: string; name: string } | null;
   item_manufacturers?: { id: string; code?: string; name: string } | null;
+  is_level_pricing_active?: boolean | null;
   customer_level_discounts?:
     | { customer_level_id: string; discount_percentage: number }[]
     | null;

@@ -78,6 +78,10 @@ export const useItemData = ({
           : [],
         base_price: (itemRecord.base_price as number) || 0,
         sell_price: (itemRecord.sell_price as number) || 0,
+        is_level_pricing_active:
+          itemRecord.is_level_pricing_active !== undefined
+            ? (itemRecord.is_level_pricing_active as boolean)
+            : true,
         min_stock: (itemRecord.min_stock as number) || 10,
         is_active:
           itemRecord.is_active !== undefined

@@ -72,6 +72,7 @@
   &--text-danger {
     @apply outline-hidden;
     color: var(--color-danger);
+    opacity: 0.8;
 
     &:not(:disabled):hover {
       @apply bg-red-200;

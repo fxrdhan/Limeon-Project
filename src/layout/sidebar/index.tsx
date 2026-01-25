@@ -411,68 +411,69 @@ const Sidebar = ({
         </div>
 
         <nav className="grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {menuItems.map(item => (
-            <div key={item.name}>
-              {item.children ? (
-                <>
-                  <button
-                    onClick={() =>
-                      toggleMenu(item.name.toLowerCase().replace(' ', ''))
-                    }
-                    onMouseEnter={() =>
-                      handleMenuMouseEnter(
-                        item.name.toLowerCase().replace(' ', '')
-                      )
-                    }
-                    onMouseLeave={handleMenuMouseLeave}
-                    className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
+          {menuItems.map(item => {
+            const menuKey = item.name.toLowerCase().replace(' ', '');
+            const isMenuActive =
+              isActive(item.path) || hasActiveChild(item.children);
+
+            return (
+              <div key={item.name}>
+                {item.children ? (
+                  <>
+                    <button
+                      onClick={() => toggleMenu(menuKey)}
+                      onMouseEnter={() => handleMenuMouseEnter(menuKey)}
+                      onMouseLeave={handleMenuMouseLeave}
+                      className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
                                                 focus:outline-hidden active:outline-hidden mx-4 rounded-lg
                                                 ${
-                                                  isActive(item.path) ||
-                                                  hasActiveChild(item.children)
+                                                  isMenuActive
                                                     ? collapsed
                                                       ? 'text-primary font-medium'
                                                       : 'bg-primary text-white font-medium'
                                                     : 'text-gray-600 hover:bg-gray-100'
                                                 }
                                                 transition-all duration-150 group relative`}
-                    style={{
-                      outline: 'none',
-                      border: 'none',
-                      borderLeft: '4px solid transparent',
-                    }}
-                  >
-                    <div className="flex items-center overflow-hidden">
-                      <div
-                        className={`shrink-0 flex items-center justify-center transition-colors duration-200`}
-                      >
-                        {item.icon}
+                      style={{
+                        outline: 'none',
+                        border: 'none',
+                        borderLeft: '4px solid transparent',
+                      }}
+                    >
+                      <div className="flex items-center overflow-hidden">
+                        <div
+                          className={`shrink-0 flex items-center justify-center transition-colors duration-200 ${
+                            isMenuActive && !collapsed ? 'text-white' : ''
+                          }`}
+                        >
+                          {item.icon}
+                        </div>
+                        <span
+                          className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'} ${
+                            isMenuActive && !collapsed ? 'text-white' : ''
+                          }`}
+                        >
+                          {item.name}
+                        </span>
                       </div>
-                      <span
-                        className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}
-                      >
-                        {item.name}
-                      </span>
-                    </div>
-                    {!collapsed && item.children && (
-                      <motion.div
-                        className="mr-4"
-                        animate={{
-                          rotate: openMenus[
-                            item.name.toLowerCase().replace(' ', '')
-                          ]
-                            ? 180
-                            : 0,
-                        }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      >
-                        <TbChevronDown className="text-sm" />
-                      </motion.div>
-                    )}
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {!collapsed &&
-                      openMenus[item.name.toLowerCase().replace(' ', '')] && (
+                      {!collapsed && item.children && (
+                        <motion.div
+                          className="mr-4"
+                          animate={{
+                            rotate: openMenus[menuKey] ? 180 : 0,
+                          }}
+                          transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        >
+                          <TbChevronDown
+                            className={`text-sm ${
+                              isMenuActive ? 'text-white' : ''
+                            }`}
+                          />
+                        </motion.div>
+                      )}
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {!collapsed && openMenus[menuKey] && (
                         <motion.div
                           key="submenu-content"
                           initial="collapsed"
@@ -488,9 +489,7 @@ const Sidebar = ({
                           }}
                           onMouseEnter={() => {
                             handleSubmenuMouseEnter();
-                            handleMenuMouseEnter(
-                              item.name.toLowerCase().replace(' ', '')
-                            );
+                            handleMenuMouseEnter(menuKey);
                           }}
                           onMouseLeave={handleSubmenuMouseLeave}
                           className="overflow-hidden"
@@ -618,47 +617,52 @@ const Sidebar = ({
                           </motion.div>
                         </motion.div>
                       )}
-                  </AnimatePresence>
-                </>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (location.pathname !== item.path) {
-                      navigate(item.path);
-                    }
-                  }}
-                  className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (location.pathname !== item.path) {
+                        navigate(item.path);
+                      }
+                    }}
+                    className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
                                                 focus:outline-hidden active:outline-hidden mx-4 rounded-lg
                                                 ${
-                                                  isActive(item.path)
+                                                  isMenuActive
                                                     ? collapsed
                                                       ? 'text-primary font-medium'
                                                       : 'bg-primary text-white font-medium'
                                                     : 'text-gray-600 hover:bg-gray-100'
                                                 }
                                                 transition-all duration-150 group relative`}
-                  style={{
-                    outline: 'none',
-                    border: 'none',
-                    borderLeft: '4px solid transparent',
-                  }}
-                >
-                  <div className="flex items-center overflow-hidden">
-                    <div
-                      className={`shrink-0 flex items-center justify-center transition-colors duration-200`}
-                    >
-                      {item.icon}
+                    style={{
+                      outline: 'none',
+                      border: 'none',
+                      borderLeft: '4px solid transparent',
+                    }}
+                  >
+                    <div className="flex items-center overflow-hidden">
+                      <div
+                        className={`shrink-0 flex items-center justify-center transition-colors duration-200 ${
+                          isMenuActive && !collapsed ? 'text-white' : ''
+                        }`}
+                      >
+                        {item.icon}
+                      </div>
+                      <span
+                        className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'} ${
+                          isMenuActive && !collapsed ? 'text-white' : ''
+                        }`}
+                      >
+                        {item.name}
+                      </span>
                     </div>
-                    <span
-                      className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}
-                    >
-                      {item.name}
-                    </span>
-                  </div>
-                </button>
-              )}
-            </div>
-          ))}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         <div

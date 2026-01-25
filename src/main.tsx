@@ -7,6 +7,7 @@ import App from './App.tsx';
 import { configurePersistence } from './lib/queryPersistence';
 import { preloadCachedImages } from './utils/imageCache';
 import './fonts.css'; // AG Grid font weight customization
+import 'antd/dist/reset.css';
 import './output.css';
 
 // Suppress React 19 ref warning from framer-motion/motion library

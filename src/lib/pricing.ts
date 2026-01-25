@@ -95,14 +95,16 @@ export const calculatePriceForCustomer = (
   const { item, customerLevel, unitId, unitName } = context;
   const resolved = resolveUnitPrice(item, unitId, unitName);
 
-  const levelPercentage =
-    normalizeNumber(customerLevel?.price_percentage) || 100;
+  const isLevelPricingActive = item.is_level_pricing_active !== false;
+
+  const levelPercentage = isLevelPricingActive
+    ? normalizeNumber(customerLevel?.price_percentage) || 100
+    : 100;
   const levelPrice = resolved.baseSellPrice * (levelPercentage / 100);
 
-  const itemDiscountPercentage = getItemDiscountForLevel(
-    item.customer_level_discounts,
-    customerLevel?.id
-  );
+  const itemDiscountPercentage = isLevelPricingActive
+    ? getItemDiscountForLevel(item.customer_level_discounts, customerLevel?.id)
+    : 0;
   const finalPrice = levelPrice * (1 - itemDiscountPercentage / 100);
 
   return {

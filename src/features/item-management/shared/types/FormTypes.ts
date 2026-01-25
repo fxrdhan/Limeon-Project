@@ -14,6 +14,7 @@ export interface ItemFormData {
   image_urls?: string[];
   base_price: number;
   sell_price: number;
+  is_level_pricing_active?: boolean;
   min_stock: number;
   quantity: number;
   unit_id: string;

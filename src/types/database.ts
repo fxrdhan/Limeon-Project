@@ -125,6 +125,7 @@ export interface Item {
   image_urls?: string[] | null;
   base_price: number;
   sell_price: number;
+  is_level_pricing_active?: boolean;
   stock: number;
   package_id?: string;
   base_unit?: string;
@@ -165,6 +166,7 @@ export interface DBItem {
   image_urls?: string[] | null;
   base_price: number;
   sell_price: number;
+  is_level_pricing_active?: boolean;
   stock: number;
   package_conversions: string | PackageConversion[];
   category_id?: string;

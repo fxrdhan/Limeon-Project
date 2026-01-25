@@ -91,6 +91,10 @@ export class ItemTransformer {
       package_conversions: packageConversions,
       base_unit: dbItem.base_unit || '', // base_unit tetap dari field base_unit
       image_urls: Array.isArray(dbItem.image_urls) ? dbItem.image_urls : [],
+      is_level_pricing_active:
+        dbItem.is_level_pricing_active !== undefined
+          ? Boolean(dbItem.is_level_pricing_active)
+          : true,
       customer_level_discounts: customerLevelDiscounts,
     };
   }

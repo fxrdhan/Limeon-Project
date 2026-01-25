@@ -396,6 +396,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       formData={{
         base_price: formData.base_price || 0,
         sell_price: formData.sell_price || 0,
+        is_level_pricing_active: formData.is_level_pricing_active ?? true,
       }}
       displayBasePrice={displayBasePrice}
       displaySellPrice={displaySellPrice}
@@ -436,6 +437,10 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       onStopEditMargin={marginEditor.stopEditing}
       onMarginInputChange={marginEditor.handleChange}
       onMarginKeyDown={marginEditor.handleKeyDown}
+      isLevelPricingActive={formData.is_level_pricing_active ?? true}
+      onLevelPricingActiveChange={active =>
+        updateFormData({ is_level_pricing_active: active })
+      }
     />
   );
 };

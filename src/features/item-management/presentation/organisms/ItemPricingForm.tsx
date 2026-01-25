@@ -9,6 +9,7 @@ import {
   TbTrash,
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
+import { Switch } from 'antd';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';
@@ -28,6 +29,7 @@ interface ItemPricingFormProps {
   formData: {
     base_price: number;
     sell_price: number;
+    is_level_pricing_active?: boolean;
   };
   displayBasePrice: string;
   displaySellPrice: string;
@@ -44,6 +46,8 @@ interface ItemPricingFormProps {
   onStopEditMargin: () => void;
   onMarginInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onMarginKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  isLevelPricingActive?: boolean;
+  onLevelPricingActiveChange?: (active: boolean) => void;
   showLevelPricing?: boolean;
   onShowLevelPricing?: () => void;
   onHideLevelPricing?: () => void;
@@ -89,6 +93,8 @@ export default function ItemPricingForm({
   onStopEditMargin,
   onMarginInputChange,
   onMarginKeyDown,
+  isLevelPricingActive,
+  onLevelPricingActiveChange,
   showLevelPricing = false,
   onShowLevelPricing,
   onHideLevelPricing,
@@ -357,31 +363,11 @@ export default function ItemPricingForm({
 
   const renderLevelPricing = () => {
     if (!levelPricing) return null;
-
-    const baseSellPrice = formData.sell_price || 0;
+    const levelPricingEnabled =
+      isLevelPricingActive ?? formData.is_level_pricing_active ?? true;
 
     return (
       <div className="p-4 md:p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-slate-700">
-              Pengaturan Level Pelanggan
-            </div>
-            <div className="text-xs text-slate-500">
-              Harga jual dasar: {formatRupiah(baseSellPrice)}
-            </div>
-          </div>
-          <button
-            type="button"
-            ref={baselineButtonRef}
-            className="p-1 text-slate-500 hover:text-slate-700 cursor-pointer"
-            onClick={openBaselineModal}
-            disabled={disabled}
-          >
-            <TbSettings size={16} />
-          </button>
-        </div>
-
         {levelPricing.isLoading ? (
           <div className="text-sm text-slate-500">
             Memuat level pelanggan...
@@ -414,7 +400,8 @@ export default function ItemPricingForm({
                 ? levelInputValues[level.id]
                 : displayDiscount.toString();
               const finalPrice =
-                (formData.sell_price || 0) * (1 - displayDiscount / 100);
+                (formData.sell_price || 0) *
+                (1 - (levelPricingEnabled ? displayDiscount : 0) / 100);
 
               return (
                 <div
@@ -470,7 +457,7 @@ export default function ItemPricingForm({
                           });
                         }}
                         placeholder="0"
-                        disabled={disabled}
+                        disabled={disabled || !levelPricingEnabled}
                         className="w-24"
                       />
                       <Input
@@ -519,9 +506,37 @@ export default function ItemPricingForm({
         }}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-          Harga Pokok & Jual
+          {showLevelPricing
+            ? 'Pengaturan Level Pelanggan'
+            : 'Harga Pokok & Jual'}
         </h2>
         <div className="flex items-center gap-1">
+          {showLevelPricing ? (
+            <Switch
+              size="small"
+              checked={
+                isLevelPricingActive ?? formData.is_level_pricing_active ?? true
+              }
+              disabled={disabled}
+              onChange={(checked: boolean) =>
+                onLevelPricingActiveChange?.(checked)
+              }
+            />
+          ) : null}
+          {showLevelPricing ? (
+            <button
+              type="button"
+              ref={baselineButtonRef}
+              className="p-1 -ml-1 mr-2 text-slate-500 hover:text-slate-700 cursor-pointer"
+              onClick={event => {
+                event.stopPropagation();
+                if (disabled) return;
+                openBaselineModal();
+              }}
+            >
+              <TbSettings size={18} />
+            </button>
+          ) : null}
           {isExpanded ? (
             <button
               type="button"
@@ -533,7 +548,7 @@ export default function ItemPricingForm({
                 setMenuOpen(prev => !prev);
               }}
             >
-              <TbMenu2 size={16} />
+              <TbMenu2 size={18} />
             </button>
           ) : null}
           {showLevelPricing ? (
@@ -550,11 +565,11 @@ export default function ItemPricingForm({
                 onHideLevelPricing?.();
               }}
             >
-              <TbArrowBackUp size={16} />
+              <TbArrowBackUp size={18} />
             </button>
           ) : (
             <TbChevronDown
-              size={16}
+              size={18}
               className={`text-slate-500 transition-transform duration-200 ${
                 isExpanded ? 'rotate-180' : ''
               }`}
