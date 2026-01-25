@@ -1,7 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
+import {
+  cacheImageBlob,
+  getCachedImageBlobUrl,
+  setCachedImage,
+} from '@/utils/imageCache';
 import { motion, AnimatePresence } from 'motion/react';
 import { TbMessageDots } from 'react-icons/tb';
 import DateTimeDisplay from './live-datetime';
@@ -25,41 +30,79 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   >(undefined);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [portalImageUrls, setPortalImageUrls] = useState<
+    Record<string, string>
+  >({});
 
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
 
   // Reorder users so current user appears last (rightmost) if present
-  const reorderedOnlineUsers =
-    onlineUsersList.length > 0 && user
-      ? (() => {
-          const currentUserIndex = onlineUsersList.findIndex(
-            u => u.id === user.id
-          );
-          if (currentUserIndex !== -1) {
-            const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
-            const currentUserObj = onlineUsersList[currentUserIndex];
-            return [...otherUsers, currentUserObj];
-          }
-          return onlineUsersList;
-        })()
-      : onlineUsersList;
+  const reorderedOnlineUsers = useMemo(() => {
+    if (onlineUsersList.length === 0 || !user) return onlineUsersList;
+    const currentUserIndex = onlineUsersList.findIndex(u => u.id === user.id);
+    if (currentUserIndex !== -1) {
+      const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
+      const currentUserObj = onlineUsersList[currentUserIndex];
+      return [...otherUsers, currentUserObj];
+    }
+    return onlineUsersList;
+  }, [onlineUsersList, user]);
 
   // Reorder users for portal so current user appears first (top) if present
-  const portalOrderedUsers =
-    onlineUsersList.length > 0 && user
-      ? (() => {
-          const currentUserIndex = onlineUsersList.findIndex(
-            u => u.id === user.id
-          );
-          if (currentUserIndex !== -1) {
-            const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
-            const currentUserObj = onlineUsersList[currentUserIndex];
-            return [currentUserObj, ...otherUsers];
+  const portalOrderedUsers = useMemo(() => {
+    if (onlineUsersList.length === 0 || !user) return onlineUsersList;
+    const currentUserIndex = onlineUsersList.findIndex(u => u.id === user.id);
+    if (currentUserIndex !== -1) {
+      const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
+      const currentUserObj = onlineUsersList[currentUserIndex];
+      return [currentUserObj, ...otherUsers];
+    }
+    return onlineUsersList;
+  }, [onlineUsersList, user]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolvePortalImages = async () => {
+      if (portalOrderedUsers.length === 0) {
+        if (isActive) setPortalImageUrls({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        portalOrderedUsers.map(async portalUser => {
+          const profilePhotoUrl = portalUser.profilephoto ?? '';
+          if (!profilePhotoUrl) return [portalUser.id, ''] as const;
+
+          if (!profilePhotoUrl.startsWith('http')) {
+            return [portalUser.id, profilePhotoUrl] as const;
           }
-          return onlineUsersList;
-        })()
-      : onlineUsersList;
+
+          const cacheKey = `profile:${portalUser.id}`;
+          setCachedImage(cacheKey, profilePhotoUrl);
+
+          const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
+          if (cachedBlobUrl) return [portalUser.id, cachedBlobUrl] as const;
+
+          const blobUrl = await cacheImageBlob(profilePhotoUrl);
+          return [portalUser.id, blobUrl || profilePhotoUrl] as const;
+        })
+      );
+
+      if (!isActive) return;
+      const nextUrls = Object.fromEntries(
+        entries.filter(([, url]) => Boolean(url))
+      );
+      setPortalImageUrls(nextUrls);
+    };
+
+    void resolvePortalImages();
+
+    return () => {
+      isActive = false;
+    };
+  }, [portalOrderedUsers]);
 
   // Helper functions for avatar display
   const getInitials = (name: string) => {
@@ -306,9 +349,9 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                               className="relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden"
                               title={`${portalUser.name} - Online`}
                             >
-                              {portalUser.profilephoto ? (
+                              {portalImageUrls[portalUser.id] ? (
                                 <img
-                                  src={portalUser.profilephoto}
+                                  src={portalImageUrls[portalUser.id]}
                                   alt={portalUser.name}
                                   className="w-full h-full object-cover"
                                   draggable={false}

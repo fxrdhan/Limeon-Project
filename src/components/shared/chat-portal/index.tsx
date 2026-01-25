@@ -4,6 +4,11 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { TbCircleArrowDownFilled, TbSend2 } from 'react-icons/tb';
+import {
+  cacheImageBlob,
+  getCachedImageBlobUrl,
+  setCachedImage,
+} from '@/utils/imageCache';
 
 interface ChatMessage {
   id: string;
@@ -66,6 +71,16 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const previousIsOpenRef = useRef(isOpen);
   const currentChannelId =
     user && targetUser ? generateChannelId(user.id, targetUser.id) : null;
+  const userProfilePhotoUrl = user?.profilephoto ?? null;
+  const targetProfilePhotoUrl = targetUser?.profilephoto ?? null;
+  const userCacheKey = user?.id ? `profile:${user.id}` : null;
+  const targetCacheKey = targetUser?.id ? `profile:${targetUser.id}` : null;
+  const [displayUserPhotoUrl, setDisplayUserPhotoUrl] = useState<string | null>(
+    null
+  );
+  const [displayTargetPhotoUrl, setDisplayTargetPhotoUrl] = useState<
+    string | null
+  >(null);
 
   // Helper function to format last seen time
   const formatLastSeen = (lastSeen: string): string => {
@@ -110,6 +125,86 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       console.error('❌ Caught error updating user chat close:', error);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!userCacheKey || !userProfilePhotoUrl) return;
+    if (userProfilePhotoUrl.startsWith('http')) {
+      setCachedImage(userCacheKey, userProfilePhotoUrl);
+    }
+  }, [userCacheKey, userProfilePhotoUrl]);
+
+  useEffect(() => {
+    if (!targetCacheKey || !targetProfilePhotoUrl) return;
+    if (targetProfilePhotoUrl.startsWith('http')) {
+      setCachedImage(targetCacheKey, targetProfilePhotoUrl);
+    }
+  }, [targetCacheKey, targetProfilePhotoUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveImage = async () => {
+      if (!userProfilePhotoUrl) {
+        if (isActive) setDisplayUserPhotoUrl(null);
+        return;
+      }
+
+      if (!userProfilePhotoUrl.startsWith('http')) {
+        if (isActive) setDisplayUserPhotoUrl(userProfilePhotoUrl);
+        return;
+      }
+
+      const cachedBlobUrl = await getCachedImageBlobUrl(userProfilePhotoUrl);
+      if (cachedBlobUrl) {
+        if (isActive) setDisplayUserPhotoUrl(cachedBlobUrl);
+        return;
+      }
+
+      const blobUrl = await cacheImageBlob(userProfilePhotoUrl);
+      if (isActive) {
+        setDisplayUserPhotoUrl(blobUrl || userProfilePhotoUrl);
+      }
+    };
+
+    void resolveImage();
+
+    return () => {
+      isActive = false;
+    };
+  }, [userProfilePhotoUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveImage = async () => {
+      if (!targetProfilePhotoUrl) {
+        if (isActive) setDisplayTargetPhotoUrl(null);
+        return;
+      }
+
+      if (!targetProfilePhotoUrl.startsWith('http')) {
+        if (isActive) setDisplayTargetPhotoUrl(targetProfilePhotoUrl);
+        return;
+      }
+
+      const cachedBlobUrl = await getCachedImageBlobUrl(targetProfilePhotoUrl);
+      if (cachedBlobUrl) {
+        if (isActive) setDisplayTargetPhotoUrl(cachedBlobUrl);
+        return;
+      }
+
+      const blobUrl = await cacheImageBlob(targetProfilePhotoUrl);
+      if (isActive) {
+        setDisplayTargetPhotoUrl(blobUrl || targetProfilePhotoUrl);
+      }
+    };
+
+    void resolveImage();
+
+    return () => {
+      isActive = false;
+    };
+  }, [targetProfilePhotoUrl]);
 
   // Centralized close logic (used by close button AND external triggers)
   const performClose = useCallback(async () => {
@@ -839,9 +934,9 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                                 {displayTime}
                               </span>
                               <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                                {user?.profilephoto ? (
+                                {displayUserPhotoUrl ? (
                                   <img
-                                    src={user.profilephoto}
+                                    src={displayUserPhotoUrl}
                                     alt={user.name || 'You'}
                                     className="w-full h-full object-cover"
                                     draggable={false}
@@ -858,10 +953,10 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                           ) : (
                             <>
                               <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                                {targetUser?.profilephoto ? (
+                                {displayTargetPhotoUrl ? (
                                   <img
-                                    src={targetUser.profilephoto}
-                                    alt={targetUser.name}
+                                    src={displayTargetPhotoUrl}
+                                    alt={targetUser?.name || 'User'}
                                     className="w-full h-full object-cover"
                                     draggable={false}
                                   />

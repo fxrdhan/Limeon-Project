@@ -1,7 +1,12 @@
-import { memo, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthStore } from '@/store/authStore';
 import type { OnlineUser } from '@/types';
+import {
+  cacheImageBlob,
+  getCachedImageBlobUrl,
+  setCachedImage,
+} from '@/utils/imageCache';
 
 interface AvatarStackProps {
   users: OnlineUser[];
@@ -37,6 +42,49 @@ const Avatar = memo(
       md: '-ml-2',
       lg: '-ml-3',
     };
+    const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
+    const profilePhotoUrl = user.profilephoto ?? null;
+    const cacheKey = `profile:${user.id}`;
+
+    useEffect(() => {
+      if (!profilePhotoUrl) return;
+      if (profilePhotoUrl.startsWith('http')) {
+        setCachedImage(cacheKey, profilePhotoUrl);
+      }
+    }, [cacheKey, profilePhotoUrl]);
+
+    useEffect(() => {
+      let isActive = true;
+
+      const resolveImage = async () => {
+        if (!profilePhotoUrl) {
+          if (isActive) setDisplayImageUrl(null);
+          return;
+        }
+
+        if (!profilePhotoUrl.startsWith('http')) {
+          if (isActive) setDisplayImageUrl(profilePhotoUrl);
+          return;
+        }
+
+        const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
+        if (cachedBlobUrl) {
+          if (isActive) setDisplayImageUrl(cachedBlobUrl);
+          return;
+        }
+
+        const blobUrl = await cacheImageBlob(profilePhotoUrl);
+        if (isActive) {
+          setDisplayImageUrl(blobUrl || profilePhotoUrl);
+        }
+      };
+
+      void resolveImage();
+
+      return () => {
+        isActive = false;
+      };
+    }, [profilePhotoUrl]);
 
     return (
       <motion.div
@@ -60,9 +108,9 @@ const Avatar = memo(
       `}
         title={`${user.name} - Online`}
       >
-        {user.profilephoto ? (
+        {displayImageUrl ? (
           <img
-            src={user.profilephoto}
+            src={displayImageUrl}
             alt={user.name}
             className="w-full h-full object-cover"
             draggable={false}

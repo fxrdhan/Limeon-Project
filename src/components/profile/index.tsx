@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import ImageUploader from '@/components/image-manager';
 import { useAuthStore } from '@/store/authStore';
+import {
+  cacheImageBlob,
+  getCachedImageBlobUrl,
+  setCachedImage,
+} from '@/utils/imageCache';
 import { motion, AnimatePresence } from 'motion/react';
 import { TbLogout, TbPencil, TbSettings, TbUserCircle } from 'react-icons/tb';
 
@@ -11,6 +16,11 @@ const Profile = () => {
   const [animatingPortal, setAnimatingPortal] = useState(false);
 
   const portalRef = useRef<HTMLDivElement>(null);
+  const cacheKey = user?.id ? `profile:${user.id}` : null;
+  const profilePhotoUrl = user?.profilephoto ?? null;
+  const [displayProfileUrl, setDisplayProfileUrl] = useState<string | null>(
+    null
+  );
 
   const glowShadows = [
     '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
@@ -42,6 +52,46 @@ const Profile = () => {
   const handleLogout = async () => {
     await logout();
   };
+
+  useEffect(() => {
+    if (!cacheKey || !profilePhotoUrl) return;
+    if (profilePhotoUrl.startsWith('http')) {
+      setCachedImage(cacheKey, profilePhotoUrl);
+    }
+  }, [cacheKey, profilePhotoUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveImage = async () => {
+      if (!profilePhotoUrl) {
+        if (isActive) setDisplayProfileUrl(null);
+        return;
+      }
+
+      if (!profilePhotoUrl.startsWith('http')) {
+        if (isActive) setDisplayProfileUrl(profilePhotoUrl);
+        return;
+      }
+
+      const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
+      if (cachedBlobUrl) {
+        if (isActive) setDisplayProfileUrl(cachedBlobUrl);
+        return;
+      }
+
+      const blobUrl = await cacheImageBlob(profilePhotoUrl);
+      if (isActive) {
+        setDisplayProfileUrl(blobUrl || profilePhotoUrl);
+      }
+    };
+
+    void resolveImage();
+
+    return () => {
+      isActive = false;
+    };
+  }, [profilePhotoUrl]);
 
   useEffect(() => {
     if (animatingPortal) {
@@ -92,9 +142,9 @@ const Profile = () => {
     const textSizeClass =
       size === 'small' ? 'text-sm' : size === 'large' ? 'text-3xl' : 'text-2xl';
 
-    return user?.profilephoto ? (
+    return displayProfileUrl ? (
       <img
-        src={user.profilephoto}
+        src={displayProfileUrl}
         alt="Profile"
         className={`${sizeClass} rounded-full object-cover ${className}`}
       />
