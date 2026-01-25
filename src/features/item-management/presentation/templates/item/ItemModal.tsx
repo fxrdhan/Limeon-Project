@@ -22,6 +22,15 @@ import type {
 } from '../../../shared/types';
 import type { DBPackageConversion, ItemPackage } from '@/types/database';
 
+type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
+
+const SECTION_ORDER: AccordionSection[] = [
+  'additional',
+  'settings',
+  'pricing',
+  'conversion',
+];
+
 // Template and Organisms
 import { ItemFormSections } from '../ItemFormSections';
 import ItemModalTemplate from '../ItemModalTemplate';
@@ -464,7 +473,6 @@ const ItemManagementContent: React.FC<{
   const hasEditData =
     isEditSession && (hasFormData || Boolean(initialItemData));
 
-  type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
   const [openSection, setOpenSection] = useState<AccordionSection | null>(() =>
     isEditSession ? null : 'additional'
   );
@@ -618,18 +626,15 @@ const ItemManagementContent: React.FC<{
       ? lastOpenSection
       : activeSection;
 
-  const sectionOrder: AccordionSection[] = [
-    'additional',
-    'settings',
-    'pricing',
-    'conversion',
-  ];
   const activeIndex = effectiveSection
-    ? sectionOrder.indexOf(effectiveSection)
+    ? SECTION_ORDER.indexOf(effectiveSection)
     : -1;
+  const stackAboveEnabled = activeIndex >= 2;
+  const stackBelowEnabled =
+    activeIndex !== -1 && SECTION_ORDER.length - 1 - activeIndex >= 2;
 
   const getStackClasses = (section: AccordionSection) => {
-    const index = sectionOrder.indexOf(section);
+    const index = SECTION_ORDER.indexOf(section);
     if (index === -1) return '';
 
     if (isStackHovering) {
@@ -648,17 +653,28 @@ const ItemManagementContent: React.FC<{
     }
 
     if (index < activeIndex) {
+      if (!stackAboveEnabled) {
+        return index === 0 ? '' : 'relative mt-4';
+      }
       return index === 0 ? 'relative' : 'relative -mt-6';
     }
 
-    return index === activeIndex + 1 ? 'relative mt-4' : 'relative -mt-6';
+    if (stackBelowEnabled) {
+      return index === activeIndex + 1 ? 'relative mt-4' : 'relative -mt-6';
+    }
+
+    return 'relative mt-4';
   };
 
   const getStackWrapperStyle = (section: AccordionSection) => {
     if (isStackHovering) return undefined;
-    const index = sectionOrder.indexOf(section);
+    const index = SECTION_ORDER.indexOf(section);
     if (index === -1 || activeIndex === -1) return undefined;
     if (index === activeIndex) return { zIndex: 30 };
+    if (index > activeIndex && !stackBelowEnabled) return undefined;
+    if (index < activeIndex && !stackAboveEnabled) {
+      return undefined;
+    }
 
     const depth = Math.abs(activeIndex - index);
     return { zIndex: Math.max(1, 20 - depth) };
@@ -666,8 +682,12 @@ const ItemManagementContent: React.FC<{
 
   const getStackStyle = (section: AccordionSection) => {
     if (isStackHovering) return undefined;
-    const index = sectionOrder.indexOf(section);
+    const index = SECTION_ORDER.indexOf(section);
     if (index === -1 || activeIndex === -1 || index === activeIndex) {
+      return undefined;
+    }
+    if (index > activeIndex && !stackBelowEnabled) return undefined;
+    if (index < activeIndex && !stackAboveEnabled) {
       return undefined;
     }
 
@@ -771,6 +791,38 @@ const ItemManagementContent: React.FC<{
       // Hover should only affect stacked cards. If the user is hovering the
       // currently expanded card, keep the current state (do not unstack).
       if (hoveredSection === activeSection) {
+        return;
+      }
+
+      const hoveredIndex = SECTION_ORDER.indexOf(hoveredSection);
+      const activeSectionIndex = activeSection
+        ? SECTION_ORDER.indexOf(activeSection)
+        : -1;
+      const shouldStackAbove = activeSectionIndex >= 2;
+      const shouldStackBelow =
+        activeSectionIndex !== -1 &&
+        SECTION_ORDER.length - 1 - activeSectionIndex >= 2;
+
+      // Only stacked cards (above active) should trigger unstack.
+      if (hoveredIndex === -1 || activeSectionIndex === -1) {
+        return;
+      }
+      if (hoveredIndex > activeSectionIndex && !shouldStackBelow) {
+        return;
+      }
+      if (hoveredIndex < activeSectionIndex && !shouldStackAbove) {
+        return;
+      }
+      if (
+        hoveredIndex < activeSectionIndex &&
+        activeSectionIndex - hoveredIndex === 1
+      ) {
+        return;
+      }
+      if (
+        hoveredIndex > activeSectionIndex &&
+        hoveredIndex - activeSectionIndex === 1
+      ) {
         return;
       }
 

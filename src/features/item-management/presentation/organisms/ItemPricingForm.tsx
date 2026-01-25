@@ -95,10 +95,6 @@ export default function ItemPricingForm({
   levelPricing,
   disabled = false,
 }: ItemPricingFormProps) {
-  const [isAddingLevel, setIsAddingLevel] = useState(false);
-  const [newLevelName, setNewLevelName] = useState('');
-  const [newLevelPercentage, setNewLevelPercentage] = useState('100');
-  const [newLevelDescription, setNewLevelDescription] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
     top: number;
@@ -133,44 +129,6 @@ export default function ItemPricingForm({
         onMarginChange(calculatedMargin.toFixed(1));
       }
     }, 0);
-  };
-
-  const handleStartAddLevel = () => {
-    setIsAddingLevel(true);
-    setNewLevelName('');
-    setNewLevelPercentage('100');
-    setNewLevelDescription('');
-  };
-
-  const handleCancelAddLevel = () => {
-    setIsAddingLevel(false);
-    setNewLevelName('');
-    setNewLevelPercentage('100');
-    setNewLevelDescription('');
-  };
-
-  const parsedNewLevelPercentage = Number(newLevelPercentage);
-  const isPercentageValid =
-    !Number.isNaN(parsedNewLevelPercentage) &&
-    parsedNewLevelPercentage >= 0 &&
-    parsedNewLevelPercentage <= 100;
-  const canSaveLevel =
-    newLevelName.trim().length > 0 &&
-    isPercentageValid &&
-    !disabled &&
-    !levelPricing?.isCreating;
-
-  const handleCreateLevel = async () => {
-    if (!levelPricing) return;
-    if (!canSaveLevel) return;
-
-    await levelPricing.onCreateLevel({
-      level_name: newLevelName.trim(),
-      price_percentage: parsedNewLevelPercentage,
-      description: newLevelDescription.trim() || null,
-    });
-
-    handleCancelAddLevel();
   };
 
   const openBaselineModal = () => {
@@ -530,71 +488,9 @@ export default function ItemPricingForm({
         )}
 
         <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50">
-          {isAddingLevel ? (
-            <div className="space-y-3 p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Nama level">
-                  <Input
-                    value={newLevelName}
-                    onChange={event => setNewLevelName(event.target.value)}
-                    placeholder="Level baru"
-                    disabled={disabled || levelPricing.isCreating}
-                  />
-                </FormField>
-                <FormField label="Persentase harga (%)">
-                  <Input
-                    type="number"
-                    value={newLevelPercentage}
-                    min={0}
-                    max={100}
-                    step={0.1}
-                    onChange={event =>
-                      setNewLevelPercentage(event.target.value)
-                    }
-                    placeholder="100"
-                    disabled={disabled || levelPricing.isCreating}
-                  />
-                </FormField>
-              </div>
-              <FormField label="Deskripsi (opsional)">
-                <Input
-                  value={newLevelDescription}
-                  onChange={event => setNewLevelDescription(event.target.value)}
-                  placeholder="Harga khusus untuk member"
-                  disabled={disabled || levelPricing.isCreating}
-                />
-              </FormField>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="text"
-                  size="sm"
-                  onClick={handleCancelAddLevel}
-                  disabled={levelPricing.isCreating}
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleCreateLevel}
-                  isLoading={levelPricing.isCreating}
-                  disabled={!canSaveLevel || levelPricing.isCreating}
-                >
-                  Simpan Level
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="w-full px-4 py-3 text-left text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-              onClick={handleStartAddLevel}
-              disabled={disabled}
-            >
-              Tambah Level
-            </button>
-          )}
+          <div className="px-4 py-3 text-sm text-slate-500">
+            Tambah level hanya tersedia lewat menu baseline.
+          </div>
         </div>
       </div>
     );
@@ -818,6 +714,12 @@ export default function ItemPricingForm({
                             onChange={event =>
                               handleBaselineChange(level.id, event.target.value)
                             }
+                            onKeyDown={event => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                handleSaveBaseline();
+                              }
+                            }}
                             disabled={disabled}
                             className="w-20 text-sm"
                           />
@@ -907,26 +809,28 @@ export default function ItemPricingForm({
                     variant="text"
                     size="sm"
                     onClick={() => {
-                      if (!baselineAddOpen) {
-                        handleAddBaselineLevel();
-                        return;
-                      }
+                      setBaselineOpen(false);
                       setBaselineAddOpen(false);
                       setBaselineNewName('');
                       setBaselineNewDiscount('');
                     }}
                     disabled={disabled || isSavingBaseline}
                   >
-                    {baselineAddOpen ? 'Batal' : 'Tambah'}
+                    Tutup
                   </Button>
                   <Button
                     type="button"
                     size="sm"
-                    onClick={handleSaveBaseline}
-                    isLoading={isSavingBaseline}
-                    disabled={isSavingBaseline || levelPricing.isUpdating}
+                    onClick={handleAddBaselineLevel}
+                    isLoading={levelPricing.isCreating}
+                    disabled={
+                      disabled ||
+                      isSavingBaseline ||
+                      (baselineAddOpen && !canCreateBaselineLevel) ||
+                      levelPricing.isCreating
+                    }
                   >
-                    Simpan
+                    Tambah
                   </Button>
                 </div>
               </div>
