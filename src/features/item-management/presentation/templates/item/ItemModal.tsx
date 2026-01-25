@@ -20,6 +20,7 @@ import type {
   ItemManagementContextValue,
   ItemModalProps,
 } from '../../../shared/types';
+import type { DBPackageConversion, ItemPackage } from '@/types/database';
 
 // Template and Organisms
 import { ItemFormSections } from '../ItemFormSections';
@@ -147,10 +148,56 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   const handleSmartUpdate = useCallback(
     (updates: Record<string, unknown>) => {
-      // Apply updates that don't conflict with user input
-      updateFormData(updates);
+      const { package_conversions, ...restUpdates } = updates;
+
+      if (package_conversions !== undefined) {
+        let parsedConversions: DBPackageConversion[] = [];
+        try {
+          if (typeof package_conversions === 'string') {
+            parsedConversions = JSON.parse(package_conversions);
+          } else if (Array.isArray(package_conversions)) {
+            parsedConversions = package_conversions as DBPackageConversion[];
+          }
+        } catch (error) {
+          console.error('Failed to parse realtime package conversions', error);
+        }
+
+        const mappedConversions = parsedConversions.map(conversion => {
+          const unitDetail =
+            packages.find(pkg => pkg.id === conversion.to_unit_id) ||
+            packages.find(pkg => pkg.name === conversion.unit_name);
+
+          const fallbackUnit: ItemPackage = unitDetail
+            ? unitDetail
+            : {
+                id: conversion.to_unit_id || '',
+                name: conversion.unit_name || 'Unknown Unit',
+              };
+
+          return {
+            id:
+              conversion.id ||
+              `${Date.now().toString()}-${Math.random()
+                .toString(36)
+                .slice(2, 9)}`,
+            unit_name: conversion.unit_name,
+            to_unit_id: fallbackUnit.id,
+            unit: { id: fallbackUnit.id, name: fallbackUnit.name },
+            conversion_rate: conversion.conversion_rate || 0,
+            base_price: conversion.base_price || 0,
+            sell_price: conversion.sell_price || 0,
+          };
+        });
+
+        packageConversionHook.setConversions(mappedConversions);
+      }
+
+      if (Object.keys(restUpdates).length > 0) {
+        // Apply updates that don't conflict with user input
+        updateFormData(restUpdates);
+      }
     },
-    [updateFormData]
+    [packageConversionHook, packages, updateFormData]
   );
 
   // Realtime for current item data with smart form sync
