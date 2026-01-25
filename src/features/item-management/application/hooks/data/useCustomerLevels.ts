@@ -96,12 +96,20 @@ export const useCustomerLevels = () => {
 
       await Promise.all(
         payload.map(async update => {
+          const updatePayload: {
+            price_percentage: number;
+            level_name?: string;
+          } = {
+            price_percentage: update.price_percentage,
+          };
+
+          if (update.level_name !== undefined) {
+            updatePayload.level_name = update.level_name;
+          }
+
           const { error } = await supabase
             .from('customer_levels')
-            .update({
-              price_percentage: update.price_percentage,
-              level_name: update.level_name,
-            })
+            .update(updatePayload)
             .eq('id', update.id);
 
           if (error) {

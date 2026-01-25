@@ -293,7 +293,6 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   onExpand,
   stackClassName,
   stackStyle,
-  itemId,
   onLevelPricingToggle,
 }) => {
   const { formData, updateFormData, handleChange } = useItemForm();
@@ -309,17 +308,18 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   } = useCustomerLevels();
   const [showLevelPricing, setShowLevelPricing] = useState(false);
 
-  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
-
-  useEffect(() => {
-    if (!isExpanded && showLevelPricing) {
-      setShowLevelPricing(false);
-    }
-  }, [isExpanded, showLevelPricing]);
+  const { resetKey, isViewingOldVersion } = useItemUI();
 
   useEffect(() => {
     onLevelPricingToggle?.(showLevelPricing);
   }, [onLevelPricingToggle, showLevelPricing]);
+
+  const handlePricingExpand = useCallback(() => {
+    if (showLevelPricing && isExpanded) {
+      setShowLevelPricing(false);
+    }
+    onExpand();
+  }, [isExpanded, onExpand, showLevelPricing]);
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: formData.base_price || 0,
@@ -365,7 +365,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   }, [customerLevelDiscounts]);
 
   const handleDiscountChange = useCallback(
-    async (levelId: string, value: string) => {
+    (levelId: string, value: string) => {
       const trimmedValue = value.trim();
       const parsedValue = trimmedValue
         ? Number(trimmedValue.replace(',', '.'))
@@ -386,47 +386,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       }
 
       updateFormData({ customer_level_discounts: nextDiscounts });
-
-      if (!itemId || !isEditMode || isViewingOldVersion) {
-        return;
-      }
-
-      try {
-        if (trimmedValue === '') {
-          const { error } = await supabase
-            .from('customer_level_discounts')
-            .delete()
-            .eq('item_id', itemId)
-            .eq('customer_level_id', levelId);
-
-          if (error) throw error;
-          return;
-        }
-
-        const { error } = await supabase
-          .from('customer_level_discounts')
-          .upsert(
-            {
-              item_id: itemId,
-              customer_level_id: levelId,
-              discount_percentage: normalizedValue,
-            },
-            { onConflict: 'item_id,customer_level_id' }
-          );
-
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error updating customer level discount:', error);
-        toast.error('Gagal memperbarui diskon level pelanggan.');
-      }
     },
-    [
-      customerLevelDiscounts,
-      isEditMode,
-      isViewingOldVersion,
-      itemId,
-      updateFormData,
-    ]
+    [customerLevelDiscounts, updateFormData]
   );
 
   return (
@@ -464,7 +425,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
           : undefined
       }
       isExpanded={isExpanded}
-      onExpand={onExpand}
+      onExpand={handlePricingExpand}
       stackClassName={stackClassName}
       stackStyle={stackStyle}
       disabled={isViewingOldVersion}

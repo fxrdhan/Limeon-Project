@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSmartFormSync } from './useSmartFormSync';
+import type { CustomerLevelDiscount } from '@/types/database';
 
 interface UseItemModalRealtimeProps {
   itemId?: string;
@@ -87,6 +88,37 @@ export const useItemModalRealtime = ({
 
           // Call custom handler
           onItemUpdated?.(payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'customer_level_discounts',
+          event: '*',
+          filter: `item_id=eq.${itemId}`,
+        },
+        async () => {
+          const { data, error } = await supabase
+            .from('customer_level_discounts')
+            .select('customer_level_id, discount_percentage')
+            .eq('item_id', itemId);
+
+          if (error) {
+            console.error('Error syncing customer level discounts:', error);
+            return;
+          }
+
+          const normalized = (data || []).map(
+            (discount: CustomerLevelDiscount) => ({
+              customer_level_id: discount.customer_level_id,
+              discount_percentage: Number(discount.discount_percentage) || 0,
+            })
+          );
+
+          smartFormSync.handleRealtimeUpdate({
+            customer_level_discounts: normalized,
+          });
         }
       )
       .on(
