@@ -386,6 +386,11 @@ export default function ItemPricingForm({
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
         onClick={() => {
           setMenuOpen(false);
+          if (showLevelPricing) {
+            setLevelInputValues({});
+            onHideLevelPricing?.();
+            return;
+          }
           onExpand?.();
         }}
       >
