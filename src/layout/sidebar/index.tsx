@@ -154,17 +154,15 @@ const Sidebar = ({
 
   const submenuItemVariants = {
     open: {
-      x: 0,
       opacity: 1,
       transition: {
-        x: { stiffness: 1000, velocity: -100 },
+        opacity: { duration: 0.2 },
       },
     },
     collapsed: {
-      x: -10,
       opacity: 0,
       transition: {
-        x: { stiffness: 1000 },
+        opacity: { duration: 0.15 },
       },
     },
   };
@@ -424,8 +422,8 @@ const Sidebar = ({
                       onClick={() => toggleMenu(menuKey)}
                       onMouseEnter={() => handleMenuMouseEnter(menuKey)}
                       onMouseLeave={handleMenuMouseLeave}
-                      className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
-                                                focus:outline-hidden active:outline-hidden mx-4 rounded-lg
+                      className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between flex-start focus-visible:outline-hidden outline-hidden border-0 cursor-pointer
+                                                focus:outline-hidden active:outline-hidden rounded-lg
                                                 ${
                                                   isMenuActive
                                                     ? collapsed
@@ -458,7 +456,6 @@ const Sidebar = ({
                       </div>
                       {!collapsed && item.children && (
                         <motion.div
-                          className="mr-4"
                           animate={{
                             rotate: openMenus[menuKey] ? 180 : 0,
                           }}
@@ -496,7 +493,7 @@ const Sidebar = ({
                         >
                           <motion.div
                             variants={submenuContainerVariants}
-                            className="pl-8 pr-2 py-4 relative"
+                            className="pl-5 pr-4 py-2 relative"
                           >
                             {/* Static background line */}
                             <div className="absolute left-5 top-4 bottom-4 w-0.5 bg-gray-300"></div>
@@ -507,7 +504,7 @@ const Sidebar = ({
                                 getActiveSubmenuItem(item.children) && (
                                   <motion.div
                                     layoutId={`active-submenu-indicator-${item.name}`}
-                                    className="absolute left-5 w-0.5 bg-primary z-20"
+                                    className="absolute w-0.5 bg-primary z-20"
                                     initial={{
                                       y: activeSubmenuIndex(item.children) * 48,
                                       height: 48,
@@ -553,7 +550,7 @@ const Sidebar = ({
                                     <AnimatePresence>
                                       {isActiveChild && (
                                         <motion.div
-                                          className="absolute left-[-15px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary z-30"
+                                          className="absolute left-[-3px] top-5 h-2 w-2 -translate-y-0.5 rounded-full bg-primary z-30"
                                           initial={{
                                             scale: 0,
                                             opacity: 0,
@@ -592,14 +589,13 @@ const Sidebar = ({
                                             e.preventDefault();
                                           }
                                         }}
-                                        className={`block px-3 py-3 text-sm rounded-md transition-all duration-300 ease-in-out
+                                        className={`block px-6 py-3 text-sm rounded-md transition-all duration-300 ease-in-out
                                                                 focus-visible:outline-hidden outline-hidden
                                                                 focus:outline-hidden active:outline-hidden
-                                                                transform hover:translate-x-1
                                                                 ${
                                                                   isActiveChild
-                                                                    ? 'font-medium scale-[1.02] bg-emerald-50'
-                                                                    : 'hover:bg-gray-100'
+                                                                    ? 'font-medium'
+                                                                    : ''
                                                                 } whitespace-nowrap overflow-hidden text-ellipsis`}
                                         style={{
                                           outline: 'none',
@@ -626,8 +622,8 @@ const Sidebar = ({
                         navigate(item.path);
                       }
                     }}
-                    className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
-                                                focus:outline-hidden active:outline-hidden mx-4 rounded-lg
+                    className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0 cursor-pointer
+                                                focus:outline-hidden active:outline-hidden rounded-lg
                                                 ${
                                                   isMenuActive
                                                     ? collapsed
