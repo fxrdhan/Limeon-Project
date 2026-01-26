@@ -31,7 +31,7 @@ import {
 } from '@/features/shared/utils/gridStateManager';
 
 // Types
-import type { Item } from '@/types/database';
+import type { Item, Supplier } from '@/types/database';
 import {
   EntityData,
   EntityType,
@@ -57,7 +57,7 @@ interface ItemWithExtendedEntities
   manufacturer?: EntityWithCode;
 }
 
-type MasterDataType = 'items' | EntityType;
+type MasterDataType = 'items' | EntityType | 'suppliers';
 
 interface EntityConfig {
   entityName: string;
@@ -74,6 +74,7 @@ interface EntityGridProps {
 
   // Data
   itemsData?: Item[];
+  suppliersData?: Supplier[];
   entityData?: EntityData[];
 
   // States
@@ -84,6 +85,7 @@ interface EntityGridProps {
 
   // Grid config
   itemColumnDefs?: (ColDef | ColGroupDef)[];
+  supplierColumnDefs?: (ColDef | ColGroupDef)[];
   isRowGroupingEnabled?: boolean;
   defaultExpanded?: number;
   showGroupPanel?: boolean;
@@ -93,13 +95,13 @@ interface EntityGridProps {
   entityColumnDefs?: (ColDef | ColGroupDef)[];
 
   // Handlers
-  onRowClick: (data: ItemWithExtendedEntities | EntityData) => void;
+  onRowClick: (data: ItemWithExtendedEntities | EntityData | Supplier) => void;
   onGridReady: (
-    params: GridReadyEvent<ItemWithExtendedEntities | EntityData>
+    params: GridReadyEvent<ItemWithExtendedEntities | EntityData | Supplier>
   ) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (
-    node: IRowNode<ItemWithExtendedEntities | EntityData>
+    node: IRowNode<ItemWithExtendedEntities | EntityData | Supplier>
   ) => boolean;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
   onFilterChanged?: (
@@ -113,12 +115,14 @@ interface EntityGridProps {
 const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   activeTab,
   itemsData = [],
+  suppliersData = [],
   entityData = [],
   isLoading,
   isError,
   error,
   search,
   itemColumnDefs = [],
+  supplierColumnDefs = [],
   isRowGroupingEnabled = false,
   defaultExpanded = 1,
   showGroupPanel = true,
@@ -274,12 +278,15 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
-    let data: (ItemWithExtendedEntities | EntityData)[] = [];
+    let data: (ItemWithExtendedEntities | EntityData | Supplier)[] = [];
     let columns: (ColDef | ColGroupDef)[] = [];
 
     if (activeTab === 'items') {
       data = itemsForDisplay || [];
       columns = itemColumnDefs;
+    } else if (activeTab === 'suppliers') {
+      data = suppliersData;
+      columns = supplierColumnDefs;
     } else {
       data = entityData;
       columns = entityColumnDefs;
@@ -289,8 +296,10 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   }, [
     activeTab,
     itemsForDisplay,
+    suppliersData,
     entityData,
     itemColumnDefs,
+    supplierColumnDefs,
     entityColumnDefs,
   ]);
 
@@ -328,7 +337,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle row clicks
   const handleRowClicked = useCallback(
-    (event: RowClickedEvent<ItemWithExtendedEntities | EntityData>) => {
+    (
+      event: RowClickedEvent<ItemWithExtendedEntities | EntityData | Supplier>
+    ) => {
       // Check if this is a group row - group rows don't have meaningful data for editing
       if (event.node.group) {
         return; // Don't try to edit group rows
@@ -344,7 +355,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle grid ready - simple!
   const handleGridReady = useCallback(
-    (params: GridReadyEvent<ItemWithExtendedEntities | EntityData>) => {
+    (
+      params: GridReadyEvent<ItemWithExtendedEntities | EntityData | Supplier>
+    ) => {
       setGridApi(params.api);
 
       // Sync current page size with grid
@@ -395,7 +408,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Handle row group opened/closed - scroll child rows into view
   const handleRowGroupOpened = useCallback(
-    (event: RowGroupOpenedEvent<ItemWithExtendedEntities | EntityData>) => {
+    (
+      event: RowGroupOpenedEvent<
+        ItemWithExtendedEntities | EntityData | Supplier
+      >
+    ) => {
       // Only for items tab when row grouping is enabled
       if (activeTab !== 'items' || !isRowGroupingEnabled) {
         return;
@@ -550,6 +567,15 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         return `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${search}"</span>`;
       }
       return '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>';
+    } else if (activeTab === 'suppliers') {
+      const isBadgeMode =
+        search.startsWith('#') &&
+        (search.includes(':') || search.includes(' #'));
+
+      if (search && !isBadgeMode) {
+        return `<span style="padding: 10px; color: #888;">Tidak ada supplier dengan nama "${search}"</span>`;
+      }
+      return '<span style="padding: 10px; color: #888;">Tidak ada data supplier yang ditemukan</span>';
     } else {
       // Entity overlay
       const isBadgeMode =
