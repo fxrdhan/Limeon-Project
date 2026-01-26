@@ -235,6 +235,40 @@ export const supplierSearchColumns: SearchColumn[] = [
 ];
 
 /**
+ * Customer search columns configuration
+ */
+export const customerSearchColumns: SearchColumn[] = [
+  {
+    field: 'name',
+    headerName: 'Nama Pelanggan',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nama pelanggan',
+  },
+  {
+    field: 'phone',
+    headerName: 'Telepon',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nomor telepon',
+  },
+  {
+    field: 'email',
+    headerName: 'Email',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan alamat email',
+  },
+  {
+    field: 'address',
+    headerName: 'Alamat',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan alamat pelanggan',
+  },
+];
+
+/**
  * Item Categories search columns configuration
  */
 export const itemCategoriesSearchColumns: SearchColumn[] = [

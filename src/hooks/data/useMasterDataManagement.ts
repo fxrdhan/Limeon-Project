@@ -7,6 +7,7 @@ import type {
   Supplier,
   Patient,
   Doctor,
+  Customer,
   UseMasterDataManagementOptions,
 } from '@/types';
 
@@ -20,9 +21,11 @@ import {
   useDoctorMutations,
   usePatients,
   useDoctors,
+  useCustomers,
+  useCustomerMutations,
 } from '@/hooks/queries';
 
-type MasterDataIdentity = Supplier | Patient | Doctor;
+type MasterDataIdentity = Supplier | Patient | Doctor | Customer;
 
 // Simplified hook selector - realtime always enabled for simplicity
 const getHooksForTable = (tableName: string) => {
@@ -47,6 +50,11 @@ const getHooksForTable = (tableName: string) => {
       return {
         useData: (options: QueryOptions) => useDoctors(options),
         useMutations: useDoctorMutations,
+      };
+    case 'customers':
+      return {
+        useData: (options: QueryOptions) => useCustomers(options),
+        useMutations: useCustomerMutations,
       };
     default:
       throw new Error(`Unsupported table: ${tableName}`);
@@ -267,6 +275,17 @@ export const useMasterDataManagement = (
               fuzzyMatch(doctor.experience_years.toString(), searchTermLower)
             )
               return true;
+          } else if (tableName === 'customers') {
+            const customer = identity as Customer;
+            if (customer.phone && fuzzyMatch(customer.phone, searchTermLower))
+              return true;
+            if (customer.email && fuzzyMatch(customer.email, searchTermLower))
+              return true;
+            if (
+              customer.address &&
+              fuzzyMatch(customer.address, searchTermLower)
+            )
+              return true;
           }
           return false;
         })
@@ -342,38 +361,41 @@ export const useMasterDataManagement = (
     async (identityData: {
       id?: string;
       code?: string;
-      name: string;
+      name?: string;
       description?: string;
       address?: string;
+      data?: Record<string, unknown>;
     }) => {
       try {
+        const defaultData: Record<string, unknown> = {};
+        if (identityData.name !== undefined) {
+          defaultData.name = identityData.name;
+        }
+        if (identityData.description !== undefined) {
+          defaultData.description = identityData.description;
+        }
+        if (identityData.address !== undefined) {
+          defaultData.address = identityData.address;
+        }
+        if (identityData.code !== undefined) {
+          defaultData.code = identityData.code;
+        }
+
+        const payloadData = identityData.data ?? defaultData;
+
         if (identityData.id) {
           // Update existing identity
           const updateMutation =
             ('updateSupplier' in mutations && mutations.updateSupplier) ||
             ('updatePatient' in mutations && mutations.updatePatient) ||
-            ('updateDoctor' in mutations && mutations.updateDoctor);
+            ('updateDoctor' in mutations && mutations.updateDoctor) ||
+            ('updateCustomer' in mutations && mutations.updateCustomer);
 
           if (
             updateMutation &&
             typeof updateMutation === 'object' &&
             'mutateAsync' in updateMutation
           ) {
-            const updateData: Record<string, unknown> = {
-              name: identityData.name,
-            };
-            if (identityData.description !== undefined) {
-              updateData.description = identityData.description;
-            }
-            if (identityData.address !== undefined) {
-              updateData.address = identityData.address;
-            }
-            // Handle code field properly for different tables
-            if (identityData.code !== undefined) {
-              // Since this hook is used by legacy components, keep the simple field assignment
-              updateData.code = identityData.code;
-            }
-
             // For specific mutations (suppliers, patients, doctors), use nested data structure
             await (
               updateMutation as unknown as {
@@ -384,7 +406,7 @@ export const useMasterDataManagement = (
               }
             ).mutateAsync({
               id: identityData.id!,
-              data: updateData,
+              data: payloadData,
             });
           }
         } else {
@@ -392,27 +414,14 @@ export const useMasterDataManagement = (
           const createMutation =
             ('createSupplier' in mutations && mutations.createSupplier) ||
             ('createPatient' in mutations && mutations.createPatient) ||
-            ('createDoctor' in mutations && mutations.createDoctor);
+            ('createDoctor' in mutations && mutations.createDoctor) ||
+            ('createCustomer' in mutations && mutations.createCustomer);
 
           if (
             createMutation &&
             typeof createMutation === 'object' &&
             'mutateAsync' in createMutation
           ) {
-            const createData: Record<string, unknown> = {
-              name: identityData.name,
-            };
-            if (identityData.description !== undefined) {
-              createData.description = identityData.description;
-            }
-            if (identityData.address !== undefined) {
-              createData.address = identityData.address;
-            }
-            // Handle code field properly for different tables
-            if (identityData.code !== undefined) {
-              // Since this hook is used by legacy components, keep the simple field assignment
-              createData.code = identityData.code;
-            }
             // Cast to unknown first to avoid type conflicts, then cast to mutation interface
             await (
               createMutation as unknown as {
@@ -420,7 +429,7 @@ export const useMasterDataManagement = (
                   data: Record<string, unknown>
                 ) => Promise<unknown>;
               }
-            ).mutateAsync(createData);
+            ).mutateAsync(payloadData);
           }
         }
 
@@ -482,7 +491,8 @@ export const useMasterDataManagement = (
         const deleteMutation =
           ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
           ('deletePatient' in mutations && mutations.deletePatient) ||
-          ('deleteDoctor' in mutations && mutations.deleteDoctor);
+          ('deleteDoctor' in mutations && mutations.deleteDoctor) ||
+          ('deleteCustomer' in mutations && mutations.deleteCustomer);
 
         if (
           deleteMutation &&

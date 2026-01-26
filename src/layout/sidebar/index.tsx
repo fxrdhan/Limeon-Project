@@ -53,6 +53,7 @@ const MENU_ITEMS: MenuItem[] = [
     children: [
       { name: 'Item Master', path: ITEM_MASTER_PATH },
       { name: 'Supplier', path: '/master-data/suppliers' },
+      { name: 'Pelanggan', path: '/master-data/customers' },
       { name: 'Pasien', path: '/master-data/patients' },
       { name: 'Dokter', path: '/master-data/doctors' },
     ],

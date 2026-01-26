@@ -29,3 +29,4 @@ export {
   useDashboardData,
 } from './useDashboard';
 export * from './usePatientsDoctors';
+export * from './useCustomers';

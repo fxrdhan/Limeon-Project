@@ -62,6 +62,17 @@ export interface Supplier {
   updated_at?: string | null;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  customer_level_id: string;
+  person_id?: string | null;
+  updated_at?: string | null;
+}
+
 export interface CompanyProfile {
   id: string;
   name: string;

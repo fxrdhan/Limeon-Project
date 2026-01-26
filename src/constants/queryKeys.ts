@@ -143,6 +143,18 @@ export const QueryKeys = {
       [...QueryKeys.doctors.all, 'search', query] as const,
   },
 
+  // Customers
+  customers: {
+    all: ['customers'] as const,
+    lists: () => [...QueryKeys.customers.all, 'list'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...QueryKeys.customers.lists(), { filters }] as const,
+    details: () => [...QueryKeys.customers.all, 'detail'] as const,
+    detail: (id: string) => [...QueryKeys.customers.details(), id] as const,
+    search: (query: string) =>
+      [...QueryKeys.customers.all, 'search', query] as const,
+  },
+
   // Users
   users: {
     all: ['users'] as const,
@@ -226,5 +238,9 @@ export const getInvalidationKeys = {
   doctors: {
     all: () => [QueryKeys.doctors.all],
     related: () => [QueryKeys.doctors.all, QueryKeys.sales.all],
+  },
+  customers: {
+    all: () => [QueryKeys.customers.all],
+    related: () => [QueryKeys.customers.all, QueryKeys.sales.all],
   },
 } as const;
