@@ -451,7 +451,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
           title="Export Data"
           className="group inline-flex items-center justify-center w-8 h-8 cursor-pointer"
         >
-          <TbTableExport className="-translate-y-0.25 h-8 w-8 text-primary transition-colors duration-200 group-hover:text-primary/80" />
+          <TbTableExport className="-translate-y-0.7 h-8 w-8 text-primary transition-colors duration-200 group-hover:text-primary/80" />
         </button>
 
         {/* Export Dropdown Portal */}

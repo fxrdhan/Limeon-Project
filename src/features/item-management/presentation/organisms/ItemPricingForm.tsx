@@ -9,7 +9,7 @@ import {
   TbTrash,
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
-import { Switch } from 'antd';
+import Switch from '@/components/switch';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';

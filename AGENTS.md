@@ -5,7 +5,7 @@
 # Guidelines:
 
 - Always run 'npx eslint [filenames path] --fix && npx tsc -b --noEmit' after editing code files.
-- When creating Git commits, use conventional commit messages (type(scope): subject) to align with commitlint.config.js.
+- When creating Git commits, use git-commit skills.
 
 # Code Exploration
 

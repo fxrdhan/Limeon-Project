@@ -410,7 +410,7 @@ const Sidebar = ({
           )}
         </div>
 
-        <nav className="grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="grow overflow-y-auto py-4 px-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {menuItems.map(item => {
             const menuKey = item.name.toLowerCase().replace(' ', '');
             const isMenuActive =
@@ -496,10 +496,10 @@ const Sidebar = ({
                         >
                           <motion.div
                             variants={submenuContainerVariants}
-                            className="pl-12 pr-2 py-4 relative"
+                            className="pl-8 pr-2 py-4 relative"
                           >
                             {/* Static background line */}
-                            <div className="absolute left-9 top-4 bottom-4 w-0.5 bg-gray-300"></div>
+                            <div className="absolute left-5 top-4 bottom-4 w-0.5 bg-gray-300"></div>
 
                             {/* Animated active indicator */}
                             <AnimatePresence>
@@ -507,7 +507,7 @@ const Sidebar = ({
                                 getActiveSubmenuItem(item.children) && (
                                   <motion.div
                                     layoutId={`active-submenu-indicator-${item.name}`}
-                                    className="absolute left-9 w-0.5 bg-primary z-20"
+                                    className="absolute left-5 w-0.5 bg-primary z-20"
                                     initial={{
                                       y: activeSubmenuIndex(item.children) * 48,
                                       height: 48,
