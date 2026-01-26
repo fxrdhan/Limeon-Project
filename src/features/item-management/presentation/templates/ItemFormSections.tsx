@@ -58,6 +58,33 @@ interface OptionalSectionProps extends CollapsibleSectionProps {
   itemId?: string;
 }
 
+interface BasicInfoRequiredProps {
+  itemId?: string;
+}
+
+const areImageSlotsEqual = (
+  left: Array<{ url: string; path: string }>,
+  right: Array<{ url: string; path: string }>
+) =>
+  left.length === right.length &&
+  left.every(
+    (slot, index) =>
+      slot.url === right[index]?.url && slot.path === right[index]?.path
+  );
+
+const updateItemFields = async (
+  itemId: string,
+  updates: Record<string, unknown>
+) => {
+  const { error } = await supabase
+    .from('items')
+    .update(updates)
+    .eq('id', itemId);
+  if (error) throw error;
+};
+
+const normalizeNullableValue = (value: string) => (value ? value : null);
+
 // Header Section
 
 const FormHeader: React.FC<{
@@ -99,7 +126,9 @@ const FormHeader: React.FC<{
 
 // Basic Info (Required) Section
 
-const BasicInfoRequiredSection: React.FC = () => {
+const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
+  itemId,
+}) => {
   const {
     formData,
     categories,
@@ -122,6 +151,17 @@ const BasicInfoRequiredSection: React.FC = () => {
     handleAddNewDosage,
     handleAddNewManufacturer,
   } = useItemModal();
+
+  const saveDropdownUpdate = useCallback(
+    (updates: Record<string, unknown>) => {
+      if (!itemId || !isEditMode || isViewingOldVersion) return;
+      void updateItemFields(itemId, updates).catch(error => {
+        console.error('Error autosaving item dropdown:', error);
+        toast.error('Gagal menyimpan perubahan.');
+      });
+    },
+    [itemId, isEditMode, isViewingOldVersion]
+  );
 
   // Transform database types to DropdownOption format
   const transformedCategories = categories.map(cat => ({
@@ -162,11 +202,16 @@ const BasicInfoRequiredSection: React.FC = () => {
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === 'is_medicine' && value === false) {
+      saveDropdownUpdate({
+        is_medicine: false,
+        has_expiry_date: false,
+      });
       updateFormData({
         is_medicine: value as boolean,
         has_expiry_date: false,
       });
     } else if (field === 'is_medicine') {
+      saveDropdownUpdate({ is_medicine: value as boolean });
       updateFormData({ is_medicine: value as boolean });
     } else if (field === 'code') {
       updateFormData({ code: value as string });
@@ -174,21 +219,32 @@ const BasicInfoRequiredSection: React.FC = () => {
   };
 
   const handleDropdownChange = (field: string, value: string) => {
+    const normalizedValue = normalizeNullableValue(value);
+
     if (field === 'category_id') {
       updateFormData({ category_id: value });
+      saveDropdownUpdate({ category_id: normalizedValue });
     } else if (field === 'type_id') {
       updateFormData({ type_id: value });
+      saveDropdownUpdate({ type_id: normalizedValue });
     } else if (field === 'package_id') {
       updateFormData({ package_id: value });
       // Also update baseUnit for unit conversion synchronization
       const selectedPackage = packages.find(pkg => pkg.id === value);
+      const nextBaseUnit = selectedPackage?.name ?? null;
       if (selectedPackage) {
         packageConversionHook.setBaseUnit(selectedPackage.name);
       }
+      saveDropdownUpdate({
+        package_id: normalizedValue,
+        base_unit: nextBaseUnit,
+      });
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
+      saveDropdownUpdate({ dosage_id: normalizedValue });
     } else if (field === 'manufacturer_id') {
       updateFormData({ manufacturer_id: value });
+      saveDropdownUpdate({ manufacturer_id: normalizedValue });
     }
   };
 
@@ -232,9 +288,10 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
   onExpand,
   stackClassName,
   stackStyle,
+  itemId,
 }) => {
   const { formData, updateFormData } = useItemForm();
-  const { isViewingOldVersion } = useItemUI();
+  const { isViewingOldVersion, isEditMode } = useItemUI();
 
   const minStockEditor = useInlineEditor({
     initialValue: (formData.min_stock || 0).toString(),
@@ -242,6 +299,17 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
       updateFormData({ min_stock: parseInt(value.toString()) || 0 });
     },
   });
+
+  const saveDropdownUpdate = useCallback(
+    (updates: Record<string, unknown>) => {
+      if (!itemId || !isEditMode || isViewingOldVersion) return;
+      void updateItemFields(itemId, updates).catch(error => {
+        console.error('Error autosaving item dropdown:', error);
+        toast.error('Gagal menyimpan perubahan.');
+      });
+    },
+    [itemId, isEditMode, isViewingOldVersion]
+  );
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === 'is_medicine' && value === false) {
@@ -252,6 +320,7 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
     } else if (field === 'is_medicine') {
       updateFormData({ is_medicine: value as boolean });
     } else if (field === 'is_active') {
+      saveDropdownUpdate({ is_active: value as boolean });
       updateFormData({ is_active: value as boolean });
     } else if (field === 'has_expiry_date') {
       updateFormData({ has_expiry_date: value as boolean });
@@ -512,7 +581,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 }) => {
   const { formData, units, loading, handleChange, updateFormData } =
     useItemForm();
-  const { resetKey, isViewingOldVersion } = useItemUI();
+  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const [imageSlots, setImageSlots] = useState(
     Array.from({ length: 4 }, () => ({ url: '', path: '' }))
   );
@@ -670,9 +739,11 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     if (!itemId) return;
 
     const cachedUrls = cacheKey ? getCachedImageSet(cacheKey) : null;
-    if (cachedUrls) {
+    if (cachedUrls && cachedUrls.length > 0) {
       const nextSlots = buildSlotsFromUrls(cachedUrls);
-      setImageSlots(nextSlots);
+      setImageSlots(prevSlots =>
+        areImageSlotsEqual(prevSlots, nextSlots) ? prevSlots : nextSlots
+      );
       preloadImages(cachedUrls.filter(Boolean));
       setIsLoadingImages(false);
       return;
@@ -751,9 +822,32 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     updateItemImagesInDatabase,
   ]);
 
+  useEffect(() => {
+    if (!itemId || loading) return;
+
+    const nextSlots = buildSlotsFromUrls(formImageUrls);
+    setImageSlots(prevSlots =>
+      areImageSlotsEqual(prevSlots, nextSlots) ? prevSlots : nextSlots
+    );
+    updateImageCache(nextSlots);
+    setIsLoadingImages(false);
+  }, [buildSlotsFromUrls, formImageUrls, itemId, loading, updateImageCache]);
+
+  const saveDropdownUpdate = useCallback(
+    (updates: Record<string, unknown>) => {
+      if (!itemId || !isEditMode || isViewingOldVersion) return;
+      void updateItemFields(itemId, updates).catch(error => {
+        console.error('Error autosaving item dropdown:', error);
+        toast.error('Gagal menyimpan perubahan.');
+      });
+    },
+    [itemId, isEditMode, isViewingOldVersion]
+  );
+
   const handleDropdownChange = (field: string, value: string) => {
     if (field === 'unit_id') {
       updateFormData({ unit_id: value });
+      saveDropdownUpdate({ unit_id: normalizeNullableValue(value) });
     }
   };
 

@@ -13,6 +13,7 @@ const IdentityModalContent: React.FC = () => {
     fields,
     isSubmitting,
     localData,
+    showImageUploader,
     onDeleteRequest,
     deleteButtonLabel,
     handleSaveAll,
@@ -36,7 +37,7 @@ const IdentityModalContent: React.FC = () => {
 
       {/* Content */}
       <div className="p-6 overflow-y-auto grow scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-        <IdentityImageUploader />
+        {showImageUploader && <IdentityImageUploader />}
 
         <div className="space-y-4">
           {fields.map(field => (

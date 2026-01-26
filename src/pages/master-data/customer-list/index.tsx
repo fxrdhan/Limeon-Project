@@ -304,6 +304,7 @@ const CustomerList = () => {
         }}
         mode="add"
         initialNameFromSearch={debouncedSearch}
+        showImageUploader={false}
       />
 
       <IdentityDataModal
@@ -347,6 +348,7 @@ const CustomerList = () => {
             : undefined
         }
         mode="edit"
+        showImageUploader={false}
       />
     </>
   );

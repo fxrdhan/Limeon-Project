@@ -311,6 +311,7 @@ export interface GenericIdentityModalProps {
   mode?: 'edit' | 'add';
   initialNameFromSearch?: string;
   imageAspectRatio?: 'default' | 'square';
+  showImageUploader?: boolean;
 }
 
 // CardName component types

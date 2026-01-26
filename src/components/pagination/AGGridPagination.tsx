@@ -145,7 +145,14 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   const itemsPerPage = isPaginationEnabled
     ? gridApi.paginationGetPageSize()
     : -1;
-  const selectedPageSizeIndex = pageSizeOptions.indexOf(itemsPerPage);
+  const effectivePageSizes = pageSizeOptions.includes(itemsPerPage)
+    ? pageSizeOptions
+    : [...pageSizeOptions, itemsPerPage].sort((a, b) => {
+        if (a === -1) return 1;
+        if (b === -1) return -1;
+        return a - b;
+      });
+  const selectedPageSizeIndex = effectivePageSizes.indexOf(itemsPerPage);
 
   // Context value
   const contextValue: PaginationContextValue = {
@@ -158,7 +165,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
     enableFloating,
     hideFloatingWhenModalOpen,
     className,
-    pageSizes: pageSizeOptions,
+    pageSizes: effectivePageSizes,
     onPageChange: handlePageChange,
     onItemsPerPageChange: handleItemsPerPageChange,
     handleItemsPerPageClick,

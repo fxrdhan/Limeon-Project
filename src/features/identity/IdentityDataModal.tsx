@@ -26,6 +26,7 @@ const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({
   mode = 'edit',
   initialNameFromSearch,
   imageAspectRatio = 'default',
+  showImageUploader = true,
 }) => {
   const { contextValue, resetInternalState } = useIdentityModalLogic({
     title,
@@ -48,6 +49,7 @@ const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({
     mode,
     initialNameFromSearch,
     imageAspectRatio,
+    showImageUploader,
   });
 
   return (

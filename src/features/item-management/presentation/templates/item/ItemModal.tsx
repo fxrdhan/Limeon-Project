@@ -874,7 +874,9 @@ const ItemManagementContent: React.FC<{
             itemId={itemId}
           />
         ),
-        basicInfoRequired: <ItemFormSections.BasicInfoRequired />,
+        basicInfoRequired: (
+          <ItemFormSections.BasicInfoRequired itemId={itemId} />
+        ),
         basicInfoOptional: !isLevelPricingMode ? (
           <div
             className={`${getStackClasses('additional')} transition-[margin] duration-200 ease-out`}
@@ -899,6 +901,7 @@ const ItemManagementContent: React.FC<{
             <ItemFormSections.Settings
               isExpanded={activeSection === 'settings'}
               onExpand={() => toggleSection('settings')}
+              itemId={itemId}
               stackClassName={getStackEffect('settings').className}
               stackStyle={getStackEffect('settings').style}
             />

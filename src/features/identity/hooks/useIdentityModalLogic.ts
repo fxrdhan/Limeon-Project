@@ -25,6 +25,7 @@ interface UseIdentityModalLogicProps {
   mode?: 'edit' | 'add';
   initialNameFromSearch?: string;
   imageAspectRatio?: 'default' | 'square';
+  showImageUploader?: boolean;
 }
 
 export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
@@ -49,6 +50,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     mode = 'edit',
     initialNameFromSearch,
     imageAspectRatio = 'default',
+    showImageUploader = true,
   } = props;
 
   // Use getDerivedStateFromProps to reset isClosing when isOpen changes
@@ -159,6 +161,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     mode,
     formattedUpdateAt,
     imageAspectRatio,
+    showImageUploader,
 
     // Image Config
     imageUploadText,

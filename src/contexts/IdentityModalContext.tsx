@@ -16,6 +16,7 @@ export interface IdentityModalContextValue {
   mode: 'edit' | 'add';
   formattedUpdateAt: string;
   imageAspectRatio: 'default' | 'square';
+  showImageUploader: boolean;
 
   // Image Config
   imageUploadText: string;
