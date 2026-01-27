@@ -49,6 +49,7 @@ const normalizeCustomerLevels = (levels: CustomerLevel[]) =>
 export const useCustomerLevels = () => {
   const queryClient = useQueryClient();
   const hasSeededDefaults = useRef(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const levelsQuery = useQuery({
     queryKey: CUSTOMER_LEVELS_QUERY_KEY,
@@ -222,6 +223,32 @@ export const useCustomerLevels = () => {
     levelsQuery.isLoading,
     seedDefaultsMutation,
   ]);
+
+  useEffect(() => {
+    if (channelRef.current) return;
+
+    const channel = supabase
+      .channel('customer-levels-realtime')
+      .on(
+        'postgres_changes',
+        { schema: 'public', table: 'customer_levels', event: '*' },
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: CUSTOMER_LEVELS_QUERY_KEY,
+          });
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (!channelRef.current) return;
+      channelRef.current.unsubscribe();
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    };
+  }, [queryClient]);
 
   return {
     levels: levelsQuery.data ?? [],
