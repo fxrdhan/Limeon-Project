@@ -319,12 +319,9 @@ function main() {
   console.log(`${COLORS.bright}Languages ${COLORS.reset}`);
   console.log(`${COLORS.gray}${'─'.repeat(80)}${COLORS.reset}`);
 
-  // Filter to only show TypeScript and Other
-  const filteredStats = languageStats.filter(
-    lang => lang.language === 'TypeScript' || lang.language === 'Other'
-  );
+  const displayStats = languageStats.filter(lang => lang.codeLines > 0);
 
-  for (const langStat of filteredStats) {
+  for (const langStat of displayStats) {
     const color = LANGUAGE_COLORS[langStat.language] || COLORS.white;
     const percentage = ((langStat.codeLines / totalCodeLines) * 100).toFixed(1);
     const bar = createProgressBar(langStat.codeLines, totalCodeLines, 30);
