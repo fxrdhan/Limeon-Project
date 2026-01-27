@@ -86,6 +86,8 @@ const updateItemFields = async (
 };
 
 const normalizeNullableValue = (value: string) => (value ? value : null);
+const appendCacheBust = (url: string, token: string | number) =>
+  url.includes('?') ? `${url}&t=${token}` : `${url}?t=${token}`;
 
 const useDebouncedAutosave = ({
   itemId,
@@ -718,8 +720,13 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     Array.from({ length: 4 }, () => ({ url: '', path: '' }))
   );
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [uploadingSlots, setUploadingSlots] = useState<boolean[]>(
+    Array.from({ length: 4 }, () => false)
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [displayUrls, setDisplayUrls] = useState<string[]>([]);
+  const [displayUrls, setDisplayUrls] = useState<
+    Array<{ source: string; display: string }>
+  >([]);
   const [cropState, setCropState] = useState<{
     slotIndex: number;
     file: File;
@@ -728,6 +735,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const [isCropping, setIsCropping] = useState(false);
   const cropperRef = useRef<Cropper | null>(null);
   const cropperImageRef = useRef<HTMLImageElement | null>(null);
+  const localPreviewUrlsRef = useRef<Record<number, string>>({});
 
   const bucketName = 'item_images';
   const maxFileSizeBytes = 500 * 1024 * 1024;
@@ -828,18 +836,52 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     [cacheKey]
   );
 
+  const setSlotUploading = useCallback((slotIndex: number, value: boolean) => {
+    setUploadingSlots(prev => {
+      if (prev[slotIndex] === value) return prev;
+      const next = [...prev];
+      next[slotIndex] = value;
+      return next;
+    });
+  }, []);
+
+  const revokeLocalPreview = useCallback((slotIndex: number) => {
+    const existing = localPreviewUrlsRef.current[slotIndex];
+    if (!existing) return;
+    URL.revokeObjectURL(existing);
+    delete localPreviewUrlsRef.current[slotIndex];
+  }, []);
+
+  const setLocalPreviewForSlot = useCallback(
+    (slotIndex: number, file: File) => {
+      const objectUrl = URL.createObjectURL(file);
+      const existing = localPreviewUrlsRef.current[slotIndex];
+      if (existing) {
+        URL.revokeObjectURL(existing);
+      }
+      localPreviewUrlsRef.current[slotIndex] = objectUrl;
+      setImageSlots(prevSlots =>
+        prevSlots.map((slot, index) =>
+          index === slotIndex ? { ...slot, url: objectUrl } : slot
+        )
+      );
+    },
+    []
+  );
+
   useEffect(() => {
     let isActive = true;
 
     const resolveDisplayUrls = async () => {
       const results = await Promise.all(
         imageSlots.map(async slot => {
-          if (!slot.url) return '';
-          if (!slot.url.startsWith('http')) return slot.url;
-          const cachedBlobUrl = await getCachedImageBlobUrl(slot.url);
-          if (cachedBlobUrl) return cachedBlobUrl;
-          const blobUrl = await cacheImageBlob(slot.url);
-          return blobUrl || slot.url;
+          const source = slot.url || '';
+          if (!source) return { source: '', display: '' };
+          if (!source.startsWith('http')) return { source, display: source };
+          const cachedBlobUrl = await getCachedImageBlobUrl(source);
+          if (cachedBlobUrl) return { source, display: cachedBlobUrl };
+          const blobUrl = await cacheImageBlob(source);
+          return { source, display: blobUrl || source };
         })
       );
 
@@ -854,6 +896,15 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       isActive = false;
     };
   }, [imageSlots]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(localPreviewUrlsRef.current).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+      localPreviewUrlsRef.current = {};
+    };
+  }, []);
 
   const updateItemImagesInDatabase = useCallback(
     async (urls: string[]) => {
@@ -924,9 +975,15 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         const slotIndex = Number(match[1]);
         if (Number.isNaN(slotIndex) || slotIndex < 0 || slotIndex > 3) return;
         const path = `items/${itemId}/${file.name}`;
+        const versionToken = file.updated_at
+          ? new Date(file.updated_at).getTime()
+          : Date.now();
         nextSlots[slotIndex] = {
           path,
-          url: StorageService.getPublicUrl(bucketName, path),
+          url: appendCacheBust(
+            StorageService.getPublicUrl(bucketName, path),
+            versionToken
+          ),
         };
       });
 
@@ -1047,7 +1104,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     async (slotIndex: number, file: File) => {
       if (!itemId) {
         toast.error('Simpan item terlebih dahulu sebelum mengunggah gambar.');
-        return;
+        return null;
       }
 
       try {
@@ -1062,7 +1119,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
         if (normalizedFile.size > maxFileSizeBytes) {
           toast.error(`Ukuran gambar maksimal ${maxFileSizeLabel}.`);
-          return;
+          return null;
         }
 
         const path = `items/${itemId}/slot-${slotIndex}`;
@@ -1076,32 +1133,20 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
         if (error) {
           toast.error('Gagal mengunggah gambar.');
-          return;
+          return null;
         }
 
-        const publicUrl = StorageService.getPublicUrl(bucketName, path);
-        setImageSlots(prevSlots => {
-          const nextSlots = prevSlots.map((slot, index) =>
-            index === slotIndex ? { path, url: publicUrl } : slot
-          );
-          updateImageCache(nextSlots);
-          updateItemImagesInDatabase(
-            nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
-          );
-          return nextSlots;
-        });
+        const publicUrl = appendCacheBust(
+          StorageService.getPublicUrl(bucketName, path),
+          Date.now()
+        );
+        return { publicUrl, path };
       } catch {
         toast.error('Gagal memproses gambar.');
+        return null;
       }
     },
-    [
-      bucketName,
-      itemId,
-      maxFileSizeBytes,
-      maxFileSizeLabel,
-      updateImageCache,
-      updateItemImagesInDatabase,
-    ]
+    [bucketName, itemId, maxFileSizeBytes, maxFileSizeLabel]
   );
 
   const handleImageUpload = useCallback(
@@ -1111,6 +1156,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         return;
       }
 
+      const previousSlot = imageSlots[slotIndex];
       try {
         const { width, height } = await getImageDimensions(file);
         if (width !== height) {
@@ -1122,9 +1168,47 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         return;
       }
 
-      await processAndUploadImage(slotIndex, file);
+      setLocalPreviewForSlot(slotIndex, file);
+      setSlotUploading(slotIndex, true);
+      const uploadResult = await processAndUploadImage(slotIndex, file);
+      if (!uploadResult) {
+        revokeLocalPreview(slotIndex);
+        setSlotUploading(slotIndex, false);
+        setImageSlots(prevSlots =>
+          prevSlots.map((slot, index) =>
+            index === slotIndex ? previousSlot : slot
+          )
+        );
+        return;
+      }
+
+      revokeLocalPreview(slotIndex);
+      setSlotUploading(slotIndex, false);
+      setImageSlots(prevSlots => {
+        const nextSlots = prevSlots.map((slot, index) =>
+          index === slotIndex
+            ? { path: uploadResult.path, url: uploadResult.publicUrl }
+            : slot
+        );
+        updateImageCache(nextSlots);
+        updateItemImagesInDatabase(
+          nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
+        );
+        return nextSlots;
+      });
     },
-    [getImageDimensions, itemId, openCropper, processAndUploadImage]
+    [
+      getImageDimensions,
+      imageSlots,
+      itemId,
+      openCropper,
+      processAndUploadImage,
+      revokeLocalPreview,
+      setLocalPreviewForSlot,
+      setSlotUploading,
+      updateImageCache,
+      updateItemImagesInDatabase,
+    ]
   );
 
   const handleCropConfirm = useCallback(async () => {
@@ -1156,14 +1240,52 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       });
 
       const targetSlot = cropState.slotIndex;
+      const previousSlot = imageSlots[targetSlot];
       closeCropper();
-      await processAndUploadImage(targetSlot, croppedFile);
+      setLocalPreviewForSlot(targetSlot, croppedFile);
+      setSlotUploading(targetSlot, true);
+      const uploadResult = await processAndUploadImage(targetSlot, croppedFile);
+      if (!uploadResult) {
+        revokeLocalPreview(targetSlot);
+        setSlotUploading(targetSlot, false);
+        setImageSlots(prevSlots =>
+          prevSlots.map((slot, index) =>
+            index === targetSlot ? previousSlot : slot
+          )
+        );
+        return;
+      }
+
+      revokeLocalPreview(targetSlot);
+      setSlotUploading(targetSlot, false);
+      setImageSlots(prevSlots => {
+        const nextSlots = prevSlots.map((slot, index) =>
+          index === targetSlot
+            ? { path: uploadResult.path, url: uploadResult.publicUrl }
+            : slot
+        );
+        updateImageCache(nextSlots);
+        updateItemImagesInDatabase(
+          nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
+        );
+        return nextSlots;
+      });
     } catch {
       toast.error('Gagal memproses gambar.');
     } finally {
       setIsCropping(false);
     }
-  }, [closeCropper, cropState, processAndUploadImage]);
+  }, [
+    closeCropper,
+    cropState,
+    imageSlots,
+    processAndUploadImage,
+    revokeLocalPreview,
+    setLocalPreviewForSlot,
+    setSlotUploading,
+    updateImageCache,
+    updateItemImagesInDatabase,
+  ]);
 
   const handleImageDelete = useCallback(
     async (slotIndex: number) => {
@@ -1199,21 +1321,42 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             id={`item-image-${index}`}
             shape="rounded"
             hasImage={Boolean(slot.url)}
-            disabled={isViewingOldVersion || !itemId || isLoadingImages}
+            disabled={
+              isViewingOldVersion ||
+              !itemId ||
+              isLoadingImages ||
+              uploadingSlots[index]
+            }
             interaction="direct"
             onImageUpload={file => handleImageUpload(index, file)}
             onImageDelete={() => handleImageDelete(index)}
             className="w-full"
             validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
+            loadingIcon={null}
           >
             {slot.url ? (
               <img
-                src={displayUrls[index] || slot.url}
+                src={
+                  displayUrls[index]?.source === slot.url
+                    ? displayUrls[index]?.display
+                    : slot.url
+                }
                 alt={`Item image ${index + 1}`}
-                className="aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in"
+                className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in ${
+                  uploadingSlots[index] ? 'animate-pulse' : ''
+                }`}
+                style={
+                  uploadingSlots[index]
+                    ? { animationDuration: '2.8s' }
+                    : undefined
+                }
                 onClick={event => {
                   event.stopPropagation();
-                  setPreviewUrl(displayUrls[index] || slot.url);
+                  setPreviewUrl(
+                    displayUrls[index]?.source === slot.url
+                      ? displayUrls[index]?.display
+                      : slot.url
+                  );
                 }}
               />
             ) : (
