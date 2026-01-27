@@ -50,6 +50,8 @@ interface LocalItemPackageConversionManagerProps {
   onAddConversion: () => void;
   onRemoveConversion: (id: string) => void;
   onUpdateSellPrice: (id: string, sellPrice: number) => void;
+  onInteractionStart?: () => void;
+  onInteractionEnd?: () => void;
   disabled?: boolean;
 }
 
@@ -66,10 +68,13 @@ export default function ItemPackageConversionManager({
   onAddConversion,
   onRemoveConversion,
   onUpdateSellPrice,
+  onInteractionStart,
+  onInteractionEnd,
   disabled = false,
 }: LocalItemPackageConversionManagerProps) {
   const gridRef = useRef<DataGridRef>(null);
   const columnStateRef = useRef<ColumnState[] | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const filteredAvailableUnits = availableUnits
     .filter(unit => unit.name !== baseUnit)
     .filter(unit => !conversions.some(uc => uc.unit.name === unit.name));
@@ -106,11 +111,40 @@ export default function ItemPackageConversionManager({
     []
   );
 
+  const handleFocusCapture = useCallback(() => {
+    if (disabled) return;
+    onInteractionStart?.();
+  }, [disabled, onInteractionStart]);
+
+  const handleBlurCapture = useCallback(
+    (event: React.FocusEvent<HTMLElement>) => {
+      if (disabled) return;
+      const nextTarget = event.relatedTarget as Node | null;
+      if (!sectionRef.current?.contains(nextTarget)) {
+        onInteractionEnd?.();
+      }
+    },
+    [disabled, onInteractionEnd]
+  );
+
+  const handleCellEditingStarted = useCallback(() => {
+    if (disabled) return;
+    onInteractionStart?.();
+  }, [disabled, onInteractionStart]);
+
+  const handleCellEditingStopped = useCallback(() => {
+    if (disabled) return;
+    onInteractionEnd?.();
+  }, [disabled, onInteractionEnd]);
+
   return (
     <section
+      ref={sectionRef}
       className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
       style={stackStyle}
       data-stack-card="true"
+      onFocusCapture={handleFocusCapture}
+      onBlurCapture={handleBlurCapture}
     >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
@@ -242,6 +276,8 @@ export default function ItemPackageConversionManager({
                         const nextValue = parseCurrencyValue(event.newValue);
                         onUpdateSellPrice(event.data.id, nextValue);
                       }}
+                      onCellEditingStarted={handleCellEditingStarted}
+                      onCellEditingStopped={handleCellEditingStopped}
                       className="ag-theme-quartz h-full"
                       style={{ height: '100%' }}
                     />

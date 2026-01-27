@@ -1,5 +1,4 @@
 import { useRef, useCallback, useMemo, useEffect } from 'react';
-import toast from 'react-hot-toast';
 
 interface UseSmartFormSyncProps {
   onDataUpdate: (updates: Record<string, unknown>) => void;
@@ -46,13 +45,6 @@ export const useSmartFormSync = ({
 
       // Apply the pending update
       onDataUpdateRef.current({ [fieldName]: pendingValue });
-
-      if (showConflictNotificationRef.current) {
-        toast.success(`Field "${fieldName}" diperbarui dengan data terbaru`, {
-          duration: 3000,
-          icon: '🔄',
-        });
-      }
     }
   }, []);
 
@@ -61,7 +53,6 @@ export const useSmartFormSync = ({
     (updates: Record<string, unknown>) => {
       const safeUpdates: Record<string, unknown> = {};
       const conflictedFields: string[] = [];
-      let hasConflicts = false;
 
       // Process each update
       Object.entries(updates).forEach(([fieldName, newValue]) => {
@@ -71,7 +62,6 @@ export const useSmartFormSync = ({
           // Field is being edited - store as pending update
           pendingUpdatesRef.current[fieldName] = newValue;
           conflictedFields.push(fieldName);
-          hasConflicts = true;
         } else {
           // Field is not being edited - safe to update
           safeUpdates[fieldName] = newValue;
@@ -84,17 +74,6 @@ export const useSmartFormSync = ({
       }
 
       // Notify about conflicts if any
-      if (hasConflicts && showConflictNotificationRef.current) {
-        const fieldNames = conflictedFields.join(', ');
-        toast.success(
-          `Perubahan tersimpan untuk field: ${fieldNames}. Akan diaplikasikan setelah Anda selesai mengedit.`,
-          {
-            duration: 5000,
-            icon: '⏳',
-          }
-        );
-      }
-
       return {
         appliedImmediately: safeUpdates,
         pendingConflicts: conflictedFields,
@@ -128,13 +107,6 @@ export const useSmartFormSync = ({
 
     if (Object.keys(allPending).length > 0) {
       onDataUpdateRef.current(allPending);
-
-      if (showConflictNotificationRef.current) {
-        toast.success('Semua perubahan terbaru telah diaplikasikan', {
-          duration: 3000,
-          icon: '✅',
-        });
-      }
     }
 
     return allPending;

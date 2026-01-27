@@ -25,6 +25,7 @@ import {
   useItemForm,
   useItemModal,
   useItemPrice,
+  useItemRealtime,
   useItemUI,
   useItemHistory,
 } from '../../shared/contexts/useItemFormContext';
@@ -599,9 +600,13 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   onExpand,
   stackClassName,
   stackStyle,
+  itemId,
 }) => {
   const { packageConversionHook } = useItemPrice();
-  const { resetKey, isViewingOldVersion } = useItemUI();
+  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
+  const realtime = useItemRealtime();
+  const smartFormSync = realtime?.smartFormSync;
+  const pendingAutosaveRef = useRef(false);
 
   const packageConversionLogic = usePackageConversionLogic({
     conversions: packageConversionHook.conversions,
@@ -615,12 +620,55 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   const handleAddConversion = () => {
     const result = packageConversionLogic.validateAndAddConversion();
     if (!result.success && result.error) {
-      // Show validation errors to user - unit selection is now handled by dropdown validation
-      if (result.error !== 'Silakan pilih kemasan!') {
-        toast.error(result.error);
-      }
+      return;
     }
+    pendingAutosaveRef.current = true;
   };
+
+  const persistConversions = useCallback(() => {
+    if (!itemId || !isEditMode || isViewingOldVersion) return;
+
+    const payload = packageConversionHook.conversions.map(conversion => ({
+      unit_name: conversion.unit.name,
+      to_unit_id: conversion.to_unit_id,
+      conversion_rate: conversion.conversion_rate,
+      base_price: conversion.base_price,
+      sell_price: conversion.sell_price,
+    }));
+
+    void updateItemFields(itemId, { package_conversions: payload }).catch(
+      error => {
+        console.error('Error autosaving item conversions:', error);
+      }
+    );
+  }, [
+    itemId,
+    isEditMode,
+    isViewingOldVersion,
+    packageConversionHook.conversions,
+  ]);
+
+  useEffect(() => {
+    if (!pendingAutosaveRef.current) return;
+    pendingAutosaveRef.current = false;
+    persistConversions();
+  }, [persistConversions, packageConversionHook.conversions]);
+
+  const handleConversionInteractionStart = useCallback(() => {
+    smartFormSync?.registerActiveField('package_conversions');
+  }, [smartFormSync]);
+
+  const handleConversionInteractionEnd = useCallback(() => {
+    smartFormSync?.unregisterActiveField('package_conversions');
+  }, [smartFormSync]);
+
+  const handleRemoveConversion = useCallback(
+    (id: string) => {
+      pendingAutosaveRef.current = true;
+      packageConversionHook.removePackageConversion(id);
+    },
+    [packageConversionHook]
+  );
 
   return (
     <ItemPackageConversionManager
@@ -636,15 +684,18 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
       disabled={isViewingOldVersion}
       onFormDataChange={packageConversionHook.setPackageConversionFormData}
       onAddConversion={handleAddConversion}
-      onRemoveConversion={packageConversionHook.removePackageConversion}
+      onRemoveConversion={handleRemoveConversion}
+      onInteractionStart={handleConversionInteractionStart}
+      onInteractionEnd={handleConversionInteractionEnd}
       onUpdateSellPrice={(id, sellPrice) =>
-        packageConversionHook.setConversions(prevConversions =>
-          prevConversions.map(conversion =>
+        packageConversionHook.setConversions(prevConversions => {
+          pendingAutosaveRef.current = true;
+          return prevConversions.map(conversion =>
             conversion.id === id
               ? { ...conversion, sell_price: sellPrice }
               : conversion
-          )
-        )
+          );
+        })
       }
     />
   );

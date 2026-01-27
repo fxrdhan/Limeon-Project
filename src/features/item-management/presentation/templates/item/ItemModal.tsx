@@ -940,6 +940,7 @@ const ItemManagementContent: React.FC<{
             <ItemFormSections.PackageConversion
               isExpanded={activeSection === 'conversion'}
               onExpand={() => toggleSection('conversion')}
+              itemId={itemId}
               stackClassName={getStackEffect('conversion').className}
               stackStyle={getStackEffect('conversion').style}
             />
