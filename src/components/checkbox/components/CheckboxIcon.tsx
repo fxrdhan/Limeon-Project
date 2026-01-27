@@ -9,6 +9,9 @@ export const CheckboxIcon: React.FC<CheckboxIconProps> = ({
   disabled = false,
   className = '',
 }) => {
+  const backgroundColor = checked ? 'var(--color-primary)' : '#ffffff';
+  const borderColor = checked ? 'var(--color-primary)' : '#d1d5db';
+
   return (
     <motion.div
       className={classNames(
@@ -18,9 +21,10 @@ export const CheckboxIcon: React.FC<CheckboxIconProps> = ({
           : '',
         className
       )}
+      initial={{ backgroundColor, borderColor }}
       animate={{
-        backgroundColor: checked ? 'var(--color-primary)' : '#ffffff',
-        borderColor: checked ? 'var(--color-primary)' : '#d1d5db',
+        backgroundColor,
+        borderColor,
       }}
       whileHover={
         !disabled
