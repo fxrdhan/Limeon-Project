@@ -88,6 +88,7 @@ export interface EditInPlaceConfig<T = unknown> {
     display?: string;
     label?: string;
     icon?: string;
+    value?: string;
   };
 
   /** Icon size (px) */
@@ -218,10 +219,12 @@ export function GenericEditInPlace<T = unknown>({
               }
             }}
           >
-            {finalDisplayValue}
+            <span className={config.classes?.value || ''}>
+              {finalDisplayValue}
+            </span>
             {!disabled && (
               <TbPencil
-                className={`ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors ${config.classes?.icon || ''}`}
+                className={`ml-4 text-gray-400 group-hover:text-primary group-focus:text-primary cursor-pointer transition-colors ${config.classes?.icon || ''}`}
                 size={iconSize}
                 onClick={e => {
                   e.stopPropagation();
@@ -290,9 +293,11 @@ export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
   classes: {
     label: 'flex items-center',
     container: 'ml-2 grow',
-    display: 'pb-1 -mt-0.5',
+    display: 'pb-1',
+    value: 'relative -top-1',
+    icon: 'relative -top-1',
   },
-  iconSize: 16,
+  iconSize: 18,
   accessibility: {
     editTitle: 'Edit stok minimal',
     displayTitle: 'Click to edit minimum stock',
