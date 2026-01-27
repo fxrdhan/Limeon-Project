@@ -13,11 +13,14 @@ import 'cropperjs/dist/cropper.css';
 import { supabase } from '@/lib/supabase';
 import { compressImageIfNeeded } from '@/utils/image';
 import { extractNumericValue } from '@/lib/formatters';
+import { QueryKeys } from '@/constants/queryKeys';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   cacheImageBlob,
-  getCachedImageSet,
   getCachedImageBlobUrl,
   preloadImages,
+  removeCachedImageBlob,
+  removeCachedImageSet,
   setCachedImageSet,
 } from '@/utils/imageCache';
 import { StorageService } from '@/utils/storage';
@@ -716,6 +719,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const { formData, units, loading, handleChange, updateFormData } =
     useItemForm();
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
+  const queryClient = useQueryClient();
   const cacheKey = itemId ? `item-images:${itemId}` : null;
   const buildSlotsFromUrlsWithItem = useCallback(
     (urls: string[]) =>
@@ -728,16 +732,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       }),
     [itemId]
   );
-  const [imageSlots, setImageSlots] = useState(() => {
-    if (!cacheKey) {
-      return Array.from({ length: 4 }, () => ({ url: '', path: '' }));
-    }
-    const cachedUrls = getCachedImageSet(cacheKey);
-    if (cachedUrls && cachedUrls.length > 0) {
-      return buildSlotsFromUrlsWithItem(cachedUrls);
-    }
-    return Array.from({ length: 4 }, () => ({ url: '', path: '' }));
-  });
+  const [imageSlots, setImageSlots] = useState(
+    Array.from({ length: 4 }, () => ({ url: '', path: '' }))
+  );
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [uploadingSlots, setUploadingSlots] = useState<boolean[]>(
     Array.from({ length: 4 }, () => false)
@@ -757,8 +754,8 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const localPreviewUrlsRef = useRef<Record<number, string>>({});
 
   const bucketName = 'item_images';
-  const maxFileSizeBytes = 500 * 1024 * 1024;
-  const maxFileSizeLabel = '500MB';
+  const maxFileSizeBytes = 1 * 1024 * 1024;
+  const maxFileSizeLabel = '1MB';
   const formImageUrls = useMemo(
     () => (Array.isArray(formData.image_urls) ? formData.image_urls : []),
     [formData.image_urls]
@@ -838,7 +835,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     (slots: Array<{ url: string }>) => {
       if (!cacheKey) return;
       const urls = slots.map(slot => slot.url);
-      setCachedImageSet(cacheKey, urls);
+      const hasImage = urls.some(Boolean);
+      if (hasImage) {
+        setCachedImageSet(cacheKey, urls);
+      } else {
+        removeCachedImageSet(cacheKey);
+      }
       preloadImages(urls.filter(Boolean));
     },
     [cacheKey]
@@ -922,23 +924,55 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         .update({ image_urls: urls })
         .eq('id', itemId);
       updateFormData({ image_urls: urls });
+      queryClient.setQueriesData(
+        { queryKey: QueryKeys.items.all },
+        (cachedData: unknown) => {
+          if (!cachedData) return cachedData;
+          if (Array.isArray(cachedData)) {
+            return cachedData.map(item =>
+              item &&
+              typeof item === 'object' &&
+              'id' in item &&
+              item.id === itemId
+                ? { ...item, image_urls: urls }
+                : item
+            );
+          }
+          if (
+            typeof cachedData === 'object' &&
+            cachedData !== null &&
+            'id' in cachedData &&
+            cachedData.id === itemId
+          ) {
+            return { ...cachedData, image_urls: urls };
+          }
+          return cachedData;
+        }
+      );
     },
-    [itemId, updateFormData]
+    [itemId, queryClient, updateFormData]
+  );
+
+  const handleBrokenImage = useCallback(
+    (slotIndex: number, url: string) => {
+      setImageSlots(prevSlots => {
+        const nextSlots = prevSlots.map((slot, index) =>
+          index === slotIndex ? { path: '', url: '' } : slot
+        );
+        updateImageCache(nextSlots);
+        if (itemId && !isViewingOldVersion && url.startsWith('http')) {
+          updateItemImagesInDatabase(
+            nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
+          );
+        }
+        return nextSlots;
+      });
+    },
+    [itemId, isViewingOldVersion, updateImageCache, updateItemImagesInDatabase]
   );
 
   useEffect(() => {
     if (!itemId) return;
-
-    const cachedUrls = cacheKey ? getCachedImageSet(cacheKey) : null;
-    if (cachedUrls && cachedUrls.length > 0) {
-      const nextSlots = buildSlotsFromUrls(cachedUrls);
-      setImageSlots(prevSlots =>
-        areImageSlotsEqual(prevSlots, nextSlots) ? prevSlots : nextSlots
-      );
-      preloadImages(cachedUrls.filter(Boolean));
-      setIsLoadingImages(false);
-      return;
-    }
 
     if (loading) {
       return;
@@ -1302,6 +1336,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
       try {
         await StorageService.deleteFile(bucketName, targetSlot.path);
+        if (targetSlot.url) {
+          await removeCachedImageBlob(targetSlot.url);
+        }
         setImageSlots(prevSlots => {
           const nextSlots = prevSlots.map((slot, index) =>
             index === slotIndex ? { path: '', url: '' } : slot
@@ -1358,6 +1395,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                     ? { animationDuration: '2.8s' }
                     : undefined
                 }
+                onError={() => handleBrokenImage(index, slot.url)}
                 onClick={event => {
                   event.stopPropagation();
                   setPreviewUrl(

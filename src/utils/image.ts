@@ -1,7 +1,7 @@
 import Compressor from 'compressorjs';
 import imageCompression from 'browser-image-compression';
 
-const MAX_SIZE_MB = 500;
+const MAX_SIZE_MB = 1;
 const COMPRESSION_OPTIONS = {
   quality: 0.7,
   maxWidth: 1024,

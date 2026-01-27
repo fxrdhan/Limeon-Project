@@ -48,8 +48,15 @@ const loadCacheFromStorage = () => {
     const parsed = JSON.parse(raw) as ImageCacheState;
     if (!parsed || parsed.version !== CACHE_VERSION) return;
     Object.entries(parsed.entries || {}).forEach(([key, entry]) => {
+      if (entry.type === 'set') {
+        const urls = entry.urls || [];
+        const hasImage = urls.some(Boolean);
+        if (!hasImage) return;
+      }
+      if (entry.type === 'single' && !entry.url) return;
       cache.set(key, entry);
     });
+    persistCache();
   } catch {
     // ignore
   }
@@ -99,6 +106,12 @@ export const setCachedImageSet = (key: string, urls: string[]) => {
     urls,
     updatedAt: Date.now(),
   });
+  persistCache();
+};
+
+export const removeCachedImageSet = (key: string) => {
+  if (!cache.has(key)) return;
+  cache.delete(key);
   persistCache();
 };
 
@@ -180,4 +193,24 @@ export const preloadCachedImages = () => {
     }
   });
   void primeImageCache(urls);
+};
+
+export const removeCachedImageBlob = async (url: string) => {
+  if (!isCacheableUrl(url)) return;
+
+  const cachedObjectUrl = blobUrlCache.get(url);
+  if (cachedObjectUrl) {
+    URL.revokeObjectURL(cachedObjectUrl);
+    blobUrlCache.delete(url);
+  }
+
+  preloadedUrls.delete(url);
+
+  const cacheStore = await openBlobCache();
+  if (!cacheStore) return;
+  await cacheStore.delete(url);
+};
+
+export const removeCachedImageBlobs = async (urls: string[]) => {
+  await Promise.all(urls.map(url => removeCachedImageBlob(url)));
 };

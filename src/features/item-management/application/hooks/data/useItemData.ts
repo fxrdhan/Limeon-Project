@@ -46,7 +46,10 @@ export const useItemData = ({
   packageConversionHook,
 }: UseItemDataProps) => {
   const hydrateItemData = useCallback(
-    (itemData: Record<string, unknown> | Item) => {
+    (
+      itemData: Record<string, unknown> | Item,
+      options?: { skipImages?: boolean }
+    ) => {
       const itemRecord = itemData as Record<string, unknown>;
       const manufacturerId =
         (itemRecord.manufacturer_id as string) ||
@@ -73,9 +76,12 @@ export const useItemData = ({
         dosage_id: (itemRecord.dosage_id as string) || '',
         barcode: (itemRecord.barcode as string) || '',
         description: (itemRecord.description as string) || '',
-        image_urls: Array.isArray(itemRecord.image_urls)
-          ? (itemRecord.image_urls as string[])
-          : [],
+        image_urls:
+          options?.skipImages === true
+            ? []
+            : Array.isArray(itemRecord.image_urls)
+              ? (itemRecord.image_urls as string[])
+              : [],
         base_price: (itemRecord.base_price as number) || 0,
         sell_price: (itemRecord.sell_price as number) || 0,
         is_level_pricing_active:
