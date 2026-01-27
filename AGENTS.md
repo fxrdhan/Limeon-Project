@@ -1,6 +1,7 @@
 # Project Info
 
 - Remember is that Bun as the runtime environment in this project.
+- Always use Firecrawl MCP to search for information on the web and scrape pages.
 - Always use Supabase MCP if you need table definitions, triggers, and so on.
 
 # Guidelines:

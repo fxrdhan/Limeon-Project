@@ -113,9 +113,19 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   }, [onImageDelete, isDeleting, disabled]);
 
   const handleUploadClick = useCallback(() => {
-    if (fileInputRef.current && !disabled && !isUploading && !isDeleting) {
-      fileInputRef.current.click();
+    if (!fileInputRef.current || disabled || isUploading || isDeleting) return;
+
+    // Ensure same file can be re-selected after cancel.
+    fileInputRef.current.value = '';
+    if (typeof fileInputRef.current.showPicker === 'function') {
+      try {
+        fileInputRef.current.showPicker();
+        return;
+      } catch {
+        // Fallback to click if showPicker isn't allowed.
+      }
     }
+    fileInputRef.current.click();
   }, [disabled, isUploading, isDeleting]);
 
   const handleContainerClick = useCallback(() => {

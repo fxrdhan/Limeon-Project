@@ -1369,7 +1369,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             disabled={
               isViewingOldVersion ||
               !itemId ||
-              isLoadingImages ||
+              (isLoadingImages && Boolean(slot.url)) ||
               uploadingSlots[index]
             }
             interaction="direct"
