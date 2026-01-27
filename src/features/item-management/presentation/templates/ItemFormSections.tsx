@@ -12,6 +12,7 @@ import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
 import { supabase } from '@/lib/supabase';
 import { compressImageIfNeeded } from '@/utils/image';
+import { extractNumericValue } from '@/lib/formatters';
 import {
   cacheImageBlob,
   getCachedImageSet,
@@ -84,6 +85,46 @@ const updateItemFields = async (
 };
 
 const normalizeNullableValue = (value: string) => (value ? value : null);
+
+const useDebouncedAutosave = ({
+  itemId,
+  isEditMode,
+  isViewingOldVersion,
+  delayMs = 600,
+}: {
+  itemId?: string;
+  isEditMode: boolean;
+  isViewingOldVersion: boolean;
+  delayMs?: number;
+}) => {
+  const timersRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(timersRef.current).forEach(timerId => {
+        window.clearTimeout(timerId);
+      });
+      timersRef.current = {};
+    };
+  }, []);
+
+  return useCallback(
+    (field: string, value: unknown) => {
+      if (!itemId || !isEditMode || isViewingOldVersion) return;
+
+      const existing = timersRef.current[field];
+      if (existing) window.clearTimeout(existing);
+
+      timersRef.current[field] = window.setTimeout(() => {
+        void updateItemFields(itemId, { [field]: value }).catch(error => {
+          console.error('Error autosaving item input:', error);
+          toast.error('Gagal menyimpan perubahan.');
+        });
+      }, delayMs);
+    },
+    [itemId, isEditMode, isViewingOldVersion, delayMs]
+  );
+};
 
 // Header Section
 
@@ -162,6 +203,11 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     },
     [itemId, isEditMode, isViewingOldVersion]
   );
+  const scheduleAutosave = useDebouncedAutosave({
+    itemId,
+    isEditMode,
+    isViewingOldVersion,
+  });
 
   // Transform database types to DropdownOption format
   const transformedCategories = categories.map(cat => ({
@@ -218,6 +264,17 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     }
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    handleChange(e);
+
+    const { name, value } = e.target;
+    if (name === 'name') {
+      scheduleAutosave('name', value);
+    }
+  };
+
   const handleDropdownChange = (field: string, value: string) => {
     const normalizedValue = normalizeNullableValue(value);
 
@@ -269,7 +326,7 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
       manufacturers={transformedManufacturers}
       loading={loading}
       disabled={isViewingOldVersion}
-      onChange={handleChange}
+      onChange={handleInputChange}
       onFieldChange={handleFieldChange}
       onDropdownChange={handleDropdownChange}
       onAddNewCategory={handleAddNewCategory}
@@ -292,11 +349,18 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
 }) => {
   const { formData, updateFormData } = useItemForm();
   const { isViewingOldVersion, isEditMode } = useItemUI();
+  const scheduleAutosave = useDebouncedAutosave({
+    itemId,
+    isEditMode,
+    isViewingOldVersion,
+  });
 
   const minStockEditor = useInlineEditor({
     initialValue: (formData.min_stock || 0).toString(),
     onSave: value => {
-      updateFormData({ min_stock: parseInt(value.toString()) || 0 });
+      const parsedValue = parseInt(value.toString()) || 0;
+      updateFormData({ min_stock: parsedValue });
+      scheduleAutosave('min_stock', parsedValue);
     },
   });
 
@@ -323,6 +387,7 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
       saveDropdownUpdate({ is_active: value as boolean });
       updateFormData({ is_active: value as boolean });
     } else if (field === 'has_expiry_date') {
+      saveDropdownUpdate({ has_expiry_date: value as boolean });
       updateFormData({ has_expiry_date: value as boolean });
     } else if (field === 'min_stock') {
       updateFormData({ min_stock: parseInt(value as string) || 0 });
@@ -363,6 +428,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   stackClassName,
   stackStyle,
   onLevelPricingToggle,
+  itemId,
 }) => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
@@ -377,7 +443,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   } = useCustomerLevels();
   const [showLevelPricing, setShowLevelPricing] = useState(false);
 
-  const { resetKey, isViewingOldVersion } = useItemUI();
+  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
+  const scheduleAutosave = useDebouncedAutosave({
+    itemId,
+    isEditMode,
+    isViewingOldVersion,
+  });
 
   useEffect(() => {
     onLevelPricingToggle?.(showLevelPricing);
@@ -413,6 +484,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     const value = parseFloat(cleanValue) || 0;
     updateFormData({ sell_price: value });
     marginEditor.setValue((calcMargin || 0).toString());
+    scheduleAutosave('sell_price', value);
+  };
+
+  const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleChange(e);
+    scheduleAutosave('base_price', extractNumericValue(e.target.value));
   };
 
   const customerLevelDiscounts = useMemo(
@@ -499,7 +576,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       stackClassName={stackClassName}
       stackStyle={stackStyle}
       disabled={isViewingOldVersion}
-      onBasePriceChange={handleChange}
+      onBasePriceChange={handleBasePriceChange}
       onSellPriceChange={handleSellPriceChange}
       onMarginChange={marginEditor.setValue}
       onStartEditMargin={marginEditor.startEditing}
@@ -507,9 +584,10 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       onMarginInputChange={marginEditor.handleChange}
       onMarginKeyDown={marginEditor.handleKeyDown}
       isLevelPricingActive={formData.is_level_pricing_active ?? true}
-      onLevelPricingActiveChange={active =>
-        updateFormData({ is_level_pricing_active: active })
-      }
+      onLevelPricingActiveChange={active => {
+        updateFormData({ is_level_pricing_active: active });
+        scheduleAutosave('is_level_pricing_active', active);
+      }}
     />
   );
 };
@@ -843,11 +921,31 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     },
     [itemId, isEditMode, isViewingOldVersion]
   );
+  const scheduleAutosave = useDebouncedAutosave({
+    itemId,
+    isEditMode,
+    isViewingOldVersion,
+  });
 
   const handleDropdownChange = (field: string, value: string) => {
     if (field === 'unit_id') {
       updateFormData({ unit_id: value });
       saveDropdownUpdate({ unit_id: normalizeNullableValue(value) });
+    }
+  };
+
+  const handleOptionalChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    handleChange(e);
+
+    const { name, value } = e.target;
+    if (name === 'barcode') {
+      scheduleAutosave('barcode', value);
+    } else if (name === 'quantity') {
+      scheduleAutosave('quantity', parseFloat(value) || 0);
+    } else if (name === 'description') {
+      scheduleAutosave('description', value);
     }
   };
 
@@ -1143,7 +1241,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         stackClassName={stackClassName}
         stackStyle={stackStyle}
         disabled={isViewingOldVersion}
-        onChange={handleChange}
+        onChange={handleOptionalChange}
         onDropdownChange={handleDropdownChange}
       />
     </div>

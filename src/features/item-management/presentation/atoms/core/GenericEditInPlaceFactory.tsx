@@ -87,7 +87,11 @@ export interface EditInPlaceConfig<T = unknown> {
     input?: string;
     display?: string;
     label?: string;
+    icon?: string;
   };
+
+  /** Icon size (px) */
+  iconSize?: number;
 
   /** Accessibility */
   accessibility?: {
@@ -176,6 +180,7 @@ export function GenericEditInPlace<T = unknown>({
   const displayTitle =
     config.accessibility?.displayTitle ||
     `Click to edit ${config.label.toLowerCase()}`;
+  const iconSize = config.iconSize ?? 14;
 
   return (
     <FormField label={config.label} className={config.classes?.label}>
@@ -216,8 +221,8 @@ export function GenericEditInPlace<T = unknown>({
             {finalDisplayValue}
             {!disabled && (
               <TbPencil
-                className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
-                size={14}
+                className={`ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors ${config.classes?.icon || ''}`}
+                size={iconSize}
                 onClick={e => {
                   e.stopPropagation();
                   onStartEdit();
@@ -285,8 +290,9 @@ export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
   classes: {
     label: 'flex items-center',
     container: 'ml-2 grow',
-    display: 'pb-1',
+    display: 'pb-1 -mt-0.5',
   },
+  iconSize: 16,
   accessibility: {
     editTitle: 'Edit stok minimal',
     displayTitle: 'Click to edit minimum stock',

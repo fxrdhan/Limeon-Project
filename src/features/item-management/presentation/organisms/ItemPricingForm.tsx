@@ -512,16 +512,23 @@ export default function ItemPricingForm({
         </h2>
         <div className="flex items-center gap-1">
           {showLevelPricing ? (
-            <Switch
-              size="small"
-              checked={
-                isLevelPricingActive ?? formData.is_level_pricing_active ?? true
-              }
-              disabled={disabled}
-              onChange={(checked: boolean) =>
-                onLevelPricingActiveChange?.(checked)
-              }
-            />
+            <div
+              onClick={event => event.stopPropagation()}
+              onMouseDown={event => event.stopPropagation()}
+            >
+              <Switch
+                size="small"
+                checked={
+                  isLevelPricingActive ??
+                  formData.is_level_pricing_active ??
+                  true
+                }
+                disabled={disabled}
+                onChange={(checked: boolean) =>
+                  onLevelPricingActiveChange?.(checked)
+                }
+              />
+            </div>
           ) : null}
           {showLevelPricing ? (
             <button
