@@ -953,6 +953,11 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     [itemId, queryClient, updateFormData]
   );
 
+  const buildImageUrlsPayload = useCallback((slots: Array<{ url: string }>) => {
+    const urls = slots.map(slot => slot.url || '');
+    return urls.some(Boolean) ? urls : [];
+  }, []);
+
   const handleBrokenImage = useCallback(
     (slotIndex: number, url: string) => {
       setImageSlots(prevSlots => {
@@ -961,14 +966,18 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         );
         updateImageCache(nextSlots);
         if (itemId && !isViewingOldVersion && url.startsWith('http')) {
-          updateItemImagesInDatabase(
-            nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
-          );
+          updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
         }
         return nextSlots;
       });
     },
-    [itemId, isViewingOldVersion, updateImageCache, updateItemImagesInDatabase]
+    [
+      buildImageUrlsPayload,
+      itemId,
+      isViewingOldVersion,
+      updateImageCache,
+      updateItemImagesInDatabase,
+    ]
   );
 
   useEffect(() => {
@@ -1031,9 +1040,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
       setImageSlots(nextSlots);
       updateImageCache(nextSlots);
-      await updateItemImagesInDatabase(
-        nextSlots.map(slot => slot.url).filter(Boolean)
-      );
+      await updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
       setIsLoadingImages(false);
     };
 
@@ -1043,6 +1050,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       isMounted = false;
     };
   }, [
+    buildImageUrlsPayload,
     bucketName,
     buildSlotsFromUrls,
     cacheKey,
@@ -1233,13 +1241,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             : slot
         );
         updateImageCache(nextSlots);
-        updateItemImagesInDatabase(
-          nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
-        );
+        updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
         return nextSlots;
       });
     },
     [
+      buildImageUrlsPayload,
       getImageDimensions,
       imageSlots,
       itemId,
@@ -1307,9 +1314,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             : slot
         );
         updateImageCache(nextSlots);
-        updateItemImagesInDatabase(
-          nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
-        );
+        updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
         return nextSlots;
       });
     } catch {
@@ -1318,6 +1323,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       setIsCropping(false);
     }
   }, [
+    buildImageUrlsPayload,
     closeCropper,
     cropState,
     imageSlots,
@@ -1344,9 +1350,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             index === slotIndex ? { path: '', url: '' } : slot
           );
           updateImageCache(nextSlots);
-          updateItemImagesInDatabase(
-            nextSlots.map(nextSlot => nextSlot.url).filter(Boolean)
-          );
+          updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
           return nextSlots;
         });
       } catch (deleteError) {
@@ -1354,7 +1358,13 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         toast.error('Gagal menghapus gambar.');
       }
     },
-    [bucketName, imageSlots, updateImageCache, updateItemImagesInDatabase]
+    [
+      bucketName,
+      buildImageUrlsPayload,
+      imageSlots,
+      updateImageCache,
+      updateItemImagesInDatabase,
+    ]
   );
 
   return (
