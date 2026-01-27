@@ -716,9 +716,28 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const { formData, units, loading, handleChange, updateFormData } =
     useItemForm();
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
-  const [imageSlots, setImageSlots] = useState(
-    Array.from({ length: 4 }, () => ({ url: '', path: '' }))
+  const cacheKey = itemId ? `item-images:${itemId}` : null;
+  const buildSlotsFromUrlsWithItem = useCallback(
+    (urls: string[]) =>
+      Array.from({ length: 4 }, (_, index) => {
+        const url = urls[index] || '';
+        return {
+          url,
+          path: url && itemId ? `items/${itemId}/slot-${index}` : '',
+        };
+      }),
+    [itemId]
   );
+  const [imageSlots, setImageSlots] = useState(() => {
+    if (!cacheKey) {
+      return Array.from({ length: 4 }, () => ({ url: '', path: '' }));
+    }
+    const cachedUrls = getCachedImageSet(cacheKey);
+    if (cachedUrls && cachedUrls.length > 0) {
+      return buildSlotsFromUrlsWithItem(cachedUrls);
+    }
+    return Array.from({ length: 4 }, () => ({ url: '', path: '' }));
+  });
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [uploadingSlots, setUploadingSlots] = useState<boolean[]>(
     Array.from({ length: 4 }, () => false)
@@ -740,7 +759,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const bucketName = 'item_images';
   const maxFileSizeBytes = 500 * 1024 * 1024;
   const maxFileSizeLabel = '500MB';
-  const cacheKey = itemId ? `item-images:${itemId}` : null;
   const formImageUrls = useMemo(
     () => (Array.isArray(formData.image_urls) ? formData.image_urls : []),
     [formData.image_urls]
@@ -814,17 +832,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     updated_at: unit.updated_at,
   }));
 
-  const buildSlotsFromUrls = useCallback(
-    (urls: string[]) =>
-      Array.from({ length: 4 }, (_, index) => {
-        const url = urls[index] || '';
-        return {
-          url,
-          path: url && itemId ? `items/${itemId}/slot-${index}` : '',
-        };
-      }),
-    [itemId]
-  );
+  const buildSlotsFromUrls = buildSlotsFromUrlsWithItem;
 
   const updateImageCache = useCallback(
     (slots: Array<{ url: string }>) => {
