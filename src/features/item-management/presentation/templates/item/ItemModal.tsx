@@ -401,6 +401,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       handleChange,
       handleSubmit,
       resetForm,
+      setInitialPackageConversions,
     },
     uiActions: {
       handleBackdropClick,

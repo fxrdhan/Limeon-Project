@@ -604,6 +604,7 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
 }) => {
   const { packageConversionHook } = useItemPrice();
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
+  const { setInitialPackageConversions } = useItemForm();
   const realtime = useItemRealtime();
   const smartFormSync = realtime?.smartFormSync;
   const pendingAutosaveRef = useRef(false);
@@ -625,7 +626,7 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     pendingAutosaveRef.current = true;
   };
 
-  const persistConversions = useCallback(() => {
+  const persistConversions = useCallback(async () => {
     if (!itemId || !isEditMode || isViewingOldVersion) return;
 
     const payload = packageConversionHook.conversions.map(conversion => ({
@@ -636,22 +637,24 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
       sell_price: conversion.sell_price,
     }));
 
-    void updateItemFields(itemId, { package_conversions: payload }).catch(
-      error => {
-        console.error('Error autosaving item conversions:', error);
-      }
-    );
+    try {
+      await updateItemFields(itemId, { package_conversions: payload });
+      setInitialPackageConversions(packageConversionHook.conversions);
+    } catch (error) {
+      console.error('Error autosaving item conversions:', error);
+    }
   }, [
     itemId,
     isEditMode,
     isViewingOldVersion,
     packageConversionHook.conversions,
+    setInitialPackageConversions,
   ]);
 
   useEffect(() => {
     if (!pendingAutosaveRef.current) return;
     pendingAutosaveRef.current = false;
-    persistConversions();
+    void persistConversions();
   }, [persistConversions, packageConversionHook.conversions]);
 
   const handleConversionInteractionStart = useCallback(() => {

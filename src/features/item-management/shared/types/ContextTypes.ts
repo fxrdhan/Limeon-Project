@@ -9,7 +9,7 @@ import type {
 } from './EntityTypes';
 import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
-import type { VersionData } from './ItemTypes';
+import type { PackageConversion, VersionData } from './ItemTypes';
 
 // Context State Interfaces (Updated to match actual implementation)
 export interface ItemFormState {
@@ -86,6 +86,7 @@ export interface ItemFormActions {
   ) => void;
   handleSubmit: (e: React.FormEvent) => void;
   resetForm: () => void;
+  setInitialPackageConversions: (conversions: PackageConversion[]) => void;
 }
 
 export interface ItemUIActions {
