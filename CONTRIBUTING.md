@@ -10,8 +10,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ### Prerequisites
 
-- **Node.js**: v18 or higher
-- **Yarn**: Package manager (we use Yarn, not npm)
+- **Bun**: Runtime and package manager (latest recommended)
 - **Git**: For version control
 - **Supabase CLI**: For database management (optional for frontend-only work)
 
@@ -28,7 +27,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 2. **Install dependencies**
 
    ```bash
-   yarn install
+   bun install
    ```
 
 3. **Set up environment variables**
@@ -40,7 +39,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 4. **Start the development server**
    ```bash
-   yarn dev
+   bun run dev
    ```
 
 ## Development Workflow
@@ -75,19 +74,19 @@ We use a feature branch workflow:
 
    ```bash
    # Type checking
-   yarn typecheck
+   bunx --bun tsc -b --noEmit
 
    # Linting
-   yarn lint
+   bun run lint
 
    # Formatting
-   yarn format
+   bun run format
 
    # Tests
-   yarn test
+   bun run test
 
    # Build
-   yarn build
+   bun run build
    ```
 
 4. **Commit your changes**
@@ -136,10 +135,10 @@ We use a feature branch workflow:
 ### PR Requirements
 
 - [ ] Code follows the project's style guidelines
-- [ ] Tests pass locally (`yarn test`)
-- [ ] Type checking passes (`yarn typecheck`)
-- [ ] Linting passes (`yarn lint`)
-- [ ] Build succeeds (`yarn build`)
+- [ ] Tests pass locally (`bun run test`)
+- [ ] Type checking passes (`bunx --bun tsc -b --noEmit`)
+- [ ] Linting passes (`bun run lint`)
+- [ ] Build succeeds (`bun run build`)
 - [ ] PR title follows conventional commit format
 - [ ] PR description clearly describes the changes
 - [ ] Related issues are linked (if applicable)
@@ -212,16 +211,16 @@ We use a feature branch workflow:
 
 ```bash
 # Run all tests
-yarn test
+bun run test
 
 # Run tests in watch mode
-yarn test:watch
+bun run test:watch
 
 # Run tests with coverage
-yarn test:coverage
+bun run test:coverage
 
 # Run specific test file
-yarn test ItemForm.test.ts
+bun run test -- ItemForm.test.ts
 ```
 
 ## Database Changes
