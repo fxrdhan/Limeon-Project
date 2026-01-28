@@ -95,10 +95,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           isExpanded ? 'items-start' : 'items-center'
         } ${
           disabled
-            ? 'bg-gray-100 text-gray-800 cursor-not-allowed border-gray-300'
+            ? 'bg-gray-100 text-gray-800 cursor-not-allowed border-slate-200'
             : hasError
               ? 'bg-white text-gray-800 hover:bg-gray-50 border-danger ring-3 ring-danger/20 focus:ring-red-200 focus:border-danger focus:outline-hidden focus:ring-3'
-              : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300 focus:ring-emerald-200 focus:border-primary focus:outline-hidden focus:ring-3'
+              : 'bg-white text-gray-800 hover:bg-gray-50 border-slate-200 focus:ring-slate-200 focus:border-slate-300 focus:outline-hidden focus:ring-3'
         }`}
         aria-haspopup="menu"
         aria-expanded={isOpen || isClosing}

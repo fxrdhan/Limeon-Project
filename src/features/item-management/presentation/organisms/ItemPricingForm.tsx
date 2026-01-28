@@ -400,8 +400,7 @@ export default function ItemPricingForm({
                 ? levelInputValues[level.id]
                 : displayDiscount.toString();
               const finalPrice =
-                (formData.sell_price || 0) *
-                (1 - (levelPricingEnabled ? displayDiscount : 0) / 100);
+                (formData.sell_price || 0) * (1 - displayDiscount / 100);
 
               return (
                 <div

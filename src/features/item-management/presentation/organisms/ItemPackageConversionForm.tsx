@@ -1,4 +1,10 @@
-import React, { useCallback, useRef } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { TbChevronDown, TbTrash } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -36,6 +42,16 @@ const DeleteButton = React.memo(
 );
 
 DeleteButton.displayName = 'DeleteButton';
+
+const parseCurrencyValue = (value: unknown) => {
+  if (typeof value === 'number') return Math.max(0, value);
+  if (typeof value === 'string') {
+    const numeric = value.replace(/[^0-9]/g, '');
+    const parsed = Number(numeric);
+    return Math.max(0, Number.isNaN(parsed) ? 0 : parsed);
+  }
+  return 0;
+};
 
 interface LocalItemPackageConversionManagerProps {
   isExpanded?: boolean;
@@ -75,24 +91,23 @@ export default function ItemPackageConversionManager({
   const gridRef = useRef<DataGridRef>(null);
   const columnStateRef = useRef<ColumnState[] | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const filteredAvailableUnits = availableUnits
-    .filter(unit => unit.name !== baseUnit)
-    .filter(unit => !conversions.some(uc => uc.unit.name === unit.name));
-
-  const filteredConversions = conversions.filter(
-    (uc, index, self) =>
-      index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
+  const [popupParent, setPopupParent] = useState<HTMLElement | null>(null);
+  const filteredAvailableUnits = useMemo(
+    () =>
+      availableUnits
+        .filter(unit => unit.name !== baseUnit)
+        .filter(unit => !conversions.some(uc => uc.unit.name === unit.name)),
+    [availableUnits, baseUnit, conversions]
   );
 
-  const parseCurrencyValue = (value: unknown) => {
-    if (typeof value === 'number') return Math.max(0, value);
-    if (typeof value === 'string') {
-      const numeric = value.replace(/[^0-9]/g, '');
-      const parsed = Number(numeric);
-      return Math.max(0, Number.isNaN(parsed) ? 0 : parsed);
-    }
-    return 0;
-  };
+  const filteredConversions = useMemo(
+    () =>
+      conversions.filter(
+        (uc, index, self) =>
+          index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
+      ),
+    [conversions]
+  );
 
   const handleFirstDataRendered = useCallback(
     (event: FirstDataRenderedEvent) => {
@@ -104,12 +119,27 @@ export default function ItemPackageConversionManager({
           state: columnStateRef.current,
           applyOrder: true,
         });
-        return;
+      } else {
+        columnStateRef.current = api.getColumnState();
       }
-      columnStateRef.current = api.getColumnState();
+      if (sectionRef.current) {
+        api.setGridOption('popupParent', sectionRef.current);
+      }
+      api.autoSizeAllColumns();
     },
     []
   );
+
+  const autoSizeAllColumns = useCallback(() => {
+    const api = gridRef.current?.api;
+    if (!api || api.isDestroyed()) return;
+    api.autoSizeAllColumns();
+  }, []);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    autoSizeAllColumns();
+  }, [autoSizeAllColumns, filteredConversions, isExpanded]);
 
   const handleFocusCapture = useCallback(() => {
     if (disabled) return;
@@ -120,6 +150,22 @@ export default function ItemPackageConversionManager({
     (event: React.FocusEvent<HTMLElement>) => {
       if (disabled) return;
       const nextTarget = event.relatedTarget as Node | null;
+      const activeElement = document.activeElement as Node | null;
+      const isAgPopupTarget = (node: Node | null) => {
+        if (!node || !(node instanceof HTMLElement)) return false;
+        return Boolean(
+          node.closest('.ag-popup, .ag-menu, .ag-dialog, .ag-tooltip')
+        );
+      };
+
+      if (
+        sectionRef.current?.contains(nextTarget) ||
+        sectionRef.current?.contains(activeElement) ||
+        isAgPopupTarget(nextTarget) ||
+        isAgPopupTarget(activeElement)
+      ) {
+        return;
+      }
       if (!sectionRef.current?.contains(nextTarget)) {
         onInteractionEnd?.();
       }
@@ -136,6 +182,79 @@ export default function ItemPackageConversionManager({
     if (disabled) return;
     onInteractionEnd?.();
   }, [disabled, onInteractionEnd]);
+
+  const handleCellValueChanged = useCallback(
+    (event: {
+      colDef: { field?: string };
+      data?: { id: string };
+      newValue?: unknown;
+    }) => {
+      if (event.colDef.field !== 'sell_price') return;
+      if (!event.data) return;
+      const nextValue = parseCurrencyValue(event.newValue);
+      onUpdateSellPrice(event.data.id, nextValue);
+    },
+    [onUpdateSellPrice]
+  );
+
+  const columnDefs = useMemo(
+    () =>
+      [
+        {
+          ...createTextColumn({
+            field: 'unit.name',
+            headerName: 'Turunan',
+          }),
+          suppressHeaderContextMenu: true,
+        },
+        {
+          ...createTextColumn({
+            field: 'conversion_rate',
+            headerName: 'Konversi',
+            cellStyle: { textAlign: 'center' },
+          }),
+          suppressHeaderContextMenu: true,
+        },
+        {
+          ...createCurrencyColumn({
+            field: 'base_price',
+            headerName: 'H. Pokok',
+          }),
+          suppressHeaderContextMenu: true,
+        },
+        {
+          ...createCurrencyColumn({
+            field: 'sell_price',
+            headerName: 'H. Jual',
+          }),
+          editable: !disabled,
+          valueParser: params => parseCurrencyValue(params.newValue),
+          suppressHeaderContextMenu: true,
+        },
+        {
+          field: 'actions',
+          headerName: '',
+          sortable: false,
+          resizable: false,
+          cellStyle: { textAlign: 'center' },
+          suppressHeaderContextMenu: true,
+          cellRenderer: (params: { data?: { id: string } }) =>
+            params.data ? (
+              <DeleteButton
+                onClick={() => onRemoveConversion(params.data!.id)}
+                disabled={disabled}
+              />
+            ) : null,
+        },
+      ] as (ColDef | ColGroupDef)[],
+    [disabled, onRemoveConversion]
+  );
+
+  useEffect(() => {
+    if (sectionRef.current && popupParent !== sectionRef.current) {
+      setPopupParent(sectionRef.current);
+    }
+  }, [popupParent]);
 
   return (
     <section
@@ -194,90 +313,18 @@ export default function ItemPackageConversionManager({
                       animateRows={false}
                       suppressAnimationFrame={true}
                       suppressColumnMoveAnimation={true}
-                      columnDefs={
-                        [
-                          {
-                            ...createTextColumn({
-                              field: 'unit.name',
-                              headerName: 'Turunan',
-                              minWidth: 130,
-                              maxWidth: 170,
-                            }),
-                            width: 140,
-                            suppressSizeToFit: true,
-                          },
-                          {
-                            ...createTextColumn({
-                              field: 'conversion_rate',
-                              headerName: 'Konversi',
-                              minWidth: 130,
-                              maxWidth: 180,
-                              cellStyle: { textAlign: 'center' },
-                            }),
-                            width: 140,
-                            suppressSizeToFit: true,
-                          },
-                          {
-                            ...createCurrencyColumn({
-                              field: 'base_price',
-                              headerName: 'H. Pokok',
-                              minWidth: 120,
-                              maxWidth: 170,
-                            }),
-                            width: 130,
-                            suppressSizeToFit: true,
-                          },
-                          {
-                            ...createCurrencyColumn({
-                              field: 'sell_price',
-                              headerName: 'H. Jual',
-                              minWidth: 120,
-                              maxWidth: 170,
-                            }),
-                            width: 130,
-                            suppressSizeToFit: true,
-                            editable: !disabled,
-                            valueParser: params =>
-                              parseCurrencyValue(params.newValue),
-                          },
-                          {
-                            field: 'actions',
-                            headerName: '',
-                            minWidth: 64,
-                            maxWidth: 64,
-                            width: 64,
-                            suppressSizeToFit: true,
-                            sortable: false,
-                            resizable: false,
-                            cellStyle: { textAlign: 'center' },
-                            cellRenderer: (params: {
-                              data?: { id: string };
-                            }) =>
-                              params.data ? (
-                                <DeleteButton
-                                  onClick={() =>
-                                    onRemoveConversion(params.data!.id)
-                                  }
-                                  disabled={disabled}
-                                />
-                              ) : null,
-                          },
-                        ] as (ColDef | ColGroupDef)[]
-                      }
+                      columnDefs={columnDefs}
                       domLayout="normal"
                       overlayNoRowsTemplate="<span class='text-slate-500'>Belum ada data konversi</span>"
                       rowClass=""
                       suppressMovableColumns={true}
+                      suppressAutoSize={true}
                       cellSelection={false}
                       rowSelection={undefined}
-                      onCellValueChanged={event => {
-                        if (event.colDef.field !== 'sell_price') return;
-                        if (!event.data) return;
-                        const nextValue = parseCurrencyValue(event.newValue);
-                        onUpdateSellPrice(event.data.id, nextValue);
-                      }}
+                      onCellValueChanged={handleCellValueChanged}
                       onCellEditingStarted={handleCellEditingStarted}
                       onCellEditingStopped={handleCellEditingStopped}
+                      popupParent={popupParent || undefined}
                       className="ag-theme-quartz h-full"
                       style={{ height: '100%' }}
                     />
