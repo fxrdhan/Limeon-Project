@@ -10,7 +10,7 @@ interface ConversionLogicProps {
   availableUnits: ItemPackage[];
   formData: PackageConversionLogicFormData;
   addPackageConversion: (
-    conversion: Omit<PackageConversion, 'id'> & {
+    conversion: Omit<PackageConversion, 'id' | 'base_price' | 'sell_price'> & {
       base_price?: number;
       sell_price?: number;
     }
@@ -73,8 +73,6 @@ export const useConversionLogic = ({
       unit_name: selectedUnit.name,
       to_unit_id: selectedUnit.id,
       conversion_rate: formData.conversion_rate,
-      base_price: 0,
-      sell_price: 0,
     });
 
     // Reset form

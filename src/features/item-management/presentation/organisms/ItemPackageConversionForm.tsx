@@ -91,6 +91,7 @@ export default function ItemPackageConversionManager({
   const gridRef = useRef<DataGridRef>(null);
   const columnStateRef = useRef<ColumnState[] | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const hasAutoSizedRef = useRef(false);
   const [popupParent, setPopupParent] = useState<HTMLElement | null>(null);
   const filteredAvailableUnits = useMemo(
     () =>
@@ -137,9 +138,15 @@ export default function ItemPackageConversionManager({
   }, []);
 
   useEffect(() => {
-    if (!isExpanded) return;
-    autoSizeAllColumns();
-  }, [autoSizeAllColumns, filteredConversions, isExpanded]);
+    if (!isExpanded) {
+      hasAutoSizedRef.current = false;
+      return;
+    }
+    if (!hasAutoSizedRef.current) {
+      autoSizeAllColumns();
+      hasAutoSizedRef.current = true;
+    }
+  }, [autoSizeAllColumns, isExpanded]);
 
   const handleFocusCapture = useCallback(() => {
     if (disabled) return;
@@ -205,6 +212,7 @@ export default function ItemPackageConversionManager({
             field: 'unit.name',
             headerName: 'Turunan',
           }),
+          enableCellChangeFlash: false,
           suppressHeaderContextMenu: true,
         },
         {
@@ -213,6 +221,7 @@ export default function ItemPackageConversionManager({
             headerName: 'Konversi',
             cellStyle: { textAlign: 'center' },
           }),
+          enableCellChangeFlash: false,
           suppressHeaderContextMenu: true,
         },
         {
@@ -220,6 +229,7 @@ export default function ItemPackageConversionManager({
             field: 'base_price',
             headerName: 'H. Pokok',
           }),
+          enableCellChangeFlash: false,
           suppressHeaderContextMenu: true,
         },
         {
@@ -227,16 +237,18 @@ export default function ItemPackageConversionManager({
             field: 'sell_price',
             headerName: 'H. Jual',
           }),
+          enableCellChangeFlash: false,
           editable: !disabled,
           valueParser: params => parseCurrencyValue(params.newValue),
           suppressHeaderContextMenu: true,
         },
         {
           field: 'actions',
-          headerName: '',
+          headerName: 'Aksi',
           sortable: false,
           resizable: false,
           cellStyle: { textAlign: 'center' },
+          enableCellChangeFlash: false,
           suppressHeaderContextMenu: true,
           cellRenderer: (params: { data?: { id: string } }) =>
             params.data ? (
@@ -317,6 +329,7 @@ export default function ItemPackageConversionManager({
                       domLayout="normal"
                       overlayNoRowsTemplate="<span class='text-slate-500'>Belum ada data konversi</span>"
                       rowClass=""
+                      getRowId={params => params.data?.id}
                       suppressMovableColumns={true}
                       suppressAutoSize={true}
                       cellSelection={false}

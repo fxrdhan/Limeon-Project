@@ -77,9 +77,52 @@ export const useItemModalRealtime = ({
           if (payload.new && payload.old) {
             // Extract only the changed fields
             const changedFields: Record<string, unknown> = {};
+            const isJsonEqual = (nextValue: unknown, prevValue: unknown) => {
+              if (nextValue === prevValue) return true;
+              if (!nextValue || !prevValue) return false;
+
+              const normalizeJson = (value: unknown) => {
+                if (typeof value !== 'string') return value;
+                try {
+                  return JSON.parse(value) as unknown;
+                } catch {
+                  return value;
+                }
+              };
+
+              const normalizedNext = normalizeJson(nextValue);
+              const normalizedPrev = normalizeJson(prevValue);
+              if (normalizedNext === normalizedPrev) return true;
+              if (
+                typeof normalizedNext !== 'object' ||
+                typeof normalizedPrev !== 'object'
+              ) {
+                return false;
+              }
+
+              try {
+                return (
+                  JSON.stringify(normalizedNext) ===
+                  JSON.stringify(normalizedPrev)
+                );
+              } catch {
+                return false;
+              }
+            };
+
             Object.keys(payload.new).forEach(key => {
-              if (payload.new[key] !== payload.old?.[key]) {
-                changedFields[key] = payload.new[key];
+              const nextValue = payload.new[key];
+              const prevValue = payload.old?.[key];
+
+              if (
+                key === 'package_conversions' &&
+                isJsonEqual(nextValue, prevValue)
+              ) {
+                return;
+              }
+
+              if (nextValue !== prevValue) {
+                changedFields[key] = nextValue;
               }
             });
 

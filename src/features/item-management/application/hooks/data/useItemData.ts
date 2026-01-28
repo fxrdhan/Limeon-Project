@@ -127,7 +127,34 @@ export const useItemData = ({
         ? (parsedConversionsFromData as PackageConversion[])
         : mapPackageConversions(parsedConversionsFromData, formState.packages);
 
-      formState.setInitialPackageConversions(mappedConversions);
+      const normalizedConversions = mappedConversions.map(conversion => {
+        const rate = Number(conversion.conversion_rate) || 0;
+        const baseFromDb = Number(conversion.base_price) || 0;
+        const sellFromDb = Number(conversion.sell_price) || 0;
+
+        const computedBase =
+          fetchedFormData.base_price > 0 && rate > 0
+            ? fetchedFormData.base_price / rate
+            : baseFromDb;
+        const computedSell =
+          fetchedFormData.sell_price > 0 && rate > 0
+            ? fetchedFormData.sell_price / rate
+            : sellFromDb;
+
+        return {
+          ...conversion,
+          base_price:
+            baseFromDb === 0 && fetchedFormData.base_price > 0
+              ? computedBase
+              : baseFromDb,
+          sell_price:
+            sellFromDb === 0 && fetchedFormData.sell_price > 0
+              ? computedSell
+              : sellFromDb,
+        };
+      });
+
+      formState.setInitialPackageConversions(normalizedConversions);
       formState.setDisplayBasePrice(
         formatRupiah(fetchedFormData.base_price || 0)
       );
@@ -140,7 +167,7 @@ export const useItemData = ({
       packageConversionHook.setBasePrice(fetchedFormData.base_price || 0);
       packageConversionHook.setSellPrice(fetchedFormData.sell_price || 0);
       packageConversionHook.skipNextRecalculation();
-      packageConversionHook.setConversions(mappedConversions);
+      packageConversionHook.setConversions(normalizedConversions);
     },
     [formState, packageConversionHook]
   );
@@ -236,9 +263,13 @@ function mapPackageConversions(
       packages.find(pkg => pkg.id === conv.to_unit_id) ||
       packages.find(pkg => pkg.name === conv.unit_name);
 
+    const fallbackId =
+      conv.to_unit_id || unitDetail?.id || conv.unit_name || '';
+
     return {
       id:
         conv.id ||
+        fallbackId ||
         `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
       unit_name: conv.unit_name,
       to_unit_id: unitDetail ? unitDetail.id : conv.to_unit_id || '',

@@ -63,8 +63,6 @@ describe('useConversionLogic', () => {
           unit_name: 'Tablet',
           to_unit_id: 'unit-3',
           conversion_rate: 5,
-          base_price: 0,
-          sell_price: 0,
         })
       );
     });

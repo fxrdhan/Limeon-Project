@@ -161,19 +161,16 @@ export const useAddItemFormState = ({
     type ConversionForCompare = {
       to_unit_id: string;
       conversion_rate: number;
-      base_price: number;
-      sell_price: number;
     };
 
     const mapConversionForComparison = (
       conv: PackageConversion
     ): ConversionForCompare | null => {
-      if (!conv || !conv.unit || !conv.unit.id) return null;
+      const unitId = conv?.unit?.id || conv?.to_unit_id;
+      if (!conv || !unitId) return null;
       return {
-        to_unit_id: conv.unit.id,
+        to_unit_id: unitId,
         conversion_rate: conv.conversion_rate,
-        base_price: conv.base_price,
-        sell_price: conv.sell_price,
       };
     };
 

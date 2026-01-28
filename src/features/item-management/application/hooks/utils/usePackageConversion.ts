@@ -35,7 +35,10 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
 
   const addPackageConversion = useCallback(
     (
-      packageConversion: Omit<PackageConversion, 'id'> & {
+      packageConversion: Omit<
+        PackageConversion,
+        'id' | 'base_price' | 'sell_price'
+      > & {
         base_price?: number;
         sell_price?: number;
       }
@@ -51,7 +54,10 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
           : sellPrice / packageConversion.conversion_rate;
 
       const newPackageConversion: PackageConversion = {
-        id: `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
+        id:
+          packageConversion.to_unit_id ||
+          packageConversion.unit?.id ||
+          `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
         unit: packageConversion.unit,
         unit_name: packageConversion.unit_name,
         to_unit_id: packageConversion.to_unit_id,

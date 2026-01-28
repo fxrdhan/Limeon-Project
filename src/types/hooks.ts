@@ -11,7 +11,10 @@ export interface UsePackageConversionReturn {
   sellPrice: number;
   setSellPrice: React.Dispatch<React.SetStateAction<number>>;
   addPackageConversion: (
-    packageConversion: Omit<PackageConversion, 'id'> & {
+    packageConversion: Omit<
+      PackageConversion,
+      'id' | 'base_price' | 'sell_price'
+    > & {
       base_price?: number;
       sell_price?: number;
     }

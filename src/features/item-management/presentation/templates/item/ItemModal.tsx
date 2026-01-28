@@ -191,21 +191,44 @@ const ItemModal: React.FC<ItemModalProps> = ({
                 name: conversion.unit_name || 'Unknown Unit',
               };
 
+          const fallbackId =
+            conversion.to_unit_id || fallbackUnit.id || conversion.unit_name;
+          const rate = Number(conversion.conversion_rate) || 0;
+          const baseFromDb = Number(conversion.base_price) || 0;
+          const sellFromDb = Number(conversion.sell_price) || 0;
+
+          const computedBase =
+            packageConversionHook.basePrice > 0 && rate > 0
+              ? packageConversionHook.basePrice / rate
+              : baseFromDb;
+          const computedSell =
+            packageConversionHook.sellPrice > 0 && rate > 0
+              ? packageConversionHook.sellPrice / rate
+              : sellFromDb;
+
           return {
             id:
               conversion.id ||
+              fallbackId ||
               `${Date.now().toString()}-${Math.random()
                 .toString(36)
                 .slice(2, 9)}`,
             unit_name: conversion.unit_name,
             to_unit_id: fallbackUnit.id,
             unit: { id: fallbackUnit.id, name: fallbackUnit.name },
-            conversion_rate: conversion.conversion_rate || 0,
-            base_price: conversion.base_price || 0,
-            sell_price: conversion.sell_price || 0,
+            conversion_rate: rate,
+            base_price:
+              baseFromDb === 0 && packageConversionHook.basePrice > 0
+                ? computedBase
+                : baseFromDb,
+            sell_price:
+              sellFromDb === 0 && packageConversionHook.sellPrice > 0
+                ? computedSell
+                : sellFromDb,
           };
         });
 
+        packageConversionHook.skipNextRecalculation();
         packageConversionHook.setConversions(mappedConversions);
         setInitialPackageConversions(mappedConversions);
       }
