@@ -20,7 +20,6 @@ import { useConfirmDialog } from '@/components/dialog-box';
 import { Card } from '@/components/card';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
 import { TbEdit, TbEye, TbFileUpload, TbPlus, TbTrash } from 'react-icons/tb';
 import {
   useQuery,
@@ -30,6 +29,7 @@ import {
 } from '@tanstack/react-query';
 import { useFieldFocus } from '@/hooks/forms/fieldFocus';
 import { getSearchState } from '@/utils/search';
+import { purchasesService } from '@/services/api/purchases.service';
 
 interface Purchase {
   id: string;
@@ -40,7 +40,7 @@ interface Purchase {
   payment_method: string;
   supplier: {
     name: string;
-  };
+  } | null;
 }
 
 const PurchaseList = () => {
@@ -92,46 +92,17 @@ const PurchaseList = () => {
     limit: number
   ) => {
     try {
-      let query = supabase.from('purchases').select(`
-                    id,
-                    invoice_number,
-                    date,
-                    total,
-                    payment_status,
-                    payment_method,
-                    supplier_id,
-                    supplier:suppliers(name)
-                `);
+      const { data, error } = await purchasesService.getPaginatedPurchases({
+        page,
+        limit,
+        searchTerm,
+      });
 
-      let countQuery = supabase
-        .from('purchases')
-        .select('id', { count: 'exact' });
-
-      if (searchTerm) {
-        query = query.ilike('invoice_number', `%${searchTerm}%`);
-        countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
+      if (error || !data) {
+        throw error ?? new Error('Gagal memuat data pembelian');
       }
 
-      const { count, error: countError } = await countQuery;
-      if (countError) throw countError;
-
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-
-      const { data, error } = await query
-        .order('date', { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
-
-      const transformedData =
-        data?.map(item => ({
-          ...item,
-          supplier: Array.isArray(item.supplier)
-            ? item.supplier[0]
-            : item.supplier,
-        })) || [];
-      return { purchases: transformedData, totalItems: count || 0 };
+      return data;
     } catch (error) {
       console.error('Error fetching purchases:', error);
       throw error;
@@ -155,12 +126,8 @@ const PurchaseList = () => {
 
   const deletePurchaseMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc(
-        'delete_purchase_with_stock_restore',
-        {
-          p_purchase_id: id,
-        }
-      );
+      const { error } =
+        await purchasesService.deletePurchaseWithStockRestore(id);
 
       if (error) throw error;
     },

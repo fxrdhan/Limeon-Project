@@ -10,7 +10,6 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
-import { supabase } from '@/lib/supabase';
 import { compressImageIfNeeded } from '@/utils/image';
 import { extractNumericValue } from '@/lib/formatters';
 import { QueryKeys } from '@/constants/queryKeys';
@@ -23,7 +22,7 @@ import {
   removeCachedImageSet,
   setCachedImageSet,
 } from '@/utils/imageCache';
-import { StorageService } from '@/utils/storage';
+import { StorageService } from '@/services/api/storage.service';
 import {
   useItemForm,
   useItemModal,
@@ -36,6 +35,8 @@ import { useItemPriceCalculations } from '../../application/hooks/utils/useItemP
 import { usePackageConversionLogic } from '../../application/hooks/utils/useConversionLogic';
 import { useCustomerLevels } from '../../application/hooks/data';
 import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
+import { itemDataService } from '../../infrastructure/itemData.service';
+import { itemStorageService } from '../../infrastructure/itemStorage.service';
 
 // Child components
 import { ItemFormHeader } from '../molecules';
@@ -81,10 +82,7 @@ const updateItemFields = async (
   itemId: string,
   updates: Record<string, unknown>
 ) => {
-  const { error } = await supabase
-    .from('items')
-    .update(updates)
-    .eq('id', itemId);
+  const { error } = await itemDataService.updateItemFields(itemId, updates);
   if (error) throw error;
 };
 
@@ -919,10 +917,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const updateItemImagesInDatabase = useCallback(
     async (urls: string[]) => {
       if (!itemId) return;
-      await supabase
-        .from('items')
-        .update({ image_urls: urls })
-        .eq('id', itemId);
+      await itemDataService.updateItemImages(itemId, urls);
       updateFormData({ image_urls: urls });
       queryClient.setQueriesData(
         { queryKey: QueryKeys.items.all },
@@ -999,12 +994,10 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
     const loadItemImages = async () => {
       setIsLoadingImages(true);
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .list(`items/${itemId}`, {
-          limit: 20,
-          sortBy: { column: 'name', order: 'asc' },
-        });
+      const { data, error } = await itemStorageService.listItemImages(
+        bucketName,
+        itemId
+      );
 
       if (!isMounted) return;
 
@@ -1173,13 +1166,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         }
 
         const path = `items/${itemId}/slot-${slotIndex}`;
-        const { error } = await supabase.storage
-          .from(bucketName)
-          .upload(path, normalizedFile, {
-            cacheControl: '3600',
-            upsert: true,
-            contentType: normalizedFile.type,
-          });
+        const { error } = await itemStorageService.uploadItemImage({
+          bucketName,
+          path,
+          file: normalizedFile,
+          contentType: normalizedFile.type,
+        });
 
         if (error) {
           toast.error('Gagal mengunggah gambar.');

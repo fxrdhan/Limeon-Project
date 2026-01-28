@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { StorageService } from '@/utils/storage';
+import { StorageService } from '@/services/api/storage.service';
 import type { Session, User, AuthError } from '@supabase/supabase-js';
 import type { UserDetails } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';

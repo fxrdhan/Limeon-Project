@@ -1,19 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import toast from 'react-hot-toast';
 import type { ItemDosage } from '@/types/database';
+import { itemDosageService } from '@/services/api/masterData.service';
 
 // Simple dosages hook without realtime
 export const useDosages = ({ enabled = true }: { enabled?: boolean } = {}) => {
   return useQuery<ItemDosage[]>({
     queryKey: QueryKeys.masterData.dosages.list(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('item_dosages')
-        .select('id, code, name, nci_code, description, created_at, updated_at')
-        .order('code');
-
+      const { data, error } = await itemDosageService.getActiveDosages();
       if (error) throw error;
       return data || [];
     },
@@ -28,11 +24,7 @@ export const useDosagesRealtime = ({
   return useQuery<ItemDosage[]>({
     queryKey: QueryKeys.masterData.dosages.list(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('item_dosages')
-        .select('id, code, name, nci_code, description, created_at, updated_at')
-        .order('code');
-
+      const { data, error } = await itemDosageService.getActiveDosages();
       if (error) throw error;
       return data || [];
     },
@@ -50,11 +42,7 @@ export const useDosageMutations = () => {
       name: string;
       description: string;
     }) => {
-      const { data, error } = await supabase
-        .from('item_dosages')
-        .insert([dosageData])
-        .select()
-        .single();
+      const { data, error } = await itemDosageService.create(dosageData);
 
       if (error) throw error;
       return data;
@@ -77,12 +65,7 @@ export const useDosageMutations = () => {
       id,
       ...updateData
     }: { id: string } & Partial<ItemDosage>) => {
-      const { data, error } = await supabase
-        .from('item_dosages')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await itemDosageService.update(id, updateData);
 
       if (error) throw error;
       return data;
@@ -102,10 +85,7 @@ export const useDosageMutations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('item_dosages')
-        .delete()
-        .eq('id', id);
+      const { error } = await itemDosageService.delete(id);
 
       if (error) throw error;
     },

@@ -23,7 +23,7 @@ import {
   useQueryClient,
   type UseQueryOptions,
 } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { GenericEntityService } from '@/services/api/genericEntity.service';
 import {
   type EntityTypeKey,
   type AnyEntity,
@@ -63,6 +63,7 @@ export function createEntityQuery<
   TEntity extends AnyEntity,
 >(entityType: TEntityType) {
   const config = getQueryConfig(entityType);
+  const service = new GenericEntityService<TEntity>(config.tableName);
 
   return function useGenericEntityQuery(
     options: GenericQueryOptions = {},
@@ -75,21 +76,15 @@ export function createEntityQuery<
       queryFn: async () => {
         // Apply custom field selection or use default
         const selectFields = select ? select.join(', ') : config.selectFields;
-        let query = supabase.from(config.tableName).select(selectFields);
-
-        // Apply filters if provided
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            query = query.eq(key, value);
-          }
-        });
 
         // Apply ordering
         const orderByField = orderBy?.column || config.orderByField;
         const ascending = orderBy?.ascending ?? true;
-        query = query.order(orderByField, { ascending });
-
-        const { data, error } = await query;
+        const { data, error } = await service.list({
+          select: selectFields,
+          filters,
+          orderBy: { column: orderByField, ascending },
+        });
 
         if (error) {
           console.error(`Error fetching ${config.entityDisplayName}:`, error);
@@ -169,6 +164,7 @@ export function createEntityMutations<
   TUpdateInput extends AnyUpdateInput,
 >(entityType: TEntityType) {
   const config = getMutationConfig(entityType);
+  const service = new GenericEntityService<TEntity>(config.tableName);
 
   // Note: queryClient is obtained inside individual hooks, not at factory level
 
@@ -181,11 +177,10 @@ export function createEntityMutations<
 
     return useMutation({
       mutationFn: async (input: TCreateInput) => {
-        const { data, error } = await supabase
-          .from(config.tableName)
-          .insert(input)
-          .select(config.selectFields)
-          .single();
+        const { data, error } = await service.create(
+          input as Record<string, unknown>,
+          config.selectFields
+        );
 
         if (error) {
           console.error(`Error creating ${config.entityDisplayName}:`, error);
@@ -221,12 +216,11 @@ export function createEntityMutations<
           unknown
         >;
 
-        const { data, error } = await supabase
-          .from(config.tableName)
-          .update(updateData)
-          .eq('id', id)
-          .select(config.selectFields)
-          .single();
+        const { data, error } = await service.update(
+          id,
+          updateData,
+          config.selectFields
+        );
 
         if (error) {
           console.error(`Error updating ${config.entityDisplayName}:`, error);
@@ -257,10 +251,7 @@ export function createEntityMutations<
 
     return useMutation({
       mutationFn: async (id: string) => {
-        const { error } = await supabase
-          .from(config.tableName)
-          .delete()
-          .eq('id', id);
+        const { error } = await service.delete(id);
 
         if (error) {
           console.error(`Error deleting ${config.entityDisplayName}:`, error);

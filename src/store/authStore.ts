@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import authService from '@/services/authService';
-import { StorageService } from '@/utils/storage';
+import { StorageService } from '@/services/api/storage.service';
 import type { AuthState } from '@/types';
 
 export const useAuthStore = create<AuthState>((set, get) => ({

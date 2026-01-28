@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
@@ -14,24 +13,12 @@ import {
   getCachedImageBlobUrl,
   setCachedImage,
 } from '@/utils/imageCache';
-
-interface ChatMessage {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  channel_id: string | null;
-  message: string;
-  message_type: 'text' | 'image' | 'file';
-  created_at: string;
-  updated_at: string;
-  is_read: boolean;
-  reply_to_id: string | null;
-  // Virtual fields for display
-  sender_name?: string;
-  receiver_name?: string;
-  // Stable key for consistent animation during optimistic updates
-  stableKey?: string;
-}
+import {
+  chatService,
+  type ChatMessage,
+  type UserPresence,
+} from '@/services/api/chat.service';
+import { realtimeService } from '@/services/realtime/realtime.service';
 
 interface ChatPortalProps {
   isOpen: boolean;
@@ -56,13 +43,6 @@ const generateChannelId = (userId1: string, userId2: string): string => {
   const sortedIds = [userId1, userId2].sort();
   return `dm_${sortedIds[0]}_${sortedIds[1]}`;
 };
-
-interface UserPresence {
-  user_id: string;
-  is_online: boolean;
-  last_seen: string;
-  current_chat_channel: string | null;
-}
 
 const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [message, setMessage] = useState('');
@@ -168,16 +148,12 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('user_presence')
-        .update({
-          is_online: false,
-          current_chat_channel: null,
-          last_seen: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
-        .select();
+      const { error } = await chatService.updateUserPresence(user.id, {
+        is_online: false,
+        current_chat_channel: null,
+        last_seen: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) {
         console.error('❌ Error updating user chat close:', error);
@@ -310,30 +286,24 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
     try {
       // First try to update existing record
-      const { data: updateData, error: updateError } = await supabase
-        .from('user_presence')
-        .update({
+      const { data: updateData, error: updateError } =
+        await chatService.updateUserPresence(user.id, {
           is_online: true,
           current_chat_channel: currentChannelId,
           last_seen: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
-        .select();
+        });
 
       if (updateError || !updateData || updateData.length === 0) {
         // If update failed or no rows affected, try insert
 
-        const { error: insertError } = await supabase
-          .from('user_presence')
-          .insert({
-            user_id: user.id,
-            is_online: true,
-            current_chat_channel: currentChannelId,
-            last_seen: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select();
+        const { error: insertError } = await chatService.insertUserPresence({
+          user_id: user.id,
+          is_online: true,
+          current_chat_channel: currentChannelId,
+          last_seen: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (insertError) {
           console.error('❌ Error inserting user presence:', insertError);
@@ -370,11 +340,9 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     if (!targetUser) return;
 
     try {
-      const { data: presence, error } = await supabase
-        .from('user_presence')
-        .select('user_id, is_online, last_seen, current_chat_channel')
-        .eq('user_id', targetUser.id)
-        .single();
+      const { data: presence, error } = await chatService.getUserPresence(
+        targetUser.id
+      );
 
       if (error && error.code !== 'PGRST116') {
         // PGRST116 = no rows returned
@@ -414,13 +382,8 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       setLoading(true);
       try {
         // Fetch existing messages (simplified query without JOIN)
-        const { data: existingMessages, error } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .or(
-            `and(sender_id.eq.${user.id},receiver_id.eq.${targetUser.id}),and(sender_id.eq.${targetUser.id},receiver_id.eq.${user.id})`
-          )
-          .order('created_at', { ascending: true });
+        const { data: existingMessages, error } =
+          await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
 
         if (error) {
           console.error('Error loading messages:', error);
@@ -461,15 +424,18 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     const setupRealtimeSubscription = () => {
       // Clean up existing channel if any
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        realtimeService.removeChannel(channelRef.current);
       }
 
       // Create new channel for this conversation
-      const channel = supabase.channel(`chat_${currentChannelId}`, {
-        config: {
-          broadcast: { self: true },
-        },
-      });
+      const channel = realtimeService.createChannel(
+        `chat_${currentChannelId}`,
+        {
+          config: {
+            broadcast: { self: true },
+          },
+        }
+      );
 
       // Subscribe to broadcast events
       channel.on('broadcast', { event: 'new_message' }, payload => {
@@ -519,15 +485,18 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     const setupPresenceSubscription = () => {
       // Clean up existing presence channel if any
       if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current);
+        realtimeService.removeChannel(presenceChannelRef.current);
       }
 
       // Create presence channel
-      const presenceChannel = supabase.channel('user_presence_changes', {
-        config: {
-          broadcast: { self: false },
-        },
-      });
+      const presenceChannel = realtimeService.createChannel(
+        'user_presence_changes',
+        {
+          config: {
+            broadcast: { self: false },
+          },
+        }
+      );
 
       // Subscribe to presence changes
       presenceChannel.on(
@@ -558,11 +527,11 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     const setupGlobalPresenceSubscription = () => {
       // Clean up existing global presence channel if any
       if (globalPresenceChannelRef.current) {
-        supabase.removeChannel(globalPresenceChannelRef.current);
+        realtimeService.removeChannel(globalPresenceChannelRef.current);
       }
 
       // Create GLOBAL presence channel that ALL users subscribe to
-      const globalPresenceChannel = supabase.channel(
+      const globalPresenceChannel = realtimeService.createChannel(
         'global_presence_updates',
         {
           config: {
@@ -623,15 +592,15 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     // Cleanup function
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
       }
       if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current);
+        realtimeService.removeChannel(presenceChannelRef.current);
         presenceChannelRef.current = null;
       }
       if (globalPresenceChannelRef.current) {
-        supabase.removeChannel(globalPresenceChannelRef.current);
+        realtimeService.removeChannel(globalPresenceChannelRef.current);
         globalPresenceChannelRef.current = null;
       }
       if (presenceRefreshIntervalRef.current) {
@@ -665,7 +634,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       // Clean up global presence channel LAST (after broadcast)
       setTimeout(() => {
         if (globalPresenceChannelRef.current) {
-          supabase.removeChannel(globalPresenceChannelRef.current);
+          realtimeService.removeChannel(globalPresenceChannelRef.current);
           globalPresenceChannelRef.current = null;
         }
       }, 200);
@@ -819,15 +788,13 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     if (messageId.startsWith('temp_')) return;
 
     try {
-      const { data: updatedMessage, error } = await supabase
-        .from('chat_messages')
-        .update({
+      const { data: updatedMessage, error } = await chatService.updateMessage(
+        messageId,
+        {
           message: updatedText,
           updated_at: updatedAt,
-        })
-        .eq('id', messageId)
-        .select()
-        .single();
+        }
+      );
 
       if (error) {
         console.error('Error updating message:', error);
@@ -872,10 +839,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     if (targetMessage.id.startsWith('temp_')) return;
 
     try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('id', targetMessage.id);
+      const { error } = await chatService.deleteMessage(targetMessage.id);
 
       if (error) {
         console.error('Error deleting message:', error);
@@ -937,21 +901,24 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
     try {
       // Insert message into database (simplified query)
-      const { data: newMessage, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: messageText,
-          message_type: 'text',
-        })
-        .select()
-        .single();
+      const { data: newMessage, error } = await chatService.insertMessage({
+        sender_id: user.id,
+        receiver_id: targetUser.id,
+        channel_id: currentChannelId,
+        message: messageText,
+        message_type: 'text',
+      });
 
       if (error) {
         console.error('Error sending message:', error);
         // Remove optimistic message and restore input
+        setMessages(prev => prev.filter(msg => msg.id !== tempId));
+        setMessage(messageText);
+        return;
+      }
+
+      if (!newMessage) {
+        console.error('Error sending message: missing response data');
         setMessages(prev => prev.filter(msg => msg.id !== tempId));
         setMessage(messageText);
         return;

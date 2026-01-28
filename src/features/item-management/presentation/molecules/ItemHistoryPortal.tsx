@@ -4,11 +4,11 @@ import { createPortal } from 'react-dom';
 import { Transition, TransitionChild } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import HistoryTimelineList from '../organisms/HistoryTimelineList';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
 import Button from '@/components/button';
 import { TbAlertTriangle, TbArrowBackUp, TbClock } from 'react-icons/tb';
+import { itemHistoryService } from '../../infrastructure/itemHistory.service';
 
 interface HistoryItem {
   id: string;
@@ -147,21 +147,19 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
       }
 
       if (restoreMode === 'hard') {
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
-          'hard_rollback_entity',
-          {
-            p_entity_table: entityTable,
-            p_entity_id: entityId,
-            p_target_version: restoreTargetVersion,
-          }
-        );
+        const { data: rpcData, error: rpcError } =
+          await itemHistoryService.hardRollbackEntity({
+            entityTable,
+            entityId,
+            targetVersion: restoreTargetVersion,
+          });
 
         if (rpcError) {
           throw new Error(`Hard rollback failed: ${rpcError.message}`);
         }
 
         toast.success(
-          `Berhasil menghapus ${rpcData.deleted_count} versi setelah v${restoreTargetVersion}`
+          `Berhasil menghapus ${rpcData?.deleted_count ?? 0} versi setelah v${restoreTargetVersion}`
         );
       } else {
         const restoreData = { ...targetVersion.entity_data };
@@ -169,13 +167,12 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
         delete restoreData.created_at;
         delete restoreData.updated_at;
 
-        const { error: updateError } = await supabase
-          .from(entityTable)
-          .update({
-            ...restoreData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', entityId);
+        const { error: updateError } =
+          await itemHistoryService.softRestoreEntity({
+            entityTable,
+            entityId,
+            restoreData,
+          });
 
         if (updateError) {
           throw new Error(updateError.message);

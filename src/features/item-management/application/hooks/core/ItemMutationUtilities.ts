@@ -12,11 +12,18 @@
  * - Complex item save/update logic
  */
 
-import { supabase } from '@/lib/supabase';
 import { logger } from '@/utils/logger';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
 import type { CustomerLevelDiscount } from '@/types/database';
 import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
+import {
+  categoryService,
+  itemDosageService,
+  itemManufacturerService,
+  itemPackageService,
+  medicineTypeService,
+} from '@/services/api/masterData.service';
+import { itemDataService } from '../../../infrastructure/itemData.service';
 
 // ============================================================================
 // ITEM DATA PREPARATION UTILITIES
@@ -105,26 +112,11 @@ const syncCustomerLevelDiscounts = async (
 
   const normalizedDiscounts = normalizeCustomerLevelDiscounts(discounts);
 
-  const { error: deleteError } = await supabase
-    .from('customer_level_discounts')
-    .delete()
-    .eq('item_id', itemId);
-
-  if (deleteError) throw deleteError;
-
-  if (!normalizedDiscounts.length) return;
-
-  const insertPayload = normalizedDiscounts.map(discount => ({
-    item_id: itemId,
-    customer_level_id: discount.customer_level_id,
-    discount_percentage: discount.discount_percentage,
-  }));
-
-  const { error: insertError } = await supabase
-    .from('customer_level_discounts')
-    .insert(insertPayload);
-
-  if (insertError) throw insertError;
+  const { error } = await itemDataService.replaceCustomerLevelDiscounts(
+    itemId,
+    normalizedDiscounts
+  );
+  if (error) throw error;
 };
 
 /**
@@ -133,13 +125,14 @@ const syncCustomerLevelDiscounts = async (
 export const checkExistingCodes = async (
   pattern: string
 ): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('items')
-    .select('code')
-    .like('code', pattern);
+  const { data, error } = await itemDataService.getItemCodesLike(pattern);
 
   if (error) throw error;
-  return data?.map(item => item.code).filter(Boolean) || [];
+  return (
+    data
+      ?.map(item => item.code)
+      .filter((code): code is string => Boolean(code)) || []
+  );
 };
 
 /**
@@ -151,31 +144,11 @@ export const generateItemCode = async (
   // Fetch codes for all related entities
   const [categoryData, typeData, packageData, dosageData, manufacturerData] =
     await Promise.all([
-      supabase
-        .from('item_categories')
-        .select('code')
-        .eq('id', formData.category_id)
-        .single(),
-      supabase
-        .from('item_types')
-        .select('code')
-        .eq('id', formData.type_id)
-        .single(),
-      supabase
-        .from('item_packages')
-        .select('code')
-        .eq('id', formData.package_id)
-        .single(),
-      supabase
-        .from('item_dosages')
-        .select('code')
-        .eq('id', formData.dosage_id)
-        .single(),
-      supabase
-        .from('item_manufacturers')
-        .select('code')
-        .eq('id', formData.manufacturer_id)
-        .single(),
+      categoryService.getById(formData.category_id, 'code'),
+      medicineTypeService.getById(formData.type_id, 'code'),
+      itemPackageService.getById(formData.package_id, 'code'),
+      itemDosageService.getById(formData.dosage_id, 'code'),
+      itemManufacturerService.getById(formData.manufacturer_id, 'code'),
     ]);
 
   // Build base code from components
@@ -265,10 +238,10 @@ export const saveItemBusinessLogic = async ({
       baseUnit,
       true
     );
-    const { error: updateError } = await supabase
-      .from('items')
-      .update(itemUpdateData)
-      .eq('id', itemId);
+    const { error: updateError } = await itemDataService.updateItemFields(
+      itemId,
+      itemUpdateData as Record<string, unknown>
+    );
     if (updateError) throw updateError;
 
     logger.debug('Item update acknowledged by Supabase', {
@@ -308,11 +281,8 @@ export const saveItemBusinessLogic = async ({
       baseUnit,
       false
     );
-    const { data: insertedItem, error: mainError } = await supabase
-      .from('items')
-      .insert(mainItemData)
-      .select('id')
-      .single();
+    const { data: insertedItem, error: mainError } =
+      await itemDataService.createItem(mainItemData as Record<string, unknown>);
     if (mainError) throw mainError;
     if (!insertedItem) {
       throw new Error('Gagal mendapatkan ID item baru setelah insert.');
@@ -347,20 +317,20 @@ export const saveEntityHelpers = {
     description?: string;
     address?: string;
   }) {
-    const { data: newCategory, error } = await supabase
-      .from('item_categories')
-      .insert(categoryData)
-      .select('id, code, name, description, created_at, updated_at')
-      .single();
+    const { data: newCategory, error } =
+      await categoryService.create(categoryData);
 
     if (error) throw new Error('Gagal menyimpan kategori baru.');
 
-    const { data: updatedCategories } = await supabase
-      .from('item_categories')
-      .select('id, code, name, description, created_at, updated_at')
-      .order('name');
+    const { data: updatedCategories } = await categoryService.getAll({
+      select: 'id, code, name, description, created_at, updated_at',
+      orderBy: { column: 'name', ascending: true },
+    });
 
-    return { newCategory, updatedCategories: updatedCategories || [] };
+    return {
+      newCategory: newCategory ?? undefined,
+      updatedCategories: updatedCategories || [],
+    };
   },
 
   async saveType(typeData: {
@@ -369,20 +339,16 @@ export const saveEntityHelpers = {
     description?: string;
     address?: string;
   }) {
-    const { data: newType, error } = await supabase
-      .from('item_types')
-      .insert(typeData)
-      .select('id, code, name, description, created_at, updated_at')
-      .single();
+    const { data: newType, error } = await medicineTypeService.create(typeData);
 
     if (error) throw new Error('Gagal menyimpan jenis item baru.');
 
-    const { data: updatedTypes } = await supabase
-      .from('item_types')
-      .select('id, code, name, description, created_at, updated_at')
-      .order('name');
+    const { data: updatedTypes } = await medicineTypeService.getAll({
+      select: 'id, code, name, description, created_at, updated_at',
+      orderBy: { column: 'name', ascending: true },
+    });
 
-    return { newType, updatedTypes: updatedTypes || [] };
+    return { newType: newType ?? undefined, updatedTypes: updatedTypes || [] };
   },
 
   async saveUnit(unitData: {
@@ -390,20 +356,19 @@ export const saveEntityHelpers = {
     name: string;
     description?: string;
   }) {
-    const { data: newUnit, error } = await supabase
-      .from('item_units')
-      .insert(unitData)
-      .select('id, code, name, description, created_at, updated_at')
-      .single();
+    const { data: newUnit, error } = await itemPackageService.create(unitData);
 
     if (error) throw new Error('Gagal menyimpan satuan baru.');
 
-    const { data: updatedUnits } = await supabase
-      .from('item_units')
-      .select('id, code, name, description, created_at, updated_at')
-      .order('name');
+    const { data: updatedPackages } = await itemPackageService.getAll({
+      select: 'id, code, name, description, created_at, updated_at',
+      orderBy: { column: 'name', ascending: true },
+    });
 
-    return { newUnit, updatedUnits: updatedUnits || [] };
+    return {
+      newUnit: newUnit ?? undefined,
+      updatedPackages: updatedPackages || [],
+    };
   },
 
   async saveDosage(dosageData: {
@@ -412,20 +377,20 @@ export const saveEntityHelpers = {
     description?: string;
     address?: string;
   }) {
-    const { data: newDosage, error } = await supabase
-      .from('item_dosages')
-      .insert(dosageData)
-      .select('id, code, name, description, created_at, updated_at')
-      .single();
+    const { data: newDosage, error } =
+      await itemDosageService.create(dosageData);
 
     if (error) throw new Error('Gagal menyimpan sediaan baru.');
 
-    const { data: updatedDosages } = await supabase
-      .from('item_dosages')
-      .select('id, code, name, description, created_at, updated_at')
-      .order('name');
+    const { data: updatedDosages } = await itemDosageService.getAll({
+      select: 'id, code, name, description, created_at, updated_at',
+      orderBy: { column: 'name', ascending: true },
+    });
 
-    return { newDosage, updatedDosages: updatedDosages || [] };
+    return {
+      newDosage: newDosage ?? undefined,
+      updatedDosages: updatedDosages || [],
+    };
   },
 
   async saveManufacturer(manufacturerData: {
@@ -433,21 +398,20 @@ export const saveEntityHelpers = {
     name: string;
     address?: string;
   }) {
-    const { data: newManufacturer, error } = await supabase
-      .from('item_manufacturers')
-      .insert(manufacturerData)
-      .select('id, code, name, address, created_at, updated_at')
-      .single();
+    const { data: newManufacturer, error } =
+      await itemManufacturerService.create(manufacturerData);
 
     if (error) throw new Error('Gagal menyimpan produsen baru.');
 
-    const { data: updatedManufacturers } = await supabase
-      .from('item_manufacturers')
-      .select('id, code, name, address, created_at, updated_at')
-      .order('name');
+    const { data: updatedManufacturers } = await itemManufacturerService.getAll(
+      {
+        select: 'id, code, name, address, created_at, updated_at',
+        orderBy: { column: 'name', ascending: true },
+      }
+    );
 
     return {
-      newManufacturer,
+      newManufacturer: newManufacturer ?? undefined,
       updatedManufacturers: updatedManufacturers || [],
     };
   },

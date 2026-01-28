@@ -1,10 +1,10 @@
 import Button from '@/components/button';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/card';
 import { TbCheck, TbPencil, TbX } from 'react-icons/tb';
 import type { CompanyProfile, ProfileKey } from '@/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { companyProfileService } from '@/services/api/companyProfile.service';
 
 const Profile = () => {
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
@@ -14,14 +14,8 @@ const Profile = () => {
   const queryClient = useQueryClient();
 
   const fetchProfile = async () => {
-    const { data, error } = await supabase
-      .from('company_profiles')
-      .select('*')
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new Error(error.message);
-    }
+    const { data, error } = await companyProfileService.getProfile();
+    if (error) throw new Error(error.message);
     return data;
   };
 
@@ -59,10 +53,11 @@ const Profile = () => {
       if (!profile?.id)
         throw new Error('Profil ID tidak ditemukan untuk diperbarui.');
 
-      const { error } = await supabase
-        .from('company_profiles')
-        .update({ [field]: value === '' ? null : value })
-        .eq('id', profile.id);
+      const { error } = await companyProfileService.updateProfileField(
+        profile.id,
+        field,
+        value
+      );
 
       if (error) throw new Error(error.message);
     },
@@ -222,14 +217,10 @@ const Profile = () => {
 
   async function createProfile() {
     try {
-      const { data, error } = await supabase
-        .from('company_profiles')
-        .insert({
-          name: 'Nama Apotek/Klinik Anda',
-          address: 'Alamat Lengkap Apotek/Klinik Anda',
-        })
-        .select()
-        .single();
+      const { data, error } = await companyProfileService.createProfile({
+        name: 'Nama Apotek/Klinik Anda',
+        address: 'Alamat Lengkap Apotek/Klinik Anda',
+      });
 
       if (error) {
         console.error('Error creating profile:', error);

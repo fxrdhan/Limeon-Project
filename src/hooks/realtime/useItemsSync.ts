@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { realtimeService } from '@/services/realtime/realtime.service';
 
 interface ItemsSyncOptions {
   enabled?: boolean;
@@ -12,7 +13,7 @@ interface ItemsSyncOptions {
  */
 // Global ref to prevent multiple instances across all hook instances
 let globalSetupRef = false;
-let globalChannelRef: ReturnType<typeof supabase.channel> | null = null;
+let globalChannelRef: RealtimeChannel | null = null;
 
 export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
   const queryClient = useQueryClient();
@@ -77,8 +78,8 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
       // ];
       const channelName = 'item-master-realtime';
 
-      const channel = supabase
-        .channel(channelName)
+      const channel = realtimeService
+        .createChannel(channelName)
         .on(
           'postgres_changes',
           {
@@ -162,7 +163,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
       if (globalChannelRef) {
         try {
           globalChannelRef.unsubscribe();
-          supabase.removeChannel(globalChannelRef);
+          realtimeService.removeChannel(globalChannelRef);
         } catch {
           // Ignore cleanup errors
         }

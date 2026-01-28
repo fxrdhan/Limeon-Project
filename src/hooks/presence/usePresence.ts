@@ -1,9 +1,10 @@
-import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import type { OnlineUser } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useCallback, useEffect, useRef } from 'react';
+import { usersService } from '@/services/api/users.service';
+import { realtimeService } from '@/services/realtime/realtime.service';
 
 // Helper function to count unique users from presence state
 const countUniqueUsers = (presenceState: Record<string, unknown>) => {
@@ -51,20 +52,14 @@ const fetchOnlineUsers = async (userIds: string[]): Promise<OnlineUser[]> => {
   if (userIds.length === 0) return [];
 
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, name, email, profilephoto')
-      .in('id', userIds);
+    const { data, error } = await usersService.getUsersByIds(userIds);
 
     if (error) {
       console.error('Error fetching online users:', error);
       return [];
     }
 
-    return data.map(user => ({
-      ...user,
-      online_at: new Date().toISOString(),
-    }));
+    return data || [];
   } catch (error) {
     console.error('Error fetching online users:', error);
     return [];
@@ -122,8 +117,8 @@ export const usePresence = () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Additional null check before removing channel
-        if (currentChannel && supabase) {
-          await supabase.removeChannel(currentChannel);
+        if (currentChannel) {
+          await realtimeService.removeChannel(currentChannel);
         }
       } catch (cleanupError) {
         // Silently handle cleanup errors - they're expected during rapid cleanup cycles
@@ -159,7 +154,7 @@ export const usePresence = () => {
 
       const presenceKey = `${user.id}:${Date.now()}`;
 
-      const newChannel = supabase.channel('browser-active', {
+      const newChannel = realtimeService.createChannel('browser-active', {
         config: {
           presence: {
             key: presenceKey,

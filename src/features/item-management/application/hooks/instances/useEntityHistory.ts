@@ -1,33 +1,18 @@
-import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-interface EntityHistoryItem {
-  id: string;
-  entity_table: string;
-  entity_id: string;
-  version_number: number;
-  action_type: 'INSERT' | 'UPDATE' | 'DELETE';
-  changed_by: string | null;
-  changed_at: string;
-  entity_data: Record<string, unknown>;
-  changed_fields?: Record<string, { from: unknown; to: unknown }>;
-  change_description?: string;
-  users?: {
-    name: string;
-    profilephoto: string | null;
-  } | null;
-  user_name?: string | null;
-  user_photo?: string | null;
-}
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { realtimeService } from '@/services/realtime/realtime.service';
+import {
+  entityHistoryService,
+  type EntityHistoryItem,
+} from '../../../infrastructure/entityHistory.service';
+import { itemHistoryService } from '../../../infrastructure/itemHistory.service';
 
 export const useEntityHistory = (entityTable: string, entityId: string) => {
   const [history, setHistory] = useState<EntityHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false); // ← Start with false for seamless pre-fetch UX
   const [error, setError] = useState<string | null>(null);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const entityChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
-    null
-  );
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const entityChannelRef = useRef<RealtimeChannel | null>(null);
 
   const fetchHistory = useCallback(
     async (silent = false) => {
@@ -44,33 +29,14 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
       try {
         // Fetch entity history with user info
-        const { data, error: fetchError } = await supabase
-          .from('entity_history')
-          .select(
-            `
-            *,
-            users:changed_by (
-              name,
-              profilephoto
-            )
-          `
-          )
-          .eq('entity_table', entityTable)
-          .eq('entity_id', entityId)
-          .order('version_number', { ascending: false });
+        const { data, error: fetchError } =
+          await entityHistoryService.fetchHistory(entityTable, entityId);
 
         if (fetchError) {
           throw new Error(fetchError.message);
         }
 
-        // Transform data to flatten user info for easier access
-        const transformedData = (data || []).map(item => ({
-          ...item,
-          user_name: item.users?.name || null,
-          user_photo: item.users?.profilephoto || null,
-        }));
-
-        setHistory(transformedData);
+        setHistory(data || []);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error';
@@ -101,13 +67,13 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       delete restoreData.updated_at;
 
       // Update the current entity with restored data
-      const { error: updateError } = await supabase
-        .from(entityTable)
-        .update({
-          ...restoreData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', entityId);
+      const { error: updateError } = await itemHistoryService.softRestoreEntity(
+        {
+          entityTable,
+          entityId,
+          restoreData,
+        }
+      );
 
       if (updateError) {
         throw new Error(updateError.message);
@@ -160,27 +126,22 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
   ) => {
     try {
       // Get next version number
-      const { data: maxVersionData } = await supabase
-        .from('entity_history')
-        .select('version_number')
-        .eq('entity_table', entityTable)
-        .eq('entity_id', entityId)
-        .order('version_number', { ascending: false })
-        .limit(1);
+      const { data: nextVersion, error: versionError } =
+        await entityHistoryService.getNextVersionNumber(entityTable, entityId);
 
-      const nextVersion = (maxVersionData?.[0]?.version_number || 0) + 1;
+      if (versionError) {
+        throw new Error(versionError.message);
+      }
 
-      // Insert history entry
-      const { error: insertError } = await supabase
-        .from('entity_history')
-        .insert({
-          entity_table: entityTable,
-          entity_id: entityId,
-          version_number: nextVersion,
-          action_type: actionType,
-          entity_data: entityData,
-          changed_fields: changedFields,
-          change_description: changeDescription,
+      const { error: insertError } =
+        await entityHistoryService.insertHistoryEntry({
+          entityTable,
+          entityId,
+          versionNumber: nextVersion || 1,
+          actionType,
+          entityData,
+          changedFields,
+          changeDescription,
         });
 
       if (insertError) {
@@ -208,7 +169,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup previous subscription if exists
     if (channelRef.current) {
       channelRef.current.unsubscribe();
-      supabase.removeChannel(channelRef.current);
+      realtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
@@ -220,8 +181,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Setup realtime subscription with postgres_changes
     // NOTE: Supabase doesn't support multi-column filters like "table=eq.X,id=eq.Y"
     // So we filter by entity_table only, then check entity_id in the callback
-    const channel = supabase
-      .channel(channelName)
+    const channel = realtimeService
+      .createChannel(channelName)
       .on(
         'postgres_changes',
         {
@@ -257,7 +218,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
-        supabase.removeChannel(channelRef.current);
+        realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
@@ -274,7 +235,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup previous subscription if exists
     if (entityChannelRef.current) {
       entityChannelRef.current.unsubscribe();
-      supabase.removeChannel(entityChannelRef.current);
+      realtimeService.removeChannel(entityChannelRef.current);
       entityChannelRef.current = null;
     }
 
@@ -285,8 +246,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
     // Setup realtime subscription for entity table UPDATE events
     // This catches hard rollback which updates the entity directly via RPC
-    const entityChannel = supabase
-      .channel(entityChannelName)
+    const entityChannel = realtimeService
+      .createChannel(entityChannelName)
       .on(
         'postgres_changes',
         {
@@ -315,7 +276,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     return () => {
       if (entityChannelRef.current) {
         entityChannelRef.current.unsubscribe();
-        supabase.removeChannel(entityChannelRef.current);
+        realtimeService.removeChannel(entityChannelRef.current);
         entityChannelRef.current = null;
       }
     };

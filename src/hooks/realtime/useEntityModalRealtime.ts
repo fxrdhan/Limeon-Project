@@ -1,8 +1,9 @@
-import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useSmartFormSync } from './useSmartFormSync';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { realtimeService } from '@/services/realtime/realtime.service';
 
 interface UseEntityModalRealtimeProps {
   entityTable: string;
@@ -31,7 +32,7 @@ export const useEntityModalRealtime = ({
   onSmartUpdate,
 }: UseEntityModalRealtimeProps) => {
   const queryClient = useQueryClient();
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<string>('');
 
   // Use refs to store latest callbacks without triggering effect re-runs
@@ -63,8 +64,8 @@ export const useEntityModalRealtime = ({
 
     const channelName = `entity-modal-${entityTable}-${entityId}`;
 
-    const channel = supabase
-      .channel(channelName)
+    const channel = realtimeService
+      .createChannel(channelName)
       .on(
         'postgres_changes',
         {
@@ -140,7 +141,7 @@ export const useEntityModalRealtime = ({
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
-        supabase.removeChannel(channelRef.current);
+        realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

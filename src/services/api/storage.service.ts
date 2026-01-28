@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { compressImageIfNeeded } from './image';
+import { compressImageIfNeeded } from '@/utils/image';
 
 export interface UploadResult {
   path: string;

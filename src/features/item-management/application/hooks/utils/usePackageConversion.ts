@@ -1,7 +1,7 @@
-import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import type { PackageConversion, UsePackageConversionReturn } from '@/types';
 import type { ItemPackage } from '@/types/database';
+import { itemPackageService } from '@/services/api/masterData.service';
 
 export const usePackageConversion = (): UsePackageConversionReturn => {
   const [baseUnit, setBaseUnit] = useState<string>('');
@@ -20,10 +20,10 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
 
   useEffect(() => {
     const fetchUnits = async () => {
-      const { data } = await supabase
-        .from('item_packages')
-        .select('id, name, description, updated_at')
-        .order('name');
+      const { data } = await itemPackageService.getAll({
+        select: 'id, name, description, updated_at',
+        orderBy: { column: 'name', ascending: true },
+      });
 
       if (data) {
         setAvailableUnits(data);

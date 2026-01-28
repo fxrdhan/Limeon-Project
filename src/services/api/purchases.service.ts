@@ -40,9 +40,79 @@ interface DBPurchaseItem {
   created_at?: string;
 }
 
+export interface PurchaseListItem {
+  id: string;
+  invoice_number: string;
+  date: string;
+  total: number;
+  payment_status: string;
+  payment_method: string;
+  supplier: { name: string } | null;
+}
+
 export class PurchasesService extends BaseService<DBPurchase> {
   constructor() {
     super('purchases');
+  }
+
+  async getPaginatedPurchases(params: {
+    page: number;
+    limit: number;
+    searchTerm?: string;
+  }): Promise<
+    ServiceResponse<{ purchases: PurchaseListItem[]; totalItems: number }>
+  > {
+    try {
+      const { page, limit, searchTerm } = params;
+
+      let query = supabase.from('purchases').select(`
+          id,
+          invoice_number,
+          date,
+          total,
+          payment_status,
+          payment_method,
+          supplier_id,
+          supplier:suppliers(name)
+        `);
+
+      let countQuery = supabase
+        .from('purchases')
+        .select('id', { count: 'exact' });
+
+      if (searchTerm) {
+        query = query.ilike('invoice_number', `%${searchTerm}%`);
+        countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
+      }
+
+      const { count, error: countError } = await countQuery;
+      if (countError) {
+        return { data: null, error: countError };
+      }
+
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      const { data, error } = await query
+        .order('date', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      const purchases =
+        data?.map(item => ({
+          ...item,
+          supplier: Array.isArray(item.supplier)
+            ? item.supplier[0]
+            : item.supplier,
+        })) || [];
+
+      return { data: { purchases, totalItems: count || 0 }, error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
   }
 
   // Get all purchases with supplier data

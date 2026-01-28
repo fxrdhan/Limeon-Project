@@ -4,6 +4,8 @@ import type {
   MedicineType,
   ItemPackage,
   Supplier,
+  ItemDosage,
+  ItemManufacturer,
 } from '@/types/database';
 
 // Define ItemUnit type (same structure as Unit but for item_units table)
@@ -72,6 +74,34 @@ export class ItemUnitService extends BaseService<ItemUnit> {
   }
 }
 
+// Item Dosage Service
+export class ItemDosageService extends BaseService<ItemDosage> {
+  constructor() {
+    super('item_dosages');
+  }
+
+  async getActiveDosages() {
+    return this.getAll({
+      select: 'id, code, name, nci_code, description, created_at, updated_at',
+      orderBy: { column: 'code', ascending: true },
+    });
+  }
+}
+
+// Item Manufacturer Service
+export class ItemManufacturerService extends BaseService<ItemManufacturer> {
+  constructor() {
+    super('item_manufacturers');
+  }
+
+  async getActiveManufacturers() {
+    return this.getAll({
+      select: 'id, code, name, address, created_at, updated_at',
+      orderBy: { column: 'code', ascending: true },
+    });
+  }
+}
+
 // Supplier Service
 export class SupplierService extends BaseService<Supplier> {
   constructor() {
@@ -117,6 +147,8 @@ export const categoryService = new CategoryService();
 export const medicineTypeService = new MedicineTypeService();
 export const itemPackageService = new ItemPackageService();
 export const itemUnitService = new ItemUnitService();
+export const itemDosageService = new ItemDosageService();
+export const itemManufacturerService = new ItemManufacturerService();
 export const supplierService = new SupplierService();
 
 // Master Data Service Facade

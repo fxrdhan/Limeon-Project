@@ -3,12 +3,12 @@ import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import toast from 'react-hot-toast';
 import HistoryTimelineList from './HistoryTimelineList';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { Transition, TransitionChild } from '@headlessui/react';
 import { createPortal } from 'react-dom';
 import Button from '@/components/button';
 import { TbAlertTriangle, TbArrowBackUp, TbClock } from 'react-icons/tb';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
+import { itemHistoryService } from '../../infrastructure/itemHistory.service';
 
 interface HistoryListContentProps {
   compareMode?: boolean;
@@ -106,21 +106,19 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       if (restoreMode === 'hard') {
         // Hard rollback: Only delete history versions, do NOT update entity
         // (updating entity would trigger a new version creation)
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
-          'hard_rollback_entity',
-          {
-            p_entity_table: entityTable,
-            p_entity_id: entityId,
-            p_target_version: restoreTargetVersion,
-          }
-        );
+        const { data: rpcData, error: rpcError } =
+          await itemHistoryService.hardRollbackEntity({
+            entityTable,
+            entityId,
+            targetVersion: restoreTargetVersion,
+          });
 
         if (rpcError) {
           throw new Error(`Hard rollback failed: ${rpcError.message}`);
         }
 
         toast.success(
-          `Berhasil menghapus ${rpcData.deleted_count} versi setelah v${restoreTargetVersion}`
+          `Berhasil menghapus ${rpcData?.deleted_count ?? 0} versi setelah v${restoreTargetVersion}`
         );
       } else {
         // Soft restore: Update entity to create a new version with old data
@@ -132,13 +130,12 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         delete restoreData.updated_at;
 
         // Update the current entity with restored data
-        const { error: updateError } = await supabase
-          .from(entityTable)
-          .update({
-            ...restoreData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', entityId);
+        const { error: updateError } =
+          await itemHistoryService.softRestoreEntity({
+            entityTable,
+            entityId,
+            restoreData,
+          });
 
         if (updateError) {
           throw new Error(updateError.message);

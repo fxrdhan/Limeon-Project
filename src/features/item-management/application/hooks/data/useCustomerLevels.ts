@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { supabase } from '@/lib/supabase';
 import type { CustomerLevel } from '@/types/database';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { realtimeService } from '@/services/realtime/realtime.service';
+import { customerLevelsService } from '@/services/api/customerLevels.service';
 
 const CUSTOMER_LEVELS_QUERY_KEY = ['customer-levels'];
 const DEFAULT_LEVELS: CreateCustomerLevelInput[] = [
@@ -49,15 +51,12 @@ const normalizeCustomerLevels = (levels: CustomerLevel[]) =>
 export const useCustomerLevels = () => {
   const queryClient = useQueryClient();
   const hasSeededDefaults = useRef(false);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const levelsQuery = useQuery({
     queryKey: CUSTOMER_LEVELS_QUERY_KEY,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customer_levels')
-        .select('id, level_name, price_percentage, description')
-        .order('level_name');
+      const { data, error } = await customerLevelsService.getAll();
 
       if (error) {
         throw error;
@@ -69,11 +68,7 @@ export const useCustomerLevels = () => {
 
   const createLevelMutation = useMutation({
     mutationFn: async (payload: CreateCustomerLevelInput) => {
-      const { data, error } = await supabase
-        .from('customer_levels')
-        .insert(payload)
-        .select('id, level_name, price_percentage, description')
-        .single();
+      const { data, error } = await customerLevelsService.create(payload);
 
       if (error) {
         throw error;
@@ -108,10 +103,10 @@ export const useCustomerLevels = () => {
             updatePayload.level_name = update.level_name;
           }
 
-          const { error } = await supabase
-            .from('customer_levels')
-            .update(updatePayload)
-            .eq('id', update.id);
+          const { error } = await customerLevelsService.update(
+            update.id,
+            updatePayload
+          );
 
           if (error) {
             throw error;
@@ -135,10 +130,7 @@ export const useCustomerLevels = () => {
     mutationFn: async (payload: DeleteCustomerLevelInput) => {
       const { id, levels } = payload;
 
-      const { error } = await supabase
-        .from('customer_levels')
-        .delete()
-        .eq('id', id);
+      const { error } = await customerLevelsService.delete(id);
 
       if (error) {
         throw error;
@@ -162,10 +154,10 @@ export const useCustomerLevels = () => {
 
       await Promise.all(
         renameUpdates.map(async update => {
-          const { error: updateError } = await supabase
-            .from('customer_levels')
-            .update({ level_name: update.level_name })
-            .eq('id', update.id);
+          const { error: updateError } = await customerLevelsService.update(
+            update.id,
+            { level_name: update.level_name }
+          );
 
           if (updateError) {
             throw updateError;
@@ -187,19 +179,14 @@ export const useCustomerLevels = () => {
 
   const seedDefaultsMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase
-        .from('customer_levels')
-        .upsert(DEFAULT_LEVELS, {
-          onConflict: 'level_name',
-          ignoreDuplicates: true,
-        })
-        .select('id');
+      const { error } =
+        await customerLevelsService.seedDefaults(DEFAULT_LEVELS);
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
@@ -227,8 +214,8 @@ export const useCustomerLevels = () => {
   useEffect(() => {
     if (channelRef.current) return;
 
-    const channel = supabase
-      .channel('customer-levels-realtime')
+    const channel = realtimeService
+      .createChannel('customer-levels-realtime')
       .on(
         'postgres_changes',
         { schema: 'public', table: 'customer_levels', event: '*' },
@@ -245,7 +232,7 @@ export const useCustomerLevels = () => {
     return () => {
       if (!channelRef.current) return;
       channelRef.current.unsubscribe();
-      supabase.removeChannel(channelRef.current);
+      realtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     };
   }, [queryClient]);

@@ -1,10 +1,12 @@
-import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSmartFormSync } from './useSmartFormSync';
 import { logger } from '@/utils/logger';
 import type { CustomerLevelDiscount } from '@/types/database';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { realtimeService } from '@/services/realtime/realtime.service';
+import { itemDataService } from '@/features/item-management/infrastructure/itemData.service';
 
 interface UseItemModalRealtimeProps {
   itemId?: string;
@@ -26,7 +28,7 @@ export const useItemModalRealtime = ({
   onSmartUpdate,
 }: UseItemModalRealtimeProps) => {
   const queryClient = useQueryClient();
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<string>('');
   const [isConnected, setIsConnected] = useState(false);
 
@@ -57,8 +59,8 @@ export const useItemModalRealtime = ({
       channel: channelName,
     });
 
-    const channel = supabase
-      .channel(channelName)
+    const channel = realtimeService
+      .createChannel(channelName)
       .on(
         'postgres_changes',
         {
@@ -165,10 +167,8 @@ export const useItemModalRealtime = ({
             action: 'refetch',
           });
 
-          const { data, error } = await supabase
-            .from('customer_level_discounts')
-            .select('customer_level_id, discount_percentage')
-            .eq('item_id', itemId);
+          const { data, error } =
+            await itemDataService.getCustomerLevelDiscounts(itemId);
 
           if (error) {
             console.error('Error syncing customer level discounts:', error);
@@ -247,7 +247,7 @@ export const useItemModalRealtime = ({
           channel: channelName,
         });
         channelRef.current.unsubscribe();
-        supabase.removeChannel(channelRef.current);
+        realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
         setIsConnected(false);
       }

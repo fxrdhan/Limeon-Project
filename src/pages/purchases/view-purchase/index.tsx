@@ -3,9 +3,9 @@ import Loading from '@/components/loading';
 import { Card } from '@/components/card';
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 import type { PurchaseData, PurchaseItem } from '@/types';
 import { TbArrowLeft, TbPrinter, TbZoomIn, TbZoomOut } from 'react-icons/tb';
+import { purchasesService } from '@/services/api/purchases.service';
 
 const ViewPurchase = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,42 +26,23 @@ const ViewPurchase = () => {
   const fetchPurchaseData = async (purchaseId: string) => {
     try {
       setLoading(true);
+      const [purchaseResult, itemsResult] = await Promise.all([
+        purchasesService.getPurchaseWithDetails(purchaseId),
+        purchasesService.getPurchaseItems(purchaseId),
+      ]);
 
-      const { data: purchaseData, error: purchaseError } = await supabase
-        .from('purchases')
-        .select(
-          `
-                    *,
-                    supplier:suppliers(
-                    name,
-                    address,
-                    contact_person
-                    )
-        `
-        )
-        .eq('id', purchaseId)
-        .single();
+      if (purchaseResult.error || !purchaseResult.data) {
+        throw (
+          purchaseResult.error ?? new Error('Data pembelian tidak ditemukan')
+        );
+      }
 
-      if (purchaseError) throw purchaseError;
+      if (itemsResult.error) {
+        throw itemsResult.error;
+      }
 
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('purchase_items')
-        .select(
-          `
-                    *,
-                    item:items(
-                        name,
-                        code
-                    )
-        `
-        )
-        .eq('purchase_id', purchaseId)
-        .order('id');
-
-      if (itemsError) throw itemsError;
-
-      setPurchase(purchaseData);
-      setItems(itemsData || []);
+      setPurchase(purchaseResult.data);
+      setItems(itemsResult.data || []);
     } catch (error) {
       console.error('Error fetching purchase data:', error);
     } finally {

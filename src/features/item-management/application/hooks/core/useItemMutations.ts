@@ -17,11 +17,11 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { logger } from '@/utils/logger';
 // ItemFormData and PackageConversion types are now used via SaveItemParams interface
 import { useEntityMutations } from './GenericHookFactories';
+import { itemsService } from '@/services/api/items.service';
 import {
   saveItemBusinessLogic,
   saveEntityHelpers,
@@ -60,6 +60,7 @@ export const useAddItemMutations = ({
   const entityMutations = {
     categories: useEntityMutations.categories,
     types: useEntityMutations.types,
+    packages: useEntityMutations.packages,
     units: useEntityMutations.units,
     dosages: useEntityMutations.dosages,
     manufacturers: useEntityMutations.manufacturers,
@@ -77,8 +78,8 @@ export const useAddItemMutations = ({
     onError: error => console.error('Error adding type:', error),
   });
 
-  const addUnitMutation = entityMutations.units.useCreate({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['units'] }),
+  const addUnitMutation = entityMutations.packages.useCreate({
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['packages'] }),
     onError: error => console.error('Error adding unit:', error),
   });
 
@@ -108,10 +109,7 @@ export const useAddItemMutations = ({
         table: 'items',
         action: 'delete',
       });
-      const { error } = await supabase
-        .from('items')
-        .delete()
-        .eq('id', itemIdToDelete);
+      const { error } = await itemsService.delete(itemIdToDelete);
       if (error) throw error;
     },
     onSuccess: () => {

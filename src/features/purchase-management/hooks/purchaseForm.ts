@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -14,6 +13,9 @@ import type {
   PurchaseItem,
   PackageConversion,
 } from '@/types';
+import { purchasesService } from '@/services/api/purchases.service';
+import { supplierService } from '@/services/api/masterData.service';
+import { companyProfileService } from '@/services/api/companyProfile.service';
 
 interface UsePurchaseFormProps {
   initialInvoiceNumber?: string;
@@ -47,11 +49,7 @@ export const usePurchaseForm = ({
 
   const fetchCompanyProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('company_profiles')
-        .select('*')
-        .single();
-
+      const { data, error } = await companyProfileService.getProfile();
       if (error) {
         console.error('Error fetching company profile:', error);
         return;
@@ -67,11 +65,7 @@ export const usePurchaseForm = ({
 
   const fetchSuppliers = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name, address')
-        .order('name');
-
+      const { data, error } = await supplierService.getActiveSuppliers();
       if (error) throw error;
       setSuppliers(data || []);
     } catch (error) {
@@ -285,25 +279,25 @@ export const usePurchaseForm = ({
         expiry_date: item.expiry_date,
       }));
 
-      const { error: purchaseError } = await supabase.rpc(
-        'process_purchase_v2',
-        {
-          p_supplier_id: formData.supplier_id || null,
-          p_invoice_number: formData.invoice_number,
-          p_date: formData.date,
-          p_total: total,
-          p_payment_status: formData.payment_status,
-          p_payment_method: formData.payment_method,
-          p_notes: formData.notes || null,
-          p_due_date: formData.due_date || null,
-          p_vat_amount: calculateTotalVat(),
-          p_vat_percentage: formData.vat_percentage,
-          p_is_vat_included: formData.is_vat_included,
-          p_customer_name: companyProfile?.name || null,
-          p_customer_address: companyProfile?.address || null,
-          p_items: purchaseItemsData,
-        }
-      );
+      const { error: purchaseError } =
+        await purchasesService.createPurchaseWithItems(
+          {
+            supplier_id: formData.supplier_id,
+            invoice_number: formData.invoice_number,
+            date: formData.date,
+            total,
+            payment_status: formData.payment_status,
+            payment_method: formData.payment_method,
+            vat_percentage: formData.vat_percentage,
+            is_vat_included: formData.is_vat_included,
+            vat_amount: calculateTotalVat(),
+            notes: formData.notes || null,
+            due_date: formData.due_date || null,
+            customer_name: companyProfile?.name ?? undefined,
+            customer_address: companyProfile?.address ?? undefined,
+          },
+          purchaseItemsData
+        );
 
       if (purchaseError) throw purchaseError;
 

@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { formatRupiah } from '@/lib/formatters';
 import toast from 'react-hot-toast';
 import { logger } from '@/utils/logger';
+import { itemDataService } from '../../../infrastructure/itemData.service';
 import type {
   ItemFormData,
   DBPackageConversion,
@@ -183,19 +183,8 @@ export const useItemData = ({
         });
 
         // Fetch item data from database with manufacturer FK
-        const { data: itemData, error: itemError } = await supabase
-          .from('items')
-          .select(
-            `
-          *, updated_at,
-          package_conversions,
-          manufacturer_id,
-          package_id,
-          customer_level_discounts (customer_level_id, discount_percentage)
-        `
-          )
-          .eq('id', id)
-          .single();
+        const { data: itemData, error: itemError } =
+          await itemDataService.fetchItemDataById(id);
 
         if (itemError) throw itemError;
         if (!itemData) throw new Error('Item tidak ditemukan');
