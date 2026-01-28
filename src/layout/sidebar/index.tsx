@@ -176,7 +176,7 @@ const getMenuButtonClassName = ({
       ? collapsed
         ? 'text-primary font-medium'
         : 'bg-primary text-white font-medium'
-      : 'text-gray-600 hover:bg-gray-100'
+      : 'text-slate-600 hover:bg-slate-100'
   } transition-all duration-150 group relative`;
 };
 
@@ -412,18 +412,18 @@ const Sidebar = ({
     <aside
       onMouseEnter={handleMouseEnterSidebar}
       onMouseLeave={handleMouseLeaveSidebar}
-      className={`sidebar bg-white text-gray-800 border-r border-gray-200
+      className={`sidebar bg-white text-slate-800 border-r border-slate-200
                         transition-all duration-500 ease-in-out h-screen
                         ${collapsed ? 'w-20' : 'w-64'} relative group z-10`}
     >
       <div className="flex flex-col h-full">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center">
             <div className="h-10 w-10 min-w-8 bg-primary rounded-md flex items-center justify-center shrink-0">
               <span className="text-white text-xl font-bold">P</span>
             </div>
             <h2
-              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-gray-800`}
+              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-slate-800`}
             >
               PharmaSys
             </h2>
@@ -431,7 +431,7 @@ const Sidebar = ({
           {!collapsed && (
             <motion.button
               onClick={toggleLock}
-              className="text-gray-400 hover:text-gray-600 focus:outline-hidden transition-colors duration-150 relative cursor-pointer"
+              className="text-slate-400 hover:text-slate-600 focus:outline-hidden transition-colors duration-150 relative cursor-pointer"
               title={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
               aria-label={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
             >
@@ -511,7 +511,7 @@ const Sidebar = ({
                           className="pl-5 pr-4 py-2 relative"
                         >
                           {/* Static background line */}
-                          <div className="absolute left-5 top-4 bottom-4 w-0.5 bg-gray-300"></div>
+                          <div className="absolute left-5 top-4 bottom-4 w-0.5 bg-slate-300"></div>
 
                           {/* Animated active indicator */}
                           <AnimatePresence>
@@ -651,7 +651,7 @@ const Sidebar = ({
         </nav>
 
         <div
-          className={`p-4 text-xs text-gray-500 border-t border-gray-200 mt-auto`}
+          className={`p-4 text-xs text-slate-500 border-t border-slate-200 mt-auto`}
         >
           <div className="h-4">
             <div

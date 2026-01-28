@@ -9,7 +9,7 @@ interface SkeletonProps {
 export const Skeleton = ({ className, width, height }: SkeletonProps) => {
   return (
     <div
-      className={classNames('animate-pulse bg-gray-200 rounded', className)}
+      className={classNames('animate-pulse bg-slate-200 rounded', className)}
       style={{ width, height }}
     />
   );
@@ -27,7 +27,7 @@ export const SkeletonText = ({ lines = 1, className }: SkeletonTextProps) => {
         <div
           key={index}
           className={classNames(
-            'animate-pulse bg-gray-200 rounded h-4',
+            'animate-pulse bg-slate-200 rounded h-4',
             index === lines - 1 && lines > 1 ? 'w-3/4' : 'w-full'
           )}
         />
@@ -49,7 +49,7 @@ export const SkeletonTableRow = ({
     <tr className={classNames('animate-pulse', className)}>
       {Array.from({ length: columns }).map((_, index) => (
         <td key={index} className="py-3 px-3">
-          <div className="bg-gray-200 rounded h-4 w-full" />
+          <div className="bg-slate-200 rounded h-4 w-full" />
         </td>
       ))}
     </tr>

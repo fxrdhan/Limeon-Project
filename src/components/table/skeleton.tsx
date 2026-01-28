@@ -19,7 +19,7 @@ export const SkeletonTableCell = ({
   return (
     <TableCell className={className}>
       <div
-        className="animate-pulse bg-gray-200 rounded h-4"
+        className="animate-pulse bg-slate-200 rounded h-4"
         style={{ width: width || '100%' }}
       />
     </TableCell>
@@ -86,7 +86,7 @@ export const SkeletonTable = ({
           <SkeletonTableRow
             key={index}
             columns={columns}
-            className="hover:bg-gray-50"
+            className="hover:bg-slate-50"
           />
         ))}
       </TableBody>

@@ -365,7 +365,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             onMouseEnter={() => handleMouseEnter('popup')}
             onMouseLeave={() => handleMouseLeave('popup')}
           >
-            <div className="px-1 py-1 bg-white border border-gray-200 rounded-xl shadow-lg min-w-[90px] animate-in fade-in-0 zoom-in-95 duration-200">
+            <div className="px-1 py-1 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[90px] animate-in fade-in-0 zoom-in-95 duration-200">
               {getPopupOptions().map(option => (
                 <Button
                   key={option.label}
@@ -380,7 +380,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   className={`w-full px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start ${
                     option.label === 'Hapus'
                       ? ''
-                      : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'
+                      : 'hover:bg-slate-200 text-slate-700 hover:text-slate-900'
                   }`}
                 >
                   {option.icon}
@@ -391,12 +391,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             {/* Dynamic Arrow */}
             {popupPosition === 'right' ? (
               <div className="absolute right-full top-1/2 transform -translate-y-1/2">
-                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-gray-200"></div>
+                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200"></div>
                 <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
               </div>
             ) : (
               <div className="absolute left-full top-1/2 transform -translate-y-1/2">
-                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-gray-200"></div>
+                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200"></div>
                 <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
               </div>
             )}

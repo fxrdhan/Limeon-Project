@@ -111,14 +111,14 @@ const Profile = () => {
     return (
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1">
-          <label className="text-sm font-medium text-gray-600">{label}</label>
+          <label className="text-sm font-medium text-slate-600">{label}</label>
           {editMode[field] ? (
             <div className="flex space-x-1">
               <Button
                 variant="text"
                 size="sm"
                 onClick={() => handleCancel(field)}
-                className="p-1 text-gray-500 hover:text-red-500"
+                className="p-1 text-slate-500 hover:text-red-500"
               >
                 <TbX />
               </Button>
@@ -126,7 +126,7 @@ const Profile = () => {
                 variant="text"
                 size="sm"
                 onClick={() => handleSave(field)}
-                className="p-1 text-gray-500 hover:text-green-500"
+                className="p-1 text-slate-500 hover:text-green-500"
                 disabled={updateProfileMutation.isPending}
               >
                 {updateProfileMutation.isPending &&
@@ -142,7 +142,7 @@ const Profile = () => {
               variant="text"
               size="sm"
               onClick={() => toggleEdit(field)}
-              className="p-1 text-gray-500 hover:text-primary"
+              className="p-1 text-slate-500 hover:text-primary"
             >
               <TbPencil />
             </Button>
@@ -156,9 +156,9 @@ const Profile = () => {
             className="w-full p-2 border rounded-md"
           />
         ) : (
-          <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
+          <div className="p-2 bg-slate-50 rounded-md min-h-[40px]">
             {(profile && profile[field]) || (
-              <span className="text-gray-400 italic">Tidak ada data</span>
+              <span className="text-slate-400 italic">Tidak ada data</span>
             )}
           </div>
         )}
@@ -182,7 +182,7 @@ const Profile = () => {
     <Card>
       <CardHeader>
         <CardTitle>Profil Perusahaan</CardTitle>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Kelola informasi detail mengenai apotek atau klinik Anda.
         </p>
       </CardHeader>

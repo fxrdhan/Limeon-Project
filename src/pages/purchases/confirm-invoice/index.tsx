@@ -123,8 +123,8 @@ const ConfirmInvoicePage = () => {
     const displayValue = value ?? '-';
     return (
       <div className="mb-2">
-        <span className="font-medium text-gray-600">{label}:</span>{' '}
-        <span className="text-gray-800">{displayValue}</span>
+        <span className="font-medium text-slate-600">{label}:</span>{' '}
+        <span className="text-slate-800">{displayValue}</span>
       </div>
     );
   };
@@ -145,8 +145,8 @@ const ConfirmInvoicePage = () => {
   ) => {
     return (
       <div className="mb-2">
-        <span className="font-medium text-gray-600">{label}:</span>{' '}
-        <span className="text-gray-800">Rp {formatCurrency(value)}</span>
+        <span className="font-medium text-slate-600">{label}:</span>{' '}
+        <span className="text-slate-800">Rp {formatCurrency(value)}</span>
       </div>
     );
   };
@@ -158,7 +158,7 @@ const ConfirmInvoicePage = () => {
     number: string;
     title: string;
   }) => (
-    <h4 className="font-medium text-gray-700 mb-2 flex items-center">
+    <h4 className="font-medium text-slate-700 mb-2 flex items-center">
       <span className="inline-block w-6 h-6 text-xs items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">
         {number}
       </span>
@@ -174,8 +174,8 @@ const ConfirmInvoicePage = () => {
             Konfirmasi Data Faktur
           </CardTitle>
           <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 rounded-full bg-gray-300"></div>
-            <div className="h-[2px] w-12 bg-gray-300"></div>
+            <div className="h-2 w-2 rounded-full bg-slate-300"></div>
+            <div className="h-[2px] w-12 bg-slate-300"></div>
             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
           </div>
         </div>

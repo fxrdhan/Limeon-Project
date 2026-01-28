@@ -54,7 +54,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
     <FormSection title="Informasi Pembelian">
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Nomor Faktur
           </label>
           <Input
@@ -67,7 +67,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Supplier
           </label>
           <Dropdown
@@ -83,7 +83,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Tanggal Pembelian
           </label>
           <Calendar
@@ -96,7 +96,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Tanggal Jatuh Tempo
           </label>
           <Calendar
@@ -110,7 +110,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Status Pembayaran
           </label>
           <Dropdown
@@ -127,7 +127,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Metode Pembayaran
           </label>
           <Dropdown

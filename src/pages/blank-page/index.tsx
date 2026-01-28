@@ -42,13 +42,13 @@ const ComingSoon = ({
 
         {/* Title */}
         <div className="space-y-3">
-          <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
-          <p className="text-gray-500 text-lg">Sedang dalam pengembangan</p>
+          <h1 className="text-2xl font-semibold text-slate-800">{title}</h1>
+          <p className="text-slate-500 text-lg">Sedang dalam pengembangan</p>
         </div>
 
         {/* Description */}
         {description && (
-          <p className="text-gray-600 leading-relaxed">{description}</p>
+          <p className="text-slate-600 leading-relaxed">{description}</p>
         )}
 
         {/* Status Badge */}
@@ -65,13 +65,13 @@ const ComingSoon = ({
         </div>
 
         {/* Status Description */}
-        <p className="text-gray-600 text-sm">{statusDescription}</p>
+        <p className="text-slate-600 text-sm">{statusDescription}</p>
 
         {/* Back Button */}
         {showBackButton && (
           <button
             onClick={handleGoBack}
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 shadow-sm"
+            className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-200 shadow-sm"
           >
             <TbArrowLeft className="w-4 h-4" />
             <span>{backButtonText}</span>

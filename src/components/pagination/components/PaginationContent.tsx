@@ -64,7 +64,7 @@ export const PaginationContent: React.FC<PaginationContentProps> = ({
         isFloating={isFloating}
       />
 
-      <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
+      <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-slate-700 overflow-hidden select-none">
         <PaginationButton
           direction="prev"
           disabled={currentPage === 1}

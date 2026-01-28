@@ -29,9 +29,9 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     glow: 'shadow-[0_0_12px_rgba(96,165,250,0.5),0_0_24px_rgba(96,165,250,0.3)]',
   },
   value: {
-    bg: 'bg-gray-100',
-    text: 'text-gray-700',
-    hoverBg: 'hover:bg-gray-200',
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    hoverBg: 'hover:bg-slate-200',
     glow: 'shadow-[0_0_12px_rgba(156,163,175,0.5),0_0_24px_rgba(156,163,175,0.3)]',
   },
   separator: {
@@ -41,9 +41,9 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     glow: '', // Separator cannot be selected
   },
   valueTo: {
-    bg: 'bg-gray-100',
-    text: 'text-gray-700',
-    hoverBg: 'hover:bg-gray-200',
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    hoverBg: 'hover:bg-slate-200',
     glow: 'shadow-[0_0_12px_rgba(156,163,175,0.5),0_0_24px_rgba(156,163,175,0.3)]',
   },
   join: {

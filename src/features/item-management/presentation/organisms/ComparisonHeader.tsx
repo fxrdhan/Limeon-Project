@@ -16,7 +16,7 @@ const UserInfo: React.FC<{
 }> = ({ userName, userPhoto }) => {
   if (!userName) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-slate-500">
         <span>Unknown</span>
         <TbUserCircle className="w-5 h-5" />
       </div>
@@ -25,15 +25,15 @@ const UserInfo: React.FC<{
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-700 font-medium">{userName}</span>
+      <span className="text-sm text-slate-700 font-medium">{userName}</span>
       {userPhoto ? (
         <img
           src={userPhoto}
           alt={userName}
-          className="w-6 h-6 rounded-full object-cover border border-gray-300"
+          className="w-6 h-6 rounded-full object-cover border border-slate-300"
         />
       ) : (
-        <TbUserCircle className="w-6 h-6 text-gray-400" />
+        <TbUserCircle className="w-6 h-6 text-slate-400" />
       )}
     </div>
   );
@@ -46,7 +46,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
   if (!compData) return null;
 
   return (
-    <div className="p-2.5 border-b-2 bg-gray-100 border-gray-200 rounded-t-xl">
+    <div className="p-2.5 border-b-2 bg-slate-100 border-slate-200 rounded-t-xl">
       {isDualMode ? (
         /* Dual Mode Header */
         <div className="rounded-lg p-2">
@@ -60,7 +60,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
                 userPhoto={compData.leftVersion?.user_photo}
               />
             </div>
-            <span className="text-gray-400 mt-4">vs</span>
+            <span className="text-slate-400 mt-4">vs</span>
             <div className="flex flex-col items-center gap-1.5">
               <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
                 v{compData.rightVersion?.version_number}

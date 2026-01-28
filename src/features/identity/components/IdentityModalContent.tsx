@@ -27,7 +27,7 @@ const IdentityModalContent: React.FC = () => {
         <div className="flex flex-col">
           <h2 className="text-xl font-semibold">{title}</h2>
           {mode === 'edit' && formattedUpdateAt !== '-' && (
-            <span className="text-sm text-gray-500 italic flex items-center mt-1">
+            <span className="text-sm text-slate-500 italic flex items-center mt-1">
               <TbHistory className="mr-1" size={12} />
               {formattedUpdateAt}
             </span>
@@ -36,7 +36,7 @@ const IdentityModalContent: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="p-6 overflow-y-auto grow scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+      <div className="p-6 overflow-y-auto grow scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
         {showImageUploader && <IdentityImageUploader />}
 
         <div className="space-y-4">

@@ -173,7 +173,7 @@ const Profile = () => {
     <div className="relative w-12 h-12 flex items-center justify-center">
       <button
         onClick={handleProfileClick}
-        className="flex items-center space-x-3 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
+        className="flex items-center space-x-3 rounded-xl hover:bg-slate-50 transition-all duration-200 group"
         aria-expanded={portalOpen}
         aria-haspopup="true"
       >
@@ -247,7 +247,7 @@ const Profile = () => {
                   duration: 0.3,
                 },
               }}
-              className="fixed top-0 right-0 w-72 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-xs"
+              className="fixed top-0 right-0 w-72 bg-white rounded-bl-2xl shadow-xl z-50 border border-slate-100 overflow-hidden backdrop-blur-xs"
               style={{ marginTop: '0px' }}
             >
               <div className="p-4 pt-6">
@@ -361,20 +361,20 @@ const Profile = () => {
                       >
                         <ProfileImage
                           size="large"
-                          className="border-4 border-gray-100 group-hover/upload:border-gray/30 transition-all duration-200"
+                          className="border-4 border-slate-100 group-hover/upload:border-slate/30 transition-all duration-200"
                         />
                       </ImageUploader>
                     </motion.div>
                   </div>
                   <div className="mt-3 text-center">
-                    <h3 className="font-semibold text-gray-800 text-lg">
+                    <h3 className="font-semibold text-slate-800 text-lg">
                       {user?.name || 'User'}
                     </h3>
-                    <p className="text-sm text-gray-500 mb-1">
+                    <p className="text-sm text-slate-500 mb-1">
                       {user?.role || 'Staff'}
                     </p>
                     <p
-                      className="text-xs text-gray-400 truncate max-w-[200px]"
+                      className="text-xs text-slate-400 truncate max-w-[200px]"
                       title={user?.email || ''}
                     >
                       {user?.email || 'Email tidak tersedia'}
@@ -383,14 +383,14 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="border-t border-gray-100"></div>
+              <div className="border-t border-slate-100"></div>
 
               <div className="p-2">
                 <button
                   onClick={() => setPortalOpen(false)}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150 group"
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors duration-150 group"
                 >
-                  <TbSettings className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+                  <TbSettings className="text-slate-400 group-hover:text-slate-600 transition-colors" />
                   <span>Pengaturan Profil</span>
                 </button>
                 <button

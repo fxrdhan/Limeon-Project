@@ -15,7 +15,7 @@ const RadioIndicator: React.FC<RadioIndicatorProps> = ({
     >
       <div
         className={`w-4 h-4 rounded-full border ${
-          isSelected ? 'border-primary' : 'border-gray-300'
+          isSelected ? 'border-primary' : 'border-slate-300'
         } flex items-center justify-center`}
       >
         {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}

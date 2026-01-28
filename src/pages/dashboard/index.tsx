@@ -55,11 +55,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
   <Card className="p-6">
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm text-gray-600 mb-1">{title}</p>
+        <p className="text-sm text-slate-600 mb-1">{title}</p>
         {isLoading ? (
-          <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-8 w-20 bg-slate-200 animate-pulse rounded"></div>
         ) : (
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-2xl font-bold text-slate-900">{value}</p>
         )}
       </div>
       <div className={`p-3 rounded-full ${color}`}>{icon}</div>
@@ -83,7 +83,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
 }) => (
   <Card className="p-6">
     <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
       {onRefresh && (
         <Button
           variant="secondary"
@@ -96,7 +96,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
       )}
     </div>
     {isLoading ? (
-      <div className="h-64 bg-gray-200 animate-pulse rounded"></div>
+      <div className="h-64 bg-slate-200 animate-pulse rounded"></div>
     ) : (
       children
     )}
@@ -200,13 +200,13 @@ const DashboardNew = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 Revenue Perbandingan
               </h3>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-slate-900">
                 {formatCurrency(monthlyRevenueQuery.data.currentMonth)}
               </p>
-              <p className="text-sm text-gray-600">Bulan ini</p>
+              <p className="text-sm text-slate-600">Bulan ini</p>
             </div>
             <div className="text-right">
               <div
@@ -225,7 +225,7 @@ const DashboardNew = () => {
                   {formatPercentage(monthlyRevenueQuery.data.percentageChange)}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">vs bulan lalu</p>
+              <p className="text-sm text-slate-600">vs bulan lalu</p>
             </div>
           </div>
         </Card>
@@ -341,7 +341,7 @@ const DashboardNew = () => {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <TbAlertTriangle className="h-5 w-5 text-red-500" />
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-slate-900">
               Peringatan Stok Menipis
             </h3>
           </div>
@@ -361,8 +361,8 @@ const DashboardNew = () => {
                     className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-medium text-slate-900">{item.name}</p>
+                      <p className="text-sm text-slate-600">
                         {item.item_categories?.[0]?.name} •{' '}
                         {item.item_packages?.[0]?.name}
                       </p>
@@ -371,7 +371,7 @@ const DashboardNew = () => {
                       <p className="text-lg font-bold text-red-600">
                         {item.stock}
                       </p>
-                      <p className="text-xs text-gray-500">tersisa</p>
+                      <p className="text-xs text-slate-500">tersisa</p>
                     </div>
                   </div>
                 )
@@ -382,7 +382,7 @@ const DashboardNew = () => {
 
       {/* Recent Transactions */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">
           Transaksi Terbaru
         </h3>
         {recentTransactionsQuery.isLoading ? (
@@ -390,7 +390,7 @@ const DashboardNew = () => {
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="h-12 bg-gray-200 animate-pulse rounded"
+                className="h-12 bg-slate-200 animate-pulse rounded"
               ></div>
             ))}
           </div>
@@ -413,7 +413,7 @@ const DashboardNew = () => {
                 }) => (
                   <div
                     key={`${transaction.type}-${transaction.id}`}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -436,11 +436,11 @@ const DashboardNew = () => {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-slate-900">
                           {transaction.invoice_number ||
                             `${transaction.type === 'sale' ? 'Sale' : 'Purchase'} #${transaction.id.slice(0, 8)}`}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-slate-600">
                           {transaction.counterparty} •{' '}
                           {new Date(transaction.date).toLocaleDateString(
                             'id-ID'
@@ -458,7 +458,7 @@ const DashboardNew = () => {
                       >
                         {formatCurrency(transaction.total)}
                       </p>
-                      <p className="text-xs text-gray-500 capitalize">
+                      <p className="text-xs text-slate-500 capitalize">
                         {transaction.type}
                       </p>
                     </div>

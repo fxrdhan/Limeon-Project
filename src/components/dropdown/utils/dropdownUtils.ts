@@ -30,10 +30,10 @@ export const filterAndSortOptions = (
 
 export const getSearchIconColor = (searchState: string) => {
   const colors: Record<string, string> = {
-    idle: 'text-gray-400',
-    typing: 'text-gray-800',
+    idle: 'text-slate-400',
+    typing: 'text-slate-800',
     found: 'text-primary',
     'not-found': 'text-primary',
   };
-  return colors[searchState] || 'text-gray-400';
+  return colors[searchState] || 'text-slate-400';
 };

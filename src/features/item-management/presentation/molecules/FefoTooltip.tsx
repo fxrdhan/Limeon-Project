@@ -40,7 +40,7 @@ export default function FefoTooltip({
         onMouseLeave={handleMouseLeave}
         ref={iconRef}
       >
-        <TbHelpCircle className="text-gray-400 cursor-help" size={14} />
+        <TbHelpCircle className="text-slate-400 cursor-help" size={14} />
       </div>
       {showTooltip &&
         tooltipPosition &&

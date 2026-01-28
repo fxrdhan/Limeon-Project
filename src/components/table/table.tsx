@@ -159,13 +159,13 @@ export const Table = memo(
 
         return (
           <div className="relative">
-            <TbSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <TbSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={localValue}
               onChange={e => handleChange(e.target.value)}
               placeholder={`Search ${columnHeader.toLowerCase()}...`}
-              className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-8 pr-2 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         );
@@ -181,7 +181,7 @@ export const Table = memo(
           {columns.map((column, index) => (
             <td
               key={column.key}
-              className="py-2 px-2 border-b border-gray-200 bg-gray-50"
+              className="py-2 px-2 border-b border-slate-200 bg-slate-50"
               style={
                 columnWidths && Object.keys(columnWidths).length > 0
                   ? {
@@ -207,7 +207,7 @@ export const Table = memo(
         <div
           ref={containerRef}
           className={classNames(
-            'w-full rounded-lg border-2 border-gray-200 overflow-hidden',
+            'w-full rounded-lg border-2 border-slate-200 overflow-hidden',
             className
           )}
           style={{
@@ -240,7 +240,7 @@ export const Table = memo(
                         }
                       )}
                       {searchable && (
-                        <thead className="bg-gray-50">
+                        <thead className="bg-slate-50">
                           <SearchBar />
                         </thead>
                       )}
@@ -268,7 +268,7 @@ export const Table = memo(
       <div
         ref={containerRef}
         className={classNames(
-          'w-full overflow-hidden rounded-lg shadow-xs border-2 border-gray-200',
+          'w-full overflow-hidden rounded-lg shadow-xs border-2 border-slate-200',
           className
         )}
       >
@@ -296,7 +296,7 @@ export const Table = memo(
                     }
                   )}
                   {searchable && (
-                    <thead className="bg-gray-50">
+                    <thead className="bg-slate-50">
                       <SearchBar />
                     </thead>
                   )}
@@ -343,9 +343,9 @@ export const TableHead = ({
   return (
     <thead
       className={classNames(
-        'text-gray-700 border-b-2 border-gray-200 group',
+        'text-slate-700 border-b-2 border-slate-200 group',
         {
-          'sticky top-0 z-20 bg-gray-200': stickyHeader,
+          'sticky top-0 z-20 bg-slate-200': stickyHeader,
         },
         className
       )}
@@ -409,7 +409,7 @@ export const TableBody = ({
 }) => {
   return (
     <tbody
-      className={classNames('divide-y divide-gray-200 bg-white', className)}
+      className={classNames('divide-y divide-slate-200 bg-white', className)}
     >
       {React.Children.map(children, child => {
         if (React.isValidElement(child) && child.type === TableRow) {
@@ -441,7 +441,7 @@ export const TableRow = memo(
     return (
       <tr
         className={classNames(
-          'transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30 group',
+          'transition-colors duration-150 hover:bg-slate-50 even:bg-slate-50/30 group',
           className
         )}
         {...props}
@@ -515,7 +515,7 @@ export const TableCell = memo(
       <td
         colSpan={colSpan}
         className={classNames(
-          'text-sm py-3 px-2 text-gray-700 align-middle relative',
+          'text-sm py-3 px-2 text-slate-700 align-middle relative',
           'overflow-hidden whitespace-nowrap text-ellipsis',
           'group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible',
           'max-h-[50px] group-hover:max-h-[400px]',
@@ -581,7 +581,7 @@ export const TableHeader = ({
     if (!isColumnSortable) return null;
 
     if (!isCurrentlySorted) {
-      return <TbArrowsUpDown className="w-4 h-4 text-gray-400" />;
+      return <TbArrowsUpDown className="w-4 h-4 text-slate-400" />;
     }
 
     switch (sortState?.direction) {
@@ -590,7 +590,7 @@ export const TableHeader = ({
       case 'desc':
         return <TbChevronDown className="w-4 h-4 text-blue-600" />;
       default:
-        return <TbArrowsUpDown className="w-4 h-4 text-gray-400" />;
+        return <TbArrowsUpDown className="w-4 h-4 text-slate-400" />;
     }
   };
 
@@ -603,14 +603,14 @@ export const TableHeader = ({
   return (
     <th
       className={classNames(
-        'py-3 px-2 text-left text-gray-700 uppercase tracking-wider text-sm font-medium',
+        'py-3 px-2 text-left text-slate-700 uppercase tracking-wider text-sm font-medium',
         'overflow-hidden whitespace-nowrap text-ellipsis',
         'group-hover:whitespace-normal group-hover:overflow-visible',
-        'bg-gray-200 border-r border-gray-300 last:border-r-0',
+        'bg-slate-200 border-r border-slate-300 last:border-r-0',
         'first:rounded-tl-md last:rounded-tr-md',
         {
-          'sticky top-0 z-30 bg-gray-200': stickyHeader,
-          'cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150':
+          'sticky top-0 z-30 bg-slate-200': stickyHeader,
+          'cursor-pointer select-none hover:bg-slate-300 transition-colors duration-150':
             isColumnSortable,
         },
         className

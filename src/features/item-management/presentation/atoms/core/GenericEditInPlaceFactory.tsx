@@ -209,7 +209,7 @@ export function GenericEditInPlace<T = unknown>({
         ) : (
           <div
             tabIndex={disabled ? undefined : tabIndex}
-            className={`group w-full py-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-semibold flex items-center focus:outline-hidden ${displayStyle.textColor || 'text-gray-900'} ${displayStyle.className || ''} ${config.classes?.display || ''}`}
+            className={`group w-full py-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-semibold flex items-center focus:outline-hidden ${displayStyle.textColor || 'text-slate-900'} ${displayStyle.className || ''} ${config.classes?.display || ''}`}
             onClick={disabled ? undefined : onStartEdit}
             title={disabled ? undefined : displayTitle}
             onKeyDown={e => {
@@ -224,7 +224,7 @@ export function GenericEditInPlace<T = unknown>({
             </span>
             {!disabled && (
               <TbPencil
-                className={`ml-4 text-gray-400 group-hover:text-primary group-focus:text-primary cursor-pointer transition-colors ${config.classes?.icon || ''}`}
+                className={`ml-4 text-slate-400 group-hover:text-primary group-focus:text-primary cursor-pointer transition-colors ${config.classes?.icon || ''}`}
                 size={iconSize}
                 onClick={e => {
                   e.stopPropagation();
@@ -266,7 +266,7 @@ export const MARGIN_CONFIG: EditInPlaceConfig = {
           ? (value as number) >= 0
             ? 'text-green-600'
             : 'text-red-600'
-          : 'text-gray-500',
+          : 'text-slate-500',
     }),
     emptyDisplay: '-',
   },

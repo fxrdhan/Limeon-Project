@@ -18,7 +18,8 @@ export const CardHeader = ({ children, className }: CardProps) => {
   return (
     <div
       className={
-        className || 'mb-4 bg-gray-100! rounded-t-xl border-b-2 border-gray-200'
+        className ||
+        'mb-4 bg-slate-100! rounded-t-xl border-b-2 border-slate-200'
       }
     >
       {children}
@@ -30,7 +31,7 @@ export const CardTitle = ({ children, className }: CardProps) => {
   return (
     <h2
       className={
-        className || 'text-2xl font-semibold text-gray-800 outline-none'
+        className || 'text-2xl font-semibold text-slate-800 outline-none'
       }
     >
       {children}
@@ -46,7 +47,7 @@ export const CardFooter = ({ children, className }: CardProps) => {
   return (
     <div
       className={classNames(
-        'mt-0 pt-4 rounded-b-xl border-t-2! border-gray-200',
+        'mt-0 pt-4 rounded-b-xl border-t-2! border-slate-200',
         className
       )}
     >

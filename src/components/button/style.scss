@@ -49,7 +49,7 @@
   }
 
   &--text {
-    @apply text-gray-500;
+    @apply text-slate-500;
 
     &:not(:disabled):hover {
       @apply text-black;

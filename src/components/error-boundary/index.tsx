@@ -59,10 +59,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         <Card className="p-8 text-center max-w-2xl mx-auto mt-8">
           <div className="mb-6">
             <TbAlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
               Oops! Terjadi Kesalahan
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-slate-600 mb-4">
               Aplikasi mengalami masalah yang tidak terduga. Silakan coba lagi
               atau hubungi tim support jika masalah berlanjut.
             </p>
@@ -87,24 +87,24 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           </div>
 
           {this.props.showDetails && this.state.error && (
-            <details className="text-left bg-gray-50 p-4 rounded-lg">
-              <summary className="cursor-pointer font-medium text-gray-700 mb-2">
+            <details className="text-left bg-slate-50 p-4 rounded-lg">
+              <summary className="cursor-pointer font-medium text-slate-700 mb-2">
                 Detail Error (untuk Developer)
               </summary>
-              <div className="text-xs text-gray-600 space-y-2">
+              <div className="text-xs text-slate-600 space-y-2">
                 <div>
                   <strong>Error:</strong> {this.state.error.message}
                 </div>
                 <div>
                   <strong>Stack:</strong>
-                  <pre className="whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded mt-1">
+                  <pre className="whitespace-pre-wrap text-xs bg-slate-100 p-2 rounded mt-1">
                     {this.state.error.stack}
                   </pre>
                 </div>
                 {this.state.errorInfo && (
                   <div>
                     <strong>Component Stack:</strong>
-                    <pre className="whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded mt-1">
+                    <pre className="whitespace-pre-wrap text-xs bg-slate-100 p-2 rounded mt-1">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </div>
@@ -150,7 +150,7 @@ export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
   const queryFallback = (
     <Card className="p-6 text-center">
       <TbAlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
-      <p className="text-gray-600 mb-4">{fallbackMessage}</p>
+      <p className="text-slate-600 mb-4">{fallbackMessage}</p>
       <Button
         onClick={() => window.location.reload()}
         variant="primary"

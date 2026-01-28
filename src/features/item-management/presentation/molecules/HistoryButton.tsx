@@ -26,7 +26,7 @@ const HistoryButton: React.FC<HistoryButtonProps> = ({
     <Button
       variant="text"
       onClick={handleHistoryClick}
-      className={`text-gray-500 hover:text-gray-700 p-1 ${className}`}
+      className={`text-slate-500 hover:text-slate-700 p-1 ${className}`}
       title={`Lihat riwayat perubahan ${entityName}`}
     >
       <TbHistory size={16} />

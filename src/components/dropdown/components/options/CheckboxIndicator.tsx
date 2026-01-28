@@ -16,7 +16,7 @@ const CheckboxIndicator: React.FC<CheckboxIndicatorProps> = ({
     >
       <div
         className={`w-4 h-4 rounded border-2 ${
-          isSelected ? 'border-primary bg-primary' : 'border-gray-300 bg-white'
+          isSelected ? 'border-primary bg-primary' : 'border-slate-300 bg-white'
         } flex items-center justify-center transition-colors duration-150 ease-out`}
       >
         {isSelected && (

@@ -63,9 +63,9 @@ const SearchIcon: React.FC<SearchIconProps> = ({
 
     switch (searchState) {
       case 'idle':
-        return '#9CA3AF'; // text-gray-400
+        return '#9CA3AF'; // text-slate-400
       case 'typing':
-        return '#1F2937'; // text-gray-800
+        return '#1F2937'; // text-slate-800
       case 'found':
         return '#10B981'; // text-primary
       case 'not-found':

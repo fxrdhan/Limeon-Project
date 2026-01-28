@@ -24,7 +24,7 @@ const PurchaseModalHeader: React.FC<PurchaseModalHeaderProps> = ({
   };
 
   return (
-    <CardHeader className="flex items-center justify-between sticky z-10 py-6! px-4! border-b-2 border-gray-200 mb-6">
+    <CardHeader className="flex items-center justify-between sticky z-10 py-6! px-4! border-b-2 border-slate-200 mb-6">
       <div className="absolute left-1/2 transform -translate-x-1/2">
         <CardTitle>{title}</CardTitle>
       </div>

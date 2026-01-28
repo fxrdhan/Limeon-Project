@@ -459,8 +459,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 }}
               >
                 <Card className="shadow-lg w-[600px] max-w-[90vw] m-6 !bg-white">
-                  <CardHeader className="mb-4 bg-white rounded-t-xl pb-2 border-b-2 border-gray-200">
-                    <CardTitle className="text-xl !bg-white font-semibold text-gray-800">
+                  <CardHeader className="mb-4 bg-white rounded-t-xl pb-2 border-b-2 border-slate-200">
+                    <CardTitle className="text-xl !bg-white font-semibold text-slate-800">
                       Unggah Faktur Pembelian
                     </CardTitle>
                   </CardHeader>
@@ -518,7 +518,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                               ? 'border-primary bg-emerald-50'
                               : isHovering
                                 ? 'border-dashed border-primary bg-emerald-25'
-                                : 'border-dashed border-gray-300'
+                                : 'border-dashed border-slate-300'
                           }
                                                   rounded-xl p-10 text-center cursor-pointer w-full min-h-[160px] flex items-center justify-center`}
                           style={{
@@ -617,7 +617,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             <motion.div
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.95 }}
-                              className={`rounded-full ${isHovering ? 'bg-emerald-100' : 'bg-gray-200'} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
+                              className={`rounded-full ${isHovering ? 'bg-emerald-100' : 'bg-slate-200'} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
                               style={{
                                 backfaceVisibility: 'hidden',
                                 WebkitBackfaceVisibility: 'hidden',
@@ -642,17 +642,17 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 }
                               >
                                 <TbUpload
-                                  className={`mx-auto h-8 w-8 ${isHovering ? 'text-primary' : 'text-gray-600'} transition-all duration-300 ease-out`}
+                                  className={`mx-auto h-8 w-8 ${isHovering ? 'text-primary' : 'text-slate-600'} transition-all duration-300 ease-out`}
                                 />
                               </motion.div>
                             </motion.div>
                             <p
-                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? 'text-primary' : 'text-gray-700'}`}
+                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? 'text-primary' : 'text-slate-700'}`}
                             >
                               Klik atau seret untuk mengunggah gambar faktur
                             </p>
                             <p
-                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? 'text-primary/70' : 'text-gray-500'}`}
+                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? 'text-primary/70' : 'text-slate-500'}`}
                             >
                               PNG, JPG (Maks. 5MB)
                             </p>
@@ -682,7 +682,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           <motion.div
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="flex items-center p-3 pr-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                            className="flex items-center p-3 pr-4 bg-slate-50 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
                             onClick={e => {
                               const target = e.target as HTMLElement;
                               const isRemoveButton = target.closest(
@@ -708,7 +708,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             {(() => {
                               const safeUrl = getSafeImageUrl(previewUrl);
                               return safeUrl ? (
-                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 shrink-0">
+                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-slate-200 shrink-0">
                                   <img
                                     src={safeUrl}
                                     alt="Thumbnail"
@@ -716,16 +716,16 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                   />
                                 </div>
                               ) : (
-                                <div className="h-16 w-16 rounded-md bg-gray-200 flex items-center justify-center shrink-0">
-                                  <TbPhoto className="h-8 w-8 text-gray-400" />
+                                <div className="h-16 w-16 rounded-md bg-slate-200 flex items-center justify-center shrink-0">
+                                  <TbPhoto className="h-8 w-8 text-slate-400" />
                                 </div>
                               );
                             })()}
                             <div className="text-left grow">
-                              <p className="text-sm font-medium text-gray-700 truncate">
+                              <p className="text-sm font-medium text-slate-700 truncate">
                                 {file.name}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-slate-500">
                                 {(file.size / (1024 * 1024)).toFixed(2)} MB •
                                 Klik untuk pratinjau
                               </p>
@@ -751,7 +751,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 e.stopPropagation();
                                 handleRemoveFile(e);
                               }}
-                              className="hover:text-red-600 hover:bg-red-50 text-gray-500 cursor-pointer relative z-30 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all duration-200 -mr-2"
+                              className="hover:text-red-600 hover:bg-red-50 text-slate-500 cursor-pointer relative z-30 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all duration-200 -mr-2"
                               aria-label="Hapus file"
                               type="button"
                               title="Hapus file"
@@ -773,7 +773,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.3 }}
-                        className="border-t-2 border-gray-200"
+                        className="border-t-2 border-slate-200"
                       >
                         <div className="flex justify-between mt-4">
                           <motion.div
@@ -906,11 +906,11 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                   }}
                   className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full flex items-center space-x-2"
                 >
-                  <TbZoomOut className="text-gray-200" />
+                  <TbZoomOut className="text-slate-200" />
                   <div className="text-sm font-medium">
                     {Math.round(zoomLevel * 100)}%
                   </div>
-                  <TbZoomIn className="text-gray-200" />
+                  <TbZoomIn className="text-slate-200" />
                 </motion.div>
               </motion.div>
             </motion.div>

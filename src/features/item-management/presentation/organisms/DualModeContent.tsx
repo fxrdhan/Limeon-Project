@@ -58,12 +58,12 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
     <div className="space-y-4">
       {/* Kode Comparison */}
       <div>
-        <label className="block text-gray-700 mb-2">Kode</label>
+        <label className="block text-slate-700 mb-2">Kode</label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
+          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isKodeDifferent
               ? 'border-purple-500 ring-3 ring-purple-500/20'
-              : 'border-gray-300'
+              : 'border-slate-300'
           }`}
         >
           {compData.isKodeDifferent ? (
@@ -73,19 +73,19 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
               className="w-full"
             />
           ) : (
-            <span className="text-gray-800">{leftKode}</span>
+            <span className="text-slate-800">{leftKode}</span>
           )}
         </div>
       </div>
 
       {/* Name Comparison */}
       <div>
-        <label className="block text-gray-700 mb-2">Nama {entityName}</label>
+        <label className="block text-slate-700 mb-2">Nama {entityName}</label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
+          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isNameDifferent
               ? 'border-purple-500 ring-3 ring-purple-500/20'
-              : 'border-gray-300'
+              : 'border-slate-300'
           }`}
         >
           {compData.isNameDifferent ? (
@@ -95,21 +95,21 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
               className="w-full"
             />
           ) : (
-            <span className="text-gray-800">{leftName}</span>
+            <span className="text-slate-800">{leftName}</span>
           )}
         </div>
       </div>
 
       {/* Description/Address Comparison */}
       <div>
-        <label className="block text-gray-700 mb-2">
+        <label className="block text-slate-700 mb-2">
           {entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
         </label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
+          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
             compData.isDescriptionDifferent
               ? 'border-purple-500 ring-3 ring-purple-500/20'
-              : 'border-gray-300'
+              : 'border-slate-300'
           }`}
         >
           {compData.isDescriptionDifferent ? (
@@ -119,7 +119,7 @@ const DualModeContent: React.FC<DualModeContentProps> = ({
               className="w-full leading-relaxed"
             />
           ) : (
-            <span className="text-gray-800 whitespace-pre-wrap">
+            <span className="text-slate-800 whitespace-pre-wrap">
               {leftDescription}
             </span>
           )}

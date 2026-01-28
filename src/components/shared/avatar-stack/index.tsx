@@ -186,7 +186,7 @@ const AvatarStack = memo(
         'bg-indigo-500',
         'bg-yellow-500',
         'bg-red-500',
-        'bg-gray-500',
+        'bg-slate-500',
       ];
 
       const index = userId
@@ -223,8 +223,8 @@ const AvatarStack = memo(
             <div
               className={`
                 ${sizeClasses[size]} -ml-2
-                rounded-full bg-gray-100
-                flex items-center justify-center text-gray-600 font-medium
+                rounded-full bg-slate-100
+                flex items-center justify-center text-slate-600 font-medium
                 shadow-sm
               `}
               title={`+${hiddenCount} more online users`}

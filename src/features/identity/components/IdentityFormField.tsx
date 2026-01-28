@@ -42,7 +42,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
             variant="text"
             size="sm"
             onClick={() => handleCancelEdit(field.key)}
-            className="text-gray-500 hover:text-red-500 p-1"
+            className="text-slate-500 hover:text-red-500 p-1"
             title="Batal"
           >
             <TbBan className="text-red-500 text-sm" />
@@ -51,7 +51,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
             variant="text"
             size="sm"
             onClick={() => handleSaveField(field.key)}
-            className="text-gray-500 hover:text-gray-700 p-1"
+            className="text-slate-500 hover:text-slate-700 p-1"
             disabled={loadingField[field.key]}
             title="Simpan"
           >
@@ -70,7 +70,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
         variant="text"
         size="sm"
         onClick={() => toggleEdit(field.key)}
-        className="text-gray-500 hover:text-gray-700 p-1"
+        className="text-slate-500 hover:text-slate-700 p-1"
         title="Edit"
       >
         <TbPencil className="text-primary text-sm" />
@@ -115,7 +115,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
         <textarea
           ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
           id={field.key}
-          className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
+          className="text-sm w-full p-2 border border-slate-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
           value={String(fieldValue ?? '')}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             handleChange(field.key, e.target.value)
@@ -150,7 +150,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
     const value = String(displayValue ?? '');
     return (
-      value || <span className="text-gray-400 italic">Tidak ada data</span>
+      value || <span className="text-slate-400 italic">Tidak ada data</span>
     );
   };
 
@@ -159,7 +159,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       <div className="flex justify-between items-center mb-1">
         <label
           htmlFor={field.key}
-          className="text-sm font-medium text-gray-600"
+          className="text-sm font-medium text-slate-600"
         >
           {field.label}
         </label>
@@ -169,7 +169,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       {isInEditMode ? (
         renderEditableField()
       ) : (
-        <div className="p-2 bg-gray-50 rounded-md min-h-[40px] text-sm">
+        <div className="p-2 bg-slate-50 rounded-md min-h-[40px] text-sm">
           {renderDisplayValue()}
         </div>
       )}

@@ -50,13 +50,13 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
     (mode === 'add' || mode === 'edit') && isEditMode && initialData?.id;
 
   return (
-    <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-xl">
+    <div className="flex justify-between items-center p-4 border-b-2 border-slate-200 bg-slate-100 rounded-t-xl">
       <div className="flex items-center gap-2">
         {showBackButton && (
           <Button
             variant="text"
             onClick={goBack}
-            className="text-gray-600 hover:text-gray-800 p-1 flex items-center"
+            className="text-slate-600 hover:text-slate-800 p-1 flex items-center"
           >
             <TbArrowLeft size={16} />
           </Button>
@@ -70,7 +70,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
             onClick={() =>
               uiActions.openHistory(getEntityTable(entityName), initialData.id)
             }
-            className="text-gray-500 hover:text-primary flex items-center transition-colors p-2"
+            className="text-slate-500 hover:text-primary flex items-center transition-colors p-2"
             title={`Lihat riwayat perubahan ${entityName} (Terakhir diubah: ${formattedUpdateAt})`}
           >
             <TbHistory size={16} />
@@ -97,7 +97,7 @@ const EntityModalFooter: React.FC<{
   // Special footer for history mode with toggle button
   if (mode === 'history') {
     return (
-      <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
+      <div className="flex justify-between items-center p-4 border-t-2 border-slate-200 rounded-b-lg">
         <div>
           <Button type="button" variant="text" onClick={onModeToggle}>
             {compareMode ? 'Single View' : 'Compare Mode'}
@@ -112,7 +112,7 @@ const EntityModalFooter: React.FC<{
 
   // Default footer for add/edit modes
   return (
-    <div className="flex justify-between p-4 border-t-2 border-gray-200 rounded-b-lg">
+    <div className="flex justify-between p-4 border-t-2 border-slate-200 rounded-b-lg">
       <div>
         {isEditMode && handleDelete ? (
           <Button

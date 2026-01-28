@@ -355,7 +355,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   ref={itemDropdownRef}
                   style={portalStyle}
                   className={classNames(
-                    'bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto',
+                    'bg-white shadow-lg rounded-md border border-slate-200 max-h-60 overflow-y-auto',
                     'transition-all duration-200 ease-out',
                     {
                       'origin-top': dropDirection === 'down',
@@ -382,7 +382,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   }}
                 >
                   {filteredItems.length === 0 ? (
-                    <div className="p-3 text-sm text-gray-500">
+                    <div className="p-3 text-sm text-slate-500">
                       Item tidak ditemukan.
                     </div>
                   ) : (
@@ -397,7 +397,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                           {
                             'bg-primary/10 border-l-4 border-primary':
                               index === highlightedIndex,
-                            'hover:bg-gray-100': index !== highlightedIndex,
+                            'hover:bg-slate-100': index !== highlightedIndex,
                           }
                         )}
                         onClick={() => handleItemSelect(item)}
@@ -407,7 +407,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                           <span className="font-semibold">{item.code}</span> -{' '}
                           {item.name}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-slate-500">
                           Harga:{' '}
                           {item.base_price.toLocaleString('id-ID', {
                             style: 'currency',

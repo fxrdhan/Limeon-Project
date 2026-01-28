@@ -807,7 +807,7 @@ export default function ItemPricingForm({
                           className={`absolute inset-y-0 right-0 flex items-center pr-3 text-lg font-bold transition-colors duration-300 ${
                             isBaselineAddActive
                               ? 'text-primary cursor-pointer'
-                              : 'text-gray-300 cursor-not-allowed'
+                              : 'text-slate-300 cursor-not-allowed'
                           }`}
                           onClick={() => {
                             if (isBaselineAddActive) {

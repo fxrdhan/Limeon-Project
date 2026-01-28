@@ -21,7 +21,7 @@ export default function ItemCodeField({
         value={displayCode}
         readOnly
         placeholder="Auto-generated"
-        className="w-full bg-gray-50"
+        className="w-full bg-slate-50"
         error={error}
         required
       />

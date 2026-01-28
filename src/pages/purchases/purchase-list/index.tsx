@@ -395,7 +395,7 @@ const PurchaseList = () => {
                   <TableRow>
                     <TableCell
                       colSpan={7}
-                      className="text-center text-gray-600"
+                      className="text-center text-slate-600"
                     >
                       {debouncedSearch
                         ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"`

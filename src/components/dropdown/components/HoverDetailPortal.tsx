@@ -42,7 +42,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
         >
           {/* Container with layout animation - resizes first, NO text animation */}
           <motion.div
-            className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 min-w-[250px] max-w-[500px] w-max relative"
+            className="bg-white rounded-lg shadow-xl border border-slate-200 p-4 min-w-[250px] max-w-[500px] w-max relative"
             layout
             layoutId={`hover-detail-${data.id}`}
             transition={{
@@ -69,7 +69,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
                     {data.code}
                   </Badge>
                 )}
-                <h3 className="font-semibold text-gray-900 break-words">
+                <h3 className="font-semibold text-slate-900 break-words">
                   {data.name}
                 </h3>
               </div>
@@ -77,7 +77,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               {/* Description - static, no animation */}
               {data.description && (
                 <div className="mb-3">
-                  <p className="text-sm text-gray-600 leading-relaxed break-words">
+                  <p className="text-sm text-slate-600 leading-relaxed break-words">
                     {data.description}
                   </p>
                 </div>
@@ -85,8 +85,8 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
 
               {/* Metadata - static, no animation */}
               {data.updated_at && (
-                <div className="border-t border-gray-100 pt-2">
-                  <div className="text-xs text-gray-500">
+                <div className="border-t border-slate-100 pt-2">
+                  <div className="text-xs text-slate-500">
                     <div className="flex justify-between">
                       <span>Updated:</span>
                       <span className="ml-2">

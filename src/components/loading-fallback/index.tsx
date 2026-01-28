@@ -42,28 +42,28 @@ export const TableLoadingFallback = ({
       {/* Table skeleton */}
       <div className="overflow-x-auto rounded-lg shadow-xs mb-6">
         <table className="min-w-full w-full table-fixed bg-white rounded-lg overflow-hidden">
-          <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
+          <thead className="bg-slate-50 text-slate-700 border-b border-slate-200">
             <tr>
               {Array.from({ length: tableColumns }).map((_, index) => (
                 <th
                   key={index}
-                  className="py-3 px-3 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm"
+                  className="py-3 px-3 text-left bg-slate-200 text-slate-700 uppercase tracking-wider text-sm"
                 >
                   <Skeleton className="h-4 w-20" />
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-slate-100 bg-white">
             {Array.from({ length: tableRows }).map((_, rowIndex) => (
               <tr
                 key={rowIndex}
-                className="transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30"
+                className="transition-colors duration-150 hover:bg-slate-50 even:bg-slate-50/30"
               >
                 {Array.from({ length: tableColumns }).map((_, colIndex) => (
                   <td
                     key={colIndex}
-                    className="text-sm py-3 px-3 text-gray-700 align-middle"
+                    className="text-sm py-3 px-3 text-slate-700 align-middle"
                   >
                     <Skeleton
                       className="h-4"
@@ -79,7 +79,7 @@ export const TableLoadingFallback = ({
 
       {/* Pagination skeleton */}
       {showPagination && (
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-slate-200 sm:px-6">
           <div className="flex items-center">
             <Skeleton className="h-4 w-32" />
           </div>

@@ -88,19 +88,19 @@ const DateTimeDisplay = () => {
           value={selectedDate}
           onChange={setSelectedDate}
         >
-          <div className="inline-flex items-center space-x-3 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
-            <span className="text-sm text-gray-600 tracking-tight font-medium">
+          <div className="inline-flex items-center space-x-3 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-md transition-colors">
+            <span className="text-sm text-slate-600 tracking-tight font-medium">
               {datePart}
             </span>
-            <TbCalendarMonthFilled className="w-5 h-5 text-gray-600" />
+            <TbCalendarMonthFilled className="w-5 h-5 text-slate-600" />
           </div>
         </Calendar>
 
-        <div className="h-5 w-px bg-gray-300 mx-3"></div>
+        <div className="h-5 w-px bg-slate-300 mx-3"></div>
 
         {/* Time */}
         <div
-          className="text-sm text-gray-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors group"
+          className="text-sm text-slate-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-md transition-colors group"
           onClick={handleTimeFormatToggle}
           title={`Click to switch to ${is24HourFormat ? '12' : '24'}-hour format`}
         >
@@ -127,7 +127,7 @@ const DateTimeDisplay = () => {
           </AnimatePresence>
 
           {/* Format indicator badge */}
-          <span className="ml-2 text-[10px] font-semibold text-gray-400 group-hover:text-gray-600 transition-colors">
+          <span className="ml-2 text-[10px] font-semibold text-slate-400 group-hover:text-slate-600 transition-colors">
             {is24HourFormat ? '24h' : '12h'}
           </span>
         </div>

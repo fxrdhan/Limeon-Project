@@ -307,7 +307,7 @@ export const SlidingSelector = <T,>({
         role="tablist"
         aria-label="Navigation tabs"
         className={classNames(
-          'flex items-center bg-zinc-100 shadow-md text-gray-700 overflow-hidden select-none relative w-fit',
+          'flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit',
           sizeClasses.container,
           shapeClasses.container,
           className
@@ -369,7 +369,7 @@ export const SlidingSelector = <T,>({
                     sizeClasses.text,
                     {
                       'text-white': isActive,
-                      'text-gray-700 group-hover:text-secondary':
+                      'text-slate-700 group-hover:text-secondary':
                         !isActive && !option.disabled,
                     }
                   )}
@@ -431,7 +431,7 @@ export const SlidingSelector = <T,>({
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="w-4 h-4 text-gray-600 group-hover:text-secondary"
+                  className="w-4 h-4 text-slate-600 group-hover:text-secondary"
                 >
                   <svg
                     fill="none"

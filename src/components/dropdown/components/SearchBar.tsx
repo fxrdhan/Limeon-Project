@@ -28,7 +28,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       onAddNew;
 
     return (
-      <div className="p-2 border-b border-gray-200 sticky top-0 z-10">
+      <div className="p-2 border-b border-slate-200 sticky top-0 z-10">
         <div className="relative flex items-center gap-2 min-w-0">
           <div className="relative flex-1 min-w-0">
             <SearchInput

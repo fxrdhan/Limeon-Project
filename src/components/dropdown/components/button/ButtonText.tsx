@@ -20,7 +20,7 @@ const ButtonText: React.FC<ButtonTextProps> = ({
           ? 'whitespace-normal break-words leading-relaxed'
           : 'truncate'
       } ${
-        isPlaceholder ? 'text-gray-400' : 'text-gray-800'
+        isPlaceholder ? 'text-slate-400' : 'text-slate-800'
       } transition-all duration-200 text-left flex-1 min-w-0`}
       title={titleText}
     >

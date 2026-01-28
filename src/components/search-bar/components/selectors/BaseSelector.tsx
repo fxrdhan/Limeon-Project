@@ -450,7 +450,7 @@ function BaseSelector<T>({
   const headerContent = useMemo(() => {
     if (internalSearchTerm) {
       return (
-        <div className="flex items-center gap-2 text-xs text-gray-600">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
           <TbSearch className="w-3 h-3" />
           <span>
             Searching:{' '}
@@ -470,7 +470,7 @@ function BaseSelector<T>({
       );
     }
     return (
-      <div className="flex items-center gap-2 text-xs text-gray-600">
+      <div className="flex items-center gap-2 text-xs text-slate-600">
         <TbSparkles className="w-3 h-3" />
         <span>{config.headerText}</span>
       </div>
@@ -482,7 +482,7 @@ function BaseSelector<T>({
       {isOpen && (
         <motion.div
           ref={modalRef}
-          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] overflow-hidden"
+          className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-lg min-w-[180px] overflow-hidden"
           style={{
             top: position.top + 5,
             left: position.left,
@@ -496,7 +496,7 @@ function BaseSelector<T>({
             {showHeader && (
               <>
                 <motion.div
-                  className="shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg"
+                  className="shrink-0 bg-white border-b border-slate-100 px-3 py-2 rounded-t-lg"
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
@@ -525,7 +525,7 @@ function BaseSelector<T>({
                   className="max-h-65 overflow-y-auto py-1"
                 >
                   {filteredItems.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                    <div className="px-3 py-4 text-sm text-slate-500 text-center">
                       {internalSearchTerm
                         ? `No results for "${internalSearchTerm}"`
                         : config.noResultsText.replace(
@@ -600,8 +600,8 @@ function BaseSelector<T>({
                               className={`shrink-0 transition-colors duration-150 ${
                                 isSelected
                                   ? config.getItemActiveColor?.(item) ||
-                                    'text-gray-900'
-                                  : 'text-gray-500'
+                                    'text-slate-900'
+                                  : 'text-slate-500'
                               }`}
                             >
                               {config.getItemIcon(item)}
@@ -612,7 +612,7 @@ function BaseSelector<T>({
                                   className={`text-sm font-medium transition-colors duration-150 ${
                                     isSelected
                                       ? selectedTextClass
-                                      : 'text-gray-700'
+                                      : 'text-slate-700'
                                   }`}
                                 >
                                   <HighlightedText
@@ -622,14 +622,14 @@ function BaseSelector<T>({
                                   />
                                 </span>
                                 {config.getItemSecondaryText && (
-                                  <span className="text-xs text-gray-400">
+                                  <span className="text-xs text-slate-400">
                                     {config.getItemSecondaryText(item)}
                                   </span>
                                 )}
                               </div>
                               {config.getItemDescription &&
                                 config.getItemDescription(item) && (
-                                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
                                     {config.getItemDescription(item)}
                                   </p>
                                 )}
@@ -647,13 +647,13 @@ function BaseSelector<T>({
           <AnimatePresence>
             {showHeader && (
               <motion.div
-                className="shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg"
+                className="shrink-0 bg-slate-50 border-t border-slate-100 px-3 py-2 rounded-b-lg"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
               >
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>
                     {internalSearchTerm ? 'Type to search' : 'Enter to select'}
                   </span>

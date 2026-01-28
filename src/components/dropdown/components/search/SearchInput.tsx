@@ -35,7 +35,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
           searchState === SEARCH_STATES.NOT_FOUND
             ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-200'
-            : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
+            : 'border-slate-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
         }`}
         placeholder="Cari..."
         value={searchTerm}

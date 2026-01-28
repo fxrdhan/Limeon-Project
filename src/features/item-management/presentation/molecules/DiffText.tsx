@@ -32,7 +32,7 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
   const getSegmentStyle = (type: 'added' | 'removed' | 'unchanged') => {
     if (type === 'unchanged') {
       return {
-        className: 'text-gray-800',
+        className: 'text-slate-800',
         style: {},
         title: '',
       };
@@ -41,13 +41,13 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
     // Green for added, red for removed
     if (type === 'added') {
       return {
-        className: 'bg-green-400 text-gray-900 py-0.5 font-medium',
+        className: 'bg-green-400 text-slate-900 py-0.5 font-medium',
         style: { backgroundColor: '#4ade80' },
         title: 'Ditambahkan',
       };
     } else {
       return {
-        className: 'bg-red-400 text-gray-900 py-0.5 font-medium',
+        className: 'bg-red-400 text-slate-900 py-0.5 font-medium',
         style: { backgroundColor: '#f87171' },
         title: 'Dihapus',
       };

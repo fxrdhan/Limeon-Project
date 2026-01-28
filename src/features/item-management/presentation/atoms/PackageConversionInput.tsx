@@ -56,7 +56,7 @@ export default function PackageConversionInput({
   return (
     <div>
       <h3 className="text-lg font-medium mb-3">Tambah Konversi Kemasan</h3>
-      <p className="text-sm text-gray-600 mb-2">
+      <p className="text-sm text-slate-600 mb-2">
         1 {baseUnit || 'Kemasan Dasar'} setara berapa kemasan turunan?
       </p>
       <div className="flex flex-row gap-4 mb-3">
@@ -107,7 +107,7 @@ export default function PackageConversionInput({
               type="button"
               tabIndex={tabIndex + 2}
               className={`absolute inset-y-0 right-0 flex items-center pr-3 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
-                isAddButtonActive ? 'text-primary' : 'text-gray-300'
+                isAddButtonActive ? 'text-primary' : 'text-slate-300'
               }`}
               onClick={e => {
                 e.preventDefault();

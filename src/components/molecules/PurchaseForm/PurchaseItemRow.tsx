@@ -76,7 +76,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
           type="text"
           value={item.batch_no || ''}
           onChange={e => onBatchNoChange(item.id, e.target.value)}
-          className="w-20 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left"
+          className="w-20 bg-transparent border-b border-slate-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left"
           placeholder="No. Batch"
         />
       </TableCell>
@@ -89,7 +89,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
               newDate ? newDate.toISOString().split('T')[0] : ''
             );
           }}
-          inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-gray-300! focus:border-primary! focus:ring-0! rounded-none!"
+          inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-slate-300! focus:border-primary! focus:ring-0! rounded-none!"
           placeholder="Pilih ED"
           minDate={new Date()}
           size="md"
@@ -116,14 +116,14 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
             const numericValue = parseInt(item.quantity.toString(), 10);
             onQuantityChange(item.id, numericValue < 1 ? 1 : numericValue);
           }}
-          className="w-8 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-leeft"
+          className="w-8 bg-transparent border-b border-slate-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-leeft"
         />
       </TableCell>
       <TableCell className="text-center">
         <select
           value={item.unit}
           onChange={e => onUnitChange(item.id, e.target.value)}
-          className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left appearance-none cursor-pointer"
+          className="w-16 bg-transparent border-b border-slate-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left appearance-none cursor-pointer"
         >
           {unitOptions.map(option => (
             <option key={option.id} value={option.name}>
@@ -140,7 +140,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
             const numericValue = extractNumericValue(e.target.value);
             onPriceChange(item.id, numericValue);
           }}
-          className="w-20 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
+          className="w-20 bg-transparent border-b border-slate-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
           placeholder="Rp 0"
         />
       </TableCell>
@@ -151,7 +151,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
           onChange={e =>
             handlePercentageInput(e.target.value, onDiscountChange)
           }
-          className="w-12 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
+          className="w-12 bg-transparent border-b border-slate-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
           placeholder="0%"
           onKeyDown={e =>
             handleBackspaceOnPercentage(e, item.discount, onDiscountChange)
@@ -164,7 +164,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
             type="text"
             value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
             onChange={e => handlePercentageInput(e.target.value, onVatChange)}
-            className="w-12 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
+            className="w-12 bg-transparent border-b border-slate-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
             placeholder="0%"
             onKeyDown={e =>
               handleBackspaceOnPercentage(e, item.vat_percentage, onVatChange)

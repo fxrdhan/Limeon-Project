@@ -134,17 +134,17 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
                         : 'border-2 border-purple-300 bg-purple-300';
                     }
                   }
-                  return 'border-2 border-gray-300 bg-white';
+                  return 'border-2 border-slate-300 bg-white';
                 })()
               : 'border-2 border-blue-300 bg-blue-300'
-            : 'border-2 border-gray-300 bg-white'
+            : 'border-2 border-slate-300 bg-white'
         }`}
       />
 
       <div
         className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-lg ${bgColor} ${
           isExpanded ? 'shadow-md' : ''
-        } border border-gray-200 hover:border-gray-300`}
+        } border border-slate-200 hover:border-slate-300`}
         onMouseEnter={() => onMouseEnter(item.id)}
         onMouseLeave={onMouseLeave}
         onClick={() => onClick(item)}
@@ -162,7 +162,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
             >
               {item.action_type}
             </span>
-            <span className="text-gray-500 text-xs">
+            <span className="text-slate-500 text-xs">
               {formatDateTime(item.changed_at)}
             </span>
           </div>
@@ -221,7 +221,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
           }`}
         >
           {item.changed_fields && (
-            <div className="text-xs p-3 rounded-lg border transition-all duration-300 bg-gray-50 border-gray-200 text-gray-600">
+            <div className="text-xs p-3 rounded-lg border transition-all duration-300 bg-slate-50 border-slate-200 text-slate-600">
               <span className="font-medium">Changed fields:</span>{' '}
               {Object.keys(item.changed_fields).join(', ')}
             </div>
@@ -549,7 +549,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
           return selectionIndex === 0 ? 'bg-blue-50' : 'bg-purple-50';
         }
       }
-      return 'hover:bg-gray-50';
+      return 'hover:bg-slate-50';
     }
 
     if (selectedVersions.includes(item.version_number)) {
@@ -558,7 +558,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     if (selectedVersion === item.version_number) {
       return 'bg-green-50';
     }
-    return 'hover:bg-gray-50';
+    return 'hover:bg-slate-50';
   };
 
   // Only show empty state when no history exists (not loading)
@@ -568,14 +568,14 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       return (
         <div className="p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-2 text-gray-500">{loadingMessage}</p>
+          <p className="mt-2 text-slate-500">{loadingMessage}</p>
         </div>
       );
     }
 
     // Show empty state when no data and not loading
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-slate-500">
         <TbHistory size={48} className="mx-auto mb-4 opacity-30" />
         <p>{emptyMessage}</p>
       </div>
@@ -586,7 +586,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     <div className="p-6">
       <div className="relative">
         {/* Fixed timeline line - doesn't scroll */}
-        <div className="absolute left-[5.4px] top-8 bottom-0 w-0.5 bg-gray-300 opacity-50 z-0" />
+        <div className="absolute left-[5.4px] top-8 bottom-0 w-0.5 bg-slate-300 opacity-50 z-0" />
 
         {/* Top fade overlay */}
         {scrollState.canScrollUp && (

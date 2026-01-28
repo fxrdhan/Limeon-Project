@@ -468,7 +468,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="origin-top bg-white rounded-xl border border-gray-200 shadow-xl"
+                  className="origin-top bg-white rounded-xl border border-slate-200 shadow-xl"
                   role="menu"
                   onClick={e => e.stopPropagation()}
                 >
@@ -479,9 +479,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                       size="sm"
                       withUnderline={false}
                       onClick={handleCsvExport}
-                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
                     >
-                      <TbCsv className="h-6 w-6 text-gray-500 group-hover:text-primary" />
+                      <TbCsv className="h-6 w-6 text-slate-500 group-hover:text-primary" />
                       <span>Export ke CSV</span>
                     </Button>
 
@@ -491,9 +491,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                       size="sm"
                       withUnderline={false}
                       onClick={handleExcelExport}
-                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
                     >
-                      <TbTableFilled className="h-6 w-6 text-gray-500 group-hover:text-primary" />
+                      <TbTableFilled className="h-6 w-6 text-slate-500 group-hover:text-primary" />
                       <span>Export ke Excel</span>
                     </Button>
 
@@ -503,9 +503,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                       size="sm"
                       withUnderline={false}
                       onClick={handleJsonExport}
-                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
                     >
-                      <TbJson className="h-6 w-6 text-gray-500 group-hover:text-primary" />
+                      <TbJson className="h-6 w-6 text-slate-500 group-hover:text-primary" />
                       <span>Export ke JSON</span>
                     </Button>
 
@@ -516,9 +516,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                       withUnderline={false}
                       onClick={handleGoogleSheetsExport}
                       disabled={isGoogleSheetsLoading || isAuthenticating}
-                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <TbBrandGoogle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
+                      <TbBrandGoogle className="h-5 w-5 text-slate-500 group-hover:text-primary" />
                       <span>
                         {isAuthenticating
                           ? 'Authenticating...'

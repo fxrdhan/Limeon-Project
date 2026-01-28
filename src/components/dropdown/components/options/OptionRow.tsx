@@ -115,8 +115,8 @@ const OptionRow: React.FC<OptionRowProps> = ({
   const textStateClass = isSelected
     ? 'text-primary font-semibold'
     : isHighlighted
-      ? 'text-gray-800 font-semibold'
-      : 'text-gray-800';
+      ? 'text-slate-800 font-semibold'
+      : 'text-slate-800';
 
   const backgroundClass = isHighlighted
     ? 'bg-slate-300/50'
@@ -130,7 +130,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
       role="option"
       aria-selected={Boolean(isSelected)}
       type="button"
-      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-gray-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
+      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

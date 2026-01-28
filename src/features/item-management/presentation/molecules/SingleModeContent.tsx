@@ -37,19 +37,19 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
       return 'border-purple-500 ring-3 ring-purple-500/20';
     }
     // Default (no difference)
-    return 'border-gray-300';
+    return 'border-slate-300';
   };
 
   return (
     <div className="space-y-4">
       {/* Kode Field */}
       <div>
-        <label className="block text-gray-700 mb-2">Kode</label>
+        <label className="block text-slate-700 mb-2">Kode</label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
+          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isKodeDifferent
               ? getDiffBorderClass(compData.leftKode, compData.rightKode)
-              : 'border-gray-300'
+              : 'border-slate-300'
           }`}
         >
           {compData.isKodeDifferent ? (
@@ -59,19 +59,19 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
               className="w-full"
             />
           ) : (
-            <span className="text-gray-800">{compData.leftKode}</span>
+            <span className="text-slate-800">{compData.leftKode}</span>
           )}
         </div>
       </div>
 
       {/* Name Field */}
       <div>
-        <label className="block text-gray-700 mb-2">Nama {entityName}</label>
+        <label className="block text-slate-700 mb-2">Nama {entityName}</label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
+          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isNameDifferent
               ? getDiffBorderClass(compData.leftName, compData.rightName)
-              : 'border-gray-300'
+              : 'border-slate-300'
           }`}
         >
           {compData.isNameDifferent ? (
@@ -81,24 +81,24 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
               className="w-full"
             />
           ) : (
-            <span className="text-gray-800">{compData.leftName}</span>
+            <span className="text-slate-800">{compData.leftName}</span>
           )}
         </div>
       </div>
 
       {/* Description Field */}
       <div>
-        <label className="block text-gray-700 mb-2">
+        <label className="block text-slate-700 mb-2">
           {entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
         </label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-gray-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
+          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
             compData.isDescriptionDifferent
               ? getDiffBorderClass(
                   compData.leftDescription,
                   compData.rightDescription
                 )
-              : 'border-gray-300'
+              : 'border-slate-300'
           }`}
         >
           {compData.isDescriptionDifferent ? (
@@ -108,7 +108,7 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
               className="w-full leading-relaxed"
             />
           ) : (
-            <span className="text-gray-800 whitespace-pre-wrap">
+            <span className="text-slate-800 whitespace-pre-wrap">
               {compData.leftDescription}
             </span>
           )}

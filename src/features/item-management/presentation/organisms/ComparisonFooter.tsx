@@ -34,7 +34,7 @@ const ComparisonFooter: React.FC<ComparisonFooterProps> = ({
   };
 
   return (
-    <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
+    <div className="flex justify-between items-center p-4 border-t-2 border-slate-200 rounded-b-lg">
       {shouldShowRestore ? (
         <Button
           type="button"

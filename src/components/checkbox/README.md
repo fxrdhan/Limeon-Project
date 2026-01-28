@@ -204,7 +204,7 @@ className = 'inline-flex items-center group focus:outline-hidden';
 className = 'relative w-5 h-5 border-2 rounded-md';
 
 // Label styling
-className = 'text-sm text-gray-700 select-none';
+className = 'text-sm text-slate-700 select-none';
 ```
 
 ### Icon Customization

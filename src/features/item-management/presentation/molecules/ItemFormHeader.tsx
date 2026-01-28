@@ -55,7 +55,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
 
     return (
       <>
-        <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
+        <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-slate-200 mb-6">
           {/* Left section - empty placeholder for symmetry */}
           <div className="flex items-center" />
 
@@ -76,7 +76,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 variant="text"
                 size="sm"
                 onClick={handleTimestampClick}
-                className="text-sm text-gray-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                className="text-sm text-slate-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 title="Lihat riwayat perubahan"
                 tabIndex={-1}
               >
@@ -88,7 +88,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 variant="text"
                 size="md"
                 onClick={onReset}
-                className="text-gray-600 hover:text-orange-600 flex items-center"
+                className="text-slate-600 hover:text-orange-600 flex items-center"
                 title="Ctrl+Shift+R"
               >
                 <TbArrowBackUp className="mr-1.5" size={12} /> Reset All

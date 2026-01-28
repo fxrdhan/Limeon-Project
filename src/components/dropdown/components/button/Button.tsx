@@ -59,8 +59,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             disabled
               ? 'cursor-not-allowed'
               : isPlaceholder
-                ? 'text-gray-500 hover:text-gray-600 cursor-pointer'
-                : 'text-gray-700 hover:text-gray-800 cursor-pointer'
+                ? 'text-slate-500 hover:text-slate-600 cursor-pointer'
+                : 'text-slate-700 hover:text-slate-800 cursor-pointer'
           }`}
           aria-haspopup="menu"
           aria-expanded={isOpen || isClosing}
@@ -95,10 +95,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           isExpanded ? 'items-start' : 'items-center'
         } ${
           disabled
-            ? 'bg-gray-100 text-gray-800 cursor-not-allowed border-slate-200'
+            ? 'bg-slate-100 text-slate-800 cursor-not-allowed border-slate-200'
             : hasError
-              ? 'bg-white text-gray-800 hover:bg-gray-50 border-danger ring-3 ring-danger/20 focus:ring-red-200 focus:border-danger focus:outline-hidden focus:ring-3'
-              : 'bg-white text-gray-800 hover:bg-gray-50 border-slate-200 focus:ring-slate-200 focus:border-slate-300 focus:outline-hidden focus:ring-3'
+              ? 'bg-white text-slate-800 hover:bg-slate-50 border-danger focus:border-danger focus:ring-3 focus:ring-red-200 focus:outline-hidden'
+              : 'bg-white text-slate-800 hover:bg-slate-50 border-slate-300 focus:border-primary focus:ring-3 focus:ring-emerald-200 focus:outline-hidden'
         }`}
         aria-haspopup="menu"
         aria-expanded={isOpen || isClosing}

@@ -227,7 +227,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                   </h3>
                 </div>
 
-                <p className="text-gray-600 mb-6">
+                <p className="text-slate-600 mb-6">
                   Pilih metode restore yang sesuai dengan kebutuhan Anda:
                 </p>
 
@@ -238,7 +238,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                     className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       restoreMode === 'soft'
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <input
@@ -254,11 +254,11 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <TbClock className="w-5 h-5 text-blue-600" />
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-slate-900">
                           Soft Restore (Recommended)
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-slate-600">
                         Membuat versi baru dengan data dari v
                         {restoreTargetVersion}. History lengkap tetap tersimpan
                         untuk audit trail. Anda dapat undo jika perlu.
@@ -271,7 +271,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                     className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       restoreMode === 'hard'
                         ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <input
@@ -287,11 +287,11 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <TbAlertTriangle className="w-5 h-5 text-red-600" />
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-slate-900">
                           Hard Rollback (Destructive)
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-sm text-slate-600 mb-2">
                         Menghapus SEMUA versi setelah v{restoreTargetVersion}{' '}
                         secara permanen. Data yang dihapus tidak dapat
                         dikembalikan.

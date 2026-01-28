@@ -27,15 +27,15 @@ const SearchBar: React.FC<TableSearchProps> = ({
   const getSearchIconColor = () => {
     switch (searchState) {
       case 'idle':
-        return 'text-gray-400';
+        return 'text-slate-400';
       case 'typing':
-        return 'text-gray-800';
+        return 'text-slate-800';
       case 'found':
         return 'text-primary';
       case 'not-found':
         return 'text-red-500';
       default:
-        return 'text-gray-400';
+        return 'text-slate-400';
     }
   };
 
@@ -64,7 +64,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             } ${
               searchState === 'not-found'
                 ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
-                : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
+                : 'border-slate-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
             } focus:outline-none rounded-lg`}
             value={value}
             onChange={onChange}
@@ -90,7 +90,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             {value}
           </span>
           <TbArrowBack
-            className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
+            className={`absolute top-1/2 transform -translate-y-1/2 text-slate-600 pointer-events-none ml-1 transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               searchState === 'not-found' && value
                 ? 'opacity-100 scale-150 translate-x-0'
                 : 'opacity-0 scale-95 translate-x-2'

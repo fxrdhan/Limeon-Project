@@ -205,26 +205,26 @@ const ViewPurchase = () => {
             <h1 className="text-2xl font-bold text-center mb-2">
               FAKTUR PEMBELIAN
             </h1>
-            <div className="border-b-2 border-gray-400 mb-4"></div>
+            <div className="border-b-2 border-slate-400 mb-4"></div>
 
             <div className="flex justify-between gap-4">
               <div className="w-1/2">
                 <div className="text-left mb-4">
-                  <h2 className="font-bold text-lg text-gray-800">
+                  <h2 className="font-bold text-lg text-slate-800">
                     {purchase.supplier?.name || 'Supplier'}
                   </h2>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-slate-600">
                     <p>{purchase.supplier?.address || ''}</p>
                   </div>
                 </div>
 
                 <div className="text-left">
-                  <h2 className="text-sm text-gray-600">Customer:</h2>
+                  <h2 className="text-sm text-slate-600">Customer:</h2>
                   <div className="text-sm ">
                     <p className="font-bold">
                       {purchase.customer_name || 'Data belum tersedia'}
                     </p>
-                    <p className="text-gray-600">
+                    <p className="text-slate-600">
                       {purchase.customer_address || 'Alamat belum tersedia'}
                     </p>
                   </div>
@@ -232,7 +232,7 @@ const ViewPurchase = () => {
               </div>
 
               <div className="w-1/2">
-                <div className="bg-gray-50 p-3 rounded-sm text-sm">
+                <div className="bg-slate-50 p-3 rounded-sm text-sm">
                   <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                     <span className="text-left font-bold">No. Faktur</span>
                     <span className="px-2">:</span>
@@ -264,7 +264,7 @@ const ViewPurchase = () => {
           <div className="mb-8">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-100 text-xs">
+                <tr className="bg-slate-100 text-xs">
                   <th className="border p-1 text-left">No.</th>
                   <th className="border p-1 text-left">Kode</th>
                   <th className="border p-1 text-left">Nama Item</th>
@@ -285,14 +285,14 @@ const ViewPurchase = () => {
                   <tr>
                     <td
                       colSpan={purchase.is_vat_included ? 10 : 11}
-                      className="border p-2 text-center text-gray-500 text-xs"
+                      className="border p-2 text-center text-slate-500 text-xs"
                     >
                       Tidak ada item
                     </td>
                   </tr>
                 ) : (
                   items.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-gray-50 text-xs">
+                    <tr key={item.id} className="hover:bg-slate-50 text-xs">
                       <td className="border p-1 text-center">{index + 1}</td>
                       <td className="border p-1">{item.item?.code || '-'}</td>
                       <td className="border p-1">

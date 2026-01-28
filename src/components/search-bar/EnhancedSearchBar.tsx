@@ -3136,7 +3136,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                         : searchMode.showOperatorSelector ||
                             !!searchMode.partialJoin
                           ? 'border-blue-300 ring-3 ring-blue-100 focus-within:border-blue-500 focus-within:ring-3 focus-within:ring-blue-100'
-                          : 'border-gray-300 focus-within:border-primary focus-within:ring-3 focus-within:ring-emerald-200'
+                          : 'border-slate-300 focus-within:border-primary focus-within:ring-3 focus-within:ring-emerald-200'
             }`}
           >
             <SearchBadge
@@ -3201,7 +3201,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
-              className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 p-1 placeholder-gray-400"
+              className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 p-1 placeholder-slate-400"
               value={displayValue}
               onChange={wrappedInputChangeHandler}
               onKeyDown={wrappedKeyDownHandler}
@@ -3212,7 +3212,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         </div>
 
         {resultsCount !== undefined && searchState === 'found' && (
-          <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <div className="mt-2 text-xs text-slate-500 flex items-center gap-1">
             <TbSearch className="w-3 h-3" />
             <span>{resultsCount} hasil ditemukan</span>
           </div>

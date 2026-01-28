@@ -123,7 +123,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
       'bg-indigo-500',
       'bg-yellow-500',
       'bg-red-500',
-      'bg-gray-500',
+      'bg-slate-500',
     ];
 
     const index = userId
@@ -197,7 +197,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         <div className="flex items-center h-8">
           <h1 className="flex items-center" style={{ minHeight: '2em' }}>
             <span
-              className="text-2xl font-bold text-gray-800"
+              className="text-2xl font-bold text-slate-800"
               style={{
                 display: 'inline-block',
                 verticalAlign: 'top',
@@ -215,7 +215,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="text-2xl font-bold text-gray-800"
+                  className="text-2xl font-bold text-slate-800"
                   style={{
                     display: 'inline-block',
                     whiteSpace: 'nowrap',
@@ -235,7 +235,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     animate={{ opacity: 1, width: 'auto' }}
                     exit={{ opacity: 0, width: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="text-2xl font-bold text-gray-800"
+                    className="text-2xl font-bold text-slate-800"
                     style={{
                       display: 'inline-block',
                       whiteSpace: 'nowrap',
@@ -258,7 +258,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2, delay: 0.1 }}
-                  className="text-2xl font-bold text-gray-800"
+                  className="text-2xl font-bold text-slate-800"
                   style={{
                     display: 'inline-block',
                     whiteSpace: 'nowrap',
@@ -279,12 +279,12 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         <div className="relative flex justify-end items-center">
           <DateTimeDisplay />
 
-          <div className="h-5 w-px bg-gray-300 mx-4"></div>
+          <div className="h-5 w-px bg-slate-300 mx-4"></div>
 
           {/* Avatar Stack + Online Text Group */}
           <div className="relative">
             <div
-              className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-md hover:bg-slate-50 transition-colors"
               onMouseEnter={handleOnlineTextEnter}
               onMouseLeave={handleOnlineTextLeave}
             >
@@ -295,7 +295,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                 showPortal={showPortal}
               />
 
-              <div className="flex items-center text-sm text-gray-600">
+              <div className="flex items-center text-sm text-slate-600">
                 <span className="font-medium">{displayOnlineUsers} Online</span>
               </div>
             </div>
@@ -310,7 +310,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -10 }}
                     transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className="absolute inset-0 bg-white rounded-xl shadow-lg border border-gray-200"
+                    className="absolute inset-0 bg-white rounded-xl shadow-lg border border-slate-200"
                   />
 
                   {/* Portal Content - avatars don't inherit fade */}
@@ -326,7 +326,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                           className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
                             portalUser.id !== user?.id
                               ? 'cursor-pointer hover:bg-emerald-50'
-                              : 'cursor-default hover:bg-gray-50'
+                              : 'cursor-default hover:bg-slate-50'
                           }`}
                           onMouseEnter={() => setHoveredUser(portalUser.id)}
                           onMouseLeave={() => setHoveredUser(null)}
@@ -374,19 +374,19 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                               transition={{ duration: 0.25, ease: 'easeOut' }}
                             >
                               <div className="flex items-center gap-1">
-                                <p className="text-sm font-medium text-gray-900 truncate">
+                                <p className="text-sm font-medium text-slate-900 truncate">
                                   {portalUser.name}
                                 </p>
                                 {portalUser.id === user?.id && (
                                   <span className="flex items-center gap-1 text-xs">
-                                    <span className="w-3 h-px bg-gray-400 translate-y-0.5"></span>
+                                    <span className="w-3 h-px bg-slate-400 translate-y-0.5"></span>
                                     <span className="text-primary font-medium">
                                       You
                                     </span>
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500 truncate">
+                              <p className="text-xs text-slate-500 truncate">
                                 {portalUser.email}
                               </p>
                             </motion.div>
@@ -429,7 +429,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             </div>
           </div>
 
-          <div className="h-5 w-px bg-gray-300 mx-5"></div>
+          <div className="h-5 w-px bg-slate-300 mx-5"></div>
 
           <Profile />
         </div>

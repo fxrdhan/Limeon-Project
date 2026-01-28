@@ -88,7 +88,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                 onChange={onChange}
                 placeholder={placeholder}
                 className={classNames(
-                  'text-sm w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 focus:ring-offset-0',
+                  'text-sm w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-slate-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 focus:ring-offset-0',
                   'transition-all duration-200 ease-in-out',
                   textareaClassName
                 )}

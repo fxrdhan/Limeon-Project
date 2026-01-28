@@ -186,7 +186,7 @@ export const ConfirmDialogComponent: React.FC = () => {
             <div id="dialog-title" className="text-lg font-semibold mb-2">
               {title}
             </div>
-            <div className="text-gray-600 mb-6">{message}</div>
+            <div className="text-slate-600 mb-6">{message}</div>
 
             <div className="flex justify-between">
               <div>

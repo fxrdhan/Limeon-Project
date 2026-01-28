@@ -52,7 +52,7 @@ const VatPercentageEditor: React.FC<VatPercentageEditorProps> = ({
               onChange={e => setTempValue(e.target.value)}
               onBlur={stopEditing}
               onKeyDown={handleKeyDown}
-              className="w-16 p-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-16 p-1 border border-slate-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent"
               min="0"
               max="100"
             />
@@ -60,7 +60,7 @@ const VatPercentageEditor: React.FC<VatPercentageEditorProps> = ({
           </div>
         ) : (
           <span
-            className="w-10 p-1 rounded-md cursor-pointer flex items-center justify-end hover:bg-gray-100 transition-colors text-orange-500"
+            className="w-10 p-1 rounded-md cursor-pointer flex items-center justify-end hover:bg-slate-100 transition-colors text-orange-500"
             onClick={startEditing}
             title="Klik untuk mengubah persentase PPN"
           >

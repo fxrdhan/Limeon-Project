@@ -29,7 +29,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       className={classNames(
-        'bg-gray-200',
+        'bg-slate-200',
         {
           rounded: rounded,
           'animate-pulse': animate,

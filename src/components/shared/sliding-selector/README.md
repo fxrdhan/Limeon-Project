@@ -242,7 +242,7 @@ The component is used throughout the application:
 
 ```typescript
 // Container classes
-'flex items-center bg-zinc-100 shadow-md text-gray-700 overflow-hidden select-none relative w-fit';
+'flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit';
 
 // Active state background
 'absolute inset-0 bg-primary shadow-xs';

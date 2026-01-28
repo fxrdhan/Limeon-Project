@@ -181,7 +181,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
             <TableRow>
               <TableCell
                 colSpan={formData.is_vat_included ? 11 : 12}
-                className="text-center text-gray-500"
+                className="text-center text-slate-500"
               >
                 {'Belum ada item ditambahkan'}
               </TableCell>

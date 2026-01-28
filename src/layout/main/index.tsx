@@ -77,7 +77,7 @@ const MainLayout = () => {
   }, [setIsLocked, setSidebarCollapsed]);
 
   return (
-    <div className="flex h-screen bg-gray-100 text-gray-800 relative">
+    <div className="flex h-screen bg-slate-100 text-slate-800 relative">
       {isAnimating && (
         <div className="fixed inset-0 z-50 pointer-events-auto cursor-wait" />
       )}
@@ -92,7 +92,7 @@ const MainLayout = () => {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar sidebarCollapsed={sidebarCollapsed} />
 
-        <main className="flex-1 overflow-y-auto p-4 text-gray-800">
+        <main className="flex-1 overflow-y-auto p-4 text-slate-800">
           <Outlet />
         </main>
       </div>
