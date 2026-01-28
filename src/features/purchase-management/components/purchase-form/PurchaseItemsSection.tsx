@@ -1,6 +1,6 @@
 import React from 'react';
 import FormSection from '@/components/form-section';
-import ItemSearchBar from '@/components/item-search';
+import ItemSearchBar from '@/features/purchase-management/components/item-search';
 import Checkbox from '@/components/checkbox';
 import {
   Table,
@@ -10,8 +10,8 @@ import {
   TableCell,
   TableHeader,
 } from '@/components/table';
-import PurchaseItemRow from '@/components/molecules/PurchaseForm/PurchaseItemRow';
-import VatPercentageEditor from '@/components/molecules/PurchaseForm/VatPercentageEditor';
+import PurchaseItemRow from '@/features/purchase-management/components/purchase-form/PurchaseItemRow';
+import VatPercentageEditor from '@/features/purchase-management/components/purchase-form/VatPercentageEditor';
 import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
 
 interface PurchaseItemsSectionProps {
