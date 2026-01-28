@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from '@/lib/formatters';
 import toast from 'react-hot-toast';
+import { logger } from '@/utils/logger';
 import type {
   ItemFormData,
   DBPackageConversion,
@@ -148,6 +149,11 @@ export const useItemData = ({
     async (id: string) => {
       try {
         formState.setLoading(true);
+        logger.debug('Fetching item data from Supabase', {
+          component: 'useItemData',
+          itemId: id,
+          table: 'items',
+        });
 
         // Fetch item data from database with manufacturer FK
         const { data: itemData, error: itemError } = await supabase
@@ -167,9 +173,21 @@ export const useItemData = ({
         if (itemError) throw itemError;
         if (!itemData) throw new Error('Item tidak ditemukan');
 
+        logger.debug('Item data received from Supabase', {
+          component: 'useItemData',
+          itemId: id,
+          table: 'items',
+          hasData: Boolean(itemData),
+        });
+
         hydrateItemData(itemData as Record<string, unknown>);
       } catch (error) {
         console.error('Error fetching item data:', error);
+        logger.error('Failed to fetch item data from Supabase', error, {
+          component: 'useItemData',
+          itemId: id,
+          table: 'items',
+        });
         toast.error('Gagal memuat data item. Silakan coba lagi.');
       } finally {
         formState.setLoading(false);

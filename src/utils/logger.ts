@@ -23,10 +23,28 @@ interface LogContext {
 class Logger {
   private level: LogLevel;
   private isDevelopment: boolean;
+  private allowDebugInProd: boolean;
 
   constructor() {
     this.isDevelopment = import.meta.env.DEV;
-    this.level = this.isDevelopment ? LogLevel.DEBUG : LogLevel.WARN;
+    const configuredLevel = String(
+      import.meta.env.VITE_LOG_LEVEL || ''
+    ).toUpperCase();
+    const levelMap: Record<string, LogLevel> = {
+      DEBUG: LogLevel.DEBUG,
+      INFO: LogLevel.INFO,
+      WARN: LogLevel.WARN,
+      ERROR: LogLevel.ERROR,
+      NONE: LogLevel.NONE,
+    };
+    const resolvedLevel =
+      configuredLevel && levelMap[configuredLevel] !== undefined
+        ? levelMap[configuredLevel]
+        : undefined;
+
+    this.allowDebugInProd = Boolean(resolvedLevel === LogLevel.DEBUG);
+    this.level =
+      resolvedLevel ?? (this.isDevelopment ? LogLevel.DEBUG : LogLevel.WARN);
   }
 
   /**
@@ -53,7 +71,10 @@ class Logger {
    * Debug level logging - only in development
    */
   debug(message: string, context?: LogContext): void {
-    if (this.level <= LogLevel.DEBUG && this.isDevelopment) {
+    if (
+      this.level <= LogLevel.DEBUG &&
+      (this.isDevelopment || this.allowDebugInProd)
+    ) {
       console.debug(this.formatMessage('DEBUG', message, context));
     }
   }
@@ -100,7 +121,7 @@ class Logger {
    * Performance timing helper
    */
   time(label: string): void {
-    if (this.isDevelopment) {
+    if (this.isDevelopment || this.allowDebugInProd) {
       console.time(label);
     }
   }
@@ -109,7 +130,7 @@ class Logger {
    * End performance timing
    */
   timeEnd(label: string): void {
-    if (this.isDevelopment) {
+    if (this.isDevelopment || this.allowDebugInProd) {
       console.timeEnd(label);
     }
   }
@@ -118,7 +139,7 @@ class Logger {
    * Group related logs
    */
   group(label: string): void {
-    if (this.isDevelopment) {
+    if (this.isDevelopment || this.allowDebugInProd) {
       console.group(label);
     }
   }
@@ -127,7 +148,7 @@ class Logger {
    * End log group
    */
   groupEnd(): void {
-    if (this.isDevelopment) {
+    if (this.isDevelopment || this.allowDebugInProd) {
       console.groupEnd();
     }
   }
@@ -136,7 +157,7 @@ class Logger {
    * Table display for structured data
    */
   table(data: unknown): void {
-    if (this.isDevelopment) {
+    if (this.isDevelopment || this.allowDebugInProd) {
       console.table(data);
     }
   }

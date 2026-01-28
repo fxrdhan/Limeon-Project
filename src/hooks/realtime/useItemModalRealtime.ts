@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSmartFormSync } from './useSmartFormSync';
+import { logger } from '@/utils/logger';
 import type { CustomerLevelDiscount } from '@/types/database';
 
 interface UseItemModalRealtimeProps {
@@ -50,6 +51,11 @@ export const useItemModalRealtime = ({
     }
 
     const channelName = `item-modal-${itemId}`;
+    logger.debug('Realtime subscription starting', {
+      component: 'useItemModalRealtime',
+      itemId,
+      channel: channelName,
+    });
 
     const channel = supabase
       .channel(channelName)
@@ -77,6 +83,15 @@ export const useItemModalRealtime = ({
               }
             });
 
+            logger.debug('Realtime update received', {
+              component: 'useItemModalRealtime',
+              itemId,
+              table: 'items',
+              event: 'UPDATE',
+              changedFields: Object.keys(changedFields),
+              commitTimestamp: currentTimestamp,
+            });
+
             // Apply smart updates
             smartFormSync.handleRealtimeUpdate(changedFields);
           }
@@ -99,6 +114,14 @@ export const useItemModalRealtime = ({
           filter: `item_id=eq.${itemId}`,
         },
         async () => {
+          logger.debug('Realtime update received', {
+            component: 'useItemModalRealtime',
+            itemId,
+            table: 'customer_level_discounts',
+            event: 'CHANGE',
+            action: 'refetch',
+          });
+
           const { data, error } = await supabase
             .from('customer_level_discounts')
             .select('customer_level_id, discount_percentage')
@@ -116,6 +139,13 @@ export const useItemModalRealtime = ({
             })
           );
 
+          logger.debug('Customer level discounts synced from Supabase', {
+            component: 'useItemModalRealtime',
+            itemId,
+            table: 'customer_level_discounts',
+            count: normalized.length,
+          });
+
           smartFormSync.handleRealtimeUpdate({
             customer_level_discounts: normalized,
           });
@@ -130,6 +160,13 @@ export const useItemModalRealtime = ({
           filter: `id=eq.${itemId}`,
         },
         () => {
+          logger.warn('Realtime delete received for item', {
+            component: 'useItemModalRealtime',
+            itemId,
+            table: 'items',
+            event: 'DELETE',
+          });
+
           toast.error('Item telah dihapus dari sumber lain', {
             duration: 5000,
             icon: '⚠️',
@@ -142,8 +179,18 @@ export const useItemModalRealtime = ({
       .subscribe(status => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
+          logger.info('Realtime channel subscribed', {
+            component: 'useItemModalRealtime',
+            itemId,
+            channel: channelName,
+          });
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false);
+          logger.warn('Realtime channel error', {
+            component: 'useItemModalRealtime',
+            itemId,
+            channel: channelName,
+          });
         }
       });
 
@@ -151,6 +198,11 @@ export const useItemModalRealtime = ({
 
     return () => {
       if (channelRef.current) {
+        logger.debug('Realtime subscription closing', {
+          component: 'useItemModalRealtime',
+          itemId,
+          channel: channelName,
+        });
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;

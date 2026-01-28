@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { logger } from '@/utils/logger';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
@@ -159,6 +160,11 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   const handleSmartUpdate = useCallback(
     (updates: Record<string, unknown>) => {
+      logger.debug('Applying realtime updates in ItemModal', {
+        component: 'ItemModal',
+        itemId,
+        fields: Object.keys(updates),
+      });
       const { package_conversions, ...restUpdates } = updates;
 
       if (package_conversions !== undefined) {
@@ -213,6 +219,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       }
     },
     [
+      itemId,
       packageConversionHook,
       packages,
       setInitialFormData,
@@ -229,6 +236,14 @@ const ItemModal: React.FC<ItemModalProps> = ({
     onItemDeleted: handleItemDeleted,
     onSmartUpdate: handleSmartUpdate,
   });
+
+  useEffect(() => {
+    if (!isOpen || !isEditMode || !itemId) return;
+    logger.info('Item edit modal opened', {
+      component: 'ItemModal',
+      itemId,
+    });
+  }, [isOpen, isEditMode, itemId]);
 
   // Get current version number from history
   const currentVersionNumber =

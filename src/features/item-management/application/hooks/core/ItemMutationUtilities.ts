@@ -13,6 +13,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/utils/logger';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
 import type { CustomerLevelDiscount } from '@/types/database';
 import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
@@ -251,6 +252,13 @@ export const saveItemBusinessLogic = async ({
 
   if (isEditMode && itemId) {
     // Update existing item
+    logger.info('Sending item update to Supabase', {
+      component: 'ItemMutationUtilities',
+      itemId,
+      table: 'items',
+      action: 'update',
+    });
+
     const itemUpdateData = await prepareItemData(
       finalFormData,
       conversions,
@@ -262,10 +270,35 @@ export const saveItemBusinessLogic = async ({
       .update(itemUpdateData)
       .eq('id', itemId);
     if (updateError) throw updateError;
+
+    logger.debug('Item update acknowledged by Supabase', {
+      component: 'ItemMutationUtilities',
+      itemId,
+      table: 'items',
+      action: 'update',
+    });
+
+    const discountsCount = Array.isArray(finalFormData.customer_level_discounts)
+      ? finalFormData.customer_level_discounts.length
+      : 0;
+    logger.info('Syncing customer level discounts to Supabase', {
+      component: 'ItemMutationUtilities',
+      itemId,
+      table: 'customer_level_discounts',
+      action: 'delete+insert',
+      count: discountsCount,
+    });
+
     await syncCustomerLevelDiscounts(
       itemId,
       finalFormData.customer_level_discounts
     );
+
+    logger.info('Item update completed', {
+      component: 'ItemMutationUtilities',
+      itemId,
+      action: 'update',
+    });
     return { action: 'update', itemId, code: finalFormData.code };
   } else {
     // Create new item

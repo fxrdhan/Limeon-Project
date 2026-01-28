@@ -19,6 +19,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { logger } from '@/utils/logger';
 // ItemFormData and PackageConversion types are now used via SaveItemParams interface
 import { useEntityMutations } from './GenericHookFactories';
 import {
@@ -101,6 +102,12 @@ export const useAddItemMutations = ({
    */
   const deleteItemMutation = useMutation({
     mutationFn: async (itemIdToDelete: string) => {
+      logger.info('Sending item delete to Supabase', {
+        component: 'useAddItemMutations',
+        itemId: itemIdToDelete,
+        table: 'items',
+        action: 'delete',
+      });
       const { error } = await supabase
         .from('items')
         .delete()

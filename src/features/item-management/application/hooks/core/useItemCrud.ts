@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 import { usePackageConversion } from '../utils/usePackageConversion';
 import { formatDateTime } from '@/lib/formatters';
+import { logger } from '@/utils/logger';
 import { useAddItemFormState } from '../form/useItemFormState';
 import { useAddItemMutations } from './useItemMutations';
 import { useItemData } from '../data/useItemData';
@@ -312,6 +313,14 @@ export const useAddItemForm = ({
               sell_price: calculatedSellPrice,
             },
           ];
+        }
+
+        if (formState.isEditMode) {
+          logger.info('Submitting item update to Supabase', {
+            component: 'useAddItemForm',
+            itemId,
+            conversionsCount: conversionsForSave.length,
+          });
         }
 
         await saveItemMutation.mutateAsync({
