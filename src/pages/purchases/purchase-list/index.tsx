@@ -155,47 +155,12 @@ const PurchaseList = () => {
 
   const deletePurchaseMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data: purchaseItems, error: itemsError } = await supabase
-        .from('purchase_items')
-        .select('item_id, quantity, unit')
-        .eq('purchase_id', id);
-
-      if (itemsError) throw itemsError;
-
-      for (const item of purchaseItems || []) {
-        const { data: itemData } = await supabase
-          .from('items')
-          .select('stock, base_unit, package_conversions')
-          .eq('id', item.item_id)
-          .single();
-
-        if (itemData) {
-          let quantityInBaseUnit = item.quantity;
-
-          if (item.unit !== itemData.base_unit) {
-            const packageConversion = itemData.package_conversions?.find(
-              (uc: { unit_name: string; conversion_rate: number }) =>
-                uc.unit_name === item.unit
-            );
-
-            if (packageConversion) {
-              quantityInBaseUnit =
-                item.quantity / packageConversion.conversion_rate;
-            }
-          }
-
-          const newStock = Math.max(
-            0,
-            (itemData.stock || 0) - quantityInBaseUnit
-          );
-          await supabase
-            .from('items')
-            .update({ stock: newStock })
-            .eq('id', item.item_id);
+      const { error } = await supabase.rpc(
+        'delete_purchase_with_stock_restore',
+        {
+          p_purchase_id: id,
         }
-      }
-
-      const { error } = await supabase.from('purchases').delete().eq('id', id);
+      );
 
       if (error) throw error;
     },

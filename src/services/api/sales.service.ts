@@ -6,6 +6,7 @@ interface DBSale {
   id: string;
   patient_id?: string;
   doctor_id?: string;
+  customer_id?: string;
   invoice_number?: string;
   date: string;
   total: number;
@@ -22,6 +23,7 @@ interface DBSaleItem {
   quantity: number;
   price: number;
   subtotal: number;
+  unit_name?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -229,41 +231,51 @@ export class SalesService extends BaseService<DBSale> {
     items: Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>[]
   ): Promise<ServiceResponse<{ sale: DBSale; items: DBSaleItem[] }>> {
     try {
-      // Start transaction by creating the sale first
-      const { data: sale, error: saleError } = await supabase
-        .from('sales')
-        .insert(saleData)
-        .select()
-        .single();
+      const saleItems = items.map(item => ({
+        item_id: item.item_id,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal,
+        unit_name: item.unit_name,
+      }));
 
-      if (saleError || !sale) {
+      const { data: saleId, error: saleError } = await supabase.rpc(
+        'process_sale_v1',
+        {
+          p_patient_id: saleData.patient_id || null,
+          p_doctor_id: saleData.doctor_id || null,
+          p_customer_id: saleData.customer_id || null,
+          p_invoice_number: saleData.invoice_number || null,
+          p_date: saleData.date,
+          p_total: saleData.total,
+          p_payment_method: saleData.payment_method,
+          p_created_by: saleData.created_by || null,
+          p_items: saleItems,
+        }
+      );
+
+      if (saleError || !saleId) {
         return { data: null, error: saleError };
       }
 
-      // Insert sale items
-      const saleItems = items.map(item => ({
-        ...item,
-        sale_id: sale.id,
-      }));
+      const { data: sale, error: fetchSaleError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('id', saleId)
+        .single();
+
+      if (fetchSaleError || !sale) {
+        return { data: null, error: fetchSaleError };
+      }
 
       const { data: insertedItems, error: itemsError } = await supabase
         .from('sale_items')
-        .insert(saleItems)
-        .select();
+        .select('*')
+        .eq('sale_id', saleId);
 
       if (itemsError) {
-        // Rollback by deleting the sale
-        await supabase.from('sales').delete().eq('id', sale.id);
         return { data: null, error: itemsError };
       }
-
-      // Update item stocks (decrease)
-      const stockUpdates = items.map(item => ({
-        id: item.item_id,
-        decrement: item.quantity,
-      }));
-
-      await this.updateItemStocks(stockUpdates);
 
       return {
         data: { sale, items: insertedItems || [] },
@@ -328,21 +340,11 @@ export class SalesService extends BaseService<DBSale> {
   // Delete sale and restore stocks
   async deleteSaleWithStockRestore(id: string): Promise<ServiceResponse<null>> {
     try {
-      // Get sale items first
-      const { data: items } = await this.getSaleItems(id);
+      const { error } = await supabase.rpc('delete_sale_with_stock_restore', {
+        p_sale_id: id,
+      });
 
-      if (items && items.length > 0) {
-        // Restore stocks (add back the quantities)
-        const stockUpdates = items.map(item => ({
-          id: item.item_id,
-          increment: item.quantity,
-        }));
-
-        await this.updateItemStocks(stockUpdates);
-      }
-
-      // Delete sale (cascade will delete items)
-      return this.delete(id);
+      return { data: null, error };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }

@@ -35,7 +35,8 @@ interface DBPurchaseItem {
   vat_percentage: number;
   batch_no: string | null;
   expiry_date: string | null;
-  unit_conversion_rate: number;
+  // Client-only helper for stock adjustments (not persisted in DB)
+  unit_conversion_rate?: number;
   created_at?: string;
 }
 
@@ -158,41 +159,60 @@ export class PurchasesService extends BaseService<DBPurchase> {
     ServiceResponse<{ purchase: DBPurchase; items: DBPurchaseItem[] }>
   > {
     try {
-      // Start a transaction
-      const { data: purchase, error: purchaseError } = await supabase
-        .from('purchases')
-        .insert(purchaseData)
-        .select()
-        .single();
+      const purchaseItems = items.map(item => ({
+        item_id: item.item_id,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal,
+        discount: item.discount,
+        vat_percentage: item.vat_percentage,
+        unit: item.unit,
+        batch_no: item.batch_no,
+        expiry_date: item.expiry_date,
+      }));
 
-      if (purchaseError || !purchase) {
+      const { data: purchaseId, error: purchaseError } = await supabase.rpc(
+        'process_purchase_v2',
+        {
+          p_supplier_id: purchaseData.supplier_id || null,
+          p_invoice_number: purchaseData.invoice_number,
+          p_date: purchaseData.date,
+          p_total: purchaseData.total,
+          p_payment_status: purchaseData.payment_status,
+          p_payment_method: purchaseData.payment_method,
+          p_notes: purchaseData.notes || null,
+          p_due_date: purchaseData.due_date || null,
+          p_vat_amount: purchaseData.vat_amount,
+          p_vat_percentage: purchaseData.vat_percentage,
+          p_is_vat_included: purchaseData.is_vat_included,
+          p_customer_name: purchaseData.customer_name || null,
+          p_customer_address: purchaseData.customer_address || null,
+          p_items: purchaseItems,
+        }
+      );
+
+      if (purchaseError || !purchaseId) {
         return { data: null, error: purchaseError };
       }
 
-      // Insert purchase items
-      const purchaseItems = items.map(item => ({
-        ...item,
-        purchase_id: purchase.id,
-      }));
+      const { data: purchase, error: fetchPurchaseError } = await supabase
+        .from('purchases')
+        .select('*')
+        .eq('id', purchaseId)
+        .single();
+
+      if (fetchPurchaseError || !purchase) {
+        return { data: null, error: fetchPurchaseError };
+      }
 
       const { data: insertedItems, error: itemsError } = await supabase
         .from('purchase_items')
-        .insert(purchaseItems)
-        .select();
+        .select('*')
+        .eq('purchase_id', purchaseId);
 
       if (itemsError) {
-        // Rollback by deleting the purchase
-        await supabase.from('purchases').delete().eq('id', purchase.id);
         return { data: null, error: itemsError };
       }
-
-      // Update item stocks
-      const stockUpdates = items.map(item => ({
-        id: item.item_id,
-        increment: item.quantity * item.unit_conversion_rate,
-      }));
-
-      await this.updateItemStocks(stockUpdates);
 
       return {
         data: { purchase, items: insertedItems || [] },
@@ -264,21 +284,14 @@ export class PurchasesService extends BaseService<DBPurchase> {
     id: string
   ): Promise<ServiceResponse<null>> {
     try {
-      // Get purchase items first
-      const { data: items } = await this.getPurchaseItems(id);
+      const { error } = await supabase.rpc(
+        'delete_purchase_with_stock_restore',
+        {
+          p_purchase_id: id,
+        }
+      );
 
-      if (items && items.length > 0) {
-        // Restore stocks
-        const stockUpdates = items.map(item => ({
-          id: item.item_id,
-          increment: -(item.quantity * item.unit_conversion_rate),
-        }));
-
-        await this.updateItemStocks(stockUpdates);
-      }
-
-      // Delete purchase (cascade will delete items)
-      return this.delete(id);
+      return { data: null, error };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -396,7 +409,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
       const currentValue = stockMap.get(item.item_id) || 0;
       stockMap.set(
         item.item_id,
-        currentValue + item.quantity * item.unit_conversion_rate
+        currentValue + item.quantity * (item.unit_conversion_rate ?? 1)
       );
     });
 

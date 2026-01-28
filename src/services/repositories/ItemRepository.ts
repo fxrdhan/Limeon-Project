@@ -13,7 +13,7 @@ export interface DBItemWithRelations {
   sell_price: number;
   stock: number;
   base_unit?: string; // Add missing base_unit field
-  package_conversions: string;
+  package_conversions: unknown;
   category_id?: string;
   type_id?: string;
   package_id?: string;

@@ -273,30 +273,7 @@ export const usePurchaseForm = ({
     try {
       setLoading(true);
 
-      const { data: purchaseData, error: purchaseError } = await supabase
-        .from('purchases')
-        .insert({
-          supplier_id: formData.supplier_id || null,
-          customer_name: companyProfile?.name || null,
-          customer_address: companyProfile?.address || null,
-          invoice_number: formData.invoice_number,
-          date: formData.date,
-          due_date: formData.due_date || null,
-          total: total,
-          payment_status: formData.payment_status,
-          payment_method: formData.payment_method,
-          vat_percentage: formData.vat_percentage,
-          is_vat_included: formData.is_vat_included,
-          vat_amount: calculateTotalVat(),
-          notes: formData.notes || null,
-        })
-        .select('id')
-        .single();
-
-      if (purchaseError) throw purchaseError;
-
       const purchaseItemsData = purchaseItems.map(item => ({
-        purchase_id: purchaseData.id,
         item_id: item.item_id,
         quantity: item.quantity,
         discount: item.discount,
@@ -308,40 +285,27 @@ export const usePurchaseForm = ({
         expiry_date: item.expiry_date,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('purchase_items')
-        .insert(purchaseItemsData);
-
-      if (itemsError) throw itemsError;
-
-      for (const item of purchaseItems) {
-        const { data: itemData } = await supabase
-          .from('items')
-          .select('stock, base_unit, package_conversions')
-          .eq('id', item.item_id)
-          .single();
-
-        if (itemData) {
-          let quantityInBaseUnit = item.quantity;
-
-          if (item.unit !== itemData.base_unit) {
-            const packageConversion = itemData.package_conversions.find(
-              (uc: { unit_name: string }) => uc.unit_name === item.unit
-            );
-
-            if (packageConversion) {
-              quantityInBaseUnit =
-                item.quantity / packageConversion.conversion_rate;
-            }
-          }
-
-          const newStock = (itemData.stock || 0) + quantityInBaseUnit;
-          await supabase
-            .from('items')
-            .update({ stock: newStock })
-            .eq('id', item.item_id);
+      const { error: purchaseError } = await supabase.rpc(
+        'process_purchase_v2',
+        {
+          p_supplier_id: formData.supplier_id || null,
+          p_invoice_number: formData.invoice_number,
+          p_date: formData.date,
+          p_total: total,
+          p_payment_status: formData.payment_status,
+          p_payment_method: formData.payment_method,
+          p_notes: formData.notes || null,
+          p_due_date: formData.due_date || null,
+          p_vat_amount: calculateTotalVat(),
+          p_vat_percentage: formData.vat_percentage,
+          p_is_vat_included: formData.is_vat_included,
+          p_customer_name: companyProfile?.name || null,
+          p_customer_address: companyProfile?.address || null,
+          p_items: purchaseItemsData,
         }
-      }
+      );
+
+      if (purchaseError) throw purchaseError;
 
       navigate('/purchases');
     } catch (error) {

@@ -64,6 +64,17 @@ export const SupplierSchema = z.object({
   updated_at: z.string().optional().nullable(),
 });
 
+export const CustomerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  customer_level_id: z.string(),
+  person_id: z.string().optional().nullable(),
+  updated_at: z.string().optional().nullable(),
+});
+
 export const CompanyProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -80,6 +91,9 @@ export const CustomerLevelSchema = z.object({
   id: z.string(),
   level_name: z.string(),
   price_percentage: z.number(),
+  description: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional().nullable(),
 });
 
 export const CustomerLevelDiscountSchema = z.object({
@@ -120,11 +134,7 @@ export const PackageConversionSchema = z.object({
   unit_name: z.string(),
   to_unit_id: z.string(),
   id: z.string(),
-  unit: z.object({
-    id: z.string(),
-    code: z.string().optional(),
-    name: z.string(),
-  }),
+  unit: ItemPackageSchema,
   base_price: z.number(),
   sell_price: z.number(),
 });
@@ -141,16 +151,30 @@ export const DBPackageConversionSchema = z.object({
 export const DBItemSchema = z.object({
   id: z.string(),
   name: z.string(),
-  manufacturer_id: z.string().optional(),
+  manufacturer_id: z.string().optional().nullable(),
   code: z.string().optional(),
   barcode: z.string().optional().nullable(),
+  image_urls: z.array(z.string()).optional().nullable(),
   base_price: z.number(),
   sell_price: z.number(),
+  is_level_pricing_active: z.boolean().optional(),
   stock: z.number(),
-  package_conversions: z.union([z.string(), z.array(PackageConversionSchema)]),
+  package_conversions: z
+    .union([z.string(), z.array(PackageConversionSchema)])
+    .nullable(),
   category_id: z.string().optional(),
   type_id: z.string().optional(),
   package_id: z.string().optional(),
+  base_unit: z.string().optional().nullable(),
+  min_stock: z.number().optional().nullable(),
+  description: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional().nullable(),
+  is_active: z.boolean().optional().nullable(),
+  rack: z.string().optional().nullable(),
+  has_expiry_date: z.boolean().optional().nullable(),
+  is_medicine: z.boolean().optional().nullable(),
+  dosage_id: z.string().optional().nullable(),
   item_categories: z
     .array(
       z.object({
@@ -222,8 +246,10 @@ export const ItemSchema = z.object({
   }),
   code: z.string().optional(),
   barcode: z.string().optional().nullable(),
+  image_urls: z.array(z.string()).optional().nullable(),
   base_price: z.number(),
   sell_price: z.number(),
+  is_level_pricing_active: z.boolean().optional(),
   stock: z.number(),
   package_id: z.string().optional(),
   base_unit: z.string().optional(),

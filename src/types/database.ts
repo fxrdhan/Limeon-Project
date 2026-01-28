@@ -171,7 +171,7 @@ export interface DBPackageConversion {
 export interface DBItem {
   id: string;
   name: string;
-  manufacturer_id?: string;
+  manufacturer_id?: string | null;
   code?: string;
   barcode?: string | null;
   image_urls?: string[] | null;
@@ -179,10 +179,20 @@ export interface DBItem {
   sell_price: number;
   is_level_pricing_active?: boolean;
   stock: number;
-  package_conversions: string | PackageConversion[];
+  package_conversions: string | PackageConversion[] | null;
   category_id?: string;
   type_id?: string;
   package_id?: string;
+  base_unit?: string | null;
+  min_stock?: number | null;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string | null;
+  is_active?: boolean | null;
+  rack?: string | null;
+  has_expiry_date?: boolean | null;
+  is_medicine?: boolean | null;
+  dosage_id?: string | null;
   item_categories?: { name: string }[] | null;
   item_types?: { name: string }[] | null;
   item_packages?: { name: string }[] | null;
