@@ -3,7 +3,12 @@ import { useAuthStore } from '@/store/authStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { TbCircleArrowDownFilled, TbSend2 } from 'react-icons/tb';
+import {
+  TbCircleArrowDownFilled,
+  TbPencil,
+  TbSend2,
+  TbTrash,
+} from 'react-icons/tb';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -39,6 +44,13 @@ interface ChatPortalProps {
   };
 }
 
+type MenuPlacement = 'left' | 'up' | 'down';
+
+const MENU_GAP = 8;
+const MENU_WIDTH = 140;
+const MENU_HEIGHT = 84;
+const MAX_MESSAGE_CHARS = 220;
+
 // Generate channel ID for direct messages
 const generateChannelId = (userId1: string, userId2: string): string => {
   const sortedIds = [userId1, userId2].sort();
@@ -58,6 +70,14 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
+    null
+  );
+  const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
+  const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [targetUserPresence, setTargetUserPresence] =
     useState<UserPresence | null>(null);
   const { user } = useAuthStore();
@@ -81,6 +101,47 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const [displayTargetPhotoUrl, setDisplayTargetPhotoUrl] = useState<
     string | null
   >(null);
+
+  const getMenuPlacement = useCallback((anchorRect: DOMRect): MenuPlacement => {
+    const containerRect = messagesContainerRef.current?.getBoundingClientRect();
+
+    if (!containerRect) return 'up';
+
+    const spaceRight = containerRect.right - anchorRect.right;
+    const spaceAbove = anchorRect.top - containerRect.top;
+    const spaceBelow = containerRect.bottom - anchorRect.bottom;
+    const canSideFit =
+      spaceRight >= MENU_WIDTH + MENU_GAP &&
+      spaceAbove >= MENU_HEIGHT / 2 &&
+      spaceBelow >= MENU_HEIGHT / 2;
+
+    if (canSideFit) return 'left';
+    if (spaceBelow >= MENU_HEIGHT + MENU_GAP) return 'up';
+    if (spaceAbove >= MENU_HEIGHT + MENU_GAP) return 'down';
+
+    return spaceBelow >= spaceAbove ? 'up' : 'down';
+  }, []);
+
+  const toggleMessageMenu = useCallback(
+    (anchor: HTMLElement, messageId: string) => {
+      const nextPlacement = getMenuPlacement(anchor.getBoundingClientRect());
+      setMenuPlacement(nextPlacement);
+      setOpenMenuMessageId(prev => (prev === messageId ? null : messageId));
+    },
+    [getMenuPlacement]
+  );
+
+  const handleToggleExpand = useCallback((messageId: string) => {
+    setExpandedMessageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
+  }, []);
 
   // Helper function to format last seen time
   const formatLastSeen = (lastSeen: string): string => {
@@ -421,6 +482,22 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
         });
       });
 
+      channel.on('broadcast', { event: 'update_message' }, payload => {
+        const updatedMessage = payload.payload as ChatMessage;
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg
+          )
+        );
+      });
+
+      channel.on('broadcast', { event: 'delete_message' }, payload => {
+        const deletedMessage = payload.payload as { id: string };
+        setMessages(prev =>
+          prev.filter(messageItem => messageItem.id !== deletedMessage.id)
+        );
+      });
+
       // Note: Presence changes now handled by global presence channel
 
       // Subscribe to presence (optional - for typing indicators)
@@ -696,7 +773,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       'bg-indigo-500',
       'bg-yellow-500',
       'bg-red-500',
-      'bg-gray-500',
+      'bg-slate-500',
     ];
 
     const index = userId
@@ -712,7 +789,123 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     setIsAtBottom(true);
   };
 
+  const handleUpdateMessage = async () => {
+    if (
+      !message.trim() ||
+      !user ||
+      !targetUser ||
+      !currentChannelId ||
+      !editingMessageId
+    )
+      return;
+
+    const messageId = editingMessageId;
+    const updatedText = message.trim();
+    const updatedAt = new Date().toISOString();
+    const existingMessage = messages.find(msg => msg.id === messageId);
+
+    setMessage('');
+    setEditingMessageId(null);
+    setOpenMenuMessageId(null);
+
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId
+          ? { ...msg, message: updatedText, updated_at: updatedAt }
+          : msg
+      )
+    );
+
+    if (messageId.startsWith('temp_')) return;
+
+    try {
+      const { data: updatedMessage, error } = await supabase
+        .from('chat_messages')
+        .update({
+          message: updatedText,
+          updated_at: updatedAt,
+        })
+        .eq('id', messageId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating message:', error);
+        return;
+      }
+
+      const mappedMessage: ChatMessage = {
+        ...(updatedMessage as ChatMessage),
+        sender_name: existingMessage?.sender_name || user.name || 'You',
+        receiver_name:
+          existingMessage?.receiver_name || targetUser.name || 'Unknown',
+        stableKey: existingMessage?.stableKey,
+      };
+
+      setMessages(prev =>
+        prev.map(msg => (msg.id === messageId ? mappedMessage : msg))
+      );
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'update_message',
+          payload: mappedMessage,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating message:', error);
+    }
+  };
+
+  const handleDeleteMessage = async (targetMessage: ChatMessage) => {
+    if (!user || !targetUser || !currentChannelId) return;
+
+    setOpenMenuMessageId(null);
+    setMessages(prev => prev.filter(msg => msg.id !== targetMessage.id));
+
+    if (editingMessageId === targetMessage.id) {
+      setEditingMessageId(null);
+      setMessage('');
+    }
+
+    if (targetMessage.id.startsWith('temp_')) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('id', targetMessage.id);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        return;
+      }
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'delete_message',
+          payload: { id: targetMessage.id },
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
+  };
+
+  const handleEditMessage = (targetMessage: ChatMessage) => {
+    setEditingMessageId(targetMessage.id);
+    setMessage(targetMessage.message);
+    setOpenMenuMessageId(null);
+  };
+
   const handleSendMessage = async () => {
+    if (editingMessageId) {
+      await handleUpdateMessage();
+      return;
+    }
+
     if (!message.trim() || !user || !targetUser || !currentChannelId) return;
 
     const messageText = message.trim();
@@ -817,15 +1010,15 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           style={{ transformOrigin: 'top right' }}
-          className="relative z-50 w-96 bg-white rounded-xl shadow-lg border border-gray-200"
+          className="relative z-50 w-96 bg-white rounded-xl shadow-lg border border-slate-200"
         >
           {/* Chat Content */}
           <div className="relative h-[500px] flex flex-col">
             {/* Chat Header */}
-            <div className="p-3 border-b border-gray-100">
+            <div className="p-3 border-b border-slate-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-gray-900">
+                  <h3 className="font-medium text-slate-900">
                     {targetUser ? targetUser.name : 'Chat'}
                   </h3>
                   {(() => {
@@ -849,7 +1042,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                       targetUserPresence.last_seen
                     ) {
                       return (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-slate-400">
                           Last seen{' '}
                           {formatLastSeen(targetUserPresence.last_seen)}
                         </span>
@@ -860,7 +1053,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                 </div>
                 <button
                   onClick={handleClose}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   ✕
                 </button>
@@ -871,10 +1064,11 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
             <div
               ref={messagesContainerRef}
               className="flex-1 p-3 overflow-y-auto space-y-3"
+              onClick={() => setOpenMenuMessageId(null)}
             >
               {loading && messages.length === 0 ? (
                 <div className="flex justify-center items-center py-8">
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-slate-400 text-sm">
                     Loading messages...
                   </div>
                 </div>
@@ -887,9 +1081,17 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                     hour: '2-digit',
                     minute: '2-digit',
                   });
+                  const isMenuOpen = openMenuMessageId === msg.id;
 
                   // Use stableKey from message if available, otherwise fall back to ID
                   const animationKey = msg.stableKey || msg.id;
+
+                  const isExpanded = expandedMessageIds.has(msg.id);
+                  const isMessageLong =
+                    !isExpanded && msg.message.length > MAX_MESSAGE_CHARS;
+                  const displayMessage = isMessageLong
+                    ? msg.message.slice(0, MAX_MESSAGE_CHARS).trimEnd()
+                    : msg.message;
 
                   return (
                     <motion.div
@@ -903,25 +1105,149 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                         stiffness: 300,
                         damping: 24,
                       }}
-                      className={`flex w-full ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex w-full transition-all duration-200 ease-out ${
+                        isCurrentUser ? 'justify-end' : 'justify-start'
+                      } ${
+                        openMenuMessageId && openMenuMessageId !== msg.id
+                          ? 'blur-[2px] brightness-95'
+                          : ''
+                      }`}
                     >
                       <div
                         className={`${isCurrentUser ? 'flex flex-col items-end max-w-xs' : 'flex flex-col items-start max-w-xs'}`}
                       >
                         {/* Message Bubble */}
-                        <div
-                          className={`relative px-3 py-2 text-sm inline-block ${
-                            isCurrentUser
-                              ? 'bg-primary text-gray-100 rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl'
-                              : 'bg-gray-100 text-gray-800 rounded-tl-2xl rounded-tr-2xl rounded-br-2xl'
-                          }`}
-                          style={{
-                            [isCurrentUser
-                              ? 'borderBottomRightRadius'
-                              : 'borderBottomLeftRadius']: '2px',
-                          }}
-                        >
-                          {msg.message}
+                        <div className="relative">
+                          <div
+                            className={`px-3 py-2 text-sm inline-block ${
+                              isCurrentUser
+                                ? 'bg-emerald-200 text-slate-900 rounded-tl-xl rounded-tr-xl rounded-bl-xl'
+                                : 'bg-slate-100 text-slate-800 rounded-tl-xl rounded-tr-xl rounded-br-xl'
+                            } ${isCurrentUser ? 'cursor-pointer' : ''}`}
+                            style={{
+                              [isCurrentUser
+                                ? 'borderBottomRightRadius'
+                                : 'borderBottomLeftRadius']: '2px',
+                            }}
+                            onClick={
+                              isCurrentUser
+                                ? event => {
+                                    event.stopPropagation();
+                                    toggleMessageMenu(
+                                      event.currentTarget,
+                                      msg.id
+                                    );
+                                  }
+                                : undefined
+                            }
+                            role={isCurrentUser ? 'button' : undefined}
+                            tabIndex={isCurrentUser ? 0 : undefined}
+                            onKeyDown={
+                              isCurrentUser
+                                ? event => {
+                                    if (
+                                      event.key === 'Enter' ||
+                                      event.key === ' '
+                                    ) {
+                                      event.preventDefault();
+                                      toggleMessageMenu(
+                                        event.currentTarget,
+                                        msg.id
+                                      );
+                                    }
+                                  }
+                                : undefined
+                            }
+                          >
+                            {displayMessage}
+                            {isMessageLong ? (
+                              <>
+                                <span>... </span>
+                                <span
+                                  className="text-primary font-medium"
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={event => {
+                                    event.stopPropagation();
+                                    handleToggleExpand(msg.id);
+                                  }}
+                                  onKeyDown={event => {
+                                    if (
+                                      event.key === 'Enter' ||
+                                      event.key === ' '
+                                    ) {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      handleToggleExpand(msg.id);
+                                    }
+                                  }}
+                                >
+                                  Read more
+                                </span>
+                              </>
+                            ) : isExpanded ? (
+                              <span
+                                className="block text-primary font-medium"
+                                role="button"
+                                tabIndex={0}
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  handleToggleExpand(msg.id);
+                                }}
+                                onKeyDown={event => {
+                                  if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                  ) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleToggleExpand(msg.id);
+                                  }
+                                }}
+                              >
+                                Read less
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {isCurrentUser && isMenuOpen ? (
+                            <div
+                              className={`absolute z-20 min-w-[120px] overflow-hidden rounded-xl bg-white text-slate-900 shadow-lg ${
+                                menuPlacement === 'left'
+                                  ? 'left-full ml-2 top-1/2 -translate-y-1/2'
+                                  : menuPlacement === 'down'
+                                    ? 'bottom-full mb-2 right-0'
+                                    : 'top-full mt-2 right-0'
+                              }`}
+                              onClick={event => event.stopPropagation()}
+                            >
+                              <span
+                                className={`absolute w-0 h-0 border-6 border-transparent ${
+                                  menuPlacement === 'left'
+                                    ? 'left-0 top-1/2 -translate-x-full -translate-y-1/2 border-r-white'
+                                    : menuPlacement === 'down'
+                                      ? 'bottom-0 right-3 translate-y-full border-t-white'
+                                      : 'top-0 right-3 -translate-y-full border-b-white'
+                                }`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleEditMessage(msg)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
+                              >
+                                <TbPencil className="h-4 w-4" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMessage(msg)}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-700 hover:bg-slate-100 transition-colors"
+                              >
+                                <TbTrash className="h-4 w-4" />
+                                Hapus
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
 
                         {/* Message Info */}
@@ -930,7 +1256,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                         >
                           {isCurrentUser ? (
                             <>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-slate-400">
                                 {displayTime}
                               </span>
                               <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
@@ -968,7 +1294,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                                   </div>
                                 )}
                               </div>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-slate-400">
                                 {displayTime}
                               </span>
                             </>
@@ -1017,7 +1343,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
             </AnimatePresence>
 
             {/* Message Input */}
-            <div className="p-3 border-t border-gray-100">
+            <div className="p-3 border-t border-slate-100">
               <div className="flex items-center">
                 <input
                   type="text"
@@ -1025,7 +1351,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                   onChange={e => setMessage(e.target.value)}
                   onKeyUp={handleKeyPress}
                   placeholder="Type a message..."
-                  className="flex-1 p-2.5 border border-gray-300 rounded-full px-3 text-sm h-[2.5rem] focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 transition-all duration-200 ease-in-out"
+                  className="flex-1 p-2.5 border border-slate-300 rounded-full px-3 text-sm h-[2.5rem] focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 transition-all duration-200 ease-in-out"
                 />
                 <div
                   className={`overflow-hidden transition-all duration-300 ease-in-out ${message.trim() ? 'w-10 ml-2' : 'w-0 ml-0'}`}
