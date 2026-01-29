@@ -6,7 +6,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // Components
 import { Card } from '@/components/card';
 import PageTitle from '@/components/page-title';
-import IdentityDataModal from '@/components/IdentityDataModal';
 import {
   SlidingSelector,
   SlidingSelectorOption,
@@ -31,6 +30,8 @@ import {
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
 import { deriveSearchPatternFromGridState } from './utils/advancedFilterToSearchPattern';
+import SupplierModals from './components/SupplierModals';
+import { useSupplierTab } from './hooks/useSupplierTab';
 
 // Entity management hooks
 import {
@@ -44,14 +45,13 @@ import {
   EntityType,
 } from '@/features/item-management/application/hooks/collections/useEntityManager';
 import type { Item as ItemDataType } from '@/types/database';
-import type { FieldConfig, Supplier as SupplierType } from '@/types';
+import type { Supplier as SupplierType } from '@/types';
 import { FilterSearch } from '@/types/search';
 
 // Testing utilities for random item generation
 import { config } from '@/config';
 import { RandomItemFloatingButton } from '@/utils/testing';
 import { fuzzyMatch } from '@/utils/search';
-import { useSuppliers, useSupplierMutations } from '@/hooks/queries';
 
 type MasterDataType =
   | 'items'
@@ -230,30 +230,20 @@ const ItemMasterNew = memo(() => {
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemsSync({ enabled: true });
 
-  // Suppliers tab data + CRUD
-  const suppliersQuery = useSuppliers({ enabled: true });
-  const supplierMutations = useSupplierMutations();
-  const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
-  const [isEditSupplierModalOpen, setIsEditSupplierModalOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<SupplierType | null>(
-    null
-  );
-
-  const supplierFields: FieldConfig[] = useMemo(
-    () => [
-      { key: 'name', label: 'Nama Supplier', type: 'text' },
-      { key: 'address', label: 'Alamat', type: 'textarea' },
-      { key: 'phone', label: 'Telepon', type: 'tel' },
-      { key: 'email', label: 'Email', type: 'email' },
-      { key: 'contact_person', label: 'Kontak Person', type: 'text' },
-    ],
-    []
-  );
-
-  const suppliersData: SupplierType[] = useMemo(
-    () => (suppliersQuery.data ?? []) as SupplierType[],
-    [suppliersQuery.data]
-  );
+  const {
+    suppliersQuery,
+    supplierMutations,
+    supplierFields,
+    supplierColumnDefs,
+    suppliersData,
+    isAddSupplierModalOpen,
+    isEditSupplierModalOpen,
+    editingSupplier,
+    openAddSupplierModal,
+    closeAddSupplierModal,
+    openEditSupplierModal,
+    closeEditSupplierModal,
+  } = useSupplierTab();
 
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -453,43 +443,6 @@ const ItemMasterNew = memo(() => {
 
     return columns;
   }, [activeTab, entityCurrentConfig]);
-
-  const supplierColumnDefs: ColDef[] = useMemo(() => {
-    const tablePrefix = 'suppliers';
-    return [
-      createTextColumn({
-        field: `${tablePrefix}.name`,
-        headerName: 'Nama Supplier',
-        minWidth: 200,
-        valueGetter: params => params.data?.name || '-',
-      }),
-      createTextColumn({
-        field: `${tablePrefix}.address`,
-        headerName: 'Alamat',
-        minWidth: 150,
-        flex: 1,
-        valueGetter: params => params.data?.address || '-',
-      }),
-      createTextColumn({
-        field: `${tablePrefix}.phone`,
-        headerName: 'Telepon',
-        minWidth: 120,
-        valueGetter: params => params.data?.phone || '-',
-      }),
-      createTextColumn({
-        field: `${tablePrefix}.email`,
-        headerName: 'Email',
-        minWidth: 150,
-        valueGetter: params => params.data?.email || '-',
-      }),
-      createTextColumn({
-        field: `${tablePrefix}.contact_person`,
-        headerName: 'Kontak Person',
-        minWidth: 150,
-        valueGetter: params => params.data?.contact_person || '-',
-      }),
-    ];
-  }, []);
 
   // Memoize modal handlers
   const openAddItemModal = useCallback(
@@ -1378,13 +1331,12 @@ const ItemMasterNew = memo(() => {
         const baseItem = data as ItemDataType;
         handleItemEdit(baseItem);
       } else if (activeTab === 'suppliers') {
-        setEditingSupplier(data as SupplierType);
-        setIsEditSupplierModalOpen(true);
+        openEditSupplierModal(data as SupplierType);
       } else {
         entityManager.openEditModal(data as EntityData);
       }
     },
-    [activeTab, handleItemEdit, entityManager]
+    [activeTab, handleItemEdit, entityManager, openEditSupplierModal]
   );
 
   const unifiedGridReadyHandler = useCallback(
@@ -1468,7 +1420,7 @@ const ItemMasterNew = memo(() => {
                 activeTab === 'items'
                   ? () => handleAddItem(undefined, itemSearch)
                   : activeTab === 'suppliers'
-                    ? () => setIsAddSupplierModalOpen(true)
+                    ? openAddSupplierModal
                     : entityManager.openAddModal
               }
               items={
@@ -1612,80 +1564,17 @@ const ItemMasterNew = memo(() => {
           />
         )}
 
-      {/* Supplier Management Modals */}
-      <IdentityDataModal
-        title="Tambah Supplier Baru"
-        data={{}}
-        fields={supplierFields}
-        isOpen={activeTab === 'suppliers' && isAddSupplierModalOpen}
-        onClose={() => setIsAddSupplierModalOpen(false)}
-        onSave={async data => {
-          await supplierMutations.createSupplier.mutateAsync({
-            name: String(data.name || ''),
-            address: String(data.address || '') || null,
-            phone: String(data.phone || '') || null,
-            email: String(data.email || '') || null,
-            contact_person: String(data.contact_person || '') || null,
-            image_url: null,
-          });
-          setIsAddSupplierModalOpen(false);
-        }}
-        mode="add"
-        initialNameFromSearch={
-          supplierSearch.startsWith('#') ? '' : supplierSearch
-        }
-      />
-
-      <IdentityDataModal
-        title="Edit Supplier"
-        data={
-          (editingSupplier as unknown as Record<
-            string,
-            string | number | boolean | null
-          >) || {}
-        }
-        fields={supplierFields}
-        isOpen={activeTab === 'suppliers' && isEditSupplierModalOpen}
-        onClose={() => {
-          setIsEditSupplierModalOpen(false);
-          setEditingSupplier(null);
-        }}
-        onSave={async data => {
-          if (!editingSupplier?.id) return;
-          await supplierMutations.updateSupplier.mutateAsync({
-            id: editingSupplier.id,
-            data: {
-              name: String(data.name || ''),
-              address: String(data.address || '') || null,
-              phone: String(data.phone || '') || null,
-              email: String(data.email || '') || null,
-              contact_person: String(data.contact_person || '') || null,
-            },
-          });
-          setIsEditSupplierModalOpen(false);
-          setEditingSupplier(null);
-        }}
-        onDeleteRequest={
-          editingSupplier
-            ? () => {
-                openConfirmDialog({
-                  title: 'Konfirmasi Hapus',
-                  message: `Apakah Anda yakin ingin menghapus supplier "${editingSupplier.name}"?`,
-                  variant: 'danger',
-                  confirmText: 'Ya, Hapus',
-                  onConfirm: async () => {
-                    await supplierMutations.deleteSupplier.mutateAsync(
-                      editingSupplier.id
-                    );
-                    setIsEditSupplierModalOpen(false);
-                    setEditingSupplier(null);
-                  },
-                });
-              }
-            : undefined
-        }
-        mode="edit"
-        imageUrl={editingSupplier?.image_url || undefined}
+      <SupplierModals
+        isActive={activeTab === 'suppliers'}
+        supplierFields={supplierFields}
+        supplierSearch={supplierSearch}
+        isAddSupplierModalOpen={isAddSupplierModalOpen}
+        isEditSupplierModalOpen={isEditSupplierModalOpen}
+        editingSupplier={editingSupplier}
+        supplierMutations={supplierMutations}
+        openConfirmDialog={openConfirmDialog}
+        closeAddSupplierModal={closeAddSupplierModal}
+        closeEditSupplierModal={closeEditSupplierModal}
       />
     </>
   );
