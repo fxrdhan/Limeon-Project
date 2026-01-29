@@ -72,7 +72,7 @@ export function createEntityQuery<
     const { enabled = true, filters = {}, orderBy, select } = options;
 
     return useQuery<TEntity[], Error>({
-      queryKey: [config.queryKey, filters, orderBy, select],
+      queryKey: [...config.queryKey, filters, orderBy, select],
       queryFn: async () => {
         // Apply custom field selection or use default
         const selectFields = select ? select.join(', ') : config.selectFields;
@@ -191,7 +191,7 @@ export function createEntityMutations<
       },
       onSuccess: data => {
         if (invalidateQueries) {
-          queryClient.invalidateQueries({ queryKey: [config.queryKey] });
+          queryClient.invalidateQueries({ queryKey: config.queryKey });
         }
         onSuccess?.(data);
       },
@@ -231,7 +231,7 @@ export function createEntityMutations<
       },
       onSuccess: data => {
         if (invalidateQueries) {
-          queryClient.invalidateQueries({ queryKey: [config.queryKey] });
+          queryClient.invalidateQueries({ queryKey: config.queryKey });
         }
         onSuccess?.(data);
       },
@@ -260,7 +260,7 @@ export function createEntityMutations<
       },
       onSuccess: () => {
         if (invalidateQueries) {
-          queryClient.invalidateQueries({ queryKey: [config.queryKey] });
+          queryClient.invalidateQueries({ queryKey: config.queryKey });
         }
         onSuccess?.();
       },

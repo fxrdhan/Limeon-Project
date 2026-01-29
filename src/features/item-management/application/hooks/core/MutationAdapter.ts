@@ -91,22 +91,6 @@ const DELETE_KEYS = [
 ] as const;
 
 // ============================================================================
-// FIELD NORMALIZATION (DEPRECATED - ALL TABLES NOW USE 'code')
-// ============================================================================
-
-/**
- * @deprecated All tables now use 'code' field. This function is kept for backward compatibility.
- * Legacy field normalization - now a no-op since all tables standardized to 'code'.
- */
-export function normalizeCodeFieldsForTable<T extends Record<string, unknown>>(
-  _tableName: string | undefined,
-  input: T
-): T {
-  // All tables now use 'code' - no normalization needed
-  return input;
-}
-
-// ============================================================================
 // INTERNAL UTILS
 // ============================================================================
 
@@ -154,11 +138,9 @@ function extractCommonState(from: unknown): {
  * Build normalized mutations from raw mutations object.
  *
  * @param rawMutations The raw external mutations object (from legacy/external hooks)
- * @param tableName Optional table name (kept for backward compatibility)
  */
 export function toNormalizedMutations(
-  rawMutations: unknown,
-  tableName?: string
+  rawMutations: unknown
 ): NormalizedMutations {
   const mutationsObj = (rawMutations ?? {}) as Record<string, unknown>;
 
@@ -173,10 +155,8 @@ export function toNormalizedMutations(
     const common = extractCommonState(createRaw.value);
     normalized.create = {
       async mutateAsync(data: Record<string, unknown>) {
-        // All tables now use 'code' - normalization is a no-op
-        const mapped = normalizeCodeFieldsForTable(tableName, data);
         // Most providers for create expect a flat record
-        return await createRaw.value.mutateAsync(mapped);
+        return await createRaw.value.mutateAsync(data);
       },
       ...common,
     };
@@ -192,12 +172,6 @@ export function toNormalizedMutations(
       ): Promise<unknown> {
         const { id, ...fields } = input ?? ({} as { id: string });
 
-        // All tables now use 'code' - normalization is a no-op
-        const mappedFields = normalizeCodeFieldsForTable(
-          tableName,
-          fields as Record<string, unknown>
-        );
-
         // Some providers (generic "updateMutation") want a flat payload { id, ...fields }
         // Others (legacy) want a nested payload { id, data: {...} }
         const wantsFlat =
@@ -208,12 +182,12 @@ export function toNormalizedMutations(
         if (wantsFlat) {
           return await updateRaw.value.mutateAsync({
             id,
-            ...mappedFields,
+            ...fields,
           });
         } else {
           return await updateRaw.value.mutateAsync({
             id,
-            data: mappedFields,
+            data: fields,
           });
         }
       },

@@ -11,6 +11,7 @@
  * - useItemMutations duplication (500+ lines)
  */
 
+import type { QueryKey } from '@tanstack/react-query';
 import type {
   ItemCategory,
   ItemTypeEntity,
@@ -92,7 +93,7 @@ export interface EntityQueryConfig<TEntity extends AnyEntity> {
   /** Database table name */
   tableName: string;
   /** React Query cache key */
-  queryKey: string;
+  queryKey: QueryKey;
   /** Fields to select from database */
   selectFields: string;
   /** Field to order by */
@@ -113,7 +114,7 @@ export interface EntityMutationConfig<
   /** Database table name */
   tableName: string;
   /** React Query cache key for invalidation */
-  queryKey: string;
+  queryKey: QueryKey;
   /** Fields to select after mutation */
   selectFields: string;
   /** Entity display name for error messages */
@@ -168,7 +169,7 @@ const CATEGORIES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_categories',
-    queryKey: QueryKeys.legacyEntities.categories,
+    queryKey: QueryKeys.masterData.categories.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'kategori',
@@ -176,7 +177,7 @@ const CATEGORIES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_categories',
-    queryKey: QueryKeys.legacyEntities.categories,
+    queryKey: QueryKeys.masterData.categories.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'kategori',
     createInputType: () => ({}) as ItemCategoryCreateInput,
@@ -200,7 +201,7 @@ const TYPES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_types',
-    queryKey: QueryKeys.legacyEntities.types,
+    queryKey: QueryKeys.masterData.types.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'jenis item',
@@ -208,7 +209,7 @@ const TYPES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_types',
-    queryKey: QueryKeys.legacyEntities.types,
+    queryKey: QueryKeys.masterData.types.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'jenis item',
     createInputType: () => ({}) as ItemTypeCreateInput,
@@ -232,7 +233,7 @@ const PACKAGES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_packages',
-    queryKey: QueryKeys.legacyEntities.packages,
+    queryKey: QueryKeys.masterData.packages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'kemasan',
@@ -240,7 +241,7 @@ const PACKAGES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_packages',
-    queryKey: QueryKeys.legacyEntities.packages,
+    queryKey: QueryKeys.masterData.packages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'kemasan',
     createInputType: () => ({}) as ItemPackageCreateInput,
@@ -264,7 +265,7 @@ const UNITS_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_units',
-    queryKey: QueryKeys.legacyEntities.units,
+    queryKey: QueryKeys.masterData.itemUnits.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'satuan',
@@ -272,7 +273,7 @@ const UNITS_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_units',
-    queryKey: QueryKeys.legacyEntities.units,
+    queryKey: QueryKeys.masterData.itemUnits.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'satuan',
     createInputType: () => ({}) as ItemUnitCreateInput,
@@ -296,7 +297,7 @@ const DOSAGES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_dosages',
-    queryKey: QueryKeys.legacyEntities.dosages,
+    queryKey: QueryKeys.masterData.dosages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'sediaan',
@@ -304,7 +305,7 @@ const DOSAGES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_dosages',
-    queryKey: QueryKeys.legacyEntities.dosages,
+    queryKey: QueryKeys.masterData.dosages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'sediaan',
     createInputType: () => ({}) as ItemDosageCreateInput,
@@ -328,7 +329,7 @@ const MANUFACTURERS_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_manufacturers',
-    queryKey: QueryKeys.legacyEntities.manufacturers,
+    queryKey: QueryKeys.masterData.manufacturers.all,
     selectFields: 'id, code, name, address, created_at, updated_at', // Note: address instead of description
     orderByField: 'name', // Note: order by name instead of code
     entityDisplayName: 'produsen',
@@ -336,7 +337,7 @@ const MANUFACTURERS_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_manufacturers',
-    queryKey: QueryKeys.legacyEntities.manufacturers,
+    queryKey: QueryKeys.masterData.manufacturers.all,
     selectFields: 'id, code, name, address, created_at, updated_at',
     entityDisplayName: 'produsen',
     createInputType: () => ({}) as ItemManufacturerCreateInput,

@@ -93,10 +93,7 @@ export const useEntityCrudOperations = (
   // Normalize whatever raw mutations the external provider gives us.
   const rawMutations =
     typeof hooks.useMutations === 'function' ? hooks.useMutations() : undefined;
-  const normalized: NormalizedMutations = toNormalizedMutations(
-    rawMutations,
-    tableName
-  );
+  const normalized: NormalizedMutations = toNormalizedMutations(rawMutations);
 
   // Pick individual mutation handles with explicit types so callers don't need to cast.
   const normalizedCreate:

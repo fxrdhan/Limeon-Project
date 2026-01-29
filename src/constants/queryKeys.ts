@@ -234,16 +234,6 @@ export const QueryKeys = {
   tables: {
     byName: (table: string) => [table] as const,
   },
-
-  // Legacy entity keys (string-based)
-  legacyEntities: {
-    categories: 'categories',
-    types: 'types',
-    packages: 'packages',
-    units: 'units',
-    dosages: 'dosages',
-    manufacturers: 'manufacturers',
-  },
 } as const;
 
 // Helper function to invalidate related queries

@@ -3,7 +3,9 @@ import { TableLoadingFallback } from '@/components/loading-fallback';
 import { Suspense, lazy, memo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
-const ItemMaster = lazy(() => import('@/pages/master-data/item-master'));
+const ItemMaster = lazy(
+  () => import('@/features/item-management/pages/item-master')
+);
 
 const MasterDataLayout = memo(function MasterDataLayout() {
   const location = useLocation();

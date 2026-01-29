@@ -103,13 +103,3 @@ export const {
   dosages: useDosagesQuery,
   manufacturers: useManufacturersQuery,
 } = useEntityQueries;
-
-/**
- * Legacy export aliases for backward compatibility
- */
-export const useItemCategoriesQuery = useCategoriesQuery;
-export const useItemTypesQuery = useTypesQuery;
-export const useItemPackagesQuery = usePackagesQuery;
-export const useItemUnitsQuery = useUnitsQuery;
-export const useItemDosagesQuery = useDosagesQuery;
-export const useItemManufacturersQuery = useManufacturersQuery;

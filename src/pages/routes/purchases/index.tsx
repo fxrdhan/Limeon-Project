@@ -6,7 +6,9 @@ import {
   FormLoadingFallback,
 } from '@/components/loading-fallback';
 
-const PurchaseList = lazy(() => import('@/pages/purchases/purchase-list'));
+const PurchaseList = lazy(
+  () => import('@/features/purchase-management/pages/PurchaseListPage')
+);
 const ConfirmInvoicePage = lazy(
   () => import('@/pages/purchases/confirm-invoice')
 );
