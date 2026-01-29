@@ -34,7 +34,8 @@
     "gen:schemas:forms": "bunx ts-to-zod --config=forms --skipValidation",
     "gen:schemas:invoice": "bunx ts-to-zod --config=invoice --skipValidation",
     "gen:schemas:purchase": "bunx ts-to-zod --config=purchase --skipValidation",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "bun scripts/patch-baseline-browser-mapping.cjs"
   },
   "dependencies": {
     "@ag-grid-community/locale": "35.0.0",
