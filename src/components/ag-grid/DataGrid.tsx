@@ -1,6 +1,8 @@
-import React, { forwardRef, useCallback } from 'react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
 import { AgGridReact, AgGridReactProps } from 'ag-grid-react';
 import {
+  ColDef,
+  ColGroupDef,
   FirstDataRenderedEvent,
   GetContextMenuItems,
   ColumnMenuTab,
@@ -34,6 +36,29 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
     ref
   ) => {
     const defaultConfig = getDefaultGridConfig();
+    const normalizedColumnDefs = useMemo(() => {
+      const stripFlex = (
+        defs?: (ColDef | ColGroupDef)[]
+      ): (ColDef | ColGroupDef)[] | undefined => {
+        if (!defs) return defs;
+        return defs.map(def => {
+          if ('children' in def && def.children) {
+            return {
+              ...def,
+              children: stripFlex(def.children as (ColDef | ColGroupDef)[]),
+            } as ColGroupDef;
+          }
+
+          const rest = { ...(def as ColDef) };
+          delete rest.flex;
+          return rest;
+        });
+      };
+
+      return stripFlex(
+        props.columnDefs as (ColDef | ColGroupDef)[] | undefined
+      );
+    }, [props.columnDefs]);
 
     // Modify default config based on props
     const finalConfig = {
@@ -84,6 +109,7 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
           ref={ref}
           {...finalConfig}
           {...props}
+          columnDefs={normalizedColumnDefs ?? props.columnDefs}
           {...(getMainMenuItems && { getMainMenuItems })}
           onFirstDataRendered={handleFirstDataRendered}
         />
