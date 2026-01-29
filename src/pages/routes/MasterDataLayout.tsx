@@ -12,7 +12,10 @@ const MasterDataLayout = memo(function MasterDataLayout() {
 
   const isUnifiedGridRoute =
     location.pathname.startsWith('/master-data/item-master') ||
-    location.pathname.startsWith('/master-data/suppliers');
+    location.pathname.startsWith('/master-data/suppliers') ||
+    location.pathname.startsWith('/master-data/customers') ||
+    location.pathname.startsWith('/master-data/patients') ||
+    location.pathname.startsWith('/master-data/doctors');
 
   if (!isUnifiedGridRoute) {
     return <Outlet />;

@@ -16,7 +16,10 @@ export type TableType =
   | 'dosages'
   | 'manufacturers'
   | 'units'
-  | 'suppliers';
+  | 'suppliers'
+  | 'customers'
+  | 'patients'
+  | 'doctors';
 
 // Get storage key for specific table
 const getStorageKey = (tableType: TableType): string => {

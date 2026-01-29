@@ -25,7 +25,13 @@ import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 import { hasSavedState, type TableType } from '@/utils/gridStateManager';
 
 // Types
-import type { Item, Supplier } from '@/types/database';
+import type {
+  Customer,
+  Doctor,
+  Item,
+  Patient,
+  Supplier,
+} from '@/types/database';
 import {
   EntityData,
   EntityType,
@@ -51,7 +57,13 @@ interface ItemWithExtendedEntities
   manufacturer?: EntityWithCode;
 }
 
-type MasterDataType = 'items' | EntityType | 'suppliers';
+type MasterDataType =
+  | 'items'
+  | EntityType
+  | 'suppliers'
+  | 'customers'
+  | 'patients'
+  | 'doctors';
 
 interface EntityConfig {
   entityName: string;
@@ -69,7 +81,7 @@ interface EntityGridProps {
   // Data
   itemsData?: Item[];
   suppliersData?: Supplier[];
-  entityData?: EntityData[];
+  entityData?: (EntityData | Customer | Patient | Doctor)[];
 
   // States
   isLoading: boolean;
@@ -89,13 +101,35 @@ interface EntityGridProps {
   entityColumnDefs?: (ColDef | ColGroupDef)[];
 
   // Handlers
-  onRowClick: (data: ItemWithExtendedEntities | EntityData | Supplier) => void;
+  onRowClick: (
+    data:
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+  ) => void;
   onGridReady: (
-    params: GridReadyEvent<ItemWithExtendedEntities | EntityData | Supplier>
+    params: GridReadyEvent<
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+    >
   ) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (
-    node: IRowNode<ItemWithExtendedEntities | EntityData | Supplier>
+    node: IRowNode<
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+    >
   ) => boolean;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
   onFilterChanged?: (
@@ -232,7 +266,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
-    let data: (ItemWithExtendedEntities | EntityData | Supplier)[] = [];
+    let data: (
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+    )[] = [];
     let columns: (ColDef | ColGroupDef)[] = [];
 
     if (activeTab === 'items') {
@@ -292,7 +333,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Handle row clicks
   const handleRowClicked = useCallback(
     (
-      event: RowClickedEvent<ItemWithExtendedEntities | EntityData | Supplier>
+      event: RowClickedEvent<
+        | ItemWithExtendedEntities
+        | EntityData
+        | Supplier
+        | Customer
+        | Patient
+        | Doctor
+      >
     ) => {
       // Check if this is a group row - group rows don't have meaningful data for editing
       if (event.node.group) {
@@ -310,7 +358,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Handle grid ready - simple!
   const handleGridReady = useCallback(
     (
-      params: GridReadyEvent<ItemWithExtendedEntities | EntityData | Supplier>
+      params: GridReadyEvent<
+        | ItemWithExtendedEntities
+        | EntityData
+        | Supplier
+        | Customer
+        | Patient
+        | Doctor
+      >
     ) => {
       setGridApi(params.api);
 
@@ -364,7 +419,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const handleRowGroupOpened = useCallback(
     (
       event: RowGroupOpenedEvent<
-        ItemWithExtendedEntities | EntityData | Supplier
+        | ItemWithExtendedEntities
+        | EntityData
+        | Supplier
+        | Customer
+        | Patient
+        | Doctor
       >
     ) => {
       // Only for items tab when row grouping is enabled

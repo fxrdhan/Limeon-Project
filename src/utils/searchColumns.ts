@@ -495,6 +495,8 @@ export const getSearchColumnsByEntity = (
       return itemSearchColumns;
     case 'patients':
       return patientSearchColumns;
+    case 'customers':
+      return customerSearchColumns;
     case 'suppliers':
       return supplierSearchColumns;
     // Item master data - match activeTab values

@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 // Components
 import { Card } from '@/components/card';
+import IdentityDataModal from '@/components/IdentityDataModal';
 import PageTitle from '@/components/page-title';
 import {
   SlidingSelector,
@@ -21,6 +22,7 @@ import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 // Hooks and utilities
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 import { useItemsManagement } from '@/hooks/data/useItemsManagement';
+import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
 import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
 import { restoreConfirmedPattern } from '@/components/search-bar/utils/patternRestoration';
 import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
@@ -32,6 +34,7 @@ import {
 import { deriveSearchPatternFromGridState } from './utils/advancedFilterToSearchPattern';
 import SupplierModals from './components/SupplierModals';
 import { useSupplierTab } from './hooks/useSupplierTab';
+import { useCustomerLevels } from '@/features/item-management/application/hooks/data/useCustomerLevels';
 
 // Entity management hooks
 import {
@@ -45,7 +48,13 @@ import {
   EntityType,
 } from '@/features/item-management/application/hooks/collections/useEntityManager';
 import type { Item as ItemDataType } from '@/types/database';
-import type { Supplier as SupplierType } from '@/types';
+import type {
+  Customer as CustomerType,
+  Doctor as DoctorType,
+  FieldConfig,
+  Patient as PatientType,
+  Supplier as SupplierType,
+} from '@/types';
 import { FilterSearch } from '@/types/search';
 
 // Testing utilities for random item generation
@@ -61,7 +70,35 @@ type MasterDataType =
   | 'dosages'
   | 'manufacturers'
   | 'units'
-  | 'suppliers';
+  | 'suppliers'
+  | 'customers'
+  | 'patients'
+  | 'doctors';
+
+const ITEM_MASTER_TABS = [
+  'items',
+  'categories',
+  'types',
+  'packages',
+  'dosages',
+  'manufacturers',
+  'units',
+] as const;
+
+type ItemMasterTab = (typeof ITEM_MASTER_TABS)[number];
+
+const isItemMasterTab = (tab: MasterDataType): tab is ItemMasterTab =>
+  ITEM_MASTER_TABS.includes(tab as ItemMasterTab);
+
+const OTHER_MASTER_DATA_TABS = ['customers', 'patients', 'doctors'] as const;
+
+type OtherMasterDataTab = (typeof OTHER_MASTER_DATA_TABS)[number];
+
+const isOtherMasterDataTab = (tab: MasterDataType): tab is OtherMasterDataTab =>
+  OTHER_MASTER_DATA_TABS.includes(tab as OtherMasterDataTab);
+
+const isItemMasterEntityTab = (tab: MasterDataType): tab is EntityType =>
+  tab !== 'items' && isItemMasterTab(tab);
 
 // Transform to SlidingSelector format
 const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [
@@ -128,6 +165,49 @@ const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
   manufacturers: 'manufacturers',
   units: 'units',
   suppliers: 'suppliers',
+  customers: 'customers',
+  patients: 'patients',
+  doctors: 'doctors',
+};
+
+const OTHER_MASTER_DATA_CONFIG: Record<
+  OtherMasterDataTab,
+  {
+    title: string;
+    entityName: string;
+    searchPlaceholder: string;
+    exportFilename: string;
+    noDataMessage: string;
+    searchNoDataMessage: string;
+  }
+> = {
+  customers: {
+    title: 'Daftar Pelanggan',
+    entityName: 'Pelanggan',
+    searchPlaceholder:
+      'Cari pelanggan atau ketik # untuk pencarian kolom spesifik',
+    exportFilename: 'daftar-pelanggan',
+    noDataMessage: 'Tidak ada data pelanggan yang ditemukan',
+    searchNoDataMessage: 'Tidak ada pelanggan dengan kata kunci',
+  },
+  patients: {
+    title: 'Daftar Pasien',
+    entityName: 'Pasien',
+    searchPlaceholder:
+      'Cari pasien atau ketik # untuk pencarian kolom spesifik',
+    exportFilename: 'daftar-pasien',
+    noDataMessage: 'Tidak ada data pasien yang ditemukan',
+    searchNoDataMessage: 'Tidak ada pasien dengan kata kunci',
+  },
+  doctors: {
+    title: 'Daftar Dokter',
+    entityName: 'Dokter',
+    searchPlaceholder:
+      'Cari dokter atau ketik # untuk pencarian kolom spesifik',
+    exportFilename: 'daftar-dokter',
+    noDataMessage: 'Tidak ada data dokter yang ditemukan',
+    searchNoDataMessage: 'Tidak ada dokter dengan kata kunci',
+  },
 };
 
 // Session storage key for last visited tab
@@ -155,7 +235,7 @@ const readGridStateForTab = (tab: MasterDataType): unknown | null => {
 
 // Session storage utility
 const saveLastTabToSession = (tab: MasterDataType): void => {
-  if (tab === 'suppliers') return;
+  if (!isItemMasterTab(tab)) return;
   try {
     sessionStorage.setItem(LAST_TAB_SESSION_KEY, tab);
   } catch (error) {
@@ -166,7 +246,7 @@ const saveLastTabToSession = (tab: MasterDataType): void => {
 const getLastTabFromSession = (): MasterDataType => {
   try {
     const savedTab = sessionStorage.getItem(LAST_TAB_SESSION_KEY);
-    if (savedTab && savedTab in URL_TO_TAB_MAP && savedTab !== 'suppliers') {
+    if (savedTab && isItemMasterTab(savedTab as MasterDataType)) {
       return savedTab as MasterDataType;
     }
   } catch {
@@ -182,7 +262,11 @@ const ItemMasterNew = memo(() => {
 
   // Memoize tab detection function
   const getTabFromPath = useCallback((pathname: string): MasterDataType => {
-    const pathSegments = pathname.split('/');
+    const normalizedPath = pathname.replace(/\/+$/, '');
+    if (normalizedPath === '/master-data/item-master') {
+      return getLastTabFromSession();
+    }
+    const pathSegments = normalizedPath.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
     return URL_TO_TAB_MAP[lastSegment] || 'items';
   }, []);
@@ -192,6 +276,17 @@ const ItemMasterNew = memo(() => {
     () => getTabFromPath(location.pathname),
     [getTabFromPath, location.pathname]
   );
+
+  const isItemTab = activeTab === 'items';
+  const isSupplierTab = activeTab === 'suppliers';
+  const isCustomerTab = activeTab === 'customers';
+  const isPatientTab = activeTab === 'patients';
+  const isDoctorTab = activeTab === 'doctors';
+  const isItemEntityTab = isItemMasterEntityTab(activeTab);
+  const isOtherMasterTab = isOtherMasterDataTab(activeTab);
+  const otherMasterDataConfig = isOtherMasterTab
+    ? OTHER_MASTER_DATA_CONFIG[activeTab]
+    : null;
 
   // Ensure /master-data/item-master lands on a concrete tab (preserve last visit).
   useEffect(() => {
@@ -245,6 +340,68 @@ const ItemMasterNew = memo(() => {
     closeEditSupplierModal,
   } = useSupplierTab();
 
+  const {
+    isAddModalOpen: isAddCustomerModalOpen,
+    setIsAddModalOpen: setIsAddCustomerModalOpen,
+    isEditModalOpen: isEditCustomerModalOpen,
+    setIsEditModalOpen: setIsEditCustomerModalOpen,
+    editingItem: editingCustomer,
+    data: customersData,
+    isLoading: isCustomersLoading,
+    isError: isCustomersError,
+    queryError: customersQueryError,
+    itemsPerPage: customerItemsPerPage,
+    handleEdit: handleCustomerEdit,
+    handleModalSubmit: handleCustomerModalSubmit,
+    handleDelete: handleCustomerDelete,
+    debouncedSearch: customerDebouncedSearch,
+    handleKeyDown: handleCustomerKeyDown,
+    setSearch: setCustomerDataSearch,
+  } = useMasterDataManagement('customers', 'Pelanggan');
+
+  const {
+    isAddModalOpen: isAddPatientModalOpen,
+    setIsAddModalOpen: setIsAddPatientModalOpen,
+    isEditModalOpen: isEditPatientModalOpen,
+    setIsEditModalOpen: setIsEditPatientModalOpen,
+    editingItem: editingPatient,
+    data: patientsData,
+    isLoading: isPatientsLoading,
+    isError: isPatientsError,
+    queryError: patientsQueryError,
+    itemsPerPage: patientItemsPerPage,
+    handleEdit: handlePatientEdit,
+    handleModalSubmit: handlePatientModalSubmit,
+    handleDelete: handlePatientDelete,
+    debouncedSearch: patientDebouncedSearch,
+    handleKeyDown: handlePatientKeyDown,
+    setSearch: setPatientDataSearch,
+  } = useMasterDataManagement('patients', 'Pasien');
+
+  const {
+    isAddModalOpen: isAddDoctorModalOpen,
+    setIsAddModalOpen: setIsAddDoctorModalOpen,
+    isEditModalOpen: isEditDoctorModalOpen,
+    setIsEditModalOpen: setIsEditDoctorModalOpen,
+    editingItem: editingDoctor,
+    data: doctorsData,
+    isLoading: isDoctorsLoading,
+    isError: isDoctorsError,
+    queryError: doctorsQueryError,
+    itemsPerPage: doctorItemsPerPage,
+    handleEdit: handleDoctorEdit,
+    handleModalSubmit: handleDoctorModalSubmit,
+    handleDelete: handleDoctorDelete,
+    debouncedSearch: doctorDebouncedSearch,
+    handleKeyDown: handleDoctorKeyDown,
+    setSearch: setDoctorDataSearch,
+  } = useMasterDataManagement('doctors', 'Dokter');
+
+  const { levels: customerLevels } = useCustomerLevels();
+  const customersDataTyped = customersData as CustomerType[];
+  const patientsDataTyped = patientsData as PatientType[];
+  const doctorsDataTyped = doctorsData as DoctorType[];
+
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isItemModalClosing, setIsItemModalClosing] = useState(false);
@@ -280,25 +437,26 @@ const ItemMasterNew = memo(() => {
 
   // Entity management (for entity tabs)
   const entityManager = useEntityManager({
-    activeEntityType:
-      activeTab !== 'items' && activeTab !== 'suppliers'
-        ? (activeTab as EntityType)
-        : 'categories',
+    activeEntityType: isItemEntityTab
+      ? (activeTab as EntityType)
+      : 'categories',
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
   });
 
   // Memoize entity options to prevent unnecessary re-renders
   const entityManagementOptions = useMemo(
     () => ({
-      entityType:
-        activeTab !== 'items' && activeTab !== 'suppliers'
-          ? (activeTab as EntityType)
-          : 'categories',
+      entityType: isItemEntityTab ? (activeTab as EntityType) : 'categories',
       search: entityManager.search,
       itemsPerPage: entityManager.itemsPerPage,
-      enabled: activeTab !== 'items' && activeTab !== 'suppliers',
+      enabled: isItemEntityTab,
     }),
-    [activeTab, entityManager.search, entityManager.itemsPerPage]
+    [
+      activeTab,
+      entityManager.search,
+      entityManager.itemsPerPage,
+      isItemEntityTab,
+    ]
   );
 
   // Generic entity data management
@@ -329,20 +487,301 @@ const ItemMasterNew = memo(() => {
   // Entity column visibility management
   const entityCurrentConfig = useMemo(
     () =>
-      activeTab !== 'items' && activeTab !== 'suppliers'
+      isItemEntityTab
         ? entityManager.entityConfigs[activeTab as EntityType]
         : null,
-    [activeTab, entityManager.entityConfigs]
+    [activeTab, entityManager.entityConfigs, isItemEntityTab]
   );
+
+  const customerLevelOptions = useMemo(
+    () =>
+      customerLevels.map(level => ({
+        id: level.id,
+        name: level.level_name,
+      })),
+    [customerLevels]
+  );
+
+  const customerLevelById = useMemo(() => {
+    return new Map(customerLevels.map(level => [level.id, level.level_name]));
+  }, [customerLevels]);
+
+  const defaultCustomerLevelId = customerLevels[0]?.id ?? null;
+
+  const customerFields: FieldConfig[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        label: 'Nama Pelanggan',
+        type: 'text',
+      },
+      {
+        key: 'customer_level_id',
+        label: 'Level Pelanggan',
+        options: customerLevelOptions,
+        isRadioDropdown: true,
+      },
+      {
+        key: 'phone',
+        label: 'Telepon',
+        type: 'tel',
+      },
+      {
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+      },
+      {
+        key: 'address',
+        label: 'Alamat',
+        type: 'textarea',
+      },
+    ],
+    [customerLevelOptions]
+  );
+
+  const patientFields: FieldConfig[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        label: 'Nama Pasien',
+        type: 'text',
+      },
+      {
+        key: 'gender',
+        label: 'Jenis Kelamin',
+        type: 'text',
+        options: [
+          { id: 'L', name: 'Laki-laki' },
+          { id: 'P', name: 'Perempuan' },
+        ],
+        isRadioDropdown: true,
+      },
+      {
+        key: 'birth_date',
+        label: 'Tanggal Lahir',
+        type: 'date',
+      },
+      {
+        key: 'address',
+        label: 'Alamat',
+        type: 'textarea',
+      },
+      {
+        key: 'phone',
+        label: 'Telepon',
+        type: 'tel',
+      },
+      {
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+      },
+    ],
+    []
+  );
+
+  const doctorFields: FieldConfig[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        label: 'Nama Dokter',
+        type: 'text',
+      },
+      {
+        key: 'gender',
+        label: 'Jenis Kelamin',
+        type: 'text',
+        options: [
+          { id: 'L', name: 'Laki-laki' },
+          { id: 'P', name: 'Perempuan' },
+        ],
+        isRadioDropdown: true,
+      },
+      {
+        key: 'specialization',
+        label: 'Spesialisasi',
+        type: 'text',
+      },
+      {
+        key: 'license_number',
+        label: 'Nomor Lisensi',
+        type: 'text',
+      },
+      {
+        key: 'experience_years',
+        label: 'Tahun Pengalaman',
+        type: 'text',
+      },
+      {
+        key: 'education',
+        label: 'Pendidikan',
+        type: 'textarea',
+      },
+      {
+        key: 'phone',
+        label: 'Telepon',
+        type: 'tel',
+      },
+      {
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+      },
+    ],
+    []
+  );
+
+  const customerColumnDefs: ColDef[] = useMemo(() => {
+    const columns: ColDef[] = [
+      createTextColumn({
+        field: 'name',
+        headerName: 'Nama Pelanggan',
+        minWidth: 200,
+        flex: 1,
+      }),
+      createTextColumn({
+        field: 'customer_level_id',
+        headerName: 'Level',
+        minWidth: 140,
+        valueGetter: params =>
+          customerLevelById.get(params.data.customer_level_id) || '-',
+      }),
+      createTextColumn({
+        field: 'phone',
+        headerName: 'Telepon',
+        minWidth: 120,
+        valueGetter: params => params.data.phone || '-',
+      }),
+      createTextColumn({
+        field: 'email',
+        headerName: 'Email',
+        minWidth: 150,
+        valueGetter: params => params.data.email || '-',
+      }),
+      createTextColumn({
+        field: 'address',
+        headerName: 'Alamat',
+        minWidth: 180,
+        flex: 1,
+        valueGetter: params => params.data.address || '-',
+      }),
+    ];
+
+    return columns;
+  }, [customerLevelById]);
+
+  const patientColumnDefs: ColDef[] = useMemo(() => {
+    const columns: ColDef[] = [
+      createTextColumn({
+        field: 'name',
+        headerName: 'Nama Pasien',
+        minWidth: 200,
+        flex: 1,
+      }),
+      createTextColumn({
+        field: 'gender',
+        headerName: 'Jenis Kelamin',
+        minWidth: 120,
+        valueGetter: params => params.data.gender || '-',
+      }),
+      createTextColumn({
+        field: 'birth_date',
+        headerName: 'Tanggal Lahir',
+        minWidth: 120,
+        valueGetter: params => {
+          const value = params.data.birth_date;
+          return value && typeof value === 'string'
+            ? new Date(value).toLocaleDateString('id-ID')
+            : '-';
+        },
+      }),
+      createTextColumn({
+        field: 'address',
+        headerName: 'Alamat',
+        minWidth: 150,
+        flex: 1,
+        valueGetter: params => params.data.address || '-',
+      }),
+      createTextColumn({
+        field: 'phone',
+        headerName: 'Telepon',
+        minWidth: 120,
+        valueGetter: params => params.data.phone || '-',
+      }),
+      createTextColumn({
+        field: 'email',
+        headerName: 'Email',
+        minWidth: 150,
+        valueGetter: params => params.data.email || '-',
+      }),
+    ];
+
+    return columns;
+  }, []);
+
+  const doctorColumnDefs: ColDef[] = useMemo(() => {
+    const columns: ColDef[] = [
+      createTextColumn({
+        field: 'name',
+        headerName: 'Nama Dokter',
+        minWidth: 200,
+        flex: 1,
+      }),
+      createTextColumn({
+        field: 'gender',
+        headerName: 'Jenis Kelamin',
+        minWidth: 120,
+        valueGetter: params => {
+          const value = params.data.gender;
+          return value === 'L'
+            ? 'Laki-laki'
+            : value === 'P'
+              ? 'Perempuan'
+              : value || '-';
+        },
+      }),
+      createTextColumn({
+        field: 'specialization',
+        headerName: 'Spesialisasi',
+        minWidth: 150,
+        valueGetter: params => params.data.specialization || '-',
+      }),
+      createTextColumn({
+        field: 'license_number',
+        headerName: 'Nomor Lisensi',
+        minWidth: 120,
+        valueGetter: params => params.data.license_number || '-',
+      }),
+      createTextColumn({
+        field: 'experience_years',
+        headerName: 'Pengalaman',
+        minWidth: 100,
+        valueGetter: params => {
+          const years = params.data.experience_years;
+          return years ? `${years} tahun` : '-';
+        },
+      }),
+      createTextColumn({
+        field: 'phone',
+        headerName: 'Telepon',
+        minWidth: 120,
+        valueGetter: params => params.data.phone || '-',
+      }),
+      createTextColumn({
+        field: 'email',
+        headerName: 'Email',
+        minWidth: 150,
+        valueGetter: params => params.data.email || '-',
+      }),
+    ];
+
+    return columns;
+  }, []);
 
   // Entity column definitions with unique field IDs per table
   const entityColumnDefs: ColDef[] = useMemo(() => {
-    if (
-      activeTab === 'items' ||
-      activeTab === 'suppliers' ||
-      !entityCurrentConfig
-    )
-      return [];
+    if (!isItemEntityTab || !entityCurrentConfig) return [];
 
     // 🎯 Create unique field IDs by prefixing with entity type
     const tablePrefix = activeTab as string;
@@ -442,7 +881,7 @@ const ItemMasterNew = memo(() => {
     });
 
     return columns;
-  }, [activeTab, entityCurrentConfig]);
+  }, [activeTab, entityCurrentConfig, isItemEntityTab]);
 
   // Memoize modal handlers
   const openAddItemModal = useCallback(
@@ -638,9 +1077,9 @@ const ItemMasterNew = memo(() => {
 
   // Entity search functionality - filtered and ordered based on AG Grid visibility & ordering
   const entitySearchColumns = useMemo(() => {
-    if (activeTab === 'items' || activeTab === 'suppliers') return [];
+    if (!isItemEntityTab) return [];
 
-    const allColumns = getSearchColumnsByEntity(activeTab as EntityType);
+    const allColumns = getSearchColumnsByEntity(activeTab);
 
     // If no visible columns tracked yet, return all columns
     if (visibleColumns.length === 0) return allColumns;
@@ -661,10 +1100,10 @@ const ItemMasterNew = memo(() => {
 
       return getIndex(a.field) - getIndex(b.field);
     });
-  }, [activeTab, visibleColumns]);
+  }, [activeTab, isItemEntityTab, visibleColumns]);
 
   const supplierSearchColumns = useMemo(() => {
-    if (activeTab !== 'suppliers') return [];
+    if (!isSupplierTab) return [];
 
     const allColumns = [
       {
@@ -713,7 +1152,52 @@ const ItemMasterNew = memo(() => {
       const safeB = indexB === -1 ? visibleColumns.length : indexB;
       return safeA - safeB;
     });
-  }, [activeTab, visibleColumns]);
+  }, [isSupplierTab, visibleColumns]);
+
+  const customerSearchColumns = useMemo(() => {
+    if (!isCustomerTab) return [];
+
+    const allColumns = getSearchColumnsByEntity('customers');
+    if (visibleColumns.length === 0) return allColumns;
+
+    return [...allColumns].sort((a, b) => {
+      const indexA = visibleColumns.indexOf(a.field);
+      const indexB = visibleColumns.indexOf(b.field);
+      const safeA = indexA === -1 ? visibleColumns.length : indexA;
+      const safeB = indexB === -1 ? visibleColumns.length : indexB;
+      return safeA - safeB;
+    });
+  }, [isCustomerTab, visibleColumns]);
+
+  const patientSearchColumns = useMemo(() => {
+    if (!isPatientTab) return [];
+
+    const allColumns = getSearchColumnsByEntity('patients');
+    if (visibleColumns.length === 0) return allColumns;
+
+    return [...allColumns].sort((a, b) => {
+      const indexA = visibleColumns.indexOf(a.field);
+      const indexB = visibleColumns.indexOf(b.field);
+      const safeA = indexA === -1 ? visibleColumns.length : indexA;
+      const safeB = indexB === -1 ? visibleColumns.length : indexB;
+      return safeA - safeB;
+    });
+  }, [isPatientTab, visibleColumns]);
+
+  const doctorSearchColumns = useMemo(() => {
+    if (!isDoctorTab) return [];
+
+    const allColumns = getSearchColumnsByEntity('doctors');
+    if (visibleColumns.length === 0) return allColumns;
+
+    return [...allColumns].sort((a, b) => {
+      const indexA = visibleColumns.indexOf(a.field);
+      const indexB = visibleColumns.indexOf(b.field);
+      const safeA = indexA === -1 ? visibleColumns.length : indexA;
+      const safeB = indexB === -1 ? visibleColumns.length : indexB;
+      return safeA - safeB;
+    });
+  }, [isDoctorTab, visibleColumns]);
 
   const handleSupplierFilterSearch = useCallback(
     (filterSearch: FilterSearch | null) => {
@@ -722,7 +1206,7 @@ const ItemMasterNew = memo(() => {
         return;
       }
 
-      if (activeTab !== 'suppliers') {
+      if (!isSupplierTab) {
         return;
       }
 
@@ -751,7 +1235,7 @@ const ItemMasterNew = memo(() => {
         // ignore
       }
     },
-    [activeTab, unifiedGridApi]
+    [activeTab, isSupplierTab, unifiedGridApi]
   );
 
   // Entity filter search handler
@@ -762,7 +1246,7 @@ const ItemMasterNew = memo(() => {
         return;
       }
 
-      if (activeTab === 'items' || activeTab === 'suppliers') {
+      if (!isItemEntityTab) {
         return;
       }
 
@@ -795,7 +1279,44 @@ const ItemMasterNew = memo(() => {
         // ignore
       }
     },
-    [activeTab, unifiedGridApi]
+    [activeTab, isItemEntityTab, unifiedGridApi]
+  );
+
+  const handleMasterDataFilterSearch = useCallback(
+    (filterSearch: FilterSearch | null) => {
+      if (isTabSwitchingRef.current && !filterSearch) {
+        return;
+      }
+
+      if (!isOtherMasterTab) {
+        return;
+      }
+
+      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
+        return;
+      }
+
+      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
+      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
+
+      try {
+        const sessionKey = getItemMasterSearchSessionKey(activeTab);
+        if (!filterSearch) {
+          sessionStorage.removeItem(sessionKey);
+        } else if (filterSearch.isConfirmed) {
+          sessionStorage.setItem(
+            sessionKey,
+            restoreConfirmedPattern({
+              ...filterSearch,
+              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
+            } as unknown as import('@/components/search-bar/types').FilterSearch)
+          );
+        }
+      } catch {
+        // ignore
+      }
+    },
+    [activeTab, isOtherMasterTab, unifiedGridApi]
   );
 
   const {
@@ -830,6 +1351,60 @@ const ItemMasterNew = memo(() => {
     useFuzzySearch: true,
     data: suppliersData,
     onFilterSearch: handleSupplierFilterSearch,
+  });
+
+  const {
+    search: customerSearch,
+    setSearch: setCustomerSearch,
+    onGridReady: customerOnGridReady,
+    isExternalFilterPresent: customerIsExternalFilterPresent,
+    doesExternalFilterPass: customerDoesExternalFilterPass,
+    searchBarProps: customerSearchBarProps,
+    clearSearchUIOnly: clearCustomerSearchUIOnly,
+  } = useUnifiedSearch({
+    columns: customerSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: customersDataTyped,
+    onSearch: setCustomerDataSearch,
+    onClear: () => setCustomerDataSearch(''),
+    onFilterSearch: handleMasterDataFilterSearch,
+  });
+
+  const {
+    search: patientSearch,
+    setSearch: setPatientSearch,
+    onGridReady: patientOnGridReady,
+    isExternalFilterPresent: patientIsExternalFilterPresent,
+    doesExternalFilterPass: patientDoesExternalFilterPass,
+    searchBarProps: patientSearchBarProps,
+    clearSearchUIOnly: clearPatientSearchUIOnly,
+  } = useUnifiedSearch({
+    columns: patientSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: patientsDataTyped,
+    onSearch: setPatientDataSearch,
+    onClear: () => setPatientDataSearch(''),
+    onFilterSearch: handleMasterDataFilterSearch,
+  });
+
+  const {
+    search: doctorSearch,
+    setSearch: setDoctorSearch,
+    onGridReady: doctorOnGridReady,
+    isExternalFilterPresent: doctorIsExternalFilterPresent,
+    doesExternalFilterPass: doctorDoesExternalFilterPass,
+    searchBarProps: doctorSearchBarProps,
+    clearSearchUIOnly: clearDoctorSearchUIOnly,
+  } = useUnifiedSearch({
+    columns: doctorSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: doctorsDataTyped,
+    onSearch: setDoctorDataSearch,
+    onClear: () => setDoctorDataSearch(''),
+    onFilterSearch: handleMasterDataFilterSearch,
   });
 
   const suppliersForDisplay: SupplierType[] = useMemo(() => {
@@ -869,6 +1444,71 @@ const ItemMasterNew = memo(() => {
       });
   }, [supplierSearch, suppliersData]);
 
+  const masterDataRows = useMemo(() => {
+    if (isItemEntityTab) return entityData.data;
+    if (isCustomerTab) return customersDataTyped;
+    if (isPatientTab) return patientsDataTyped;
+    if (isDoctorTab) return doctorsDataTyped;
+    return [];
+  }, [
+    customersDataTyped,
+    doctorsDataTyped,
+    entityData.data,
+    isCustomerTab,
+    isDoctorTab,
+    isItemEntityTab,
+    isPatientTab,
+    patientsDataTyped,
+  ]);
+
+  const masterDataColumnDefs = useMemo(() => {
+    if (isItemEntityTab) return entityColumnDefs;
+    if (isCustomerTab) return customerColumnDefs;
+    if (isPatientTab) return patientColumnDefs;
+    if (isDoctorTab) return doctorColumnDefs;
+    return [];
+  }, [
+    customerColumnDefs,
+    doctorColumnDefs,
+    entityColumnDefs,
+    isCustomerTab,
+    isDoctorTab,
+    isItemEntityTab,
+    isPatientTab,
+    patientColumnDefs,
+  ]);
+
+  const masterDataConfig = useMemo(() => {
+    if (isItemEntityTab) return entityCurrentConfig;
+    if (otherMasterDataConfig) {
+      return {
+        entityName: otherMasterDataConfig.entityName,
+        nameColumnHeader: 'Nama',
+        searchPlaceholder: otherMasterDataConfig.searchPlaceholder,
+        noDataMessage: otherMasterDataConfig.noDataMessage,
+        searchNoDataMessage: otherMasterDataConfig.searchNoDataMessage,
+      };
+    }
+    return null;
+  }, [entityCurrentConfig, isItemEntityTab, otherMasterDataConfig]);
+
+  const activeItemsPerPage = useMemo(() => {
+    if (isItemTab) return itemsManagement.itemsPerPage;
+    if (isCustomerTab) return customerItemsPerPage;
+    if (isPatientTab) return patientItemsPerPage;
+    if (isDoctorTab) return doctorItemsPerPage;
+    return itemsManagement.itemsPerPage;
+  }, [
+    customerItemsPerPage,
+    doctorItemsPerPage,
+    isCustomerTab,
+    isDoctorTab,
+    isItemTab,
+    isPatientTab,
+    itemsManagement.itemsPerPage,
+    patientItemsPerPage,
+  ]);
+
   // Restore SearchBar badge UI per tab (session-scoped)
   // Priority: explicit saved pattern → derive from grid_state_{tab}.advancedFilterModel
   useEffect(() => {
@@ -877,7 +1517,13 @@ const ItemMasterNew = memo(() => {
         ? setItemSearch
         : activeTab === 'suppliers'
           ? setSupplierSearch
-          : setEntitySearch;
+          : activeTab === 'customers'
+            ? setCustomerSearch
+            : activeTab === 'patients'
+              ? setPatientSearch
+              : activeTab === 'doctors'
+                ? setDoctorSearch
+                : setEntitySearch;
     const sessionKey = getItemMasterSearchSessionKey(activeTab);
 
     let savedPattern: string | null = null;
@@ -908,7 +1554,15 @@ const ItemMasterNew = memo(() => {
     }
 
     setSearch('');
-  }, [activeTab, setEntitySearch, setItemSearch, setSupplierSearch]);
+  }, [
+    activeTab,
+    setCustomerSearch,
+    setDoctorSearch,
+    setEntitySearch,
+    setItemSearch,
+    setPatientSearch,
+    setSupplierSearch,
+  ]);
 
   // Cleanup grid API reference and pending tab changes on unmount
   useEffect(() => {
@@ -929,7 +1583,13 @@ const ItemMasterNew = memo(() => {
       const isAnyModalOpen =
         isAddItemModalOpen ||
         entityManager.isAddModalOpen ||
-        entityManager.isEditModalOpen;
+        entityManager.isEditModalOpen ||
+        isAddCustomerModalOpen ||
+        isEditCustomerModalOpen ||
+        isAddPatientModalOpen ||
+        isEditPatientModalOpen ||
+        isAddDoctorModalOpen ||
+        isEditDoctorModalOpen;
       const activeDialog = document.querySelector(
         '[role="dialog"][aria-modal="true"]'
       );
@@ -978,6 +1638,12 @@ const ItemMasterNew = memo(() => {
     entityManager.isAddModalOpen,
     entityManager.isEditModalOpen,
     isAddItemModalOpen,
+    isAddCustomerModalOpen,
+    isEditCustomerModalOpen,
+    isAddPatientModalOpen,
+    isEditPatientModalOpen,
+    isAddDoctorModalOpen,
+    isEditDoctorModalOpen,
   ]);
 
   // Auto-focus SearchBar on initial mount and tab (sub-page) changes.
@@ -988,7 +1654,13 @@ const ItemMasterNew = memo(() => {
     const isAnyModalOpen =
       isAddItemModalOpen ||
       entityManager.isAddModalOpen ||
-      entityManager.isEditModalOpen;
+      entityManager.isEditModalOpen ||
+      isAddCustomerModalOpen ||
+      isEditCustomerModalOpen ||
+      isAddPatientModalOpen ||
+      isEditPatientModalOpen ||
+      isAddDoctorModalOpen ||
+      isEditDoctorModalOpen;
     if (isAnyModalOpen) return;
 
     let cancelled = false;
@@ -998,7 +1670,13 @@ const ItemMasterNew = memo(() => {
       if (
         isAddItemModalOpen ||
         entityManager.isAddModalOpen ||
-        entityManager.isEditModalOpen
+        entityManager.isEditModalOpen ||
+        isAddCustomerModalOpen ||
+        isEditCustomerModalOpen ||
+        isAddPatientModalOpen ||
+        isEditPatientModalOpen ||
+        isAddDoctorModalOpen ||
+        isEditDoctorModalOpen
       ) {
         return false;
       }
@@ -1048,6 +1726,12 @@ const ItemMasterNew = memo(() => {
     entityManager.isAddModalOpen,
     entityManager.isEditModalOpen,
     isAddItemModalOpen,
+    isAddCustomerModalOpen,
+    isEditCustomerModalOpen,
+    isAddPatientModalOpen,
+    isEditPatientModalOpen,
+    isAddDoctorModalOpen,
+    isEditDoctorModalOpen,
     isTabSelectorExpanded,
   ]);
 
@@ -1059,7 +1743,13 @@ const ItemMasterNew = memo(() => {
     const isAnyModalOpen =
       isAddItemModalOpen ||
       entityManager.isAddModalOpen ||
-      entityManager.isEditModalOpen;
+      entityManager.isEditModalOpen ||
+      isAddCustomerModalOpen ||
+      isEditCustomerModalOpen ||
+      isAddPatientModalOpen ||
+      isEditPatientModalOpen ||
+      isAddDoctorModalOpen ||
+      isEditDoctorModalOpen;
 
     if (isAnyModalOpen) return;
 
@@ -1112,6 +1802,12 @@ const ItemMasterNew = memo(() => {
     entityManager.isAddModalOpen,
     entityManager.isEditModalOpen,
     isAddItemModalOpen,
+    isAddCustomerModalOpen,
+    isEditCustomerModalOpen,
+    isAddPatientModalOpen,
+    isEditPatientModalOpen,
+    isAddDoctorModalOpen,
+    isEditDoctorModalOpen,
     isTabSelectorExpanded,
   ]);
 
@@ -1125,7 +1821,13 @@ const ItemMasterNew = memo(() => {
     const isAnyModalOpen =
       isAddItemModalOpen ||
       entityManager.isAddModalOpen ||
-      entityManager.isEditModalOpen;
+      entityManager.isEditModalOpen ||
+      isAddCustomerModalOpen ||
+      isEditCustomerModalOpen ||
+      isAddPatientModalOpen ||
+      isEditPatientModalOpen ||
+      isAddDoctorModalOpen ||
+      isEditDoctorModalOpen;
 
     const prev = wasAnyModalOpenRef.current;
     wasAnyModalOpenRef.current = isAnyModalOpen;
@@ -1161,6 +1863,12 @@ const ItemMasterNew = memo(() => {
     entityManager.isAddModalOpen,
     entityManager.isEditModalOpen,
     isAddItemModalOpen,
+    isAddCustomerModalOpen,
+    isEditCustomerModalOpen,
+    isAddPatientModalOpen,
+    isEditPatientModalOpen,
+    isAddDoctorModalOpen,
+    isEditDoctorModalOpen,
     isTabSelectorExpanded,
   ]);
 
@@ -1170,7 +1878,13 @@ const ItemMasterNew = memo(() => {
       navigate(
         targetTab === 'suppliers'
           ? '/master-data/suppliers'
-          : `/master-data/item-master/${targetTab}`
+          : targetTab === 'customers'
+            ? '/master-data/customers'
+            : targetTab === 'patients'
+              ? '/master-data/patients'
+              : targetTab === 'doctors'
+                ? '/master-data/doctors'
+                : `/master-data/item-master/${targetTab}`
       );
 
       // Save selected tab to session storage for future visits
@@ -1220,6 +1934,12 @@ const ItemMasterNew = memo(() => {
         clearItemSearchUIOnly();
       } else if (activeTab === 'suppliers') {
         clearSupplierSearchUIOnly();
+      } else if (activeTab === 'customers') {
+        clearCustomerSearchUIOnly();
+      } else if (activeTab === 'patients') {
+        clearPatientSearchUIOnly();
+      } else if (activeTab === 'doctors') {
+        clearDoctorSearchUIOnly();
       } else {
         clearEntitySearchUIOnly();
       }
@@ -1242,15 +1962,49 @@ const ItemMasterNew = memo(() => {
       if (isAddItemModalOpen) {
         closeAddItemModal();
       }
+
+      if (isAddCustomerModalOpen) {
+        setIsAddCustomerModalOpen(false);
+      }
+      if (isEditCustomerModalOpen) {
+        setIsEditCustomerModalOpen(false);
+      }
+      if (isAddPatientModalOpen) {
+        setIsAddPatientModalOpen(false);
+      }
+      if (isEditPatientModalOpen) {
+        setIsEditPatientModalOpen(false);
+      }
+      if (isAddDoctorModalOpen) {
+        setIsAddDoctorModalOpen(false);
+      }
+      if (isEditDoctorModalOpen) {
+        setIsEditDoctorModalOpen(false);
+      }
     },
     [
       navigate,
       activeTab,
       isTabSelectorExpanded,
       isAddItemModalOpen,
+      isAddCustomerModalOpen,
+      isEditCustomerModalOpen,
+      isAddPatientModalOpen,
+      isEditPatientModalOpen,
+      isAddDoctorModalOpen,
+      isEditDoctorModalOpen,
       closeAddItemModal,
+      setIsAddCustomerModalOpen,
+      setIsEditCustomerModalOpen,
+      setIsAddPatientModalOpen,
+      setIsEditPatientModalOpen,
+      setIsAddDoctorModalOpen,
+      setIsEditDoctorModalOpen,
       clearItemSearchUIOnly,
       clearEntitySearchUIOnly,
+      clearCustomerSearchUIOnly,
+      clearDoctorSearchUIOnly,
+      clearPatientSearchUIOnly,
       clearSupplierSearchUIOnly,
     ]
   );
@@ -1325,18 +2079,40 @@ const ItemMasterNew = memo(() => {
 
   // Unified handlers for EntityGrid
   const unifiedRowClickHandler = useCallback(
-    (data: ItemDataType | EntityData | SupplierType) => {
+    (
+      data:
+        | ItemDataType
+        | EntityData
+        | SupplierType
+        | CustomerType
+        | PatientType
+        | DoctorType
+    ) => {
       if (activeTab === 'items') {
         // Convert back to base Item type for editing
         const baseItem = data as ItemDataType;
         handleItemEdit(baseItem);
       } else if (activeTab === 'suppliers') {
         openEditSupplierModal(data as SupplierType);
+      } else if (activeTab === 'customers') {
+        handleCustomerEdit(data as CustomerType);
+      } else if (activeTab === 'patients') {
+        handlePatientEdit(data as PatientType);
+      } else if (activeTab === 'doctors') {
+        handleDoctorEdit(data as DoctorType);
       } else {
         entityManager.openEditModal(data as EntityData);
       }
     },
-    [activeTab, handleItemEdit, entityManager, openEditSupplierModal]
+    [
+      activeTab,
+      handleCustomerEdit,
+      handleDoctorEdit,
+      handleItemEdit,
+      handlePatientEdit,
+      entityManager,
+      openEditSupplierModal,
+    ]
   );
 
   const unifiedGridReadyHandler = useCallback(
@@ -1345,12 +2121,168 @@ const ItemMasterNew = memo(() => {
         enhancedItemOnGridReady(params);
       } else if (activeTab === 'suppliers') {
         supplierOnGridReady(params);
+      } else if (activeTab === 'customers') {
+        customerOnGridReady(params);
+      } else if (activeTab === 'patients') {
+        patientOnGridReady(params);
+      } else if (activeTab === 'doctors') {
+        doctorOnGridReady(params);
       } else {
         entityOnGridReady(params);
       }
     },
-    [activeTab, enhancedItemOnGridReady, entityOnGridReady, supplierOnGridReady]
+    [
+      activeTab,
+      customerOnGridReady,
+      doctorOnGridReady,
+      enhancedItemOnGridReady,
+      entityOnGridReady,
+      patientOnGridReady,
+      supplierOnGridReady,
+    ]
   );
+
+  const showTabSelector = isItemMasterTab(activeTab);
+  const pageTitle =
+    activeTab === 'suppliers'
+      ? 'Daftar Supplier'
+      : (otherMasterDataConfig?.title ?? 'Item Master');
+
+  const activeSearchBarProps = isItemTab
+    ? itemSearchBarProps
+    : isSupplierTab
+      ? supplierSearchBarProps
+      : isCustomerTab
+        ? customerSearchBarProps
+        : isPatientTab
+          ? patientSearchBarProps
+          : isDoctorTab
+            ? doctorSearchBarProps
+            : entitySearchBarProps;
+
+  const activeSearchValue = isItemTab
+    ? itemSearch
+    : isSupplierTab
+      ? supplierSearch
+      : isCustomerTab
+        ? customerSearch
+        : isPatientTab
+          ? patientSearch
+          : isDoctorTab
+            ? doctorSearch
+            : entitySearch;
+
+  const activePlaceholder = isItemTab
+    ? 'Cari item...'
+    : isSupplierTab
+      ? 'Cari supplier...'
+      : (otherMasterDataConfig?.searchPlaceholder ??
+        `${entityCurrentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`);
+
+  const activeOnAdd = isItemTab
+    ? () => handleAddItem(undefined, itemSearch)
+    : isSupplierTab
+      ? openAddSupplierModal
+      : isCustomerTab
+        ? () => setIsAddCustomerModalOpen(true)
+        : isPatientTab
+          ? () => setIsAddPatientModalOpen(true)
+          : isDoctorTab
+            ? () => setIsAddDoctorModalOpen(true)
+            : entityManager.openAddModal;
+
+  const activeOnKeyDown = isCustomerTab
+    ? handleCustomerKeyDown
+    : isPatientTab
+      ? handlePatientKeyDown
+      : isDoctorTab
+        ? handleDoctorKeyDown
+        : undefined;
+
+  const activeExportFilename = isItemTab
+    ? 'daftar-item'
+    : isSupplierTab
+      ? 'daftar-supplier'
+      : (otherMasterDataConfig?.exportFilename ??
+        (activeTab === 'categories'
+          ? 'kategori-item'
+          : activeTab === 'types'
+            ? 'jenis-item'
+            : activeTab === 'packages'
+              ? 'kemasan-item'
+              : activeTab === 'dosages'
+                ? 'sediaan-item'
+                : activeTab === 'manufacturers'
+                  ? 'produsen-item'
+                  : 'satuan-item'));
+
+  const activeIsLoading = isItemTab
+    ? itemsManagement.isLoading
+    : isSupplierTab
+      ? suppliersQuery.isLoading
+      : isCustomerTab
+        ? isCustomersLoading
+        : isPatientTab
+          ? isPatientsLoading
+          : isDoctorTab
+            ? isDoctorsLoading
+            : entityData.isLoading;
+
+  const activeIsError = isItemTab
+    ? itemsManagement.isError
+    : isSupplierTab
+      ? suppliersQuery.isError
+      : isCustomerTab
+        ? isCustomersError
+        : isPatientTab
+          ? isPatientsError
+          : isDoctorTab
+            ? isDoctorsError
+            : entityData.isError;
+
+  const activeError = isItemTab
+    ? itemsManagement.queryError
+    : isSupplierTab
+      ? suppliersQuery.error
+      : isCustomerTab
+        ? customersQueryError
+        : isPatientTab
+          ? patientsQueryError
+          : isDoctorTab
+            ? doctorsQueryError
+            : entityData.error;
+
+  const activeIsExternalFilterPresent = isItemTab
+    ? itemIsExternalFilterPresent
+    : isSupplierTab
+      ? supplierIsExternalFilterPresent
+      : isCustomerTab
+        ? customerIsExternalFilterPresent
+        : isPatientTab
+          ? patientIsExternalFilterPresent
+          : isDoctorTab
+            ? doctorIsExternalFilterPresent
+            : entityIsExternalFilterPresent;
+
+  const activeDoesExternalFilterPass = isItemTab
+    ? itemDoesExternalFilterPass
+    : isSupplierTab
+      ? supplierDoesExternalFilterPass
+      : isCustomerTab
+        ? customerDoesExternalFilterPass
+        : isPatientTab
+          ? patientDoesExternalFilterPass
+          : isDoctorTab
+            ? doctorDoesExternalFilterPass
+            : entityDoesExternalFilterPass;
+
+  const activeItemsSelection = isItemTab
+    ? (itemsManagement.data as ItemDataType[])
+    : undefined;
+
+  const activeOnItemSelect = isItemTab ? handleItemSelect : undefined;
+
+  const enableTabShortcuts = isItemMasterTab(activeTab);
 
   // Removed unified column handlers - now handled by live save in EntityGrid
 
@@ -1362,7 +2294,7 @@ const ItemMasterNew = memo(() => {
       <Card>
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
-            {activeTab !== 'suppliers' && (
+            {showTabSelector && (
               <SlidingSelector
                 options={SWITCHER_TAB_OPTIONS}
                 activeKey={activeTab}
@@ -1381,11 +2313,7 @@ const ItemMasterNew = memo(() => {
             )}
           </div>
 
-          <PageTitle
-            title={
-              activeTab === 'suppliers' ? 'Daftar Supplier' : 'Item Master'
-            }
-          />
+          <PageTitle title={pageTitle} />
         </div>
 
         {/* Unified SearchToolbar */}
@@ -1395,62 +2323,17 @@ const ItemMasterNew = memo(() => {
               searchInputRef={
                 searchInputRef as React.RefObject<HTMLInputElement>
               }
-              searchBarProps={
-                activeTab === 'items'
-                  ? itemSearchBarProps
-                  : activeTab === 'suppliers'
-                    ? supplierSearchBarProps
-                    : entitySearchBarProps
-              }
-              search={
-                activeTab === 'items'
-                  ? itemSearch
-                  : activeTab === 'suppliers'
-                    ? supplierSearch
-                    : entitySearch
-              }
-              placeholder={
-                activeTab === 'items'
-                  ? 'Cari item...'
-                  : activeTab === 'suppliers'
-                    ? 'Cari supplier...'
-                    : `${entityCurrentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`
-              }
-              onAdd={
-                activeTab === 'items'
-                  ? () => handleAddItem(undefined, itemSearch)
-                  : activeTab === 'suppliers'
-                    ? openAddSupplierModal
-                    : entityManager.openAddModal
-              }
-              items={
-                activeTab === 'items'
-                  ? (itemsManagement.data as ItemDataType[])
-                  : undefined
-              }
-              onItemSelect={
-                activeTab === 'items' ? handleItemSelect : undefined
-              }
+              searchBarProps={activeSearchBarProps}
+              search={activeSearchValue}
+              placeholder={activePlaceholder}
+              onAdd={activeOnAdd}
+              onKeyDown={activeOnKeyDown}
+              items={activeItemsSelection}
+              onItemSelect={activeOnItemSelect}
               gridApi={unifiedGridApi}
-              exportFilename={
-                activeTab === 'items'
-                  ? 'daftar-item'
-                  : activeTab === 'suppliers'
-                    ? 'daftar-supplier'
-                    : activeTab === 'categories'
-                      ? 'kategori-item'
-                      : activeTab === 'types'
-                        ? 'jenis-item'
-                        : activeTab === 'packages'
-                          ? 'kemasan-item'
-                          : activeTab === 'dosages'
-                            ? 'sediaan-item'
-                            : activeTab === 'manufacturers'
-                              ? 'produsen-item'
-                              : 'satuan-item'
-              }
-              onTabNext={handleTabNext}
-              onTabPrevious={handleTabPrevious}
+              exportFilename={activeExportFilename}
+              onTabNext={enableTabShortcuts ? handleTabNext : undefined}
+              onTabPrevious={enableTabShortcuts ? handleTabPrevious : undefined}
             />
           </div>
         </div>
@@ -1461,57 +2344,21 @@ const ItemMasterNew = memo(() => {
             activeTab={activeTab}
             itemsData={itemsManagement.data as ItemDataType[]}
             suppliersData={suppliersForDisplay}
-            entityData={entityData.data}
-            isLoading={
-              activeTab === 'items'
-                ? itemsManagement.isLoading
-                : activeTab === 'suppliers'
-                  ? suppliersQuery.isLoading
-                  : entityData.isLoading
-            }
-            isError={
-              activeTab === 'items'
-                ? itemsManagement.isError
-                : activeTab === 'suppliers'
-                  ? suppliersQuery.isError
-                  : entityData.isError
-            }
-            error={
-              activeTab === 'items'
-                ? itemsManagement.queryError
-                : activeTab === 'suppliers'
-                  ? suppliersQuery.error
-                  : entityData.error
-            }
-            search={
-              activeTab === 'items'
-                ? itemSearch
-                : activeTab === 'suppliers'
-                  ? supplierSearch
-                  : entitySearch
-            }
+            entityData={masterDataRows}
+            isLoading={activeIsLoading}
+            isError={activeIsError}
+            error={activeError}
+            search={activeSearchValue}
             itemColumnDefs={itemColumnDefs}
-            entityConfig={entityCurrentConfig}
-            entityColumnDefs={entityColumnDefs}
+            entityConfig={masterDataConfig}
+            entityColumnDefs={masterDataColumnDefs}
             supplierColumnDefs={supplierColumnDefs}
             onRowClick={unifiedRowClickHandler}
             onGridReady={unifiedGridReadyHandler}
-            isExternalFilterPresent={
-              activeTab === 'items'
-                ? itemIsExternalFilterPresent
-                : activeTab === 'suppliers'
-                  ? supplierIsExternalFilterPresent
-                  : entityIsExternalFilterPresent
-            }
-            doesExternalFilterPass={
-              activeTab === 'items'
-                ? itemDoesExternalFilterPass
-                : activeTab === 'suppliers'
-                  ? supplierDoesExternalFilterPass
-                  : entityDoesExternalFilterPass
-            }
+            isExternalFilterPresent={activeIsExternalFilterPresent}
+            doesExternalFilterPass={activeDoesExternalFilterPass}
             onGridApiReady={handleUnifiedGridApiReady}
-            itemsPerPage={itemsManagement.itemsPerPage}
+            itemsPerPage={activeItemsPerPage}
             isRowGroupingEnabled={
               activeTab === 'items' ? isRowGroupingEnabled : false
             }
@@ -1541,8 +2388,7 @@ const ItemMasterNew = memo(() => {
       )}
 
       {/* Entity Management Modal - only render for entity tabs */}
-      {activeTab !== 'items' &&
-        activeTab !== 'suppliers' &&
+      {isItemEntityTab &&
         (entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
           <EntityModal
             isOpen={true}
@@ -1575,6 +2421,185 @@ const ItemMasterNew = memo(() => {
         openConfirmDialog={openConfirmDialog}
         closeAddSupplierModal={closeAddSupplierModal}
         closeEditSupplierModal={closeEditSupplierModal}
+      />
+
+      {/* Customer Modals */}
+      <IdentityDataModal
+        title="Tambah Pelanggan Baru"
+        data={{ customer_level_id: defaultCustomerLevelId }}
+        fields={customerFields}
+        isOpen={isCustomerTab && isAddCustomerModalOpen}
+        onClose={() => setIsAddCustomerModalOpen(false)}
+        onSave={async data => {
+          await handleCustomerModalSubmit({
+            data: {
+              name: String(data.name || ''),
+              customer_level_id: String(
+                data.customer_level_id || defaultCustomerLevelId || ''
+              ),
+              phone: data.phone ? String(data.phone) : null,
+              email: data.email ? String(data.email) : null,
+              address: data.address ? String(data.address) : null,
+            },
+          });
+        }}
+        mode="add"
+        initialNameFromSearch={customerDebouncedSearch}
+        showImageUploader={false}
+      />
+
+      <IdentityDataModal
+        title="Edit Pelanggan"
+        data={
+          (editingCustomer as unknown as Record<
+            string,
+            string | number | boolean | null
+          >) || {}
+        }
+        fields={customerFields}
+        isOpen={isCustomerTab && isEditCustomerModalOpen}
+        onClose={() => setIsEditCustomerModalOpen(false)}
+        onSave={async data => {
+          await handleCustomerModalSubmit({
+            id: editingCustomer?.id,
+            data: {
+              name: String(data.name || ''),
+              customer_level_id: String(
+                data.customer_level_id || defaultCustomerLevelId || ''
+              ),
+              phone: data.phone ? String(data.phone) : null,
+              email: data.email ? String(data.email) : null,
+              address: data.address ? String(data.address) : null,
+            },
+          });
+        }}
+        onDeleteRequest={
+          editingCustomer
+            ? () => {
+                openConfirmDialog({
+                  title: 'Konfirmasi Hapus',
+                  message: `Apakah Anda yakin ingin menghapus pelanggan "${editingCustomer.name}"?`,
+                  variant: 'danger',
+                  confirmText: 'Ya, Hapus',
+                  onConfirm: async () => {
+                    await handleCustomerDelete(editingCustomer.id);
+                  },
+                });
+              }
+            : undefined
+        }
+        mode="edit"
+        showImageUploader={false}
+      />
+
+      {/* Patient Modals */}
+      <IdentityDataModal
+        title="Tambah Pasien Baru"
+        data={{}}
+        fields={patientFields}
+        isOpen={isPatientTab && isAddPatientModalOpen}
+        onClose={() => setIsAddPatientModalOpen(false)}
+        onSave={async data => {
+          await handlePatientModalSubmit({
+            name: String(data.name || ''),
+            description: String(data.address || ''),
+            id: undefined,
+          });
+        }}
+        mode="add"
+        initialNameFromSearch={patientDebouncedSearch}
+      />
+
+      <IdentityDataModal
+        title="Edit Pasien"
+        data={
+          (editingPatient as unknown as Record<
+            string,
+            string | number | boolean | null
+          >) || {}
+        }
+        fields={patientFields}
+        isOpen={isPatientTab && isEditPatientModalOpen}
+        onClose={() => setIsEditPatientModalOpen(false)}
+        onSave={async data => {
+          await handlePatientModalSubmit({
+            name: String(data.name || ''),
+            description: String(data.address || ''),
+            id: editingPatient?.id,
+          });
+        }}
+        onDeleteRequest={
+          editingPatient
+            ? () => {
+                openConfirmDialog({
+                  title: 'Konfirmasi Hapus',
+                  message: `Apakah Anda yakin ingin menghapus pasien "${editingPatient.name}"?`,
+                  variant: 'danger',
+                  confirmText: 'Ya, Hapus',
+                  onConfirm: async () => {
+                    await handlePatientDelete(editingPatient.id);
+                  },
+                });
+              }
+            : undefined
+        }
+        mode="edit"
+        imageUrl={(editingPatient as PatientType)?.image_url || undefined}
+      />
+
+      {/* Doctor Modals */}
+      <IdentityDataModal
+        title="Tambah Dokter Baru"
+        data={{}}
+        fields={doctorFields}
+        isOpen={isDoctorTab && isAddDoctorModalOpen}
+        onClose={() => setIsAddDoctorModalOpen(false)}
+        onSave={async data => {
+          await handleDoctorModalSubmit({
+            name: String(data.name || ''),
+            description: String(data.specialization || ''),
+            id: undefined,
+          });
+        }}
+        mode="add"
+        initialNameFromSearch={doctorDebouncedSearch}
+      />
+
+      <IdentityDataModal
+        title="Edit Dokter"
+        data={
+          (editingDoctor as unknown as Record<
+            string,
+            string | number | boolean | null
+          >) || {}
+        }
+        fields={doctorFields}
+        isOpen={isDoctorTab && isEditDoctorModalOpen}
+        onClose={() => setIsEditDoctorModalOpen(false)}
+        onSave={async data => {
+          await handleDoctorModalSubmit({
+            name: String(data.name || ''),
+            description: String(data.specialization || ''),
+            id: editingDoctor?.id,
+          });
+        }}
+        onDeleteRequest={
+          editingDoctor
+            ? () => {
+                openConfirmDialog({
+                  title: 'Konfirmasi Hapus',
+                  message: `Apakah Anda yakin ingin menghapus dokter "${editingDoctor.name}"?`,
+                  variant: 'danger',
+                  confirmText: 'Ya, Hapus',
+                  onConfirm: async () => {
+                    await handleDoctorDelete(editingDoctor.id);
+                  },
+                });
+              }
+            : undefined
+        }
+        mode="edit"
+        imageUrl={(editingDoctor as DoctorType)?.image_url || undefined}
       />
     </>
   );
