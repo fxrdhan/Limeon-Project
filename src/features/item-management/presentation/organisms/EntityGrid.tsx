@@ -25,10 +25,7 @@ import { useColumnDisplayMode } from '@/features/item-management/application/hoo
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 // Simple grid state utilities
-import {
-  hasSavedState,
-  type TableType,
-} from '@/features/shared/utils/gridStateManager';
+import { hasSavedState, type TableType } from '@/utils/gridStateManager';
 
 // Types
 import type { Item, Supplier } from '@/types/database';

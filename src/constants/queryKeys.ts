@@ -9,6 +9,16 @@ export const QueryKeys = {
     detail: (id: string) => [...QueryKeys.items.details(), id] as const,
     search: (query: string, filters?: Record<string, unknown>) =>
       [...QueryKeys.items.all, 'search', query, { filters }] as const,
+    byCategory: (categoryId: string) =>
+      [...QueryKeys.items.all, 'byCategory', categoryId] as const,
+    byType: (typeId: string) =>
+      [...QueryKeys.items.all, 'byType', typeId] as const,
+    lowStock: (threshold: number) =>
+      [...QueryKeys.items.all, 'lowStock', threshold] as const,
+    checkCode: (code: string, excludeId?: string) =>
+      [...QueryKeys.items.all, 'checkCode', code, excludeId] as const,
+    checkBarcode: (barcode: string, excludeId?: string) =>
+      [...QueryKeys.items.all, 'checkBarcode', barcode, excludeId] as const,
     packageConversions: (itemId: string) =>
       [...QueryKeys.items.detail(itemId), 'packageConversions'] as const,
   },
@@ -19,10 +29,25 @@ export const QueryKeys = {
     lists: () => [...QueryKeys.purchases.all, 'list'] as const,
     list: (filters?: Record<string, unknown>) =>
       [...QueryKeys.purchases.lists(), { filters }] as const,
+    paginated: (page: number, searchTerm: string, limit: number) =>
+      [...QueryKeys.purchases.all, page, searchTerm, limit] as const,
     details: () => [...QueryKeys.purchases.all, 'detail'] as const,
     detail: (id: string) => [...QueryKeys.purchases.details(), id] as const,
     items: (purchaseId: string) =>
       [...QueryKeys.purchases.detail(purchaseId), 'items'] as const,
+    bySupplier: (supplierId: string) =>
+      [...QueryKeys.purchases.all, 'bySupplier', supplierId] as const,
+    byPaymentStatus: (status: string) =>
+      [...QueryKeys.purchases.all, 'byPaymentStatus', status] as const,
+    byDateRange: (startDate: string, endDate: string) =>
+      [...QueryKeys.purchases.all, 'byDateRange', startDate, endDate] as const,
+    checkInvoice: (invoiceNumber: string, excludeId?: string) =>
+      [
+        ...QueryKeys.purchases.all,
+        'checkInvoice',
+        invoiceNumber,
+        excludeId,
+      ] as const,
   },
 
   // Sales
@@ -39,6 +64,7 @@ export const QueryKeys = {
 
   // Master Data
   masterData: {
+    all: ['masterData', 'all'] as const,
     // Categories
     categories: {
       all: ['masterData', 'categories'] as const,
@@ -82,6 +108,7 @@ export const QueryKeys = {
       details: () => [...QueryKeys.masterData.suppliers.all, 'detail'] as const,
       detail: (id: string) =>
         [...QueryKeys.masterData.suppliers.details(), id] as const,
+      search: (query: string) => ['suppliers', 'search', query] as const,
     },
 
     // Dosages
@@ -180,6 +207,9 @@ export const QueryKeys = {
     salesAnalytics: (period?: string) =>
       ['dashboard', 'salesAnalytics', period] as const,
     stockAlerts: ['dashboard', 'stockAlerts'] as const,
+    recentTransactions: (limit: number) =>
+      ['dashboard', 'recentTransactions', limit] as const,
+    monthlyRevenue: ['dashboard', 'monthlyRevenue'] as const,
   },
 
   // API Metrics
@@ -188,6 +218,21 @@ export const QueryKeys = {
     lists: () => [...QueryKeys.apiMetrics.all, 'list'] as const,
     list: (filters?: Record<string, unknown>) =>
       [...QueryKeys.apiMetrics.lists(), { filters }] as const,
+  },
+
+  // Generic table queries (fallback for dynamic tables)
+  tables: {
+    byName: (table: string) => [table] as const,
+  },
+
+  // Legacy entity keys (string-based)
+  legacyEntities: {
+    categories: 'categories',
+    types: 'types',
+    packages: 'packages',
+    units: 'units',
+    dosages: 'dosages',
+    manufacturers: 'manufacturers',
   },
 } as const;
 

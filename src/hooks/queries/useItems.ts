@@ -79,7 +79,7 @@ export const useItemsByCategory = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['items', 'byCategory', categoryId],
+    queryKey: QueryKeys.items.byCategory(categoryId),
     queryFn: async () => {
       const result = await itemsService.getItemsByCategory(categoryId);
       if (result.error) throw result.error;
@@ -96,7 +96,7 @@ export const useItemsByType = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['items', 'byType', typeId],
+    queryKey: QueryKeys.items.byType(typeId),
     queryFn: async () => {
       const result = await itemsService.getItemsByType(typeId);
       if (result.error) throw result.error;
@@ -113,7 +113,7 @@ export const useLowStockItems = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['items', 'lowStock', threshold],
+    queryKey: QueryKeys.items.lowStock(threshold),
     queryFn: async () => {
       const result = await itemsService.getLowStockItems(threshold);
       if (result.error) throw result.error;
@@ -249,7 +249,7 @@ export const useCheckCodeUniqueness = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['items', 'checkCode', code, excludeId],
+    queryKey: QueryKeys.items.checkCode(code, excludeId),
     queryFn: () => itemsService.isCodeUnique(code, excludeId),
     enabled: (options?.enabled ?? true) && code.length > 0,
   });
@@ -261,7 +261,7 @@ export const useCheckBarcodeUniqueness = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['items', 'checkBarcode', barcode, excludeId],
+    queryKey: QueryKeys.items.checkBarcode(barcode, excludeId),
     queryFn: () => itemsService.isBarcodeUnique(barcode, excludeId),
     enabled: (options?.enabled ?? true) && barcode.length > 0,
   });

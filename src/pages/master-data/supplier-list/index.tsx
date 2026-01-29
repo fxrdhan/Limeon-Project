@@ -3,7 +3,7 @@ import { ExportDropdown } from '@/components/export';
 import PageTitle from '@/components/page-title';
 import { AGGridPagination } from '@/components/pagination';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import IdentityDataModal from '@/features/identity/IdentityDataModal';
+import IdentityDataModal from '@/components/IdentityDataModal';
 
 import { DataGrid, createTextColumn } from '@/components/ag-grid';
 import { Card } from '@/components/card';

@@ -31,6 +31,7 @@ import type {
   ItemManufacturerCreateInput,
   ItemManufacturerUpdateInput,
 } from '../../../shared/types';
+import { QueryKeys } from '@/constants/queryKeys';
 
 // ============================================================================
 // ENTITY TYPE DEFINITIONS
@@ -167,7 +168,7 @@ const CATEGORIES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_categories',
-    queryKey: 'categories',
+    queryKey: QueryKeys.legacyEntities.categories,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'kategori',
@@ -175,7 +176,7 @@ const CATEGORIES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_categories',
-    queryKey: 'categories',
+    queryKey: QueryKeys.legacyEntities.categories,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'kategori',
     createInputType: () => ({}) as ItemCategoryCreateInput,
@@ -199,7 +200,7 @@ const TYPES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_types',
-    queryKey: 'types',
+    queryKey: QueryKeys.legacyEntities.types,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'jenis item',
@@ -207,7 +208,7 @@ const TYPES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_types',
-    queryKey: 'types',
+    queryKey: QueryKeys.legacyEntities.types,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'jenis item',
     createInputType: () => ({}) as ItemTypeCreateInput,
@@ -231,7 +232,7 @@ const PACKAGES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_packages',
-    queryKey: 'packages',
+    queryKey: QueryKeys.legacyEntities.packages,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'kemasan',
@@ -239,7 +240,7 @@ const PACKAGES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_packages',
-    queryKey: 'packages',
+    queryKey: QueryKeys.legacyEntities.packages,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'kemasan',
     createInputType: () => ({}) as ItemPackageCreateInput,
@@ -263,7 +264,7 @@ const UNITS_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_units',
-    queryKey: 'units',
+    queryKey: QueryKeys.legacyEntities.units,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'satuan',
@@ -271,7 +272,7 @@ const UNITS_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_units',
-    queryKey: 'units',
+    queryKey: QueryKeys.legacyEntities.units,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'satuan',
     createInputType: () => ({}) as ItemUnitCreateInput,
@@ -295,7 +296,7 @@ const DOSAGES_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_dosages',
-    queryKey: 'dosages',
+    queryKey: QueryKeys.legacyEntities.dosages,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'sediaan',
@@ -303,7 +304,7 @@ const DOSAGES_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_dosages',
-    queryKey: 'dosages',
+    queryKey: QueryKeys.legacyEntities.dosages,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'sediaan',
     createInputType: () => ({}) as ItemDosageCreateInput,
@@ -327,7 +328,7 @@ const MANUFACTURERS_CONFIG: EntityConfig<
 > = {
   query: {
     tableName: 'item_manufacturers',
-    queryKey: 'manufacturers',
+    queryKey: QueryKeys.legacyEntities.manufacturers,
     selectFields: 'id, code, name, address, created_at, updated_at', // Note: address instead of description
     orderByField: 'name', // Note: order by name instead of code
     entityDisplayName: 'produsen',
@@ -335,7 +336,7 @@ const MANUFACTURERS_CONFIG: EntityConfig<
   },
   mutation: {
     tableName: 'item_manufacturers',
-    queryKey: 'manufacturers',
+    queryKey: QueryKeys.legacyEntities.manufacturers,
     selectFields: 'id, code, name, address, created_at, updated_at',
     entityDisplayName: 'produsen',
     createInputType: () => ({}) as ItemManufacturerCreateInput,

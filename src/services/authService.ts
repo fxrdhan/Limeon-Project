@@ -1,17 +1,13 @@
 /**
  * Thin Auth and User service
- * Decouples store logic from Supabase infrastructure by exposing small, testable functions.
+ * Delegates to API auth service for Supabase access.
  *
  * Responsibilities:
  * - Authentication (session, sign in, sign out)
  * - User fetching and basic updates (profile photo URL)
- *
- * NOTE:
- * - Storage operations (upload/delete) should be handled by a dedicated storage utility/service.
- * - This service only reads/writes to Supabase Auth and "users" table.
  */
 
-import { supabase } from '@/lib/supabase';
+import { authService as apiAuthService } from '@/services/api/auth.service';
 import type { Session } from '@supabase/supabase-js';
 import type { UserDetails } from '@/types';
 
@@ -24,9 +20,9 @@ export type UserPublicFields = Pick<
  * Get current session (if any)
  */
 export async function getCurrentSession(): Promise<Session | null> {
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await apiAuthService.getSession();
   if (error) throw error;
-  return data.session ?? null;
+  return data ?? null;
 }
 
 /**
@@ -39,29 +35,23 @@ export async function signInWithEmailPassword(
   session: Session;
   user: UserPublicFields | null;
 }> {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await apiAuthService.signInWithPassword(
     email,
-    password,
-  });
-  if (error) throw error;
+    password
+  );
 
-  const session = data.session;
-  if (!session) {
-    // Should be rare; treat as auth failure
-    throw new Error('Authentication succeeded but session is missing');
+  if (error || !data?.session) {
+    throw error ?? new Error('Authentication succeeded but session is missing');
   }
 
-  const userId = data.user?.id;
-  const user = userId ? await fetchUserById(userId) : null;
-
-  return { session, user };
+  return { session: data.session, user: data.user ?? null };
 }
 
 /**
  * Sign out current user
  */
 export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await apiAuthService.signOut();
   if (error) throw error;
 }
 
@@ -71,17 +61,22 @@ export async function signOut(): Promise<void> {
 export async function fetchUserById(
   userId: string
 ): Promise<UserPublicFields | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, name, email, role, profilephoto')
-    .eq('id', userId)
-    .single();
+  const { data, error } = await apiAuthService.getUserProfile(userId);
 
   if (error) {
-    // If row is not found, return null; otherwise propagate error
+    const errorCode =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? (error as { code?: string }).code
+        : undefined;
+    const errorDetails =
+      typeof error === 'object' && error !== null && 'details' in error
+        ? (error as { details?: string }).details
+        : undefined;
+
     if (
-      error.code === 'PGRST116' ||
-      error.details?.includes('Results contain 0 rows')
+      errorCode === 'PGRST116' ||
+      (typeof errorDetails === 'string' &&
+        errorDetails.includes('Results contain 0 rows'))
     ) {
       return null;
     }
@@ -93,21 +88,14 @@ export async function fetchUserById(
 
 /**
  * Update user's profile photo URL
- * Storage upload should be handled by a separate service,
- * then pass the resulting public URL here to persist on DB.
  */
 export async function updateUserProfilePhotoUrl(
   userId: string,
   publicUrl: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from('users')
-    .update({
-      profilephoto: publicUrl,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId);
-
+  const { error } = await apiAuthService.updateUserProfile(userId, {
+    profilephoto: publicUrl,
+  });
   if (error) throw error;
 }
 
@@ -115,14 +103,9 @@ export async function updateUserProfilePhotoUrl(
  * Clear user's profile photo URL (set to null)
  */
 export async function clearUserProfilePhoto(userId: string): Promise<void> {
-  const { error } = await supabase
-    .from('users')
-    .update({
-      profilephoto: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId);
-
+  const { error } = await apiAuthService.updateUserProfile(userId, {
+    profilephoto: null,
+  });
   if (error) throw error;
 }
 

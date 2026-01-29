@@ -139,6 +139,9 @@ We use a feature branch workflow:
 - [ ] Type checking passes (`bunx --bun tsc -b --noEmit`)
 - [ ] Linting passes (`bun run lint`)
 - [ ] Build succeeds (`bun run build`)
+- [ ] No cross-feature imports (use `src/components/`, `src/utils/`, `src/hooks/`)
+- [ ] All React Query keys use `src/constants/queryKeys.ts`
+- [ ] No direct Supabase calls in hooks/components (use services/infrastructure)
 - [ ] PR title follows conventional commit format
 - [ ] PR description clearly describes the changes
 - [ ] Related issues are linked (if applicable)

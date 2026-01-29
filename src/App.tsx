@@ -7,7 +7,7 @@ import {
   cleanupLegacyGridStates,
   hasLegacyKeys,
   migrateGridStatesToSessionStorage,
-} from '@/features/shared/utils/gridStateManager';
+} from '@/utils/gridStateManager';
 import MainLayout from '@/layout/main';
 import Login from '@/pages/auth/login';
 import { ClinicRoutes } from '@/pages/routes/clinic';

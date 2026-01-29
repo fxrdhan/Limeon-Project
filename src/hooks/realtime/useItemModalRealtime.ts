@@ -7,6 +7,7 @@ import type { CustomerLevelDiscount } from '@/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import { itemDataService } from '@/features/item-management/infrastructure/itemData.service';
+import { QueryKeys } from '@/constants/queryKeys';
 
 interface UseItemModalRealtimeProps {
   itemId?: string;
@@ -143,7 +144,7 @@ export const useItemModalRealtime = ({
 
           // Invalidate item queries for fresh data
           queryClient.invalidateQueries({
-            queryKey: ['item', itemId],
+            queryKey: QueryKeys.items.detail(itemId),
           });
 
           // Call custom handler

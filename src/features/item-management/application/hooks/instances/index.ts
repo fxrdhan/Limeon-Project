@@ -2,4 +2,4 @@
 // Handles operations on individual entity records
 export * from './useEntityHistory';
 export * from './useEntityModalLogic';
-export * from './useItemSelection';
+export * from '@/hooks/items/useItemSelection';

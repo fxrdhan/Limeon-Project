@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useSmartFormSync } from './useSmartFormSync';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { realtimeService } from '@/services/realtime/realtime.service';
+import { QueryKeys } from '@/constants/queryKeys';
 
 interface UseEntityModalRealtimeProps {
   entityTable: string;
@@ -103,7 +104,7 @@ export const useEntityModalRealtime = ({
 
           // Invalidate queries for fresh data in lists
           queryClient.invalidateQueries({
-            queryKey: [entityTable],
+            queryKey: QueryKeys.tables.byName(entityTable),
           });
 
           // Call custom handler using ref (always latest callback)

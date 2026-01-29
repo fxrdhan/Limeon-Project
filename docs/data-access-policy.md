@@ -27,6 +27,12 @@ Tujuan dokumen ini:
 - Semua query/mutation di hooks yang langsung memakai `supabase` akan dipindah ke layer data access.
 - API tetap sama, hanya lokasi & batasan akses yang dirapikan.
 
+## 4.1) Target Refactor (Phase 3)
+
+- Semua `queryKey` wajib memakai `QueryKeys` di `src/constants/queryKeys.ts`.
+- Service yang tumpang tindih disatukan ke satu entry point (auth, items).
+- Shared storage utilities berada di `src/services/api/*` atau feature infrastructure.
+
 ## 5) Anti-Pattern
 
 - `supabase.from()` langsung di hook atau komponen UI.

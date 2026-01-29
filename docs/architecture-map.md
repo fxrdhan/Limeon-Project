@@ -56,6 +56,12 @@ Tujuan dokumen ini:
 
 Tujuan: `src/components/` hanya berisi komponen lintas fitur.
 
+## 3.1) Shared Artifacts (Phase 3)
+
+- Komponen lintas fitur dipusatkan di `src/components/` (contoh: SearchToolbar).
+- Utilitas lintas fitur dipusatkan di `src/utils/` (contoh: gridStateManager).
+- Tidak ada lagi folder `src/features/shared`.
+
 ## 4) State Management
 
 - **React Query**: data server (CRUD, list, cache, sync).

@@ -19,6 +19,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { logger } from '@/utils/logger';
+import { QueryKeys } from '@/constants/queryKeys';
 // ItemFormData and PackageConversion types are now used via SaveItemParams interface
 import { useEntityMutations } from './GenericHookFactories';
 import { itemsService } from '@/services/api/items.service';
@@ -69,28 +70,41 @@ export const useAddItemMutations = ({
   // Create mutations with proper success/error handling for backward compatibility
   const addCategoryMutation = entityMutations.categories.useCreate({
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['categories'] }),
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      }),
     onError: error => console.error('Error adding category:', error),
   });
 
   const addTypeMutation = entityMutations.types.useCreate({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['types'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.types.all,
+      }),
     onError: error => console.error('Error adding type:', error),
   });
 
   const addUnitMutation = entityMutations.packages.useCreate({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['packages'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.packages.all,
+      }),
     onError: error => console.error('Error adding unit:', error),
   });
 
   const addDosageMutation = entityMutations.dosages.useCreate({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dosages'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.dosages.all,
+      }),
     onError: error => console.error('Error adding dosage:', error),
   });
 
   const addManufacturerMutation = entityMutations.manufacturers.useCreate({
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['manufacturers'] }),
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.manufacturers.all,
+      }),
     onError: error => console.error('Error adding manufacturer:', error),
   });
 
@@ -114,7 +128,7 @@ export const useAddItemMutations = ({
     },
     onSuccess: () => {
       toast.success('Item berhasil dihapus');
-      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
       onClose();
     },
     onError: error => {
@@ -140,14 +154,14 @@ export const useAddItemMutations = ({
 
       // Invalidate and refetch items
       queryClient.invalidateQueries({
-        queryKey: ['items'],
+        queryKey: QueryKeys.items.all,
         refetchType: 'all',
       });
 
       // Force refetch items with delays to ensure data consistency
       setTimeout(() => {
         queryClient.refetchQueries({
-          queryKey: ['items'],
+          queryKey: QueryKeys.items.all,
           type: 'all',
         });
       }, 100);

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { realtimeService } from '@/services/realtime/realtime.service';
+import { QueryKeys } from '@/constants/queryKeys';
 
 interface ItemsSyncOptions {
   enabled?: boolean;
@@ -52,17 +53,24 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
         }
       ) => {
         // Invalidate all item master queries
-        queryClient.invalidateQueries({ queryKey: ['items'] });
+        queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
         queryClient.invalidateQueries({
-          queryKey: ['masterData', 'categories'],
+          queryKey: QueryKeys.masterData.categories.all,
         });
-        queryClient.invalidateQueries({ queryKey: ['masterData', 'types'] });
-        queryClient.invalidateQueries({ queryKey: ['item_units'] });
-        queryClient.invalidateQueries({ queryKey: ['masterData', 'packages'] });
-        queryClient.invalidateQueries({ queryKey: ['item_packages'] });
-        queryClient.invalidateQueries({ queryKey: ['masterData', 'dosages'] });
         queryClient.invalidateQueries({
-          queryKey: ['masterData', 'manufacturers'],
+          queryKey: QueryKeys.masterData.types.all,
+        });
+        queryClient.invalidateQueries({
+          queryKey: QueryKeys.masterData.itemUnits.all,
+        });
+        queryClient.invalidateQueries({
+          queryKey: QueryKeys.masterData.packages.all,
+        });
+        queryClient.invalidateQueries({
+          queryKey: QueryKeys.masterData.dosages.all,
+        });
+        queryClient.invalidateQueries({
+          queryKey: QueryKeys.masterData.manufacturers.all,
         });
       };
 

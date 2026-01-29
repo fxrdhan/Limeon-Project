@@ -54,7 +54,7 @@ export const usePurchasesBySupplier = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['purchases', 'bySupplier', supplierId],
+    queryKey: QueryKeys.purchases.bySupplier(supplierId),
     queryFn: async () => {
       const result = await purchasesService.getPurchasesBySupplier(supplierId);
       if (result.error) throw result.error;
@@ -69,7 +69,7 @@ export const usePurchasesByPaymentStatus = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['purchases', 'byPaymentStatus', status],
+    queryKey: QueryKeys.purchases.byPaymentStatus(status),
     queryFn: async () => {
       const result = await purchasesService.getPurchasesByPaymentStatus(status);
       if (result.error) throw result.error;
@@ -85,7 +85,7 @@ export const usePurchasesByDateRange = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['purchases', 'byDateRange', startDate, endDate],
+    queryKey: QueryKeys.purchases.byDateRange(startDate, endDate),
     queryFn: async () => {
       const result = await purchasesService.getPurchasesByDateRange(
         startDate,
@@ -186,7 +186,7 @@ export const useCheckInvoiceUniqueness = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['purchases', 'checkInvoice', invoiceNumber, excludeId],
+    queryKey: QueryKeys.purchases.checkInvoice(invoiceNumber, excludeId),
     queryFn: () =>
       purchasesService.isInvoiceNumberUnique(invoiceNumber, excludeId),
     enabled: (options?.enabled ?? true) && invoiceNumber.length > 0,

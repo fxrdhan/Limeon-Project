@@ -141,11 +141,6 @@ export default defineConfig({
             return 'items-feature';
           }
 
-          // Shared features
-          if (id.includes('/features/shared/')) {
-            return 'shared-features';
-          }
-
           // API services and hooks - keep together with related components
           if (id.includes('/services/api/')) {
             return 'api-services';

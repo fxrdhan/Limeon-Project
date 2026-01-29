@@ -77,7 +77,7 @@ export const useRecentTransactions = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['dashboard', 'recentTransactions', limit],
+    queryKey: QueryKeys.dashboard.recentTransactions(limit),
     queryFn: async () => {
       const result = await dashboardService.getRecentTransactions(limit);
       if (result.error) throw result.error;
@@ -94,7 +94,7 @@ export const useMonthlyRevenueComparison = (options?: {
   enabled?: boolean;
 }) => {
   return useQuery({
-    queryKey: ['dashboard', 'monthlyRevenue'],
+    queryKey: QueryKeys.dashboard.monthlyRevenue,
     queryFn: async () => {
       const result = await dashboardService.getMonthlyRevenueComparison();
       if (result.error) throw result.error;

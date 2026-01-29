@@ -448,7 +448,7 @@ export const useSearchSuppliers = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: ['suppliers', 'search', query],
+    queryKey: QueryKeys.masterData.suppliers.search(query),
     queryFn: async () => {
       const result = await masterDataService.suppliers.searchSuppliers(query);
       if (result.error) throw result.error;
@@ -527,7 +527,7 @@ export const useSupplierMutations = () => {
 // Combined Master Data Hook
 export const useAllMasterData = (options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: ['masterData', 'all'],
+    queryKey: QueryKeys.masterData.all,
     queryFn: async () => {
       const result = await masterDataService.getAllMasterData();
       if (
