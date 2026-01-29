@@ -4,7 +4,7 @@ Real-time synchronization hook for Item Master data using Supabase realtime.
 
 ## 📋 Overview
 
-`useItemMasterRealtime` provides **automatic UI updates** when database changes occur on all Item Master tables. Users see changes from other sessions instantly without manual refresh.
+`useItemsSync` provides **automatic UI updates** when database changes occur on all Item Master tables. Users see changes from other sessions instantly without manual refresh.
 
 ### Monitored Tables
 
@@ -19,11 +19,11 @@ Real-time synchronization hook for Item Master data using Supabase realtime.
 ## 🚀 Usage
 
 ```typescript
-import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
+import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 
 function ItemMasterPage() {
   // Enable realtime for all item master tables
-  useItemMasterRealtime({ enabled: true });
+  useItemsSync({ enabled: true });
 
   return <div>Your component</div>;
 }

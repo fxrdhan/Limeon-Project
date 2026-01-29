@@ -180,6 +180,3 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
     };
   }, [queryClient, enabled]);
 };
-
-// Backward compatibility alias
-export const useItemMasterRealtime = useItemsSync;

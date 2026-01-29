@@ -13,11 +13,8 @@ import {
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Components
-import {
-  DataGrid,
-  DataGridRef,
-  getPinAndFilterMenuItems,
-} from '@/components/ag-grid';
+import { DataGrid, getPinAndFilterMenuItems } from '@/components/ag-grid';
+import type { AgGridReact } from 'ag-grid-react';
 import { StandardPagination } from '../atoms';
 
 // Hooks
@@ -135,7 +132,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  const dataGridRef = useRef<DataGridRef>(null);
+  const dataGridRef = useRef<AgGridReact>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
 
   // 🎯 Load initial grid state for AG Grid's initialState prop
@@ -570,7 +567,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
-          mainMenuItems={getMainMenuItems}
+          getMainMenuItems={getMainMenuItems}
           enableFilterHandlers={true}
           rowSelection={{
             mode: 'multiRow',

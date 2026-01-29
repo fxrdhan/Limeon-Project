@@ -35,8 +35,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   // Search state management
   const [search, setSearch] = useState(initialSearch);
 
-  // Simple pagination state (for potential future use with AG Grid)
-  const [currentPage, setCurrentPage] = useState(1);
+  // Pagination state for grid configuration
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Fetch items data using existing useItems hook
@@ -103,16 +102,14 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
       });
   }, [allData, search]);
 
-  // Calculate pagination (though AG Grid handles its own pagination)
+  // Calculate pagination metrics
   const totalItems = filteredData?.length || 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return {
     // Data
     data: filteredData || [],
     allData,
     totalItems,
-    totalPages,
 
     // Loading states
     isLoading,
@@ -125,9 +122,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     search,
     setSearch,
 
-    // Pagination state (for compatibility, though AG Grid handles pagination)
-    currentPage,
-    setCurrentPage,
+    // Pagination state
     itemsPerPage,
     setItemsPerPage,
 

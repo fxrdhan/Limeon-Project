@@ -1,7 +1,6 @@
 import React, { forwardRef, useCallback } from 'react';
 import { AgGridReact, AgGridReactProps } from 'ag-grid-react';
 import {
-  GetMainMenuItems,
   FirstDataRenderedEvent,
   GetContextMenuItems,
   ColumnMenuTab,
@@ -16,8 +15,6 @@ interface DataGridProps extends AgGridReactProps<any> {
   autoSizeColumns?: string[];
   sizeColumnsToFit?: boolean;
   disableFiltering?: boolean;
-  // Keep backward compatibility with old prop name
-  mainMenuItems?: GetMainMenuItems;
   getContextMenuItems?: GetContextMenuItems;
 }
 
@@ -29,7 +26,7 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       autoSizeColumns,
       sizeColumnsToFit,
       disableFiltering,
-      mainMenuItems,
+      getMainMenuItems,
       getContextMenuItems: customGetContextMenuItems,
       onFirstDataRendered,
       ...props
@@ -44,8 +41,8 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       // Apply conditional defaultColDef modifications
       defaultColDef: {
         ...defaultConfig.defaultColDef,
-        // Add menuTabs only if no custom mainMenuItems provided AND not disabling filtering
-        ...(!mainMenuItems &&
+        // Add menuTabs only if no custom getMainMenuItems provided AND not disabling filtering
+        ...(!getMainMenuItems &&
           !disableFiltering && {
             menuTabs: [
               'filterMenuTab',
@@ -87,8 +84,7 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
           ref={ref}
           {...finalConfig}
           {...props}
-          // Convert mainMenuItems to correct ag-grid prop name
-          {...(mainMenuItems && { getMainMenuItems: mainMenuItems })}
+          {...(getMainMenuItems && { getMainMenuItems })}
           onFirstDataRendered={handleFirstDataRendered}
         />
       </div>
@@ -97,9 +93,6 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
 );
 
 DataGrid.displayName = 'DataGrid';
-
-// For backward compatibility - DataGridRef is now just AgGridReact
-export type DataGridRef = AgGridReact;
 
 export default DataGrid;
 export type { DataGridProps };

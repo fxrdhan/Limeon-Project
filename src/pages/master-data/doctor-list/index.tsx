@@ -53,7 +53,7 @@ const DoctorListNew = () => {
     totalPages: _totalPages, // eslint-disable-line @typescript-eslint/no-unused-vars
     currentPage: _currentPage, // eslint-disable-line @typescript-eslint/no-unused-vars
     itemsPerPage,
-    deleteMutation,
+    handleDelete,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -359,7 +359,7 @@ const DoctorListNew = () => {
                   variant: 'danger',
                   confirmText: 'Ya, Hapus',
                   onConfirm: async () => {
-                    await deleteMutation.mutateAsync(editingItem.id);
+                    await handleDelete(editingItem.id);
                   },
                 });
               }

@@ -115,7 +115,7 @@ export const defaultColDef: ColDef = {
   sortable: true, // Enable sorting by default
   resizable: true, // Enable column resizing by default
   // menuTabs removed - let individual grids control this
-  // This allows mainMenuItems to work properly
+  // This allows getMainMenuItems to work properly
 };
 
 // Default getRowId function

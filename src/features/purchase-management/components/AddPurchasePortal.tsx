@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import FormAction from '@/components/form-action';
-import ItemModal from '@/features/item-management/presentation/templates/item/ItemModal';
+import ItemModal from '@/components/item-management/ItemModal';
 import { CardContent, CardFooter } from '@/components/card';
 import PurchaseModalHeader from '@/features/purchase-management/components/purchase-form/PurchaseModalHeader';
 import PurchaseInfoSection from '@/features/purchase-management/components/purchase-form/PurchaseInfoSection';

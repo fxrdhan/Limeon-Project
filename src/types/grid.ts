@@ -1,13 +1,11 @@
 import {
   RowClickedEvent,
   IRowNode,
-  GridApi,
   CellStyle,
   ValueFormatterParams,
   ValueGetterParams,
   GridReadyEvent,
   ColDef,
-  RowDataTransaction,
   ColumnMenuTab,
   GetMainMenuItems,
   GetContextMenuItems,
@@ -69,7 +67,7 @@ export interface DataGridProps {
   doesExternalFilterPass?: (node: IRowNode) => boolean;
   disableFiltering?: boolean;
   columnMenuTabs?: ColumnMenuTab[];
-  mainMenuItems?: GetMainMenuItems;
+  getMainMenuItems?: GetMainMenuItems;
   getContextMenuItems?: GetContextMenuItems;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
@@ -112,14 +110,4 @@ export interface DataGridProps {
   onStateUpdated?: (event: StateUpdatedEvent) => void;
   onGridPreDestroyed?: (event: GridPreDestroyedEvent) => void;
   suppressColumnMoveAnimation?: boolean;
-}
-
-export interface DataGridRef {
-  api: GridApi | null;
-  autoSizeColumns: (columns?: string[]) => void;
-  sizeColumnsToFit: () => void;
-  onFilterChanged: () => void;
-  refreshCells: () => void;
-  applyTransaction: (transaction: RowDataTransaction) => unknown;
-  applyTransactionAsync: (transaction: RowDataTransaction) => unknown;
 }

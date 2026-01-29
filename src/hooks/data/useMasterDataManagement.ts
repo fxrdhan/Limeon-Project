@@ -537,15 +537,8 @@ export const useMasterDataManagement = (
 
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);
 
-  const handleIdentitiesPerPageChange = (
-    newIdentitiesPerPage: number | React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    // Handle both number and event for backward compatibility
-    const value =
-      typeof newIdentitiesPerPage === 'number'
-        ? newIdentitiesPerPage
-        : Number(newIdentitiesPerPage.target.value);
-    setIdentitiesPerPage(value);
+  const handleIdentitiesPerPageChange = (newIdentitiesPerPage: number) => {
+    setIdentitiesPerPage(newIdentitiesPerPage);
     setCurrentPage(1);
   };
 
@@ -566,83 +559,6 @@ export const useMasterDataManagement = (
   );
 
   const totalPages = Math.ceil(totalEntities / identitiesPerPage);
-
-  // Create mutation objects with consistent interface for backward compatibility
-  const addMutation = {
-    mutate: (data: {
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => handleModalSubmit(data),
-    mutateAsync: (data: {
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => handleModalSubmit(data),
-    isLoading: Object.values(mutations).some((mutation: unknown) => {
-      const m = mutation as { isLoading?: boolean; isPending?: boolean };
-      return m?.isLoading || m?.isPending;
-    }),
-    error: (() => {
-      const mutationWithError = Object.values(mutations).find(
-        (mutation: unknown) => {
-          const m = mutation as { error?: Error };
-          return m?.error;
-        }
-      ) as { error?: Error } | undefined;
-      return mutationWithError?.error || null;
-    })(),
-  };
-
-  const updateMutation = {
-    mutate: (data: {
-      id: string;
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => handleModalSubmit(data),
-    mutateAsync: (data: {
-      id: string;
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => handleModalSubmit(data),
-    isLoading: Object.values(mutations).some((mutation: unknown) => {
-      const m = mutation as { isLoading?: boolean; isPending?: boolean };
-      return m?.isLoading || m?.isPending;
-    }),
-    error: (() => {
-      const mutationWithError = Object.values(mutations).find(
-        (mutation: unknown) => {
-          const m = mutation as { error?: Error };
-          return m?.error;
-        }
-      ) as { error?: Error } | undefined;
-      return mutationWithError?.error || null;
-    })(),
-  };
-
-  const deleteMutation = {
-    mutate: (identityId: string) => handleDelete(identityId),
-    mutateAsync: (identityId: string) => handleDelete(identityId),
-    isLoading: Object.values(mutations).some((mutation: unknown) => {
-      const m = mutation as { isLoading?: boolean; isPending?: boolean };
-      return m?.isLoading || m?.isPending;
-    }),
-    error: (() => {
-      const mutationWithError = Object.values(mutations).find(
-        (mutation: unknown) => {
-          const m = mutation as { error?: Error };
-          return m?.error;
-        }
-      ) as { error?: Error } | undefined;
-      return mutationWithError?.error || null;
-    })(),
-  };
 
   return {
     isAddModalOpen,
@@ -667,11 +583,9 @@ export const useMasterDataManagement = (
     queryError,
     isFetching, // Now use actual isFetching from React Query
     isPlaceholderData, // Indicates if data is from cache or fresh
-    addMutation,
-    updateMutation,
-    deleteMutation,
     handleEdit,
     handleModalSubmit,
+    handleDelete,
     handlePageChange,
     handleItemsPerPageChange: handleIdentitiesPerPageChange,
     handleKeyDown,

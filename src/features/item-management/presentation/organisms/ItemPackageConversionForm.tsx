@@ -19,8 +19,8 @@ import {
   DataGrid,
   createTextColumn,
   createCurrencyColumn,
-  type DataGridRef,
 } from '@/components/ag-grid';
+import type { AgGridReact } from 'ag-grid-react';
 import type {
   PackageConversion,
   PackageConversionLogicFormData,
@@ -88,7 +88,7 @@ export default function ItemPackageConversionManager({
   onInteractionEnd,
   disabled = false,
 }: LocalItemPackageConversionManagerProps) {
-  const gridRef = useRef<DataGridRef>(null);
+  const gridRef = useRef<AgGridReact>(null);
   const columnStateRef = useRef<ColumnState[] | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const hasAutoSizedRef = useRef(false);

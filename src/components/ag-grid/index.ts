@@ -1,5 +1,5 @@
 export { default as DataGrid } from './DataGrid';
-export type { DataGridProps, DataGridRef } from './DataGrid';
+export type { DataGridProps } from './DataGrid';
 
 // Grid setup and configuration
 export {

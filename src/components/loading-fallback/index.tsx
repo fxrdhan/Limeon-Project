@@ -176,4 +176,3 @@ export const FormLoadingFallback = () => {
 };
 
 // Default export for backward compatibility
-export default TableLoadingFallback;
