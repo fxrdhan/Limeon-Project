@@ -155,7 +155,11 @@ export const QueryKeys = {
     details: () => [...QueryKeys.patients.all, 'detail'] as const,
     detail: (id: string) => [...QueryKeys.patients.details(), id] as const,
     search: (query: string) =>
-      [...QueryKeys.patients.all, 'search', query] as const,
+      [...QueryKeys.patients.list(), 'search', query] as const,
+    byGender: (gender: string) =>
+      [...QueryKeys.patients.list(), 'gender', gender] as const,
+    recent: (limit: number) =>
+      [...QueryKeys.patients.list(), 'recent', limit] as const,
   },
 
   // Doctors
@@ -167,7 +171,13 @@ export const QueryKeys = {
     details: () => [...QueryKeys.doctors.all, 'detail'] as const,
     detail: (id: string) => [...QueryKeys.doctors.details(), id] as const,
     search: (query: string) =>
-      [...QueryKeys.doctors.all, 'search', query] as const,
+      [...QueryKeys.doctors.list(), 'search', query] as const,
+    bySpecialization: (specialization: string) =>
+      [...QueryKeys.doctors.list(), 'specialization', specialization] as const,
+    byExperience: (minYears: number) =>
+      [...QueryKeys.doctors.list(), 'experience', minYears] as const,
+    recent: (limit: number) =>
+      [...QueryKeys.doctors.list(), 'recent', limit] as const,
   },
 
   // Customers

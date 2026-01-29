@@ -49,7 +49,7 @@ export const useSearchPatients = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.patients.list(), 'search', query],
+    queryKey: QueryKeys.patients.search(query),
     queryFn: async () => {
       const result = await patientsService.searchPatients(query);
       if (result.error) throw result.error;
@@ -64,7 +64,7 @@ export const usePatientsByGender = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.patients.list(), 'gender', gender],
+    queryKey: QueryKeys.patients.byGender(gender),
     queryFn: async () => {
       const result = await patientsService.getPatientsByGender(gender);
       if (result.error) throw result.error;
@@ -79,7 +79,7 @@ export const useRecentPatients = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.patients.list(), 'recent', limit],
+    queryKey: QueryKeys.patients.recent(limit),
     queryFn: async () => {
       const result = await patientsService.getRecentPatients(limit);
       if (result.error) throw result.error;
@@ -193,7 +193,7 @@ export const useSearchDoctors = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.doctors.list(), 'search', query],
+    queryKey: QueryKeys.doctors.search(query),
     queryFn: async () => {
       const result = await doctorsService.searchDoctors(query);
       if (result.error) throw result.error;
@@ -208,7 +208,7 @@ export const useDoctorsBySpecialization = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.doctors.list(), 'specialization', specialization],
+    queryKey: QueryKeys.doctors.bySpecialization(specialization),
     queryFn: async () => {
       const result =
         await doctorsService.getDoctorsBySpecialization(specialization);
@@ -224,7 +224,7 @@ export const useDoctorsByExperience = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.doctors.list(), 'experience', minYears],
+    queryKey: QueryKeys.doctors.byExperience(minYears),
     queryFn: async () => {
       const result = await doctorsService.getDoctorsByExperience(minYears);
       if (result.error) throw result.error;
@@ -239,7 +239,7 @@ export const useRecentDoctors = (
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [...QueryKeys.doctors.list(), 'recent', limit],
+    queryKey: QueryKeys.doctors.recent(limit),
     queryFn: async () => {
       const result = await doctorsService.getRecentDoctors(limit);
       if (result.error) throw result.error;
