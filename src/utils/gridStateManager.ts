@@ -8,10 +8,6 @@ const getSessionStorage = (): Storage => {
   return sessionStorage;
 };
 
-const getLegacyStorage = (): Storage => {
-  return localStorage;
-};
-
 export type TableType =
   | 'items'
   | 'categories'
@@ -36,29 +32,7 @@ const readGridStateRaw = (tableType: TableType): string | null => {
   } catch {
     // ignore
   }
-
-  // 🔁 Migration: older versions stored state in localStorage.
-  // Move to sessionStorage to avoid confusion.
-  try {
-    const legacyValue = getLegacyStorage().getItem(storageKey);
-    if (legacyValue === null) return null;
-
-    try {
-      getSessionStorage().setItem(storageKey, legacyValue);
-    } catch {
-      // ignore
-    }
-
-    try {
-      getLegacyStorage().removeItem(storageKey);
-    } catch {
-      // ignore
-    }
-
-    return legacyValue;
-  } catch {
-    return null;
-  }
+  return null;
 };
 
 // Save current grid state to sessionStorage (including pagination state)
@@ -144,11 +118,6 @@ export const restoreGridState = (
       } catch {
         // ignore
       }
-      try {
-        getLegacyStorage().removeItem(storageKey);
-      } catch {
-        // ignore
-      }
       return false;
     }
 
@@ -164,11 +133,6 @@ export const restoreGridState = (
       // Clear corrupted data
       try {
         getSessionStorage().removeItem(storageKey);
-      } catch {
-        // ignore
-      }
-      try {
-        getLegacyStorage().removeItem(storageKey);
       } catch {
         // ignore
       }
@@ -211,12 +175,6 @@ export const clearGridState = (tableType: TableType): boolean => {
     const storageKey = getStorageKey(tableType);
     try {
       getSessionStorage().removeItem(storageKey);
-    } catch {
-      // ignore
-    }
-    try {
-      // Cleanup any old values still in localStorage
-      getLegacyStorage().removeItem(storageKey);
     } catch {
       // ignore
     }
@@ -263,11 +221,6 @@ export const loadSavedStateForInit = (
       } catch {
         // ignore
       }
-      try {
-        getLegacyStorage().removeItem(storageKey);
-      } catch {
-        // ignore
-      }
       return undefined;
     }
 
@@ -282,11 +235,6 @@ export const loadSavedStateForInit = (
       // Clear corrupted data
       try {
         getSessionStorage().removeItem(storageKey);
-      } catch {
-        // ignore
-      }
-      try {
-        getLegacyStorage().removeItem(storageKey);
       } catch {
         // ignore
       }
@@ -332,71 +280,11 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
       } catch {
         // ignore
       }
-      try {
-        getLegacyStorage().removeItem(storageKey);
-      } catch {
-        // ignore
-      }
       return null;
     }
   } catch {
     return null;
   }
-};
-
-// ============================================================================
-// MIGRATION
-// ============================================================================
-
-/**
- * Migrate all existing grid_state_* keys from localStorage to sessionStorage.
- * After migration, the localStorage keys are removed.
- */
-export const migrateGridStatesToSessionStorage = (): {
-  migratedCount: number;
-  removedCount: number;
-} => {
-  const allTableTypes: TableType[] = [
-    'items',
-    'categories',
-    'types',
-    'packages',
-    'dosages',
-    'manufacturers',
-    'units',
-  ];
-
-  let migratedCount = 0;
-  let removedCount = 0;
-
-  allTableTypes.forEach(tableType => {
-    const storageKey = getStorageKey(tableType);
-
-    try {
-      const legacyValue = getLegacyStorage().getItem(storageKey);
-      if (legacyValue !== null) {
-        try {
-          if (getSessionStorage().getItem(storageKey) === null) {
-            getSessionStorage().setItem(storageKey, legacyValue);
-            migratedCount++;
-          }
-        } catch {
-          // ignore
-        }
-
-        try {
-          getLegacyStorage().removeItem(storageKey);
-          removedCount++;
-        } catch {
-          // ignore
-        }
-      }
-    } catch {
-      // ignore
-    }
-  });
-
-  return { migratedCount, removedCount };
 };
 
 // Clear all saved states (for cleanup)
@@ -419,12 +307,6 @@ export const clearAllGridStates = (): boolean => {
       } catch {
         // ignore
       }
-      try {
-        // Cleanup any old values still in localStorage
-        getLegacyStorage().removeItem(storageKey);
-      } catch {
-        // ignore
-      }
     });
 
     // toast.success('Semua state grid berhasil dihapus');
@@ -434,117 +316,4 @@ export const clearAllGridStates = (): boolean => {
     toast.error('Gagal menghapus semua state grid');
     return false;
   }
-};
-
-// ============================================================================
-// MIGRATION & CLEANUP UTILITIES
-// ============================================================================
-
-// Legacy prefix used in old system
-const LEGACY_PREFIX = 'pharmasys_manual_grid_state_';
-
-/**
- * Get all legacy keys from localStorage
- */
-export const getLegacyKeys = (): string[] => {
-  const legacyKeys: string[] = [];
-
-  try {
-    for (let i = 0; i < getLegacyStorage().length; i++) {
-      const key = getLegacyStorage().key(i);
-      if (key && key.startsWith(LEGACY_PREFIX)) {
-        legacyKeys.push(key);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to get legacy keys:', error);
-  }
-
-  return legacyKeys;
-};
-
-/**
- * Clean up legacy grid state keys from localStorage
- * Safe to run - only removes old pharmasys_manual_grid_state_* keys
- */
-export const cleanupLegacyGridStates = (): {
-  success: boolean;
-  removedCount: number;
-  keys: string[];
-} => {
-  const legacyKeys = getLegacyKeys();
-  let removedCount = 0;
-
-  try {
-    legacyKeys.forEach(key => {
-      getLegacyStorage().removeItem(key);
-      removedCount++;
-    });
-
-    // Cleanup completed successfully
-
-    return {
-      success: true,
-      removedCount,
-      keys: legacyKeys,
-    };
-  } catch (error) {
-    console.error('Failed to cleanup legacy grid states:', error);
-    return {
-      success: false,
-      removedCount,
-      keys: legacyKeys,
-    };
-  }
-};
-
-/**
- * Check if there are any legacy keys that need cleanup
- */
-export const hasLegacyKeys = (): boolean => {
-  return getLegacyKeys().length > 0;
-};
-
-/**
- * Get storage statistics for debugging
- */
-export const getStorageStats = (): {
-  currentKeys: string[];
-  legacyKeys: string[];
-  totalKeys: number;
-  storageSize: number;
-} => {
-  const currentKeys: string[] = [];
-  const legacyKeys: string[] = [];
-  let storageSize = 0;
-
-  try {
-    const collectFromStorage = (storage: Storage) => {
-      for (let i = 0; i < storage.length; i++) {
-        const key = storage.key(i);
-        if (!key) continue;
-
-        const value = storage.getItem(key) || '';
-        storageSize += key.length + value.length;
-
-        if (key.startsWith(GRID_STATE_PREFIX)) {
-          currentKeys.push(key);
-        } else if (key.startsWith(LEGACY_PREFIX)) {
-          legacyKeys.push(key);
-        }
-      }
-    };
-
-    collectFromStorage(getSessionStorage());
-    collectFromStorage(getLegacyStorage());
-  } catch (error) {
-    console.error('Failed to get storage stats:', error);
-  }
-
-  return {
-    currentKeys,
-    legacyKeys,
-    totalKeys: getSessionStorage().length + getLegacyStorage().length,
-    storageSize,
-  };
 };

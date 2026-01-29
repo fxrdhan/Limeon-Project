@@ -6,7 +6,7 @@
  * - Normalize parameter shapes (e.g., update { id, data } vs { id, ...fields })
  *
  * Why:
- * - External hooks (legacy or third-party) expose different method names and payload shapes
+ * - External hooks (non-standard or third-party) expose different method names and payload shapes
  * - This adapter reduces branching and special cases in consumers (e.g. useEntityCrudOperations)
  */
 
@@ -137,7 +137,7 @@ function extractCommonState(from: unknown): {
 /**
  * Build normalized mutations from raw mutations object.
  *
- * @param rawMutations The raw external mutations object (from legacy/external hooks)
+ * @param rawMutations The raw external mutations object (from external hooks)
  */
 export function toNormalizedMutations(
   rawMutations: unknown
@@ -173,7 +173,7 @@ export function toNormalizedMutations(
         const { id, ...fields } = input ?? ({} as { id: string });
 
         // Some providers (generic "updateMutation") want a flat payload { id, ...fields }
-        // Others (legacy) want a nested payload { id, data: {...} }
+        // Others want a nested payload { id, data: {...} }
         const wantsFlat =
           updateKey === 'updateMutation' ||
           // Heuristic: if provider exposes a createMutation key, it's likely using flat payload style for update too.

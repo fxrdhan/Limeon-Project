@@ -150,25 +150,7 @@ const readGridStateForTab = (tab: MasterDataType): unknown | null => {
   } catch {
     // ignore
   }
-
-  // 🔁 Migration: older versions stored in localStorage.
-  try {
-    const legacyState = localStorage.getItem(storageKey);
-    if (!legacyState) return null;
-    try {
-      sessionStorage.setItem(storageKey, legacyState);
-    } catch {
-      // ignore
-    }
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      // ignore
-    }
-    return JSON.parse(legacyState);
-  } catch {
-    return null;
-  }
+  return null;
 };
 
 // Session storage utility
@@ -239,7 +221,7 @@ const ItemMasterNew = memo(() => {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const TAB_CHANGE_COOLDOWN_MS = 250; // Cooldown period to detect rapid clicking
 
-  // Unified Grid API reference from MasterDataGrid
+  // Unified Grid API reference from EntityGrid
   const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
 
   // Track visible and ordered columns from AG Grid
@@ -637,7 +619,7 @@ const ItemMasterNew = memo(() => {
     onFilterSearch: handleItemFilterSearch,
   });
 
-  // Grid API ready callback from MasterDataGrid
+  // Grid API ready callback from EntityGrid
   const handleUnifiedGridApiReady = useCallback((api: GridApi | null) => {
     setUnifiedGridApi(api);
   }, []);
@@ -1388,7 +1370,7 @@ const ItemMasterNew = memo(() => {
     handleTabChange(prevTab.key, prevTab.value);
   }, [activeTab, handleTabChange]);
 
-  // Unified handlers for MasterDataGrid
+  // Unified handlers for EntityGrid
   const unifiedRowClickHandler = useCallback(
     (data: ItemDataType | EntityData | SupplierType) => {
       if (activeTab === 'items') {
@@ -1418,7 +1400,7 @@ const ItemMasterNew = memo(() => {
     [activeTab, enhancedItemOnGridReady, entityOnGridReady, supplierOnGridReady]
   );
 
-  // Removed unified column handlers - now handled by live save in MasterDataGrid
+  // Removed unified column handlers - now handled by live save in EntityGrid
 
   // No need for mouse handlers - handled by SlidingSelector
 
@@ -1521,7 +1503,7 @@ const ItemMasterNew = memo(() => {
           </div>
         </div>
 
-        {/* Unified MasterDataGrid */}
+        {/* Unified EntityGrid */}
         <div>
           <EntityGrid
             activeTab={activeTab}

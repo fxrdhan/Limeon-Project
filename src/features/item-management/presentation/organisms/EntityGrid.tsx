@@ -144,44 +144,22 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     const tableType = activeTab as TableType;
     const storageKey = `grid_state_${tableType}`;
 
-    const loadFromStorage = (storage: Storage): unknown | undefined => {
+    const loadFromStorage = (storage: Storage): GridState | undefined => {
       const raw = storage.getItem(storageKey);
       if (!raw) return undefined;
       try {
-        return JSON.parse(raw);
+        return JSON.parse(raw) as GridState;
       } catch (error) {
         console.warn('Failed to parse initial grid state:', error);
         return undefined;
       }
     };
 
-    // Prefer sessionStorage (session-scoped grid state)
-    const sessionState = loadFromStorage(sessionStorage);
-    if (sessionState) {
-      return sessionState;
-    }
-
-    // 🔁 Migration: older versions stored in localStorage.
-    const legacyState = loadFromStorage(localStorage);
-    if (legacyState) {
-      try {
-        sessionStorage.setItem(storageKey, JSON.stringify(legacyState));
-      } catch {
-        // ignore
-      }
-      try {
-        localStorage.removeItem(storageKey);
-      } catch {
-        // ignore
-      }
-      return legacyState;
-    }
-
-    return undefined;
+    return loadFromStorage(sessionStorage);
   }, [activeTab]);
 
   // 💾 AG Grid Best Practice: Auto-save on state changes
-  // Simple onStateUpdated handler - saves to localStorage automatically
+  // Simple onStateUpdated handler - saves to sessionStorage automatically
   const handleStateUpdated = useCallback(
     (event: { state: GridState }) => {
       const tableType = activeTab as TableType;
@@ -214,25 +192,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       previousActiveTabRef.current = tableType;
 
       const storageKey = `grid_state_${tableType}`;
-      let savedState = sessionStorage.getItem(storageKey);
-
-      // 🔁 Migration: older versions stored in localStorage.
-      if (!savedState) {
-        const legacyState = localStorage.getItem(storageKey);
-        if (legacyState) {
-          savedState = legacyState;
-          try {
-            sessionStorage.setItem(storageKey, legacyState);
-          } catch {
-            // ignore
-          }
-          try {
-            localStorage.removeItem(storageKey);
-          } catch {
-            // ignore
-          }
-        }
-      }
+      const savedState = sessionStorage.getItem(storageKey);
 
       if (savedState) {
         try {
@@ -512,7 +472,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     const tableType = activeTab as TableType;
     const storageKey = `grid_state_${tableType}`;
     const savedState = hasSavedState(tableType)
-      ? sessionStorage.getItem(storageKey) || localStorage.getItem(storageKey)
+      ? sessionStorage.getItem(storageKey)
       : null;
 
     // Parse saved state to determine if sidebar should be open by default
@@ -671,6 +631,3 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 });
 
 export default EntityGrid;
-
-// Backward compatibility alias
-export { EntityGrid as MasterDataGrid };

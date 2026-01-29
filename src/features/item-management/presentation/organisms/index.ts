@@ -1,5 +1,5 @@
 // Complex feature-complete components
-export { default as EntityGrid, MasterDataGrid } from './EntityGrid';
+export { default as EntityGrid } from './EntityGrid';
 
 // Form organisms
 export { default as ItemBasicInfoForm } from './ItemBasicInfoForm';

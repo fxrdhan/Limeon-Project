@@ -90,7 +90,7 @@ export function setFilterValue(
  * Extract preserved filter data from multi-condition filter
  * Supports N conditions through array-based structure
  *
- * Populates both new (conditions[], joins[]) and legacy fields for backward compatibility
+ * Populates both new (conditions[], joins[]) and fallback fields for compatibility
  *
  * @param searchMode - Current search state
  * @returns Preserved filter object or null
@@ -340,7 +340,7 @@ export function getJoinAt(
     return searchMode.joins[index];
   }
 
-  // For index 0, also check legacy sources
+  // For index 0, also check fallback sources
   if (index === 0) {
     // From confirmed multi-condition filter
     if (filter.joinOperator) {
@@ -376,7 +376,7 @@ export function getConditionOperatorAt(
     return condition.operator;
   }
 
-  // Extract from value pattern as fallback (for index 1 only - legacy support)
+  // Extract from value pattern as fallback (for index 1 only)
   if (index === 1 && valuePattern) {
     const condOpMatch = valuePattern.match(/#(and|or)\s+#([^\s]+)/i);
     if (condOpMatch) {

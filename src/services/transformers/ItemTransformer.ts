@@ -40,8 +40,7 @@ export class ItemTransformer {
     manufacturerData:
       | { id: string; code?: string; name: string }
       | null
-      | undefined,
-    legacyManufacturerName?: string
+      | undefined
   ): ItemManufacturer {
     // Use JOIN data if available (new FK relationship)
     if (manufacturerData) {
@@ -52,11 +51,10 @@ export class ItemTransformer {
       };
     }
 
-    // Fallback for legacy data (should be rare after migration)
     return {
       id: '',
       code: undefined,
-      name: legacyManufacturerName || '',
+      name: '',
     };
   }
 
@@ -65,8 +63,7 @@ export class ItemTransformer {
    */
   static transformDBItemToItem(dbItem: DBItemWithRelations): Item {
     const manufacturerInfo = this.getManufacturerInfo(
-      dbItem.item_manufacturers,
-      dbItem.manufacturer // Fallback for legacy data
+      dbItem.item_manufacturers
     );
     const packageConversions = this.parsePackageConversions(
       dbItem.package_conversions

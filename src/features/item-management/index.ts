@@ -17,7 +17,7 @@ export { default as ItemManagementModal } from './presentation/templates/item/It
 export { EntityManagementModal } from './presentation/templates/entity';
 
 // Data Components
-export { MasterDataGrid } from './presentation/organisms';
+export { EntityGrid } from './presentation/organisms';
 export { useItemGridColumns } from './application/hooks/ui';
 
 // Context Providers
