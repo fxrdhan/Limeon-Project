@@ -108,7 +108,8 @@ export const QueryKeys = {
       details: () => [...QueryKeys.masterData.suppliers.all, 'detail'] as const,
       detail: (id: string) =>
         [...QueryKeys.masterData.suppliers.details(), id] as const,
-      search: (query: string) => ['suppliers', 'search', query] as const,
+      search: (query: string) =>
+        [...QueryKeys.masterData.suppliers.all, 'search', query] as const,
     },
 
     // Dosages
