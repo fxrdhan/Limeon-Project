@@ -17,10 +17,10 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
   (
     {
       searchItem,
-      setSearchItem,
-      filteredItems,
+      onSearchItemChange,
+      items,
       selectedItem,
-      setSelectedItem,
+      onSelectItem,
       onOpenAddItemPortal,
       isAddItemButtonDisabled = true,
     },
@@ -44,7 +44,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       setOpenState(prev => ({ ...prev, applyOpenStyles: value }));
     };
 
-    // Use getDerivedStateFromProps to reset highlightedIndex when isOpen or filteredItems changes
+    // Use getDerivedStateFromProps to reset highlightedIndex when isOpen or items changes
     const [highlightState, setHighlightState] = useState({
       isOpen: false,
       filteredLength: 0,
@@ -52,12 +52,12 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     });
     if (
       isOpen !== highlightState.isOpen ||
-      filteredItems.length !== highlightState.filteredLength
+      items.length !== highlightState.filteredLength
     ) {
       setHighlightState({
         isOpen,
-        filteredLength: filteredItems.length,
-        highlightedIndex: isOpen && filteredItems.length > 0 ? 0 : -1,
+        filteredLength: items.length,
+        highlightedIndex: isOpen && items.length > 0 ? 0 : -1,
       });
     }
     const highlightedIndex = highlightState.highlightedIndex;
@@ -194,10 +194,10 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       };
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
-    // highlightedIndex is now derived from isOpen and filteredItems (no effect needed)
+    // highlightedIndex is now derived from isOpen and items (no effect needed)
 
     const handleItemSelect = (item: Item) => {
-      setSelectedItem(item);
+      onSelectItem(item);
     };
 
     const handleInputFocus = () => {
@@ -229,11 +229,11 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
-          handleItemSelect(filteredItems[highlightedIndex]);
+        if (highlightedIndex >= 0 && highlightedIndex < items.length) {
+          handleItemSelect(items[highlightedIndex]);
           closeDropdown();
         } else if (
-          filteredItems.length === 0 &&
+          items.length === 0 &&
           searchItem.trim() !== '' &&
           !isAddItemButtonDisabled
         ) {
@@ -242,38 +242,34 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
         }
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (isOpen && filteredItems.length > 0) {
+        if (isOpen && items.length > 0) {
           const newIndex =
-            highlightedIndex < filteredItems.length - 1
-              ? highlightedIndex + 1
-              : 0;
+            highlightedIndex < items.length - 1 ? highlightedIndex + 1 : 0;
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        if (isOpen && filteredItems.length > 0) {
+        if (isOpen && items.length > 0) {
           const newIndex =
-            highlightedIndex > 0
-              ? highlightedIndex - 1
-              : filteredItems.length - 1;
+            highlightedIndex > 0 ? highlightedIndex - 1 : items.length - 1;
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
       } else if (e.key === 'PageDown') {
         e.preventDefault();
-        if (isOpen && filteredItems.length > 0) {
+        if (isOpen && items.length > 0) {
           const pageSize = 5;
           const newIndex = Math.min(
             highlightedIndex + pageSize,
-            filteredItems.length - 1
+            items.length - 1
           );
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
       } else if (e.key === 'PageUp') {
         e.preventDefault();
-        if (isOpen && filteredItems.length > 0) {
+        if (isOpen && items.length > 0) {
           const pageSize = 5;
           const newIndex = Math.max(highlightedIndex - pageSize, 0);
           setHighlightedIndex(newIndex);
@@ -317,7 +313,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
               value={searchItem}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
-                setSearchItem(value);
+                onSearchItemChange(value);
                 if (
                   value &&
                   !isOpen &&
@@ -329,15 +325,15 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   closeDropdown();
                 }
                 if (selectedItem && value !== selectedItem.name) {
-                  setSelectedItem(null);
+                  onSelectItem(null);
                 }
               }}
               placeholder="Cari nama atau kode item..."
               className="mb-0"
               searchState={
-                filteredItems.length === 0 && searchItem
+                items.length === 0 && searchItem
                   ? 'not-found'
-                  : filteredItems.length > 0
+                  : items.length > 0
                     ? 'found'
                     : searchItem
                       ? 'typing'
@@ -381,12 +377,12 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                       clearTimeout(openTimeoutRef.current);
                   }}
                 >
-                  {filteredItems.length === 0 ? (
+                  {items.length === 0 ? (
                     <div className="p-3 text-sm text-slate-500">
                       Item tidak ditemukan.
                     </div>
                   ) : (
-                    filteredItems.map((item, index) => (
+                    items.map((item, index) => (
                       <div
                         key={item.id}
                         ref={

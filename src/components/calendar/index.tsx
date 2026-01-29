@@ -223,6 +223,3 @@ const Calendar: React.FC<CalendarProps> = ({
 };
 
 export default Calendar;
-
-// Backward compatibility alias
-export const Datepicker = Calendar;

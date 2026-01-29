@@ -54,6 +54,3 @@ export const useCalendarNavigation = (
     navigateYear,
   };
 };
-
-// Backward compatibility alias
-export const useDatepickerNavigation = useCalendarNavigation;

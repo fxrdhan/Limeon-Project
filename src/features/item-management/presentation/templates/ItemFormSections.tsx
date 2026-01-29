@@ -32,7 +32,7 @@ import {
   useItemHistory,
 } from '../../shared/contexts/useItemFormContext';
 import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
-import { usePackageConversionLogic } from '../../application/hooks/utils/useConversionLogic';
+import { useConversionLogic } from '../../application/hooks/utils/useConversionLogic';
 import { useCustomerLevels } from '../../application/hooks/data';
 import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 import { itemDataService } from '../../infrastructure/itemData.service';
@@ -612,7 +612,7 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   const smartFormSync = realtime?.smartFormSync;
   const pendingAutosaveRef = useRef(false);
 
-  const packageConversionLogic = usePackageConversionLogic({
+  const packageConversionLogic = useConversionLogic({
     conversions: packageConversionHook.conversions,
     availableUnits: packageConversionHook.availableUnits,
     formData: packageConversionHook.packageConversionFormData,

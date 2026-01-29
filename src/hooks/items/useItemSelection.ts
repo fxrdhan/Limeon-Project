@@ -115,15 +115,5 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
     getItemById,
     hasStock,
     getItemUnits,
-
-    // Legacy compatibility for backward compatibility
-    data: filteredItems,
-    isError: !!error,
-    queryError: error,
-    setSearchItem: handleItemSearchChange,
-    setSelectedItem: handleSelectItem,
-    filteredItems,
-    getItemByID: getItemById,
-    setShowItemDropdown: handleItemDropdownToggle,
   };
 };

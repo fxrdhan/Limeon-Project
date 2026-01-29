@@ -87,6 +87,3 @@ export const useCalendarPosition = (
     calculatePosition,
   };
 };
-
-// Backward compatibility alias
-export const useDatepickerPosition = useCalendarPosition;

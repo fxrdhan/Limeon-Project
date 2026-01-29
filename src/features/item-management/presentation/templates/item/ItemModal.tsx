@@ -1000,6 +1000,3 @@ const ItemManagementContent: React.FC<{
 };
 
 export default ItemModal;
-
-// Backward compatibility alias
-export { ItemModal as ItemManagementModal };

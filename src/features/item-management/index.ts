@@ -13,8 +13,8 @@
  */
 
 // Core Templates
-export { default as ItemManagementModal } from './presentation/templates/item/ItemModal';
-export { EntityManagementModal } from './presentation/templates/entity';
+export { default as ItemModal } from './presentation/templates/item/ItemModal';
+export { EntityModal } from './presentation/templates/entity';
 
 // Data Components
 export { EntityGrid } from './presentation/organisms';
@@ -44,7 +44,7 @@ export { useEntityModalLogic } from './application/hooks/instances/useEntityModa
 // Type Definitions
 export type {
   ItemFormData,
-  ItemManagementModalProps,
+  ItemModalProps,
   ItemManagementContextValue,
   PackageConversion,
 } from './shared/types';

@@ -16,10 +16,10 @@ import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
 
 interface PurchaseItemsSectionProps {
   searchItem: string;
-  setSearchItem: (value: string) => void;
-  filteredItems: Item[];
+  onSearchItemChange: (value: string) => void;
+  items: Item[];
   selectedItem: Item | null;
-  setSelectedItem: (value: Item | null) => void;
+  onSelectItem: (value: Item | null) => void;
   purchaseItems: PurchaseItem[];
   isAddNewItemDisabled: boolean;
   onOpenAddItemPortal: () => void;
@@ -29,7 +29,7 @@ interface PurchaseItemsSectionProps {
     vat_percentage: number;
   };
   total: number;
-  getItemByID: (id: string) => Item | undefined;
+  getItemById: (id: string) => Item | undefined;
   updateItem: (
     id: string,
     field: 'quantity' | 'price' | 'discount',
@@ -49,17 +49,17 @@ interface PurchaseItemsSectionProps {
 
 const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   searchItem,
-  setSearchItem,
-  filteredItems,
+  onSearchItemChange,
+  items,
   selectedItem,
-  setSelectedItem,
+  onSelectItem,
   purchaseItems,
   isAddNewItemDisabled,
   onOpenAddItemPortal,
   itemSearchBarRef,
   formData,
   total,
-  getItemByID,
+  getItemById,
   updateItem,
   updateItemVat,
   onHandleUnitChange,
@@ -69,7 +69,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   handleChange,
 }) => {
   const getUnitOptions = (itemId: string) => {
-    const item = getItemByID(itemId);
+    const item = getItemById(itemId);
     if (!item) return [];
 
     const baseOption = {
@@ -149,10 +149,10 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
       <ItemSearchBar
         ref={itemSearchBarRef}
         searchItem={searchItem}
-        setSearchItem={setSearchItem}
-        filteredItems={filteredItems}
+        onSearchItemChange={onSearchItemChange}
+        items={items}
         selectedItem={selectedItem}
-        setSelectedItem={setSelectedItem}
+        onSelectItem={onSelectItem}
         isAddItemButtonDisabled={isAddNewItemDisabled}
         onOpenAddItemPortal={onOpenAddItemPortal}
       />
@@ -192,7 +192,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
                 key={item.id}
                 item={item}
                 index={index}
-                itemCode={getItemByID(item.item_id)?.code || '-'}
+                itemCode={getItemById(item.item_id)?.code || '-'}
                 unitOptions={getUnitOptions(item.item_id)}
                 isVatIncluded={formData.is_vat_included}
                 onQuantityChange={(id, value) =>

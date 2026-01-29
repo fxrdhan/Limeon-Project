@@ -1,7 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { ModalMode, VersionData, EntityModalContextValue } from '../types';
 
-// Re-export for backward compatibility
 export type { ModalMode, VersionData, EntityModalContextValue };
 
 const EntityModalContext = createContext<EntityModalContextValue | null>(null);

@@ -382,6 +382,3 @@ export const useCalendarKeyboard = (
     handleCalendarKeyDown,
   };
 };
-
-// Backward compatibility alias
-export const useDatepickerKeyboard = useCalendarKeyboard;

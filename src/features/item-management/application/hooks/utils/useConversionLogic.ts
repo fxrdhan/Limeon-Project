@@ -95,6 +95,3 @@ export const useConversionLogic = ({
     validateAndAddConversion,
   };
 };
-
-// Backward compatibility alias
-export const usePackageConversionLogic = useConversionLogic;

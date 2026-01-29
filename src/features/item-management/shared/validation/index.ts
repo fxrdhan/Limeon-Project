@@ -215,11 +215,3 @@ export const EntityValidation = {
       validateManufacturer(data, VALIDATION_CONFIGS.manufacturers),
   },
 } as const;
-
-// Backward compatibility aliases
-export const ItemCategoryRules = EntityValidation.categories;
-export const ItemTypeRules = EntityValidation.types;
-export const ItemPackageRules = EntityValidation.packages;
-export const ItemUnitRules = EntityValidation.units;
-export const ItemDosageRules = EntityValidation.dosages;
-export const ItemManufacturerRules = EntityValidation.manufacturers;

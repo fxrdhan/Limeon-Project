@@ -104,6 +104,3 @@ const EntityModal: React.FC<EntityModalProps> = ({
 };
 
 export default EntityModal;
-
-// Backward compatibility alias
-export { EntityModal as EntityManagementModal };

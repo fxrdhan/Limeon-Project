@@ -92,7 +92,3 @@ export interface CalendarProviderProps {
   portalWidth?: string | number;
   readOnly?: boolean;
 }
-
-export interface DatepickerProviderProps extends CalendarProviderProps {
-  mode?: 'datepicker';
-}

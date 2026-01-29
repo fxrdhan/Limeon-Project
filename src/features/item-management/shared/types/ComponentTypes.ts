@@ -1,7 +1,7 @@
 import type { Item } from '@/types/database';
 
 // Modal Component Props
-export interface ItemManagementModalProps {
+export interface ItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   itemId?: string;
@@ -11,9 +11,6 @@ export interface ItemManagementModalProps {
   setIsClosing: (value: boolean) => void;
   refetchItems?: () => void;
 }
-
-// Shorter aliases
-export type ItemModalProps = ItemManagementModalProps;
 
 // Form Component Props
 

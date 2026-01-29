@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import FormAction from '@/components/form-action';
-import ItemManagementModal from '@/components/item-management/ItemManagementModal';
+import ItemModal from '@/features/item-management/presentation/templates/item/ItemModal';
 import { CardContent, CardFooter } from '@/components/card';
 import PurchaseModalHeader from '@/features/purchase-management/components/purchase-form/PurchaseModalHeader';
 import PurchaseInfoSection from '@/features/purchase-management/components/purchase-form/PurchaseInfoSection';
@@ -46,11 +46,11 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
 
   const {
     searchItem,
-    setSearchItem,
     selectedItem,
-    setSelectedItem,
-    filteredItems,
-    getItemByID,
+    items,
+    handleItemSearchChange,
+    handleSelectItem,
+    getItemById,
     refetchItems,
   } = useItemSelection({
     enabled: isOpen,
@@ -60,7 +60,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     usePurchaseModalAnimation();
 
   const isAddNewItemDisabled = !(
-    searchItem.trim() !== '' && filteredItems.length === 0
+    searchItem.trim() !== '' && items.length === 0
   );
 
   const onHandleSubmit = (e: React.FormEvent) => {
@@ -73,9 +73,9 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   useItemSelectionEffect({
     selectedItem,
     addItem,
-    setSelectedItem,
-    setSearchItem,
-    getItemByID,
+    onSelectItem: handleSelectItem,
+    onSearchItemChange: handleItemSearchChange,
+    getItemById,
   });
 
   useEffect(() => {
@@ -87,7 +87,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   }, [isOpen]);
 
   const onHandleUnitChange = (id: string, unitName: string) => {
-    handleUnitChange(id, unitName, getItemByID);
+    handleUnitChange(id, unitName, getItemById);
   };
 
   const handleCloseAddItemPortal = () => {
@@ -167,10 +167,10 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
 
                   <PurchaseItemsSection
                     searchItem={searchItem}
-                    setSearchItem={setSearchItem}
-                    filteredItems={filteredItems}
+                    onSearchItemChange={handleItemSearchChange}
+                    items={items}
                     selectedItem={selectedItem}
-                    setSelectedItem={setSelectedItem}
+                    onSelectItem={handleSelectItem}
                     purchaseItems={purchaseItems}
                     isAddNewItemDisabled={isAddNewItemDisabled}
                     onOpenAddItemPortal={() => {
@@ -180,7 +180,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                     itemSearchBarRef={itemSearchBarRef}
                     formData={formData}
                     total={total}
-                    getItemByID={getItemByID}
+                    getItemById={getItemById}
                     updateItem={updateItem}
                     updateItemVat={updateItemVat}
                     onHandleUnitChange={onHandleUnitChange}
@@ -207,7 +207,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
         </motion.div>
       )}
 
-      <ItemManagementModal
+      <ItemModal
         key={`${searchItem ?? ''}-${portalRenderId}`}
         isOpen={isAddItemPortalOpen}
         onClose={handleCloseAddItemPortal}

@@ -48,6 +48,3 @@ export const useCalendarHover = (
     handleCalendarMouseLeave,
   };
 };
-
-// Backward compatibility alias
-export const useDatepickerHover = useCalendarHover;

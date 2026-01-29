@@ -90,9 +90,6 @@ export const CALENDAR_SIZE_PRESETS = {
   },
 } as const;
 
-// Backward compatibility alias
-export const DATEPICKER_CONSTANTS = CALENDAR_CONSTANTS;
-
 // Date formatting configuration
 export const DATE_FORMAT_CONFIG = {
   locale: 'id-ID',

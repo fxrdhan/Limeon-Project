@@ -4,21 +4,21 @@ import type { PurchaseItem, Item } from '@/types';
 interface UseItemSelectionEffectProps {
   selectedItem: Item | null;
   addItem: (item: PurchaseItem) => void;
-  setSelectedItem: (item: Item | null) => void;
-  setSearchItem: (value: string) => void;
-  getItemByID: (id: string) => Item | undefined;
+  onSelectItem: (item: Item | null) => void;
+  onSearchItemChange: (value: string) => void;
+  getItemById: (id: string) => Item | undefined;
 }
 
 export const useItemSelectionEffect = ({
   selectedItem,
   addItem,
-  setSelectedItem,
-  setSearchItem,
-  getItemByID,
+  onSelectItem,
+  onSearchItemChange,
+  getItemById,
 }: UseItemSelectionEffectProps) => {
   useEffect(() => {
     if (selectedItem) {
-      const itemData = getItemByID(selectedItem.id);
+      const itemData = getItemById(selectedItem.id);
       if (itemData) {
         const newPurchaseItem: PurchaseItem = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -39,9 +39,9 @@ export const useItemSelectionEffect = ({
           },
         };
         addItem(newPurchaseItem);
-        setSelectedItem(null);
-        setSearchItem('');
+        onSelectItem(null);
+        onSearchItemChange('');
       }
     }
-  }, [selectedItem, addItem, setSelectedItem, setSearchItem, getItemByID]);
+  }, [selectedItem, addItem, onSelectItem, onSearchItemChange, getItemById]);
 };

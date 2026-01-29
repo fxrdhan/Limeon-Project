@@ -1,4 +1,4 @@
-import EntityManagementModal from '../entity/EntityModal';
+import EntityModal from '../entity/EntityModal';
 
 interface MutationState {
   isPending: boolean;
@@ -72,7 +72,7 @@ export default function ItemFormModals({
 }: ItemFormModalsProps) {
   return (
     <>
-      <EntityManagementModal
+      <EntityModal
         entityName="Kategori"
         isOpen={categoryModal.isOpen}
         onClose={categoryModal.onClose}
@@ -81,7 +81,7 @@ export default function ItemFormModals({
         initialNameFromSearch={currentSearchTerm}
       />
 
-      <EntityManagementModal
+      <EntityModal
         isOpen={typeModal.isOpen}
         onClose={typeModal.onClose}
         onSubmit={typeModal.onSubmit}
@@ -90,7 +90,7 @@ export default function ItemFormModals({
         initialNameFromSearch={currentSearchTerm}
       />
 
-      <EntityManagementModal
+      <EntityModal
         isOpen={unitModal.isOpen}
         onClose={unitModal.onClose}
         onSubmit={unitModal.onSubmit}
@@ -99,7 +99,7 @@ export default function ItemFormModals({
         initialNameFromSearch={currentSearchTerm}
       />
 
-      <EntityManagementModal
+      <EntityModal
         isOpen={dosageModal.isOpen}
         onClose={dosageModal.onClose}
         onSubmit={dosageModal.onSubmit}
@@ -108,7 +108,7 @@ export default function ItemFormModals({
         initialNameFromSearch={currentSearchTerm}
       />
 
-      <EntityManagementModal
+      <EntityModal
         isOpen={manufacturerModal.isOpen}
         onClose={manufacturerModal.onClose}
         onSubmit={manufacturerModal.onSubmit}

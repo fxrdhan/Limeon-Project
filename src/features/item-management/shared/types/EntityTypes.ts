@@ -16,7 +16,7 @@ import type {
 } from '@/types/database';
 
 // ============================================================================
-// TYPE ALIASES FOR BACKWARD COMPATIBILITY
+// TYPE ALIASES FOR DOMAIN NAMING
 // ============================================================================
 
 /**
@@ -172,31 +172,3 @@ export interface UpdateInputTypeMap {
   dosages: ItemDosageUpdateInput;
   manufacturers: ItemManufacturerUpdateInput;
 }
-
-// ============================================================================
-// BACKWARD COMPATIBILITY EXPORTS
-// ============================================================================
-
-/**
- * Legacy exports for smooth transition
- * These maintain exact same API as domain/entities
- */
-
-// Base entity concept (simplified)
-export interface BaseEntity {
-  id: string;
-  name: string;
-  created_at?: string;
-  updated_at?: string | null;
-}
-
-// Export validation rules (moved to shared/validation)
-export {
-  ItemCategoryRules,
-  ItemTypeRules,
-  ItemPackageRules,
-  ItemUnitRules,
-  ItemDosageRules,
-  ItemManufacturerRules,
-  EntityValidation,
-} from '../validation';

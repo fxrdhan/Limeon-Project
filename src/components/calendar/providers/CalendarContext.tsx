@@ -394,6 +394,3 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     </CalendarContext.Provider>
   );
 };
-
-// Backward compatibility alias
-export const DatepickerProvider = CalendarProvider;

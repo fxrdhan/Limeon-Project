@@ -58,6 +58,3 @@ export const useCalendarState = (
     setIsOpening,
   };
 };
-
-// Backward compatibility alias
-export const useDatepickerState = useCalendarState;

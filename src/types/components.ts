@@ -237,10 +237,10 @@ export interface PageTitleProps {
 
 export interface ItemSearchBarProps {
   searchItem: string;
-  setSearchItem: (value: string) => void;
-  filteredItems: Item[];
+  onSearchItemChange: (value: string) => void;
+  items: Item[];
   selectedItem: Item | null;
-  setSelectedItem: (item: Item | null) => void;
+  onSelectItem: (item: Item | null) => void;
   onOpenAddItemPortal: () => void;
   isAddItemButtonDisabled?: boolean;
 }

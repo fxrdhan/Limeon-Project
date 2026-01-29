@@ -187,19 +187,3 @@ export const clearAllColumnVisibilityStates = () => {
     }
   });
 };
-
-// Backward compatibility alias for entity tables
-export const useEntityColumnVisibilityState = (options: {
-  entityType: EntityType;
-  enabled?: boolean;
-  gridApi?: GridApi | null;
-}): ColumnStateManager => {
-  return useColumnState({
-    tableType: options.entityType,
-    enabled: options.enabled,
-    gridApi: options.gridApi,
-  });
-};
-
-// Shorter alias
-export const useColumnVisibilityState = useColumnState;

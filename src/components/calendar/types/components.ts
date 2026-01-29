@@ -24,10 +24,6 @@ export interface CalendarProps {
   children?: React.ReactNode; // For custom trigger element
 }
 
-export interface DatepickerProps extends CalendarProps {
-  mode?: 'datepicker';
-}
-
 export interface CalendarButtonProps {
   value: CustomDateValueType;
   placeholder?: string;

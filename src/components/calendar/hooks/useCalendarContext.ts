@@ -13,6 +13,3 @@ export const useCalendarContext = (): CalendarContextState => {
 
   return context;
 };
-
-// Backward compatibility alias
-export const useDatepickerContext = useCalendarContext;
