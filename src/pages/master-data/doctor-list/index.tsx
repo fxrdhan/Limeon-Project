@@ -1,37 +1,21 @@
-import Button from '@/components/button';
-import { ExportDropdown } from '@/components/export';
-import PageTitle from '@/components/page-title';
-import { AGGridPagination } from '@/components/pagination';
-import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import IdentityDataModal from '@/components/IdentityDataModal';
 
-import { DataGrid, createTextColumn } from '@/components/ag-grid';
-import { Card } from '@/components/card';
-import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
+import { createTextColumn } from '@/components/ag-grid';
 import type { Doctor as DoctorType, FieldConfig } from '@/types';
-import {
-  ColDef,
-  GridApi,
-  GridReadyEvent,
-  RowClickedEvent,
-} from 'ag-grid-community';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { TbPlus } from 'react-icons/tb';
+import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { useMemo, useRef } from 'react';
 
 // Use the new modular architecture
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
 
-import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
+import { useMasterDataList } from '@/pages/master-data/hooks/useMasterDataList';
+import MasterDataListPage from '@/pages/master-data/components/MasterDataListPage';
 import { doctorSearchColumns } from '@/utils/searchColumns';
 
 const DoctorListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null
   ) as React.RefObject<HTMLInputElement>;
-
-  // Grid API state for AG Grid pagination
-  const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  const [currentPageSize, setCurrentPageSize] = useState<number>(10);
 
   // Data management hook for server-side operations
   const {
@@ -62,56 +46,22 @@ const DoctorListNew = () => {
     searchInputRef,
   });
 
-  // Stable callback functions to prevent infinite re-renders
-  const handleSearch = useCallback(
-    (searchValue: string) => {
-      setDataSearch(searchValue);
-    },
-    [setDataSearch]
-  );
-
-  const handleClear = useCallback(() => {
-    setDataSearch('');
-  }, [setDataSearch]);
-
-  // Unified search functionality with hybrid mode
   const {
+    gridApi,
+    setCurrentPageSize,
+    gridHeight,
+    handleGridReady,
     search,
-    onGridReady: unifiedSearchOnGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,
     searchBarProps,
-  } = useUnifiedSearch({
-    columns: doctorSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
+  } = useMasterDataList({
     data: doctorsData,
-    onSearch: handleSearch,
-    onClear: handleClear,
+    searchColumns: doctorSearchColumns,
+    setSearch: setDataSearch,
   });
-
-  // Enhanced onGridReady to capture grid API for AGGridPagination
-  const handleGridReady = useCallback(
-    (params: GridReadyEvent) => {
-      setGridApi(params.api);
-
-      // Sync current page size with grid
-      const gridPageSize = params.api.paginationGetPageSize();
-      setCurrentPageSize(gridPageSize);
-
-      unifiedSearchOnGridReady(params);
-    },
-    [unifiedSearchOnGridReady]
-  );
 
   const doctors = doctorsData || [];
-
-  // Use dynamic grid height hook
-  const { gridHeight } = useDynamicGridHeight({
-    data: doctors,
-    currentPageSize,
-    viewportOffset: 320, // navbar + toolbar + pagination + margins + bottom pagination
-  });
 
   const doctorFields: FieldConfig[] = [
     {
@@ -233,88 +183,41 @@ const DoctorListNew = () => {
   };
 
   return (
-    <>
-      <Card
-        className={
-          isFetching
-            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col'
-            : 'flex-1 flex flex-col'
-        }
-      >
-        <div className="mb-6">
-          <PageTitle title="Daftar Dokter" />
-        </div>
-        <div className="flex items-center">
-          <EnhancedSearchBar
-            inputRef={searchInputRef}
-            {...searchBarProps}
-            onKeyDown={handleKeyDown}
-            placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
-            className="grow"
-          />
-          <div className="ml-4 mb-2">
-            <ExportDropdown gridApi={gridApi} filename="daftar-dokter" />
-          </div>
-          <Button
-            variant="primary"
-            withGlow
-            className="flex items-center ml-4 mb-2"
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            <TbPlus className="mr-2" />
-            Tambah Dokter Baru
-          </Button>
-        </div>
-        {isError && (
-          <div className="text-center p-6 text-red-500">
-            Error:{' '}
-            {queryError instanceof Error
-              ? queryError.message
-              : 'Gagal memuat data'}
-          </div>
-        )}
-        {!isError && (
-          <>
-            <DataGrid
-              rowData={doctors as DoctorType[]}
-              columnDefs={columnDefs}
-              onRowClicked={onRowClicked}
-              onGridReady={handleGridReady}
-              loading={isLoading}
-              overlayNoRowsTemplate={
-                search
-                  ? `<span style="padding: 10px; color: #888;">Tidak ada dokter dengan nama "${search}"</span>`
-                  : '<span style="padding: 10px; color: #888;">Tidak ada data dokter yang ditemukan</span>'
-              }
-              sizeColumnsToFit={true}
-              onFirstDataRendered={() => {}}
-              isExternalFilterPresent={isExternalFilterPresent}
-              doesExternalFilterPass={doesExternalFilterPass}
-              style={{
-                width: '100%',
-                marginTop: '1rem',
-                marginBottom: '1rem',
-                height: `${gridHeight}px`, // Dynamic height based on pagination size
-                transition: 'height 0.3s ease-in-out',
-              }}
-              // AG Grid Built-in Pagination (hidden - we'll use custom component)
-              pagination={true}
-              paginationPageSize={itemsPerPage || 10}
-              suppressPaginationPanel={true} // Hide AG Grid's built-in pagination UI
-            />
-
-            {/* Custom Pagination Component using AG Grid API */}
-            <AGGridPagination
-              gridApi={gridApi}
-              pageSizeOptions={[10, 20, 50, 100]}
-              enableFloating={true}
-              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
-              onPageSizeChange={setCurrentPageSize}
-            />
-          </>
-        )}
-      </Card>
-
+    <MasterDataListPage
+      title="Daftar Dokter"
+      entityName="Dokter"
+      exportFilename="daftar-dokter"
+      searchInputRef={searchInputRef}
+      searchBarProps={searchBarProps}
+      onSearchKeyDown={handleKeyDown}
+      onAddClick={() => setIsAddModalOpen(true)}
+      isFetching={isFetching}
+      isError={isError}
+      queryError={queryError}
+      searchValue={search}
+      gridHeight={gridHeight}
+      gridProps={{
+        rowData: doctors as DoctorType[],
+        columnDefs,
+        onRowClicked,
+        onGridReady: handleGridReady,
+        loading: isLoading,
+        sizeColumnsToFit: true,
+        onFirstDataRendered: () => {},
+        isExternalFilterPresent,
+        doesExternalFilterPass,
+        pagination: true,
+        paginationPageSize: itemsPerPage || 10,
+        suppressPaginationPanel: true,
+      }}
+      pagination={{
+        gridApi,
+        pageSizeOptions: [10, 20, 50, 100],
+        enableFloating: true,
+        hideFloatingWhenModalOpen: isAddModalOpen || isEditModalOpen,
+        onPageSizeChange: setCurrentPageSize,
+      }}
+    >
       <IdentityDataModal
         title="Tambah Dokter Baru"
         data={{}}
@@ -368,7 +271,7 @@ const DoctorListNew = () => {
         mode="edit"
         imageUrl={(editingItem as DoctorType)?.image_url || undefined}
       />
-    </>
+    </MasterDataListPage>
   );
 };
 

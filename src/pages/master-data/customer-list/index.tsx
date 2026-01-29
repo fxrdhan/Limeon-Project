@@ -1,25 +1,13 @@
-import Button from '@/components/button';
-import { ExportDropdown } from '@/components/export';
-import PageTitle from '@/components/page-title';
-import { AGGridPagination } from '@/components/pagination';
-import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import IdentityDataModal from '@/components/IdentityDataModal';
 
-import { DataGrid, createTextColumn } from '@/components/ag-grid';
-import { Card } from '@/components/card';
-import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
+import { createTextColumn } from '@/components/ag-grid';
 import type { Customer as CustomerType, FieldConfig } from '@/types';
-import {
-  ColDef,
-  GridApi,
-  GridReadyEvent,
-  RowClickedEvent,
-} from 'ag-grid-community';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { TbPlus } from 'react-icons/tb';
+import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { useMemo, useRef } from 'react';
 
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
-import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
+import { useMasterDataList } from '@/pages/master-data/hooks/useMasterDataList';
+import MasterDataListPage from '@/pages/master-data/components/MasterDataListPage';
 import { customerSearchColumns } from '@/utils/searchColumns';
 import { useCustomerLevels } from '@/features/item-management/application/hooks/data/useCustomerLevels';
 
@@ -27,9 +15,6 @@ const CustomerList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null
   ) as React.RefObject<HTMLInputElement>;
-
-  const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  const [currentPageSize, setCurrentPageSize] = useState<number>(10);
 
   const {
     isAddModalOpen,
@@ -76,51 +61,22 @@ const CustomerList = () => {
 
   const defaultCustomerLevelId = customerLevels[0]?.id ?? null;
 
-  const handleSearch = useCallback(
-    (searchValue: string) => {
-      setDataSearch(searchValue);
-    },
-    [setDataSearch]
-  );
-
-  const handleClear = useCallback(() => {
-    setDataSearch('');
-  }, [setDataSearch]);
-
   const {
+    gridApi,
+    setCurrentPageSize,
+    gridHeight,
+    handleGridReady,
     search,
-    onGridReady: unifiedSearchOnGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,
     searchBarProps,
-  } = useUnifiedSearch({
-    columns: customerSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
+  } = useMasterDataList({
     data: customersData,
-    onSearch: handleSearch,
-    onClear: handleClear,
+    searchColumns: customerSearchColumns,
+    setSearch: setDataSearch,
   });
-
-  const handleGridReady = useCallback(
-    (params: GridReadyEvent) => {
-      setGridApi(params.api);
-
-      const gridPageSize = params.api.paginationGetPageSize();
-      setCurrentPageSize(gridPageSize);
-
-      unifiedSearchOnGridReady(params);
-    },
-    [unifiedSearchOnGridReady]
-  );
 
   const customers = customersData || [];
-
-  const { gridHeight } = useDynamicGridHeight({
-    data: customers,
-    currentPageSize,
-    viewportOffset: 320,
-  });
 
   const customerFields: FieldConfig[] = [
     {
@@ -203,86 +159,41 @@ const CustomerList = () => {
   };
 
   return (
-    <>
-      <Card
-        className={
-          isFetching
-            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col'
-            : 'flex-1 flex flex-col'
-        }
-      >
-        <div className="mb-6">
-          <PageTitle title="Daftar Pelanggan" />
-        </div>
-        <div className="flex items-center">
-          <EnhancedSearchBar
-            inputRef={searchInputRef}
-            {...searchBarProps}
-            onKeyDown={handleKeyDown}
-            placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
-            className="grow"
-          />
-          <div className="ml-4 mb-2">
-            <ExportDropdown gridApi={gridApi} filename="daftar-pelanggan" />
-          </div>
-          <Button
-            variant="primary"
-            withGlow
-            className="flex items-center ml-4 mb-2"
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            <TbPlus className="mr-2" />
-            Tambah Pelanggan Baru
-          </Button>
-        </div>
-        {isError && (
-          <div className="text-center p-6 text-red-500">
-            Error:{' '}
-            {queryError instanceof Error
-              ? queryError.message
-              : 'Gagal memuat data'}
-          </div>
-        )}
-        {!isError && (
-          <>
-            <DataGrid
-              rowData={customers as CustomerType[]}
-              columnDefs={columnDefs}
-              onRowClicked={onRowClicked}
-              onGridReady={handleGridReady}
-              loading={isLoading}
-              overlayNoRowsTemplate={
-                search
-                  ? `<span style="padding: 10px; color: #888;">Tidak ada pelanggan dengan nama "${search}"</span>`
-                  : '<span style="padding: 10px; color: #888;">Tidak ada data pelanggan yang ditemukan</span>'
-              }
-              sizeColumnsToFit={true}
-              onFirstDataRendered={() => {}}
-              isExternalFilterPresent={isExternalFilterPresent}
-              doesExternalFilterPass={doesExternalFilterPass}
-              style={{
-                width: '100%',
-                marginTop: '1rem',
-                marginBottom: '1rem',
-                height: `${gridHeight}px`,
-                transition: 'height 0.3s ease-in-out',
-              }}
-              pagination={true}
-              paginationPageSize={itemsPerPage || 10}
-              suppressPaginationPanel={true}
-            />
-
-            <AGGridPagination
-              gridApi={gridApi}
-              pageSizeOptions={[10, 20, 50, 100]}
-              enableFloating={true}
-              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
-              onPageSizeChange={setCurrentPageSize}
-            />
-          </>
-        )}
-      </Card>
-
+    <MasterDataListPage
+      title="Daftar Pelanggan"
+      entityName="Pelanggan"
+      exportFilename="daftar-pelanggan"
+      searchInputRef={searchInputRef}
+      searchBarProps={searchBarProps}
+      onSearchKeyDown={handleKeyDown}
+      onAddClick={() => setIsAddModalOpen(true)}
+      isFetching={isFetching}
+      isError={isError}
+      queryError={queryError}
+      searchValue={search}
+      gridHeight={gridHeight}
+      gridProps={{
+        rowData: customers as CustomerType[],
+        columnDefs,
+        onRowClicked,
+        onGridReady: handleGridReady,
+        loading: isLoading,
+        sizeColumnsToFit: true,
+        onFirstDataRendered: () => {},
+        isExternalFilterPresent,
+        doesExternalFilterPass,
+        pagination: true,
+        paginationPageSize: itemsPerPage || 10,
+        suppressPaginationPanel: true,
+      }}
+      pagination={{
+        gridApi,
+        pageSizeOptions: [10, 20, 50, 100],
+        enableFloating: true,
+        hideFloatingWhenModalOpen: isAddModalOpen || isEditModalOpen,
+        onPageSizeChange: setCurrentPageSize,
+      }}
+    >
       <IdentityDataModal
         title="Tambah Pelanggan Baru"
         data={{ customer_level_id: defaultCustomerLevelId }}
@@ -350,7 +261,7 @@ const CustomerList = () => {
         mode="edit"
         showImageUploader={false}
       />
-    </>
+    </MasterDataListPage>
   );
 };
 
