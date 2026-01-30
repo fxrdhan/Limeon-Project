@@ -1,8 +1,6 @@
 import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ImageUploader from '@/components/image-manager';
-import { TbPencil } from 'react-icons/tb';
-import { ClipLoader } from 'react-spinners';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 import {
   cacheImageBlob,
@@ -19,7 +17,6 @@ const IdentityImageUploader: React.FC = () => {
     mode,
     imageAspectRatio,
     imageUploadText,
-    imageFormatHint,
     imageNotAvailableText,
     defaultImageUrl,
     imagePlaceholder,
@@ -37,6 +34,7 @@ const IdentityImageUploader: React.FC = () => {
   const cachedImageUrl = cacheKey ? getCachedImage(cacheKey) : null;
   const sourceImageUrl =
     currentImageUrl || cachedImageUrl || defaultImageUrl || null;
+  const hasImage = Boolean(currentImageUrl || cachedImageUrl);
 
   useEffect(() => {
     if (!cacheKey || !currentImageUrl) return;
@@ -86,7 +84,7 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={displayImageUrl}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
@@ -94,13 +92,12 @@ const IdentityImageUploader: React.FC = () => {
     if (mode === 'add') {
       return (
         <div
-          className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-slate-300 rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors`}
+          className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-slate-200 rounded-lg bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
         >
           <div className="text-center p-4">
             <p className="text-sm font-medium text-slate-600">
               {imageUploadText}
             </p>
-            <p className="text-xs text-slate-400 mt-1">{imageFormatHint}</p>
           </div>
         </div>
       );
@@ -111,7 +108,7 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={defaultImageUrl}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
@@ -121,14 +118,14 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={imagePlaceholder}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
 
     return (
       <div
-        className={`w-full ${aspectRatioClass} flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50`}
+        className={`w-full ${aspectRatioClass} flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
       >
         <div className="text-center p-4">
           <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -162,9 +159,11 @@ const IdentityImageUploader: React.FC = () => {
           shape="rounded"
           onImageUpload={handleImageUpload}
           onImageDelete={handleImageDeleteInternal}
+          hasImage={hasImage}
           disabled={isUploadingImage || mode !== 'add'}
-          loadingIcon={<ClipLoader color="#ffffff" size={20} loading={true} />}
-          defaultIcon={<TbPencil className="text-white text-lg" />}
+          interaction="direct"
+          loadingIcon={null}
+          validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
         >
           {renderImageContent()}
         </ImageUploader>
