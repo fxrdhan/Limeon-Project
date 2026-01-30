@@ -39,10 +39,16 @@ export const useKeyboardNavigation = ({
 
   useEffect(() => {
     if (!isOpen) {
-      queueMicrotask(() => {
-        setHighlightedIndex(-1);
-        setIsKeyboardNavigation(false);
-      });
+      if (highlightedIndex !== -1 || isKeyboardNavigation) {
+        queueMicrotask(() => {
+          if (highlightedIndex !== -1) {
+            setHighlightedIndex(-1);
+          }
+          if (isKeyboardNavigation) {
+            setIsKeyboardNavigation(false);
+          }
+        });
+      }
     } else if (
       currentFilteredOptions.length > 0 &&
       !isKeyboardNavigation &&
@@ -55,7 +61,9 @@ export const useKeyboardNavigation = ({
             option => option.id === value
           );
           if (selectedIndex >= 0) {
-            setHighlightedIndex(selectedIndex);
+            if (selectedIndex !== highlightedIndex) {
+              setHighlightedIndex(selectedIndex);
+            }
             setExpandedId(currentFilteredOptions[selectedIndex].id);
           }
         } else {
