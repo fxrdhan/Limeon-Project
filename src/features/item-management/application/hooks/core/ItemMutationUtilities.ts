@@ -24,6 +24,63 @@ import {
   medicineTypeService,
 } from '@/services/api/masterData.service';
 import { itemDataService } from '../../../infrastructure/itemData.service';
+import { StorageService } from '@/services/api/storage.service';
+
+const ITEM_IMAGE_BUCKET = 'item_images';
+
+const isTempImageUrl = (url: string) =>
+  url.startsWith('blob:') || url.startsWith('data:');
+
+const fileFromDataUrl = (dataUrl: string, filename: string) => {
+  const [metadata, data] = dataUrl.split(',');
+  const mimeMatch = metadata?.match(/data:(.*?);/);
+  const mimeType = mimeMatch?.[1] || 'image/jpeg';
+  const binary = atob(data || '');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new File([bytes], filename, { type: mimeType });
+};
+
+const fileFromUrl = async (url: string, filename: string) => {
+  if (url.startsWith('data:')) {
+    return fileFromDataUrl(url, filename);
+  }
+
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new File([blob], filename, {
+    type: blob.type || 'image/jpeg',
+  });
+};
+
+const uploadPendingItemImages = async (itemId: string, imageUrls: string[]) => {
+  const uploads = await Promise.all(
+    imageUrls.map(async (url, index) => {
+      if (!url) return '';
+      if (!isTempImageUrl(url)) return url;
+
+      try {
+        const file = await fileFromUrl(url, `slot-${index + 1}.jpg`);
+        const path = `items/${itemId}/slot-${index}`;
+        const { publicUrl } = await StorageService.uploadFile(
+          ITEM_IMAGE_BUCKET,
+          file,
+          path
+        );
+        return publicUrl;
+      } catch (error) {
+        console.error('Failed to upload item image', error);
+        return '';
+      }
+    })
+  );
+
+  if (uploads.some(Boolean)) {
+    await itemDataService.updateItemImages(itemId, uploads);
+  }
+};
 
 // ============================================================================
 // ITEM DATA PREPARATION UTILITIES
@@ -210,6 +267,9 @@ export const saveItemBusinessLogic = async ({
   itemId,
 }: SaveItemParams): Promise<SaveItemResult> => {
   const finalFormData = { ...formData };
+  const pendingImageUrls = Array.isArray(finalFormData.image_urls)
+    ? finalFormData.image_urls
+    : [];
 
   // For new items, auto-generate the code
   if (!isEditMode) {
@@ -275,6 +335,9 @@ export const saveItemBusinessLogic = async ({
     return { action: 'update', itemId, code: finalFormData.code };
   } else {
     // Create new item
+    finalFormData.image_urls = pendingImageUrls.filter(
+      url => url && !isTempImageUrl(url)
+    );
     const mainItemData = await prepareItemData(
       finalFormData,
       conversions,
@@ -286,6 +349,9 @@ export const saveItemBusinessLogic = async ({
     if (mainError) throw mainError;
     if (!insertedItem) {
       throw new Error('Gagal mendapatkan ID item baru setelah insert.');
+    }
+    if (pendingImageUrls.some(isTempImageUrl)) {
+      await uploadPendingItemImages(insertedItem.id, pendingImageUrls);
     }
     await syncCustomerLevelDiscounts(
       insertedItem.id,

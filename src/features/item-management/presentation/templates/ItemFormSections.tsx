@@ -719,6 +719,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const queryClient = useQueryClient();
   const cacheKey = itemId ? `item-images:${itemId}` : null;
+  const isDraftMode = !itemId && !isEditMode;
   const buildSlotsFromUrlsWithItem = useCallback(
     (urls: string[]) =>
       Array.from({ length: 4 }, (_, index) => {
@@ -953,6 +954,11 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     return urls.some(Boolean) ? urls : [];
   }, []);
 
+  useEffect(() => {
+    if (!isDraftMode) return;
+    updateFormData({ image_urls: buildImageUrlsPayload(imageSlots) });
+  }, [buildImageUrlsPayload, imageSlots, isDraftMode, updateFormData]);
+
   const handleBrokenImage = useCallback(
     (slotIndex: number, url: string) => {
       setImageSlots(prevSlots => {
@@ -1146,7 +1152,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const processAndUploadImage = useCallback(
     async (slotIndex: number, file: File) => {
       if (!itemId) {
-        toast.error('Simpan item terlebih dahulu sebelum mengunggah gambar.');
         return null;
       }
 
@@ -1193,11 +1198,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   const handleImageUpload = useCallback(
     async (slotIndex: number, file: File) => {
-      if (!itemId) {
-        toast.error('Simpan item terlebih dahulu sebelum mengunggah gambar.');
-        return;
-      }
-
       const previousSlot = imageSlots[slotIndex];
       try {
         const { width, height } = await getImageDimensions(file);
@@ -1211,6 +1211,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       }
 
       setLocalPreviewForSlot(slotIndex, file);
+      if (!itemId) {
+        return;
+      }
       setSlotUploading(slotIndex, true);
       const uploadResult = await processAndUploadImage(slotIndex, file);
       if (!uploadResult) {
@@ -1284,6 +1287,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       const previousSlot = imageSlots[targetSlot];
       closeCropper();
       setLocalPreviewForSlot(targetSlot, croppedFile);
+      if (!itemId) {
+        return;
+      }
       setSlotUploading(targetSlot, true);
       const uploadResult = await processAndUploadImage(targetSlot, croppedFile);
       if (!uploadResult) {
@@ -1318,6 +1324,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     buildImageUrlsPayload,
     closeCropper,
     cropState,
+    itemId,
     imageSlots,
     processAndUploadImage,
     revokeLocalPreview,
@@ -1330,7 +1337,17 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const handleImageDelete = useCallback(
     async (slotIndex: number) => {
       const targetSlot = imageSlots[slotIndex];
-      if (!targetSlot?.path) return;
+      if (!targetSlot?.path) {
+        revokeLocalPreview(slotIndex);
+        setImageSlots(prevSlots => {
+          const nextSlots = prevSlots.map((slot, index) =>
+            index === slotIndex ? { path: '', url: '' } : slot
+          );
+          updateImageCache(nextSlots);
+          return nextSlots;
+        });
+        return;
+      }
 
       try {
         await StorageService.deleteFile(bucketName, targetSlot.path);
@@ -1354,6 +1371,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       bucketName,
       buildImageUrlsPayload,
       imageSlots,
+      revokeLocalPreview,
       updateImageCache,
       updateItemImagesInDatabase,
     ]
@@ -1370,7 +1388,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             hasImage={Boolean(slot.url)}
             disabled={
               isViewingOldVersion ||
-              !itemId ||
               (isLoadingImages && Boolean(slot.url)) ||
               uploadingSlots[index]
             }
@@ -1389,7 +1406,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                     : slot.url
                 }
                 alt={`Item image ${index + 1}`}
-                className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in ${
+                className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in transition duration-200 group-hover:brightness-95 ${
                   uploadingSlots[index] ? 'animate-pulse' : ''
                 }`}
                 style={
@@ -1408,8 +1425,8 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 }}
               />
             ) : (
-              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400">
-                {itemId ? 'Unggah' : 'Simpan dulu'}
+              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400 transition duration-200 group-hover:bg-slate-100">
+                Unggah gambar
               </div>
             )}
           </ImageUploader>
