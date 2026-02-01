@@ -6,7 +6,7 @@
 
 # Guidelines:
 
-- Always run 'npx eslint [filenames path] --fix && npx tsc -b --noEmit' after editing code files.
+- Always run 'npx eslint [filenames path] --fix && npx tsc -b --noEmit' after editing MASSIVE code files.
 - When creating Git commits, use git-commit skills.
 
 # Code Exploration
