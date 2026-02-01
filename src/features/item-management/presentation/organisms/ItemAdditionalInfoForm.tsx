@@ -113,6 +113,20 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
         onClick={() => onExpand?.()}
+        onFocus={event => {
+          if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
+            onExpand?.();
+          }
+        }}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onExpand?.();
+          }
+        }}
+        tabIndex={12}
+        role="button"
+        aria-expanded={isExpanded}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           Info Tambahan
@@ -140,7 +154,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
                 <Input
                   name="barcode"
                   value={formData.barcode}
-                  tabIndex={8}
+                  tabIndex={13}
                   onChange={onChange}
                   className="w-full"
                   placeholder="Masukkan barcode item"
@@ -155,7 +169,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
                       name="quantity"
                       type="number"
                       value={quantityDisplayValue}
-                      tabIndex={10}
+                      tabIndex={15}
                       onChange={onChange}
                       fullWidth={false}
                       className="w-auto"
@@ -180,7 +194,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
                   ) : (
                     <Dropdown
                       name="unit_id"
-                      tabIndex={9}
+                      tabIndex={14}
                       value={formData.unit_id}
                       onChange={value => {
                         setQuantityTouched(false);
@@ -208,7 +222,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
 
               <DescriptiveTextarea
                 label="Keterangan"
-                tabIndex={11}
+                tabIndex={16}
                 name="description"
                 value={formData.description}
                 onChange={onChange}

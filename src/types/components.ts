@@ -200,6 +200,7 @@ export interface ImageUploaderProps {
   validTypes?: string[];
   className?: string;
   disabled?: boolean;
+  tabIndex?: number;
   loadingIcon?: React.ReactNode;
   defaultIcon?: React.ReactNode;
   shape?: 'rounded' | 'rounded-sm' | 'square' | 'full';

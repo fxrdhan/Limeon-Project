@@ -751,6 +751,16 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const cropperRef = useRef<Cropper | null>(null);
   const cropperImageRef = useRef<HTMLImageElement | null>(null);
   const localPreviewUrlsRef = useRef<Record<number, string>>({});
+  const imageTabIndexMap = useMemo(() => {
+    const slots = [0, 1, 2, 3];
+    const firstEmptyIndex = imageSlots.findIndex(slot => !slot.url);
+    const firstIndex = firstEmptyIndex === -1 ? 0 : firstEmptyIndex;
+    const ordered = slots.slice(firstIndex).concat(slots.slice(0, firstIndex));
+    return ordered.reduce<Record<number, number>>((acc, index, order) => {
+      acc[index] = 8 + order;
+      return acc;
+    }, {});
+  }, [imageSlots]);
 
   const bucketName = 'item_images';
   const maxFileSizeBytes = 1 * 1024 * 1024;
@@ -1397,6 +1407,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             className="w-full"
             validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
             loadingIcon={null}
+            tabIndex={imageTabIndexMap[index]}
           >
             {slot.url ? (
               <img

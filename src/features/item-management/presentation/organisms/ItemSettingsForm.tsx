@@ -57,6 +57,20 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
         <div
           className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
           onClick={() => onExpand?.()}
+          onFocus={event => {
+            if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
+              onExpand?.();
+            }
+          }}
+          onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onExpand?.();
+            }
+          }}
+          tabIndex={17}
+          role="button"
+          aria-expanded={isExpanded}
         >
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
             Pengaturan Tambahan
@@ -83,7 +97,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
                 <FormField label="Status" required={true}>
                   <Dropdown
                     name="is_active"
-                    tabIndex={15}
+                    tabIndex={18}
                     value={formData.is_active ? 'true' : 'false'}
                     onChange={value => {
                       onFieldChange('is_active', value === 'true');
@@ -102,7 +116,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
                   isEditing={minStockEditing.isEditing}
                   minStockValue={minStockEditing.value}
                   currentMinStock={formData.min_stock}
-                  tabIndex={16}
+                  tabIndex={19}
                   onStartEdit={onStartEditMinStock}
                   onStopEdit={onStopEditMinStock}
                   onChange={onMinStockChange}
@@ -117,7 +131,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
                 >
                   <Checkbox
                     id="has_expiry_date"
-                    tabIndex={17}
+                    tabIndex={20}
                     ref={ref}
                     label="Memiliki Tanggal Kadaluarsa"
                     checked={formData.has_expiry_date}

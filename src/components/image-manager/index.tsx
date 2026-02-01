@@ -14,6 +14,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
   className = '',
   disabled = false,
+  tabIndex,
   loadingIcon = <ClipLoader color="#ffffff" size={20} loading={true} />,
   shape = 'full',
   interaction = 'menu',
@@ -321,7 +322,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         onClick={handleContainerClick}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        tabIndex={0}
+        tabIndex={disabled ? -1 : (tabIndex ?? 0)}
         role="button"
         aria-label={hasImage ? 'Edit or delete image' : 'Upload image'}
       >

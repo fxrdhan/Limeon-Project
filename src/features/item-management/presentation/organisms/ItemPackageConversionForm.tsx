@@ -280,6 +280,20 @@ export default function ItemPackageConversionManager({
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
         onClick={() => onExpand?.()}
+        onFocus={event => {
+          if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
+            onExpand?.();
+          }
+        }}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onExpand?.();
+          }
+        }}
+        tabIndex={25}
+        role="button"
+        aria-expanded={isExpanded}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           Konversi Kemasan
@@ -310,7 +324,7 @@ export default function ItemPackageConversionManager({
                   formData={formData}
                   onFormDataChange={onFormDataChange}
                   onAddConversion={onAddConversion}
-                  tabIndex={18}
+                  tabIndex={26}
                   disabled={disabled}
                 />
               </div>

@@ -482,6 +482,20 @@ export default function ItemPricingForm({
     );
   };
 
+  const handleHeaderToggle = () => {
+    setMenuOpen(false);
+    if (showLevelPricing) {
+      setLevelInputValues({});
+      setBaselineOpen(false);
+      setBaselineAddOpen(false);
+      setBaselineNewName('');
+      setBaselineNewDiscount('');
+      onHideLevelPricing?.();
+      return;
+    }
+    onExpand?.();
+  };
+
   return (
     <section
       className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
@@ -490,19 +504,21 @@ export default function ItemPricingForm({
     >
       <div
         className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
-        onClick={() => {
-          setMenuOpen(false);
-          if (showLevelPricing) {
-            setLevelInputValues({});
-            setBaselineOpen(false);
-            setBaselineAddOpen(false);
-            setBaselineNewName('');
-            setBaselineNewDiscount('');
-            onHideLevelPricing?.();
-            return;
+        onClick={handleHeaderToggle}
+        onFocus={event => {
+          if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
+            onExpand?.();
           }
-          onExpand?.();
         }}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleHeaderToggle();
+          }
+        }}
+        tabIndex={21}
+        role="button"
+        aria-expanded={isExpanded}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           {showLevelPricing
@@ -613,7 +629,7 @@ export default function ItemPricingForm({
                     name="base_price"
                     value={displayBasePrice}
                     onChange={handleBasePriceChange}
-                    tabIndex={12}
+                    tabIndex={22}
                     validationSchema={basePriceSchema}
                     required={true}
                     readOnly={disabled}
@@ -625,7 +641,7 @@ export default function ItemPricingForm({
                     isEditing={marginEditing.isEditing}
                     marginPercentage={marginEditing.percentage}
                     calculatedMargin={calculatedMargin}
-                    tabIndex={13}
+                    tabIndex={23}
                     onStartEdit={onStartEditMargin}
                     onStopEdit={onStopEditMargin}
                     onChange={onMarginInputChange}
@@ -638,7 +654,7 @@ export default function ItemPricingForm({
                     name="sell_price"
                     value={displaySellPrice}
                     onChange={onSellPriceChange}
-                    tabIndex={14}
+                    tabIndex={24}
                     validationSchema={sellPriceComparisonSchema(
                       displayBasePrice
                     )}
