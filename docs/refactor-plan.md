@@ -19,9 +19,10 @@ Tujuan dokumen ini:
     mengimpor `useItemSelection` dan `ItemModal` dari `item-management`.
 - **Shared artifacts dipusatkan di `src/components/` dan `src/utils/`.**
 - **Page logic masih berat**:
-  - `src/pages/purchases/purchase-list/index.tsx` berisi query + state +
+  - `src/features/purchases/purchase-list/index.tsx` berisi query + state +
     handler CRUD sekaligus.
-  - `src/pages/master-data/item-master/index.tsx` menggunakan shared toolbar.
+  - `src/features/item-management/pages/item-master/index.tsx` menggunakan
+    shared toolbar.
 - **Query keys belum konsisten**:
   - Banyak `queryKey: ['...']` literal di hooks/pages, padahal sudah ada
     `src/constants/queryKeys.ts`.
@@ -51,8 +52,8 @@ Acceptance:
 Target: semua query/invalidation memakai `QueryKeys`.
 
 - Ganti semua literal `queryKey: ['...']` di:
-  - `src/pages/purchases/purchase-list/index.tsx`
-  - `src/pages/settings/profile/index.tsx`
+  - `src/features/purchases/purchase-list/index.tsx`
+  - `src/features/settings/profile/index.tsx`
   - `src/hooks/queries/*`
   - `src/hooks/realtime/*`
 - Standarisasi invalidation memakai `getInvalidationKeys`.
@@ -83,17 +84,17 @@ Acceptance:
 
 ### D. Page → Feature Extraction
 
-Target: `src/pages/` hanya orchestration.
+Target: `src/app/routes/` hanya orchestration.
 
 - Buat hook/container di feature untuk:
-  - `src/pages/purchases/purchase-list/index.tsx`
-  - `src/pages/master-data/item-master/index.tsx`
-  - `src/pages/settings/profile/index.tsx`
+  - `src/features/purchases/purchase-list/index.tsx`
+  - `src/features/item-management/pages/item-master/index.tsx`
+  - `src/features/settings/profile/index.tsx`
 - Pages hanya merangkai container + UI shells.
 
 Acceptance:
 
-- Pages minim logic state/CRUD, fokus pada composition.
+- Routes minim logic state/CRUD, fokus pada composition.
 
 ### E. Dokumentasi & Checklist
 

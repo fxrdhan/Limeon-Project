@@ -8,18 +8,20 @@ Tujuan dokumen ini:
 
 ## 1) Struktur Direktori Inti
 
+- `src/app/`
+  - Entry point aplikasi, routing, dan layout.
+  - Berisi `App.tsx`, `main.tsx`, `routes/`, dan `layout/`.
+
 - `src/features/`
-  - Implementasi per fitur (domain, hooks, components, templates).
-  - Contoh saat ini: `item-management`, `purchase-management`, `identity`.
+  - Implementasi per fitur (domain, hooks, components, templates, screens).
+  - Contoh saat ini: `auth`, `dashboard`, `master-data`,
+    `item-management`, `purchase-management`, `identity`.
 
 - `src/components/`
   - Komponen UI **shared** lintas fitur (button, dropdown, table, calendar, dll).
   - Tidak boleh berisi komponen yang hanya dipakai satu fitur.
 
-- `src/pages/`
-  - Entry halaman/route. Idealnya hanya orchestration + composition.
-
-- `src/layout/`
+- `src/app/layout/`
   - Layout utama (navbar, sidebar, main).
 
 - `src/services/`
@@ -70,8 +72,8 @@ Tujuan: `src/components/` hanya berisi komponen lintas fitur.
 
 ## 5) Routing & Composition
 
-- `src/App.tsx` mengatur routing tingkat aplikasi.
-- `src/pages/` mengikat route ke feature.
+- `src/app/App.tsx` mengatur routing tingkat aplikasi.
+- `src/app/routes/` mengikat route ke feature.
 - Feature merender komponen internalnya sendiri.
 
 ## 6) Test & Quality
