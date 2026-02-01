@@ -522,6 +522,8 @@ const ItemManagementContent: React.FC<{
   const [lastOpenSection, setLastOpenSection] =
     useState<AccordionSection | null>(isEditSession ? null : 'additional');
   const hoverTimerRef = useRef<number | null>(null);
+  const ignoreStackTapRef = useRef(false);
+  const ignoreStackTapTimerRef = useRef<number | null>(null);
   const updateOpenSection = useCallback(
     (nextSection: AccordionSection | null) => {
       setOpenSection(nextSection);
@@ -748,6 +750,64 @@ const ItemManagementContent: React.FC<{
     style: getStackStyle(section),
   });
 
+  const getStackSectionFromTarget = useCallback(
+    (target: HTMLElement | null) => {
+      if (!target) return null;
+      const hoveredSectionEl = target.closest<HTMLElement>(
+        '[data-stack-section]'
+      );
+      const hoveredSectionRaw = hoveredSectionEl?.dataset.stackSection;
+      return hoveredSectionRaw === 'additional' ||
+        hoveredSectionRaw === 'settings' ||
+        hoveredSectionRaw === 'pricing' ||
+        hoveredSectionRaw === 'conversion'
+        ? (hoveredSectionRaw as AccordionSection)
+        : null;
+    },
+    []
+  );
+
+  const shouldTriggerStackExpand = useCallback(
+    (hoveredSection: AccordionSection) => {
+      if (hoveredSection === activeSection) return false;
+
+      const hoveredIndex = SECTION_ORDER.indexOf(hoveredSection);
+      const activeSectionIndex = activeSection
+        ? SECTION_ORDER.indexOf(activeSection)
+        : -1;
+      if (hoveredIndex === -1 || activeSectionIndex === -1) {
+        return false;
+      }
+
+      const shouldStackAbove = activeSectionIndex >= 2;
+      const shouldStackBelow =
+        activeSectionIndex !== -1 &&
+        SECTION_ORDER.length - 1 - activeSectionIndex >= 2;
+
+      if (hoveredIndex > activeSectionIndex && !shouldStackBelow) {
+        return false;
+      }
+      if (hoveredIndex < activeSectionIndex && !shouldStackAbove) {
+        return false;
+      }
+      if (
+        hoveredIndex < activeSectionIndex &&
+        activeSectionIndex - hoveredIndex === 1
+      ) {
+        return false;
+      }
+      if (
+        hoveredIndex > activeSectionIndex &&
+        hoveredIndex - activeSectionIndex === 1
+      ) {
+        return false;
+      }
+
+      return true;
+    },
+    [activeSection]
+  );
+
   const startStackCollapse = useCallback(() => {
     if (isStackHovering || isStackTransitioning) return;
     if (openSection) {
@@ -800,17 +860,7 @@ const ItemManagementContent: React.FC<{
       const isOverIgnore = Boolean(
         target.closest('[data-stack-ignore="true"]')
       );
-      const hoveredSectionEl = target.closest<HTMLElement>(
-        '[data-stack-section]'
-      );
-      const hoveredSectionRaw = hoveredSectionEl?.dataset.stackSection;
-      const hoveredSection: AccordionSection | null =
-        hoveredSectionRaw === 'additional' ||
-        hoveredSectionRaw === 'settings' ||
-        hoveredSectionRaw === 'pricing' ||
-        hoveredSectionRaw === 'conversion'
-          ? (hoveredSectionRaw as AccordionSection)
-          : null;
+      const hoveredSection = getStackSectionFromTarget(target);
 
       // Ignore regions (e.g. image uploader grid) should not participate in the
       // stack/unstack behavior.
@@ -818,6 +868,15 @@ const ItemManagementContent: React.FC<{
         if (isStackHovering || isStackTransitioning) {
           restoreStack();
         }
+        return;
+      }
+
+      if (
+        isStackHovering &&
+        hoveredSection &&
+        hoveredSection === lastOpenSection
+      ) {
+        restoreStack();
         return;
       }
 
@@ -833,35 +892,7 @@ const ItemManagementContent: React.FC<{
         return;
       }
 
-      const hoveredIndex = SECTION_ORDER.indexOf(hoveredSection);
-      const activeSectionIndex = activeSection
-        ? SECTION_ORDER.indexOf(activeSection)
-        : -1;
-      const shouldStackAbove = activeSectionIndex >= 2;
-      const shouldStackBelow =
-        activeSectionIndex !== -1 &&
-        SECTION_ORDER.length - 1 - activeSectionIndex >= 2;
-
-      // Only stacked cards (above active) should trigger unstack.
-      if (hoveredIndex === -1 || activeSectionIndex === -1) {
-        return;
-      }
-      if (hoveredIndex > activeSectionIndex && !shouldStackBelow) {
-        return;
-      }
-      if (hoveredIndex < activeSectionIndex && !shouldStackAbove) {
-        return;
-      }
-      if (
-        hoveredIndex < activeSectionIndex &&
-        activeSectionIndex - hoveredIndex === 1
-      ) {
-        return;
-      }
-      if (
-        hoveredIndex > activeSectionIndex &&
-        hoveredIndex - activeSectionIndex === 1
-      ) {
+      if (!shouldTriggerStackExpand(hoveredSection)) {
         return;
       }
 
@@ -869,9 +900,12 @@ const ItemManagementContent: React.FC<{
     },
     [
       activeSection,
+      getStackSectionFromTarget,
       isStackHovering,
       isStackTransitioning,
+      lastOpenSection,
       restoreStack,
+      shouldTriggerStackExpand,
       startStackCollapse,
     ]
   );
@@ -880,11 +914,62 @@ const ItemManagementContent: React.FC<{
     restoreStack();
   }, [restoreStack]);
 
+  const handleStackPointerDownCapture = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType === 'mouse') return;
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-stack-ignore="true"]')) return;
+      if (isStackHovering || isStackTransitioning) return;
+
+      const tappedSection = getStackSectionFromTarget(target);
+      if (!tappedSection) return;
+      if (!shouldTriggerStackExpand(tappedSection)) return;
+
+      startStackCollapse();
+      ignoreStackTapRef.current = true;
+      if (ignoreStackTapTimerRef.current) {
+        window.clearTimeout(ignoreStackTapTimerRef.current);
+      }
+      ignoreStackTapTimerRef.current = window.setTimeout(() => {
+        ignoreStackTapRef.current = false;
+        ignoreStackTapTimerRef.current = null;
+      }, 400);
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [
+      getStackSectionFromTarget,
+      isStackHovering,
+      isStackTransitioning,
+      shouldTriggerStackExpand,
+      startStackCollapse,
+    ]
+  );
+
+  const handleStackClickCapture = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!ignoreStackTapRef.current) return;
+      ignoreStackTapRef.current = false;
+      if (ignoreStackTapTimerRef.current) {
+        window.clearTimeout(ignoreStackTapTimerRef.current);
+        ignoreStackTapTimerRef.current = null;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    []
+  );
+
   useEffect(
     () => () => {
       if (hoverTimerRef.current) {
         window.clearTimeout(hoverTimerRef.current);
         hoverTimerRef.current = null;
+      }
+      if (ignoreStackTapTimerRef.current) {
+        window.clearTimeout(ignoreStackTapTimerRef.current);
+        ignoreStackTapTimerRef.current = null;
       }
     },
     []
@@ -903,6 +988,8 @@ const ItemManagementContent: React.FC<{
           : {
               onMouseMove: handleStackMouseMove,
               onMouseLeave: handleStackMouseLeave,
+              onPointerDownCapture: handleStackPointerDownCapture,
+              onClickCapture: handleStackClickCapture,
             }),
       }}
       children={{
