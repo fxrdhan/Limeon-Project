@@ -20,6 +20,7 @@ const CACHE_VERSION = 1;
 const cache = new Map<string, CachedImageEntry>();
 const preloadedUrls = new Set<string>();
 const blobUrlCache = new Map<string, string>();
+const blobUrlRefCount = new Map<string, number>();
 const BLOB_CACHE_NAME = 'pharmasys-image-blobs-v1';
 
 const isBrowser = typeof window !== 'undefined';
@@ -32,11 +33,35 @@ const openBlobCache = async () => {
   return caches.open(BLOB_CACHE_NAME);
 };
 
+const retainBlobUrl = (url: string) => {
+  const current = blobUrlRefCount.get(url) ?? 0;
+  blobUrlRefCount.set(url, current + 1);
+};
+
+const releaseBlobUrl = (url: string) => {
+  const current = blobUrlRefCount.get(url);
+  if (!current) return;
+  if (current > 1) {
+    blobUrlRefCount.set(url, current - 1);
+    return;
+  }
+  blobUrlRefCount.delete(url);
+  const cachedObjectUrl = blobUrlCache.get(url);
+  if (cachedObjectUrl) {
+    URL.revokeObjectURL(cachedObjectUrl);
+    blobUrlCache.delete(url);
+  }
+};
+
 const createBlobUrl = async (url: string, response: Response) => {
-  if (blobUrlCache.has(url)) return blobUrlCache.get(url) || null;
+  if (blobUrlCache.has(url)) {
+    retainBlobUrl(url);
+    return blobUrlCache.get(url) || null;
+  }
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);
   blobUrlCache.set(url, objectUrl);
+  retainBlobUrl(url);
   return objectUrl;
 };
 
@@ -120,7 +145,10 @@ export const getCachedImageBlobUrl = async (
 ): Promise<string | null> => {
   if (!isCacheableUrl(url)) return null;
   const existing = blobUrlCache.get(url);
-  if (existing) return existing;
+  if (existing) {
+    retainBlobUrl(url);
+    return existing;
+  }
 
   const cacheStore = await openBlobCache();
   if (!cacheStore) return null;
@@ -198,6 +226,7 @@ export const preloadCachedImages = () => {
 export const removeCachedImageBlob = async (url: string) => {
   if (!isCacheableUrl(url)) return;
 
+  blobUrlRefCount.delete(url);
   const cachedObjectUrl = blobUrlCache.get(url);
   if (cachedObjectUrl) {
     URL.revokeObjectURL(cachedObjectUrl);
@@ -211,6 +240,15 @@ export const removeCachedImageBlob = async (url: string) => {
   await cacheStore.delete(url);
 };
 
+export const releaseCachedImageBlob = (url: string) => {
+  if (!isCacheableUrl(url)) return;
+  releaseBlobUrl(url);
+};
+
 export const removeCachedImageBlobs = async (urls: string[]) => {
   await Promise.all(urls.map(url => removeCachedImageBlob(url)));
+};
+
+export const releaseCachedImageBlobs = (urls: string[]) => {
+  urls.forEach(url => releaseCachedImageBlob(url));
 };

@@ -293,7 +293,15 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     const canScrollUp = scrollTop > threshold;
     const canScrollDown = scrollTop < scrollHeight - clientHeight - threshold;
 
-    setScrollState({ canScrollUp, canScrollDown });
+    setScrollState(prev => {
+      if (
+        prev.canScrollUp === canScrollUp &&
+        prev.canScrollDown === canScrollDown
+      ) {
+        return prev;
+      }
+      return { canScrollUp, canScrollDown };
+    });
   };
 
   useEffect(() => {
@@ -307,6 +315,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     const timeoutId = setTimeout(checkScrollPosition, 100);
 
     // Handle scrolling state for hover prevention during scroll
+    let scrollCheckRaf: number | null = null;
     const handleScroll = () => {
       setIsScrolling(true);
 
@@ -320,18 +329,26 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
         setIsScrolling(false);
       }, 150);
 
-      // Also call original check
-      checkScrollPosition();
+      if (scrollCheckRaf !== null) return;
+      scrollCheckRaf = requestAnimationFrame(() => {
+        scrollCheckRaf = null;
+        checkScrollPosition();
+      });
     };
 
     // Add scroll listener
     container.addEventListener('scroll', handleScroll);
 
     // Check when content changes
+    let resizeRaf: number | null = null;
     const resizeObserver = new ResizeObserver(() => {
-      checkScrollPosition();
-      // Double-check after resize completes
-      setTimeout(checkScrollPosition, 50);
+      if (resizeRaf !== null) return;
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = null;
+        checkScrollPosition();
+        // Double-check after resize completes
+        setTimeout(checkScrollPosition, 50);
+      });
     });
     resizeObserver.observe(container);
 
@@ -339,6 +356,12 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       clearTimeout(timeoutId);
       container.removeEventListener('scroll', handleScroll);
       resizeObserver.disconnect();
+      if (scrollCheckRaf !== null) {
+        cancelAnimationFrame(scrollCheckRaf);
+      }
+      if (resizeRaf !== null) {
+        cancelAnimationFrame(resizeRaf);
+      }
       if (scrollingTimeoutRef.current) {
         clearTimeout(scrollingTimeoutRef.current);
       }

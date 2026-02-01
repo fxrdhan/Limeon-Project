@@ -20,6 +20,7 @@ import {
   preloadImages,
   removeCachedImageBlob,
   removeCachedImageSet,
+  releaseCachedImageBlobs,
   setCachedImageSet,
 } from '@/utils/imageCache';
 import { StorageService } from '@/services/api/storage.service';
@@ -751,6 +752,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const cropperRef = useRef<Cropper | null>(null);
   const cropperImageRef = useRef<HTMLImageElement | null>(null);
   const localPreviewUrlsRef = useRef<Record<number, string>>({});
+  const retainedDisplaySourcesRef = useRef<string[]>([]);
   const imageTabIndexMap = useMemo(() => {
     const slots = [0, 1, 2, 3];
     const firstEmptyIndex = imageSlots.findIndex(slot => !slot.url);
@@ -896,6 +898,15 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   useEffect(() => {
     let isActive = true;
+    let didCommit = false;
+    const previousSources = retainedDisplaySourcesRef.current;
+    const nextSources = imageSlots
+      .map(slot => slot.url)
+      .filter(source => source && source.startsWith('http'));
+    const nextSourceSet = new Set(nextSources);
+    const releaseSources = previousSources.filter(
+      source => !nextSourceSet.has(source)
+    );
 
     const resolveDisplayUrls = async () => {
       const results = await Promise.all(
@@ -910,17 +921,33 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         })
       );
 
-      if (isActive) {
-        setDisplayUrls(results);
+      if (!isActive) {
+        releaseCachedImageBlobs(nextSources);
+        return;
       }
+
+      releaseCachedImageBlobs(releaseSources);
+      retainedDisplaySourcesRef.current = nextSources;
+      setDisplayUrls(results);
+      didCommit = true;
     };
 
     resolveDisplayUrls();
 
     return () => {
+      if (!didCommit) {
+        releaseCachedImageBlobs(nextSources);
+      }
       isActive = false;
     };
   }, [imageSlots]);
+
+  useEffect(() => {
+    return () => {
+      releaseCachedImageBlobs(retainedDisplaySourcesRef.current);
+      retainedDisplaySourcesRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
