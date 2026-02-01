@@ -1,6 +1,7 @@
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { mockConsole } from './utils/testHelpers';
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
@@ -9,6 +10,9 @@ expect.extend(matchers);
 afterEach(() => {
   cleanup();
 });
+
+// Silence console output during tests
+mockConsole();
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
