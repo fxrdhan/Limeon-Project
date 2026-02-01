@@ -13,7 +13,6 @@ import {
   DataGrid,
   createTextColumn,
   createCurrencyColumn,
-  getPinAndFilterMenuItems,
 } from '@/components/ag-grid';
 import type { AgGridReact } from 'ag-grid-react';
 import type {
@@ -216,62 +215,70 @@ export default function ItemPackageConversionManager({
     [onUpdateSellPrice]
   );
 
-  const columnDefs = useMemo(
-    () =>
-      [
-        {
-          ...createTextColumn({
-            field: 'unit.name',
-            headerName: 'Turunan',
-          }),
-          enableCellChangeFlash: false,
-        },
-        {
-          ...createTextColumn({
-            field: 'conversion_rate',
-            headerName: 'Konversi',
-            cellStyle: { textAlign: 'center' },
-          }),
-          enableCellChangeFlash: false,
-        },
-        {
-          ...createCurrencyColumn({
-            field: 'base_price',
-            headerName: 'HP',
-          }),
-          enableCellChangeFlash: false,
-        },
-        {
-          ...createCurrencyColumn({
-            field: 'sell_price',
-            headerName: 'HJ',
-          }),
-          enableCellChangeFlash: false,
-          editable: !disabled,
-          valueParser: params => parseCurrencyValue(params.newValue),
-        },
-        {
-          field: 'actions',
-          headerName: 'Aksi',
-          sortable: false,
-          resizable: false,
-          suppressSizeToFit: true,
-          width: 100,
-          minWidth: 100,
-          maxWidth: 100,
+  const columnDefs = useMemo(() => {
+    const headerMenuDisabled = {
+      suppressHeaderMenuButton: true,
+      suppressHeaderContextMenu: true,
+    };
+
+    return [
+      {
+        ...createTextColumn({
+          field: 'unit.name',
+          headerName: 'Turunan',
+        }),
+        ...headerMenuDisabled,
+        enableCellChangeFlash: false,
+      },
+      {
+        ...createTextColumn({
+          field: 'conversion_rate',
+          headerName: 'Konversi',
           cellStyle: { textAlign: 'center' },
-          enableCellChangeFlash: false,
-          cellRenderer: (params: { data?: { id: string } }) =>
-            params.data ? (
-              <DeleteButton
-                onClick={() => onRemoveConversion(params.data!.id)}
-                disabled={disabled}
-              />
-            ) : null,
-        },
-      ] as (ColDef | ColGroupDef)[],
-    [disabled, onRemoveConversion]
-  );
+        }),
+        ...headerMenuDisabled,
+        enableCellChangeFlash: false,
+      },
+      {
+        ...createCurrencyColumn({
+          field: 'base_price',
+          headerName: 'HP',
+        }),
+        ...headerMenuDisabled,
+        enableCellChangeFlash: false,
+      },
+      {
+        ...createCurrencyColumn({
+          field: 'sell_price',
+          headerName: 'HJ',
+        }),
+        ...headerMenuDisabled,
+        enableCellChangeFlash: false,
+        editable: !disabled,
+        valueParser: params => parseCurrencyValue(params.newValue),
+      },
+      {
+        field: 'actions',
+        headerName: 'Aksi',
+        sortable: false,
+        resizable: false,
+        suppressSizeToFit: true,
+        width: 100,
+        minWidth: 100,
+        maxWidth: 100,
+        cellStyle: { textAlign: 'center' },
+        ...headerMenuDisabled,
+        enableCellChangeFlash: false,
+        cellRenderer: (params: { data?: { id: string } }) =>
+          params.data ? (
+            <DeleteButton
+              onClick={() => onRemoveConversion(params.data!.id)}
+              disabled={disabled}
+            />
+          ) : null,
+      },
+    ] as (ColDef | ColGroupDef)[];
+  }, [disabled, onRemoveConversion]);
 
   const focusFirstField = () => {
     const container = sectionRef.current?.querySelector<HTMLElement>(
@@ -370,7 +377,6 @@ export default function ItemPackageConversionManager({
                       suppressColumnVirtualisation={true}
                       cellSelection={false}
                       rowSelection={undefined}
-                      getMainMenuItems={getPinAndFilterMenuItems}
                       onColumnMenuVisibleChanged={handleMenuVisibleChanged}
                       onContextMenuVisibleChanged={handleMenuVisibleChanged}
                       onCellValueChanged={handleCellValueChanged}
