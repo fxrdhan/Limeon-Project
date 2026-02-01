@@ -6,6 +6,7 @@ export const CheckboxInput: React.FC<CheckboxInputProps> = ({
   checked,
   onChange,
   disabled = false,
+  tabIndex,
 }) => {
   const handleChange = () => {
     if (!disabled) {
@@ -20,6 +21,7 @@ export const CheckboxInput: React.FC<CheckboxInputProps> = ({
       checked={checked}
       onChange={handleChange}
       disabled={disabled}
+      tabIndex={tabIndex}
       className="sr-only"
     />
   );

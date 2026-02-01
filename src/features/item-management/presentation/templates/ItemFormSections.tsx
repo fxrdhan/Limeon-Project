@@ -55,6 +55,7 @@ interface CollapsibleSectionProps {
   stackClassName?: string;
   stackStyle?: React.CSSProperties;
   itemId?: string;
+  onRequestNextSection?: () => void;
 }
 
 interface PricingSectionProps extends CollapsibleSectionProps {
@@ -351,6 +352,7 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
   stackClassName,
   stackStyle,
   itemId,
+  onRequestNextSection,
 }) => {
   const { formData, updateFormData } = useItemForm();
   const { isViewingOldVersion, isEditMode } = useItemUI();
@@ -421,6 +423,7 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
       onStopEditMinStock={minStockEditor.stopEditing}
       onMinStockChange={minStockEditor.handleChange}
       onMinStockKeyDown={minStockEditor.handleKeyDown}
+      onRequestNextSection={onRequestNextSection}
     />
   );
 };

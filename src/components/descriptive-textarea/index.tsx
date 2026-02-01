@@ -33,6 +33,16 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
       <button
         type="button"
         tabIndex={tabIndex}
+        onFocus={event => {
+          if (!expandOnClick) return;
+          if (showTextarea) return;
+          if (!event.currentTarget.matches(':focus-visible')) return;
+          setHasInteracted(true);
+          setShowTextarea(true);
+          setTimeout(() => {
+            textareaRef.current?.focus();
+          }, 0);
+        }}
         onMouseEnter={() => !expandOnClick && setIsHovered(true)}
         onMouseLeave={() => !expandOnClick && setIsHovered(false)}
         className={classNames(

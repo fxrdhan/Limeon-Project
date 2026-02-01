@@ -30,6 +30,7 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
         checked={checked}
         onChange={onChange}
         disabled={disabled}
+        tabIndex={tabIndex !== undefined ? -1 : undefined}
       />
       <CheckboxIcon checked={checked} disabled={disabled} />
       <CheckboxLabel label={label} />

@@ -914,6 +914,42 @@ const ItemManagementContent: React.FC<{
     restoreStack();
   }, [restoreStack]);
 
+  const focusSectionFirstField = useCallback((section: AccordionSection) => {
+    let attempts = 0;
+    const tryFocus = () => {
+      const modal = document.querySelector(
+        '[role="dialog"][aria-modal="true"]'
+      );
+      if (!modal) return;
+      const sectionEl = modal.querySelector(
+        `[data-stack-section="${section}"]`
+      );
+      const container = sectionEl?.querySelector<HTMLElement>(
+        '[data-section-content]'
+      );
+      const preferredInput =
+        section === 'pricing'
+          ? container?.querySelector<HTMLInputElement>(
+              'input[name="base_price"]'
+            )
+          : null;
+      const firstFocusable =
+        preferredInput ||
+        container?.querySelector<HTMLElement>(
+          'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+        );
+      if (firstFocusable) {
+        firstFocusable.focus();
+        return;
+      }
+      if (attempts < 6) {
+        attempts += 1;
+        requestAnimationFrame(tryFocus);
+      }
+    };
+    tryFocus();
+  }, []);
+
   const handleStackPointerDownCapture = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (event.pointerType === 'mouse') return;
@@ -1028,6 +1064,10 @@ const ItemManagementContent: React.FC<{
               isExpanded={activeSection === 'settings'}
               onExpand={() => toggleSection('settings')}
               itemId={itemId}
+              onRequestNextSection={() => {
+                toggleSection('pricing');
+                requestAnimationFrame(() => focusSectionFirstField('pricing'));
+              }}
               stackClassName={getStackEffect('settings').className}
               stackStyle={getStackEffect('settings').style}
             />

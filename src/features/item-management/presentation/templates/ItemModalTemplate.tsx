@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { CardFooter } from '@/components/card';
@@ -43,6 +43,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
   }) => {
     const { className: rightColumnClassName, ...restRightColumnProps } =
       rightColumnProps || {};
+    const modalRef = useRef<HTMLDivElement>(null);
     const backdropVariants = {
       hidden: { opacity: 0 },
       visible: { opacity: 1 },
@@ -57,6 +58,75 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
       hidden: { opacity: 0 },
       visible: { opacity: 1 },
     };
+
+    useEffect(() => {
+      if (!isOpen) return;
+      const container = modalRef.current;
+      if (!container) return;
+
+      const getFocusableElements = () => {
+        const focusableSelector =
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const nodes = Array.from(
+          container.querySelectorAll<HTMLElement>(focusableSelector)
+        ).filter(node => {
+          if (node.tabIndex < 0) return false;
+          if (node.hasAttribute('disabled')) return false;
+          if (node.getAttribute('aria-hidden') === 'true') return false;
+          return node.getClientRects().length > 0;
+        });
+
+        const positive = nodes
+          .filter(node => node.tabIndex > 0)
+          .sort((a, b) => {
+            if (a.tabIndex !== b.tabIndex) return a.tabIndex - b.tabIndex;
+            return a.compareDocumentPosition(b) &
+              Node.DOCUMENT_POSITION_FOLLOWING
+              ? -1
+              : 1;
+          });
+        const zero = nodes.filter(node => node.tabIndex === 0);
+        return [...positive, ...zero];
+      };
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== 'Tab') return;
+        if (!container.contains(document.activeElement)) return;
+
+        const focusables = getFocusableElements();
+        if (focusables.length === 0) return;
+
+        const active = document.activeElement as HTMLElement | null;
+        const currentIndex = active ? focusables.indexOf(active) : -1;
+        if (event.shiftKey) {
+          if (currentIndex <= 0) {
+            event.preventDefault();
+            focusables[focusables.length - 1]?.focus();
+          }
+        } else if (
+          currentIndex === -1 ||
+          currentIndex === focusables.length - 1
+        ) {
+          event.preventDefault();
+          focusables[0]?.focus();
+        }
+      };
+
+      const focusFirst = () => {
+        const focusables = getFocusableElements();
+        if (focusables.length === 0) return;
+        if (!container.contains(document.activeElement)) {
+          focusables[0]?.focus();
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown, true);
+      requestAnimationFrame(focusFirst);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown, true);
+      };
+    }, [isOpen]);
 
     return createPortal(
       <AnimatePresence>
@@ -87,6 +157,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="rounded-2xl bg-white shadow-xl w-[60vw] max-h-[90vh] md:h-[90vh] flex flex-col border border-slate-200"
               onClick={e => e.stopPropagation()}
+              ref={modalRef}
             >
               <motion.div
                 key="modal-header"

@@ -5,6 +5,7 @@ export interface CheckboxInputProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  tabIndex?: number;
 }
 
 export interface CheckboxIconProps {

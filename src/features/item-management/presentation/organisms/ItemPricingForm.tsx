@@ -497,16 +497,30 @@ export default function ItemPricingForm({
   };
 
   const sectionRef = useRef<HTMLElement>(null);
-  const focusFirstField = () => {
+  const pendingFocusRef = useRef(false);
+  const focusFirstField = useCallback(() => {
     const container = sectionRef.current?.querySelector<HTMLElement>(
       '[data-section-content]'
     );
     if (!container) return;
+    const basePriceInput = container.querySelector<HTMLInputElement>(
+      'input[name="base_price"]'
+    );
+    if (basePriceInput) {
+      basePriceInput.focus();
+      return;
+    }
     const firstFocusable = container.querySelector<HTMLElement>(
       'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
     );
     firstFocusable?.focus();
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isExpanded || !pendingFocusRef.current) return;
+    pendingFocusRef.current = false;
+    requestAnimationFrame(() => focusFirstField());
+  }, [focusFirstField, isExpanded]);
 
   return (
     <section
@@ -520,15 +534,15 @@ export default function ItemPricingForm({
         onClick={handleHeaderToggle}
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
+            pendingFocusRef.current = true;
             onExpand?.();
-            setTimeout(focusFirstField, 0);
           }
         }}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
+            pendingFocusRef.current = true;
             handleHeaderToggle();
-            setTimeout(focusFirstField, 0);
           }
         }}
         tabIndex={21}

@@ -27,6 +27,7 @@ interface ItemSettingsFormProps {
   onStopEditMinStock: () => void;
   onMinStockChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onMinStockKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onRequestNextSection?: () => void;
   disabled?: boolean;
 }
 
@@ -44,6 +45,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
       onStopEditMinStock,
       onMinStockChange,
       onMinStockKeyDown,
+      onRequestNextSection,
       disabled = false,
     },
     ref
@@ -66,6 +68,21 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
         className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
         style={stackStyle}
         data-stack-card="true"
+        onKeyDownCapture={event => {
+          if (event.key !== 'Tab' || event.shiftKey) return;
+          const target = event.target as HTMLElement | null;
+          if (!target) return;
+          const isExpiryLabel =
+            target.tagName === 'LABEL' &&
+            target.getAttribute('for') === 'has_expiry_date';
+          const isExpiryInput =
+            target.tagName === 'INPUT' &&
+            target.getAttribute('id') === 'has_expiry_date';
+          if (!isExpiryLabel && !isExpiryInput) return;
+          if (!onRequestNextSection) return;
+          event.preventDefault();
+          onRequestNextSection();
+        }}
       >
         <div
           className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
