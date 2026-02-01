@@ -26,10 +26,12 @@ class Logger {
   private allowDebugInProd: boolean;
 
   constructor() {
-    this.isDevelopment = import.meta.env.DEV;
-    const configuredLevel = String(
-      import.meta.env.VITE_LOG_LEVEL || ''
-    ).toUpperCase();
+    const devOverride = (globalThis as { __LOG_DEV__?: boolean }).__LOG_DEV__;
+    this.isDevelopment = devOverride ?? import.meta.env.DEV;
+    const envLogLevel =
+      (globalThis as { __LOG_LEVEL__?: string }).__LOG_LEVEL__ ??
+      import.meta.env.VITE_LOG_LEVEL;
+    const configuredLevel = String(envLogLevel || '').toUpperCase();
     const levelMap: Record<string, LogLevel> = {
       DEBUG: LogLevel.DEBUG,
       INFO: LogLevel.INFO,

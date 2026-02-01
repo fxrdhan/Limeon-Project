@@ -1,6 +1,58 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger, LogLevel } from './logger';
 
+const originalDev = import.meta.env.DEV;
+const originalLogLevel = import.meta.env.VITE_LOG_LEVEL;
+
+const setEnvValue = (key: string, value: unknown) => {
+  try {
+    Object.defineProperty(import.meta.env, key, {
+      value,
+      configurable: true,
+    });
+  } catch {
+    (import.meta.env as Record<string, unknown>)[key] = value;
+  }
+};
+
+const restoreEnv = () => {
+  setEnvValue('DEV', originalDev);
+  setEnvValue('VITE_LOG_LEVEL', originalLogLevel);
+};
+
+const createLoggerWithEnv = (overrides: {
+  DEV?: boolean;
+  VITE_LOG_LEVEL?: string;
+}) => {
+  if (overrides.DEV !== undefined) setEnvValue('DEV', overrides.DEV);
+  if (overrides.VITE_LOG_LEVEL !== undefined)
+    setEnvValue('VITE_LOG_LEVEL', overrides.VITE_LOG_LEVEL);
+
+  const LoggerClass = (
+    logger as unknown as { constructor: new () => typeof logger }
+  ).constructor;
+  const instance = new LoggerClass();
+  restoreEnv();
+  return instance;
+};
+
+const createLoggerWithState = (state: {
+  level: LogLevel;
+  isDevelopment: boolean;
+  allowDebugInProd: boolean;
+}) => {
+  const LoggerClass = (
+    logger as unknown as { constructor: new () => typeof logger }
+  ).constructor;
+  const instance = new LoggerClass();
+  (instance as unknown as { level: LogLevel }).level = state.level;
+  (instance as unknown as { isDevelopment: boolean }).isDevelopment =
+    state.isDevelopment;
+  (instance as unknown as { allowDebugInProd: boolean }).allowDebugInProd =
+    state.allowDebugInProd;
+  return instance;
+};
+
 describe('Logger', () => {
   // Save original console methods
   const originalConsole = {
@@ -8,6 +60,11 @@ describe('Logger', () => {
     info: console.info,
     warn: console.warn,
     error: console.error,
+    time: console.time,
+    timeEnd: console.timeEnd,
+    group: console.group,
+    groupEnd: console.groupEnd,
+    table: console.table,
   };
 
   beforeEach(() => {
@@ -16,6 +73,11 @@ describe('Logger', () => {
     console.info = vi.fn();
     console.warn = vi.fn();
     console.error = vi.fn();
+    console.time = vi.fn();
+    console.timeEnd = vi.fn();
+    console.group = vi.fn();
+    console.groupEnd = vi.fn();
+    console.table = vi.fn();
   });
 
   afterEach(() => {
@@ -24,6 +86,14 @@ describe('Logger', () => {
     console.info = originalConsole.info;
     console.warn = originalConsole.warn;
     console.error = originalConsole.error;
+    console.time = originalConsole.time;
+    console.timeEnd = originalConsole.timeEnd;
+    console.group = originalConsole.group;
+    console.groupEnd = originalConsole.groupEnd;
+    console.table = originalConsole.table;
+    delete (globalThis as { __LOG_DEV__?: boolean }).__LOG_DEV__;
+    delete (globalThis as { __LOG_LEVEL__?: string }).__LOG_LEVEL__;
+    restoreEnv();
   });
 
   describe('setLevel', () => {
@@ -89,6 +159,87 @@ describe('Logger', () => {
       logger.error('An error occurred', 'string error');
 
       expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should not log when level is NONE', () => {
+      logger.setLevel(LogLevel.NONE);
+      logger.error('Error should be suppressed');
+
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('debug and tooling utilities', () => {
+    it('should log debug and timing utilities when allowed in prod', () => {
+      const prodDebugLogger = createLoggerWithState({
+        level: LogLevel.DEBUG,
+        isDevelopment: false,
+        allowDebugInProd: true,
+      });
+
+      prodDebugLogger.debug('Debug message');
+      prodDebugLogger.time('timer');
+      prodDebugLogger.timeEnd('timer');
+      prodDebugLogger.group('group');
+      prodDebugLogger.groupEnd();
+      prodDebugLogger.table([{ id: 1 }]);
+
+      expect(console.debug).toHaveBeenCalled();
+      expect(console.time).toHaveBeenCalledWith('timer');
+      expect(console.timeEnd).toHaveBeenCalledWith('timer');
+      expect(console.group).toHaveBeenCalledWith('group');
+      expect(console.groupEnd).toHaveBeenCalled();
+      expect(console.table).toHaveBeenCalled();
+    });
+
+    it('should not log debug or tooling utilities when disabled in prod', () => {
+      const prodLogger = createLoggerWithState({
+        level: LogLevel.INFO,
+        isDevelopment: false,
+        allowDebugInProd: false,
+      });
+
+      prodLogger.debug('Debug message');
+      prodLogger.time('timer');
+      prodLogger.timeEnd('timer');
+      prodLogger.group('group');
+      prodLogger.groupEnd();
+      prodLogger.table([{ id: 1 }]);
+
+      expect(console.debug).not.toHaveBeenCalled();
+      expect(console.time).not.toHaveBeenCalled();
+      expect(console.timeEnd).not.toHaveBeenCalled();
+      expect(console.group).not.toHaveBeenCalled();
+      expect(console.groupEnd).not.toHaveBeenCalled();
+      expect(console.table).not.toHaveBeenCalled();
+    });
+
+    it('should respect configured DEBUG level from env', () => {
+      const prodLogger = createLoggerWithEnv({
+        DEV: false,
+        VITE_LOG_LEVEL: 'DEBUG',
+      });
+
+      prodLogger.debug('Debug message');
+
+      expect(console.debug).toHaveBeenCalled();
+    });
+
+    it('should fall back when VITE_LOG_LEVEL is invalid', () => {
+      (globalThis as { __LOG_LEVEL__?: string }).__LOG_LEVEL__ = 'INVALID';
+      (globalThis as { __LOG_DEV__?: boolean }).__LOG_DEV__ = false;
+      const LoggerClass = (
+        logger as unknown as { constructor: new () => typeof logger }
+      ).constructor;
+      const fallbackLogger = new LoggerClass();
+
+      expect(
+        (fallbackLogger as unknown as { allowDebugInProd: boolean })
+          .allowDebugInProd
+      ).toBe(false);
+      expect((fallbackLogger as unknown as { level: LogLevel }).level).toBe(
+        LogLevel.WARN
+      );
     });
   });
 
