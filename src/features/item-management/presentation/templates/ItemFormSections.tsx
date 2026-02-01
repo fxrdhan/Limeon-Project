@@ -672,12 +672,28 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     smartFormSync?.unregisterActiveField('package_conversions');
   }, [smartFormSync]);
 
+  const { removePackageConversion, setConversions } = packageConversionHook;
+
   const handleRemoveConversion = useCallback(
     (id: string) => {
       pendingAutosaveRef.current = true;
-      packageConversionHook.removePackageConversion(id);
+      removePackageConversion(id);
     },
-    [packageConversionHook]
+    [removePackageConversion]
+  );
+
+  const handleUpdateSellPrice = useCallback(
+    (id: string, sellPrice: number) => {
+      setConversions(prevConversions => {
+        pendingAutosaveRef.current = true;
+        return prevConversions.map(conversion =>
+          conversion.id === id
+            ? { ...conversion, sell_price: sellPrice }
+            : conversion
+        );
+      });
+    },
+    [setConversions]
   );
 
   return (
@@ -697,16 +713,7 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
       onRemoveConversion={handleRemoveConversion}
       onInteractionStart={handleConversionInteractionStart}
       onInteractionEnd={handleConversionInteractionEnd}
-      onUpdateSellPrice={(id, sellPrice) =>
-        packageConversionHook.setConversions(prevConversions => {
-          pendingAutosaveRef.current = true;
-          return prevConversions.map(conversion =>
-            conversion.id === id
-              ? { ...conversion, sell_price: sellPrice }
-              : conversion
-          );
-        })
-      }
+      onUpdateSellPrice={handleUpdateSellPrice}
     />
   );
 };

@@ -26,6 +26,12 @@
   font-weight: 600 !important;
 }
 
+/* Ensure AG Grid popups appear above modal overlays */
+.ag-menu,
+.ag-popup {
+  z-index: 60 !important;
+}
+
 /* Pagination controls - Semibold */
 .ag-paging-panel {
   font-weight: 600 !important;

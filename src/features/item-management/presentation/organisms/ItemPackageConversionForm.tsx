@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { TbChevronDown, TbTrash } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -19,6 +13,7 @@ import {
   DataGrid,
   createTextColumn,
   createCurrencyColumn,
+  getPinAndFilterMenuItems,
 } from '@/components/ag-grid';
 import type { AgGridReact } from 'ag-grid-react';
 import type {
@@ -92,7 +87,9 @@ export default function ItemPackageConversionManager({
   const columnStateRef = useRef<ColumnState[] | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const hasAutoSizedRef = useRef(false);
-  const [popupParent, setPopupParent] = useState<HTMLElement | null>(null);
+  const isMenuOpenRef = useRef(false);
+  const popupParent =
+    typeof document !== 'undefined' ? document.body : undefined;
   const filteredAvailableUnits = useMemo(
     () =>
       availableUnits
@@ -123,9 +120,6 @@ export default function ItemPackageConversionManager({
       } else {
         columnStateRef.current = api.getColumnState();
       }
-      if (sectionRef.current) {
-        api.setGridOption('popupParent', sectionRef.current);
-      }
       api.autoSizeAllColumns();
     },
     []
@@ -148,6 +142,11 @@ export default function ItemPackageConversionManager({
     }
   }, [autoSizeAllColumns, isExpanded]);
 
+  useEffect(() => {
+    if (!isExpanded) return;
+    autoSizeAllColumns();
+  }, [autoSizeAllColumns, filteredConversions.length, isExpanded]);
+
   const handleFocusCapture = useCallback(() => {
     if (disabled) return;
     onInteractionStart?.();
@@ -156,6 +155,12 @@ export default function ItemPackageConversionManager({
   const handleBlurCapture = useCallback(
     (event: React.FocusEvent<HTMLElement>) => {
       if (disabled) return;
+      if (
+        isMenuOpenRef.current ||
+        document.querySelector('.ag-popup, .ag-menu, .ag-dialog, .ag-tooltip')
+      ) {
+        return;
+      }
       const nextTarget = event.relatedTarget as Node | null;
       const activeElement = document.activeElement as Node | null;
       const isAgPopupTarget = (node: Node | null) => {
@@ -178,6 +183,13 @@ export default function ItemPackageConversionManager({
       }
     },
     [disabled, onInteractionEnd]
+  );
+
+  const handleMenuVisibleChanged = useCallback(
+    (event: { visible?: boolean }) => {
+      isMenuOpenRef.current = Boolean(event?.visible);
+    },
+    []
   );
 
   const handleCellEditingStarted = useCallback(() => {
@@ -213,7 +225,6 @@ export default function ItemPackageConversionManager({
             headerName: 'Turunan',
           }),
           enableCellChangeFlash: false,
-          suppressHeaderContextMenu: true,
         },
         {
           ...createTextColumn({
@@ -222,34 +233,34 @@ export default function ItemPackageConversionManager({
             cellStyle: { textAlign: 'center' },
           }),
           enableCellChangeFlash: false,
-          suppressHeaderContextMenu: true,
         },
         {
           ...createCurrencyColumn({
             field: 'base_price',
-            headerName: 'H. Pokok',
+            headerName: 'HP',
           }),
           enableCellChangeFlash: false,
-          suppressHeaderContextMenu: true,
         },
         {
           ...createCurrencyColumn({
             field: 'sell_price',
-            headerName: 'H. Jual',
+            headerName: 'HJ',
           }),
           enableCellChangeFlash: false,
           editable: !disabled,
           valueParser: params => parseCurrencyValue(params.newValue),
-          suppressHeaderContextMenu: true,
         },
         {
           field: 'actions',
           headerName: 'Aksi',
           sortable: false,
           resizable: false,
+          suppressSizeToFit: true,
+          width: 100,
+          minWidth: 100,
+          maxWidth: 100,
           cellStyle: { textAlign: 'center' },
           enableCellChangeFlash: false,
-          suppressHeaderContextMenu: true,
           cellRenderer: (params: { data?: { id: string } }) =>
             params.data ? (
               <DeleteButton
@@ -261,12 +272,6 @@ export default function ItemPackageConversionManager({
       ] as (ColDef | ColGroupDef)[],
     [disabled, onRemoveConversion]
   );
-
-  useEffect(() => {
-    if (sectionRef.current && popupParent !== sectionRef.current) {
-      setPopupParent(sectionRef.current);
-    }
-  }, [popupParent]);
 
   const focusFirstField = () => {
     const container = sectionRef.current?.querySelector<HTMLElement>(
@@ -362,12 +367,16 @@ export default function ItemPackageConversionManager({
                       getRowId={params => params.data?.id}
                       suppressMovableColumns={true}
                       suppressAutoSize={true}
+                      suppressColumnVirtualisation={true}
                       cellSelection={false}
                       rowSelection={undefined}
+                      getMainMenuItems={getPinAndFilterMenuItems}
+                      onColumnMenuVisibleChanged={handleMenuVisibleChanged}
+                      onContextMenuVisibleChanged={handleMenuVisibleChanged}
                       onCellValueChanged={handleCellValueChanged}
                       onCellEditingStarted={handleCellEditingStarted}
                       onCellEditingStopped={handleCellEditingStopped}
-                      popupParent={popupParent || undefined}
+                      popupParent={popupParent}
                       className="ag-theme-quartz h-full"
                       style={{ height: '100%' }}
                     />
