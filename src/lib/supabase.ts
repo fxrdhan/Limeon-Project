@@ -53,20 +53,25 @@ if (typeof window !== 'undefined') {
   startConnectionHealthCheck();
 }
 
-// Global cleanup function for development
-if (import.meta.env.DEV) {
-  // Clean up any dangling connections on hot reload
-  if (import.meta.hot) {
-    import.meta.hot.dispose(() => {
-      try {
-        if (connectionHealthCheck) {
-          clearInterval(connectionHealthCheck);
-          connectionHealthCheck = null;
-        }
-        supabase.removeAllChannels();
-      } catch (error) {
-        console.warn('Error cleaning up Supabase channels:', error);
-      }
-    });
+// Global cleanup function for development / HMR
+const hmrOverride = (
+  globalThis as {
+    __SUPABASE_HMR__?: { dispose: (cb: () => void) => void } | null;
   }
+).__SUPABASE_HMR__;
+const hot = hmrOverride === null ? null : (hmrOverride ?? import.meta.hot);
+
+// Clean up any dangling connections on hot reload
+if (hot) {
+  hot.dispose(() => {
+    try {
+      if (connectionHealthCheck) {
+        clearInterval(connectionHealthCheck);
+        connectionHealthCheck = null;
+      }
+      supabase.removeAllChannels();
+    } catch (error) {
+      console.warn('Error cleaning up Supabase channels:', error);
+    }
+  });
 }
