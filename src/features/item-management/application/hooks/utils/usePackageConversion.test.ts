@@ -4,32 +4,35 @@
  * Consolidated hook tests focusing on business logic over state management
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePackageConversion } from './usePackageConversion';
 import type { PackageConversion } from '@/types';
+import { itemPackageService } from '@/services/api/masterData.service';
 
 // Mock Supabase
+const defaultUnits = [
+  { id: 'unit-1', name: 'Strip', description: 'Strip packaging' },
+  { id: 'unit-2', name: 'Box', description: 'Box packaging' },
+  { id: 'unit-3', name: 'Tablet', description: 'Single tablet' },
+];
+let unitsResponse: { data: typeof defaultUnits | null; error: null };
+
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: vi.fn(() => ({
       select: vi.fn(() => ({
-        order: vi.fn(() =>
-          Promise.resolve({
-            data: [
-              { id: 'unit-1', name: 'Strip', description: 'Strip packaging' },
-              { id: 'unit-2', name: 'Box', description: 'Box packaging' },
-              { id: 'unit-3', name: 'Tablet', description: 'Single tablet' },
-            ],
-            error: null,
-          })
-        ),
+        order: vi.fn(() => Promise.resolve(unitsResponse)),
       })),
     })),
   },
 }));
 
 describe('usePackageConversion', () => {
+  beforeEach(() => {
+    unitsResponse = { data: [...defaultUnits], error: null };
+  });
+
   describe('Initialization and basic setup', () => {
     it('should initialize with defaults and load available units', async () => {
       const { result } = renderHook(() => usePackageConversion());
@@ -42,6 +45,19 @@ describe('usePackageConversion', () => {
       await waitFor(() => {
         expect(result.current.availableUnits).toHaveLength(3);
       });
+    });
+
+    it('should keep availableUnits empty when response has no data', async () => {
+      const getAllSpy = vi
+        .spyOn(itemPackageService, 'getAll')
+        .mockResolvedValueOnce({ data: null, error: null });
+      const { result } = renderHook(() => usePackageConversion());
+
+      await waitFor(() => {
+        expect(result.current.availableUnits).toHaveLength(0);
+      });
+
+      getAllSpy.mockRestore();
     });
 
     it('should set base unit and prices', async () => {
@@ -176,6 +192,38 @@ describe('usePackageConversion', () => {
 
       expect(result.current.conversions[1].base_price).toBe(100000);
     });
+
+    it('should fall back to unit id when to_unit_id is missing', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+
+      await act(async () => {
+        result.current.addPackageConversion({
+          unit: { id: 'unit-9', name: 'Bottle' },
+          unit_name: 'Bottle',
+          conversion_rate: 5,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      expect(result.current.conversions[0].id).toBe('unit-9');
+    });
+
+    it('should generate id when unit and to_unit_id are missing', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(123456);
+      const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+      await act(async () => {
+        result.current.addPackageConversion({
+          unit_name: 'Custom',
+          conversion_rate: 2,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      expect(result.current.conversions[0].id).toMatch(/^123456-/);
+
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+    });
   });
 
   describe('removePackageConversion', () => {
@@ -235,11 +283,12 @@ describe('usePackageConversion', () => {
       expect(result.current.conversions[0].sell_price).toBe(1200);
     });
 
-    it('should not recalculate if skipRecalculation flag is set', async () => {
+    it('should skip once and then allow recalculation', async () => {
       const { result } = renderHook(() => usePackageConversion());
 
       await act(async () => {
         result.current.setBasePrice(10000);
+        result.current.setSellPrice(12000);
       });
 
       await act(async () => {
@@ -255,11 +304,20 @@ describe('usePackageConversion', () => {
 
       await act(async () => {
         result.current.skipNextRecalculation();
+      });
+
+      await act(async () => {
         result.current.setBasePrice(20000);
         result.current.recalculateBasePrices();
       });
 
       expect(result.current.conversions[0].base_price).toBe(initialPrice);
+
+      await act(async () => {
+        result.current.recalculateBasePrices();
+      });
+
+      expect(result.current.conversions[0].base_price).toBe(2000);
     });
 
     it('should handle zero prices and floating point calculations', async () => {
@@ -303,6 +361,127 @@ describe('usePackageConversion', () => {
         3333.333,
         1
       );
+    });
+
+    it('should early return when no conversions exist', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+      const before = result.current.conversions;
+
+      await act(async () => {
+        result.current.recalculateBasePrices();
+      });
+
+      expect(result.current.conversions).toBe(before);
+    });
+
+    it('should early return when base and sell prices are zero', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+
+      await act(async () => {
+        result.current.setBasePrice(0);
+        result.current.setSellPrice(0);
+      });
+
+      await act(async () => {
+        result.current.addPackageConversion({
+          unit: { id: 'unit-2', name: 'Box' },
+          unit_name: 'Box',
+          to_unit_id: 'unit-2',
+          conversion_rate: 10,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      const before = result.current.conversions;
+
+      await act(async () => {
+        result.current.recalculateBasePrices();
+      });
+
+      expect(result.current.conversions).toBe(before);
+    });
+
+    it('should not update when recalculated prices match', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+
+      await act(async () => {
+        result.current.setBasePrice(10000);
+        result.current.setSellPrice(12000);
+      });
+
+      await act(async () => {
+        result.current.addPackageConversion({
+          unit: { id: 'unit-2', name: 'Box' },
+          unit_name: 'Box',
+          to_unit_id: 'unit-2',
+          conversion_rate: 10,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      const before = result.current.conversions;
+
+      await act(async () => {
+        result.current.recalculateBasePrices();
+      });
+
+      expect(result.current.conversions).toBe(before);
+    });
+
+    it('should recalculate with base price zero and sell price set', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+
+      await act(async () => {
+        result.current.setBasePrice(0);
+        result.current.setSellPrice(1000);
+      });
+
+      await act(async () => {
+        result.current.addPackageConversion({
+          unit: { id: 'unit-2', name: 'Box' },
+          unit_name: 'Box',
+          to_unit_id: 'unit-2',
+          conversion_rate: 10,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      await act(async () => {
+        result.current.setSellPrice(2000);
+      });
+
+      await act(async () => {
+        result.current.recalculateBasePrices();
+      });
+
+      expect(result.current.conversions[0].base_price).toBe(0);
+      expect(result.current.conversions[0].sell_price).toBe(200);
+    });
+
+    it('should recalculate with sell price zero and base price set', async () => {
+      const { result } = renderHook(() => usePackageConversion());
+
+      await act(async () => {
+        result.current.setBasePrice(1000);
+        result.current.setSellPrice(0);
+      });
+
+      await act(async () => {
+        result.current.addPackageConversion({
+          unit: { id: 'unit-3', name: 'Tablet' },
+          unit_name: 'Tablet',
+          to_unit_id: 'unit-3',
+          conversion_rate: 10,
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      await act(async () => {
+        result.current.setBasePrice(2000);
+      });
+
+      await act(async () => {
+        result.current.recalculateBasePrices();
+      });
+
+      expect(result.current.conversions[0].base_price).toBe(200);
+      expect(result.current.conversions[0].sell_price).toBe(0);
     });
   });
 

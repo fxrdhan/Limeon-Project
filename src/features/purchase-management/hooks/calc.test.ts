@@ -122,6 +122,11 @@ describe('Purchase Calculations', () => {
           discount: 150,
           expected: { afterDiscount: 0 },
         }, // Clamped to 100%
+        {
+          quantity: 10,
+          price: undefined,
+          expected: { base: 0, subtotal: 0 },
+        }, // Missing price defaults to 0
       ])(
         'should handle edge case: $quantity qty @ $price',
         ({ quantity, price, discount = 0, expected }) => {
@@ -347,6 +352,7 @@ describe('Purchase Calculations', () => {
     it.each([
       { field: 'item_id', value: '', error: 'Item belum dipilih.' },
       { field: 'item_name', value: '   ', error: 'Nama item tidak valid.' },
+      { field: 'unit', value: '   ', error: 'Satuan harus diisi.' },
       {
         field: 'quantity',
         value: 0,
@@ -444,9 +450,19 @@ describe('Purchase Calculations', () => {
         error: 'Tanggal faktur tidak valid (YYYY-MM-DD).',
       },
       {
+        field: 'due_date',
+        value: '2025/02/15',
+        error: 'Tanggal jatuh tempo harus YYYY-MM-DD.',
+      },
+      {
         field: 'payment_status',
         value: '',
         error: 'Status pembayaran wajib diisi.',
+      },
+      {
+        field: 'payment_method',
+        value: '',
+        error: 'Metode pembayaran wajib diisi.',
       },
     ])('should fail when $field = "$value"', ({ field, value, error }) => {
       const form = { ...validForm, [field]: value };
