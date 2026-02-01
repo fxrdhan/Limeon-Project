@@ -268,6 +268,17 @@ export default function ItemPackageConversionManager({
     }
   }, [popupParent]);
 
+  const focusFirstField = () => {
+    const container = sectionRef.current?.querySelector<HTMLElement>(
+      '[data-section-content]'
+    );
+    if (!container) return;
+    const firstFocusable = container.querySelector<HTMLElement>(
+      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable?.focus();
+  };
+
   return (
     <section
       ref={sectionRef}
@@ -283,12 +294,14 @@ export default function ItemPackageConversionManager({
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
             onExpand?.();
+            setTimeout(focusFirstField, 0);
           }
         }}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             onExpand?.();
+            setTimeout(focusFirstField, 0);
           }
         }}
         tabIndex={25}
@@ -316,7 +329,10 @@ export default function ItemPackageConversionManager({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="p-4 md:p-5 flex flex-col gap-4">
+            <div
+              className="p-4 md:p-5 flex flex-col gap-4"
+              data-section-content="true"
+            >
               <div className="w-full">
                 <PackageConversionInput
                   baseUnit={baseUnit}

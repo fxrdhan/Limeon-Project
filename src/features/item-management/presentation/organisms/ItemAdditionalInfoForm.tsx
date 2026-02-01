@@ -48,6 +48,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
   onChange,
   onDropdownChange,
 }) => {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [quantityTouched, setQuantityTouched] = useState(false);
@@ -104,8 +105,20 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
     };
   }, []);
 
+  const focusFirstField = () => {
+    const container = sectionRef.current?.querySelector<HTMLElement>(
+      '[data-section-content]'
+    );
+    if (!container) return;
+    const firstFocusable = container.querySelector<HTMLElement>(
+      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable?.focus();
+  };
+
   return (
     <div
+      ref={sectionRef}
       className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
       style={stackStyle}
       data-stack-card="true"
@@ -116,12 +129,14 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
             onExpand?.();
+            setTimeout(focusFirstField, 0);
           }
         }}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             onExpand?.();
+            setTimeout(focusFirstField, 0);
           }
         }}
         tabIndex={12}
@@ -149,7 +164,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="p-4 md:p-5 space-y-5">
+            <div className="p-4 md:p-5 space-y-5" data-section-content="true">
               <FormField label="Barcode">
                 <Input
                   name="barcode"

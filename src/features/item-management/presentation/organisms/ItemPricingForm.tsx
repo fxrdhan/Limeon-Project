@@ -496,8 +496,21 @@ export default function ItemPricingForm({
     onExpand?.();
   };
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const focusFirstField = () => {
+    const container = sectionRef.current?.querySelector<HTMLElement>(
+      '[data-section-content]'
+    );
+    if (!container) return;
+    const firstFocusable = container.querySelector<HTMLElement>(
+      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable?.focus();
+  };
+
   return (
     <section
+      ref={sectionRef}
       className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
       style={stackStyle}
       data-stack-card="true"
@@ -508,12 +521,14 @@ export default function ItemPricingForm({
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
             onExpand?.();
+            setTimeout(focusFirstField, 0);
           }
         }}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             handleHeaderToggle();
+            setTimeout(focusFirstField, 0);
           }
         }}
         tabIndex={21}
@@ -613,7 +628,10 @@ export default function ItemPricingForm({
             {showLevelPricing ? (
               renderLevelPricing()
             ) : (
-              <div className="p-4 md:p-5 flex flex-col space-y-4">
+              <div
+                className="p-4 md:p-5 flex flex-col space-y-4"
+                data-section-content="true"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="Kemasan Dasar">
                     <Input

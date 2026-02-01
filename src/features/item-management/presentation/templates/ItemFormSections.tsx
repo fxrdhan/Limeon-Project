@@ -754,12 +754,18 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const imageTabIndexMap = useMemo(() => {
     const slots = [0, 1, 2, 3];
     const firstEmptyIndex = imageSlots.findIndex(slot => !slot.url);
-    const firstIndex = firstEmptyIndex === -1 ? 0 : firstEmptyIndex;
-    const ordered = slots.slice(firstIndex).concat(slots.slice(0, firstIndex));
-    return ordered.reduce<Record<number, number>>((acc, index, order) => {
+    const startIndex = firstEmptyIndex === -1 ? 0 : firstEmptyIndex;
+    const ordered = slots.slice(startIndex);
+    const map = ordered.reduce<Record<number, number>>((acc, index, order) => {
       acc[index] = 8 + order;
       return acc;
     }, {});
+    if (startIndex > 0) {
+      for (let index = 0; index < startIndex; index += 1) {
+        map[index] = -1;
+      }
+    }
+    return map;
   }, [imageSlots]);
 
   const bucketName = 'item_images';

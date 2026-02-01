@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties } from 'react';
+import { forwardRef, useRef, type CSSProperties } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Dropdown from '@/components/dropdown';
@@ -48,8 +48,21 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     },
     ref
   ) => {
+    const sectionRef = useRef<HTMLElement>(null);
+    const focusFirstField = () => {
+      const container = sectionRef.current?.querySelector<HTMLElement>(
+        '[data-section-content]'
+      );
+      if (!container) return;
+      const firstFocusable = container.querySelector<HTMLElement>(
+        'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+      );
+      firstFocusable?.focus();
+    };
+
     return (
       <section
+        ref={sectionRef}
         className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
         style={stackStyle}
         data-stack-card="true"
@@ -60,12 +73,14 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
           onFocus={event => {
             if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
               onExpand?.();
+              setTimeout(focusFirstField, 0);
             }
           }}
           onKeyDown={event => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
               onExpand?.();
+              setTimeout(focusFirstField, 0);
             }
           }}
           tabIndex={17}
@@ -93,7 +108,10 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
               transition={{ duration: 0.2, ease: 'easeOut' }}
               style={{ overflow: 'hidden' }}
             >
-              <div className="p-4 md:p-5 grid grid-cols-1 gap-6">
+              <div
+                className="p-4 md:p-5 grid grid-cols-1 gap-6"
+                data-section-content="true"
+              >
                 <FormField label="Status" required={true}>
                   <Dropdown
                     name="is_active"
