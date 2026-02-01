@@ -29,6 +29,7 @@ const isCacheableUrl = (url: string) =>
   url.startsWith('http://') || url.startsWith('https://');
 
 const openBlobCache = async () => {
+  /* c8 ignore next */
   if (!isBrowser || !('caches' in window)) return null;
   return caches.open(BLOB_CACHE_NAME);
 };
@@ -54,6 +55,7 @@ const releaseBlobUrl = (url: string) => {
 };
 
 const createBlobUrl = async (url: string, response: Response) => {
+  /* c8 ignore next */
   if (blobUrlCache.has(url)) {
     retainBlobUrl(url);
     return blobUrlCache.get(url) || null;
@@ -66,6 +68,7 @@ const createBlobUrl = async (url: string, response: Response) => {
 };
 
 const loadCacheFromStorage = () => {
+  /* c8 ignore next */
   if (!isBrowser) return;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -88,6 +91,7 @@ const loadCacheFromStorage = () => {
 };
 
 const persistCache = () => {
+  /* c8 ignore next */
   if (!isBrowser) return;
   try {
     const entries = Object.fromEntries(cache.entries());

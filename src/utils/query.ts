@@ -45,6 +45,7 @@ export function useSupabaseMutation<
 
   return useMutation({
     mutationFn,
+    ...options,
     onSuccess: (
       data: TData,
       variables: TVariables,
@@ -60,12 +61,9 @@ export function useSupabaseMutation<
         type: 'active',
       });
 
-      if (options?.onSuccess) {
-        if (context !== undefined) {
-          options.onSuccess(data, variables, context, functionContext);
-        }
+      if (options?.onSuccess && context !== undefined) {
+        options.onSuccess(data, variables, context, functionContext);
       }
     },
-    ...options,
   });
 }

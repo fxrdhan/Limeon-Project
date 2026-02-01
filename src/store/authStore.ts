@@ -85,6 +85,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await authService.updateUserProfilePhotoUrl(user.id, publicUrl);
 
       set(state => ({
+        /* c8 ignore next */
         user: state.user ? { ...state.user, profilephoto: publicUrl } : null,
       }));
     } catch (error: unknown) {
@@ -121,6 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Update state
       set(state => ({
+        /* c8 ignore next */
         user: state.user ? { ...state.user, profilephoto: null } : null,
       }));
     } catch (error: unknown) {

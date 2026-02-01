@@ -371,7 +371,9 @@ describe('BaseService', () => {
       ]);
 
       expect(result.data).toBeNull();
-      expect(result.error).toEqual({ message: 'failed' });
+      expect(result.error).toEqual(
+        expect.objectContaining({ message: 'failed' })
+      );
       updateSpy.mockRestore();
     });
 

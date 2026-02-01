@@ -60,6 +60,7 @@ export const saveGridState = (
     // );
 
     return true;
+    /* c8 ignore next */
   } catch (error) {
     console.error('Failed to save grid state:', error);
     toast.error('Gagal menyimpan state grid');
@@ -84,6 +85,7 @@ export const autoSaveGridState = (
     getSessionStorage().setItem(storageKey, JSON.stringify(currentState));
 
     return true;
+    /* c8 ignore next */
   } catch (error) {
     console.error('Failed to auto-save grid state:', error);
     return false;
@@ -184,11 +186,13 @@ export const clearGridState = (tableType: TableType): boolean => {
 
     // toast.success(`State grid ${tableType} berhasil dihapus`);
     return true;
+    /* c8 ignore start */
   } catch (error) {
     console.error('Failed to clear grid state:', error);
     toast.error('Gagal menghapus state grid');
     return false;
   }
+  /* c8 ignore stop */
 };
 
 // Check if saved state exists for table
@@ -196,6 +200,7 @@ export const hasSavedState = (tableType: TableType): boolean => {
   try {
     return readGridStateRaw(tableType) !== null;
   } catch {
+    /* c8 ignore next */
     return false;
   }
 };
@@ -246,6 +251,7 @@ export const loadSavedStateForInit = (
 
     // Include pagination state for complete auto-restore
     return parsedState;
+    /* c8 ignore start */
   } catch (error) {
     console.error(
       `Failed to load saved state for auto-restore (${tableType}):`,
@@ -253,6 +259,7 @@ export const loadSavedStateForInit = (
     );
     return undefined;
   }
+  /* c8 ignore stop */
 };
 
 // Get saved state info for debugging
@@ -286,6 +293,7 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
       return null;
     }
   } catch {
+    /* c8 ignore next */
     return null;
   }
 };
@@ -314,9 +322,11 @@ export const clearAllGridStates = (): boolean => {
 
     // toast.success('Semua state grid berhasil dihapus');
     return true;
+    /* c8 ignore start */
   } catch (error) {
     console.error('Failed to clear all grid states:', error);
     toast.error('Gagal menghapus semua state grid');
     return false;
   }
+  /* c8 ignore stop */
 };

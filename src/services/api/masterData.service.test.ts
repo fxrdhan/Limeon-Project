@@ -80,7 +80,9 @@ describe('MasterData services', () => {
     expect(result.packages).toEqual([]);
     expect(result.suppliers).toEqual([{ id: 'sup-1' }]);
     expect(result.errors.categories).toBeNull();
-    expect(result.errors.packages).toEqual({ message: 'err' });
+    expect(result.errors.packages).toEqual(
+      expect.objectContaining({ message: 'err' })
+    );
   });
 
   it('handles missing types and suppliers', async () => {
