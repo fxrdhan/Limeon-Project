@@ -86,37 +86,51 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               : 1;
           });
         const zero = nodes.filter(node => node.tabIndex === 0);
-        return [...positive, ...zero];
+        return {
+          positive,
+          zero,
+          ordered: positive.length > 0 ? positive : zero,
+        };
       };
 
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key !== 'Tab') return;
-        if (!container.contains(document.activeElement)) return;
+        const activeElement = document.activeElement as HTMLElement | null;
+        if (activeElement?.closest('[data-modal-tab-override="true"]')) return;
+        if (!container.contains(activeElement)) return;
 
-        const focusables = getFocusableElements();
-        if (focusables.length === 0) return;
+        const { ordered } = getFocusableElements();
+        if (ordered.length === 0) return;
 
-        const active = document.activeElement as HTMLElement | null;
-        const currentIndex = active ? focusables.indexOf(active) : -1;
-        if (event.shiftKey) {
-          if (currentIndex <= 0) {
-            event.preventDefault();
-            focusables[focusables.length - 1]?.focus();
-          }
-        } else if (
-          currentIndex === -1 ||
-          currentIndex === focusables.length - 1
+        const currentIndex = activeElement
+          ? ordered.indexOf(activeElement)
+          : -1;
+        event.preventDefault();
+        if (
+          !event.shiftKey &&
+          activeElement?.getAttribute('name') === 'conversion_rate'
         ) {
-          event.preventDefault();
-          focusables[0]?.focus();
+          ordered[0]?.focus();
+          return;
         }
+        if (event.shiftKey) {
+          const prevIndex =
+            currentIndex <= 0 ? ordered.length - 1 : currentIndex - 1;
+          ordered[prevIndex]?.focus();
+          return;
+        }
+        const nextIndex =
+          currentIndex === -1 || currentIndex === ordered.length - 1
+            ? 0
+            : currentIndex + 1;
+        ordered[nextIndex]?.focus();
       };
 
       const focusFirst = () => {
-        const focusables = getFocusableElements();
-        if (focusables.length === 0) return;
+        const { ordered } = getFocusableElements();
+        if (ordered.length === 0) return;
         if (!container.contains(document.activeElement)) {
-          focusables[0]?.focus();
+          ordered[0]?.focus();
         }
       };
 
@@ -221,8 +235,8 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     isSaving={formAction.isSaving}
                     isDeleting={formAction.isDeleting}
                     isEditMode={formAction.isEditMode}
-                    cancelTabIndex={29}
-                    saveTabIndex={30}
+                    cancelTabIndex={-1}
+                    saveTabIndex={-1}
                     isDisabled={formAction.isDisabled}
                     saveText="Simpan"
                     updateText="Update"

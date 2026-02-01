@@ -316,7 +316,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     <div className="relative inline-block">
       <div
         ref={containerRef}
-        className={`relative group ${className} ${getBorderRadiusClass()} overflow-hidden cursor-pointer`}
+        className={`relative group ${className} ${getBorderRadiusClass()} overflow-hidden cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0`}
         onMouseEnter={() => handleMouseEnter('container')}
         onMouseLeave={() => handleMouseLeave('container')}
         onClick={handleContainerClick}

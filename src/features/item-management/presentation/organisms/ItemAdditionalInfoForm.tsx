@@ -124,7 +124,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
       data-stack-card="true"
     >
       <div
-        className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none"
+        className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
         onClick={() => onExpand?.()}
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {

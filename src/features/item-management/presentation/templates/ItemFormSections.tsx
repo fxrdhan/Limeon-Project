@@ -1453,7 +1453,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                     : slot.url
                 }
                 alt={`Item image ${index + 1}`}
-                className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in transition duration-200 group-hover:brightness-95 ${
+                className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in transition duration-200 group-hover:brightness-95 group-focus-visible:brightness-95 ${
                   uploadingSlots[index] ? 'animate-pulse' : ''
                 }`}
                 style={
@@ -1472,7 +1472,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 }}
               />
             ) : (
-              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400 transition duration-200 group-hover:bg-slate-100">
+              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400 transition duration-200 group-hover:bg-slate-100 group-focus-visible:bg-slate-100">
                 Unggah gambar
               </div>
             )}
