@@ -169,7 +169,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="rounded-2xl bg-white shadow-xl w-[60vw] max-h-[90vh] md:h-[90vh] flex flex-col border border-slate-200"
+              className="rounded-2xl bg-white shadow-xl w-[60vw] max-h-[90vh] flex flex-col border border-slate-200"
               onClick={e => e.stopPropagation()}
               ref={modalRef}
             >
@@ -194,7 +194,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                 onSubmit={onSubmit}
                 className="flex-1 flex flex-col min-h-0"
               >
-                <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden scrollbar-hide">
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                   <div className="px-6 py-2 h-full min-h-0 flex flex-col">
                     {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
                     {!children.settingsForm &&
@@ -209,13 +209,13 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     ) : (
                       // Standard form layout
                       <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-5">
-                        <div className="w-full md:w-[40%] min-h-0 md:overflow-y-auto md:pr-2 md:pl-2 scrollbar-hide">
+                        <div className="w-full md:w-[40%] min-h-0 md:pr-2 md:pl-2 scrollbar-hide">
                           {children.basicInfoRequired}
                           {children.categoryForm && children.categoryForm}
                         </div>
 
                         <div
-                          className={`w-full md:w-[60%] flex flex-col gap-0 min-h-0 md:overflow-y-auto md:pl-2 md:pr-2 scrollbar-hide ${rightColumnClassName || ''}`}
+                          className={`w-full md:w-[60%] flex flex-col gap-0 min-h-0 md:pl-2 md:pr-2 scrollbar-hide ${rightColumnClassName || ''}`}
                           {...restRightColumnProps}
                         >
                           {children.basicInfoOptional}
