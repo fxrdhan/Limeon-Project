@@ -731,16 +731,26 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const queryClient = useQueryClient();
   const cacheKey = itemId ? `item-images:${itemId}` : null;
   const isDraftMode = !itemId && !isEditMode;
+  const bucketName = 'item_images';
+  const resolveSlotPath = useCallback(
+    (url: string, slotIndex: number) => {
+      if (!url || !itemId) return '';
+      const cleanUrl = url.split('?')[0];
+      const extracted = StorageService.extractPathFromUrl(cleanUrl, bucketName);
+      return extracted || `items/${itemId}/slot-${slotIndex}`;
+    },
+    [bucketName, itemId]
+  );
   const buildSlotsFromUrlsWithItem = useCallback(
     (urls: string[]) =>
       Array.from({ length: 4 }, (_, index) => {
         const url = urls[index] || '';
         return {
           url,
-          path: url && itemId ? `items/${itemId}/slot-${index}` : '',
+          path: url ? resolveSlotPath(url, index) : '',
         };
       }),
-    [itemId]
+    [resolveSlotPath]
   );
   const [imageSlots, setImageSlots] = useState(
     Array.from({ length: 4 }, () => ({ url: '', path: '' }))
@@ -780,9 +790,27 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     return map;
   }, [imageSlots]);
 
-  const bucketName = 'item_images';
   const maxFileSizeBytes = 1 * 1024 * 1024;
   const maxFileSizeLabel = '1MB';
+  const buildHistoryImagePath = useCallback(
+    (slotIndex: number, file: File) => {
+      if (!itemId) return '';
+      const parts = file.name.split('.');
+      const nameExtension = parts.length > 1 ? parts[parts.length - 1] : '';
+      const extension = nameExtension
+        ? nameExtension.toLowerCase()
+        : file.type === 'image/png'
+          ? 'png'
+          : file.type === 'image/webp'
+            ? 'webp'
+            : 'jpg';
+      const uniqueSuffix = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      return `items/${itemId}/history/slot-${slotIndex}-${uniqueSuffix}.${extension}`;
+    },
+    [itemId]
+  );
   const formImageUrls = useMemo(
     () => (Array.isArray(formData.image_urls) ? formData.image_urls : []),
     [formData.image_urls]
@@ -1223,7 +1251,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           return null;
         }
 
-        const path = `items/${itemId}/slot-${slotIndex}`;
+        const path = buildHistoryImagePath(slotIndex, normalizedFile);
         const { error } = await itemStorageService.uploadItemImage({
           bucketName,
           path,
@@ -1246,7 +1274,13 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         return null;
       }
     },
-    [bucketName, itemId, maxFileSizeBytes, maxFileSizeLabel]
+    [
+      bucketName,
+      buildHistoryImagePath,
+      itemId,
+      maxFileSizeBytes,
+      maxFileSizeLabel,
+    ]
   );
 
   const handleImageUpload = useCallback(
@@ -1390,20 +1424,8 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const handleImageDelete = useCallback(
     async (slotIndex: number) => {
       const targetSlot = imageSlots[slotIndex];
-      if (!targetSlot?.path) {
-        revokeLocalPreview(slotIndex);
-        setImageSlots(prevSlots => {
-          const nextSlots = prevSlots.map((slot, index) =>
-            index === slotIndex ? { path: '', url: '' } : slot
-          );
-          updateImageCache(nextSlots);
-          return nextSlots;
-        });
-        return;
-      }
-
       try {
-        await StorageService.deleteFile(bucketName, targetSlot.path);
+        revokeLocalPreview(slotIndex);
         if (targetSlot.url) {
           await removeCachedImageBlob(targetSlot.url);
         }
@@ -1421,7 +1443,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       }
     },
     [
-      bucketName,
       buildImageUrlsPayload,
       imageSlots,
       revokeLocalPreview,

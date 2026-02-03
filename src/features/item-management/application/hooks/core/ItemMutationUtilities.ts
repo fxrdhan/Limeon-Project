@@ -31,6 +31,27 @@ const ITEM_IMAGE_BUCKET = 'item_images';
 const isTempImageUrl = (url: string) =>
   url.startsWith('blob:') || url.startsWith('data:');
 
+const getFileExtension = (file: File) => {
+  const parts = file.name.split('.');
+  const nameExtension = parts.length > 1 ? parts[parts.length - 1] : '';
+  if (nameExtension) return nameExtension.toLowerCase();
+  if (file.type === 'image/png') return 'png';
+  if (file.type === 'image/webp') return 'webp';
+  return 'jpg';
+};
+
+const buildHistoryImagePath = (
+  itemId: string,
+  slotIndex: number,
+  file: File
+) => {
+  const extension = getFileExtension(file);
+  const uniqueSuffix = `${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+  return `items/${itemId}/history/slot-${slotIndex}-${uniqueSuffix}.${extension}`;
+};
+
 const fileFromDataUrl = (dataUrl: string, filename: string) => {
   const [metadata, data] = dataUrl.split(',');
   const mimeMatch = metadata?.match(/data:(.*?);/);
@@ -63,7 +84,7 @@ const uploadPendingItemImages = async (itemId: string, imageUrls: string[]) => {
 
       try {
         const file = await fileFromUrl(url, `slot-${index + 1}.jpg`);
-        const path = `items/${itemId}/slot-${index}`;
+        const path = buildHistoryImagePath(itemId, index, file);
         const { publicUrl } = await StorageService.uploadFile(
           ITEM_IMAGE_BUCKET,
           file,
