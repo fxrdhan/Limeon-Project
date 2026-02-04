@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
+import { TbPhotoUp } from 'react-icons/tb';
 import { compressImageIfNeeded } from '@/utils/image';
 import { extractNumericValue } from '@/lib/formatters';
 import { QueryKeys } from '@/constants/queryKeys';
@@ -1500,8 +1501,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 }}
               />
             ) : (
-              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400 transition duration-200 group-hover:bg-slate-100 group-focus-visible:bg-slate-100">
-                Unggah gambar
+              <div className="aspect-square w-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 transition duration-200 group-hover:bg-slate-100 group-focus-visible:bg-slate-100">
+                <TbPhotoUp className="h-6 w-6" />
+                <span className="sr-only">Unggah gambar</span>
               </div>
             )}
           </ImageUploader>

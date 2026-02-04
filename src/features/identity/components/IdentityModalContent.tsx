@@ -23,7 +23,7 @@ const IdentityModalContent: React.FC = () => {
   return (
     <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4 flex flex-col">
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b">
+      <div className="flex justify-between items-center p-4 border-b border-slate-200">
         <div className="flex flex-col">
           <h2 className="text-xl font-semibold">{title}</h2>
           {mode === 'edit' && formattedUpdateAt !== '-' && (
@@ -48,7 +48,7 @@ const IdentityModalContent: React.FC = () => {
 
       {/* Footer */}
       {mode === 'edit' ? (
-        <div className="p-4 border-t flex justify-between items-center bg-white">
+        <div className="p-4 border-t border-slate-200 flex justify-between items-center bg-white">
           {onDeleteRequest && (
             <Button variant="danger" onClick={() => onDeleteRequest(localData)}>
               {deleteButtonLabel}
@@ -59,7 +59,7 @@ const IdentityModalContent: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <div className="p-4 border-t flex justify-between items-center bg-white">
+        <div className="p-4 border-t border-slate-200 flex justify-between items-center bg-white">
           <Button type="button" variant="text" onClick={handleCloseModal}>
             Batal
           </Button>

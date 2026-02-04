@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { TbPhotoUp } from 'react-icons/tb';
 import ImageUploader from '@/components/image-manager';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 import {
@@ -95,9 +96,8 @@ const IdentityImageUploader: React.FC = () => {
           className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-slate-200 rounded-lg bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
         >
           <div className="text-center p-4">
-            <p className="text-sm font-medium text-slate-600">
-              {imageUploadText}
-            </p>
+            <TbPhotoUp className="mx-auto h-8 w-8 text-slate-400" />
+            <span className="sr-only">{imageUploadText}</span>
           </div>
         </div>
       );
