@@ -14,7 +14,7 @@ import { TbPhotoUp } from 'react-icons/tb';
 import { compressImageIfNeeded } from '@/utils/image';
 import { extractNumericValue } from '@/lib/formatters';
 import { QueryKeys } from '@/constants/queryKeys';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -89,6 +89,60 @@ const updateItemFields = async (
   if (error) throw error;
 };
 
+const applyItemCacheUpdates = (
+  queryClient: QueryClient,
+  itemId: string,
+  updates: Record<string, unknown>
+) => {
+  const applyUpdates = (item: Record<string, unknown>) => {
+    const nextItem = { ...item };
+    Object.entries(updates).forEach(([key, value]) => {
+      if (key in nextItem) {
+        nextItem[key] = value;
+      }
+    });
+    return nextItem;
+  };
+
+  queryClient.setQueriesData(
+    { queryKey: QueryKeys.items.all },
+    (cachedData: unknown) => {
+      if (!cachedData) return cachedData;
+      if (Array.isArray(cachedData)) {
+        return cachedData.map(item =>
+          item && typeof item === 'object' && 'id' in item && item.id === itemId
+            ? applyUpdates(item as Record<string, unknown>)
+            : item
+        );
+      }
+      if (
+        typeof cachedData === 'object' &&
+        cachedData !== null &&
+        'id' in cachedData &&
+        cachedData.id === itemId
+      ) {
+        return applyUpdates(cachedData as Record<string, unknown>);
+      }
+      return cachedData;
+    }
+  );
+
+  queryClient.setQueriesData(
+    { queryKey: QueryKeys.items.detail(itemId) },
+    (cachedData: unknown) => {
+      if (
+        typeof cachedData === 'object' &&
+        cachedData !== null &&
+        'id' in cachedData &&
+        cachedData.id === itemId
+      ) {
+        return applyUpdates(cachedData as Record<string, unknown>);
+      }
+      return cachedData;
+    }
+  );
+};
+
 const normalizeNullableValue = (value: string) => (value ? value : null);
 const appendCacheBust = (url: string, token: string | number) =>
   url.includes('?') ? `${url}&t=${token}` : `${url}?t=${token}`;
@@ -98,11 +152,13 @@ const useDebouncedAutosave = ({
   isEditMode,
   isViewingOldVersion,
   delayMs = 600,
+  onSaved,
 }: {
   itemId?: string;
   isEditMode: boolean;
   isViewingOldVersion: boolean;
   delayMs?: number;
+  onSaved?: (updates: Record<string, unknown>) => void;
 }) => {
   const timersRef = useRef<Record<string, number>>({});
 
@@ -122,14 +178,19 @@ const useDebouncedAutosave = ({
       const existing = timersRef.current[field];
       if (existing) window.clearTimeout(existing);
 
+      const updates = { [field]: value };
       timersRef.current[field] = window.setTimeout(() => {
-        void updateItemFields(itemId, { [field]: value }).catch(error => {
-          console.error('Error autosaving item input:', error);
-          toast.error('Gagal menyimpan perubahan.');
-        });
+        void updateItemFields(itemId, updates)
+          .then(() => {
+            onSaved?.(updates);
+          })
+          .catch(error => {
+            console.error('Error autosaving item input:', error);
+            toast.error('Gagal menyimpan perubahan.');
+          });
       }, delayMs);
     },
-    [itemId, isEditMode, isViewingOldVersion, delayMs]
+    [itemId, isEditMode, isViewingOldVersion, delayMs, onSaved]
   );
 };
 
@@ -191,6 +252,7 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
 
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const { packageConversionHook } = useItemPrice();
+  const queryClient = useQueryClient();
 
   const {
     handleAddNewCategory,
@@ -214,6 +276,10 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     itemId,
     isEditMode,
     isViewingOldVersion,
+    onSaved: updates => {
+      if (!itemId) return;
+      applyItemCacheUpdates(queryClient, itemId, updates);
+    },
   });
 
   // Transform database types to DropdownOption format
@@ -357,10 +423,15 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
 }) => {
   const { formData, updateFormData } = useItemForm();
   const { isViewingOldVersion, isEditMode } = useItemUI();
+  const queryClient = useQueryClient();
   const scheduleAutosave = useDebouncedAutosave({
     itemId,
     isEditMode,
     isViewingOldVersion,
+    onSaved: updates => {
+      if (!itemId) return;
+      applyItemCacheUpdates(queryClient, itemId, updates);
+    },
   });
 
   const minStockEditor = useInlineEditor({
@@ -453,10 +524,15 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   const [showLevelPricing, setShowLevelPricing] = useState(false);
 
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
+  const queryClient = useQueryClient();
   const scheduleAutosave = useDebouncedAutosave({
     itemId,
     isEditMode,
     isViewingOldVersion,
+    onSaved: updates => {
+      if (!itemId) return;
+      applyItemCacheUpdates(queryClient, itemId, updates);
+    },
   });
 
   useEffect(() => {
@@ -1167,6 +1243,10 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     itemId,
     isEditMode,
     isViewingOldVersion,
+    onSaved: updates => {
+      if (!itemId) return;
+      applyItemCacheUpdates(queryClient, itemId, updates);
+    },
   });
 
   const handleDropdownChange = (field: string, value: string) => {

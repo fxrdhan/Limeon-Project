@@ -7,7 +7,7 @@ import type { CustomerLevelDiscount } from '@/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import { itemDataService } from '@/features/item-management/infrastructure/itemData.service';
-import { QueryKeys } from '@/constants/queryKeys';
+import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 
 interface UseItemModalRealtimeProps {
   itemId?: string;
@@ -142,7 +142,12 @@ export const useItemModalRealtime = ({
             smartFormSync.handleRealtimeUpdate(changedFields);
           }
 
-          // Invalidate item queries for fresh data
+          // Invalidate item queries for fresh data (list + detail)
+          const keysToInvalidate = getInvalidationKeys.items.all();
+          keysToInvalidate.forEach(keySet => {
+            queryClient.invalidateQueries({ queryKey: keySet });
+            queryClient.refetchQueries({ queryKey: keySet });
+          });
           queryClient.invalidateQueries({
             queryKey: QueryKeys.items.detail(itemId),
           });
