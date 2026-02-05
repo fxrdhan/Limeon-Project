@@ -5,6 +5,7 @@ import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { DropdownOption } from '@/types/components';
 import { useItemCodeGenerator } from '../../application/hooks/utils';
+import { useItemRealtime } from '../../shared/contexts/useItemFormContext';
 import {
   createOptimizedCategoryDetailFetcher,
   createOptimizedTypeDetailFetcher,
@@ -67,6 +68,22 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     },
     ref
   ) => {
+    const realtime = useItemRealtime();
+    const nameFieldHandlers = realtime?.smartFormSync?.getFieldHandlers('name');
+
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e);
+      nameFieldHandlers?.onChange(e);
+    };
+
+    const handleNameFocus = () => {
+      nameFieldHandlers?.onFocus();
+    };
+
+    const handleNameBlur = () => {
+      nameFieldHandlers?.onBlur();
+    };
+
     // Generate item code based on selected values
     const codeGeneration = useItemCodeGenerator({
       categoryId: formData.category_id,
@@ -148,7 +165,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 ref={ref}
                 value={formData.name}
                 tabIndex={1}
-                onChange={onChange}
+                onChange={handleNameChange}
+                onFocus={handleNameFocus}
+                onBlur={handleNameBlur}
                 className="w-full"
                 validate={true}
                 validationSchema={itemNameSchema}
