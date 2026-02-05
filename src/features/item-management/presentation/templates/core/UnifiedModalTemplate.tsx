@@ -79,6 +79,7 @@ export interface FormActionConfig {
   isDeleting: boolean;
   isEditMode: boolean;
   isDisabled: boolean;
+  isSubmitDisabled?: boolean;
   cancelTabIndex?: number;
   saveTabIndex?: number;
   saveText?: string;
@@ -246,6 +247,7 @@ export function UnifiedModal({
                       cancelTabIndex={formAction.cancelTabIndex || 20}
                       saveTabIndex={formAction.saveTabIndex || 21}
                       isDisabled={formAction.isDisabled}
+                      isSubmitDisabled={formAction.isSubmitDisabled}
                       saveText={formAction.saveText || 'Simpan'}
                       updateText={formAction.updateText || 'Update'}
                       deleteText={formAction.deleteText || 'Hapus'}

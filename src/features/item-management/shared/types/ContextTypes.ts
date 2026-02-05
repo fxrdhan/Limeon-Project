@@ -61,6 +61,7 @@ export interface ItemActionState {
 }
 
 export interface ItemRealtimeState {
+  isConnected?: boolean;
   smartFormSync?: {
     handleRealtimeUpdate: (updates: Record<string, unknown>) => {
       appliedImmediately: Record<string, unknown>;

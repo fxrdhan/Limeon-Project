@@ -7,6 +7,7 @@ const FormAction: React.FC<FormActionProps> = ({
   isSaving,
   isDeleting,
   isDisabled = false,
+  isSubmitDisabled,
   cancelText = 'Batal',
   saveText = 'Simpan',
   updateText = 'Update',
@@ -15,6 +16,8 @@ const FormAction: React.FC<FormActionProps> = ({
   cancelTabIndex,
   saveTabIndex,
 }) => {
+  const submitDisabled = isSubmitDisabled ?? isDisabled;
+
   return (
     <div className="flex justify-between w-full">
       <div>
@@ -45,7 +48,7 @@ const FormAction: React.FC<FormActionProps> = ({
         <Button
           type="submit"
           variant="primary"
-          disabled={isSaving || isDeleting || isDisabled}
+          disabled={isSaving || isDeleting || submitDisabled}
           tabIndex={saveTabIndex}
           isLoading={isSaving}
         >

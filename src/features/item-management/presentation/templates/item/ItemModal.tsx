@@ -15,6 +15,7 @@ import {
   useItemActions,
   useItemForm,
   useItemPrice,
+  useItemRealtime,
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
 import type {
@@ -252,13 +253,14 @@ const ItemModal: React.FC<ItemModalProps> = ({
   );
 
   // Realtime for current item data with smart form sync
-  const { smartFormSync } = useItemModalRealtime({
-    itemId: itemId,
-    enabled: isOpen && isEditMode, // Only enable in edit mode
-    onItemUpdated: handleItemUpdated,
-    onItemDeleted: handleItemDeleted,
-    onSmartUpdate: handleSmartUpdate,
-  });
+  const { smartFormSync, isConnected: isRealtimeConnected } =
+    useItemModalRealtime({
+      itemId: itemId,
+      enabled: isOpen && isEditMode, // Only enable in edit mode
+      onItemUpdated: handleItemUpdated,
+      onItemDeleted: handleItemDeleted,
+      onSmartUpdate: handleSmartUpdate,
+    });
 
   useEffect(() => {
     if (!isOpen || !isEditMode || !itemId) return;
@@ -392,6 +394,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
     },
     realtime: {
       smartFormSync,
+      isConnected: isRealtimeConnected,
     },
     ui: {
       isOpen,
@@ -504,6 +507,12 @@ const ItemManagementContent: React.FC<{
   const form = useItemForm();
   const price = useItemPrice();
   const actions = useItemActions();
+  const realtime = useItemRealtime();
+  const isRealtimeConnected = Boolean(realtime?.isConnected);
+  const useOfflineUpdate = ui.isEditMode && !isRealtimeConnected;
+  const submitDisabledOverride =
+    ui.isEditMode && isRealtimeConnected ? true : undefined;
+  const updateText = useOfflineUpdate ? 'Update' : 'Tersimpan';
   const isEditSession = Boolean(itemId);
   const hasFormData =
     Boolean(form.formData.code?.trim()) ||
@@ -1121,6 +1130,8 @@ const ItemManagementContent: React.FC<{
         isDeleting: actions.deleteItemMutation?.isPending || false,
         isEditMode: ui.isEditMode,
         isDisabled: actions.finalDisabledState,
+        isSubmitDisabled: submitDisabledOverride,
+        updateText,
       }}
     />
   );

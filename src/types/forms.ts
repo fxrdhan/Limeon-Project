@@ -55,6 +55,7 @@ export interface FormActionProps {
   isSaving: boolean;
   isDeleting?: boolean;
   isDisabled?: boolean;
+  isSubmitDisabled?: boolean;
   cancelText?: string;
   saveText?: string;
   updateText?: string;

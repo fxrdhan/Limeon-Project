@@ -28,6 +28,10 @@ interface ItemModalTemplateProps {
     isDeleting: boolean;
     isEditMode: boolean;
     isDisabled: boolean;
+    isSubmitDisabled?: boolean;
+    saveText?: string;
+    updateText?: string;
+    deleteText?: string;
   };
 }
 
@@ -238,9 +242,10 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     cancelTabIndex={-1}
                     saveTabIndex={-1}
                     isDisabled={formAction.isDisabled}
-                    saveText="Simpan"
-                    updateText="Update"
-                    deleteText="Hapus"
+                    isSubmitDisabled={formAction.isSubmitDisabled}
+                    saveText={formAction.saveText || 'Simpan'}
+                    updateText={formAction.updateText || 'Update'}
+                    deleteText={formAction.deleteText || 'Hapus'}
                   />
                 </CardFooter>
               </motion.form>
