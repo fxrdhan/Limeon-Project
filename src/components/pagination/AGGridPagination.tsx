@@ -23,7 +23,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   className,
   enableFloating = true,
   hideFloatingWhenModalOpen = false,
-  pageSizeOptions = [20, 50, 100, -1],
+  pageSizeOptions = [25, 50, 100, -1],
   onPageSizeChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);

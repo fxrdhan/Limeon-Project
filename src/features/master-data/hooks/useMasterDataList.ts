@@ -19,7 +19,7 @@ export const useMasterDataList = <TData>({
   viewportOffset = 320,
 }: UseMasterDataListOptions<TData>) => {
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  const [currentPageSize, setCurrentPageSize] = useState<number>(10);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(25);
 
   const handleSearch = useCallback(
     (searchValue: string) => {

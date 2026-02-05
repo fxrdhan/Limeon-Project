@@ -117,7 +117,7 @@ Centralized configuration for:
 
 - **Animation**: Spring physics, timing, and transition values
 - **Floating**: Intersection Observer settings, positioning
-- **Page Sizes**: Available items per page options `[10, 20, 50, 100]`
+- **Page Sizes**: Available items per page options `[25, 50, 100, -1]`
 - **Styling**: Backdrop filters, colors, dimensions
 - **Accessibility**: ARIA labels for screen readers
 
@@ -151,13 +151,13 @@ PageSizeSelector → SlidingSelector (shared/SlidingSelector)
 - **Adapter Pattern**: `PageSizeSelector` acts as an adapter, converting pagination-specific data to `SlidingSelectorOption` format
 - **Configuration Mapping**:
   ```typescript
-  // Pagination pageSizes: [10, 20, 50, 100]
+  // Pagination pageSizes: [25, 50, 100, -1]
   // Transforms to SlidingSelector options:
   {
-    key: "10",
-    value: 10,
-    defaultLabel: "10",
-    activeLabel: "10 items"
+    key: "25",
+    value: 25,
+    defaultLabel: "25",
+    activeLabel: "25 items"
   }
   ```
 

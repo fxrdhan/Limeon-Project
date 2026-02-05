@@ -10,7 +10,7 @@ interface UseDynamicGridHeightOptions {
   viewportOffset?: number;
   /** Base height for grid header and padding (default: 108px) */
   baseHeight?: number;
-  /** Height per row (default: 36px) */
+  /** Height per row (default: 32px) */
   rowHeight?: number;
   /** Minimum rows to display (default: 5) */
   minRows?: number;
@@ -25,7 +25,7 @@ export const useDynamicGridHeight = ({
   currentPageSize,
   viewportOffset = 320,
   baseHeight = 108,
-  rowHeight = 36,
+  rowHeight = 32,
   minRows = 5,
 }: UseDynamicGridHeightOptions) => {
   // Get dynamic table height based on viewport

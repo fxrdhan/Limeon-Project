@@ -14,7 +14,7 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  tooltipField: config.tooltipField || config.field,
+  ...(config.tooltipField && { tooltipField: config.tooltipField }),
   // Only include valueGetter/valueFormatter if explicitly provided
   ...(config.valueGetter !== undefined && { valueGetter: config.valueGetter }),
   ...(config.valueFormatter !== undefined && {

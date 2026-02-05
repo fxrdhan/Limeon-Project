@@ -140,6 +140,7 @@ export const getDefaultGridConfig = () => ({
   getRowId,
   getContextMenuItems,
   localeText, // Include locale text for proper operator display in Advanced Filter
+  rowHeight: 32,
   domLayout: 'autoHeight' as const,
   rowClass: 'cursor-pointer',
   suppressScrollOnNewData: true,

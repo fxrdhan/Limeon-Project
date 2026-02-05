@@ -6,6 +6,7 @@
 /* Cell content (table data) - Medium weight untuk data */
 .ag-cell {
   font-weight: 500 !important;
+  font-size: var(--ag-header-font-size, var(--ag-font-size, 13px)) !important;
 }
 
 /* Header table (column headers) - Semibold */

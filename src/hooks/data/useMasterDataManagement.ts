@@ -80,7 +80,7 @@ export const useMasterDataManagement = (
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [identitiesPerPage, setIdentitiesPerPage] = useState(10);
+  const [identitiesPerPage, setIdentitiesPerPage] = useState(25);
 
   const actualIsModalOpen =
     isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);

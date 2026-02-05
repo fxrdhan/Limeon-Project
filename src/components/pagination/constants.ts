@@ -25,7 +25,7 @@ export const PAGINATION_CONSTANTS = {
   },
 
   // Page sizes
-  PAGE_SIZES: [20, 50, 100, -1] as const,
+  PAGE_SIZES: [25, 50, 100, -1] as const,
 
   // Styling
   STYLES: {

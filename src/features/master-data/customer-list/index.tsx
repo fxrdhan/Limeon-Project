@@ -183,12 +183,12 @@ const CustomerList = () => {
         isExternalFilterPresent,
         doesExternalFilterPass,
         pagination: true,
-        paginationPageSize: itemsPerPage || 10,
+        paginationPageSize: itemsPerPage || 25,
         suppressPaginationPanel: true,
       }}
       pagination={{
         gridApi,
-        pageSizeOptions: [10, 20, 50, 100],
+        pageSizeOptions: [25, 50, 100, -1],
         enableFloating: true,
         hideFloatingWhenModalOpen: isAddModalOpen || isEditModalOpen,
         onPageSizeChange: setCurrentPageSize,
