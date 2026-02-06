@@ -30,7 +30,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const popupHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Use explicit hasImage prop instead of trying to detect from children
 
   const isDirect = interaction === 'direct';
@@ -39,16 +40,23 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const isVisible = isHoveringContainer || isHoveringPopup || isFocused;
   const shouldShowPopup = !isDirect || hasImage;
 
+  const clearHoverTimeout = useCallback((target: 'container' | 'popup') => {
+    const timeoutRef =
+      target === 'container' ? containerHideTimeoutRef : popupHideTimeoutRef;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
   // Function to close the portal
-  const closePortal = () => {
+  const closePortal = useCallback(() => {
     setIsHoveringContainer(false);
     setIsHoveringPopup(false);
     setIsFocused(false);
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
-  };
+    clearHoverTimeout('container');
+    clearHoverTimeout('popup');
+  }, [clearHoverTimeout]);
 
   const getBorderRadiusClass = () => {
     switch (shape) {
@@ -175,10 +183,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   ]);
 
   const handleMouseEnter = (target: 'container' | 'popup') => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
+    clearHoverTimeout(target);
 
     if (target === 'container') {
       setIsHoveringContainer(true);
@@ -188,13 +193,19 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   const handleMouseLeave = (target: 'container' | 'popup') => {
+    clearHoverTimeout(target);
+
+    const timeoutRef =
+      target === 'container' ? containerHideTimeoutRef : popupHideTimeoutRef;
+
     // Add delay before updating state to allow mouse movement between areas
-    hideTimeoutRef.current = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       if (target === 'container') {
         setIsHoveringContainer(false);
       } else {
         setIsHoveringPopup(false);
       }
+      timeoutRef.current = null;
     }, 100); // 100ms delay for smoother transition
   };
 
@@ -301,16 +312,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [isVisible]);
+  }, [isVisible, closePortal]);
 
   useEffect(() => {
     // Cleanup timeout on unmount
     return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
+      clearHoverTimeout('container');
+      clearHoverTimeout('popup');
     };
-  }, []);
+  }, [clearHoverTimeout]);
 
   return (
     <div className="relative inline-block">
