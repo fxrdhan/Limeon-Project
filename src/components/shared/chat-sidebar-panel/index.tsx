@@ -50,6 +50,12 @@ const MAX_MESSAGE_CHARS = 220;
 const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 const MESSAGE_INPUT_MIN_HEIGHT = 22;
 const MESSAGE_INPUT_MAX_HEIGHT = 170;
+const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
+const TEXT_MOVE_TRANSITION = {
+  type: 'tween' as const,
+  duration: 0.07,
+  ease: 'easeOut' as const,
+};
 
 // Generate channel ID for direct messages
 const generateChannelId = (userId1: string, userId2: string): string => {
@@ -101,8 +107,12 @@ const ChatSidebarPanel = memo(
     const [messageInputHeight, setMessageInputHeight] = useState(
       MESSAGE_INPUT_MIN_HEIGHT
     );
-    const isMessageInputMultiline =
-      messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2;
+    const [composerLayoutMode, setComposerLayoutMode] = useState<
+      'inline' | 'multiline'
+    >('inline');
+    const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
+    const isTargetMultiline = messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2;
+    const isMessageInputMultiline = composerLayoutMode === 'multiline';
 
     const getMenuPlacement = useCallback(
       (anchorRect: DOMRect): MenuPlacement => {
@@ -982,6 +992,28 @@ const ChatSidebarPanel = memo(
       resizeMessageInput(message);
     }, [isOpen, message, resizeMessageInput]);
 
+    useEffect(() => {
+      const nextMode = isTargetMultiline ? 'multiline' : 'inline';
+      if (nextMode === composerLayoutMode) return;
+
+      if (composerLayoutDelayRef.current) {
+        clearTimeout(composerLayoutDelayRef.current);
+        composerLayoutDelayRef.current = null;
+      }
+
+      composerLayoutDelayRef.current = setTimeout(() => {
+        setComposerLayoutMode(nextMode);
+        composerLayoutDelayRef.current = null;
+      }, COMPOSER_LAYOUT_SWITCH_DELAY);
+
+      return () => {
+        if (composerLayoutDelayRef.current) {
+          clearTimeout(composerLayoutDelayRef.current);
+          composerLayoutDelayRef.current = null;
+        }
+      };
+    }, [composerLayoutMode, isTargetMultiline]);
+
     const handleSendMessage = async () => {
       if (editingMessageId) {
         await handleUpdateMessage();
@@ -1199,7 +1231,7 @@ const ChatSidebarPanel = memo(
           {/* Messages Area */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 px-3 pt-3 overflow-y-auto space-y-3"
+            className="flex-1 px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
             style={{
               overflowAnchor: 'none',
               paddingBottom: messageInputHeight + 108,
@@ -1481,7 +1513,7 @@ const ChatSidebarPanel = memo(
                 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={scrollToBottom}
-                className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-colors"
+                className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-[color,bottom] duration-[110ms] ease-out"
                 style={{
                   bottom: messageInputHeight + 78,
                   filter: 'drop-shadow(0 0 0 white)',
@@ -1496,7 +1528,7 @@ const ChatSidebarPanel = memo(
 
           {/* Message Input */}
           <div className="absolute bottom-2 left-0 right-0 px-3 pb-4">
-            <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-2.5 transition-[height] duration-200 ease-out">
+            <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-2.5 transition-[height] duration-[85ms] ease-out">
               <div
                 className={`grid grid-cols-[auto_1fr_auto] gap-x-2 ${
                   isMessageInputMultiline
@@ -1504,7 +1536,9 @@ const ChatSidebarPanel = memo(
                     : 'grid-rows-[auto] gap-y-0 items-center'
                 }`}
               >
-                <textarea
+                <motion.textarea
+                  layout="position"
+                  transition={{ layout: TEXT_MOVE_TRANSITION }}
                   ref={messageInputRef}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
@@ -1512,13 +1546,15 @@ const ChatSidebarPanel = memo(
                   placeholder="Type a message..."
                   rows={1}
                   style={{ height: `${messageInputHeight}px` }}
-                  className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-out ${
+                  className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-[85ms] ease-out ${
                     isMessageInputMultiline
                       ? 'col-span-3 row-start-1'
                       : 'col-start-2 row-start-1'
                   }`}
                 />
-                <button
+                <motion.button
+                  layout="position"
+                  transition={{ layout: TEXT_MOVE_TRANSITION }}
                   type="button"
                   className={`h-8 w-8 rounded-full text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0 ${
                     isMessageInputMultiline
@@ -1527,8 +1563,10 @@ const ChatSidebarPanel = memo(
                   }`}
                 >
                   <TbPlus size={20} />
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  layout="position"
+                  transition={{ layout: TEXT_MOVE_TRANSITION }}
                   onClick={handleSendMessage}
                   className={`h-9 w-9 rounded-full bg-violet-500 text-white flex items-center justify-center transition-colors whitespace-nowrap hover:bg-violet-600 shrink-0 ${
                     isMessageInputMultiline
@@ -1537,7 +1575,7 @@ const ChatSidebarPanel = memo(
                   }`}
                 >
                   <TbSend2 size={20} className="text-white" />
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>
