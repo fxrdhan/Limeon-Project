@@ -111,7 +111,13 @@ const ChatSidebarPanel = memo(
       'inline' | 'multiline'
     >('inline');
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
-    const isTargetMultiline = messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2;
+    const inlineOverflowThresholdRef = useRef<number | null>(null);
+    const isHoldingMultilineByInlineOverflow =
+      inlineOverflowThresholdRef.current !== null &&
+      message.length >= inlineOverflowThresholdRef.current - 2;
+    const isTargetMultiline =
+      messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2 ||
+      isHoldingMultilineByInlineOverflow;
     const isMessageInputMultiline = composerLayoutMode === 'multiline';
 
     const getMenuPlacement = useCallback(
@@ -967,25 +973,50 @@ const ChatSidebarPanel = memo(
       [closeMessageMenu]
     );
 
-    const resizeMessageInput = useCallback((value: string) => {
-      const textarea = messageInputRef.current;
-      if (!textarea) return;
+    const resizeMessageInput = useCallback(
+      (value: string) => {
+        const textarea = messageInputRef.current;
+        if (!textarea) return;
 
-      textarea.style.height = 'auto';
-      const contentHeight = value.trim()
-        ? textarea.scrollHeight
-        : MESSAGE_INPUT_MIN_HEIGHT;
-      const nextHeight = Math.min(
-        Math.max(contentHeight, MESSAGE_INPUT_MIN_HEIGHT),
-        MESSAGE_INPUT_MAX_HEIGHT
-      );
-      textarea.style.height = `${nextHeight}px`;
-      textarea.style.overflowY =
-        textarea.scrollHeight > MESSAGE_INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
-      setMessageInputHeight(prevHeight =>
-        prevHeight === nextHeight ? prevHeight : nextHeight
-      );
-    }, []);
+        textarea.style.height = 'auto';
+
+        const hasValue = value.length > 0;
+        const isOverflowingCurrentLayout =
+          hasValue && textarea.scrollHeight > MESSAGE_INPUT_MIN_HEIGHT + 2;
+        const currentThreshold = inlineOverflowThresholdRef.current;
+
+        if (!hasValue) {
+          inlineOverflowThresholdRef.current = null;
+        } else if (
+          composerLayoutMode === 'inline' &&
+          isOverflowingCurrentLayout
+        ) {
+          if (currentThreshold === null || value.length < currentThreshold) {
+            inlineOverflowThresholdRef.current = value.length;
+          }
+        } else if (
+          currentThreshold !== null &&
+          value.length < currentThreshold - 2
+        ) {
+          inlineOverflowThresholdRef.current = null;
+        }
+
+        const contentHeight = hasValue
+          ? textarea.scrollHeight
+          : MESSAGE_INPUT_MIN_HEIGHT;
+        const nextHeight = Math.min(
+          Math.max(contentHeight, MESSAGE_INPUT_MIN_HEIGHT),
+          MESSAGE_INPUT_MAX_HEIGHT
+        );
+        textarea.style.height = `${nextHeight}px`;
+        textarea.style.overflowY =
+          textarea.scrollHeight > MESSAGE_INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+        setMessageInputHeight(prevHeight =>
+          prevHeight === nextHeight ? prevHeight : nextHeight
+        );
+      },
+      [composerLayoutMode]
+    );
 
     useLayoutEffect(() => {
       if (!isOpen) return;
