@@ -1,7 +1,14 @@
 import { useAuthStore } from '@/store/authStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   TbCircleArrowDownFilled,
   TbPencil,
@@ -102,13 +109,24 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
     return spaceBelow >= spaceAbove ? 'up' : 'down';
   }, []);
 
+  const closeMessageMenu = useCallback(() => {
+    setOpenMenuMessageId(null);
+  }, []);
+
   const toggleMessageMenu = useCallback(
     (anchor: HTMLElement, messageId: string) => {
-      const nextPlacement = getMenuPlacement(anchor.getBoundingClientRect());
+      if (openMenuMessageId === messageId) {
+        closeMessageMenu();
+        return;
+      }
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const nextPlacement = getMenuPlacement(anchorRect);
+
       setMenuPlacement(nextPlacement);
-      setOpenMenuMessageId(prev => (prev === messageId ? null : messageId));
+      setOpenMenuMessageId(messageId);
     },
-    [getMenuPlacement]
+    [closeMessageMenu, getMenuPlacement, openMenuMessageId]
   );
 
   const handleToggleExpand = useCallback((messageId: string) => {
@@ -122,6 +140,40 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
       return next;
     });
   }, []);
+
+  const ensureMenuFullyVisible = useCallback((messageId: string) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const menuElement = container.querySelector<HTMLElement>(
+      `[data-chat-menu-id="${messageId}"]`
+    );
+
+    if (!menuElement) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const menuRect = menuElement.getBoundingClientRect();
+
+    let scrollOffset = 0;
+    if (menuRect.top < containerRect.top) {
+      scrollOffset = menuRect.top - containerRect.top - MENU_GAP;
+    } else if (menuRect.bottom > containerRect.bottom) {
+      scrollOffset = menuRect.bottom - containerRect.bottom;
+    }
+
+    if (scrollOffset !== 0) {
+      container.scrollTo({
+        top: container.scrollTop + scrollOffset,
+        behavior: 'auto',
+      });
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!openMenuMessageId) return;
+
+    ensureMenuFullyVisible(openMenuMessageId);
+  }, [openMenuMessageId, menuPlacement, ensureMenuFullyVisible]);
 
   // Helper function to format last seen time
   const formatLastSeen = (lastSeen: string): string => {
@@ -775,7 +827,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
 
     setMessage('');
     setEditingMessageId(null);
-    setOpenMenuMessageId(null);
+    closeMessageMenu();
 
     setMessages(prev =>
       prev.map(msg =>
@@ -828,7 +880,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const handleDeleteMessage = async (targetMessage: ChatMessage) => {
     if (!user || !targetUser || !currentChannelId) return;
 
-    setOpenMenuMessageId(null);
+    closeMessageMenu();
     setMessages(prev => prev.filter(msg => msg.id !== targetMessage.id));
 
     if (editingMessageId === targetMessage.id) {
@@ -861,7 +913,7 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
   const handleEditMessage = (targetMessage: ChatMessage) => {
     setEditingMessageId(targetMessage.id);
     setMessage(targetMessage.message);
-    setOpenMenuMessageId(null);
+    closeMessageMenu();
   };
 
   const handleSendMessage = async () => {
@@ -1031,7 +1083,8 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
             <div
               ref={messagesContainerRef}
               className="flex-1 p-3 overflow-y-auto space-y-3"
-              onClick={() => setOpenMenuMessageId(null)}
+              style={{ overflowAnchor: 'none' }}
+              onClick={closeMessageMenu}
             >
               {loading && messages.length === 0 ? (
                 <div className="flex justify-center items-center py-8">
@@ -1177,44 +1230,59 @@ const ChatPortal = memo(({ isOpen, onClose, targetUser }: ChatPortalProps) => {
                             ) : null}
                           </div>
 
-                          {isCurrentUser && isMenuOpen ? (
-                            <div
-                              className={`absolute z-20 min-w-[120px] overflow-hidden rounded-xl bg-white text-slate-900 shadow-lg ${
-                                menuPlacement === 'left'
-                                  ? 'left-full ml-2 top-1/2 -translate-y-1/2'
-                                  : menuPlacement === 'down'
-                                    ? 'bottom-full mb-2 right-0'
-                                    : 'top-full mt-2 right-0'
-                              }`}
-                              onClick={event => event.stopPropagation()}
-                            >
-                              <span
-                                className={`absolute w-0 h-0 border-6 border-transparent ${
+                          <AnimatePresence>
+                            {isCurrentUser && isMenuOpen ? (
+                              <motion.div
+                                data-chat-menu-id={msg.id}
+                                initial={{
+                                  opacity: 0,
+                                  scale: 0.96,
+                                  y: menuPlacement === 'down' ? 6 : -6,
+                                }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{
+                                  opacity: 0,
+                                  scale: 0.98,
+                                  y: 0,
+                                }}
+                                transition={{ duration: 0.12, ease: 'easeOut' }}
+                                className={`absolute z-20 min-w-[120px] overflow-hidden rounded-xl bg-white text-slate-900 shadow-lg ${
                                   menuPlacement === 'left'
-                                    ? 'left-0 top-1/2 -translate-x-full -translate-y-1/2 border-r-white'
+                                    ? 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
                                     : menuPlacement === 'down'
-                                      ? 'bottom-0 right-3 translate-y-full border-t-white'
-                                      : 'top-0 right-3 -translate-y-full border-b-white'
+                                      ? 'bottom-full mb-2 right-0 origin-bottom-right'
+                                      : 'top-full mt-2 right-0 origin-top-right'
                                 }`}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleEditMessage(msg)}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
+                                onClick={event => event.stopPropagation()}
                               >
-                                <TbPencil className="h-4 w-4" />
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteMessage(msg)}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-700 hover:bg-slate-100 transition-colors"
-                              >
-                                <TbTrash className="h-4 w-4" />
-                                Hapus
-                              </button>
-                            </div>
-                          ) : null}
+                                <span
+                                  className={`absolute w-0 h-0 border-6 border-transparent ${
+                                    menuPlacement === 'left'
+                                      ? 'left-0 top-1/2 -translate-x-full -translate-y-1/2 border-r-white'
+                                      : menuPlacement === 'down'
+                                        ? 'bottom-0 right-3 translate-y-full border-t-white'
+                                        : 'top-0 right-3 -translate-y-full border-b-white'
+                                  }`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditMessage(msg)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
+                                >
+                                  <TbPencil className="h-4 w-4" />
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteMessage(msg)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-700 hover:bg-slate-100 transition-colors"
+                                >
+                                  <TbTrash className="h-4 w-4" />
+                                  Hapus
+                                </button>
+                              </motion.div>
+                            ) : null}
+                          </AnimatePresence>
                         </div>
 
                         {/* Message Info */}
