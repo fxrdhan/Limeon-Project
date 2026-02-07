@@ -11,10 +11,13 @@ import {
 } from 'react';
 import {
   TbCircleArrowDownFilled,
+  TbCopy,
   TbPencil,
+  TbPlus,
   TbSend2,
   TbTrash,
 } from 'react-icons/tb';
+import toast, { Toaster } from 'react-hot-toast';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -42,8 +45,11 @@ type MenuPlacement = 'left' | 'up' | 'down';
 
 const MENU_GAP = 8;
 const MENU_WIDTH = 140;
-const MENU_HEIGHT = 84;
+const MENU_HEIGHT = 128;
 const MAX_MESSAGE_CHARS = 220;
+const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
+const MESSAGE_INPUT_MIN_HEIGHT = 22;
+const MESSAGE_INPUT_MAX_HEIGHT = 170;
 
 // Generate channel ID for direct messages
 const generateChannelId = (userId1: string, userId2: string): string => {
@@ -71,6 +77,7 @@ const ChatSidebarPanel = memo(
     const [targetUserPresence, setTargetUserPresence] =
       useState<UserPresence | null>(null);
     const { user } = useAuthStore();
+    const messageInputRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const channelRef = useRef<RealtimeChannel | null>(null);
@@ -91,6 +98,11 @@ const ChatSidebarPanel = memo(
     const [displayTargetPhotoUrl, setDisplayTargetPhotoUrl] = useState<
       string | null
     >(null);
+    const [messageInputHeight, setMessageInputHeight] = useState(
+      MESSAGE_INPUT_MIN_HEIGHT
+    );
+    const isMessageInputMultiline =
+      messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2;
 
     const getMenuPlacement = useCallback(
       (anchorRect: DOMRect): MenuPlacement => {
@@ -926,6 +938,50 @@ const ChatSidebarPanel = memo(
       closeMessageMenu();
     };
 
+    const handleCopyMessage = useCallback(
+      async (targetMessage: ChatMessage) => {
+        try {
+          await navigator.clipboard.writeText(targetMessage.message);
+          toast.success('Pesan berhasil disalin', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        } catch (error) {
+          console.error('Error copying message:', error);
+          toast.error('Gagal menyalin pesan', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        } finally {
+          closeMessageMenu();
+        }
+      },
+      [closeMessageMenu]
+    );
+
+    const resizeMessageInput = useCallback((value: string) => {
+      const textarea = messageInputRef.current;
+      if (!textarea) return;
+
+      textarea.style.height = 'auto';
+      const contentHeight = value.trim()
+        ? textarea.scrollHeight
+        : MESSAGE_INPUT_MIN_HEIGHT;
+      const nextHeight = Math.min(
+        Math.max(contentHeight, MESSAGE_INPUT_MIN_HEIGHT),
+        MESSAGE_INPUT_MAX_HEIGHT
+      );
+      textarea.style.height = `${nextHeight}px`;
+      textarea.style.overflowY =
+        textarea.scrollHeight > MESSAGE_INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+      setMessageInputHeight(prevHeight =>
+        prevHeight === nextHeight ? prevHeight : nextHeight
+      );
+    }, []);
+
+    useLayoutEffect(() => {
+      if (!isOpen) return;
+      resizeMessageInput(message);
+    }, [isOpen, message, resizeMessageInput]);
+
     const handleSendMessage = async () => {
       if (editingMessageId) {
         await handleUpdateMessage();
@@ -1042,43 +1098,94 @@ const ChatSidebarPanel = memo(
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="relative h-full w-full"
       >
+        <Toaster
+          toasterId={CHAT_SIDEBAR_TOASTER_ID}
+          position="top-right"
+          containerStyle={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+          }}
+          toastOptions={{
+            style: {
+              boxShadow: '0 10px 30px -12px rgba(0, 0, 0, 0.35)',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid rgba(226, 232, 240, 1)',
+              color: '#0f172a',
+            },
+            success: {
+              style: {
+                backgroundColor: 'oklch(26.2% 0.051 172.552 / 0.9)',
+                color: 'white',
+                border: '1px solid oklch(26.2% 0.051 172.552 / 0.3)',
+              },
+            },
+            error: {
+              style: {
+                backgroundColor: 'oklch(27.1% 0.105 12.094 / 0.9)',
+                color: 'white',
+                border: '1px solid oklch(27.1% 0.105 12.094 / 0.3)',
+              },
+            },
+          }}
+        />
+
         {/* Chat Content */}
         <div className="relative h-full flex flex-col">
           {/* Chat Header */}
-          <div className="p-3 border-b border-slate-100">
+          <div className="px-4 py-3.5 border-b border-slate-100">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium text-slate-900">
-                  {targetUser ? targetUser.name : 'Chat'}
-                </h3>
-                {(() => {
-                  const shouldShowOnline =
-                    targetUserPresence &&
-                    targetUserPresence.is_online &&
-                    targetUserPresence.current_chat_channel ===
-                      currentChannelId;
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
+                  {displayTargetPhotoUrl ? (
+                    <img
+                      src={displayTargetPhotoUrl}
+                      alt={targetUser?.name || 'User'}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div
+                      className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
+                    >
+                      {getInitials(targetUser?.name || 'User')}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-medium text-slate-900 truncate">
+                    {targetUser ? targetUser.name : 'Chat'}
+                  </h3>
+                  {(() => {
+                    const shouldShowOnline =
+                      targetUserPresence &&
+                      targetUserPresence.is_online &&
+                      targetUserPresence.current_chat_channel ===
+                        currentChannelId;
 
-                  if (shouldShowOnline) {
-                    return (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <span className="text-xs text-green-600 font-medium">
-                          Online
+                    if (shouldShowOnline) {
+                      return (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="text-xs text-green-600 font-medium">
+                            Online
+                          </span>
+                        </div>
+                      );
+                    } else if (
+                      targetUserPresence &&
+                      targetUserPresence.last_seen
+                    ) {
+                      return (
+                        <span className="text-xs text-slate-400">
+                          Last seen{' '}
+                          {formatLastSeen(targetUserPresence.last_seen)}
                         </span>
-                      </div>
-                    );
-                  } else if (
-                    targetUserPresence &&
-                    targetUserPresence.last_seen
-                  ) {
-                    return (
-                      <span className="text-xs text-slate-400">
-                        Last seen {formatLastSeen(targetUserPresence.last_seen)}
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </div>
               <button
                 onClick={handleClose}
@@ -1092,8 +1199,11 @@ const ChatSidebarPanel = memo(
           {/* Messages Area */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 p-3 overflow-y-auto space-y-3"
-            style={{ overflowAnchor: 'none' }}
+            className="flex-1 px-3 pt-3 overflow-y-auto space-y-3"
+            style={{
+              overflowAnchor: 'none',
+              paddingBottom: messageInputHeight + 108,
+            }}
             onClick={closeMessageMenu}
           >
             {loading && messages.length === 0 ? (
@@ -1154,41 +1264,24 @@ const ChatSidebarPanel = memo(
                             isCurrentUser
                               ? 'bg-emerald-200 text-slate-900 rounded-tl-xl rounded-tr-xl rounded-bl-xl'
                               : 'bg-slate-100 text-slate-800 rounded-tl-xl rounded-tr-xl rounded-br-xl'
-                          } ${isCurrentUser ? 'cursor-pointer' : ''}`}
+                          } cursor-pointer select-none`}
                           style={{
                             [isCurrentUser
                               ? 'borderBottomRightRadius'
                               : 'borderBottomLeftRadius']: '2px',
                           }}
-                          onClick={
-                            isCurrentUser
-                              ? event => {
-                                  event.stopPropagation();
-                                  toggleMessageMenu(
-                                    event.currentTarget,
-                                    msg.id
-                                  );
-                                }
-                              : undefined
-                          }
-                          role={isCurrentUser ? 'button' : undefined}
-                          tabIndex={isCurrentUser ? 0 : undefined}
-                          onKeyDown={
-                            isCurrentUser
-                              ? event => {
-                                  if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                  ) {
-                                    event.preventDefault();
-                                    toggleMessageMenu(
-                                      event.currentTarget,
-                                      msg.id
-                                    );
-                                  }
-                                }
-                              : undefined
-                          }
+                          onClick={event => {
+                            event.stopPropagation();
+                            toggleMessageMenu(event.currentTarget, msg.id);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={event => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              toggleMessageMenu(event.currentTarget, msg.id);
+                            }
+                          }}
                         >
                           {displayMessage}
                           {isMessageLong ? (
@@ -1242,7 +1335,7 @@ const ChatSidebarPanel = memo(
                         </div>
 
                         <AnimatePresence>
-                          {isCurrentUser && isMenuOpen ? (
+                          {isMenuOpen ? (
                             <motion.div
                               data-chat-menu-id={msg.id}
                               initial={{
@@ -1277,20 +1370,32 @@ const ChatSidebarPanel = memo(
                               />
                               <button
                                 type="button"
-                                onClick={() => handleEditMessage(msg)}
+                                onClick={() => handleCopyMessage(msg)}
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
                               >
-                                <TbPencil className="h-4 w-4" />
-                                Edit
+                                <TbCopy className="h-4 w-4" />
+                                Salin
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteMessage(msg)}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-700 hover:bg-slate-100 transition-colors"
-                              >
-                                <TbTrash className="h-4 w-4" />
-                                Hapus
-                              </button>
+                              {isCurrentUser ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditMessage(msg)}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
+                                  >
+                                    <TbPencil className="h-4 w-4" />
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteMessage(msg)}
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-700 hover:bg-slate-100 transition-colors"
+                                  >
+                                    <TbTrash className="h-4 w-4" />
+                                    Hapus
+                                  </button>
+                                </>
+                              ) : null}
                             </motion.div>
                           ) : null}
                         </AnimatePresence>
@@ -1376,8 +1481,9 @@ const ChatSidebarPanel = memo(
                 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={scrollToBottom}
-                className="absolute bottom-16 left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-colors"
+                className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-colors"
                 style={{
+                  bottom: messageInputHeight + 78,
                   filter: 'drop-shadow(0 0 0 white)',
                   background:
                     'radial-gradient(circle at center, white 30%, transparent 30%)',
@@ -1389,27 +1495,48 @@ const ChatSidebarPanel = memo(
           </AnimatePresence>
 
           {/* Message Input */}
-          <div className="p-3 border-t border-slate-100">
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                onKeyUp={handleKeyPress}
-                placeholder="Type a message..."
-                className="flex-1 p-2.5 border border-slate-300 rounded-full px-3 text-sm h-[2.5rem] focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200 transition-all duration-200 ease-in-out"
-              />
+          <div className="absolute bottom-2 left-0 right-0 px-3 pb-4">
+            <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-2.5 transition-[height] duration-200 ease-out">
               <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${message.trim() ? 'w-10 ml-2' : 'w-0 ml-0'}`}
+                className={`grid grid-cols-[auto_1fr_auto] gap-x-2 ${
+                  isMessageInputMultiline
+                    ? 'grid-rows-[auto_auto] gap-y-1 items-end'
+                    : 'grid-rows-[auto] gap-y-0 items-center'
+                }`}
               >
+                <textarea
+                  ref={messageInputRef}
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type a message..."
+                  rows={1}
+                  style={{ height: `${messageInputHeight}px` }}
+                  className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-out ${
+                    isMessageInputMultiline
+                      ? 'col-span-3 row-start-1'
+                      : 'col-start-2 row-start-1'
+                  }`}
+                />
+                <button
+                  type="button"
+                  className={`h-8 w-8 rounded-full text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0 ${
+                    isMessageInputMultiline
+                      ? 'col-start-1 row-start-2'
+                      : 'col-start-1 row-start-1'
+                  }`}
+                >
+                  <TbPlus size={20} />
+                </button>
                 <button
                   onClick={handleSendMessage}
-                  className="p-1 transition-colors whitespace-nowrap"
+                  className={`h-9 w-9 rounded-full bg-violet-500 text-white flex items-center justify-center transition-colors whitespace-nowrap hover:bg-violet-600 shrink-0 ${
+                    isMessageInputMultiline
+                      ? 'col-start-3 row-start-2'
+                      : 'col-start-3 row-start-1'
+                  }`}
                 >
-                  <TbSend2
-                    size={28}
-                    className="text-emerald-600 hover:text-primary"
-                  />
+                  <TbSend2 size={20} className="text-white" />
                 </button>
               </div>
             </div>
