@@ -57,9 +57,6 @@ import type {
 } from '@/types';
 import { FilterSearch } from '@/types/search';
 
-// Testing utilities for random item generation
-import { config } from '@/config';
-import { RandomItemFloatingButton } from '@/utils/testing';
 import { fuzzyMatch } from '@/utils/search';
 
 type MasterDataType =
@@ -2367,11 +2364,6 @@ const ItemMasterNew = memo(() => {
           />
         </div>
       </Card>
-
-      {/* Floating Random Item Generator Button - only for items tab */}
-      <RandomItemFloatingButton
-        enabled={activeTab === 'items' && config.random_item_generator_enabled}
-      />
 
       {/* Item Management Modal - only render for items tab */}
       {activeTab === 'items' && (

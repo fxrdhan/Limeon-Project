@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { configurePersistence } from '@/lib/queryPersistence';
@@ -57,10 +56,6 @@ const initializeApp = async () => {
         <BrowserRouter>
           <App />
         </BrowserRouter>
-        {/* Only load DevTools in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
       </QueryClientProvider>
     </StrictMode>
   );

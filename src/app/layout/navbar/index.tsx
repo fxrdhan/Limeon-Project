@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { NavbarProps } from '@/types';
+import type { ChatTargetUser, NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import {
@@ -12,22 +12,15 @@ import { TbMessageDots } from 'react-icons/tb';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
-import ChatPortal from '@/components/shared/chat-portal';
 
-const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
+const Navbar = ({
+  sidebarCollapsed,
+  showChatSidebar,
+  onChatUserSelect,
+}: NavbarProps) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const [showPortal, setShowPortal] = useState(false);
-  const [showChatPortal, setShowChatPortal] = useState(false);
-  const [selectedChatUser, setSelectedChatUser] = useState<
-    | {
-        id: string;
-        name: string;
-        email: string;
-        profilephoto?: string | null;
-      }
-    | undefined
-  >(undefined);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [portalImageUrls, setPortalImageUrls] = useState<
@@ -151,8 +144,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
       hoverTimeoutRef.current = null;
     }
 
-    // Don't close avatar portal if chat portal is open
-    if (!showChatPortal) {
+    // Don't close avatar portal if chat sidebar is open
+    if (!showChatSidebar) {
       hoverTimeoutRef.current = setTimeout(() => {
         setShowPortal(false);
         hoverTimeoutRef.current = null;
@@ -161,25 +154,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   };
 
   // Chat handlers
-  const handleChatOpen = (targetUser: {
-    id: string;
-    name: string;
-    email: string;
-    profilephoto?: string | null;
-  }) => {
-    // Toggle: if same user clicked, close chat portal
-    if (selectedChatUser && selectedChatUser.id === targetUser.id) {
-      setShowChatPortal(false);
-      setSelectedChatUser(undefined);
-    } else {
-      setSelectedChatUser(targetUser);
-      setShowChatPortal(true);
-    }
-  };
-
-  const handleChatClose = () => {
-    setShowChatPortal(false);
-    setSelectedChatUser(undefined);
+  const handleChatOpen = (targetUser: ChatTargetUser) => {
+    onChatUserSelect(targetUser);
   };
 
   // Cleanup timeout on unmount
@@ -418,15 +394,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                 </div>
               )}
             </AnimatePresence>
-
-            {/* Chat Portal - positioned to the left of avatar portal */}
-            <div className="absolute top-full right-50 mt-2 z-50">
-              <ChatPortal
-                isOpen={showChatPortal}
-                onClose={handleChatClose}
-                targetUser={selectedChatUser}
-              />
-            </div>
           </div>
 
           <div className="h-5 w-px bg-slate-300 mx-5"></div>

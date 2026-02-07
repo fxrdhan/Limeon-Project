@@ -17,6 +17,7 @@ import {
 
 const ITEM_MASTER_PATH = '/master-data/item-master';
 const SUBMENU_ITEM_HEIGHT = 48;
+const EXPANDED_CONTENT_DELAY_MS = 90;
 
 type SubmenuItem = { name: string; path: string };
 
@@ -286,8 +287,13 @@ const Sidebar = ({
   const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(
     () => new Set()
   );
+  const [isExpandedContentReady, setIsExpandedContentReady] =
+    useState(!collapsed);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const menuHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showExpandedContent = !collapsed && isExpandedContentReady;
+  const isVisuallyCollapsed = collapsed || !isExpandedContentReady;
 
   const toggleMenu = useCallback(
     (menuKey: string) => {
@@ -369,6 +375,25 @@ const Sidebar = ({
   }, [collapsed, isLocked, collapseSidebar, pathname, manuallyClosedMenus]);
 
   useEffect(() => {
+    if (collapsed) {
+      const timeoutId = setTimeout(() => {
+        setIsExpandedContentReady(false);
+      }, 0);
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
+
+    const timeoutId = setTimeout(() => {
+      setIsExpandedContentReady(true);
+    }, EXPANDED_CONTENT_DELAY_MS);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [collapsed]);
+
+  useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
@@ -414,7 +439,7 @@ const Sidebar = ({
       onMouseLeave={handleMouseLeaveSidebar}
       className={`sidebar bg-white text-slate-800 border-r border-slate-200
                         transition-all duration-500 ease-in-out h-screen
-                        ${collapsed ? 'w-20' : 'w-64'} relative group z-10`}
+                        ${collapsed ? 'w-20' : 'w-64'} relative group z-10 overflow-x-hidden`}
     >
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
@@ -423,12 +448,12 @@ const Sidebar = ({
               <span className="text-white text-xl font-bold">P</span>
             </div>
             <h2
-              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-slate-800`}
+              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${isVisuallyCollapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-slate-800`}
             >
               PharmaSys
             </h2>
           </div>
-          {!collapsed && (
+          {showExpandedContent && (
             <motion.button
               onClick={toggleLock}
               className="text-slate-400 hover:text-slate-600 focus:outline-hidden transition-colors duration-150 relative cursor-pointer"
@@ -447,7 +472,7 @@ const Sidebar = ({
               isRouteActive(pathname, item.path) ||
               hasActiveChildRoute(pathname, item.children);
             const menuButtonClassName = getMenuButtonClassName({
-              collapsed,
+              collapsed: isVisuallyCollapsed,
               isActive: isMenuActive,
             });
 
@@ -467,12 +492,12 @@ const Sidebar = ({
                     style={menuButtonStyle}
                   >
                     <SidebarMenuLabel
-                      collapsed={collapsed}
+                      collapsed={isVisuallyCollapsed}
                       icon={item.icon}
                       isActive={isMenuActive}
                       name={item.name}
                     />
-                    {!collapsed && (
+                    {showExpandedContent && (
                       <motion.div
                         animate={{
                           rotate: openMenus[menuKey] ? 180 : 0,
@@ -489,7 +514,7 @@ const Sidebar = ({
                   </button>
 
                   <AnimatePresence initial={false}>
-                    {!collapsed && openMenus[menuKey] && (
+                    {showExpandedContent && openMenus[menuKey] && (
                       <motion.div
                         key="submenu-content"
                         initial="collapsed"
@@ -639,7 +664,7 @@ const Sidebar = ({
                   style={menuButtonStyle}
                 >
                   <SidebarMenuLabel
-                    collapsed={collapsed}
+                    collapsed={isVisuallyCollapsed}
                     icon={item.icon}
                     isActive={isMenuActive}
                     name={item.name}
@@ -662,7 +687,7 @@ const Sidebar = ({
               }}
             >
               <AnimatePresence initial={false}>
-                {!collapsed && (
+                {showExpandedContent && (
                   <motion.div
                     key="pharmasys-text"
                     initial={{ opacity: 0, width: 0, marginRight: 0 }}

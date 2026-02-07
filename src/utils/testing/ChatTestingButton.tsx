@@ -1,13 +1,13 @@
 /**
  * Chat Testing Button Component
  *
- * A floating action button that opens the chat portal for UI testing purposes.
+ * A floating action button that opens the chat panel for UI testing purposes.
  * Provides easy access to test the chat bubble functionality with auto-replies.
  */
 
 import { useState } from 'react';
 import { TbMessageDots } from 'react-icons/tb';
-import ChatPortal from '@/components/shared/chat-portal';
+import ChatSidebarPanel from '@/components/shared/chat-sidebar-panel';
 
 /**
  * Props for ChatTestingButton component
@@ -49,10 +49,10 @@ export function ChatTestingButton({
         <TbMessageDots className="w-5 h-5" />
       </button>
 
-      {/* Chat Portal */}
+      {/* Chat Panel */}
       {isChatOpen && (
         <div className="fixed bottom-20 left-6 z-50">
-          <ChatPortal
+          <ChatSidebarPanel
             isOpen={isChatOpen}
             onClose={() => setIsChatOpen(false)}
             targetUser={targetUser}
