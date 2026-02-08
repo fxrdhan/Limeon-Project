@@ -54,6 +54,8 @@ describe('useSearchInput', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -571,5 +573,421 @@ describe('useSearchInput', () => {
     });
 
     expect(onChange).toHaveBeenCalledWith(passthroughEvent);
+  });
+
+  it('manages operator/join refs and lazy ref cache stability', () => {
+    const onChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useSearchInput({
+        value: '#name #contains',
+        searchMode: baseSearchMode(),
+        onChange,
+      })
+    );
+
+    const operatorEl = document.createElement('div');
+    const joinEl = document.createElement('div');
+
+    act(() => {
+      result.current.setBadgeRef('condition-2-operator', operatorEl);
+      result.current.setBadgeRef('join-1', joinEl);
+    });
+
+    expect(result.current.getOperatorRef(2)).toBe(operatorEl);
+    expect(result.current.getJoinRef(1)).toBe(joinEl);
+
+    const lazyOperatorRefA = result.current.getLazyOperatorRef(2);
+    const lazyOperatorRefB = result.current.getLazyOperatorRef(2);
+    const lazyJoinRefA = result.current.getLazyJoinRef(1);
+    const lazyJoinRefB = result.current.getLazyJoinRef(1);
+
+    expect(lazyOperatorRefA).toBe(lazyOperatorRefB);
+    expect(lazyOperatorRefA.current).toBe(operatorEl);
+    expect(lazyJoinRefA).toBe(lazyJoinRefB);
+    expect(lazyJoinRefA.current).toBe(joinEl);
+  });
+
+  it('computes displayValue for condition N and partial-join inRange branches', () => {
+    const onChange = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ value, searchMode }) =>
+        useSearchInput({
+          value,
+          searchMode,
+          onChange,
+        }),
+      {
+        initialProps: {
+          value: '#name #contains a #and #stock #inRange 500 #to',
+          searchMode: baseSearchMode({
+            activeConditionIndex: 2,
+            partialConditions: [
+              {
+                field: 'name',
+                operator: 'contains',
+                value: 'a',
+                column: nameColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'equals',
+                value: '10',
+                column: stockColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'inRange',
+                value: '500',
+                waitingForValueTo: true,
+                column: stockColumn,
+              },
+            ],
+          }),
+        },
+      }
+    );
+
+    expect(result.current.displayValue).toBe('');
+
+    rerender({
+      value: '#name #contains a #and #stock #inRange 500 #to 700',
+      searchMode: baseSearchMode({
+        activeConditionIndex: 2,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'equals',
+            value: '10',
+            column: stockColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'inRange',
+            value: '500',
+            valueTo: '700',
+            column: stockColumn,
+          },
+        ],
+      }),
+    });
+    expect(result.current.displayValue).toBe('700');
+
+    rerender({
+      value: '#name #contains a #and #stock #equals 10',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'inRange',
+            value: '10',
+            waitingForValueTo: true,
+            column: stockColumn,
+          },
+        ],
+      }),
+    });
+    expect(result.current.displayValue).toBe('');
+
+    rerender({
+      value: '#name #contains a #and #stock #inRange 10 #to 20',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'inRange',
+            value: '10',
+            valueTo: '20',
+            column: stockColumn,
+          },
+        ],
+      }),
+    });
+    expect(result.current.displayValue).toBe('20');
+  });
+
+  it('updates badge width CSS variable and resets when indicator is hidden', () => {
+    vi.useFakeTimers();
+
+    const onChange = vi.fn();
+    const observeMock = vi.fn();
+    const disconnectMock = vi.fn();
+    const resizeCallbacks: ResizeObserverCallback[] = [];
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = observeMock;
+        disconnect = disconnectMock;
+        constructor(cb: ResizeObserverCallback) {
+          resizeCallbacks.push(cb);
+        }
+      }
+    );
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((cb: FrameRequestCallback) => {
+        cb(0);
+        return 1;
+      })
+    );
+
+    const input = document.createElement('input');
+    const inputRef = { current: input };
+    const setPropertySpy = vi.spyOn(input.style, 'setProperty');
+    const removePropertySpy = vi.spyOn(input.style, 'removeProperty');
+
+    const { result, rerender } = renderHook(
+      ({ searchMode }) =>
+        useSearchInput({
+          value: '#name #contains aspirin',
+          searchMode,
+          onChange,
+          inputRef,
+        }),
+      {
+        initialProps: {
+          searchMode: baseSearchMode(),
+        },
+      }
+    );
+
+    const columnBadge = document.createElement('div');
+    Object.defineProperty(columnBadge, 'offsetWidth', {
+      configurable: true,
+      get: () => 80,
+    });
+
+    act(() => {
+      result.current.setBadgeRef('condition-0-column', columnBadge);
+    });
+
+    rerender({
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        selectedColumn: nameColumn,
+        filterSearch: {
+          field: 'name',
+          value: 'aspirin',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(setPropertySpy).toHaveBeenCalledWith('--badge-width', '96px');
+    expect(observeMock).toHaveBeenCalled();
+
+    act(() => {
+      resizeCallbacks[0]?.([] as ResizeObserverEntry[], {} as ResizeObserver);
+      vi.advanceTimersByTime(16);
+    });
+
+    expect(setPropertySpy).toHaveBeenCalled();
+
+    rerender({
+      searchMode: baseSearchMode(),
+    });
+
+    expect(removePropertySpy).toHaveBeenCalledWith('--badge-width');
+    expect(disconnectMock).toHaveBeenCalled();
+  });
+
+  it('covers condition-N and operator-selector fallback branches in handleInputChange', () => {
+    const onChange = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ value, searchMode }) =>
+        useSearchInput({
+          value,
+          searchMode,
+          onChange,
+        }),
+      {
+        initialProps: {
+          value: '#name #contains a #and #stock #inRange 500 #to',
+          searchMode: baseSearchMode({
+            isFilterMode: true,
+            activeConditionIndex: 2,
+            partialConditions: [
+              {
+                field: 'name',
+                operator: 'contains',
+                value: 'a',
+                column: nameColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'equals',
+                value: '10',
+                column: stockColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'inRange',
+                value: '500',
+                waitingForValueTo: true,
+                column: stockColumn,
+              },
+            ],
+            filterSearch: {
+              field: 'name',
+              value: 'a',
+              operator: 'contains',
+              column: nameColumn,
+              isExplicitOperator: true,
+            },
+          }),
+        },
+      }
+    );
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '700' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains a #and #stock #inRange 500 #to 700' },
+      })
+    );
+
+    rerender({
+      value: 'raw-pattern-without-hash-match',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        activeConditionIndex: 2,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'equals',
+            value: '10',
+            column: stockColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'equals',
+            value: 'old',
+            column: stockColumn,
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: 'x' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: 'raw-pattern-without-hash-matchx' },
+      })
+    );
+
+    rerender({
+      value: 'plain value',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+
+    const passthroughEvent = {
+      target: { value: 'next' },
+    } as React.ChangeEvent<HTMLInputElement>;
+    act(() => {
+      result.current.handleInputChange(passthroughEvent);
+    });
+    expect(onChange).toHaveBeenCalledWith(passthroughEvent);
+
+    rerender({
+      value: '#name #',
+      searchMode: baseSearchMode({
+        showOperatorSelector: true,
+        selectedColumn: nameColumn,
+      }),
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '#eq' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #eq' },
+      })
+    );
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(buildColumnValueMock).toHaveBeenCalledWith('name', 'plain');
   });
 });

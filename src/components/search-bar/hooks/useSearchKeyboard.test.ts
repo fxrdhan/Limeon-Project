@@ -32,6 +32,20 @@ const baseSearchMode = (
 
 type Props = Parameters<typeof useSearchKeyboard>[0];
 
+const nameColumn = {
+  field: 'name',
+  headerName: 'Name',
+  searchable: true,
+  type: 'text',
+} as const;
+
+const stockColumn = {
+  field: 'stock',
+  headerName: 'Stock',
+  searchable: true,
+  type: 'number',
+} as const;
+
 const buildProps = (partial: Partial<Props> = {}): Props => ({
   value: '',
   searchMode: baseSearchMode(),
@@ -424,5 +438,256 @@ describe('useSearchKeyboard', () => {
       .calls[0][0].target.value;
     expect(changedValue).not.toBe('#name #contains a #and #stock #equals');
     expect(changedValue).toContain('#name #contains');
+  });
+
+  it('handles additional global Delete branches for selector-open state', () => {
+    const stepBackProps = buildProps({
+      value: '#name #contains aspirin #',
+      searchMode: baseSearchMode({ showColumnSelector: true }),
+      onStepBackDelete: vi.fn(() => true),
+    });
+
+    renderHook(() => useSearchKeyboard(stepBackProps));
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+    });
+
+    expect(stepBackProps.onStepBackDelete).toHaveBeenCalled();
+    expect(stepBackProps.onChange).not.toHaveBeenCalled();
+
+    const trailingJoinProps = buildProps({
+      value: '#name #contains aspirin #and #',
+      searchMode: baseSearchMode({ showColumnSelector: true }),
+    });
+
+    renderHook(() => useSearchKeyboard(trailingJoinProps));
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+    });
+
+    expect(trailingJoinProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains aspirin #' },
+      })
+    );
+
+    removeGroupTokenAtIndexMock.mockReturnValueOnce('#name #');
+    const groupedProps = buildProps({
+      value: '#( #',
+      searchMode: baseSearchMode({ showColumnSelector: true }),
+    });
+    renderHook(() => useSearchKeyboard(groupedProps));
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+    });
+
+    expect(removeGroupTokenAtIndexMock).toHaveBeenCalled();
+    expect(groupedProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #' },
+      })
+    );
+  });
+
+  it('prevents character input when modal selector is open and supports Enter early-return', () => {
+    const props = buildProps({
+      value: '#name #',
+      searchMode: baseSearchMode({ showOperatorSelector: true }),
+    });
+
+    const { result } = renderHook(() => useSearchKeyboard(props));
+
+    const charEvent = makeKeyEvent('a');
+    act(() => {
+      result.current.handleInputKeyDown(charEvent);
+    });
+    expect(charEvent.preventDefault).toHaveBeenCalled();
+
+    const enterEvent = makeKeyEvent('Enter');
+    act(() => {
+      result.current.handleInputKeyDown(enterEvent);
+    });
+    expect(props.onChange).not.toHaveBeenCalled();
+  });
+
+  it('covers Enter and Delete edge paths for partial and empty conditions', () => {
+    const partialEnterProps = buildProps({
+      value: '#name #contains #',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'name',
+            operator: 'contains',
+            value: '',
+            column: nameColumn,
+          },
+        ],
+      }),
+    });
+
+    const { result: partialEnterResult } = renderHook(() =>
+      useSearchKeyboard(partialEnterProps)
+    );
+
+    act(() => {
+      partialEnterResult.current.handleInputKeyDown(makeKeyEvent('Enter'));
+    });
+    expect(partialEnterProps.onChange).not.toHaveBeenCalled();
+
+    const emptyContainsProps = buildProps({
+      value: '',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: '',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: false,
+          isConfirmed: false,
+          isMultiCondition: false,
+        },
+      }),
+    });
+
+    const { result: emptyContainsResult } = renderHook(() =>
+      useSearchKeyboard(emptyContainsProps)
+    );
+
+    act(() => {
+      emptyContainsResult.current.handleInputKeyDown(makeKeyEvent('Delete'));
+    });
+    expect(emptyContainsProps.onClearSearch).toHaveBeenCalled();
+
+    const emptyOperatorProps = buildProps({
+      value: '',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'stock',
+          value: '',
+          operator: 'equals',
+          column: stockColumn,
+          isExplicitOperator: true,
+          isConfirmed: false,
+          isMultiCondition: false,
+        },
+      }),
+    });
+
+    const { result: emptyOperatorResult } = renderHook(() =>
+      useSearchKeyboard(emptyOperatorProps)
+    );
+
+    act(() => {
+      emptyOperatorResult.current.handleInputKeyDown(makeKeyEvent('Delete'));
+    });
+    expect(emptyOperatorProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#stock #' },
+      })
+    );
+  });
+
+  it('handles operator-selector delete navigation and selected-column clear path', () => {
+    patternBuilderBuildNConditionsMock.mockReturnValue('rebuilt-pattern');
+
+    const operatorDeleteProps = buildProps({
+      value: 'free-text',
+      searchMode: baseSearchMode({
+        showOperatorSelector: true,
+        selectedColumn: stockColumn,
+        partialJoin: 'AND',
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'equals',
+            value: '',
+            column: stockColumn,
+          },
+        ],
+        joins: ['AND'],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          isMultiColumn: true,
+        },
+      }),
+    });
+
+    const { result: operatorDeleteResult } = renderHook(() =>
+      useSearchKeyboard(operatorDeleteProps)
+    );
+
+    act(() => {
+      operatorDeleteResult.current.handleInputKeyDown(makeKeyEvent('Delete'));
+    });
+
+    expect(operatorDeleteProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: 'rebuilt-pattern' },
+      })
+    );
+
+    const selectedColumnProps = buildProps({
+      value: '#name',
+      searchMode: baseSearchMode({
+        selectedColumn: nameColumn,
+      }),
+    });
+
+    const { result: selectedColumnResult } = renderHook(() =>
+      useSearchKeyboard(selectedColumnProps)
+    );
+
+    act(() => {
+      selectedColumnResult.current.handleInputKeyDown(makeKeyEvent('Delete'));
+    });
+
+    expect(selectedColumnProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '' },
+      })
+    );
+  });
+
+  it('falls back to onKeyDown when handler throws', () => {
+    insertGroupOpenTokenMock.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+
+    const props = buildProps({
+      value: '#name #contains aspirin #and #',
+      searchMode: baseSearchMode({ isFilterMode: true }),
+    });
+
+    const { result } = renderHook(() => useSearchKeyboard(props));
+
+    act(() => {
+      result.current.handleInputKeyDown(makeKeyEvent('('));
+    });
+
+    expect(props.onKeyDown).toHaveBeenCalled();
   });
 });
