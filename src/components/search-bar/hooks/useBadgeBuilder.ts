@@ -111,16 +111,18 @@ const getGroupValueBadgeInlineProps = (
   inlineEditingProps: GroupInlineEditingProps | undefined,
   path: number[],
   field: 'value' | 'valueTo'
-): Pick<
-  BadgeConfig,
-  'isEditing' | 'editingValue' | 'onValueChange' | 'onEditComplete'
-> | null => {
-  if (!inlineEditingProps?.editingBadge) return null;
+): Partial<
+  Pick<
+    BadgeConfig,
+    'isEditing' | 'editingValue' | 'onValueChange' | 'onEditComplete'
+  >
+> => {
+  if (!inlineEditingProps?.editingBadge) return {};
   const { editingBadge } = inlineEditingProps;
   const samePath =
     editingBadge.path.length === path.length &&
     editingBadge.path.every((value, index) => value === path[index]);
-  if (!samePath || editingBadge.field !== field) return null;
+  if (!samePath || editingBadge.field !== field) return {};
 
   return {
     isEditing: true,
@@ -205,7 +207,7 @@ const buildBadgesFromCondition = (
             canClear: !!groupHandlers?.onClearCondition,
           }
         ),
-        ...(inlineProps ?? {}),
+        ...inlineProps,
       });
       badges.push(createStaticSeparatorBadge(`condition-${key}-separator`));
     }
@@ -234,7 +236,7 @@ const buildBadgesFromCondition = (
             canClear: !!groupHandlers?.onClearCondition,
           }
         ),
-        ...(inlineProps ?? {}),
+        ...inlineProps,
       });
     }
   } else if (condition.value) {
@@ -262,7 +264,7 @@ const buildBadgesFromCondition = (
           canClear: !!groupHandlers?.onClearCondition,
         }
       ),
-      ...(inlineProps ?? {}),
+      ...inlineProps,
     });
   }
 
@@ -399,16 +401,18 @@ function getValueBadgeInlineProps(
   inlineEditingProps: InlineEditingProps | undefined,
   conditionIndex: number,
   isValueTo: boolean
-): Pick<
-  BadgeConfig,
-  | 'isEditing'
-  | 'editingValue'
-  | 'onValueChange'
-  | 'onEditComplete'
-  | 'onNavigateEdit'
-  | 'onFocusInput'
-> | null {
-  if (!inlineEditingProps?.editingBadge) return null;
+): Partial<
+  Pick<
+    BadgeConfig,
+    | 'isEditing'
+    | 'editingValue'
+    | 'onValueChange'
+    | 'onEditComplete'
+    | 'onNavigateEdit'
+    | 'onFocusInput'
+  >
+> {
+  if (!inlineEditingProps?.editingBadge) return {};
 
   // Check if this badge matches the editing state using index-based comparison
   const { conditionIndex: editingIndex, field: editingField } =
@@ -416,7 +420,7 @@ function getValueBadgeInlineProps(
   const expectedField = isValueTo ? 'valueTo' : 'value';
   const isEditing =
     editingIndex === conditionIndex && editingField === expectedField;
-  if (!isEditing) return null;
+  if (!isEditing) return {};
 
   return {
     isEditing: true,
@@ -526,7 +530,7 @@ function createValueBadgeConfig(
     canClear: true,
     onEdit: handlers.onEdit,
     canEdit: handlers.canEdit,
-    ...(inlineProps ?? {}),
+    ...inlineProps,
     columnType,
   };
 }

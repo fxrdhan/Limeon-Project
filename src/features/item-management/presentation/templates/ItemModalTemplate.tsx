@@ -208,14 +208,14 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                       <div className="w-full flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                         {children.basicInfoRequired}
                         {children.basicInfoOptional}
-                        {children.categoryForm && children.categoryForm}
+                        {children.categoryForm}
                       </div>
                     ) : (
                       // Standard form layout
                       <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-5">
                         <div className="w-full md:w-[40%] min-h-0 md:pr-2 md:pl-2 scrollbar-hide">
                           {children.basicInfoRequired}
-                          {children.categoryForm && children.categoryForm}
+                          {children.categoryForm}
                         </div>
 
                         <div

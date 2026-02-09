@@ -1027,16 +1027,16 @@ const ItemManagementContent: React.FC<{
       isClosing={ui.isClosing}
       onBackdropClick={ui.handleBackdropClick}
       onSubmit={form.handleSubmit}
-      rightColumnProps={{
-        ...(isLevelPricingMode
-          ? {}
+      rightColumnProps={
+        isLevelPricingMode
+          ? undefined
           : {
               onMouseMove: handleStackMouseMove,
               onMouseLeave: handleStackMouseLeave,
               onPointerDownCapture: handleStackPointerDownCapture,
               onClickCapture: handleStackClickCapture,
-            }),
-      }}
+            }
+      }
       children={{
         header: (
           <ItemFormSections.Header

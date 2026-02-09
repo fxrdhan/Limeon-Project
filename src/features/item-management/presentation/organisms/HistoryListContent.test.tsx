@@ -154,13 +154,13 @@ const createContextValue = (
     entityId: 'item-1',
     data: historyData,
     isLoading: false,
-    ...(overrides.history ?? {}),
+    ...overrides.history,
   },
   comparison: {
     isOpen: false,
     isDualMode: true,
     isFlipped: true,
-    ...(overrides.comparison ?? {}),
+    ...overrides.comparison,
   },
   uiActions: {
     closeComparison: closeComparisonMock,
