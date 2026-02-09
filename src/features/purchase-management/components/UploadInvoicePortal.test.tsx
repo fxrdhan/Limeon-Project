@@ -375,4 +375,157 @@ describe('UploadInvoicePortal', () => {
     fireEvent.click(uploadBox);
     expect(clickSpy).toHaveBeenCalled();
   });
+
+  it('covers input/drop validation branches and valid dropped file caching', async () => {
+    const { unmount } = render(
+      <UploadInvoicePortal isOpen onClose={vi.fn()} />
+    );
+
+    const uploadArea = screen
+      .getByText('Klik atau seret untuk mengunggah gambar faktur')
+      .closest('div[class*="border-2"]') as HTMLDivElement | null;
+    const input = document.querySelector(
+      '#fileInput'
+    ) as HTMLInputElement | null;
+    expect(uploadArea).toBeTruthy();
+    expect(input).toBeTruthy();
+    if (!uploadArea || !input) return;
+
+    fireEvent.change(input, { target: { files: [] } });
+    expect(
+      screen.queryByText(/Tipe file tidak valid/i)
+    ).not.toBeInTheDocument();
+
+    const oversizedInputFile = new File(['x'], 'too-big.jpg', {
+      type: 'image/jpeg',
+    });
+    Object.defineProperty(oversizedInputFile, 'size', {
+      value: 6 * 1024 * 1024,
+    });
+    fireEvent.change(input, { target: { files: [oversizedInputFile] } });
+    expect(
+      await screen.findByText('Ukuran file terlalu besar. Maksimum 5MB.')
+    ).toBeInTheDocument();
+
+    const invalidDropFile = new File(['bad'], 'drop.txt', {
+      type: 'text/plain',
+    });
+    fireEvent.dragLeave(uploadArea);
+    fireEvent.drop(uploadArea, { dataTransfer: { files: [invalidDropFile] } });
+    expect(
+      screen.getByText(/(Tipe file tidak valid|Ukuran file terlalu besar)/)
+    ).toBeInTheDocument();
+
+    unmount();
+
+    render(<UploadInvoicePortal isOpen onClose={vi.fn()} />);
+    const uploadArea2 = screen
+      .getByText('Klik atau seret untuk mengunggah gambar faktur')
+      .closest('div[class*="border-2"]') as HTMLDivElement | null;
+    expect(uploadArea2).toBeTruthy();
+    if (!uploadArea2) return;
+
+    const validDroppedFile = new File(['img'], 'drop-valid.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.drop(uploadArea2, {
+      dataTransfer: { files: [validDroppedFile] },
+    });
+    expect(setCachedInvoiceFileMock).toHaveBeenCalledWith(validDroppedFile);
+  });
+
+  it('handles hover glow timers, mousemove throttle, and close cleanup paths', async () => {
+    vi.useFakeTimers();
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    const rafSpy = vi
+      .spyOn(globalThis, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        callback(0);
+        return 1;
+      });
+
+    const onClose = vi.fn();
+    const { rerender } = render(
+      <UploadInvoicePortal isOpen onClose={onClose} />
+    );
+
+    const uploadArea = screen
+      .getByText('Klik atau seret untuk mengunggah gambar faktur')
+      .closest('div[class*="border-2"]') as HTMLDivElement | null;
+    expect(uploadArea).toBeTruthy();
+    if (!uploadArea) return;
+
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 120, clientY: 150 })
+    );
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 122, clientY: 152 })
+    );
+
+    fireEvent.mouseEnter(uploadArea);
+    fireEvent.mouseLeave(uploadArea, { clientX: -20, clientY: -20 });
+    await vi.advanceTimersByTimeAsync(20);
+
+    const backdrop = Array.from(
+      document.querySelectorAll<HTMLDivElement>('.fixed.inset-0')
+    ).find(node => node.className.includes('bg-black/50'));
+    expect(backdrop).toBeTruthy();
+    if (backdrop) {
+      fireEvent.click(backdrop);
+    }
+    expect(onClose).toHaveBeenCalled();
+
+    rerender(<UploadInvoicePortal isOpen={false} onClose={onClose} />);
+    await vi.advanceTimersByTimeAsync(20);
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    expect(rafSpy).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('handles invalid blob URL parsing and preview close cleanup', async () => {
+    const onClose = vi.fn();
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('invalid-url');
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+
+    render(<UploadInvoicePortal isOpen onClose={onClose} />);
+
+    const input = document.querySelector(
+      '#fileInput'
+    ) as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    if (!input) return;
+
+    const validFile = new File(['img'], 'invalid-preview.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(input, { target: { files: [validFile] } });
+
+    expect(await screen.findByText('invalid-preview.jpg')).toBeInTheDocument();
+    expect(screen.queryByAltText('Thumbnail')).not.toBeInTheDocument();
+
+    const fileRow = screen.getByText('invalid-preview.jpg').closest('div');
+    expect(fileRow).toBeTruthy();
+    if (!fileRow) return;
+    fireEvent.click(fileRow);
+
+    const previewOverlay = Array.from(
+      document.querySelectorAll<HTMLDivElement>('.fixed.inset-0')
+    ).find(node => node.className.includes('bg-black/70'));
+    expect(previewOverlay).toBeTruthy();
+    if (previewOverlay) {
+      fireEvent.click(previewOverlay);
+    }
+
+    const baseOverlay = Array.from(
+      document.querySelectorAll<HTMLDivElement>('.fixed.inset-0')
+    ).find(node => node.className.includes('bg-black/50'));
+    expect(baseOverlay).toBeTruthy();
+    if (baseOverlay) {
+      fireEvent.click(baseOverlay);
+    }
+
+    expect(onClose).toHaveBeenCalled();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
 });

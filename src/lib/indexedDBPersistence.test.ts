@@ -13,6 +13,7 @@ type MockConfig = {
   storeExistsOnOpen?: boolean[];
   callUpgradeOnOpen?: boolean[];
   openErrorAtCall?: number;
+  deleteErrorAtCall?: number;
   initialRecords?: PersistedRecord[];
 };
 
@@ -155,8 +156,13 @@ const createIndexedDbMock = (config: MockConfig = {}) => {
     }),
     deleteDatabase: vi.fn(() => {
       const request = makeRequest<null>(null);
-      deleteCalls.push(1);
+      const callNumber = deleteCalls.push(1);
       queueMicrotask(() => {
+        if (config.deleteErrorAtCall === callNumber) {
+          request.error = new Error('delete failed');
+          request.onerror?.({ target: request });
+          return;
+        }
         request.onsuccess?.({ target: request });
       });
       return request;
@@ -330,5 +336,147 @@ describe('indexedDBPersistence', () => {
 
     expect(db).not.toBeNull();
     expect(deleteCalls.length).toBeGreaterThan(0);
+  });
+
+  it('returns null when recreation retries are exhausted or delete fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const exhaustedMock = createIndexedDbMock({
+      storeExistsOnOpen: [false, false, false],
+      callUpgradeOnOpen: [false, false, false],
+    });
+    Object.defineProperty(globalThis, 'indexedDB', {
+      value: exhaustedMock.indexedDBMock,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'IDBKeyRange', {
+      value: { upperBound: (upper: number) => ({ upper }) },
+      configurable: true,
+    });
+
+    const { setupIndexedDBPersistence } =
+      await import('./indexedDBPersistence');
+
+    const exhaustedResult = await setupIndexedDBPersistence({
+      getQueryCache: () => ({
+        subscribe: vi.fn(),
+        getAll: vi.fn(() => []),
+      }),
+      setQueryData: vi.fn(),
+    } as never);
+    expect(exhaustedResult).toBeNull();
+    expect(errorSpy).toHaveBeenCalled();
+
+    vi.resetModules();
+    const deleteFailedMock = createIndexedDbMock({
+      storeExistsOnOpen: [false],
+      callUpgradeOnOpen: [false],
+      deleteErrorAtCall: 1,
+    });
+    Object.defineProperty(globalThis, 'indexedDB', {
+      value: deleteFailedMock.indexedDBMock,
+      configurable: true,
+    });
+
+    const { setupIndexedDBPersistence: setupAfterDeleteFailure } =
+      await import('./indexedDBPersistence');
+    const deleteFailedResult = await setupAfterDeleteFailure({
+      getQueryCache: () => ({
+        subscribe: vi.fn(),
+        getAll: vi.fn(() => []),
+      }),
+      setQueryData: vi.fn(),
+    } as never);
+    expect(deleteFailedResult).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it('handles missing stores and thrown transactions with safe fallbacks', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { indexedDBMock } = createIndexedDbMock();
+
+    Object.defineProperty(globalThis, 'indexedDB', {
+      value: indexedDBMock,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'IDBKeyRange', {
+      value: { upperBound: (upper: number) => ({ upper }) },
+      configurable: true,
+    });
+
+    const { setupIndexedDBPersistence } =
+      await import('./indexedDBPersistence');
+    const db = await setupIndexedDBPersistence({
+      getQueryCache: () => ({
+        subscribe: vi.fn(),
+        getAll: vi.fn(() => []),
+      }),
+      setQueryData: vi.fn(),
+    } as never);
+    expect(db).not.toBeNull();
+
+    const internalDb = (db as { db: IDBDatabase }).db as IDBDatabase;
+    vi.spyOn(internalDb.objectStoreNames, 'contains').mockReturnValue(false);
+
+    await db?.saveQuery(['items'], { a: 1 }, Date.now(), 1000);
+    expect(await db?.getQuery(['items'])).toBeNull();
+    await db?.removeQuery(['items']);
+    await db?.clear();
+    await db?.cleanup();
+    expect(await db?.getStats()).toEqual({ count: 0, size: '0 B' });
+
+    vi.spyOn(internalDb.objectStoreNames, 'contains').mockReturnValue(true);
+    vi.spyOn(internalDb, 'transaction').mockImplementation(() => {
+      throw new Error('transaction failed');
+    });
+
+    await db?.saveQuery(['items'], { b: 2 }, Date.now(), 1000);
+    expect(await db?.getQuery(['items'])).toBeNull();
+    await db?.removeQuery(['items']);
+    await db?.clear();
+    await db?.cleanup();
+    expect(await db?.getStats()).toEqual({ count: 0, size: '0 B' });
+    expect(
+      (db as { formatBytes: (value: number) => string }).formatBytes(0)
+    ).toBe('0 B');
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it('logs warning when loading existing cache queries throws', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { indexedDBMock } = createIndexedDbMock();
+
+    Object.defineProperty(globalThis, 'indexedDB', {
+      value: indexedDBMock,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'IDBKeyRange', {
+      value: { upperBound: (upper: number) => ({ upper }) },
+      configurable: true,
+    });
+
+    const { setupIndexedDBPersistence } =
+      await import('./indexedDBPersistence');
+    const queryCache = {
+      subscribe: vi.fn(),
+      getAll: vi.fn(() => [{ queryKey: ['items'], state: { data: null } }]),
+    };
+    const queryClient = {
+      getQueryCache: () => queryCache,
+      setQueryData: vi.fn(),
+    } as never;
+
+    const db = await setupIndexedDBPersistence(queryClient);
+    vi.spyOn(
+      db as { getQuery: (key: unknown[]) => Promise<unknown> },
+      'getQuery'
+    ).mockRejectedValue(new Error('load failed'));
+
+    await setupIndexedDBPersistence(queryClient);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to load persisted query:',
+      expect.any(Error)
+    );
   });
 });

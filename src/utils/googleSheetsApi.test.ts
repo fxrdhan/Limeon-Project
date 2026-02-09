@@ -191,4 +191,109 @@ describe('GoogleSheetsService', () => {
     expect(sessionStorage.getItem('google_sheets_access_token')).toBeNull();
     expect(service.isAuthorized()).toBe(false);
   });
+
+  it('loads GIS script when google accounts object is unavailable', async () => {
+    const { initMock } = setupGoogleApis();
+    Object.defineProperty(window, 'google', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
+
+    const appendSpy = vi
+      .spyOn(document.head, 'appendChild')
+      .mockImplementation(node => {
+        const script = node as HTMLScriptElement;
+        if (script.src.includes('accounts.google.com/gsi/client')) {
+          Object.defineProperty(window, 'google', {
+            value: {
+              accounts: {
+                oauth2: {
+                  initTokenClient: vi.fn(() => ({
+                    requestAccessToken: vi.fn(),
+                  })),
+                },
+              },
+            },
+            configurable: true,
+            writable: true,
+          });
+          script.onload?.(new Event('load'));
+        }
+        return node;
+      });
+
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+
+    expect(appendSpy).toHaveBeenCalled();
+    expect(initMock).toHaveBeenCalled();
+  });
+
+  it('rejects initialization when GIS script fails to load', async () => {
+    setupGoogleApis();
+    Object.defineProperty(window, 'google', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
+
+    vi.spyOn(document.head, 'appendChild').mockImplementation(node => {
+      const script = node as HTMLScriptElement;
+      script.onerror?.(new Event('error'));
+      return node;
+    });
+
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+
+    await expect(service.initialize()).rejects.toThrow(
+      'Failed to load Google Identity Services'
+    );
+  });
+
+  it('resolves authorize immediately when in-memory token already exists', async () => {
+    const { requestAccessTokenMock } = setupGoogleApis();
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+    await service.authorize();
+
+    const serviceState = service as unknown as { accessToken: string | null };
+    serviceState.accessToken = 'cached-token';
+
+    const token = await service.authorize();
+
+    expect(token).toBe('cached-token');
+    expect(requestAccessTokenMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('wraps createSpreadsheetWithData failures with user-facing error', async () => {
+    const { createMock } = setupGoogleApis();
+    createMock.mockRejectedValueOnce(new Error('network down'));
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+    await service.authorize();
+
+    await expect(
+      service.createSpreadsheetWithData('Laporan', ['A'], [['1']])
+    ).rejects.toThrow('Failed to create Google Sheet');
+  });
+
+  it('rethrows non-auth errors from export workflow', async () => {
+    setupGoogleApis();
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+
+    vi.spyOn(service, 'createSpreadsheetWithData').mockRejectedValueOnce(
+      new Error('quota exceeded')
+    );
+
+    await expect(
+      service.exportGridDataToSheets([['x']], ['h'], 'report')
+    ).rejects.toThrow('quota exceeded');
+  });
 });
