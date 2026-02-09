@@ -541,6 +541,7 @@ describe('ItemFormSections', () => {
       onFieldChange: (field: string, value: boolean | string) => void;
     };
     settingsProps.onFieldChange('is_medicine', false);
+    settingsProps.onFieldChange('is_medicine', true);
     settingsProps.onFieldChange('is_active', false);
     settingsProps.onFieldChange('has_expiry_date', true);
     settingsProps.onFieldChange('min_stock', '12');
@@ -814,6 +815,697 @@ describe('ItemFormSections', () => {
         package_conversions: expect.any(Array),
       });
     });
+  });
+
+  it('covers additional helper utility fallback branches', () => {
+    expect(
+      areImageSlotsEqual(
+        [{ url: 'a', path: 'pa' }],
+        [
+          { url: 'a', path: 'pa' },
+          { url: 'b', path: 'pb' },
+        ]
+      )
+    ).toBe(false);
+
+    const queryClient = { setQueriesData: vi.fn() };
+    applyItemCacheUpdates(queryClient as never, 'item-1', { name: 'Updated' });
+
+    const listUpdater = queryClient.setQueriesData.mock.calls[0][1] as (
+      data: unknown
+    ) => unknown;
+    expect(listUpdater({ id: 'item-1', name: 'Old' })).toEqual({
+      id: 'item-1',
+      name: 'Updated',
+    });
+    expect(listUpdater({ id: 'item-2', name: 'Old' })).toEqual({
+      id: 'item-2',
+      name: 'Old',
+    });
+    expect(listUpdater('raw')).toBe('raw');
+  });
+
+  it('handles dropdown autosave error branches across required/settings/optional sections', async () => {
+    updateItemFieldsMock
+      .mockRejectedValueOnce(new Error('required failed'))
+      .mockRejectedValueOnce(new Error('settings failed'))
+      .mockRejectedValueOnce(new Error('optional failed'));
+
+    render(<ItemFormSections.BasicInfoRequired itemId="item-1" />);
+    (
+      capturedProps.basicInfoRequired as {
+        onDropdownChange: (field: string, value: string) => void;
+      }
+    ).onDropdownChange('category_id', 'cat-1');
+
+    render(
+      <ItemFormSections.Settings
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+    (
+      capturedProps.settings as {
+        onFieldChange: (field: string, value: boolean | string) => void;
+      }
+    ).onFieldChange('is_active', false);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+    (
+      capturedProps.basicInfoOptional as {
+        onDropdownChange: (field: string, value: string) => void;
+      }
+    ).onDropdownChange('unit_id', 'unit-1');
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('Gagal menyimpan perubahan.');
+    });
+  });
+
+  it('handles pricing expand/hide branches and level-discount filtering map', async () => {
+    const onExpand = vi.fn();
+    const formHook = createFormHook();
+    formHook.formData.customer_level_discounts = [
+      { customer_level_id: '', discount_percentage: 5 },
+      { customer_level_id: 'lvl-1', discount_percentage: 15 },
+    ];
+    useItemFormMock.mockReturnValue(formHook);
+
+    render(
+      <ItemFormSections.Pricing
+        isExpanded={true}
+        onExpand={onExpand}
+        itemId="item-1"
+      />
+    );
+
+    const pricingProps = capturedProps.pricing as {
+      onShowLevelPricing: () => void;
+      onHideLevelPricing: () => void;
+      onExpand: () => void;
+      onLevelPricingActiveChange: (active: boolean) => void;
+      levelPricing?: {
+        onDiscountChange: (levelId: string, value: string) => void;
+      };
+    };
+
+    pricingProps.onShowLevelPricing();
+    await waitFor(() => {
+      expect(
+        (capturedProps.pricing as { levelPricing?: unknown }).levelPricing
+      ).toBeTruthy();
+    });
+    const expandedPricingProps = capturedProps.pricing as {
+      onExpand: () => void;
+      onHideLevelPricing: () => void;
+      onLevelPricingActiveChange: (active: boolean) => void;
+      levelPricing?: {
+        onDiscountChange: (levelId: string, value: string) => void;
+      };
+    };
+    expandedPricingProps.onExpand();
+    expandedPricingProps.onHideLevelPricing();
+    expandedPricingProps.onLevelPricingActiveChange(false);
+    expandedPricingProps.levelPricing?.onDiscountChange('lvl-1', '');
+
+    expect(onExpand).toHaveBeenCalled();
+    expect(useItemFormMock().updateFormData).toHaveBeenCalled();
+  });
+
+  it('covers package conversion updater mapping and persist success flow', async () => {
+    const packageHook = createPackageHook();
+    packageHook.setConversions = vi.fn(
+      (
+        updater: (
+          prev: Array<{
+            id: string;
+            to_unit_id: string;
+            unit: { id: string; name: string };
+            conversion_rate: number;
+            base_price: number;
+            sell_price: number;
+          }>
+        ) => Array<{
+          id: string;
+          to_unit_id: string;
+          unit: { id: string; name: string };
+          conversion_rate: number;
+          base_price: number;
+          sell_price: number;
+        }>
+      ) => {
+        packageHook.conversions = updater(packageHook.conversions);
+      }
+    );
+    useItemPriceMock.mockReturnValue({
+      packageConversionHook: packageHook,
+      displayBasePrice: 'Rp 1000',
+      displaySellPrice: 'Rp 1500',
+    });
+
+    const { rerender } = render(
+      <ItemFormSections.PackageConversion
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    (
+      capturedProps.packageConversion as {
+        onUpdateSellPrice: (id: string, sellPrice: number) => void;
+      }
+    ).onUpdateSellPrice('conv-1', 777);
+
+    rerender(
+      <ItemFormSections.PackageConversion
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', {
+        package_conversions: expect.any(Array),
+      });
+    });
+    expect(useItemFormMock().setInitialPackageConversions).toHaveBeenCalled();
+  });
+
+  it('covers optional image loading guard branch', () => {
+    const formHook = createFormHook();
+    formHook.loading = true;
+    useItemFormMock.mockReturnValue(formHook);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    expect(listItemImagesMock).not.toHaveBeenCalled();
+  });
+
+  it('covers optional image delete error and preview click propagation', async () => {
+    const formHook = createFormHook();
+    formHook.loading = false;
+    formHook.formData.image_urls = [
+      'https://cdn.pharmasys.test/items/item-1/slot-0',
+      '',
+      '',
+      '',
+    ];
+    useItemFormMock.mockReturnValue(formHook);
+    removeCachedImageBlobMock.mockRejectedValueOnce(new Error('delete-failed'));
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    const image = await screen.findByAltText('Item 1');
+    fireEvent.click(image);
+    const previewImage = await screen.findByAltText('Preview');
+    fireEvent.click(previewImage);
+    expect(screen.getByAltText('Preview')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('delete-item-image-0'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('Gagal menghapus gambar.');
+    });
+  });
+
+  it('covers optional autosave onSaved cache updates and item image cache updater branches', async () => {
+    vi.useFakeTimers();
+
+    const formHook = createFormHook();
+    formHook.formData.image_urls = [
+      'https://cdn.pharmasys.test/items/item-1/slot-0',
+      '',
+      '',
+      '',
+    ];
+    useItemFormMock.mockReturnValue(formHook);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    queryClientState.setQueriesData.mockClear();
+    (
+      capturedProps.basicInfoOptional as {
+        onChange: (
+          event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+        ) => void;
+      }
+    ).onChange({
+      target: { name: 'barcode', value: 'BR-UPDATED' },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    await act(async () => {
+      vi.advanceTimersByTime(650);
+      await Promise.resolve();
+    });
+    expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', {
+      barcode: 'BR-UPDATED',
+    });
+    expect(queryClientState.setQueriesData).toHaveBeenCalled();
+    vi.useRealTimers();
+
+    fireEvent.click(screen.getByText('delete-item-image-0'));
+    await waitFor(() => {
+      expect(updateItemImagesMock).toHaveBeenCalled();
+    });
+
+    const updater = queryClientState.setQueriesData.mock.calls.at(-1)?.[1] as (
+      data: unknown
+    ) => unknown;
+    expect(updater(null)).toBeNull();
+    expect(
+      updater([{ id: 'item-1', name: 'Paracetamol' }, { id: 'item-2' }])
+    ).toEqual([
+      { id: 'item-1', name: 'Paracetamol', image_urls: [] },
+      { id: 'item-2' },
+    ]);
+    expect(updater({ id: 'item-1', name: 'Paracetamol' })).toEqual({
+      id: 'item-1',
+      name: 'Paracetamol',
+      image_urls: [],
+    });
+    expect(updater('raw-cache')).toBe('raw-cache');
+  });
+
+  it('covers local preview replacement and revoke path in draft image upload flow', async () => {
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled();
+    });
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    await waitFor(() => {
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob://preview');
+    });
+  });
+
+  it('covers openCropper file-reader error branches', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({
+        width: 120,
+        height: 80,
+        close: vi.fn(),
+      }))
+    );
+    const originalFileReader = globalThis.FileReader;
+
+    class NonStringResultReader {
+      public result: string | ArrayBuffer | null = new ArrayBuffer(8);
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+    vi.stubGlobal('FileReader', NonStringResultReader as unknown as FileReader);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal memuat gambar untuk crop.'
+      );
+    });
+
+    class ReaderError {
+      public result: string | ArrayBuffer | null = null;
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onerror?.();
+      }
+    }
+    vi.stubGlobal('FileReader', ReaderError as unknown as FileReader);
+    fireEvent.click(screen.getByText('upload-item-image-1'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal memuat gambar untuk crop.'
+      );
+    });
+
+    vi.stubGlobal('FileReader', originalFileReader);
+  });
+
+  it('covers getImageDimensions fallback reject branches', async () => {
+    vi.stubGlobal('createImageBitmap', undefined);
+    const originalImage = globalThis.Image;
+    const originalFileReader = globalThis.FileReader;
+
+    class NonStringReader {
+      public result: string | ArrayBuffer | null = new ArrayBuffer(8);
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+    vi.stubGlobal('FileReader', NonStringReader as unknown as FileReader);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal membaca ukuran gambar.'
+      );
+    });
+
+    class StringReader {
+      public result: string | ArrayBuffer | null = 'data:image/jpeg;base64,ok';
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+    class ErrorImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        this.onerror?.();
+      }
+      get src() {
+        return '';
+      }
+    }
+    vi.stubGlobal('FileReader', StringReader as unknown as FileReader);
+    vi.stubGlobal('Image', ErrorImage as unknown as typeof Image);
+    fireEvent.click(screen.getByText('upload-item-image-1'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal membaca ukuran gambar.'
+      );
+    });
+
+    vi.stubGlobal('Image', originalImage);
+    vi.stubGlobal('FileReader', originalFileReader);
+  });
+
+  it('covers processAndUploadImage failure branches and upload rollback', async () => {
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    const onImageUpload = capturedProps.imageUploaderById['item-image-0']
+      .onImageUpload as (file: File) => Promise<void>;
+
+    compressImageIfNeededMock.mockResolvedValueOnce(
+      new File([new Uint8Array(1024 * 1024 + 10)], 'big.jpg', {
+        type: 'image/jpeg',
+      })
+    );
+    await act(async () => {
+      await onImageUpload(
+        new File(['img'], 'oversize.jpg', { type: 'image/jpeg' })
+      );
+    });
+    expect(toastErrorMock).toHaveBeenCalledWith('Ukuran gambar maksimal 1MB.');
+
+    compressImageIfNeededMock.mockResolvedValueOnce(
+      new File(['img'], 'upload-error.jpg', { type: 'image/jpeg' })
+    );
+    uploadItemImageMock.mockResolvedValueOnce({
+      error: new Error('upload failed'),
+    });
+    await act(async () => {
+      await onImageUpload(
+        new File(['img'], 'upload-error.jpg', { type: 'image/jpeg' })
+      );
+    });
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal mengunggah gambar.');
+
+    compressImageIfNeededMock.mockRejectedValueOnce(
+      new Error('compress failed')
+    );
+    await act(async () => {
+      await onImageUpload(
+        new File(['img'], 'compress-error.jpg', { type: 'image/jpeg' })
+      );
+    });
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal memproses gambar.');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob://preview');
+  });
+
+  it('covers crop confirm no-itemId, failure, and success branches', async () => {
+    Object.defineProperty(HTMLImageElement.prototype, 'complete', {
+      configurable: true,
+      get: () => true,
+    });
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({
+        width: 120,
+        height: 80,
+        close: vi.fn(),
+      }))
+    );
+    const originalFileReader = globalThis.FileReader;
+    class CropReader {
+      public result: string | ArrayBuffer | null =
+        'data:image/jpeg;base64,crop';
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+    vi.stubGlobal('FileReader', CropReader as unknown as FileReader);
+
+    const { rerender } = render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cropperConstructorMock).toHaveBeenCalled();
+    });
+    fireEvent.click(screen.getByText('Simpan'));
+    await waitFor(() => {
+      expect(screen.queryByText('Crop gambar (1:1)')).not.toBeInTheDocument();
+    });
+
+    rerender(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    uploadItemImageMock.mockResolvedValueOnce({
+      error: new Error('crop upload fail'),
+    });
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cropperConstructorMock).toHaveBeenCalled();
+    });
+    fireEvent.click(screen.getByText('Simpan'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('Gagal mengunggah gambar.');
+    });
+
+    uploadItemImageMock.mockResolvedValueOnce({ error: null });
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cropperConstructorMock).toHaveBeenCalled();
+    });
+    fireEvent.click(screen.getByText('Simpan'));
+    await waitFor(() => {
+      expect(updateItemImagesMock).toHaveBeenCalled();
+    });
+
+    vi.stubGlobal('FileReader', originalFileReader);
+  });
+
+  it('covers cropper init through image onload handler when image is not complete', async () => {
+    const completeDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLImageElement.prototype,
+      'complete'
+    );
+    Object.defineProperty(HTMLImageElement.prototype, 'complete', {
+      configurable: true,
+      get: () => false,
+    });
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({
+        width: 120,
+        height: 80,
+        close: vi.fn(),
+      }))
+    );
+    const originalFileReader = globalThis.FileReader;
+    class CropReader {
+      public result: string | ArrayBuffer | null =
+        'data:image/jpeg;base64,crop';
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+    vi.stubGlobal('FileReader', CropReader as unknown as FileReader);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        typeof (screen.getByAltText('Crop') as HTMLImageElement).onload
+      ).toBe('function');
+    });
+    const cropImage = screen.getByAltText('Crop') as HTMLImageElement;
+    expect(cropperConstructorMock).not.toHaveBeenCalled();
+    cropImage.onload?.(new Event('load'));
+    await waitFor(() => {
+      expect(cropperConstructorMock).toHaveBeenCalled();
+    });
+
+    if (completeDescriptor) {
+      Object.defineProperty(
+        HTMLImageElement.prototype,
+        'complete',
+        completeDescriptor
+      );
+    }
+    vi.stubGlobal('FileReader', originalFileReader);
+  });
+
+  it('covers image-dimension fallback branches and cropper onload initialization', async () => {
+    const formHook = createFormHook();
+    useItemFormMock.mockReturnValue(formHook);
+
+    vi.stubGlobal('createImageBitmap', undefined);
+    const originalImage = globalThis.Image;
+    const originalFileReader = globalThis.FileReader;
+
+    class SuccessFileReader {
+      public result: string | ArrayBuffer | null = 'data:image/jpeg;base64,ok';
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+
+    class MockImage {
+      width = 120;
+      height = 80;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        this.onload?.();
+      }
+      get src() {
+        return '';
+      }
+    }
+
+    vi.stubGlobal('FileReader', SuccessFileReader as unknown as FileReader);
+    vi.stubGlobal('Image', MockImage as unknown as typeof Image);
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+
+    const cropImage = screen.getByAltText('Crop') as HTMLImageElement;
+    Object.defineProperty(cropImage, 'complete', {
+      configurable: true,
+      get: () => false,
+    });
+    cropImage.onload?.(new Event('load'));
+    await waitFor(() => {
+      expect(cropperConstructorMock).toHaveBeenCalled();
+    });
+
+    class ErrorFileReader {
+      public result: string | ArrayBuffer | null = null;
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      readAsDataURL() {
+        this.onerror?.();
+      }
+    }
+
+    vi.stubGlobal('FileReader', ErrorFileReader as unknown as FileReader);
+    fireEvent.click(screen.getByText('upload-item-image-1'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal membaca ukuran gambar.'
+      );
+    });
+
+    vi.stubGlobal('Image', originalImage);
+    vi.stubGlobal('FileReader', originalFileReader);
   });
 
   it('loads and updates persisted item images when optional section is in edit mode', async () => {

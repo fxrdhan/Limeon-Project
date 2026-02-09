@@ -185,6 +185,7 @@ vi.mock('../ItemModalTemplate', () => ({
     };
     return (
       <div data-testid="item-modal-template" role="dialog" aria-modal="true">
+        <input name="name" aria-label="modal-name-input" />
         <button type="button" onClick={() => onBackdropClick?.()}>
           backdrop
         </button>
@@ -423,6 +424,12 @@ describe('ItemModal template/item', () => {
     expect(handlers.setInitialPackageConversions).toHaveBeenCalled();
     expect(handlers.updateFormData).toHaveBeenCalledWith({ name: 'Nama Baru' });
     expect(handlers.setInitialFormData).toHaveBeenCalled();
+    const initialFormUpdater = handlers.setInitialFormData.mock.calls[0]?.[0] as
+      | ((
+          prev: Record<string, unknown> | null
+        ) => Record<string, unknown> | null)
+      | undefined;
+    expect(initialFormUpdater?.(null)).toBeNull();
     expect(loggerDebugMock).toHaveBeenCalled();
 
     realtimeArgs.onItemDeleted();
@@ -745,5 +752,336 @@ describe('ItemModal template/item', () => {
     );
 
     expect(screen.queryByText('form-delete')).not.toBeInTheDocument();
+  });
+
+  it('covers stack guard branches, touch capture handlers, and cleanup timers', () => {
+    vi.useFakeTimers();
+    const handlers = createHandlers();
+    handlers.isEditMode = false;
+    handlers.formData = {
+      ...handlers.formData,
+      code: '',
+      name: '',
+      updated_at: null,
+      barcode: '',
+      quantity: 0,
+      description: '',
+      unit_id: '',
+      base_price: 0,
+      sell_price: 0,
+    };
+    useAddItemPageHandlersMock.mockReturnValue(handlers);
+    useItemUIMock.mockReturnValue({
+      ...useItemUIMock(),
+      isEditMode: false,
+    });
+    useItemFormMock.mockReturnValue({
+      formData: handlers.formData,
+      loading: false,
+      handleSubmit: vi.fn((event?: React.FormEvent) => event?.preventDefault()),
+    });
+
+    const { unmount } = render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId={undefined}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    const additionalSection = document.querySelector(
+      '[data-stack-section="additional"]'
+    ) as HTMLElement;
+    const settingsSection = document.querySelector(
+      '[data-stack-section="settings"]'
+    ) as HTMLElement;
+    const pricingSection = document.querySelector(
+      '[data-stack-section="pricing"]'
+    ) as HTMLElement;
+    const conversionSection = document.querySelector(
+      '[data-stack-section="conversion"]'
+    ) as HTMLElement;
+    const rightColumn = screen.getByTestId('right-column');
+    const rightColumnProps = (
+      captured.templateProps as {
+        rightColumnProps: {
+          onMouseMove: (event: React.MouseEvent<HTMLDivElement>) => void;
+          onPointerDownCapture: (
+            event: React.PointerEvent<HTMLDivElement>
+          ) => void;
+          onClickCapture: (event: React.MouseEvent<HTMLDivElement>) => void;
+        };
+      }
+    ).rightColumnProps;
+
+    fireEvent.click(screen.getByText('expand-settings'));
+    fireEvent.mouseMove(additionalSection);
+    fireEvent.mouseMove(pricingSection);
+    fireEvent.click(screen.getByText('expand-pricing'));
+    fireEvent.mouseMove(settingsSection);
+    fireEvent.mouseMove(conversionSection);
+    fireEvent.mouseMove(pricingSection);
+    fireEvent.mouseMove(rightColumn);
+
+    fireEvent.click(screen.getByText('expand-optional'));
+    fireEvent.mouseMove(conversionSection);
+    fireEvent.mouseLeave(rightColumn);
+    fireEvent.mouseMove(conversionSection);
+    fireEvent.click(screen.getByText('expand-settings'));
+    fireEvent.mouseMove(conversionSection);
+    fireEvent.click(screen.getByText('level-on'));
+    fireEvent.click(screen.getByText('level-off'));
+
+    fireEvent.mouseMove(conversionSection);
+    act(() => {
+      vi.advanceTimersByTime(220);
+    });
+    fireEvent.mouseMove(settingsSection);
+
+    act(() => {
+      rightColumnProps.onMouseMove({
+        target: conversionSection,
+      } as React.MouseEvent<HTMLDivElement>);
+      rightColumnProps.onMouseMove({
+        target: conversionSection,
+      } as React.MouseEvent<HTMLDivElement>);
+    });
+
+    const preventPointer = vi.fn();
+    const stopPointer = vi.fn();
+    rightColumnProps.onPointerDownCapture({
+      pointerType: 'touch',
+      target: conversionSection,
+      preventDefault: preventPointer,
+      stopPropagation: stopPointer,
+    } as unknown as React.PointerEvent<HTMLDivElement>);
+    expect(preventPointer).toHaveBeenCalled();
+    expect(stopPointer).toHaveBeenCalled();
+
+    const preventClick = vi.fn();
+    const stopClick = vi.fn();
+    rightColumnProps.onClickCapture({
+      preventDefault: preventClick,
+      stopPropagation: stopClick,
+    } as unknown as React.MouseEvent<HTMLDivElement>);
+    expect(preventClick).toHaveBeenCalled();
+    expect(stopClick).toHaveBeenCalled();
+
+    rightColumnProps.onMouseMove({
+      target: conversionSection,
+    } as React.MouseEvent<HTMLDivElement>);
+    rightColumnProps.onPointerDownCapture({
+      pointerType: 'touch',
+      target: conversionSection,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as React.PointerEvent<HTMLDivElement>);
+
+    unmount();
+    vi.useRealTimers();
+  });
+
+  it('covers pricing focus retry loop when no focusable element is found', () => {
+    const rafSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        callback(0);
+        return 1;
+      });
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId="item-1"
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    const pricingContent = document.querySelector(
+      '[data-stack-section="pricing"] [data-section-content]'
+    );
+    pricingContent?.replaceChildren();
+
+    fireEvent.click(screen.getByText('next-pricing'));
+    expect(rafSpy).toHaveBeenCalled();
+    rafSpy.mockRestore();
+  });
+
+  it('covers auto-focus first-field fallback when name input query is unavailable', () => {
+    vi.useFakeTimers();
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId="item-1"
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    screen.getByLabelText('modal-name-input').setAttribute('disabled', 'true');
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(document.activeElement).toBeTruthy();
+    vi.useRealTimers();
+  });
+
+  it('covers stack timer-clearing, hover-restore, pointer replacement timer, and conversion expand', () => {
+    vi.useFakeTimers();
+    const handlers = createHandlers();
+    handlers.isEditMode = false;
+    handlers.formData = {
+      ...handlers.formData,
+      code: '',
+      name: '',
+      updated_at: null,
+      barcode: '',
+      quantity: 0,
+      description: '',
+      unit_id: '',
+      base_price: 0,
+      sell_price: 0,
+    };
+    useAddItemPageHandlersMock.mockReturnValue(handlers);
+    useItemUIMock.mockReturnValue({
+      ...useItemUIMock(),
+      isEditMode: false,
+    });
+    useItemFormMock.mockReturnValue({
+      formData: handlers.formData,
+      loading: false,
+      handleSubmit: vi.fn((event?: React.FormEvent) => event?.preventDefault()),
+    });
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId={undefined}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    const settingsSection = document.querySelector(
+      '[data-stack-section="settings"]'
+    ) as HTMLElement;
+    const conversionSection = document.querySelector(
+      '[data-stack-section="conversion"]'
+    ) as HTMLElement;
+    const rightColumnProps = (
+      captured.templateProps as {
+        rightColumnProps: {
+          onMouseMove: (event: React.MouseEvent<HTMLDivElement>) => void;
+          onPointerDownCapture: (
+            event: React.PointerEvent<HTMLDivElement>
+          ) => void;
+        };
+      }
+    ).rightColumnProps;
+
+    fireEvent.click(screen.getByText('expand-settings'));
+    rightColumnProps.onMouseMove({
+      target: conversionSection,
+    } as React.MouseEvent<HTMLDivElement>);
+    fireEvent.click(screen.getByText('expand-pricing'));
+
+    fireEvent.click(screen.getByText('expand-settings'));
+    rightColumnProps.onMouseMove({
+      target: conversionSection,
+    } as React.MouseEvent<HTMLDivElement>);
+    act(() => {
+      vi.advanceTimersByTime(220);
+    });
+    rightColumnProps.onMouseMove({
+      target: settingsSection,
+    } as React.MouseEvent<HTMLDivElement>);
+
+    fireEvent.click(screen.getByText('expand-optional'));
+    rightColumnProps.onPointerDownCapture({
+      pointerType: 'touch',
+      target: conversionSection,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as React.PointerEvent<HTMLDivElement>);
+    rightColumnProps.onPointerDownCapture({
+      pointerType: 'touch',
+      target: conversionSection,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as React.PointerEvent<HTMLDivElement>);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    fireEvent.click(screen.getByText('expand-conversion'));
+    vi.useRealTimers();
+  });
+
+  it('restores stack when hovering the last opened section in hover mode', () => {
+    vi.useFakeTimers();
+    const handlers = createHandlers();
+    handlers.isEditMode = false;
+    handlers.formData = {
+      ...handlers.formData,
+      code: '',
+      name: '',
+      updated_at: null,
+      barcode: '',
+      quantity: 0,
+      description: '',
+      unit_id: '',
+      base_price: 0,
+      sell_price: 0,
+    };
+    useAddItemPageHandlersMock.mockReturnValue(handlers);
+    useItemUIMock.mockReturnValue({
+      ...useItemUIMock(),
+      isEditMode: false,
+    });
+    useItemFormMock.mockReturnValue({
+      formData: handlers.formData,
+      loading: false,
+      handleSubmit: vi.fn((event?: React.FormEvent) => event?.preventDefault()),
+    });
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId={undefined}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    const settingsSection = document.querySelector(
+      '[data-stack-section="settings"]'
+    ) as HTMLElement;
+    const conversionSection = document.querySelector(
+      '[data-stack-section="conversion"]'
+    ) as HTMLElement;
+
+    fireEvent.click(screen.getByText('expand-settings'));
+    fireEvent.mouseMove(conversionSection);
+    act(() => {
+      vi.advanceTimersByTime(220);
+    });
+    fireEvent.mouseMove(settingsSection);
+
+    expect(screen.getByTestId('right-column')).toBeInTheDocument();
+    vi.useRealTimers();
   });
 });
