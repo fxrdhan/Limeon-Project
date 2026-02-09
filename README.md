@@ -35,7 +35,7 @@
 ![Vitest](https://img.shields.io/badge/-Vitest-252529?style=for-the-badge&logo=vitest&logoColor=FCC72B)
 ![Sass](https://img.shields.io/badge/Sass-CC6699?style=for-the-badge&logo=sass&logoColor=white)
 ![SWC](https://img.shields.io/badge/swc-f6cc49.svg?style=for-the-badge&logo=swc&logoColor=black)
-![ESLint](https://img.shields.io/badge/ESLint-4b32c3?style=for-the-badge&logo=eslint&logoColor=white)
+![Oxlint](https://img.shields.io/badge/Oxlint-111111?style=for-the-badge)
 ![Prettier](https://img.shields.io/badge/prettier-%23F7B93E.svg?style=for-the-badge&logo=prettier&logoColor=black)
 ![Husky](https://img.shields.io/badge/husky-%23323330.svg?style=for-the-badge&logo=git&logoColor=white)
 

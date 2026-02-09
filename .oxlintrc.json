@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "react"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2020": true
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "supabase/**",
+    ".claude/**",
+    ".yarn/**",
+    "coverage/**",
+    "**/*.js",
+    "**/*.mjs",
+    "**/*.cjs"
+  ],
+  "rules": {
+    "react/no-children-prop": "off"
+  }
+}

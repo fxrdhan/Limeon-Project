@@ -10,7 +10,7 @@ Tujuan dokumen ini:
 
 - **Tidak mengubah behavior** (UI/UX, data flow, hasil bisnis).
 - Refactor hanya **memindah lokasi, merapikan boundary, dan konsistensi style**.
-- Semua perubahan **harus lulus** `eslint --fix` dan `tsc -b --noEmit`.
+- Semua perubahan **harus lulus** `oxlint --fix` dan `tsc -b --noEmit`.
 
 ## 2) Temuan Kunci (Evidence)
 
@@ -127,5 +127,5 @@ Target: DevEx stabil, aturan jelas.
 ## 6) Validasi
 
 - Jalankan lint + tsc untuk setiap batch:
-  - `npx eslint [paths] --fix`
+  - `npx oxlint [paths] --fix`
   - `npx tsc -b --noEmit`

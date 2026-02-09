@@ -113,7 +113,7 @@ function shouldExcludeFile(filePath: string): boolean {
     'package.json',
     'package-lock.json',
     'yarn.lock',
-    'eslint.config.ts',
+    '.oxlintrc.json',
     'postcss.config.js',
     'tailwind.config.ts',
     'vite.config.ts',
