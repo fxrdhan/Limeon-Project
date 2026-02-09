@@ -248,4 +248,80 @@ describe('EnhancedSearchBar helpers', () => {
       nextCarry: false,
     });
   });
+
+  it('handles non-condition/non-group mutation paths without changing target node type', () => {
+    const base = makeGroup();
+
+    const valueOnGroup = updateGroupConditionValue(base, [1], 'value', 'noop');
+    expect(valueOnGroup.nodes[1]).toEqual(base.nodes[1]);
+
+    const valueOnConditionWithNestedPath = updateGroupConditionValue(
+      base,
+      [0, 0],
+      'value',
+      'noop'
+    );
+    expect(valueOnConditionWithNestedPath.nodes[0]).toEqual(base.nodes[0]);
+
+    const columnOnGroup = updateGroupConditionColumn(base, [1], nameColumn);
+    expect(columnOnGroup.nodes[1]).toEqual(base.nodes[1]);
+
+    const columnOnConditionWithNestedPath = updateGroupConditionColumn(
+      base,
+      [0, 0],
+      nameColumn
+    );
+    expect(columnOnConditionWithNestedPath.nodes[0]).toEqual(base.nodes[0]);
+
+    const operatorOnGroup = updateGroupConditionOperator(base, [1], 'equals');
+    expect(operatorOnGroup.nodes[1]).toEqual(base.nodes[1]);
+
+    const operatorOnConditionWithNestedPath = updateGroupConditionOperator(
+      base,
+      [0, 0],
+      'equals'
+    );
+    expect(operatorOnConditionWithNestedPath.nodes[0]).toEqual(base.nodes[0]);
+
+    const removeOnConditionWithNestedPath = removeGroupNodeAtPath(base, [0, 0]);
+    expect(removeOnConditionWithNestedPath.nodes[0]).toEqual(base.nodes[0]);
+
+    const unwrapOnConditionPath = unwrapGroupAtPath(base, [0]);
+    expect(unwrapOnConditionPath.nodes[0]).toEqual(base.nodes[0]);
+
+    const unwrapOnConditionWithNestedPath = unwrapGroupAtPath(base, [0, 0]);
+    expect(unwrapOnConditionWithNestedPath.nodes[0]).toEqual(base.nodes[0]);
+  });
+
+  it('covers additional step-back edge cases around confirmation and trailing hash handling', () => {
+    expect(stepBackPatternValue('#', false)).toEqual({
+      handled: false,
+      nextValue: '#',
+      nextCarry: false,
+    });
+
+    expect(stepBackPatternValue('#name', false)).toEqual({
+      handled: true,
+      nextValue: '#',
+      nextCarry: true,
+    });
+
+    expect(stepBackPatternValue('#and##', false)).toEqual({
+      handled: true,
+      nextValue: '',
+      nextCarry: false,
+    });
+
+    expect(stepBackPatternValue('#name #)##', false)).toEqual({
+      handled: true,
+      nextValue: '#name',
+      nextCarry: true,
+    });
+
+    expect(stepBackPatternValue('#( #name #) #)##', false)).toEqual({
+      handled: true,
+      nextValue: '#( #name #)##',
+      nextCarry: true,
+    });
+  });
 });

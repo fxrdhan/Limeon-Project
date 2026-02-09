@@ -488,4 +488,388 @@ describe('useMasterDataManagement', () => {
     );
     consoleSpy.mockRestore();
   });
+
+  it('clears debounced search states, resets page size, clears editing after close, and handles delete success', async () => {
+    const { result } = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+
+    act(() => {
+      result.current.setSearch('Alpha');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(result.current.debouncedSearch).toBe('Alpha');
+
+    act(() => {
+      result.current.setSearch('   ');
+    });
+    expect(result.current.debouncedSearch).toBe('');
+
+    act(() => {
+      result.current.setSearch('Beta');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(result.current.debouncedSearch).toBe('Beta');
+
+    act(() => {
+      result.current.setSearch('#supplier');
+    });
+    expect(result.current.debouncedSearch).toBe('');
+
+    act(() => {
+      result.current.handleEdit(supplierRows[0]);
+    });
+    expect(result.current.editingItem?.id).toBe('sup-1');
+    expect(result.current.isEditModalOpen).toBe(true);
+
+    act(() => {
+      result.current.setIsEditModalOpen(false);
+    });
+    expect(result.current.editingItem?.id).toBe('sup-1');
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(result.current.editingItem).toBeNull();
+
+    act(() => {
+      result.current.handlePageChange(2);
+      result.current.handleItemsPerPageChange(10);
+    });
+    expect(result.current.itemsPerPage).toBe(10);
+    expect(result.current.currentPage).toBe(1);
+
+    await act(async () => {
+      await result.current.handleDelete('sup-1');
+    });
+    expect(deleteSupplierMutateAsyncMock).toHaveBeenCalledWith('sup-1');
+    expect(refetchMock).toHaveBeenCalled();
+  });
+
+  it('covers table-specific field filters and sort score ordering branches', () => {
+    useSuppliersMock.mockReturnValue({
+      data: [
+        { id: 's-code-start', code: 'af-01', name: 'code start' },
+        { id: 's-code-include', code: 'xaf-02', name: 'code include' },
+        { id: 's-name-start', code: 'zz-03', name: 'afandi' },
+        { id: 's-name-include', code: 'zz-04', name: 'zafer' },
+        { id: 's-name-fuzzy', code: 'zz-05', name: 'alpha fuzzy' },
+        {
+          id: 's-desc',
+          code: '',
+          name: 'desc row',
+          description: 'special desc',
+        },
+        {
+          id: 's-addr-generic',
+          code: '',
+          name: 'addr row',
+          address: 'Main Street',
+        },
+        {
+          id: 's-addr-supplier',
+          code: '',
+          name: 'addr supplier',
+          address: { nested: true } as unknown as string,
+        },
+        { id: 's-phone', code: '', name: 'phone row', phone: '08123' },
+        { id: 's-email', code: '', name: 'email row', email: 'mail@row.test' },
+        {
+          id: 's-contact',
+          code: '',
+          name: 'contact row',
+          contact_person: 'Rani',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: refetchMock,
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+
+    usePatientsMock.mockReturnValue({
+      data: [
+        {
+          id: 'pat-x',
+          code: '',
+          name: 'patient row',
+          gender: 'male',
+          address: { meta: 'raw' } as unknown as string,
+          phone: '08234',
+          email: 'pat@row.test',
+          birth_date: '2000-02-02',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+
+    useDoctorsMock.mockReturnValue({
+      data: [
+        {
+          id: 'doc-x',
+          code: '',
+          name: 'doctor row',
+          specialization: 'cardiology',
+          license_number: 'SIP-900',
+          phone: '08345',
+          email: 'doc@row.test',
+          experience_years: 12,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+
+    useCustomersMock.mockReturnValue({
+      data: [
+        {
+          id: 'cus-x',
+          code: '',
+          name: 'customer row',
+          phone: '08456',
+          email: 'cus@row.test',
+          address: { info: 'raw' } as unknown as string,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+
+    fuzzyMatchMock.mockImplementation((text: string, term: string) => {
+      const normalizedText = String(text).toLowerCase();
+      const normalizedTerm = String(term).toLowerCase();
+      if (normalizedText === 'alpha fuzzy' && normalizedTerm === 'af')
+        return true;
+      if (normalizedText === '[object object]' && normalizedTerm === 'object') {
+        return true;
+      }
+      return normalizedText.includes(normalizedTerm);
+    });
+
+    const suppliers = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+    act(() => {
+      suppliers.result.current.setSearch('af');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(suppliers.result.current.data.map(item => item.id)).toEqual([
+      's-code-start',
+      's-code-include',
+      's-name-start',
+      's-name-include',
+      's-name-fuzzy',
+    ]);
+
+    act(() => {
+      suppliers.result.current.setSearch('special desc');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(suppliers.result.current.data[0].id).toBe('s-desc');
+
+    act(() => {
+      suppliers.result.current.setSearch('main street');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(suppliers.result.current.data[0].id).toBe('s-addr-generic');
+
+    act(() => {
+      suppliers.result.current.setSearch('object');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(
+      suppliers.result.current.data.some(item => item.id === 's-addr-supplier')
+    ).toBe(true);
+
+    act(() => {
+      suppliers.result.current.setSearch('08123');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(suppliers.result.current.data[0].id).toBe('s-phone');
+
+    act(() => {
+      suppliers.result.current.setSearch('mail@row.test');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(suppliers.result.current.data[0].id).toBe('s-email');
+
+    act(() => {
+      suppliers.result.current.setSearch('rani');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(suppliers.result.current.data[0].id).toBe('s-contact');
+
+    const patients = renderHook(() =>
+      useMasterDataManagement('patients', 'Patient')
+    );
+    act(() => {
+      patients.result.current.setSearch('object');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(patients.result.current.data[0].id).toBe('pat-x');
+    act(() => {
+      patients.result.current.setSearch('08234');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(patients.result.current.data[0].id).toBe('pat-x');
+    act(() => {
+      patients.result.current.setSearch('pat@row.test');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(patients.result.current.data[0].id).toBe('pat-x');
+    act(() => {
+      patients.result.current.setSearch('2000-02-02');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(patients.result.current.data[0].id).toBe('pat-x');
+
+    const doctors = renderHook(() =>
+      useMasterDataManagement('doctors', 'Doctor')
+    );
+    act(() => {
+      doctors.result.current.setSearch('sip-900');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(doctors.result.current.data[0].id).toBe('doc-x');
+    act(() => {
+      doctors.result.current.setSearch('08345');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(doctors.result.current.data[0].id).toBe('doc-x');
+    act(() => {
+      doctors.result.current.setSearch('doc@row.test');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(doctors.result.current.data[0].id).toBe('doc-x');
+    act(() => {
+      doctors.result.current.setSearch('12');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(doctors.result.current.data[0].id).toBe('doc-x');
+
+    const customers = renderHook(() =>
+      useMasterDataManagement('customers', 'Customer')
+    );
+    act(() => {
+      customers.result.current.setSearch('08456');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(customers.result.current.data[0].id).toBe('cus-x');
+    act(() => {
+      customers.result.current.setSearch('cus@row.test');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(customers.result.current.data[0].id).toBe('cus-x');
+    act(() => {
+      customers.result.current.setSearch('object');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(customers.result.current.data[0].id).toBe('cus-x');
+
+    useSuppliersMock.mockReturnValue({
+      data: [
+        { id: 'tie-2', code: 'xaf-20', name: 'row b' },
+        { id: 'tie-1', code: 'xaf-10', name: 'row a' },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: refetchMock,
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    const tieByCode = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+    act(() => {
+      tieByCode.result.current.setSearch('af');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(tieByCode.result.current.data.map(item => item.id)).toEqual([
+      'tie-1',
+      'tie-2',
+    ]);
+
+    useSuppliersMock.mockReturnValue({
+      data: [
+        { id: 'tie-name-b', name: 'beta only' } as never,
+        { id: 'tie-name-a', name: 'alpha only' } as never,
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: refetchMock,
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    const tieByName = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+    act(() => {
+      tieByName.result.current.setSearch('only');
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(tieByName.result.current.data.map(item => item.id)).toEqual([
+      'tie-name-a',
+      'tie-name-b',
+    ]);
+  });
 });

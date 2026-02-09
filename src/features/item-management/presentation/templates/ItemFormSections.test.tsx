@@ -44,6 +44,7 @@ const removeCachedImageBlobMock = vi.hoisted(() => vi.fn());
 const releaseCachedImageBlobsMock = vi.hoisted(() => vi.fn());
 const extractPathFromUrlMock = vi.hoisted(() => vi.fn());
 const getPublicUrlMock = vi.hoisted(() => vi.fn());
+const cropperConstructorMock = vi.hoisted(() => vi.fn());
 const queryClientState = vi.hoisted(() => ({ setQueriesData: vi.fn() }));
 const cropperBlobState = vi.hoisted(() => ({
   value: new Blob(['img'], { type: 'image/jpeg' }) as Blob | null,
@@ -67,6 +68,9 @@ vi.mock('react-hot-toast', () => ({
 
 vi.mock('cropperjs', () => ({
   default: class MockCropper {
+    constructor(...args: unknown[]) {
+      cropperConstructorMock(...args);
+    }
     getCroppedCanvas() {
       return {
         toBlob(callback: (blob: Blob | null) => void) {
@@ -390,6 +394,7 @@ describe('ItemFormSections', () => {
     extractPathFromUrlMock.mockReset();
     getPublicUrlMock.mockReset();
     toastErrorMock.mockReset();
+    cropperConstructorMock.mockReset();
     queryClientState.setQueriesData.mockReset();
     cropperBlobState.value = new Blob(['img'], { type: 'image/jpeg' });
 
@@ -907,6 +912,9 @@ describe('ItemFormSections', () => {
 
     fireEvent.click(screen.getByText('upload-item-image-0'));
     expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(cropperConstructorMock).toHaveBeenCalled();
+    });
 
     fireEvent.click(screen.getByText('Simpan'));
     await waitFor(() => {
