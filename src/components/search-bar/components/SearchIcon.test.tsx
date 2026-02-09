@@ -70,6 +70,26 @@ describe('SearchIcon', () => {
     expect(screen.getByTestId('icon-hash')).toBeInTheDocument();
   });
 
+  it('renders dynamic hash icon when contains operator is implicit in filter mode', () => {
+    render(
+      <SearchIcon
+        searchMode={baseSearchMode({
+          isFilterMode: true,
+          filterSearch: {
+            field: 'name',
+            value: 'aspirin',
+            operator: 'contains',
+            isExplicitOperator: false,
+          },
+        })}
+        searchState="idle"
+        displayValue="#name #contains aspirin"
+      />
+    );
+
+    expect(screen.getByTestId('icon-hash')).toBeInTheDocument();
+  });
+
   it('renders join icon for join selector mode', () => {
     render(
       <SearchIcon
@@ -106,5 +126,35 @@ describe('SearchIcon', () => {
     );
 
     expect(screen.getByTestId('icon-filterx')).toBeInTheDocument();
+  });
+
+  it('evaluates search-state color branches for found, not-found, and fallback states', () => {
+    const { rerender } = render(
+      <SearchIcon
+        searchMode={baseSearchMode()}
+        searchState="found"
+        displayValue=""
+      />
+    );
+
+    expect(screen.getByTestId('icon-search')).toBeInTheDocument();
+
+    rerender(
+      <SearchIcon
+        searchMode={baseSearchMode()}
+        searchState="not-found"
+        displayValue=""
+      />
+    );
+    expect(screen.getByTestId('icon-search')).toBeInTheDocument();
+
+    rerender(
+      <SearchIcon
+        searchMode={baseSearchMode()}
+        searchState={'unexpected' as never}
+        displayValue=""
+      />
+    );
+    expect(screen.getByTestId('icon-search')).toBeInTheDocument();
   });
 });

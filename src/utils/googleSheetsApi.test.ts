@@ -80,6 +80,7 @@ const setupGoogleApis = () => {
     initMock,
     createMock,
     updateMock,
+    getLatestTokenConfig: () => latestTokenConfig,
   };
 };
 
@@ -113,6 +114,21 @@ describe('GoogleSheetsService', () => {
 
     expect(requestAccessTokenMock).toHaveBeenCalledTimes(1);
     expect(token).toBe('token-123');
+    expect(service.isAuthorized()).toBe(true);
+  });
+
+  it('updates in-memory token from initialize token-client callback', async () => {
+    const { getLatestTokenConfig } = setupGoogleApis();
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+
+    getLatestTokenConfig()?.callback({
+      access_token: 'token-from-init',
+      token_type: 'Bearer',
+      expires_in: 3600,
+    });
+
     expect(service.isAuthorized()).toBe(true);
   });
 
@@ -231,6 +247,48 @@ describe('GoogleSheetsService', () => {
     expect(initMock).toHaveBeenCalled();
   });
 
+  it('loads Google API script when gapi object is unavailable', async () => {
+    const { initMock } = setupGoogleApis();
+    Object.defineProperty(window, 'gapi', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
+
+    const appendSpy = vi
+      .spyOn(document.head, 'appendChild')
+      .mockImplementation(node => {
+        const script = node as HTMLScriptElement;
+        if (script.src.includes('apis.google.com/js/api.js')) {
+          Object.defineProperty(window, 'gapi', {
+            value: {
+              load: (_libraries: string, callback: () => void) => callback(),
+              client: {
+                init: initMock,
+                sheets: {
+                  spreadsheets: {
+                    create: vi.fn(),
+                    values: { update: vi.fn() },
+                  },
+                },
+              },
+            },
+            configurable: true,
+            writable: true,
+          });
+          script.onload?.(new Event('load'));
+        }
+        return node;
+      });
+
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+
+    expect(appendSpy).toHaveBeenCalled();
+    expect(initMock).toHaveBeenCalled();
+  });
+
   it('rejects initialization when GIS script fails to load', async () => {
     setupGoogleApis();
     Object.defineProperty(window, 'google', {
@@ -250,6 +308,81 @@ describe('GoogleSheetsService', () => {
 
     await expect(service.initialize()).rejects.toThrow(
       'Failed to load Google Identity Services'
+    );
+  });
+
+  it('rejects initialization when Google API script fails to load', async () => {
+    setupGoogleApis();
+    Object.defineProperty(window, 'gapi', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
+
+    vi.spyOn(document.head, 'appendChild').mockImplementation(node => {
+      const script = node as HTMLScriptElement;
+      if (script.src.includes('apis.google.com/js/api.js')) {
+        script.onerror?.(new Event('error'));
+      }
+      return node;
+    });
+
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+
+    await expect(service.initialize()).rejects.toThrow(
+      'Failed to load Google API client'
+    );
+  });
+
+  it('rejects initialization when loaded Google API client init throws', async () => {
+    setupGoogleApis();
+    Object.defineProperty(window, 'gapi', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
+
+    vi.spyOn(document.head, 'appendChild').mockImplementation(node => {
+      const script = node as HTMLScriptElement;
+      if (script.src.includes('apis.google.com/js/api.js')) {
+        Object.defineProperty(window, 'gapi', {
+          value: {
+            load: (_libraries: string, callback: () => void) => callback(),
+            client: {
+              init: vi.fn().mockRejectedValue(new Error('init failed')),
+              sheets: {
+                spreadsheets: {
+                  create: vi.fn(),
+                  values: { update: vi.fn() },
+                },
+              },
+            },
+          },
+          configurable: true,
+          writable: true,
+        });
+        script.onload?.(new Event('load'));
+      }
+      return node;
+    });
+
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+
+    await expect(service.initialize()).rejects.toThrow(
+      'Failed to initialize Google API client'
+    );
+  });
+
+  it('rejects initialization when gapi client init throws in existing gapi path', async () => {
+    const { initMock } = setupGoogleApis();
+    initMock.mockRejectedValueOnce(new Error('init failed'));
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+
+    await expect(service.initialize()).rejects.toThrow(
+      'Failed to initialize Google API client'
     );
   });
 
@@ -295,5 +428,22 @@ describe('GoogleSheetsService', () => {
     await expect(
       service.exportGridDataToSheets([['x']], ['h'], 'report')
     ).rejects.toThrow('quota exceeded');
+  });
+
+  it('returns spreadsheet URL on successful export workflow', async () => {
+    setupGoogleApis();
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+    await service.authorize();
+
+    vi.spyOn(service, 'createSpreadsheetWithData').mockResolvedValueOnce({
+      spreadsheetId: 'sheet-123',
+      spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/sheet-123',
+    });
+
+    await expect(
+      service.exportGridDataToSheets([['value']], ['header'], 'report')
+    ).resolves.toBe('https://docs.google.com/spreadsheets/d/sheet-123');
   });
 });

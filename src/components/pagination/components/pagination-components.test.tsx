@@ -209,6 +209,19 @@ describe('pagination components', () => {
     expect(screen.queryByTestId('floating-child')).not.toBeInTheDocument();
   });
 
+  it('returns null when window is unavailable in SSR-like runtime', () => {
+    vi.stubGlobal('window', undefined);
+
+    const result = FloatingWrapper({
+      children: <div>child</div>,
+      show: true,
+      hideWhenModalOpen: false,
+    });
+
+    expect(result).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
   it('renders pagination content and handles prev/next/page-size interactions', () => {
     const onPageChange = vi.fn();
     const handleItemsPerPageClick = vi.fn();
