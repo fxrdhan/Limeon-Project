@@ -66,4 +66,60 @@ describe('useCalendarState', () => {
     expect(result.current.isOpen).toBe(true);
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('executes timer-clearing branches with mocked React primitives', async () => {
+    vi.resetModules();
+
+    const clearTimeoutSpy = vi
+      .spyOn(globalThis, 'clearTimeout')
+      .mockImplementation(() => {});
+
+    let refCalls = 0;
+    let stateCalls = 0;
+    const setStateSpy = vi.fn();
+
+    vi.doMock('react', async () => {
+      const actual = await vi.importActual<typeof import('react')>('react');
+      return {
+        ...actual,
+        useRef: (initial: unknown) => {
+          refCalls += 1;
+          if (refCalls <= 2) {
+            return { current: setTimeout(() => {}, 1) };
+          }
+          return { current: initial };
+        },
+        useCallback: <T extends (...args: never[]) => unknown>(fn: T) => fn,
+        useState: (initial: unknown) => {
+          stateCalls += 1;
+          const value =
+            typeof initial === 'function'
+              ? (initial as () => unknown)()
+              : initial;
+
+          // Fourth call is the pseudo-cleanup useState in this hook.
+          if (stateCalls === 4 && typeof value === 'function') {
+            (value as () => void)();
+          }
+
+          return [value, setStateSpy] as const;
+        },
+      };
+    });
+
+    const { useCalendarState: mockedUseCalendarState } =
+      await import('./useCalendarState');
+
+    const calendarState = mockedUseCalendarState({
+      onOpen: vi.fn(),
+      onClose: vi.fn(),
+    });
+
+    calendarState.openCalendar();
+    calendarState.closeCalendar();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+
+    vi.doUnmock('react');
+  });
 });

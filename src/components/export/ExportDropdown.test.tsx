@@ -242,4 +242,215 @@ describe('ExportDropdown', () => {
       );
     });
   });
+
+  it('does not open menu when gridApi is null or destroyed', async () => {
+    const user = userEvent.setup();
+
+    const { rerender } = render(<ExportDropdown gridApi={null} />);
+    await user.click(screen.getByTitle('Export Data'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    const destroyedApi = createGridApi({
+      isDestroyed: vi.fn(() => true),
+    });
+    rerender(<ExportDropdown gridApi={destroyedApi as never} />);
+    await user.click(screen.getByTitle('Export Data'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('toggles menu and exercises CSV/Excel formatter callbacks', async () => {
+    const user = userEvent.setup();
+    const gridApi = createGridApi();
+
+    const originalInnerWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', {
+      value: 300,
+      configurable: true,
+    });
+
+    render(<ExportDropdown gridApi={gridApi as never} filename="report" />);
+
+    const toggle = screen.getByTitle('Export Data');
+    const getRectSpy = vi
+      .spyOn(toggle, 'getBoundingClientRect')
+      .mockReturnValue({
+        x: 0,
+        y: 0,
+        width: 32,
+        height: 32,
+        top: 10,
+        right: 500,
+        bottom: 42,
+        left: 468,
+        toJSON: () => ({}),
+      } as DOMRect);
+
+    await user.click(toggle);
+    const menu = await screen.findByRole('menu');
+    expect(menu).toHaveStyle({ left: '62px', width: '230px' });
+
+    await user.click(toggle);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    Object.defineProperty(window, 'innerWidth', {
+      value: 400,
+      configurable: true,
+    });
+    getRectSpy.mockReturnValue({
+      x: 0,
+      y: 0,
+      width: 32,
+      height: 32,
+      top: 10,
+      right: 100,
+      bottom: 42,
+      left: 68,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    await user.click(toggle);
+    expect(await screen.findByRole('menu')).toHaveStyle({ left: '8px' });
+
+    await user.click(screen.getByText('Export ke CSV'));
+    const csvParams = (gridApi.exportDataAsCsv as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    expect(csvParams.processCellCallback({ value: null })).toBe('');
+    expect(csvParams.processCellCallback({ value: undefined })).toBe('');
+    expect(csvParams.processCellCallback({ value: 'ok' })).toBe('ok');
+
+    await user.click(toggle);
+    await user.click(screen.getByText('Export ke Excel'));
+    const excelParams = (gridApi.exportDataAsExcel as ReturnType<typeof vi.fn>)
+      .mock.calls[0][0];
+
+    expect(
+      excelParams.columnWidth({
+        column: { getColDef: () => ({ headerName: 'AB' }) },
+      })
+    ).toBe(80);
+    expect(
+      excelParams.columnWidth({
+        column: { getColDef: () => ({ headerName: 'LongHeaderName' }) },
+      })
+    ).toBe(112);
+
+    expect(
+      excelParams.processCellCallback({
+        value: null,
+      })
+    ).toBe('');
+    expect(
+      excelParams.processHeaderCallback({
+        column: {
+          getColDef: () => ({ headerName: '' }),
+          getColId: () => 'fallback-id',
+        },
+      })
+    ).toBe('fallback-id');
+
+    Object.defineProperty(window, 'innerWidth', {
+      value: originalInnerWidth,
+      configurable: true,
+    });
+  });
+
+  it('keeps menu open while authenticating/loading and handles export edge cases', async () => {
+    const user = userEvent.setup();
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    let resolveAuthorize: ((value: unknown) => void) | null = null;
+    authorizeMock.mockReturnValue(
+      new Promise(resolve => {
+        resolveAuthorize = resolve;
+      })
+    );
+
+    const processingErrorApi = createGridApi({
+      forEachNode: vi.fn(() => {
+        throw new Error('row api unavailable');
+      }),
+    });
+
+    const authPlaceholderTab = {
+      document: { write: vi.fn() },
+      location: { href: '' },
+      close: vi.fn(),
+      closed: false,
+    };
+    const loadingPlaceholderTab = {
+      document: {
+        write: vi.fn(() => {
+          throw new Error('write failed');
+        }),
+      },
+      location: { href: '' },
+      close: vi.fn(),
+      closed: false,
+    };
+
+    const openSpy = vi
+      .spyOn(window, 'open')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(authPlaceholderTab as never)
+      .mockReturnValueOnce(loadingPlaceholderTab as never)
+      .mockReturnValueOnce(loadingPlaceholderTab as never);
+
+    const { rerender } = render(
+      <ExportDropdown gridApi={processingErrorApi as never} />
+    );
+
+    await user.click(screen.getByTitle('Export Data'));
+    await user.click(screen.getByText('Export ke Google Sheets'));
+
+    expect(screen.getByText('Authenticating...')).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    resolveAuthorize?.('token');
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Please allow popups to open Google Sheets.'
+      );
+    });
+    expect(openSpy).toHaveBeenCalledWith('about:blank', '_blank');
+
+    isAuthorizedMock.mockReturnValue(true);
+
+    await user.click(screen.getByText('Export ke Google Sheets'));
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Failed to export to Google Sheets: Failed to retrieve grid data. Please ensure grid is ready.'
+      );
+      expect(authPlaceholderTab.close).toHaveBeenCalled();
+    });
+
+    const noUrlApi = createGridApi();
+    exportGridDataToSheetsMock.mockResolvedValueOnce('');
+
+    rerender(<ExportDropdown gridApi={noUrlApi as never} />);
+    if (!screen.queryByText('Export ke Google Sheets')) {
+      await user.click(screen.getByTitle('Export Data'));
+    }
+    await user.click(screen.getByText('Export ke Google Sheets'));
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Failed to create Google Sheet. Please try again.'
+      );
+      expect(loadingPlaceholderTab.close).toHaveBeenCalled();
+    });
+
+    exportGridDataToSheetsMock.mockRejectedValueOnce(
+      new Error('Authentication token expired')
+    );
+    if (!screen.queryByText('Export ke Google Sheets')) {
+      await user.click(screen.getByTitle('Export Data'));
+    }
+    await user.click(screen.getByText('Export ke Google Sheets'));
+    await waitFor(() => {
+      expect(confirmSpy).toHaveBeenCalledWith(
+        'Your Google authentication has expired. Click OK to re-authenticate and try again.'
+      );
+    });
+  });
 });

@@ -248,4 +248,226 @@ describe('ImageUploader', () => {
     fireEvent.click(containerButton);
     expect(inputClickSpy).not.toHaveBeenCalled();
   });
+
+  it('supports shape variants and ignores file change when no file is selected', () => {
+    const { rerender, onImageUpload } = renderUploader({ shape: 'rounded' });
+    const getContainer = () =>
+      screen.getByRole('button', { name: 'Upload image' });
+    const input = document.getElementById('img-uploader') as HTMLInputElement;
+
+    expect(getContainer().className).toContain('rounded-lg');
+    fireEvent.change(input, { target: { files: [] } });
+    expect(onImageUpload).not.toHaveBeenCalled();
+
+    rerender(
+      <ImageUploader
+        id="img-uploader"
+        onImageUpload={onImageUpload}
+        onImageDelete={vi.fn()}
+        shape="rounded-sm"
+      >
+        <div>avatar</div>
+      </ImageUploader>
+    );
+    expect(getContainer().className).toContain('rounded-md');
+
+    rerender(
+      <ImageUploader
+        id="img-uploader"
+        onImageUpload={onImageUpload}
+        onImageDelete={vi.fn()}
+        shape="square"
+      >
+        <div>avatar</div>
+      </ImageUploader>
+    );
+    expect(getContainer().className).toContain('rounded-none');
+
+    rerender(
+      <ImageUploader
+        id="img-uploader"
+        onImageUpload={onImageUpload}
+        onImageDelete={vi.fn()}
+        shape={'unknown' as never}
+      >
+        <div>avatar</div>
+      </ImageUploader>
+    );
+    expect(getContainer().className).toContain('rounded-full');
+  });
+
+  it('uses showPicker when available and falls back to click when showPicker throws', async () => {
+    renderUploader();
+    const containerButton = screen.getByRole('button', {
+      name: 'Upload image',
+    });
+    fireEvent.mouseEnter(containerButton);
+
+    const uploadOption = await screen.findByRole('button', { name: 'Upload' });
+    const input = document.getElementById(
+      'img-uploader'
+    ) as HTMLInputElement & {
+      showPicker?: () => void;
+    };
+    const inputClickSpy = vi
+      .spyOn(input, 'click')
+      .mockImplementation(() => undefined);
+
+    const showPickerSpy = vi.fn();
+    input.showPicker = showPickerSpy;
+    fireEvent.click(uploadOption);
+    expect(showPickerSpy).toHaveBeenCalledTimes(1);
+    expect(inputClickSpy).not.toHaveBeenCalled();
+
+    input.showPicker = vi.fn(() => {
+      throw new Error('show picker not allowed');
+    });
+    fireEvent.click(uploadOption);
+    expect(inputClickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates popup placement for left and clamped fallback positions', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      value: 320,
+      configurable: true,
+      writable: true,
+    });
+
+    renderUploader({ hasImage: true });
+    const containerButton = screen.getByRole('button', {
+      name: 'Edit or delete image',
+    });
+
+    let rect = {
+      left: 220,
+      right: 280,
+      top: 120,
+      bottom: 160,
+      width: 60,
+      height: 40,
+      x: 220,
+      y: 120,
+      toJSON: () => ({}),
+    };
+    vi.spyOn(containerButton, 'getBoundingClientRect').mockImplementation(
+      () => rect as DOMRect
+    );
+
+    fireEvent.mouseEnter(containerButton);
+    await screen.findByRole('button', { name: 'Edit' });
+
+    const portal = document.body.querySelector(
+      '.fixed.z-\\[9999\\]'
+    ) as HTMLElement;
+    vi.spyOn(portal, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          ...rect,
+          width: 120,
+        }) as DOMRect
+    );
+
+    window.dispatchEvent(new Event('resize'));
+    await waitFor(() => {
+      expect(document.body.querySelector('.left-full')).toBeInTheDocument();
+    });
+
+    rect = {
+      ...rect,
+      left: 40,
+      right: 100,
+      x: 40,
+      width: 60,
+    };
+    Object.defineProperty(window, 'innerWidth', {
+      value: 180,
+      configurable: true,
+      writable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
+    await waitFor(() => {
+      expect(document.body.querySelector('.right-full')).toBeInTheDocument();
+    });
+
+    rect = {
+      ...rect,
+      left: 90,
+      right: 150,
+      x: 90,
+    };
+    Object.defineProperty(window, 'innerWidth', {
+      value: 230,
+      configurable: true,
+      writable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
+    await waitFor(() => {
+      expect(document.body.querySelector('.left-full')).toBeInTheDocument();
+    });
+  });
+
+  it('handles focus visibility and popup hover timeout transitions', async () => {
+    renderUploader({ hasImage: true });
+
+    const containerButton = screen.getByRole('button', {
+      name: 'Edit or delete image',
+    });
+
+    fireEvent.focus(containerButton);
+    expect(
+      await screen.findByRole('button', { name: 'Edit' })
+    ).toBeInTheDocument();
+    fireEvent.blur(containerButton);
+
+    fireEvent.mouseEnter(containerButton);
+    const portal = document.body.querySelector(
+      '.fixed.z-\\[9999\\]'
+    ) as HTMLElement;
+    fireEvent.mouseLeave(containerButton);
+    fireEvent.mouseEnter(containerButton);
+
+    fireEvent.mouseEnter(portal);
+    fireEvent.mouseLeave(portal);
+    fireEvent.mouseLeave(containerButton);
+    await new Promise(resolve => setTimeout(resolve, 130));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Edit' })
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('prevents duplicate delete calls while deletion is in progress', async () => {
+    let resolveDelete: (() => void) | null = null;
+    const onImageDelete = vi.fn(
+      () =>
+        new Promise<void>(resolve => {
+          resolveDelete = resolve;
+        })
+    );
+
+    render(
+      <ImageUploader
+        id="img-uploader"
+        onImageUpload={vi.fn()}
+        onImageDelete={onImageDelete}
+        hasImage
+      >
+        <div>avatar</div>
+      </ImageUploader>
+    );
+
+    fireEvent.mouseEnter(
+      screen.getByRole('button', { name: 'Edit or delete image' })
+    );
+    const deleteButton = await screen.findByRole('button', { name: 'Hapus' });
+
+    fireEvent.click(deleteButton);
+    fireEvent.click(deleteButton);
+    expect(onImageDelete).toHaveBeenCalledTimes(1);
+
+    resolveDelete?.();
+    await Promise.resolve();
+  });
 });

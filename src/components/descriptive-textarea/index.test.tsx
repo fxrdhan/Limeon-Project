@@ -114,4 +114,74 @@ describe('DescriptiveTextarea', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument();
     matchesSpy.mockRestore();
   });
+
+  it('does not expand on focus when focus-visible is false, and keeps visible when already open', () => {
+    const originalMatches = HTMLElement.prototype.matches;
+    const matchesSpy = vi
+      .spyOn(HTMLElement.prototype, 'matches')
+      .mockImplementation(function (this: HTMLElement, selector: string) {
+        if (selector === ':focus-visible') {
+          return false;
+        }
+        return originalMatches.call(this, selector);
+      });
+
+    const { rerender } = render(
+      <DescriptiveTextarea
+        label="Catatan"
+        name="notes"
+        value=""
+        onChange={vi.fn()}
+        expandOnClick={true}
+      />
+    );
+
+    const toggle = screen.getByRole('button', { name: 'Catatan' });
+    fireEvent.focus(toggle);
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+    rerender(
+      <DescriptiveTextarea
+        label="Catatan"
+        name="notes"
+        value=""
+        onChange={vi.fn()}
+        expandOnClick={true}
+        showInitially={true}
+      />
+    );
+
+    fireEvent.focus(toggle);
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+
+    matchesSpy.mockRestore();
+  });
+
+  it('handles textarea container hover callbacks and keeps expanded on textarea focus', () => {
+    render(
+      <DescriptiveTextarea
+        label="Uraian"
+        name="description"
+        value="abc"
+        onChange={vi.fn()}
+        expandOnClick={false}
+      />
+    );
+
+    const toggle = screen.getByRole('button', { name: 'Uraian' });
+    fireEvent.mouseEnter(toggle);
+    const textbox = screen.getByRole('textbox');
+    expect(textbox).toBeInTheDocument();
+
+    const overflowContainer = textbox.closest('.overflow-visible');
+    expect(overflowContainer).toBeTruthy();
+    fireEvent.mouseEnter(overflowContainer!);
+
+    fireEvent.focus(textbox);
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+
+    fireEvent.mouseLeave(overflowContainer!);
+    fireEvent.mouseLeave(toggle);
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
 });

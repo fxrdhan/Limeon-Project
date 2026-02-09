@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Navbar from './index';
 
@@ -86,6 +92,7 @@ describe('Navbar', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -153,5 +160,108 @@ describe('Navbar', () => {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     expect(screen.getByText('Second User')).toBeInTheDocument();
+  });
+
+  it('uses minimum online count, closes portal on leave, and clears timers on unmount', () => {
+    vi.useFakeTimers();
+    usePresenceStoreMock.mockReturnValue({
+      onlineUsers: 0,
+      onlineUsersList,
+    });
+
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    const { unmount } = render(
+      <Navbar
+        onChatUserSelect={vi.fn()}
+        showChatSidebar={false}
+        sidebarCollapsed={false}
+      />
+    );
+
+    expect(screen.getByText('1 Online')).toBeInTheDocument();
+
+    const hoverRegion = screen.getByText('1 Online').closest('div');
+    expect(hoverRegion).toBeTruthy();
+
+    fireEvent.mouseEnter(hoverRegion!);
+    act(() => {
+      vi.advanceTimersByTime(210);
+    });
+    expect(screen.getByText('Second User')).toBeInTheDocument();
+    expect(screen.getByTestId('avatar-stack')).toHaveTextContent('3:true');
+
+    fireEvent.mouseLeave(hoverRegion!);
+    act(() => {
+      vi.advanceTimersByTime(110);
+    });
+    expect(screen.getByTestId('avatar-stack')).toHaveTextContent('3:false');
+
+    fireEvent.mouseEnter(hoverRegion!);
+    unmount();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
+
+  it('renders fallback initials for users without photo and avoids chat callback for current user', () => {
+    vi.useFakeTimers();
+
+    useAuthStoreMock.mockReturnValue({ user: currentUser });
+    usePresenceStoreMock.mockReturnValue({
+      onlineUsers: 2,
+      onlineUsersList: [
+        {
+          id: 'u-4',
+          name: 'No Photo',
+          email: 'no-photo@example.com',
+          profilephoto: '',
+        },
+        currentUser,
+      ],
+    });
+    getCachedImageBlobUrlMock.mockResolvedValue('blob:https://cached-current');
+
+    const onChatUserSelect = vi.fn();
+
+    render(
+      <Navbar
+        onChatUserSelect={onChatUserSelect}
+        showChatSidebar={false}
+        sidebarCollapsed={true}
+      />
+    );
+
+    const hoverRegion = screen.getByText('2 Online').closest('div');
+    expect(hoverRegion).toBeTruthy();
+    fireEvent.mouseEnter(hoverRegion!);
+    act(() => {
+      vi.advanceTimersByTime(210);
+    });
+
+    expect(screen.getByText('No Photo')).toBeInTheDocument();
+    expect(screen.getByText('NP')).toBeInTheDocument();
+    expect(screen.getByText('You')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Current User'));
+    expect(onChatUserSelect).not.toHaveBeenCalled();
+  });
+
+  it('supports presence list when user is logged out', () => {
+    useAuthStoreMock.mockReturnValue({ user: null });
+    usePresenceStoreMock.mockReturnValue({
+      onlineUsers: 0,
+      onlineUsersList: [onlineUsersList[1]],
+    });
+
+    render(
+      <Navbar
+        onChatUserSelect={vi.fn()}
+        showChatSidebar={false}
+        sidebarCollapsed={true}
+      />
+    );
+
+    expect(screen.getByText('0 Online')).toBeInTheDocument();
+    expect(screen.getByTestId('avatar-stack')).toHaveTextContent('1:false');
   });
 });
