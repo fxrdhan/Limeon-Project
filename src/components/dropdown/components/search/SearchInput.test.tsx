@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import SearchInput from './SearchInput';
@@ -25,7 +26,7 @@ describe('SearchInput', () => {
 
     const input = screen.getByRole('textbox');
     expect(input).toHaveClass('border-danger');
-    expect(input).toHaveAttribute('aria-expanded', 'true');
+    expect(input).toHaveAttribute('data-open', 'true');
     expect(input).toHaveAttribute(
       'aria-activedescendant',
       'dropdown-option-option-1'

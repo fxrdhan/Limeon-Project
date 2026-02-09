@@ -875,7 +875,7 @@ describe('ItemFormSections', () => {
       />
     );
 
-    const image = await screen.findByAltText('Item image 1');
+    const image = await screen.findByAltText('Item 1');
     fireEvent.click(image);
     expect(screen.getByAltText('Preview')).toBeInTheDocument();
     fireEvent.click(document.body.querySelector('.fixed.inset-0.z-50')!);
