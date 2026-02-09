@@ -84,4 +84,75 @@ describe('groupParser', () => {
       })
     );
   });
+
+  it('covers malformed grouped tokens and invalid join sequences', () => {
+    expect(
+      parseGroupedFilterPattern('#( #name #contains aspirin #) foo##', columns)
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern(
+        '#( #name #contains aspirin #name #contains ibuprofen #)##',
+        columns
+      )
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #name #contains aspirin #and #)##', columns)
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #name #contains aspirin #) #)##', columns)
+    ).toBeNull();
+  });
+
+  it('covers invalid grouped condition shapes and unresolved columns/operators', () => {
+    expect(parseGroupedFilterPattern('#( aspirin #)##', columns)).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #name aspirin #)##', columns)
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #name #contains #)##', columns)
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #unknown #contains aspirin #)##', columns)
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #name #between aspirin #)##', columns)
+    ).toBeNull();
+  });
+
+  it('covers grouped inRange fallbacks, open groups, and trailing-token leftovers', () => {
+    const topLevelMixed = parseGroupedFilterPattern(
+      '#name #contains aspirin #and #( #stock #inRange 10-20 #)##',
+      columns
+    );
+    expect(topLevelMixed).not.toBeNull();
+    expect(topLevelMixed?.filterGroup?.isExplicit).toBe(false);
+    expect(topLevelMixed?.joinOperator).toBe('AND');
+    expect(topLevelMixed?.valueTo).toBeUndefined();
+
+    const unclosedGroup = parseGroupedFilterPattern(
+      '#( #name #contains aspirin##',
+      columns
+    );
+    expect(unclosedGroup).not.toBeNull();
+    expect(unclosedGroup?.filterGroup).toEqual(
+      expect.objectContaining({ isClosed: false })
+    );
+
+    expect(
+      parseGroupedFilterPattern('#( #stock #inRange 10 #to #)##', columns)
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #stock #inRange 10 #)##', columns)
+    ).toBeNull();
+
+    expect(
+      parseGroupedFilterPattern(
+        '#( #name #contains aspirin #) trailing##',
+        columns
+      )
+    ).toBeNull();
+    expect(
+      parseGroupedFilterPattern('#( #name #contains aspirin #) ####', columns)
+    ).toBeNull();
+  });
 });

@@ -511,4 +511,327 @@ describe('useColumnSelection', () => {
     expect(incompatibleSimpleRef.current).toBeNull();
     expect(setPreservedSearchMode).toHaveBeenLastCalledWith(null);
   });
+
+  it('handles multi-column selection branches for no-second-value and valueTo paths', () => {
+    const onChange = vi.fn();
+    const setPreservedSearchMode = vi.fn();
+    const setIsEditingSecondOperator = vi.fn();
+    const inputRef = {
+      current: { focus: vi.fn() },
+    } as unknown as RefObject<HTMLInputElement | null>;
+
+    isOperatorCompatibleWithColumnMock.mockReturnValue(true);
+    const compatibleNoValueRef = {
+      current: {
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'aspirin' },
+          { field: 'stock', operator: 'equals', value: '' },
+        ],
+        joins: ['AND'],
+      },
+    } as RefObject<PreservedFilter | null>;
+    const searchModeNoValue: EnhancedSearchState = {
+      showColumnSelector: false,
+      showOperatorSelector: true,
+      showJoinOperatorSelector: false,
+      isFilterMode: true,
+      partialJoin: 'AND',
+      filterSearch: {
+        field: 'name',
+        value: 'aspirin',
+        operator: 'contains',
+        column: nameColumn,
+        isExplicitOperator: true,
+      },
+    };
+
+    handleColumnSelectMultiColumn(
+      stockColumn,
+      searchModeNoValue,
+      compatibleNoValueRef,
+      null,
+      setPreservedSearchMode,
+      setIsEditingSecondOperator,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      '#name #contains aspirin #and #stock #equals ',
+      onChange,
+      inputRef
+    );
+
+    isOperatorCompatibleWithColumnMock.mockReturnValue(false);
+    const incompatibleWithRangeRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '5', valueTo: '15' },
+          { field: 'name', operator: 'equals', value: '' },
+        ],
+        joins: ['OR'],
+      },
+    } as RefObject<PreservedFilter | null>;
+    const searchModeWithRange: EnhancedSearchState = {
+      showColumnSelector: false,
+      showOperatorSelector: true,
+      showJoinOperatorSelector: false,
+      isFilterMode: true,
+      partialJoin: 'OR',
+      filterSearch: {
+        field: 'stock',
+        value: '5',
+        valueTo: '15',
+        operator: 'inRange',
+        column: stockColumn,
+        isExplicitOperator: true,
+      },
+    };
+
+    handleColumnSelectMultiColumn(
+      codeColumn,
+      searchModeWithRange,
+      incompatibleWithRangeRef,
+      null,
+      setPreservedSearchMode,
+      setIsEditingSecondOperator,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#stock #inRange 5 #to 15 #or #code #',
+      onChange,
+      inputRef
+    );
+
+    const noSecondOperatorRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '8', valueTo: '18' },
+          { field: 'name', operator: '', value: '' },
+        ],
+        joins: ['AND'],
+      },
+    } as RefObject<PreservedFilter | null>;
+
+    handleColumnSelectMultiColumn(
+      codeColumn,
+      {
+        ...searchModeWithRange,
+        partialJoin: 'AND',
+        filterSearch: {
+          ...searchModeWithRange.filterSearch!,
+          value: '8',
+          valueTo: '18',
+        },
+      },
+      noSecondOperatorRef,
+      null,
+      setPreservedSearchMode,
+      setIsEditingSecondOperator,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#stock #inRange 8 #to 18 #and #code #',
+      onChange,
+      inputRef
+    );
+  });
+
+  it('handles preserved filter compatible branch matrix and fallback variants', () => {
+    const onChange = vi.fn();
+    const setPreservedSearchMode = vi.fn();
+    const inputRef = {
+      current: { focus: vi.fn() },
+    } as unknown as RefObject<HTMLInputElement | null>;
+
+    isOperatorCompatibleWithColumnMock.mockReturnValue(true);
+    const unresolvedSecondColumnRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '1', valueTo: '9' },
+          { field: 'missing', operator: 'equals', value: '4' },
+        ],
+        joins: ['AND'],
+        isMultiColumn: true,
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      codeColumn,
+      unresolvedSecondColumnRef,
+      null,
+      setPreservedSearchMode,
+      [nameColumn, stockColumn, codeColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#code #inRange 1 9##',
+      onChange,
+      inputRef
+    );
+
+    const joinWithValueToRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '10', valueTo: '20' },
+          { field: 'stock', operator: 'equals', value: '' },
+        ],
+        joins: ['AND'],
+        isMultiColumn: false,
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      stockColumn,
+      joinWithValueToRef,
+      null,
+      setPreservedSearchMode,
+      [stockColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#stock #inRange 10 #to 20 #and #equals ',
+      onChange,
+      inputRef
+    );
+
+    const joinNoValueToRef = {
+      current: {
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'aspirin' },
+          { field: 'name', operator: 'greaterThan', value: '' },
+        ],
+        joins: ['OR'],
+        isMultiColumn: false,
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      nameColumn,
+      joinNoValueToRef,
+      null,
+      setPreservedSearchMode,
+      [nameColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #contains aspirin #or #greaterThan ',
+      onChange,
+      inputRef
+    );
+
+    const joinAndSecondFieldWithRangeRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '3', valueTo: '6' },
+          { field: 'code', value: '' },
+        ],
+        joins: ['AND'],
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      nameColumn,
+      joinAndSecondFieldWithRangeRef,
+      null,
+      setPreservedSearchMode,
+      [nameColumn, codeColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #inRange 3 #to 6 #and #code #',
+      onChange,
+      inputRef
+    );
+
+    const joinAndSecondFieldNoRangeRef = {
+      current: {
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'ibuprofen' },
+          { field: 'stock', value: '' },
+        ],
+        joins: ['OR'],
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      codeColumn,
+      joinAndSecondFieldNoRangeRef,
+      null,
+      setPreservedSearchMode,
+      [nameColumn, stockColumn, codeColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#code #contains ibuprofen #or #stock #',
+      onChange,
+      inputRef
+    );
+
+    const joinOnlyWithRangeRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '12', valueTo: '24' },
+        ],
+        joins: ['AND'],
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      stockColumn,
+      joinOnlyWithRangeRef,
+      null,
+      setPreservedSearchMode,
+      [stockColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#stock #inRange 12 #to 24 #and #',
+      onChange,
+      inputRef
+    );
+
+    const noJoinConfirmedRef = {
+      current: {
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'cetirizine' },
+        ],
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      nameColumn,
+      noJoinConfirmedRef,
+      null,
+      setPreservedSearchMode,
+      [nameColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #contains cetirizine##',
+      onChange,
+      inputRef
+    );
+
+    const noJoinColumnOperatorRef = {
+      current: {
+        conditions: [{ field: 'name', operator: 'contains', value: '' }],
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleColumnSelectWithPreservedFilter(
+      nameColumn,
+      noJoinColumnOperatorRef,
+      null,
+      setPreservedSearchMode,
+      [nameColumn],
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #contains ',
+      onChange,
+      inputRef
+    );
+  });
 });

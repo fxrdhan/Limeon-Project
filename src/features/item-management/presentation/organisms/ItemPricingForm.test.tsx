@@ -108,6 +108,7 @@ vi.mock('../atoms', () => ({
       <label>
         <span>{String(props.label)}</span>
         <input
+          name={name}
           data-testid={`price-input-${name}`}
           value={String(props.value ?? '')}
           onChange={event =>
@@ -652,5 +653,228 @@ describe('ItemPricingForm', () => {
     expect(
       screen.getByRole('button', { name: 'Atur per-level' })
     ).toBeInTheDocument();
+  });
+
+  it('handles focus-visible expansion and keyboard toggle interactions', () => {
+    const onExpand = vi.fn();
+    const requestAnimationFrameSpy = vi
+      .spyOn(globalThis, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        callback(0);
+        return 1;
+      });
+
+    const originalMatches = HTMLElement.prototype.matches;
+    const matchesSpy = vi
+      .spyOn(HTMLElement.prototype, 'matches')
+      .mockImplementation(function (selector: string) {
+        if (selector === ':focus-visible') return true;
+        return originalMatches.call(this, selector);
+      });
+
+    const props = createProps({ isExpanded: false, onExpand });
+    const { container, rerender } = render(<ItemPricingForm {...props} />);
+
+    const header = container.querySelector(
+      'div[role="button"]'
+    ) as HTMLDivElement;
+    expect(header).toBeTruthy();
+    if (!header) return;
+
+    fireEvent.focus(header);
+    expect(onExpand).toHaveBeenCalledTimes(1);
+
+    rerender(<ItemPricingForm {...props} isExpanded />);
+    expect(requestAnimationFrameSpy).toHaveBeenCalled();
+    expect(screen.getByTestId('price-input-base_price')).toHaveFocus();
+
+    fireEvent.keyDown(header, { key: 'Enter' });
+    fireEvent.keyDown(header, { key: ' ' });
+    expect(onExpand).toHaveBeenCalledTimes(3);
+
+    matchesSpy.mockRestore();
+  });
+
+  it('handles menu and baseline outside-click/escape/reposition branches', async () => {
+    const levelPricing = createLevelPricing();
+    const { container } = render(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing,
+        })}
+      />
+    );
+
+    const menuButton = container.querySelector('button.-ml-2');
+    expect(menuButton).toBeTruthy();
+    if (!menuButton) return;
+
+    fireEvent.click(menuButton);
+    expect(
+      await screen.findByRole('button', { name: 'Atur per-level' })
+    ).toBeInTheDocument();
+
+    const menuPanel = document.body.querySelector(
+      '.w-\\[190px\\].rounded-lg'
+    ) as HTMLDivElement | null;
+    expect(menuPanel).toBeTruthy();
+    if (!menuPanel) return;
+
+    fireEvent.mouseDown(menuButton);
+    expect(
+      screen.getByRole('button', { name: 'Atur per-level' })
+    ).toBeInTheDocument();
+
+    fireEvent.mouseDown(menuPanel);
+    expect(
+      screen.getByRole('button', { name: 'Atur per-level' })
+    ).toBeInTheDocument();
+
+    fireEvent.resize(window);
+    fireEvent.scroll(window);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Atur per-level' })
+      ).not.toBeInTheDocument();
+    });
+
+    const settingsButton = container.querySelector('button.mr-2');
+    expect(settingsButton).toBeTruthy();
+    if (!settingsButton) return;
+
+    fireEvent.click(settingsButton);
+    expect(await screen.findByText('Atur baseline')).toBeInTheDocument();
+
+    const baselinePanel = document.body.querySelector(
+      '.w-\\[260px\\].rounded-lg'
+    ) as HTMLDivElement | null;
+    expect(baselinePanel).toBeTruthy();
+    if (!baselinePanel) return;
+
+    fireEvent.mouseDown(settingsButton);
+    expect(screen.getByText('Atur baseline')).toBeInTheDocument();
+
+    fireEvent.mouseDown(baselinePanel);
+    expect(screen.getByText('Atur baseline')).toBeInTheDocument();
+
+    fireEvent.resize(window);
+    fireEvent.scroll(window);
+    fireEvent.mouseDown(document.body);
+    await waitFor(() => {
+      expect(screen.queryByText('Atur baseline')).not.toBeInTheDocument();
+    });
+  });
+
+  it('handles baseline save/create guard branches and discount blur cleanup states', async () => {
+    const levelPricing = createLevelPricing();
+    const { container, rerender } = render(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing,
+          isLevelPricingActive: true,
+          formData: {
+            base_price: 1000,
+            sell_price: 1500,
+            is_level_pricing_active: true,
+          },
+        })}
+      />
+    );
+
+    const levelDiscountInput = screen.getByRole('spinbutton');
+    fireEvent.blur(levelDiscountInput);
+    fireEvent.change(levelDiscountInput, { target: { value: '6' } });
+    fireEvent.blur(levelDiscountInput);
+    fireEvent.change(levelDiscountInput, { target: { value: '' } });
+    fireEvent.blur(levelDiscountInput);
+
+    const switchWrapper = screen.getByRole('checkbox', {
+      name: 'level-pricing-switch',
+    }).parentElement;
+    if (switchWrapper) {
+      fireEvent.mouseDown(switchWrapper);
+    }
+
+    openBaselineModal(container);
+    expect(await screen.findByText('Atur baseline')).toBeInTheDocument();
+
+    const baselineInput = document.body.querySelector(
+      'input.w-20.text-sm'
+    ) as HTMLInputElement | null;
+    expect(baselineInput).toBeTruthy();
+    if (!baselineInput) return;
+
+    fireEvent.change(baselineInput, { target: { value: '7' } });
+    await waitFor(() => {
+      expect(baselineInput.value).toBe('7');
+    });
+    const refreshedBaselineInput = document.body.querySelector(
+      'input.w-20.text-sm'
+    ) as HTMLInputElement | null;
+    expect(refreshedBaselineInput).toBeTruthy();
+    if (!refreshedBaselineInput) return;
+    fireEvent.keyDown(refreshedBaselineInput, {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      charCode: 13,
+    });
+    await waitFor(() => {
+      expect(levelPricing.onUpdateLevels).toHaveBeenCalledWith([
+        { id: 'lvl-1', price_percentage: 93 },
+      ]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Atur baseline')).not.toBeInTheDocument();
+    });
+
+    const updatingLevelPricing = createLevelPricing();
+    updatingLevelPricing.isUpdating = true;
+    rerender(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing: updatingLevelPricing,
+        })}
+      />
+    );
+    openBaselineModal(container);
+    expect(await screen.findByText('Atur baseline')).toBeInTheDocument();
+    const baselineInputUpdating = document.body.querySelector(
+      'input.w-20.text-sm'
+    ) as HTMLInputElement | null;
+    expect(baselineInputUpdating).toBeTruthy();
+    if (baselineInputUpdating) {
+      fireEvent.keyDown(baselineInputUpdating, { key: 'Enter' });
+    }
+    expect(updatingLevelPricing.onUpdateLevels).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tambah' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tambah' }));
+    expect(updatingLevelPricing.onCreateLevel).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByPlaceholderText('Diskon (%)'), {
+      target: { value: '11' },
+    });
+    fireEvent.keyDown(screen.getByPlaceholderText('Diskon (%)'), {
+      key: 'Enter',
+    });
+    expect(updatingLevelPricing.onCreateLevel).toHaveBeenCalled();
+
+    const noLevelPricingProps = createProps({
+      showLevelPricing: true,
+      levelPricing: undefined,
+      disabled: false,
+    });
+    rerender(<ItemPricingForm {...noLevelPricingProps} />);
+    const settingsButton = container.querySelector('button.mr-2');
+    expect(settingsButton).toBeTruthy();
+    if (settingsButton) {
+      fireEvent.click(settingsButton);
+    }
+    expect(screen.queryByText('Atur baseline')).not.toBeInTheDocument();
   });
 });

@@ -432,4 +432,243 @@ describe('useOperatorSelection', () => {
       undefined
     );
   });
+
+  it('handles second-operator edit for inRange in multi-column mode', () => {
+    const preservedRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '10', valueTo: '20' },
+          { field: 'code', operator: 'equals', value: 'A1' },
+        ],
+        joins: ['OR'],
+        isMultiColumn: true,
+      },
+    } as RefObject<PreservedFilter | null>;
+
+    const setPreservedSearchMode = vi.fn();
+    const setIsEditingSecondOperator = vi.fn();
+    const setEditingBadge = vi.fn();
+    const onChange = vi.fn();
+    const inputRef = {
+      current: { focus: vi.fn() },
+    } as unknown as RefObject<HTMLInputElement | null>;
+
+    handleOperatorSelectEditSecond(
+      makeOperator('inRange'),
+      'stock',
+      preservedRef,
+      null,
+      setPreservedSearchMode,
+      setIsEditingSecondOperator,
+      setEditingBadge,
+      onChange,
+      inputRef
+    );
+
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      '#stock #inRange 10 #to 20 #or #code #inRange A1##',
+      onChange,
+      inputRef
+    );
+    vi.runAllTimers();
+    expect(setEditingBadge).toHaveBeenCalledWith({
+      conditionIndex: 1,
+      field: 'value',
+      value: 'A1-',
+    });
+  });
+
+  it('handles second-operator edit partial branches with and without first valueTo', () => {
+    const onChange = vi.fn();
+    const setPreservedSearchMode = vi.fn();
+    const setIsEditingSecondOperator = vi.fn();
+    const setEditingBadge = vi.fn();
+    const inputRef = {
+      current: { focus: vi.fn() },
+    } as unknown as RefObject<HTMLInputElement | null>;
+
+    const partialWithValueToRef = {
+      current: {
+        conditions: [
+          { field: 'stock', operator: 'inRange', value: '5', valueTo: '9' },
+          { field: 'name', operator: 'equals', value: '' },
+        ],
+        joins: ['AND'],
+        isMultiColumn: false,
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleOperatorSelectEditSecond(
+      makeOperator('contains'),
+      'stock',
+      partialWithValueToRef,
+      null,
+      setPreservedSearchMode,
+      setIsEditingSecondOperator,
+      setEditingBadge,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      '#stock #inRange 5 #to 9 #and #contains ',
+      onChange,
+      inputRef
+    );
+
+    const partialMultiColumnRef = {
+      current: {
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'aspirin' },
+          { field: 'code', operator: 'equals', value: '' },
+        ],
+        joins: ['OR'],
+        isMultiColumn: true,
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleOperatorSelectEditSecond(
+      makeOperator('notEqual'),
+      'name',
+      partialMultiColumnRef,
+      null,
+      setPreservedSearchMode,
+      setIsEditingSecondOperator,
+      setEditingBadge,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #contains aspirin #or #code #notEqual ',
+      onChange,
+      inputRef
+    );
+  });
+
+  it('handles first-operator inRange conversion with join and non-join confirmed path', () => {
+    const onChange = vi.fn();
+    const setPreservedSearchMode = vi.fn();
+    const setEditingBadge = vi.fn();
+    const inputRef = {
+      current: { focus: vi.fn() },
+    } as unknown as RefObject<HTMLInputElement | null>;
+
+    const joinInRangeRef = {
+      current: {
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'ibuprofen' },
+          { field: 'stock', operator: 'equals', value: '30' },
+        ],
+        joins: ['AND'],
+        isMultiColumn: true,
+      },
+    } as RefObject<PreservedFilter | null>;
+
+    handleOperatorSelectEditFirst(
+      makeOperator('inRange'),
+      'name',
+      joinInRangeRef,
+      setPreservedSearchMode,
+      setEditingBadge,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      '#name #inRange ibuprofen #and #stock #equals 30##',
+      onChange,
+      inputRef
+    );
+    vi.runAllTimers();
+    expect(setEditingBadge).toHaveBeenCalledWith({
+      conditionIndex: 0,
+      field: 'value',
+      value: 'ibuprofen-',
+    });
+
+    const nonJoinConfirmedRef = {
+      current: {
+        conditions: [{ field: 'code', operator: 'equals', value: 'RX-001' }],
+      },
+    } as RefObject<PreservedFilter | null>;
+    handleOperatorSelectEditFirst(
+      makeOperator('contains'),
+      'code',
+      nonJoinConfirmedRef,
+      setPreservedSearchMode,
+      setEditingBadge,
+      onChange,
+      inputRef
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#code #contains RX-001##',
+      onChange,
+      inputRef
+    );
+  });
+
+  it('handles second-operator selection branches for firstValTo non-multi and no-valueTo multi', () => {
+    const onChange = vi.fn();
+
+    getColumnAtMock.mockReturnValue({ field: 'stock' });
+    isBuildingConditionNMock.mockReturnValue(false);
+    handleOperatorSelectSecond(
+      makeOperator('equals'),
+      {
+        showColumnSelector: false,
+        showOperatorSelector: false,
+        showJoinOperatorSelector: false,
+        isFilterMode: true,
+        partialJoin: 'AND',
+        filterSearch: {
+          field: 'name',
+          value: 'aspirin',
+          valueTo: 'ibuprofen',
+          operator: 'contains',
+          column: {
+            field: 'name',
+            headerName: 'Name',
+            searchable: true,
+            type: 'text',
+          },
+          isExplicitOperator: true,
+        },
+      },
+      onChange,
+      undefined
+    );
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      '#name #contains aspirin #to ibuprofen #and #equals ',
+      onChange,
+      undefined
+    );
+
+    isBuildingConditionNMock.mockReturnValue(true);
+    getColumnAtMock.mockReturnValue({ field: 'code' });
+    handleOperatorSelectSecond(
+      makeOperator('greaterThan'),
+      {
+        showColumnSelector: false,
+        showOperatorSelector: false,
+        showJoinOperatorSelector: false,
+        isFilterMode: true,
+        partialJoin: 'OR',
+        filterSearch: {
+          field: 'stock',
+          value: '7',
+          operator: 'equals',
+          column: {
+            field: 'stock',
+            headerName: 'Stock',
+            searchable: true,
+            type: 'number',
+          },
+          isExplicitOperator: true,
+        },
+      },
+      onChange,
+      undefined
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#stock #equals 7 #or #code #greaterThan ',
+      onChange,
+      undefined
+    );
+  });
 });

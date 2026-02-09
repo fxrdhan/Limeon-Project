@@ -1915,6 +1915,12 @@ describe('EnhancedSearchBar', () => {
     const badgeHookArgs = useBadgeHandlersMock.mock.calls[0]?.[0] as
       | {
           setPreservedSearchMode?: (value: EnhancedSearchState | null) => void;
+          setEditingSelectorTarget?: (
+            value: {
+              conditionIndex: number;
+              target: 'column' | 'operator' | 'join';
+            } | null
+          ) => void;
         }
       | undefined;
 
@@ -1935,5 +1941,56 @@ describe('EnhancedSearchBar', () => {
       capturedOperatorSelectorProps.current?.defaultSelectedIndex
     ).toBeDefined();
     expect(capturedColumnSelectorProps.current?.defaultSelectedIndex).toBe(1);
+  });
+
+  it('covers second-operator partial fallback and selected-column fallback indexes', () => {
+    const onChange = vi.fn();
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        showOperatorSelector: true,
+        showColumnSelector: true,
+        selectedColumn: columns[1],
+      }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#name #contains aspirin #"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    const badgeHookArgs = useBadgeHandlersMock.mock.calls[0]?.[0] as
+      | {
+          setPreservedSearchMode?: (value: EnhancedSearchState | null) => void;
+        }
+      | undefined;
+
+    act(() => {
+      badgeHookArgs?.setPreservedSearchMode?.({
+        ...baseSearchMode({
+          selectedColumn: columns[1],
+          partialConditions: [
+            { field: 'name', column: columns[0], operator: 'contains' },
+            { field: 'stock', column: columns[1], operator: 'equals' },
+          ],
+        }),
+      });
+      badgeHookArgs?.setEditingSelectorTarget?.({
+        conditionIndex: 1,
+        target: 'operator',
+      });
+    });
+
+    expect(
+      capturedOperatorSelectorProps.current?.defaultSelectedIndex
+    ).toBeDefined();
+
+    act(() => {
+      badgeHookArgs?.setEditingSelectorTarget?.(null);
+    });
+
+    expect(capturedColumnSelectorProps.current).toBeTruthy();
   });
 });

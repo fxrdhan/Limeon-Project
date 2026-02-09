@@ -41,11 +41,13 @@ const config: BaseSelectorConfig<Item> = {
   headerText: 'Pilih item',
   footerSingular: 'item',
   maxHeight: '320px',
+  theme: 'blue',
   noResultsText: 'Tidak ada hasil untuk "{searchTerm}"',
   getItemKey: item => item.id,
   getItemLabel: item => item.label,
   getItemIcon: item => <span data-testid={`icon-${item.id}`}>icon</span>,
   getItemActiveColor: () => 'text-purple-500',
+  getItemSecondaryText: item => item.code ?? '',
   getSearchFields: item => [
     { key: 'label', value: item.label, boost: 1000 },
     { key: 'code', value: item.code || '', boost: 500 },
@@ -87,7 +89,9 @@ describe('BaseSelector', () => {
     });
 
     expect(screen.getByText('Pilih item')).toBeInTheDocument();
-    expect(screen.getByText('Aspirin')).toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) => element?.textContent === 'Aspirin')
+    ).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'ArrowDown' });
     fireEvent.keyDown(document, { key: 'Enter' });
@@ -141,7 +145,129 @@ describe('BaseSelector', () => {
     expect(screen.getByText('No results for "z"')).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'Backspace' });
-    expect(screen.getByText('Aspirin')).toBeInTheDocument();
+    const aspirinLabel = screen.getByText(
+      (_, element) => element?.textContent === 'Aspirin'
+    );
+    expect(aspirinLabel).toBeInTheDocument();
+  });
+
+  it('covers search highlight, click selection, and space-skip/defaultPrevented branches', () => {
+    const onSelect = vi.fn();
+
+    render(
+      <BaseSelector
+        items={items}
+        isOpen
+        onSelect={onSelect}
+        onClose={vi.fn()}
+        position={{ top: 0, left: 0 }}
+        config={config}
+      />
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    fireEvent.keyDown(document, { key: 'a' });
+    fireEvent.keyDown(document, { key: 's' });
+    fireEvent.keyDown(document, { key: 'p' });
+    const aspirinLabel = screen.getByText(
+      (_, element) => element?.textContent === 'Aspirin'
+    );
+    expect(aspirinLabel).toBeInTheDocument();
+    expect(
+      document.querySelectorAll('.font-bold.text-blue-600').length
+    ).toBeGreaterThan(0);
+
+    fireEvent.click(aspirinLabel);
+    expect(onSelect).toHaveBeenCalledWith(items[0]);
+
+    const prevented = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    prevented.preventDefault();
+    document.dispatchEvent(prevented);
+
+    fireEvent.keyDown(document, { key: 'Backspace' });
+    fireEvent.keyDown(document, { key: 'Backspace' });
+    fireEvent.keyDown(document, { key: 'Backspace' });
+    fireEvent.keyDown(document, { key: ' ' });
+    expect(screen.getByText('Ibuprofen')).toBeInTheDocument();
+  });
+
+  it('handles ArrowUp wrap, defaultSelectedIndex changes, and closed-keydown guard', () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(
+      <BaseSelector
+        items={items}
+        isOpen
+        onSelect={onSelect}
+        onClose={vi.fn()}
+        position={{ top: 0, left: 0 }}
+        config={config}
+        defaultSelectedIndex={1}
+      />
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    fireEvent.keyDown(document, { key: 'ArrowUp' });
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onSelect).toHaveBeenLastCalledWith(items[0]);
+
+    rerender(
+      <BaseSelector
+        items={items}
+        isOpen
+        onSelect={onSelect}
+        onClose={vi.fn()}
+        position={{ top: 0, left: 0 }}
+        config={config}
+        defaultSelectedIndex={undefined}
+      />
+    );
+
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onSelect).toHaveBeenLastCalledWith(items[0]);
+
+    rerender(
+      <BaseSelector
+        items={items}
+        isOpen={false}
+        onSelect={onSelect}
+        onClose={vi.fn()}
+        position={{ top: 0, left: 0 }}
+        config={config}
+      />
+    );
+
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders empty items no-results branch with external search text replacement', () => {
+    render(
+      <BaseSelector
+        items={[]}
+        isOpen
+        onSelect={vi.fn()}
+        onClose={vi.fn()}
+        position={{ top: 0, left: 0 }}
+        config={config}
+        searchTerm="nama-obat"
+      />
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(screen.getByText('Tidak ada hasil untuk "nama-obat"')).toBeTruthy();
   });
 
   it('handles outside click and clears highlight when closed', () => {

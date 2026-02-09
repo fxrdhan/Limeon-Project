@@ -629,4 +629,632 @@ describe('ChatSidebarPanel', () => {
     });
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('supports keyboard actions for menu and read more/less toggles', async () => {
+    const longOwnMessage = `Keyboard long ${'x'.repeat(280)}`;
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-keyboard-own',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: longOwnMessage,
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    const bubble = await screen.findByRole('button', {
+      name: /Keyboard long/i,
+    });
+    fireEvent.keyDown(bubble, { key: 'Enter' });
+    expect(
+      await screen.findByRole('button', { name: 'Salin' })
+    ).toBeInTheDocument();
+    const refreshedBubble = screen.getByRole('button', {
+      name: /Keyboard long/i,
+    });
+    fireEvent.keyDown(refreshedBubble, { key: 'Enter' });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Salin' })
+      ).not.toBeInTheDocument();
+    });
+
+    const readMoreButton = screen.getByRole('button', { name: 'Read more' });
+    fireEvent.keyDown(readMoreButton, { key: 'Enter' });
+    expect(
+      await screen.findByRole('button', { name: 'Read less' })
+    ).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Read less' }), {
+      key: ' ',
+    });
+    expect(
+      await screen.findByRole('button', { name: 'Read more' })
+    ).toBeInTheDocument();
+  });
+
+  it('handles temp message edit/delete branches without API mutation', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'temp_local_1',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Pesan temp lokal',
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Pesan temp lokal');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pesan temp lokal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: 'Pesan temp diubah' } });
+    const sendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(sendButton).toBeTruthy();
+    fireEvent.click(sendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.updateMessage).not.toHaveBeenCalled();
+    });
+    expect(await screen.findByText('Pesan temp diubah')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pesan temp diubah' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    expect(screen.getByPlaceholderText('Type a message...')).toHaveValue(
+      'Pesan temp diubah'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pesan temp diubah' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Pesan temp diubah')).not.toBeInTheDocument();
+    });
+    expect(chatServiceMock.deleteMessage).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText('Type a message...')).toHaveValue('');
+  });
+
+  it('restores message input when send response is empty or throws', async () => {
+    chatServiceMock.insertMessage
+      .mockResolvedValueOnce({
+        data: null,
+        error: null,
+      })
+      .mockRejectedValueOnce(new Error('insert-boom'));
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+    await screen.findByText('Halo dari target');
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+
+    fireEvent.change(textarea, { target: { value: 'Tanpa data response' } });
+    const firstSendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(firstSendButton).toBeTruthy();
+    fireEvent.click(firstSendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.insertMessage).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByPlaceholderText('Type a message...')).toHaveValue(
+      'Tanpa data response'
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Type a message...'), {
+      target: { value: 'Kena exception' },
+    });
+    const secondSendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(secondSendButton).toBeTruthy();
+    fireEvent.click(secondSendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.insertMessage).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByPlaceholderText('Type a message...')).toHaveValue(
+      'Kena exception'
+    );
+  });
+
+  it('handles presence/channel errors and beforeunload fallback close update', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.updateUserPresence
+      .mockRejectedValueOnce(new Error('open-presence-failed'))
+      .mockResolvedValue({
+        data: [],
+        error: null,
+      });
+    chatServiceMock.getUserPresence.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'UNKNOWN', message: 'presence-load-failed' },
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+    await screen.findByText('Halo dari target');
+
+    const chatChannel = channelRegistry.get('chat_dm_user-1_user-2');
+    const subscribeCallback = chatChannel?.subscribe.mock.calls[0]?.[0] as
+      | ((status: string) => void)
+      | undefined;
+    subscribeCallback?.('CHANNEL_ERROR');
+
+    const presenceDbHandler = getHandler(
+      'user_presence_changes',
+      'postgres_changes',
+      '*'
+    );
+    act(() => {
+      presenceDbHandler({
+        eventType: 'INSERT',
+        new: {
+          user_id: targetUser.id,
+          is_online: true,
+          current_chat_channel: 'dm_user-1_user-2',
+          last_seen: '2026-02-08T01:00:00.000Z',
+        },
+      });
+    });
+    expect(await screen.findByText('Online')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        '❌ Caught error updating user chat open:',
+        expect.any(Error)
+      );
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      '❌ Error loading target user presence:',
+      expect.objectContaining({ code: 'UNKNOWN' })
+    );
+    expect(errorSpy).toHaveBeenCalledWith('Failed to connect to chat channel');
+
+    window.dispatchEvent(new Event('beforeunload'));
+    await waitFor(() => {
+      expect(chatServiceMock.updateUserPresence).toHaveBeenCalledWith(
+        currentUser.id,
+        expect.objectContaining({
+          is_online: false,
+          current_chat_channel: null,
+        })
+      );
+    });
+
+    errorSpy.mockRestore();
+  });
+
+  it('resolves local profile images without blob cache lookup', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [
+        createMessage({
+          id: 'msg-self-photo',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Foto saya',
+        }),
+      ],
+      error: null,
+    });
+
+    useAuthStoreMock.mockReturnValue({
+      user: {
+        ...currentUser,
+        profilephoto: '/local/user-photo.png',
+      },
+    });
+
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          ...targetUser,
+          profilephoto: '/local/target-photo.png',
+        }}
+      />
+    );
+
+    expect(await screen.findByText('Foto saya')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Admin User').length).toBeGreaterThan(0);
+    expect(screen.getAllByAltText('Target User').length).toBeGreaterThan(0);
+    expect(setCachedImageMock).not.toHaveBeenCalled();
+    expect(getCachedImageBlobUrlMock).not.toHaveBeenCalled();
+    expect(cacheImageBlobMock).not.toHaveBeenCalled();
+  });
+
+  it('uses cached http profile images and stores cache keys', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [
+        createMessage({
+          id: 'msg-self-http',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Foto cached',
+        }),
+      ],
+      error: null,
+    });
+    useAuthStoreMock.mockReturnValue({
+      user: {
+        ...currentUser,
+        profilephoto: 'https://cdn.example.com/user.png',
+      },
+    });
+    getCachedImageBlobUrlMock
+      .mockResolvedValueOnce('blob:user-cached')
+      .mockResolvedValueOnce('blob:target-cached');
+
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          ...targetUser,
+          profilephoto: 'https://cdn.example.com/target.png',
+        }}
+      />
+    );
+
+    expect(await screen.findByText('Foto cached')).toBeInTheDocument();
+    expect(setCachedImageMock).toHaveBeenCalledWith(
+      'profile:user-1',
+      'https://cdn.example.com/user.png'
+    );
+    expect(setCachedImageMock).toHaveBeenCalledWith(
+      'profile:user-2',
+      'https://cdn.example.com/target.png'
+    );
+    expect(cacheImageBlobMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to cacheImageBlob for uncached http profile images', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-self-blob',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Foto user uncached',
+        }),
+        createMessage({
+          id: 'msg-target-blob',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          message: 'Foto target uncached',
+        }),
+      ],
+      error: null,
+    });
+    useAuthStoreMock.mockReturnValue({
+      user: {
+        ...currentUser,
+        profilephoto: 'https://cdn.example.com/user-uncached.png',
+      },
+    });
+    getCachedImageBlobUrlMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    cacheImageBlobMock
+      .mockResolvedValueOnce('blob:user-generated')
+      .mockResolvedValueOnce(null);
+
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          ...targetUser,
+          profilephoto: 'https://cdn.example.com/target-uncached.png',
+        }}
+      />
+    );
+
+    expect(await screen.findByText('Foto user uncached')).toBeInTheDocument();
+    expect(await screen.findByText('Foto target uncached')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(cacheImageBlobMock).toHaveBeenCalledWith(
+        'https://cdn.example.com/user-uncached.png'
+      );
+      expect(cacheImageBlobMock).toHaveBeenCalledWith(
+        'https://cdn.example.com/target-uncached.png'
+      );
+    });
+
+    const adminPhotos = screen.getAllByAltText(
+      'Admin User'
+    ) as HTMLImageElement[];
+    expect(
+      adminPhotos.some(
+        photo => photo.getAttribute('src') === 'blob:user-generated'
+      )
+    ).toBe(true);
+
+    const targetPhotos = screen.getAllByAltText(
+      'Target User'
+    ) as HTMLImageElement[];
+    expect(
+      targetPhotos.some(photo =>
+        (photo.getAttribute('src') || '').includes(
+          'https://cdn.example.com/target-uncached.png'
+        )
+      )
+    ).toBe(true);
+  });
+
+  it('renders last seen labels for minute, hour, and date ranges', async () => {
+    const now = Date.now();
+    chatServiceMock.getUserPresence.mockResolvedValueOnce({
+      data: {
+        user_id: targetUser.id,
+        is_online: false,
+        current_chat_channel: null,
+        last_seen: new Date(now).toISOString(),
+      },
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    expect(await screen.findByText('Last seen Just now')).toBeInTheDocument();
+
+    const globalPresenceHandler = getHandler(
+      'global_presence_updates',
+      'broadcast',
+      'presence_changed'
+    );
+
+    act(() => {
+      globalPresenceHandler({
+        payload: {
+          user_id: targetUser.id,
+          is_online: false,
+          current_chat_channel: null,
+          last_seen: new Date(now - 35 * 60 * 1000).toISOString(),
+        },
+      });
+    });
+    expect(await screen.findByText('Last seen 35m ago')).toBeInTheDocument();
+
+    act(() => {
+      globalPresenceHandler({
+        payload: {
+          user_id: targetUser.id,
+          is_online: false,
+          current_chat_channel: null,
+          last_seen: new Date(now - 5 * 60 * 60 * 1000).toISOString(),
+        },
+      });
+    });
+    expect(await screen.findByText('Last seen 5h ago')).toBeInTheDocument();
+
+    const oldTimestamp = new Date(now - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const expectedOldDate = new Date(oldTimestamp).toLocaleDateString();
+    act(() => {
+      globalPresenceHandler({
+        payload: {
+          user_id: targetUser.id,
+          is_online: false,
+          current_chat_channel: null,
+          last_seen: oldTimestamp,
+        },
+      });
+    });
+    expect(
+      await screen.findByText(`Last seen ${expectedOldDate}`)
+    ).toBeInTheDocument();
+  });
+
+  it('logs message loading failures for response errors and thrown exceptions', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'load-failed' },
+    });
+
+    const { unmount } = render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Error loading messages:',
+        expect.objectContaining({ message: 'load-failed' })
+      );
+    });
+
+    unmount();
+
+    chatServiceMock.fetchMessagesBetweenUsers.mockRejectedValueOnce(
+      new Error('load-boom')
+    );
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Error loading messages:',
+        expect.any(Error)
+      );
+    });
+
+    errorSpy.mockRestore();
+  });
+
+  it('logs insert presence error when update has no rows and insert fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.updateUserPresence.mockResolvedValueOnce({
+      data: [],
+      error: { code: 'NO_ROWS' },
+    });
+    chatServiceMock.insertUserPresence.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'insert-presence-failed' },
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await waitFor(() => {
+      expect(chatServiceMock.insertUserPresence).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: currentUser.id,
+          current_chat_channel: 'dm_user-1_user-2',
+        })
+      );
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      '❌ Error inserting user presence:',
+      expect.objectContaining({ message: 'insert-presence-failed' })
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  it('keeps composer message on Shift+Enter and still sends via button', async () => {
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Halo dari target');
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: 'Kirim lewat enter' } });
+    await waitFor(() => {
+      expect(textarea).toHaveValue('Kirim lewat enter');
+    });
+
+    fireEvent.keyDown(textarea, {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      charCode: 13,
+      shiftKey: true,
+    });
+    expect(chatServiceMock.insertMessage).not.toHaveBeenCalled();
+
+    const sendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(sendButton).toBeTruthy();
+    fireEvent.click(sendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.insertMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Kirim lewat enter' })
+      );
+    });
+  });
+
+  it('uses left and down menu placement based on available container space', async () => {
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    const messageButton = await screen.findByRole('button', {
+      name: 'Halo dari target',
+    });
+    const container = document.querySelector(
+      'div.flex-1.px-3.pt-3.overflow-y-auto'
+    ) as HTMLDivElement | null;
+    expect(container).toBeTruthy();
+
+    const containerRect = {
+      top: 0,
+      left: 0,
+      right: 400,
+      bottom: 400,
+      width: 400,
+      height: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+
+    Object.defineProperty(container!, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => containerRect,
+    });
+
+    const anchorRect = {
+      top: 120,
+      left: 180,
+      right: 200,
+      bottom: 140,
+      width: 20,
+      height: 20,
+      x: 180,
+      y: 120,
+      toJSON: () => ({}),
+    };
+    Object.defineProperty(messageButton, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => anchorRect,
+    });
+
+    const reopenButton = screen.getByRole('button', {
+      name: 'Halo dari target',
+    });
+    fireEvent.click(reopenButton);
+    const copyButton = await screen.findByRole('button', { name: 'Salin' });
+    expect(copyButton.closest('[data-chat-menu-id]')).toHaveClass('left-full');
+
+    const refreshedButton = screen.getByRole('button', {
+      name: 'Halo dari target',
+    });
+    fireEvent.click(refreshedButton);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Salin' })
+      ).not.toBeInTheDocument();
+    });
+
+    const downButton = screen.getByRole('button', {
+      name: 'Halo dari target',
+    });
+    Object.defineProperty(downButton, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        top: 260,
+        left: 365,
+        right: 395,
+        bottom: 390,
+        width: 30,
+        height: 130,
+        x: 365,
+        y: 260,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent.click(downButton);
+    const copyButtonDown = await screen.findByRole('button', { name: 'Salin' });
+    expect(copyButtonDown.closest('[data-chat-menu-id]')).toHaveClass(
+      'bottom-full'
+    );
+  });
 });

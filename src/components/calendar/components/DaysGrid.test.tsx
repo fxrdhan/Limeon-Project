@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import DaysGrid from './DaysGrid';
 
 const useCalendarContextMock = vi.hoisted(() => vi.fn());
+const capturedMotionProps = vi.hoisted(
+  () =>
+    ({
+      current: null as Record<string, unknown> | null,
+    }) as { current: Record<string, unknown> | null }
+);
 
 vi.mock('../hooks', () => ({
   useCalendarContext: useCalendarContextMock,
@@ -13,8 +19,10 @@ vi.mock('motion/react', async () => {
   const react = await vi.importActual<typeof import('react')>('react');
   const createMotionComponent = (tag: string) =>
     react.forwardRef<HTMLElement, Record<string, unknown>>(
-      ({ children, ...props }, ref) =>
-        react.createElement(tag, { ...props, ref }, children)
+      ({ children, ...props }, ref) => {
+        if (tag === 'div') capturedMotionProps.current = props;
+        return react.createElement(tag, { ...props, ref }, children);
+      }
     );
 
   return {
@@ -32,6 +40,7 @@ vi.mock('motion/react', async () => {
 describe('DaysGrid', () => {
   beforeEach(() => {
     useCalendarContextMock.mockReset();
+    capturedMotionProps.current = null;
     useCalendarContextMock.mockReturnValue({
       navigationDirection: 'next',
       yearNavigationDirection: null,
@@ -106,5 +115,100 @@ describe('DaysGrid', () => {
 
     expect(onDateSelect).not.toHaveBeenCalled();
     expect(onDateHighlight).not.toHaveBeenCalled();
+  });
+
+  it('applies month/year animation direction branches and today styling', () => {
+    useCalendarContextMock.mockReturnValue({
+      navigationDirection: 'prev',
+      yearNavigationDirection: null,
+      readOnly: false,
+    });
+
+    const today = new Date();
+    render(
+      <DaysGrid
+        displayDate={new Date(today.getFullYear(), today.getMonth(), 1)}
+        onDateSelect={vi.fn()}
+        onDateHighlight={vi.fn()}
+        animated={true}
+      />
+    );
+
+    expect(capturedMotionProps.current?.initial).toEqual({ x: '-100%', y: 0 });
+    expect(capturedMotionProps.current?.exit).toEqual({ x: '100%', y: 0 });
+    expect(
+      screen.getByRole('button', { name: String(today.getDate()) })
+    ).toHaveClass('calendar__day-button--today');
+  });
+
+  it('uses neutral animation values when no navigation direction is active', () => {
+    useCalendarContextMock.mockReturnValue({
+      navigationDirection: null,
+      yearNavigationDirection: null,
+      readOnly: false,
+    });
+
+    render(
+      <DaysGrid
+        displayDate={new Date(2026, 0, 1)}
+        onDateSelect={vi.fn()}
+        onDateHighlight={vi.fn()}
+        animated={true}
+      />
+    );
+
+    expect(capturedMotionProps.current?.initial).toBe(false);
+    expect(capturedMotionProps.current?.exit).toEqual({ x: 0, y: 0 });
+  });
+
+  it('covers remaining animation direction branches for year prev and month next', () => {
+    useCalendarContextMock.mockReturnValue({
+      navigationDirection: 'next',
+      yearNavigationDirection: 'prev',
+      readOnly: false,
+    });
+
+    const { rerender } = render(
+      <DaysGrid
+        displayDate={new Date(2026, 0, 1)}
+        onDateSelect={vi.fn()}
+        onDateHighlight={vi.fn()}
+        animated={true}
+      />
+    );
+
+    expect(capturedMotionProps.current?.initial).toEqual({ y: '-100%', x: 0 });
+    expect(capturedMotionProps.current?.exit).toEqual({ y: '100%', x: 0 });
+
+    useCalendarContextMock.mockReturnValue({
+      navigationDirection: 'next',
+      yearNavigationDirection: null,
+      readOnly: false,
+    });
+    rerender(
+      <DaysGrid
+        displayDate={new Date(2026, 0, 1)}
+        onDateSelect={vi.fn()}
+        onDateHighlight={vi.fn()}
+        animated={true}
+      />
+    );
+    expect(capturedMotionProps.current?.initial).toEqual({ x: '100%', y: 0 });
+    expect(capturedMotionProps.current?.exit).toEqual({ x: '-100%', y: 0 });
+
+    useCalendarContextMock.mockReturnValue({
+      navigationDirection: 'idle' as unknown as 'next',
+      yearNavigationDirection: null,
+      readOnly: false,
+    });
+    rerender(
+      <DaysGrid
+        displayDate={new Date(2026, 0, 1)}
+        onDateSelect={vi.fn()}
+        onDateHighlight={vi.fn()}
+        animated={true}
+      />
+    );
+    expect(capturedMotionProps.current?.initial).toEqual({ x: 0, y: 0 });
   });
 });
