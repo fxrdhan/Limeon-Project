@@ -139,8 +139,13 @@ describe('EntityModal', () => {
         entityName,
         selectedVersion: { version_number: 2 },
       });
+
+      if (!comparisonProps) {
+        throw new Error('Expected comparison props to be captured');
+      }
+
       expect(
-        (comparisonProps?.currentData as { description: string }).description
+        (comparisonProps.currentData as { description: string }).description
       ).toBe(entityName === 'Produsen' ? 'Alamat Live' : 'Deskripsi Live');
 
       unmount();

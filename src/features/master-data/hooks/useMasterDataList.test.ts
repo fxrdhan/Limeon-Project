@@ -57,11 +57,18 @@ describe('useMasterDataList', () => {
       data: [{ id: '1', name: 'Data' }],
     });
 
+    if (!capturedUnifiedSearchOptions) {
+      throw new Error('Expected search options to be captured');
+    }
+
+    const { onSearch, onClear } = capturedUnifiedSearchOptions as {
+      onSearch: (value: string) => void;
+      onClear: () => void;
+    };
+
     act(() => {
-      (capturedUnifiedSearchOptions?.onSearch as (value: string) => void)(
-        'sari'
-      );
-      (capturedUnifiedSearchOptions?.onClear as () => void)();
+      onSearch('sari');
+      onClear();
     });
 
     expect(setSearch).toHaveBeenNthCalledWith(1, 'sari');
