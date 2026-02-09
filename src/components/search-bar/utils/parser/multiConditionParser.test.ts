@@ -227,4 +227,68 @@ describe('multiConditionParser', () => {
       )
     ).toBeNull();
   });
+
+  it('handles malformed joined patterns and trailing-space confirmation branch', () => {
+    expect(
+      parsePartialNConditions('#name #contains aspirin #and', columns)
+    ).toBeNull();
+
+    const trailingSpaceConfirmed = parsePartialNConditions(
+      '#name #contains aspirin #and #equals ibuprofen## ',
+      columns
+    );
+    expect(trailingSpaceConfirmed?.activeConditionIndex).toBe(2);
+    expect(trailingSpaceConfirmed?.showOperatorSelector).toBe(false);
+    expect(trailingSpaceConfirmed?.showJoinOperatorSelector).toBe(false);
+  });
+
+  it('covers second-condition inRange waiting and combined token resolution branches', () => {
+    const waitingSecond = parsePartialNConditions(
+      '#name #contains aspirin #and #stock #inRange 10 #to',
+      columns
+    );
+    expect(waitingSecond?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'inRange',
+        value: '10',
+        waitingForValueTo: true,
+      })
+    );
+
+    const knownColumnToken = parsePartialNConditions(
+      '#name #contains aspirin #and #stock',
+      columns
+    );
+    expect(knownColumnToken?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+      })
+    );
+
+    const unknownToken = parsePartialNConditions(
+      '#name #contains aspirin #and #doesNotExist',
+      columns
+    );
+    expect(unknownToken?.partialConditions?.[1]).toEqual({});
+    expect(unknownToken?.showColumnSelector).toBe(true);
+  });
+
+  it('returns null for multi-condition parse when first segment is invalid or incomplete', () => {
+    expect(
+      parseMultiConditionFilter(
+        '#name #unknown x #and #equals ibuprofen##',
+        nameColumn,
+        columns
+      )
+    ).toBeNull();
+
+    expect(
+      parseMultiConditionFilter(
+        '#contains aspirin #and #equals ibuprofen##',
+        nameColumn,
+        columns
+      )
+    ).toBeNull();
+  });
 });

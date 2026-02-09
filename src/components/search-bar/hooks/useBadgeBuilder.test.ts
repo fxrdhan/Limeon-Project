@@ -303,4 +303,183 @@ describe('useBadgeBuilder', () => {
     conditionColumn?.onEdit?.();
     expect(groupHandlers.onEditColumn).toHaveBeenCalledWith([0]);
   });
+
+  it('builds grouped badges without explicit wrappers and without group handlers', () => {
+    getOperatorLabelForColumnMock.mockImplementation(
+      (_column: SearchColumn, operator: string) => `${operator}-label`
+    );
+    const handlers = createHandlers();
+    const group: FilterGroup = {
+      kind: 'group',
+      join: 'AND',
+      isExplicit: false,
+      isClosed: false,
+      nodes: [
+        {
+          kind: 'condition',
+          field: 'name',
+          column: textColumn,
+          operator: 'contains',
+          value: 'asp',
+        },
+      ],
+    };
+
+    const searchMode = baseSearchMode({
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: 'asp',
+        operator: 'contains',
+        column: textColumn,
+        isExplicitOperator: true,
+        filterGroup: group,
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useBadgeBuilder(
+        searchMode,
+        handlers,
+        undefined,
+        null,
+        {
+          editingBadge: { path: [9], field: 'value', value: 'x' },
+          onInlineValueChange: vi.fn(),
+          onInlineEditComplete: vi.fn(),
+        },
+        undefined
+      )
+    );
+
+    const badges = result.current;
+    expect(badges.some(b => b.id.startsWith('group-open'))).toBe(false);
+    expect(badges.some(b => b.id.startsWith('group-close'))).toBe(false);
+    expect(badges.find(b => b.id === 'condition-0-column')?.canEdit).toBe(
+      false
+    );
+  });
+
+  it('builds multi-condition between badges in confirmed and partial flows', () => {
+    getOperatorLabelForColumnMock.mockImplementation(
+      (_column: SearchColumn, operator: string) => `${operator}-label`
+    );
+    const handlers = {
+      ...createHandlers(),
+      insertConditionAfter: undefined,
+    };
+
+    const confirmedSearchMode = baseSearchMode({
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: 'asp',
+        operator: 'contains',
+        column: textColumn,
+        isExplicitOperator: true,
+        isConfirmed: true,
+        isMultiCondition: true,
+        conditions: [
+          {
+            field: 'name',
+            column: textColumn,
+            operator: 'contains',
+            value: 'asp',
+          },
+          {
+            field: 'stock',
+            column: numberColumn,
+            operator: 'inRange',
+            value: '10',
+            valueTo: '20',
+          },
+        ],
+        joins: ['AND'],
+      },
+    });
+
+    const { result: confirmed } = renderHook(() =>
+      useBadgeBuilder(confirmedSearchMode, handlers)
+    );
+    const confirmedIds = confirmed.current.map(b => b.id);
+    expect(confirmedIds).toContain('condition-1-value-from');
+    expect(confirmedIds).toContain('condition-1-separator');
+    expect(confirmedIds).toContain('condition-1-value-to');
+
+    const partialSearchMode = baseSearchMode({
+      isFilterMode: true,
+      activeConditionIndex: 0,
+      filterSearch: {
+        field: 'name',
+        value: 'asp',
+        operator: 'contains',
+        column: textColumn,
+        isExplicitOperator: true,
+        isConfirmed: true,
+      },
+      partialConditions: [
+        {
+          field: 'name',
+          column: textColumn,
+          operator: 'contains',
+          value: 'asp',
+        },
+        {
+          field: 'stock',
+          column: numberColumn,
+          operator: 'inRange',
+          value: '5',
+          valueTo: '9',
+        },
+      ],
+      joins: ['OR'],
+    });
+
+    const { result: partial } = renderHook(() =>
+      useBadgeBuilder(partialSearchMode, handlers)
+    );
+    const partialIds = partial.current.map(b => b.id);
+    expect(partialIds).toContain('condition-1-value-from');
+    expect(partialIds).toContain('condition-1-separator');
+    expect(partialIds).toContain('condition-1-value-to');
+  });
+
+  it('handles sparse partial conditions with fallback condition data', () => {
+    getOperatorLabelForColumnMock.mockImplementation(
+      (_column: SearchColumn, operator: string) => `${operator}-label`
+    );
+    const handlers = createHandlers();
+
+    const sparseSearchMode = baseSearchMode({
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: 'asp',
+        operator: 'contains',
+        column: textColumn,
+        isExplicitOperator: true,
+        isConfirmed: true,
+      },
+      partialConditions: [
+        {
+          field: 'name',
+          column: textColumn,
+          operator: 'contains',
+          value: 'asp',
+        },
+        undefined as unknown as {
+          field?: string;
+          column?: SearchColumn;
+          operator?: string;
+          value?: string;
+        },
+      ],
+      joins: ['AND'],
+    });
+
+    const { result } = renderHook(() =>
+      useBadgeBuilder(sparseSearchMode, handlers)
+    );
+    expect(result.current.some(b => b.id === 'join-0')).toBe(true);
+  });
 });

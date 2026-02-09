@@ -544,4 +544,154 @@ describe('useBadgeHandlers', () => {
       props.inputRef
     );
   });
+
+  it('handles operator clear fallback paths and ignores invalid value/valueTo indexes', () => {
+    extractMultiConditionPreservationMock.mockReturnValue({
+      conditions: [],
+      joins: [],
+      isMultiColumn: false,
+    });
+
+    const props = buildProps({
+      searchMode: baseSearchMode({
+        partialConditions: [],
+      }),
+    });
+
+    const { result } = renderHook(() => useBadgeHandlers(props));
+
+    result.current.clearConditionPart(0, 'operator');
+    expect(props.onClearSearch).toHaveBeenCalledTimes(1);
+
+    result.current.clearConditionPart(3, 'value');
+    result.current.clearConditionPart(3, 'valueTo');
+    expect(setFilterValueMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('handles single-condition join clear/edit with partial conditions and join fallbacks', () => {
+    patternBuilderBuildNConditionsMock.mockReturnValue('single-join-open');
+    patternBuilderWithJoinSelectorAtIndexMock.mockReturnValue(
+      'single-edit-join'
+    );
+
+    const props = buildProps({
+      searchMode: baseSearchMode({
+        partialJoin: 'OR',
+        joins: ['AND'],
+        partialConditions: [
+          {
+            field: 'name',
+            column: nameColumn,
+            operator: 'contains',
+            value: 'asp',
+          },
+          {
+            field: 'stock',
+            column: stockColumn,
+            operator: 'greaterThan',
+            value: '10',
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'asp',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          isConfirmed: true,
+        },
+      }),
+    });
+
+    const { result } = renderHook(() => useBadgeHandlers(props));
+
+    result.current.clearJoin(0);
+    expect(props.setCurrentJoinOperator).toHaveBeenCalledWith('OR');
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      'single-join-open',
+      props.onChange,
+      props.inputRef
+    );
+
+    result.current.editJoin(0);
+    expect(patternBuilderWithJoinSelectorAtIndexMock).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Array),
+      false,
+      'name',
+      0
+    );
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      'single-edit-join',
+      props.onChange,
+      props.inputRef
+    );
+  });
+
+  it('covers edit fallbacks for missing filter state and selector pattern builders', () => {
+    const propsNoFilter = buildProps({ searchMode: baseSearchMode() });
+    const { result: noFilterResult } = renderHook(() =>
+      useBadgeHandlers(propsNoFilter)
+    );
+
+    noFilterResult.current.editValueN(0, 'value');
+    noFilterResult.current.editJoin(0);
+    expect(setFilterValueMock).not.toHaveBeenCalled();
+
+    extractMultiConditionPreservationMock.mockReturnValue({
+      conditions: [
+        { field: 'name', operator: 'contains', value: 'asp' },
+        { field: 'stock', operator: 'greaterThan', value: '10' },
+      ],
+      joins: ['AND'],
+      isMultiColumn: true,
+    });
+    patternBuilderBuildNConditionsMock.mockReturnValue('edit-column-base');
+    patternBuilderColumnWithOperatorSelectorMock.mockReturnValue('#name #');
+
+    const propsWithFilter = buildProps({
+      searchMode: baseSearchMode({
+        selectedColumn: nameColumn,
+        filterSearch: {
+          field: 'name',
+          value: 'asp',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          isConfirmed: true,
+        },
+      }),
+    });
+
+    const { result: withFilterResult } = renderHook(() =>
+      useBadgeHandlers(propsWithFilter)
+    );
+
+    withFilterResult.current.editConditionPart(1, 'column');
+    expect(setFilterValueMock).toHaveBeenCalledWith(
+      'edit-column-base #and #',
+      propsWithFilter.onChange,
+      propsWithFilter.inputRef
+    );
+
+    extractMultiConditionPreservationMock.mockReturnValueOnce(null);
+    withFilterResult.current.editConditionPart(0, 'operator');
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #',
+      propsWithFilter.onChange,
+      propsWithFilter.inputRef
+    );
+
+    extractMultiConditionPreservationMock.mockReturnValue({
+      conditions: [{ field: 'name', operator: 'contains', value: 'asp' }],
+      joins: [],
+      isMultiColumn: false,
+    });
+    withFilterResult.current.editConditionPart(0, 'operator');
+    expect(setFilterValueMock).toHaveBeenLastCalledWith(
+      '#name #',
+      propsWithFilter.onChange,
+      propsWithFilter.inputRef
+    );
+  });
 });
