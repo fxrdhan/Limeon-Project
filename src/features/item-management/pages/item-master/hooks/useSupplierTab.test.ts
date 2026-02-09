@@ -67,6 +67,28 @@ describe('useSupplierTab', () => {
       'PT Farmasi Satu'
     );
     expect(firstColumn.valueGetter?.({ data: null } as never)).toBe('-');
+
+    const secondColumn = result.current.supplierColumnDefs[1];
+    expect(secondColumn.valueGetter?.({ data: supplier } as never)).toBe(
+      'Jl. Utama'
+    );
+    expect(secondColumn.valueGetter?.({ data: null } as never)).toBe('-');
+
+    const thirdColumn = result.current.supplierColumnDefs[2];
+    expect(thirdColumn.valueGetter?.({ data: supplier } as never)).toBe(
+      '08123'
+    );
+    expect(thirdColumn.valueGetter?.({ data: null } as never)).toBe('-');
+
+    const fourthColumn = result.current.supplierColumnDefs[3];
+    expect(fourthColumn.valueGetter?.({ data: supplier } as never)).toBe(
+      'sales@farmasi.test'
+    );
+    expect(fourthColumn.valueGetter?.({ data: null } as never)).toBe('-');
+
+    const fifthColumn = result.current.supplierColumnDefs[4];
+    expect(fifthColumn.valueGetter?.({ data: supplier } as never)).toBe('Budi');
+    expect(fifthColumn.valueGetter?.({ data: null } as never)).toBe('-');
   });
 
   it('toggles add/edit supplier modal state and editing entity', () => {
@@ -107,5 +129,13 @@ describe('useSupplierTab', () => {
     });
     expect(result.current.isEditSupplierModalOpen).toBe(false);
     expect(result.current.editingSupplier).toBeNull();
+  });
+
+  it('falls back to empty suppliersData when query data is nullish', () => {
+    useSuppliersMock.mockReturnValueOnce({ data: null });
+
+    const { result } = renderHook(() => useSupplierTab());
+
+    expect(result.current.suppliersData).toEqual([]);
   });
 });

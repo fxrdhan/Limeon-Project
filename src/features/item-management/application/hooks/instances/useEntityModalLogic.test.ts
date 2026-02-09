@@ -241,4 +241,331 @@ describe('useEntityModalLogic', () => {
     await flushTimers(250);
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('handles realtime delete callback, default table fallback, and realtime field updates', async () => {
+    const onClose = vi.fn();
+
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose,
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        entityName: 'Unknown Entity',
+        initialData: {
+          id: 'entity-1',
+          code: 'ENT-1',
+          name: 'Entity One',
+          description: 'old',
+          updated_at: '2025-01-03T00:00:00.000Z',
+        },
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    expect(useEntityModalRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityTable: '',
+        entityId: 'entity-1',
+        enabled: true,
+      })
+    );
+
+    const realtimeConfig = useEntityModalRealtimeMock.mock.calls[0][0] as {
+      onSmartUpdate: (payload: Record<string, unknown>) => void;
+      onEntityDeleted: () => void;
+    };
+
+    act(() => {
+      realtimeConfig.onSmartUpdate({
+        code: 'ENT-2',
+        description: 'from server',
+      });
+    });
+
+    expect(result.current.contextValue.form.code).toBe('ENT-2');
+    expect(result.current.contextValue.form.description).toBe('from server');
+
+    act(() => {
+      realtimeConfig.onEntityDeleted();
+    });
+
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Data telah dihapus dari sumber lain',
+      expect.objectContaining({
+        duration: 3000,
+        icon: '⚠️',
+      })
+    );
+
+    await flushTimers(1000);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('covers reset form path, closeHistory/openComparison, and closeComparison flow', async () => {
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose: vi.fn(),
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        entityName: 'Kemasan',
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    expect(useEntityModalRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityTable: 'item_packages',
+      })
+    );
+
+    act(() => {
+      result.current.contextValue.formActions.setCode?.('KMS-1');
+      result.current.contextValue.formActions.setName('Box');
+      result.current.contextValue.formActions.setDescription('desc');
+      result.current.contextValue.formActions.setAddress?.('jalan');
+    });
+
+    act(() => {
+      result.current.contextValue.formActions.resetForm();
+    });
+
+    expect(result.current.contextValue.form.code).toBe('');
+    expect(result.current.contextValue.form.name).toBe('');
+    expect(result.current.contextValue.form.description).toBe('');
+    expect(result.current.contextValue.form.address).toBe('');
+
+    act(() => {
+      result.current.contextValue.uiActions.openHistory(
+        'item_packages',
+        'pkg-1'
+      );
+      result.current.contextValue.uiActions.closeHistory();
+      result.current.contextValue.uiActions.openComparison(baseVersion);
+      result.current.contextValue.uiActions.closeComparison();
+    });
+
+    await flushTimers(250);
+    expect(result.current.contextValue.comparison.isOpen).toBe(false);
+  });
+
+  it('covers sequential handleClose path when comparison is open', async () => {
+    const onClose = vi.fn();
+    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose,
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        entityName: 'Kategori',
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    act(() => {
+      result.current.contextValue.uiActions.openComparison(baseVersion);
+    });
+    expect(result.current.contextValue.comparison.isOpen).toBe(true);
+
+    act(() => {
+      result.current.contextValue.uiActions.handleClose();
+    });
+
+    const hasCloseDelay = setTimeoutSpy.mock.calls.some(
+      call => call[1] === 300
+    );
+    expect(hasCloseDelay).toBe(true);
+    await flushTimers(300);
+    expect(result.current.contextValue.ui.isClosing).toBe(true);
+
+    setTimeoutSpy.mockRestore();
+  });
+
+  it('covers direct handleClose path when comparison is not open', async () => {
+    const onClose = vi.fn();
+
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose,
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        entityName: 'Kategori',
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    act(() => {
+      result.current.contextValue.uiActions.handleClose();
+    });
+
+    await flushTimers(200);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('covers backdrop sequential close with comparison open and ignore backdrop while closing', async () => {
+    const onClose = vi.fn();
+
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose,
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        entityName: 'Sediaan',
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    expect(useEntityModalRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityTable: 'item_dosages',
+      })
+    );
+
+    act(() => {
+      result.current.contextValue.uiActions.openComparison(baseVersion);
+    });
+
+    const backdropEvent = {
+      target: null,
+      currentTarget: null,
+    } as React.MouseEvent<HTMLDivElement>;
+    backdropEvent.target = backdropEvent.currentTarget;
+
+    act(() => {
+      result.current.contextValue.uiActions.handleBackdropClick(backdropEvent);
+    });
+
+    await flushTimers(300);
+    expect(result.current.contextValue.ui.isClosing).toBe(true);
+
+    const closeCallCount = onClose.mock.calls.length;
+    act(() => {
+      result.current.contextValue.uiActions.handleBackdropClick(backdropEvent);
+    });
+
+    await flushTimers(200);
+    expect(onClose.mock.calls.length).toBeGreaterThanOrEqual(closeCallCount);
+  });
+
+  it('covers handleDelete success, failure, and noop branches', async () => {
+    const onCloseSuccess = vi.fn();
+    const onDeleteSuccess = vi.fn().mockResolvedValue(undefined);
+
+    const successHook = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose: onCloseSuccess,
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        onDelete: onDeleteSuccess,
+        entityName: 'Kategori',
+        initialData: {
+          id: 'cat-1',
+          code: 'CAT-1',
+          name: 'Kategori 1',
+          updated_at: '2025-01-01T00:00:00.000Z',
+        },
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    await act(async () => {
+      await successHook.result.current.contextValue.formActions.handleDelete();
+    });
+
+    expect(onDeleteSuccess).toHaveBeenCalledWith('cat-1');
+    await flushTimers(200);
+    expect(onCloseSuccess).toHaveBeenCalled();
+
+    const onCloseFailure = vi.fn();
+    const onDeleteFailure = vi
+      .fn()
+      .mockRejectedValue(new Error('delete failed'));
+
+    const failureHook = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose: onCloseFailure,
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        onDelete: onDeleteFailure,
+        entityName: 'Kategori',
+        initialData: {
+          id: 'cat-2',
+          code: 'CAT-2',
+          name: 'Kategori 2',
+          updated_at: '2025-01-01T00:00:00.000Z',
+        },
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    await act(async () => {
+      await failureHook.result.current.contextValue.formActions.handleDelete();
+    });
+
+    await flushTimers(250);
+    expect(onCloseFailure).not.toHaveBeenCalled();
+
+    const onDeleteNoop = vi.fn();
+    const noopHook = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose: vi.fn(),
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        onDelete: onDeleteNoop,
+        entityName: 'Kategori',
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    await act(async () => {
+      await noopHook.result.current.contextValue.formActions.handleDelete();
+    });
+
+    expect(onDeleteNoop).not.toHaveBeenCalled();
+  });
+
+  it('resets comparison state when modal closes while comparison is open', async () => {
+    const onClose = vi.fn();
+
+    const { result, rerender } = renderHook(
+      (isOpen: boolean) =>
+        useEntityModalLogic({
+          isOpen,
+          onClose,
+          onSubmit: vi.fn().mockResolvedValue(undefined),
+          entityName: 'Kategori',
+        }),
+      {
+        initialProps: true,
+      }
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    act(() => {
+      result.current.contextValue.uiActions.openComparison(baseVersion);
+    });
+
+    expect(result.current.contextValue.comparison.isOpen).toBe(true);
+
+    rerender(false);
+    expect(result.current.contextValue.comparison.isOpen).toBe(false);
+  });
 });

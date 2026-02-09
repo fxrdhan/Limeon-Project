@@ -1375,4 +1375,534 @@ describe('ItemMaster page', () => {
 
     errorSpy.mockRestore();
   });
+
+  it('routes grid-ready and row-click handlers for supplier/customer/patient/doctor/entity tabs', () => {
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      handleEdit: vi.fn(),
+      setSearch: vi.fn(),
+    };
+    const patientState = {
+      ...createMasterDataHookState('patient'),
+      handleEdit: vi.fn(),
+      setSearch: vi.fn(),
+    };
+    const doctorState = {
+      ...createMasterDataHookState('doctor'),
+      handleEdit: vi.fn(),
+      setSearch: vi.fn(),
+    };
+    const openEditSupplierModal = vi.fn();
+    const entityManagerState = {
+      search: '',
+      itemsPerPage: 10,
+      entityConfigs: {
+        categories: {
+          entityName: 'Kategori',
+          nameColumnHeader: 'Nama',
+          searchPlaceholder: 'Cari kategori',
+          hasNciCode: false,
+          hasAddress: false,
+          noDataMessage: 'Tidak ada',
+          searchNoDataMessage: 'Tidak ketemu',
+        },
+      },
+      handleSearch: vi.fn(),
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal: vi.fn(),
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingEntity: null,
+    };
+
+    useEntityManagerMock.mockReturnValue(entityManagerState);
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') return customerState;
+      if (type === 'patients') return patientState;
+      if (type === 'doctors') return doctorState;
+      return createMasterDataHookState(type);
+    });
+    useSupplierTabMock.mockReturnValue({
+      suppliersQuery: { isLoading: false, isError: false, error: null },
+      supplierMutations: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+      supplierFields: [{ key: 'name', label: 'Nama Supplier' }],
+      supplierColumnDefs: [{ field: 'suppliers.name' }],
+      suppliersData: [{ id: 'sup-1', name: 'Supplier A' }],
+      isAddSupplierModalOpen: false,
+      isEditSupplierModalOpen: false,
+      editingSupplier: null,
+      openAddSupplierModal: vi.fn(),
+      closeAddSupplierModal: vi.fn(),
+      openEditSupplierModal,
+      closeEditSupplierModal: vi.fn(),
+    });
+
+    const gridParams = { api: 'grid-ready' };
+
+    locationMock.mockReturnValue({ pathname: '/master-data/suppliers' });
+    const supplierView = render(<ItemMasterPage />);
+    const supplierCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.searchMode === 'client');
+    const supplierIndex = unifiedSearchCalls.findIndex(
+      call => call === supplierCall
+    );
+    const supplierReturn = unifiedSearchReturns[supplierIndex] as
+      | { onGridReady?: (params: unknown) => void }
+      | undefined;
+    act(() => {
+      (
+        captured.entityGridProps?.onGridReady as
+          | ((params: unknown) => void)
+          | undefined
+      )?.(gridParams);
+      (
+        captured.entityGridProps?.onRowClick as
+          | ((row: Record<string, unknown>) => void)
+          | undefined
+      )?.({ id: 'sup-1', name: 'Supplier A' });
+    });
+    expect(supplierReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+    expect(openEditSupplierModal).toHaveBeenCalledWith({
+      id: 'sup-1',
+      name: 'Supplier A',
+    });
+    supplierView.unmount();
+
+    locationMock.mockReturnValue({ pathname: '/master-data/customers' });
+    const customerView = render(<ItemMasterPage />);
+    const customerCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === customerState.setSearch);
+    const customerIndex = unifiedSearchCalls.findIndex(
+      call => call === customerCall
+    );
+    const customerReturn = unifiedSearchReturns[customerIndex] as
+      | { onGridReady?: (params: unknown) => void }
+      | undefined;
+    act(() => {
+      (
+        captured.entityGridProps?.onGridReady as
+          | ((params: unknown) => void)
+          | undefined
+      )?.(gridParams);
+      (
+        captured.entityGridProps?.onRowClick as
+          | ((row: Record<string, unknown>) => void)
+          | undefined
+      )?.({ id: 'cus-1', name: 'Customer A' });
+    });
+    expect(customerReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+    expect(customerState.handleEdit).toHaveBeenCalledWith({
+      id: 'cus-1',
+      name: 'Customer A',
+    });
+    customerView.unmount();
+
+    locationMock.mockReturnValue({ pathname: '/master-data/patients' });
+    const patientView = render(<ItemMasterPage />);
+    const patientCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === patientState.setSearch);
+    const patientIndex = unifiedSearchCalls.findIndex(
+      call => call === patientCall
+    );
+    const patientReturn = unifiedSearchReturns[patientIndex] as
+      | { onGridReady?: (params: unknown) => void }
+      | undefined;
+    act(() => {
+      (
+        captured.entityGridProps?.onGridReady as
+          | ((params: unknown) => void)
+          | undefined
+      )?.(gridParams);
+      (
+        captured.entityGridProps?.onRowClick as
+          | ((row: Record<string, unknown>) => void)
+          | undefined
+      )?.({ id: 'pat-1', name: 'Patient A' });
+    });
+    expect(patientReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+    expect(patientState.handleEdit).toHaveBeenCalledWith({
+      id: 'pat-1',
+      name: 'Patient A',
+    });
+    patientView.unmount();
+
+    locationMock.mockReturnValue({ pathname: '/master-data/doctors' });
+    const doctorView = render(<ItemMasterPage />);
+    const doctorCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === doctorState.setSearch);
+    const doctorIndex = unifiedSearchCalls.findIndex(
+      call => call === doctorCall
+    );
+    const doctorReturn = unifiedSearchReturns[doctorIndex] as
+      | { onGridReady?: (params: unknown) => void }
+      | undefined;
+    act(() => {
+      (
+        captured.entityGridProps?.onGridReady as
+          | ((params: unknown) => void)
+          | undefined
+      )?.(gridParams);
+      (
+        captured.entityGridProps?.onRowClick as
+          | ((row: Record<string, unknown>) => void)
+          | undefined
+      )?.({ id: 'doc-1', name: 'Doctor A' });
+    });
+    expect(doctorReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+    expect(doctorState.handleEdit).toHaveBeenCalledWith({
+      id: 'doc-1',
+      name: 'Doctor A',
+    });
+    doctorView.unmount();
+
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+    render(<ItemMasterPage />);
+    const entityCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === entityManagerState.handleSearch);
+    const entityIndex = unifiedSearchCalls.findIndex(
+      call => call === entityCall
+    );
+    const entityReturn = unifiedSearchReturns[entityIndex] as
+      | { onGridReady?: (params: unknown) => void }
+      | undefined;
+    act(() => {
+      (
+        captured.entityGridProps?.onGridReady as
+          | ((params: unknown) => void)
+          | undefined
+      )?.(gridParams);
+      (
+        captured.entityGridProps?.onRowClick as
+          | ((row: Record<string, unknown>) => void)
+          | undefined
+      )?.({ id: 'cat-1', name: 'Kategori A' });
+    });
+    expect(entityReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+    expect(entityManagerState.openEditModal).toHaveBeenCalledWith({
+      id: 'cat-1',
+      name: 'Kategori A',
+    });
+  });
+
+  it('orders customer/patient/doctor search columns from visible grid columns and runs clear handlers', () => {
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      setSearch: vi.fn(),
+    };
+    const patientState = {
+      ...createMasterDataHookState('patient'),
+      setSearch: vi.fn(),
+    };
+    const doctorState = {
+      ...createMasterDataHookState('doctor'),
+      setSearch: vi.fn(),
+    };
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') return customerState;
+      if (type === 'patients') return patientState;
+      if (type === 'doctors') return doctorState;
+      return createMasterDataHookState(type);
+    });
+    getSearchColumnsByEntityMock.mockImplementation((entity: string) => {
+      if (entity === 'customers') {
+        return [
+          {
+            field: 'customers.name',
+            headerName: 'Nama',
+            searchable: true,
+            type: 'text',
+          },
+          {
+            field: 'customers.email',
+            headerName: 'Email',
+            searchable: true,
+            type: 'text',
+          },
+        ];
+      }
+      if (entity === 'patients') {
+        return [
+          {
+            field: 'patients.name',
+            headerName: 'Nama',
+            searchable: true,
+            type: 'text',
+          },
+          {
+            field: 'patients.email',
+            headerName: 'Email',
+            searchable: true,
+            type: 'text',
+          },
+        ];
+      }
+      if (entity === 'doctors') {
+        return [
+          {
+            field: 'doctors.name',
+            headerName: 'Nama',
+            searchable: true,
+            type: 'text',
+          },
+          {
+            field: 'doctors.email',
+            headerName: 'Email',
+            searchable: true,
+            type: 'text',
+          },
+        ];
+      }
+      return [
+        { field: 'name', headerName: 'Nama', searchable: true, type: 'text' },
+      ];
+    });
+
+    const listeners: Record<string, Array<() => void>> = {};
+    const orderedApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => [
+        { getColId: () => 'customers.email' },
+        { getColId: () => 'customers.name' },
+      ]),
+      addEventListener: vi.fn((event: string, cb: () => void) => {
+        listeners[event] = [...(listeners[event] || []), cb];
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    locationMock.mockReturnValue({ pathname: '/master-data/customers' });
+    const customerView = render(<ItemMasterPage />);
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(orderedApi);
+      listeners.columnVisible?.forEach(cb => cb());
+    });
+    const customerCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === customerState.setSearch);
+    expect(
+      (customerCall?.columns as Array<{ field: string }> | undefined)?.map(
+        col => col.field
+      )
+    ).toEqual(['customers.email', 'customers.name']);
+    act(() => {
+      (customerCall?.onClear as (() => void) | undefined)?.();
+    });
+    expect(customerState.setSearch).toHaveBeenCalledWith('');
+    customerView.unmount();
+
+    locationMock.mockReturnValue({ pathname: '/master-data/patients' });
+    const patientView = render(<ItemMasterPage />);
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.({
+        ...orderedApi,
+        getAllDisplayedColumns: () => [
+          { getColId: () => 'patients.email' },
+          { getColId: () => 'patients.name' },
+        ],
+      });
+      listeners.columnVisible?.forEach(cb => cb());
+    });
+    const patientCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === patientState.setSearch);
+    expect(
+      (patientCall?.columns as Array<{ field: string }> | undefined)?.map(
+        col => col.field
+      )
+    ).toEqual(['patients.email', 'patients.name']);
+    act(() => {
+      (patientCall?.onClear as (() => void) | undefined)?.();
+    });
+    expect(patientState.setSearch).toHaveBeenCalledWith('');
+    patientView.unmount();
+
+    locationMock.mockReturnValue({ pathname: '/master-data/doctors' });
+    render(<ItemMasterPage />);
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.({
+        ...orderedApi,
+        getAllDisplayedColumns: () => [
+          { getColId: () => 'doctors.email' },
+          { getColId: () => 'doctors.name' },
+        ],
+      });
+      listeners.columnVisible?.forEach(cb => cb());
+    });
+    const doctorCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === doctorState.setSearch);
+    expect(
+      (doctorCall?.columns as Array<{ field: string }> | undefined)?.map(
+        col => col.field
+      )
+    ).toEqual(['doctors.email', 'doctors.name']);
+    act(() => {
+      (doctorCall?.onClear as (() => void) | undefined)?.();
+    });
+    expect(doctorState.setSearch).toHaveBeenCalledWith('');
+  });
+
+  it('handles entity delete callback and closes customer/patient/doctor modals from modal props', async () => {
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      setIsAddModalOpen: vi.fn(),
+      setIsEditModalOpen: vi.fn(),
+      isAddModalOpen: true,
+      isEditModalOpen: true,
+      editingItem: { id: 'cus-1', name: 'Customer A' },
+    };
+    const patientState = {
+      ...createMasterDataHookState('patient'),
+      setIsAddModalOpen: vi.fn(),
+      setIsEditModalOpen: vi.fn(),
+      isAddModalOpen: true,
+      isEditModalOpen: true,
+      editingItem: { id: 'pat-1', name: 'Patient A' },
+    };
+    const doctorState = {
+      ...createMasterDataHookState('doctor'),
+      setIsAddModalOpen: vi.fn(),
+      setIsEditModalOpen: vi.fn(),
+      isAddModalOpen: true,
+      isEditModalOpen: true,
+      editingItem: { id: 'doc-1', name: 'Doctor A' },
+    };
+    const entityManagerState = {
+      search: '',
+      itemsPerPage: 10,
+      entityConfigs: {
+        categories: {
+          entityName: 'Kategori',
+          nameColumnHeader: 'Nama',
+          searchPlaceholder: 'Cari kategori',
+          hasNciCode: false,
+          hasAddress: false,
+          noDataMessage: 'Tidak ada',
+          searchNoDataMessage: 'Tidak ketemu',
+        },
+      },
+      handleSearch: vi.fn(),
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal: vi.fn(),
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: false,
+      isEditModalOpen: true,
+      editingEntity: { id: 'cat-1', name: 'Kategori A' },
+    };
+
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') return customerState;
+      if (type === 'patients') return patientState;
+      if (type === 'doctors') return doctorState;
+      return createMasterDataHookState(type);
+    });
+    useEntityManagerMock.mockReturnValue(entityManagerState);
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+
+    render(<ItemMasterPage />);
+
+    await act(async () => {
+      await (
+        captured.entityModalProps?.onDelete as (() => Promise<void>) | undefined
+      )?.();
+    });
+    expect(entityManagerState.handleDelete).toHaveBeenCalledWith({
+      id: 'cat-1',
+      name: 'Kategori A',
+    });
+
+    const customerAddModal = captured.identityModalProps.find(
+      props => props.title === 'Tambah Pelanggan Baru'
+    );
+    const customerEditModal = captured.identityModalProps.find(
+      props => props.title === 'Edit Pelanggan'
+    );
+    const patientAddModal = captured.identityModalProps.find(
+      props => props.title === 'Tambah Pasien Baru'
+    );
+    const patientEditModal = captured.identityModalProps.find(
+      props => props.title === 'Edit Pasien'
+    );
+    const doctorAddModal = captured.identityModalProps.find(
+      props => props.title === 'Tambah Dokter Baru'
+    );
+    const doctorEditModal = captured.identityModalProps.find(
+      props => props.title === 'Edit Dokter'
+    );
+
+    act(() => {
+      (customerAddModal?.onClose as (() => void) | undefined)?.();
+      (customerEditModal?.onClose as (() => void) | undefined)?.();
+      (patientAddModal?.onClose as (() => void) | undefined)?.();
+      (patientEditModal?.onClose as (() => void) | undefined)?.();
+      (doctorAddModal?.onClose as (() => void) | undefined)?.();
+      (doctorEditModal?.onClose as (() => void) | undefined)?.();
+    });
+
+    expect(customerState.setIsAddModalOpen).toHaveBeenCalledWith(false);
+    expect(customerState.setIsEditModalOpen).toHaveBeenCalledWith(false);
+    expect(patientState.setIsAddModalOpen).toHaveBeenCalledWith(false);
+    expect(patientState.setIsEditModalOpen).toHaveBeenCalledWith(false);
+    expect(doctorState.setIsAddModalOpen).toHaveBeenCalledWith(false);
+    expect(doctorState.setIsEditModalOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('skips same-tab navigation and clears pending debounce when unmounting', () => {
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    const view = render(<ItemMasterPage />);
+
+    const onSelectionChange = captured.slidingSelectorProps
+      ?.onSelectionChange as ((key: string, value: string) => void) | undefined;
+
+    act(() => {
+      onSelectionChange?.('items', 'items');
+    });
+    expect(navigateMock).toHaveBeenCalledTimes(0);
+
+    act(() => {
+      onSelectionChange?.('categories', 'categories');
+      onSelectionChange?.('types', 'types');
+    });
+    expect(navigateMock).toHaveBeenCalledTimes(1);
+    expect(navigateMock).toHaveBeenLastCalledWith(
+      '/master-data/item-master/categories'
+    );
+
+    view.unmount();
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(navigateMock).toHaveBeenCalledTimes(1);
+  });
 });

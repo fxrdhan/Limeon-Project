@@ -197,6 +197,10 @@ describe('useMasterData hooks', () => {
       data: { id: 'unit-1' },
       error: null,
     });
+    masterDataServiceMock.suppliers.getActiveSuppliers.mockResolvedValue({
+      data: [{ id: 'sup-1' }],
+      error: null,
+    });
     masterDataServiceMock.suppliers.getById.mockResolvedValue({
       data: { id: 'sup-1' },
       error: null,
@@ -249,6 +253,11 @@ describe('useMasterData hooks', () => {
     await expect(itemUnitResult.current.queryFn()).resolves.toEqual({
       id: 'unit-1',
     });
+
+    const { result: suppliersResult } = renderHook(() => useSuppliers());
+    await expect(suppliersResult.current.queryFn()).resolves.toEqual([
+      { id: 'sup-1' },
+    ]);
 
     const { result: supplierResult } = renderHook(() => useSupplier('sup-1'));
     await expect(supplierResult.current.queryFn()).resolves.toEqual({
@@ -520,5 +529,310 @@ describe('useMasterData hooks', () => {
       result.current.deleteSupplier.mutateAsync('sup-1')
     ).rejects.toThrow('supplier delete failed');
     expect(toastErrorMock).toHaveBeenCalledWith('Gagal menghapus supplier');
+  });
+
+  it('covers remaining query errors and enabled flag branches', async () => {
+    const { result: categoriesDisabled } = renderHook(() =>
+      useCategories({ enabled: false })
+    );
+    expect(categoriesDisabled.current.enabled).toBe(false);
+
+    const { result: categoryDisabled } = renderHook(() =>
+      useCategory('cat-1', { enabled: false })
+    );
+    expect(categoryDisabled.current.enabled).toBe(false);
+
+    const { result: medicineTypesDisabled } = renderHook(() =>
+      useMedicineTypes({ enabled: false })
+    );
+    expect(medicineTypesDisabled.current.enabled).toBe(false);
+
+    const { result: medicineTypeDisabled } = renderHook(() =>
+      useMedicineType('type-1', { enabled: false })
+    );
+    expect(medicineTypeDisabled.current.enabled).toBe(false);
+
+    const { result: packagesDisabled } = renderHook(() =>
+      usePackages({ enabled: false })
+    );
+    expect(packagesDisabled.current.enabled).toBe(false);
+
+    const { result: packageDisabled } = renderHook(() =>
+      usePackage('pkg-1', { enabled: false })
+    );
+    expect(packageDisabled.current.enabled).toBe(false);
+
+    const { result: itemUnitsDisabled } = renderHook(() =>
+      useItemUnits({ enabled: false })
+    );
+    expect(itemUnitsDisabled.current.enabled).toBe(false);
+
+    const { result: itemUnitDisabled } = renderHook(() =>
+      useItemUnit('unit-1', { enabled: false })
+    );
+    expect(itemUnitDisabled.current.enabled).toBe(false);
+
+    useQueryMock.mockImplementationOnce(
+      (config: {
+        queryKey: readonly unknown[];
+        queryFn: () => Promise<unknown>;
+        enabled?: boolean;
+      }) => ({
+        data: null,
+        isLoading: false,
+        isError: false,
+        error: null,
+        isFetching: false,
+        isPlaceholderData: false,
+        queryKey: config.queryKey,
+        queryFn: config.queryFn,
+        enabled: config.enabled,
+      })
+    );
+
+    const { result: suppliersDisabled } = renderHook(() =>
+      useSuppliers({ enabled: false })
+    );
+    expect(suppliersDisabled.current.enabled).toBe(false);
+    expect(setCachedImageMock).not.toHaveBeenCalled();
+    expect(preloadImageMock).not.toHaveBeenCalled();
+
+    const { result: supplierDisabled } = renderHook(() =>
+      useSupplier('sup-1', { enabled: false })
+    );
+    expect(supplierDisabled.current.enabled).toBe(false);
+
+    const { result: searchSuppliersEmpty } = renderHook(() =>
+      useSearchSuppliers('')
+    );
+    expect(searchSuppliersEmpty.current.enabled).toBe(false);
+
+    const { result: searchSuppliersDisabled } = renderHook(() =>
+      useSearchSuppliers('target', { enabled: false })
+    );
+    expect(searchSuppliersDisabled.current.enabled).toBe(false);
+
+    const { result: allMasterDataDisabled } = renderHook(() =>
+      useAllMasterData({ enabled: false })
+    );
+    expect(allMasterDataDisabled.current.enabled).toBe(false);
+
+    masterDataServiceMock.categories.getActiveCategories.mockResolvedValueOnce({
+      data: null,
+      error: new Error('categories query failed'),
+    });
+    await expect(categoriesDisabled.current.queryFn()).rejects.toThrow(
+      'categories query failed'
+    );
+
+    masterDataServiceMock.types.getActiveTypes.mockResolvedValueOnce({
+      data: null,
+      error: new Error('types query failed'),
+    });
+    await expect(medicineTypesDisabled.current.queryFn()).rejects.toThrow(
+      'types query failed'
+    );
+
+    masterDataServiceMock.types.getById.mockResolvedValueOnce({
+      data: null,
+      error: new Error('type detail failed'),
+    });
+    await expect(medicineTypeDisabled.current.queryFn()).rejects.toThrow(
+      'type detail failed'
+    );
+
+    masterDataServiceMock.packages.getActivePackages.mockResolvedValueOnce({
+      data: null,
+      error: new Error('packages query failed'),
+    });
+    await expect(packagesDisabled.current.queryFn()).rejects.toThrow(
+      'packages query failed'
+    );
+
+    masterDataServiceMock.packages.getById.mockResolvedValueOnce({
+      data: null,
+      error: new Error('package detail failed'),
+    });
+    await expect(packageDisabled.current.queryFn()).rejects.toThrow(
+      'package detail failed'
+    );
+
+    masterDataServiceMock.itemUnits.getActiveItemUnits.mockResolvedValueOnce({
+      data: null,
+      error: new Error('item units query failed'),
+    });
+    await expect(itemUnitsDisabled.current.queryFn()).rejects.toThrow(
+      'item units query failed'
+    );
+
+    masterDataServiceMock.itemUnits.getById.mockResolvedValueOnce({
+      data: null,
+      error: new Error('item unit detail failed'),
+    });
+    await expect(itemUnitDisabled.current.queryFn()).rejects.toThrow(
+      'item unit detail failed'
+    );
+
+    masterDataServiceMock.suppliers.getActiveSuppliers.mockResolvedValueOnce({
+      data: null,
+      error: new Error('suppliers query failed'),
+    });
+    await expect(suppliersDisabled.current.queryFn()).rejects.toThrow(
+      'suppliers query failed'
+    );
+
+    masterDataServiceMock.suppliers.getById.mockResolvedValueOnce({
+      data: null,
+      error: new Error('supplier detail failed'),
+    });
+    await expect(supplierDisabled.current.queryFn()).rejects.toThrow(
+      'supplier detail failed'
+    );
+
+    masterDataServiceMock.suppliers.searchSuppliers.mockResolvedValueOnce({
+      data: null,
+      error: new Error('supplier search failed'),
+    });
+    await expect(searchSuppliersDisabled.current.queryFn()).rejects.toThrow(
+      'supplier search failed'
+    );
+  });
+
+  it('covers remaining mutation error handlers', async () => {
+    const { result: categoryMutations } = renderHook(() =>
+      useCategoryMutations()
+    );
+    const { result: typeMutations } = renderHook(() =>
+      useMedicineTypeMutations()
+    );
+    const { result: packageMutations } = renderHook(() =>
+      usePackageMutations()
+    );
+    const { result: itemUnitMutations } = renderHook(() =>
+      useItemUnitMutations()
+    );
+    const { result: supplierMutations } = renderHook(() =>
+      useSupplierMutations()
+    );
+
+    masterDataServiceMock.categories.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('category update failed'),
+    });
+    await expect(
+      categoryMutations.current.updateCategory.mutateAsync({
+        id: 'cat-1',
+        data: { name: 'x' },
+      })
+    ).rejects.toThrow('category update failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui kategori');
+
+    masterDataServiceMock.categories.delete.mockResolvedValueOnce({
+      data: null,
+      error: new Error('category delete failed'),
+    });
+    await expect(
+      categoryMutations.current.deleteCategory.mutateAsync('cat-1')
+    ).rejects.toThrow('category delete failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menghapus kategori');
+
+    masterDataServiceMock.types.create.mockResolvedValueOnce({
+      data: null,
+      error: new Error('type create failed'),
+    });
+    await expect(
+      typeMutations.current.createMedicineType.mutateAsync({ name: 'Type' })
+    ).rejects.toThrow('type create failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menambahkan jenis obat');
+
+    masterDataServiceMock.types.delete.mockResolvedValueOnce({
+      data: null,
+      error: new Error('type delete failed'),
+    });
+    await expect(
+      typeMutations.current.deleteMedicineType.mutateAsync('type-1')
+    ).rejects.toThrow('type delete failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menghapus jenis obat');
+
+    masterDataServiceMock.packages.create.mockResolvedValueOnce({
+      data: null,
+      error: new Error('package create failed'),
+    });
+    await expect(
+      packageMutations.current.createPackage.mutateAsync({ name: 'Pkg' })
+    ).rejects.toThrow('package create failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menambahkan kemasan');
+
+    masterDataServiceMock.packages.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('package update failed'),
+    });
+    await expect(
+      packageMutations.current.updatePackage.mutateAsync({
+        id: 'pkg-1',
+        data: { name: 'Pkg 2' },
+      })
+    ).rejects.toThrow('package update failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui kemasan');
+
+    masterDataServiceMock.packages.delete.mockResolvedValueOnce({
+      data: null,
+      error: new Error('package delete failed'),
+    });
+    await expect(
+      packageMutations.current.deletePackage.mutateAsync('pkg-1')
+    ).rejects.toThrow('package delete failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menghapus kemasan');
+
+    masterDataServiceMock.itemUnits.create.mockResolvedValueOnce({
+      data: null,
+      error: new Error('item unit create failed'),
+    });
+    await expect(
+      itemUnitMutations.current.createItemUnit.mutateAsync({ name: 'Unit' })
+    ).rejects.toThrow('item unit create failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menambahkan satuan');
+
+    masterDataServiceMock.itemUnits.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('item unit update failed'),
+    });
+    await expect(
+      itemUnitMutations.current.updateItemUnit.mutateAsync({
+        id: 'unit-1',
+        data: { name: 'Unit 2' },
+      })
+    ).rejects.toThrow('item unit update failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui satuan');
+
+    masterDataServiceMock.itemUnits.delete.mockResolvedValueOnce({
+      data: null,
+      error: new Error('item unit delete failed'),
+    });
+    await expect(
+      itemUnitMutations.current.deleteItemUnit.mutateAsync('unit-1')
+    ).rejects.toThrow('item unit delete failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menghapus satuan');
+
+    masterDataServiceMock.suppliers.create.mockResolvedValueOnce({
+      data: null,
+      error: new Error('supplier create failed'),
+    });
+    await expect(
+      supplierMutations.current.createSupplier.mutateAsync({ name: 'Sup' })
+    ).rejects.toThrow('supplier create failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menambahkan supplier');
+
+    masterDataServiceMock.suppliers.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('supplier update failed'),
+    });
+    await expect(
+      supplierMutations.current.updateSupplier.mutateAsync({
+        id: 'sup-1',
+        data: { name: 'Sup 2' },
+      })
+    ).rejects.toThrow('supplier update failed');
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui supplier');
   });
 });
