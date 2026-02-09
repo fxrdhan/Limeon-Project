@@ -411,6 +411,19 @@ describe('ItemMaster page', () => {
     expect(navigateMock).toHaveBeenCalledWith(
       '/master-data/item-master/packages'
     );
+
+    act(() => {
+      onSelectionChange?.('types', 'types'); // queue debounced tab
+      vi.setSystemTime(new Date(Date.now() + 300)); // exit cooldown without running queued timeout
+      onSelectionChange?.('units', 'units'); // immediate navigation should clear queued debounce timer
+    });
+    expect(navigateMock).toHaveBeenLastCalledWith(
+      '/master-data/item-master/units'
+    );
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(navigateMock).toHaveBeenCalledTimes(3);
   });
 
   it('handles supplier grid filtering and row click edit flow', () => {
@@ -547,6 +560,31 @@ describe('ItemMaster page', () => {
         phone: '0812',
         email: 'budi@test.dev',
         address: 'Jl. Melati',
+      },
+    });
+
+    await act(async () => {
+      await (
+        editModal?.onSave as
+          | ((data: Record<string, unknown>) => Promise<void>)
+          | undefined
+      )?.({
+        name: 'Budi Edit',
+        customer_level_id: 'lvl-1',
+        phone: '0822',
+        email: 'budi-edit@test.dev',
+        address: 'Jl. Mawar',
+      });
+    });
+
+    expect(customerSubmitSpy).toHaveBeenCalledWith({
+      id: 'cust-1',
+      data: {
+        name: 'Budi Edit',
+        customer_level_id: 'lvl-1',
+        phone: '0822',
+        email: 'budi-edit@test.dev',
+        address: 'Jl. Mawar',
       },
     });
 
@@ -844,12 +882,20 @@ describe('ItemMaster page', () => {
       ?.valueGetter as
       | ((params: Record<string, unknown>) => string)
       | undefined;
+    const patientGenderGetter = patientColumns.find(
+      col => col.field === 'gender'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const patientAddressGetter = patientColumns.find(
+      col => col.field === 'address'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
 
     const expectedDate = new Date('2020-01-01').toLocaleDateString('id-ID');
     expect(birthDateGetter?.({ data: { birth_date: '2020-01-01' } })).toBe(
       expectedDate
     );
     expect(birthDateGetter?.({ data: { birth_date: null } })).toBe('-');
+    expect(patientGenderGetter?.({ data: { gender: '' } })).toBe('-');
+    expect(patientAddressGetter?.({ data: { address: '' } })).toBe('-');
     expect(patientPhoneGetter?.({ data: { phone: '' } })).toBe('-');
     expect(patientEmailGetter?.({ data: { email: '' } })).toBe('-');
 
@@ -941,6 +987,44 @@ describe('ItemMaster page', () => {
     expect(nameGetter?.({ data: { name: '' } })).toBe('-');
     expect(nciGetter?.({ data: { nci_code: '' } })).toBe('-');
     expect(addressGetter?.({ data: { address: '' } })).toBe('-');
+
+    useEntityManagerMock.mockReturnValue({
+      search: '',
+      itemsPerPage: 10,
+      entityConfigs: {
+        categories: {
+          entityName: 'Kategori',
+          nameColumnHeader: 'Nama',
+          searchPlaceholder: 'Cari kategori',
+          hasNciCode: false,
+          hasAddress: false,
+          noDataMessage: 'Tidak ada',
+          searchNoDataMessage: 'Tidak ketemu',
+        },
+      },
+      handleSearch: vi.fn(),
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal: vi.fn(),
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingEntity: null,
+    });
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+    render(<ItemMasterPage />);
+    const descGetter = (
+      (captured.entityGridProps?.entityColumnDefs || []) as Array<
+        Record<string, unknown>
+      >
+    ).find(col => String(col.field).includes('.description'))?.valueGetter as
+      | ((params: Record<string, unknown>) => string)
+      | undefined;
+    expect(descGetter?.({ data: { description: '' } })).toBe('-');
 
     locationMock.mockReturnValue({
       pathname: '/master-data/item-master/items',
@@ -1185,21 +1269,6 @@ describe('ItemMaster page', () => {
 
     render(<ItemMasterPage />);
 
-    const gridApi = {
-      isDestroyed: vi.fn(() => false),
-      setAdvancedFilterModel: vi.fn(),
-      getAllDisplayedColumns: vi.fn(() => []),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    };
-    act(() => {
-      (
-        captured.entityGridProps?.onGridApiReady as
-          | ((api: unknown) => void)
-          | undefined
-      )?.(gridApi);
-    });
-
     const reversedItemCallIndex = [...unifiedSearchCalls]
       .reverse()
       .findIndex(
@@ -1218,13 +1287,59 @@ describe('ItemMaster page', () => {
           onFilterSearch?: (filter: Record<string, unknown> | null) => void;
         }
       | undefined;
-    const itemReturn = unifiedSearchReturns[itemCallIndex] as
+    act(() => {
+      itemCall?.onFilterSearch?.({
+        field: 'items.name',
+        operator: 'contains',
+        value: 'pre-grid',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+    });
+    expect(buildAdvancedFilterModelMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ value: 'pre-grid' })
+    );
+
+    const gridApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => []),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(gridApi);
+    });
+
+    const refreshedReversedIndex = [...unifiedSearchCalls]
+      .reverse()
+      .findIndex(
+        call =>
+          (call.columns as Array<{ field?: string }> | undefined)?.[0]
+            ?.field === 'items.name'
+      );
+    const refreshedItemIndex =
+      refreshedReversedIndex === -1
+        ? -1
+        : unifiedSearchCalls.length - 1 - refreshedReversedIndex;
+    const activeItemCall = unifiedSearchCalls[refreshedItemIndex] as
+      | {
+          onSearch?: (q: string) => void;
+          onClear?: () => void;
+          onFilterSearch?: (filter: Record<string, unknown> | null) => void;
+        }
+      | undefined;
+    const activeItemReturn = unifiedSearchReturns[refreshedItemIndex] as
       | { onGridReady?: (params: unknown) => void }
       | undefined;
 
     act(() => {
-      itemCall?.onSearch?.('para');
-      itemCall?.onClear?.();
+      activeItemCall?.onSearch?.('para');
+      activeItemCall?.onClear?.();
     });
     expect(setSearch).toHaveBeenCalledWith('para');
     expect(setSearch).toHaveBeenCalledWith('');
@@ -1237,7 +1352,7 @@ describe('ItemMaster page', () => {
           | undefined
       )?.(gridParams);
     });
-    expect(itemReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+    expect(activeItemReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
 
     const confirmed = {
       field: 'items.name',
@@ -1247,7 +1362,7 @@ describe('ItemMaster page', () => {
       isExplicitOperator: true,
     };
     act(() => {
-      itemCall?.onFilterSearch?.(confirmed);
+      activeItemCall?.onFilterSearch?.(confirmed);
     });
     expect(gridApi.setAdvancedFilterModel).toHaveBeenCalled();
     expect(sessionStorage.getItem('item_master_search_items')).toBe(
@@ -1255,7 +1370,7 @@ describe('ItemMaster page', () => {
     );
 
     act(() => {
-      itemCall?.onFilterSearch?.(null);
+      activeItemCall?.onFilterSearch?.(null);
     });
     expect(sessionStorage.getItem('item_master_search_items')).toBeNull();
 
@@ -1904,5 +2019,314 @@ describe('ItemMaster page', () => {
       vi.advanceTimersByTime(300);
     });
     expect(navigateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to items tab for unknown item-master path segment', () => {
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/not-a-real-tab',
+    });
+
+    render(<ItemMasterPage />);
+
+    expect(captured.entityGridProps?.activeTab).toBe('items');
+    expect(captured.searchToolbarProps?.exportFilename).toBe('daftar-item');
+  });
+
+  it('orders entity search columns by base field and blocks null filter during tab switch', () => {
+    const entityManagerState = {
+      search: '',
+      itemsPerPage: 10,
+      entityConfigs: {
+        categories: {
+          entityName: 'Kategori',
+          nameColumnHeader: 'Nama',
+          searchPlaceholder: 'Cari kategori',
+          hasNciCode: false,
+          hasAddress: false,
+          noDataMessage: 'Tidak ada',
+          searchNoDataMessage: 'Tidak ketemu',
+        },
+      },
+      handleSearch: vi.fn(),
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal: vi.fn(),
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingEntity: null,
+    };
+    useEntityManagerMock.mockReturnValue(entityManagerState);
+    getSearchColumnsByEntityMock.mockImplementation((entity: string) => {
+      if (entity === 'categories') {
+        return [
+          {
+            field: 'categories.name',
+            headerName: 'Nama',
+            searchable: true,
+            type: 'text',
+          },
+          {
+            field: 'categories.code',
+            headerName: 'Kode',
+            searchable: true,
+            type: 'text',
+          },
+          {
+            field: 'categories.description',
+            headerName: 'Deskripsi',
+            searchable: true,
+            type: 'text',
+          },
+        ];
+      }
+      return [
+        { field: 'name', headerName: 'Nama', searchable: true, type: 'text' },
+      ];
+    });
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+
+    render(<ItemMasterPage />);
+
+    const listeners: Record<string, Array<() => void>> = {};
+    const gridApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => [
+        { getColId: () => 'visible.code' },
+        { getColId: () => 'visible.name' },
+      ]),
+      addEventListener: vi.fn((event: string, cb: () => void) => {
+        listeners[event] = [...(listeners[event] || []), cb];
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(gridApi);
+      listeners.columnVisible?.forEach(cb => cb());
+    });
+
+    const entityCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === entityManagerState.handleSearch) as
+      | {
+          columns?: Array<{ field: string }>;
+          onFilterSearch?: (filter: Record<string, unknown> | null) => void;
+        }
+      | undefined;
+
+    expect(entityCall?.columns?.map(col => col.field)).toEqual([
+      'categories.code',
+      'categories.name',
+      'categories.description',
+    ]);
+
+    const appliedCount = gridApi.setAdvancedFilterModel.mock.calls.length;
+    act(() => {
+      (
+        captured.slidingSelectorProps?.onSelectionChange as
+          | ((key: string, value: string) => void)
+          | undefined
+      )?.('types', 'types');
+      entityCall?.onFilterSearch?.(null);
+    });
+    expect(gridApi.setAdvancedFilterModel.mock.calls.length).toBe(appliedCount);
+  });
+
+  it('covers master-data filter guards before grid ready and on destroyed grid api', () => {
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      setSearch: vi.fn(),
+    };
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') return customerState;
+      return createMasterDataHookState(type);
+    });
+    locationMock.mockReturnValue({ pathname: '/master-data/customers' });
+
+    render(<ItemMasterPage />);
+
+    const findCustomerCall = () =>
+      [...unifiedSearchCalls]
+        .reverse()
+        .find(call => call.onSearch === customerState.setSearch) as
+        | {
+            onFilterSearch?: (filter: Record<string, unknown> | null) => void;
+          }
+        | undefined;
+
+    const initialCall = findCustomerCall();
+    const beforeNoGrid = buildAdvancedFilterModelMock.mock.calls.length;
+    act(() => {
+      initialCall?.onFilterSearch?.(null);
+    });
+    expect(buildAdvancedFilterModelMock.mock.calls.length).toBe(beforeNoGrid);
+
+    const destroyedApi = {
+      isDestroyed: vi.fn(() => true),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => []),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(destroyedApi);
+    });
+    const destroyedCall = findCustomerCall();
+    const beforeDestroyed = buildAdvancedFilterModelMock.mock.calls.length;
+    act(() => {
+      destroyedCall?.onFilterSearch?.({
+        field: 'customers.name',
+        operator: 'contains',
+        value: 'alpha',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+    });
+    expect(buildAdvancedFilterModelMock.mock.calls.length).toBe(
+      beforeDestroyed
+    );
+
+    const liveApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => []),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(liveApi);
+    });
+
+    const liveCall = findCustomerCall();
+    act(() => {
+      liveCall?.onFilterSearch?.({
+        field: 'customers.name',
+        operator: 'contains',
+        value: 'beta',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+    });
+    expect(liveApi.setAdvancedFilterModel).toHaveBeenCalled();
+    expect(sessionStorage.getItem('item_master_search_customers')).toBe(
+      '#name #contains aspirin##'
+    );
+
+    act(() => {
+      liveCall?.onFilterSearch?.(null);
+    });
+    expect(sessionStorage.getItem('item_master_search_customers')).toBeNull();
+  });
+
+  it('uses add-mode entity modal close handler with fallback entity name', () => {
+    const closeAddModal = vi.fn();
+    useEntityManagerMock.mockReturnValue({
+      search: '',
+      itemsPerPage: 10,
+      entityConfigs: {},
+      handleSearch: vi.fn(),
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal,
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: true,
+      isEditModalOpen: false,
+      editingEntity: null,
+    });
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+
+    render(<ItemMasterPage />);
+
+    expect(captured.entityModalProps?.entityName).toBe('Entity');
+    expect(captured.entityModalProps?.onDelete).toBeUndefined();
+    act(() => {
+      (captured.entityModalProps?.onClose as (() => void) | undefined)?.();
+    });
+    expect(closeAddModal).toHaveBeenCalled();
+  });
+
+  it('does not force search focus while tab selector is expanded', () => {
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+
+    const input = screen.getByTestId('toolbar-search-input');
+    act(() => {
+      (
+        captured.slidingSelectorProps?.onExpandedChange as
+          | ((expanded: boolean) => void)
+          | undefined
+      )?.(true);
+    });
+
+    input.blur();
+    (document.body as HTMLElement).focus();
+    fireEvent.pointerDown(document.body, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(input).not.toHaveFocus();
+
+    act(() => {
+      (
+        captured.slidingSelectorProps?.onExpandedChange as
+          | ((expanded: boolean) => void)
+          | undefined
+      )?.(false);
+    });
+    fireEvent.pointerDown(document.body, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(input).toHaveFocus();
+  });
+
+  it('closes open item modal when switching tabs from items view', () => {
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+
+    act(() => {
+      (captured.searchToolbarProps?.onAdd as (() => void) | undefined)?.();
+    });
+    expect(captured.itemModalProps?.isOpen).toBe(true);
+
+    act(() => {
+      (
+        captured.slidingSelectorProps?.onSelectionChange as
+          | ((key: string, value: string) => void)
+          | undefined
+      )?.('categories', 'categories');
+      vi.advanceTimersByTime(120);
+    });
+
+    expect(captured.itemModalProps?.isOpen).toBe(false);
+    expect(navigateMock).toHaveBeenCalledWith(
+      '/master-data/item-master/categories'
+    );
   });
 });
