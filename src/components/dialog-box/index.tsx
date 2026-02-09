@@ -31,10 +31,9 @@ const ConfirmDialogContext =
 export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [dialogState, setDialogState] =
-    useState<
-      Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>
-    >(initialState);
+  const [dialogState, setDialogState] = useState<
+    Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>
+  >(initialState);
 
   const openConfirmDialog = useCallback((options: ConfirmDialogOptions) => {
     setDialogState({

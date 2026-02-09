@@ -21,7 +21,7 @@ pull_request_rules:
   # ⚙️ Fast-track auto-merge for config-only changes
   - name: Auto-merge config-only PRs
     conditions:
-      - files~=^(\.mergify\.yml|\.github/dependabot\.yml|\.prettierrc.*|\.prettierignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example)$
+      - files~=^(\.mergify\.yml|\.github/dependabot\.yml|\.oxfmtrc.*|\.oxfmtignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example)$
       - check-success=Configuration Check
       - '#approved-reviews-by>=1'
       - -draft
@@ -164,8 +164,8 @@ pull_request_rules:
   # ⚙️ Auto-label config-only PRs
   - name: Label config-only changes
     conditions:
-      - files~=^(\.mergify\.yml|\.github/dependabot\.yml|\.prettierrc.*|\.prettierignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example)$
-      - -files~=^(?!\.mergify\.yml|\.github/dependabot\.yml|\.prettierrc.*|\.prettierignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example).*$
+      - files~=^(\.mergify\.yml|\.github/dependabot\.yml|\.oxfmtrc.*|\.oxfmtignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example)$
+      - -files~=^(?!\.mergify\.yml|\.github/dependabot\.yml|\.oxfmtrc.*|\.oxfmtignore|eslint\.config\..*|\.eslintrc.*|\.eslintignore|tailwind\.config\..*|postcss\.config\..*|\.husky/.*|\.gitignore|\.gitattributes|\.mcp\.json.*|.*\.example).*$
     actions:
       label:
         add:

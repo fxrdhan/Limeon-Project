@@ -35,8 +35,9 @@ export const useIdentityForm = ({
   const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [loadingField, setLoadingField] = useState<Record<string, boolean>>({});
-  const [localData, setLocalData] =
-    useState<Record<string, string | number | boolean | null>>(initialData);
+  const [localData, setLocalData] = useState<
+    Record<string, string | number | boolean | null>
+  >(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<
     Record<string, { el: HTMLInputElement | HTMLTextAreaElement | null }>

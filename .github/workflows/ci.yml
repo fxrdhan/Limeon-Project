@@ -73,8 +73,8 @@ jobs:
             config:
               - '.mergify.yml'
               - '.github/dependabot.yml'
-              - '.prettierrc*'
-              - '.prettierignore'
+              - '.oxfmtrc*'
+              - '.oxfmtignore'
               - '.oxlintrc*'
               - 'tailwind.config.*'
               - 'postcss.config.*'

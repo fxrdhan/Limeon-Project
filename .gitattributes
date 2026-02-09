@@ -44,7 +44,8 @@ vite.config.ts linguist-vendored
 .env* linguist-vendored
 .gitignore linguist-vendored
 .gitattributes linguist-vendored
-.prettierrc* linguist-vendored
+.oxfmtrc* linguist-vendored
+.oxfmtignore linguist-vendored
 .babelrc* linguist-vendored
 babel.config.* linguist-vendored
 webpack.config.* linguist-vendored

@@ -18,11 +18,7 @@
 
   // Formatting
   "format_on_save": "on",
-  "formatter": "prettier",
-  "prettier": {
-    "allowed": true,
-    "plugins": ["prettier-plugin-tailwindcss"]
-  },
+  "formatter": "language_server",
 
   // Autocomplete
   "completions": {
@@ -60,7 +56,7 @@
       "tab_size": 2,
       "enable_language_server": true,
       "format_on_save": "on",
-      "formatter": "prettier",
+      "formatter": "language_server",
       "code_actions_on_format": {
         "source.organizeImports": true
       }
@@ -69,7 +65,7 @@
       "tab_size": 2,
       "enable_language_server": true,
       "format_on_save": "on",
-      "formatter": "prettier",
+      "formatter": "language_server",
       "code_actions_on_format": {
         "source.organizeImports": true
       }
@@ -78,7 +74,7 @@
       "tab_size": 2,
       "enable_language_server": true,
       "format_on_save": "on",
-      "formatter": "prettier"
+      "formatter": "language_server"
     },
     "JSON": {
       "tab_size": 2,

@@ -24,10 +24,7 @@ if (!source.includes(warningSnippet)) {
   process.exit(0);
 }
 
-const patched = source.replace(
-  `console.warn(\"${warningSnippet}\")`,
-  'void 0'
-);
+const patched = source.replace(`console.warn(\"${warningSnippet}\")`, 'void 0');
 
 if (patched !== source) {
   fs.writeFileSync(targetPath, patched, 'utf8');

@@ -298,8 +298,8 @@ If your changes require database modifications:
 
 This project uses pre-commit hooks to ensure code quality:
 
-- **Code formatting** (Prettier)
-- **Linting** (ESLint)
+- **Code formatting** (Oxfmt)
+- **Linting** (Oxlint)
 - **Type checking** (TypeScript)
 - **Tests** (Vitest)
 - **Build validation**

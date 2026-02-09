@@ -106,8 +106,10 @@ function shouldExcludeFile(filePath: string): boolean {
   const configExtensions = ['json', 'yml', 'yaml', 'toml', 'ini'];
   const configFiles = [
     '.gitignore',
-    '.prettierignore',
-    '.prettierrc',
+    '.oxfmtignore',
+    '.oxfmtrc',
+    '.oxfmtrc.json',
+    '.oxfmtrc.jsonc',
     '.swcrc',
     '.yarnrc.yml',
     'package.json',
