@@ -77,7 +77,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         >
           <div className="relative bg-white rounded-xl shadow-xl max-w-[90vw] w-[340px]">
             {/* Hidden element to capture initial focus */}
-            <div tabIndex={0} className="sr-only" aria-hidden="true"></div>
+            <div tabIndex={0} className="sr-only"></div>
 
             {/* Header */}
             <ComparisonHeader isDualMode={isDualMode} compData={compData} />

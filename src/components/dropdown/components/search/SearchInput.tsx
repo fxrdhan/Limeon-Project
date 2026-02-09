@@ -49,8 +49,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           }
           onFocus();
         }}
-        aria-autocomplete="list"
-        aria-expanded={isOpen}
+        data-open={isOpen ? 'true' : 'false'}
         aria-controls="dropdown-options-list"
         aria-activedescendant={
           highlightedIndex >= 0 && currentFilteredOptions[highlightedIndex]

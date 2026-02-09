@@ -1561,7 +1561,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                     ? displayUrls[index]?.display
                     : slot.url
                 }
-                alt={`Item image ${index + 1}`}
+                alt={`Item ${index + 1}`}
                 className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in transition duration-200 group-hover:brightness-95 group-focus-visible:brightness-95 ${
                   uploadingSlots[index] ? 'animate-pulse' : ''
                 }`}
