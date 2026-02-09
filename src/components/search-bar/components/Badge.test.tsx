@@ -176,4 +176,197 @@ describe('Badge', () => {
     expect(onInsert).toHaveBeenCalledTimes(1);
     expect(onHoverChange).toHaveBeenCalled();
   });
+
+  it('keeps raw label for non-currency and space-separated values', () => {
+    const { rerender } = render(
+      <Badge
+        config={buildConfig({ label: '500 600', columnType: 'currency' })}
+      />
+    );
+    expect(screen.getByText('500 600')).toBeInTheDocument();
+
+    rerender(
+      <Badge
+        config={buildConfig({
+          type: 'column',
+          label: 'Harga',
+          columnType: 'currency',
+        })}
+      />
+    );
+    expect(screen.getByText('Harga')).toBeInTheDocument();
+  });
+
+  it('handles invalid enter, delete-blur guard, and cursor restoration in edit mode', () => {
+    const onEditComplete = vi.fn();
+    const onValueChange = vi.fn();
+    const onInvalidValue = vi.fn();
+    const { rerender } = render(
+      <Badge
+        config={buildConfig({
+          isEditing: true,
+          editingValue: '120',
+          onEditComplete,
+          onValueChange,
+          onInvalidValue,
+        })}
+      />
+    );
+
+    const input = screen.getByDisplayValue('120') as HTMLInputElement;
+    const selectionSpy = vi.spyOn(input, 'setSelectionRange');
+    selectionSpy.mockClear();
+
+    validateFilterValueMock.mockReturnValue(false);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onEditComplete).not.toHaveBeenCalled();
+    expect(onInvalidValue).toHaveBeenCalled();
+
+    Object.defineProperty(input, 'selectionStart', {
+      configurable: true,
+      value: 2,
+    });
+    fireEvent.change(input, { target: { value: '121' } });
+    expect(onValueChange).toHaveBeenCalledWith('121');
+
+    rerender(
+      <Badge
+        config={buildConfig({
+          isEditing: true,
+          editingValue: '121',
+          onEditComplete,
+          onValueChange,
+          onInvalidValue,
+        })}
+      />
+    );
+    expect(selectionSpy).toHaveBeenCalledWith(2, 2);
+
+    fireEvent.keyDown(screen.getByDisplayValue('121'), { key: 'Delete' });
+    fireEvent.blur(screen.getByDisplayValue('121'));
+    expect(onEditComplete).toHaveBeenCalledTimes(1);
+    expect(onEditComplete).toHaveBeenCalledWith('');
+  });
+
+  it('resets invalid auto-trigger flag after becoming valid', () => {
+    const onEdit = vi.fn();
+    const onInvalidValue = vi.fn();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+      cb(0);
+      return 1;
+    });
+
+    validateFilterValueMock.mockReturnValue(false);
+    const { rerender } = render(
+      <Badge
+        config={buildConfig({
+          isEditing: false,
+          label: 'bad',
+          onEdit,
+          onInvalidValue,
+        })}
+      />
+    );
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+
+    validateFilterValueMock.mockReturnValue(true);
+    rerender(
+      <Badge
+        config={buildConfig({
+          isEditing: false,
+          label: '100',
+          onEdit,
+          onInvalidValue,
+        })}
+      />
+    );
+
+    validateFilterValueMock.mockReturnValue(false);
+    rerender(
+      <Badge
+        config={buildConfig({
+          isEditing: false,
+          label: 'bad-again',
+          onEdit,
+          onInvalidValue,
+        })}
+      />
+    );
+
+    expect(onEdit).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops mouse-down propagation for edit label and action buttons', () => {
+    const onRootMouseDown = vi.fn();
+    const onClear = vi.fn();
+    const onInsert = vi.fn();
+
+    const { rerender } = render(
+      <div onMouseDown={onRootMouseDown}>
+        <Badge
+          config={buildConfig({
+            label: 'text',
+            columnType: 'text',
+            isSelected: true,
+            canInsert: true,
+            onClear,
+            onInsert,
+          })}
+        />
+      </div>
+    );
+
+    const label = screen.getByText('text');
+    fireEvent.mouseDown(label);
+
+    const clearButton = screen.getAllByRole('button')[1];
+    const insertButton = screen.getByTitle('Tambah kondisi');
+    fireEvent.mouseDown(clearButton);
+    fireEvent.mouseDown(insertButton);
+
+    expect(onRootMouseDown).not.toHaveBeenCalled();
+
+    const onEditComplete = vi.fn();
+    rerender(
+      <div onMouseDown={onRootMouseDown}>
+        <Badge
+          config={buildConfig({
+            isEditing: true,
+            editingValue: 'abc',
+            onEditComplete,
+          })}
+        />
+      </div>
+    );
+
+    const editButton = screen.getByRole('button');
+    fireEvent.mouseDown(editButton);
+    fireEvent.click(editButton);
+    fireEvent.blur(screen.getByDisplayValue('abc'));
+
+    expect(onEditComplete).toHaveBeenCalledWith('abc');
+    expect(onEditComplete).toHaveBeenCalledTimes(1);
+    expect(onRootMouseDown).not.toHaveBeenCalled();
+  });
+
+  it('executes hide-timeout branches when action icons are not desired', () => {
+    const onHoverChange = vi.fn();
+    render(
+      <Badge
+        config={buildConfig({
+          canEdit: false,
+          canInsert: false,
+          isSelected: false,
+          onHoverChange,
+        })}
+      />
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(130);
+    });
+
+    expect(onHoverChange).toHaveBeenCalledWith(false);
+  });
 });

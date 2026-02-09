@@ -1140,6 +1140,198 @@ describe('useSearchKeyboard', () => {
     );
   });
 
+  it('covers confirmed inRange value deletion and empty-contains fallback without clear callback', () => {
+    const confirmedBetweenEditProps = buildProps({
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'stock',
+          value: '10',
+          operator: 'inRange',
+          column: stockColumn,
+          isExplicitOperator: true,
+          isConfirmed: true,
+          isMultiCondition: false,
+        },
+      }),
+    });
+    const { result: confirmedBetweenEditResult } = renderHook(() =>
+      useSearchKeyboard(confirmedBetweenEditProps)
+    );
+    act(() => {
+      confirmedBetweenEditResult.current.handleInputKeyDown(
+        makeKeyEvent('Delete')
+      );
+    });
+    expect(confirmedBetweenEditProps.editConditionValue).toHaveBeenCalledWith(
+      0,
+      'value'
+    );
+
+    const confirmedBetweenClearProps = buildProps({
+      editConditionValue: undefined,
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'stock',
+          value: '10',
+          operator: 'inRange',
+          column: stockColumn,
+          isExplicitOperator: true,
+          isConfirmed: true,
+          isMultiCondition: false,
+        },
+      }),
+    });
+    const { result: confirmedBetweenClearResult } = renderHook(() =>
+      useSearchKeyboard(confirmedBetweenClearProps)
+    );
+    act(() => {
+      confirmedBetweenClearResult.current.handleInputKeyDown(
+        makeKeyEvent('Delete')
+      );
+    });
+    expect(confirmedBetweenClearProps.clearConditionPart).toHaveBeenCalledWith(
+      0,
+      'value'
+    );
+
+    const emptyContainsFallbackProps = buildProps({
+      onClearSearch: undefined,
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: '',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: false,
+          isConfirmed: false,
+          isMultiCondition: false,
+        },
+      }),
+    });
+    const { result: emptyContainsFallbackResult } = renderHook(() =>
+      useSearchKeyboard(emptyContainsFallbackProps)
+    );
+    act(() => {
+      emptyContainsFallbackResult.current.handleInputKeyDown(
+        makeKeyEvent('Delete')
+      );
+    });
+    expect(emptyContainsFallbackProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '' },
+      })
+    );
+  });
+
+  it('covers grouped regex deletes and filter-mode Enter passthrough return', () => {
+    const groupedOperatorDeleteProps = buildProps({
+      value: 'x #( #name #contains a #and #stock #equals',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'equals',
+            column: stockColumn,
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          filterGroup: { kind: 'group', join: 'AND', nodes: [] },
+        },
+      }),
+    });
+    const { result: groupedOperatorDeleteResult } = renderHook(() =>
+      useSearchKeyboard(groupedOperatorDeleteProps)
+    );
+    act(() => {
+      groupedOperatorDeleteResult.current.handleInputKeyDown(
+        makeKeyEvent('Delete')
+      );
+    });
+    expect(groupedOperatorDeleteProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: 'x #( #name #contains a #and #stock #' },
+      })
+    );
+
+    const groupedColumnDeleteProps = buildProps({
+      value: 'x #( #name #contains a #and #stock #',
+      searchMode: baseSearchMode({
+        showOperatorSelector: true,
+        selectedColumn: stockColumn,
+        partialJoin: 'AND',
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            column: stockColumn,
+          },
+        ],
+        joins: ['AND'],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          isMultiColumn: true,
+          filterGroup: { kind: 'group', join: 'AND', nodes: [] },
+        },
+      }),
+    });
+    const { result: groupedColumnDeleteResult } = renderHook(() =>
+      useSearchKeyboard(groupedColumnDeleteProps)
+    );
+    act(() => {
+      groupedColumnDeleteResult.current.handleInputKeyDown(
+        makeKeyEvent('Delete')
+      );
+    });
+    expect(groupedColumnDeleteProps.onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: 'x #( #name #contains a #and #' },
+      })
+    );
+
+    const filterModeEnterPassthroughProps = buildProps({
+      value: '',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+      }),
+    });
+    const { result: filterModeEnterPassthroughResult } = renderHook(() =>
+      useSearchKeyboard(filterModeEnterPassthroughProps)
+    );
+    act(() => {
+      filterModeEnterPassthroughResult.current.handleInputKeyDown(
+        makeKeyEvent('Enter')
+      );
+    });
+    expect(filterModeEnterPassthroughProps.onChange).not.toHaveBeenCalled();
+    expect(filterModeEnterPassthroughProps.onKeyDown).not.toHaveBeenCalled();
+  });
+
   it('falls back to onKeyDown when handler throws', () => {
     insertGroupOpenTokenMock.mockImplementationOnce(() => {
       throw new Error('boom');

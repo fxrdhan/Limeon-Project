@@ -850,21 +850,6 @@ export const useSearchKeyboard = ({
               } as React.ChangeEvent<HTMLInputElement>);
             }
             return;
-          } else if (
-            searchMode.selectedColumn &&
-            !searchMode.showColumnSelector &&
-            !searchMode.showOperatorSelector &&
-            !searchMode.isFilterMode &&
-            value === `#${searchMode.selectedColumn.field}`
-          ) {
-            if (onClearSearch) {
-              onClearSearch();
-            } else {
-              onChange({
-                target: { value: '' },
-              } as React.ChangeEvent<HTMLInputElement>);
-            }
-            return;
           }
         }
 
@@ -877,11 +862,6 @@ export const useSearchKeyboard = ({
             e.key === KEY_CODES.ARROW_UP ||
             e.key === KEY_CODES.ENTER)
         ) {
-          return;
-        }
-
-        // Don't propagate Enter key to parent if in filter mode (already handled above)
-        if (e.key === KEY_CODES.ENTER && searchMode.isFilterMode) {
           return;
         }
 
