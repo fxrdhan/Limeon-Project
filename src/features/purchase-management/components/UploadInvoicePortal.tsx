@@ -30,7 +30,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   const [shouldShowGlow, setShouldShowGlow] = useState(false);
   const [glowIntensity, setGlowIntensity] = useState(0);
 
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const glowAnimationRef = useRef<NodeJS.Timeout | null>(null);
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +75,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   }, [file]);
 
   useEffect(() => {
-    const hoverTimeout = hoverTimeoutRef.current;
     const glowTimeout = glowAnimationRef.current;
 
     if (!isOpen) {
@@ -91,18 +89,12 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       setIsHovering(false);
       setShouldShowGlow(false);
       setGlowIntensity(0);
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout);
-      }
       if (glowTimeout) {
         clearTimeout(glowTimeout);
       }
     }
 
     return () => {
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout);
-      }
       if (glowTimeout) {
         clearTimeout(glowTimeout);
       }
@@ -204,10 +196,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       setShouldShowGlow(false);
       setGlowIntensity(0);
 
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
       if (glowAnimationRef.current) {
         clearTimeout(glowAnimationRef.current);
         glowAnimationRef.current = null;
@@ -276,15 +264,11 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      setError('Silakan pilih file gambar faktur terlebih dahulu.');
-      return;
-    }
     try {
       setLoading(true);
       setError(null);
       const startTime = Date.now();
-      const data = await uploadAndExtractInvoice(file);
+      const data = await uploadAndExtractInvoice(file!);
       const imageIdentifier = data.imageIdentifier;
       const processingTime = (Date.now() - startTime) / 1000;
       clearCachedInvoiceFile();
@@ -326,10 +310,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     setZoomLevel(1);
     setPosition({ x: 0, y: 0 });
 
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
     if (glowAnimationRef.current) {
       clearTimeout(glowAnimationRef.current);
       glowAnimationRef.current = null;
@@ -344,17 +324,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     requestAnimationFrame(() => {});
   };
 
-  const toggleFullPreview = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    if (!showFullPreview) {
-      setShowFullPreview(true);
-    } else {
-      setShowFullPreview(false);
-    }
+  const toggleFullPreview = () => {
+    setShowFullPreview(prev => !prev);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -401,10 +372,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 setGlowIntensity(0);
                 setIsDragging(false);
 
-                if (hoverTimeoutRef.current) {
-                  clearTimeout(hoverTimeoutRef.current);
-                  hoverTimeoutRef.current = null;
-                }
                 if (glowAnimationRef.current) {
                   clearTimeout(glowAnimationRef.current);
                   glowAnimationRef.current = null;
@@ -549,9 +516,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           onMouseEnter={() => {
                             if (!isHovering) {
                               setIsHovering(true);
-                              if (hoverTimeoutRef.current) {
-                                clearTimeout(hoverTimeoutRef.current);
-                              }
                               if (glowAnimationRef.current) {
                                 clearTimeout(glowAnimationRef.current);
                               }
@@ -584,9 +548,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
                               if (!isStillInside) {
                                 setIsHovering(false);
-                                if (hoverTimeoutRef.current) {
-                                  clearTimeout(hoverTimeoutRef.current);
-                                }
                                 if (glowAnimationRef.current) {
                                   clearTimeout(glowAnimationRef.current);
                                 }
@@ -846,10 +807,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 setShouldShowGlow(false);
                 setGlowIntensity(0);
 
-                if (hoverTimeoutRef.current) {
-                  clearTimeout(hoverTimeoutRef.current);
-                  hoverTimeoutRef.current = null;
-                }
                 if (glowAnimationRef.current) {
                   clearTimeout(glowAnimationRef.current);
                   glowAnimationRef.current = null;

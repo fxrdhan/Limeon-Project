@@ -528,4 +528,182 @@ describe('UploadInvoicePortal', () => {
     expect(onClose).toHaveBeenCalled();
     expect(clearTimeoutSpy).toHaveBeenCalled();
   });
+
+  it('covers initial-hover glow animation and close cleanup branches', async () => {
+    vi.useFakeTimers();
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(cb => {
+      cb(0);
+      return 1;
+    });
+
+    const { rerender, unmount } = render(
+      <UploadInvoicePortal isOpen onClose={vi.fn()} />
+    );
+
+    const uploadArea = screen
+      .getByText('Klik atau seret untuk mengunggah gambar faktur')
+      .closest('div[class*="border-2"]') as HTMLDivElement | null;
+    expect(uploadArea).toBeTruthy();
+    if (!uploadArea) return;
+
+    vi.spyOn(uploadArea, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 400,
+      bottom: 400,
+      width: 400,
+      height: 400,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 120, clientY: 130 })
+    );
+
+    fireEvent.mouseEnter(uploadArea);
+    await vi.advanceTimersByTimeAsync(20);
+    fireEvent.dragLeave(uploadArea);
+    fireEvent.mouseLeave(uploadArea, { clientX: -20, clientY: -20 });
+    await vi.advanceTimersByTimeAsync(10);
+    fireEvent.mouseEnter(uploadArea);
+    await vi.advanceTimersByTimeAsync(10);
+
+    rerender(<UploadInvoicePortal isOpen={false} onClose={vi.fn()} />);
+    await vi.advanceTimersByTimeAsync(10);
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('covers touch toggle and preview cleanup with active glow ref', async () => {
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(cb => {
+      cb(0);
+      return 1;
+    });
+
+    render(<UploadInvoicePortal isOpen onClose={vi.fn()} />);
+
+    const uploadArea = screen
+      .getByText('Klik atau seret untuk mengunggah gambar faktur')
+      .closest('div[class*="border-2"]') as HTMLDivElement | null;
+    expect(uploadArea).toBeTruthy();
+
+    if (uploadArea) {
+      fireEvent.mouseEnter(uploadArea);
+    }
+
+    const input = document.querySelector(
+      '#fileInput'
+    ) as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    if (!input) return;
+
+    const validFile = new File(['touch-preview'], 'touch-preview.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(input, { target: { files: [validFile] } });
+    await screen.findByText('touch-preview.jpg');
+    const fileRow = document.querySelector(
+      'div.cursor-pointer'
+    ) as HTMLDivElement | null;
+    expect(fileRow).toBeTruthy();
+    if (!fileRow) return;
+
+    fireEvent.touchEnd(fileRow);
+    expect(await screen.findByText('100%')).toBeInTheDocument();
+
+    const previewOverlay = Array.from(
+      document.querySelectorAll<HTMLDivElement>('.fixed.inset-0')
+    ).find(node => node.className.includes('bg-black/70'));
+    expect(previewOverlay).toBeTruthy();
+    if (previewOverlay) {
+      fireEvent.click(previewOverlay);
+    }
+
+    await waitFor(() => {
+      expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+    });
+
+    const removeButton = screen.getByRole('button', { name: 'Hapus file' });
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 180, clientY: 200 })
+    );
+    fireEvent.click(removeButton);
+
+    expect(clearCachedInvoiceFileMock).toHaveBeenCalled();
+  });
+
+  it('covers residual hover and cleanup branches with active timers', async () => {
+    vi.useFakeTimers();
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(cb => {
+      cb(0);
+      return 1;
+    });
+
+    const { rerender } = render(
+      <UploadInvoicePortal isOpen onClose={vi.fn()} />
+    );
+
+    const uploadArea = screen
+      .getByText('Klik atau seret untuk mengunggah gambar faktur')
+      .closest('div[class*="border-2"]') as HTMLDivElement | null;
+    expect(uploadArea).toBeTruthy();
+    if (!uploadArea) return;
+
+    vi.spyOn(uploadArea, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 400,
+      bottom: 400,
+      width: 400,
+      height: 400,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 120, clientY: 130 })
+    );
+    fireEvent.mouseEnter(uploadArea);
+    await vi.advanceTimersByTimeAsync(20);
+
+    fireEvent.dragLeave(uploadArea);
+    const invalidDropFile = new File(['bad'], 'drop-invalid.txt', {
+      type: 'text/plain',
+    });
+    fireEvent.drop(uploadArea, {
+      dataTransfer: { files: [invalidDropFile] },
+    });
+
+    fireEvent.mouseLeave(uploadArea, { clientX: -10, clientY: -10 });
+    await vi.advanceTimersByTimeAsync(6);
+
+    const input = document.querySelector(
+      '#fileInput'
+    ) as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    if (!input) return;
+
+    const validFile = new File(['img'], 'residual-remove.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(input, { target: { files: [validFile] } });
+    expect(screen.getByText('residual-remove.jpg')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus file' }));
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 40, clientY: 40 })
+    );
+    rerender(<UploadInvoicePortal isOpen={false} onClose={vi.fn()} />);
+    await vi.advanceTimersByTimeAsync(10);
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });
