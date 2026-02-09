@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useRef } from 'react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import toast from 'react-hot-toast';
 import HistoryTimelineList from './HistoryTimelineList';
@@ -28,6 +28,9 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
   >(null);
   const [restoreMode, setRestoreMode] = useState<RestoreMode>('soft');
   const [isRestoring, setIsRestoring] = useState(false);
+  const restoreResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   // Use shared history selection hook
   const {
@@ -69,6 +72,15 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     }
   }, [comparison.isOpen, comparison.selectedVersion]);
 
+  useEffect(() => {
+    return () => {
+      if (restoreResetTimeoutRef.current) {
+        clearTimeout(restoreResetTimeoutRef.current);
+        restoreResetTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const handleRestore = async (version: number) => {
     // Close comparison modal to avoid z-index conflicts and improve focus
     if (comparison.isOpen) {
@@ -83,10 +95,15 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
 
   const closeRestoreDialog = () => {
     setShowRestoreDialog(false);
+    if (restoreResetTimeoutRef.current) {
+      clearTimeout(restoreResetTimeoutRef.current);
+      restoreResetTimeoutRef.current = null;
+    }
     // Delay resetting state until exit animation completes (200ms + buffer)
-    setTimeout(() => {
+    restoreResetTimeoutRef.current = setTimeout(() => {
       setRestoreTargetVersion(null);
       setRestoreMode('soft');
+      restoreResetTimeoutRef.current = null;
     }, 250);
   };
 
