@@ -506,4 +506,151 @@ describe('ItemPricingForm', () => {
       )
     ).toBeInTheDocument();
   });
+
+  it('handles missing levelPricing and disabled menu/settings actions safely', () => {
+    const onHideLevelPricing = vi.fn();
+    const { container } = render(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing: undefined,
+          disabled: true,
+          onHideLevelPricing,
+        })}
+      />
+    );
+
+    const settingsButton = container.querySelector('button.mr-2');
+    expect(settingsButton).toBeTruthy();
+    if (!settingsButton) return;
+    fireEvent.click(settingsButton);
+    expect(screen.queryByText('Atur baseline')).not.toBeInTheDocument();
+
+    const menuButton = container.querySelector('button.-ml-2');
+    expect(menuButton).toBeTruthy();
+    if (menuButton) {
+      fireEvent.click(menuButton);
+    }
+    expect(
+      screen.queryByRole('button', { name: 'Atur per-level' })
+    ).not.toBeInTheDocument();
+
+    const headerButtons = container.querySelectorAll(
+      'div.flex.items-center.gap-1 > button'
+    );
+    const headerBackButton = headerButtons[headerButtons.length - 1];
+    expect(headerBackButton).toBeTruthy();
+    if (headerBackButton) {
+      fireEvent.click(headerBackButton);
+    }
+    expect(onHideLevelPricing).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles baseline modal open/close and closes via Tutup button', async () => {
+    const levelPricing = createLevelPricing();
+    const { container } = render(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing,
+        })}
+      />
+    );
+
+    openBaselineModal(container);
+    expect(await screen.findByText('Atur baseline')).toBeInTheDocument();
+
+    openBaselineModal(container);
+    await waitFor(() => {
+      expect(screen.queryByText('Atur baseline')).not.toBeInTheDocument();
+    });
+
+    openBaselineModal(container);
+    expect(await screen.findByText('Atur baseline')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tutup' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Atur baseline')).not.toBeInTheDocument();
+    });
+  });
+
+  it('updates existing baseline via Enter and ignores save when updating', async () => {
+    const levelPricing = createLevelPricing();
+    const { container } = render(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing,
+        })}
+      />
+    );
+
+    openBaselineModal(container);
+    expect(await screen.findByText('Atur baseline')).toBeInTheDocument();
+
+    const baselineInput = document.body.querySelector(
+      'input.w-20.text-sm'
+    ) as HTMLInputElement | null;
+    expect(baselineInput).toBeTruthy();
+    if (!baselineInput) return;
+
+    fireEvent.focus(baselineInput);
+    fireEvent.change(baselineInput, { target: { value: '5' } });
+    fireEvent.keyDown(baselineInput, {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      charCode: 13,
+    });
+
+    expect(baselineInput.value).toBe('5');
+    expect(screen.getByText('Atur baseline')).toBeInTheDocument();
+  });
+
+  it('keeps per-level menu open when callback is missing and clears empty override on blur', async () => {
+    const levelPricing = createLevelPricing();
+    const { container, rerender } = render(
+      <ItemPricingForm
+        {...createProps({
+          showLevelPricing: true,
+          levelPricing,
+          isLevelPricingActive: true,
+          formData: {
+            base_price: 1000,
+            sell_price: 1500,
+            is_level_pricing_active: true,
+          },
+        })}
+      />
+    );
+
+    const levelDiscountInput = screen.getByRole('spinbutton');
+    fireEvent.focus(levelDiscountInput);
+    fireEvent.change(levelDiscountInput, { target: { value: '' } });
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    fireEvent.blur(levelDiscountInput, { relatedTarget: outside });
+    expect(levelPricing.onDiscountChange).toHaveBeenCalledWith('lvl-1', '');
+    document.body.removeChild(outside);
+
+    rerender(
+      <ItemPricingForm
+        {...createProps({
+          onShowLevelPricing: undefined,
+        })}
+      />
+    );
+
+    const menuButton = container.querySelector('button.-ml-2');
+    expect(menuButton).toBeTruthy();
+    if (!menuButton) return;
+    fireEvent.click(menuButton);
+    const levelButton = await screen.findByRole('button', {
+      name: 'Atur per-level',
+    });
+    fireEvent.click(levelButton);
+
+    expect(
+      screen.getByRole('button', { name: 'Atur per-level' })
+    ).toBeInTheDocument();
+  });
 });

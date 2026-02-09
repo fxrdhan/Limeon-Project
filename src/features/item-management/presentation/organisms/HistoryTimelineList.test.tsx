@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryTimelineList, { type HistoryItem } from './HistoryTimelineList';
 
 vi.mock('motion/react', async () => {
@@ -58,8 +58,44 @@ const baseProps = () => ({
 });
 
 describe('HistoryTimelineList', () => {
+  let resizeObserverCallback:
+    | ((entries: ResizeObserverEntry[], observer: ResizeObserver) => void)
+    | null = null;
+  const observeMock = vi.fn();
+  const disconnectMock = vi.fn();
+
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(
+      callback => {
+        callback(0);
+        return 1;
+      }
+    );
+    vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation(() => {});
+
+    class ResizeObserverMock {
+      constructor(
+        callback: (
+          entries: ResizeObserverEntry[],
+          observer: ResizeObserver
+        ) => void
+      ) {
+        resizeObserverCallback = callback;
+      }
+
+      observe = observeMock;
+      disconnect = disconnectMock;
+    }
+
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+  });
+
+  afterEach(() => {
+    observeMock.mockReset();
+    disconnectMock.mockReset();
+    resizeObserverCallback = null;
+    vi.unstubAllGlobals();
   });
 
   it('renders loading and empty states when no history data exists', () => {
@@ -236,5 +272,180 @@ describe('HistoryTimelineList', () => {
 
     expect(first?.className).toContain('bg-purple-50');
     expect(second?.className).toContain('bg-blue-50');
+  });
+
+  it('updates scroll overlays and cleans pending raf jobs on unmount', () => {
+    let rafId = 0;
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(
+      () => ++rafId
+    );
+
+    const { container, unmount } = render(
+      <HistoryTimelineList {...baseProps()} />
+    );
+    const scrollContainer = container.querySelector(
+      '.history-scrollbar-hidden'
+    ) as HTMLDivElement;
+
+    let scrollTop = 0;
+    Object.defineProperty(scrollContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(scrollContainer, 'clientHeight', {
+      configurable: true,
+      value: 100,
+    });
+    Object.defineProperty(scrollContainer, 'scrollHeight', {
+      configurable: true,
+      value: 400,
+    });
+
+    scrollTop = 120;
+    fireEvent.scroll(scrollContainer);
+
+    if (resizeObserverCallback) {
+      resizeObserverCallback([], {} as ResizeObserver);
+    }
+
+    unmount();
+
+    expect(disconnectMock).toHaveBeenCalled();
+    expect(globalThis.cancelAnimationFrame).toHaveBeenCalled();
+  });
+
+  it('shows top and bottom fade overlays based on scroll position', async () => {
+    const { container } = render(<HistoryTimelineList {...baseProps()} />);
+    const scrollContainer = container.querySelector(
+      '.history-scrollbar-hidden'
+    ) as HTMLDivElement;
+
+    let scrollTop = 0;
+    Object.defineProperty(scrollContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(scrollContainer, 'clientHeight', {
+      configurable: true,
+      value: 100,
+    });
+    Object.defineProperty(scrollContainer, 'scrollHeight', {
+      configurable: true,
+      value: 400,
+    });
+
+    fireEvent.scroll(scrollContainer);
+    await waitFor(() => {
+      expect(container.querySelector('.bg-gradient-to-t')).toBeInTheDocument();
+    });
+
+    scrollTop = 120;
+    fireEvent.scroll(scrollContainer);
+    await waitFor(() => {
+      expect(container.querySelector('.bg-gradient-to-b')).toBeInTheDocument();
+    });
+  });
+
+  it('handles smooth wheel scrolling and cancels previous wheel animation', () => {
+    let rafId = 0;
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(
+      () => ++rafId
+    );
+
+    const { container, unmount } = render(
+      <HistoryTimelineList {...baseProps()} />
+    );
+    const scrollContainer = container.querySelector(
+      '.history-scrollbar-hidden'
+    ) as HTMLDivElement;
+
+    let scrollTop = 0;
+    Object.defineProperty(scrollContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(scrollContainer, 'clientHeight', {
+      configurable: true,
+      value: 100,
+    });
+    Object.defineProperty(scrollContainer, 'scrollHeight', {
+      configurable: true,
+      value: 250,
+    });
+
+    fireEvent.wheel(scrollContainer, { deltaY: 0 });
+    fireEvent.wheel(scrollContainer, { deltaY: 100 });
+    fireEvent.wheel(scrollContainer, { deltaY: 120 });
+
+    expect(globalThis.cancelAnimationFrame).toHaveBeenCalled();
+    unmount();
+  });
+
+  it('delays hover expansion and handles leave event', async () => {
+    const { container } = render(<HistoryTimelineList {...baseProps()} />);
+    const card = container.querySelector('[data-version-number="1"] .ml-6')!;
+    const getDetailBox = () =>
+      container.querySelector(
+        '[data-version-number="1"] .overflow-hidden'
+      ) as HTMLDivElement;
+
+    fireEvent.mouseEnter(card);
+    fireEvent.mouseEnter(card);
+    expect(getDetailBox().className).toContain('max-h-0');
+
+    await new Promise(resolve => setTimeout(resolve, 180));
+    await waitFor(() => {
+      expect(getDetailBox().className).toContain('max-h-24');
+    });
+
+    fireEvent.mouseLeave(card, { relatedTarget: document.body });
+  });
+
+  it('does not auto-scroll when selected version is missing or multi-select mode is on', () => {
+    vi.useFakeTimers();
+    const scrollToMock = vi.fn();
+
+    const { container, rerender } = render(
+      <HistoryTimelineList
+        {...baseProps()}
+        selectedVersion={999}
+        autoScrollToSelected={true}
+      />
+    );
+
+    const scrollContainer = container.querySelector(
+      '.history-scrollbar-hidden'
+    ) as HTMLDivElement;
+    scrollContainer.scrollTo = scrollToMock;
+    vi.runAllTimers();
+    expect(scrollToMock).not.toHaveBeenCalled();
+
+    rerender(
+      <HistoryTimelineList
+        {...baseProps()}
+        selectedVersion={2}
+        allowMultiSelect={true}
+        autoScrollToSelected={true}
+      />
+    );
+    vi.runAllTimers();
+    expect(scrollToMock).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('falls back to version badges when restore callback is unavailable', () => {
+    render(<HistoryTimelineList {...baseProps()} showRestoreButton={true} />);
+    expect(screen.queryByTitle('Restore ke versi ini')).not.toBeInTheDocument();
+    expect(screen.getByText('v1')).toBeInTheDocument();
+    expect(screen.getByText('v2')).toBeInTheDocument();
   });
 });

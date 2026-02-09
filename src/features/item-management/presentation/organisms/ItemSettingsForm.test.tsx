@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -252,5 +252,82 @@ describe('ItemSettingsForm', () => {
     expect(screen.getByText('change-is_active-true')).toBeDisabled();
     expect(screen.getByText('start-min-stock')).toBeDisabled();
     expect(screen.getByLabelText('Memiliki Tanggal Kadaluarsa')).toBeDisabled();
+  });
+
+  it('handles collapsed rendering and focus-visible expansion path', () => {
+    vi.useFakeTimers();
+    const props = baseProps();
+    const originalMatches = HTMLElement.prototype.matches;
+    const matchesSpy = vi
+      .spyOn(HTMLElement.prototype, 'matches')
+      .mockImplementation(function (this: HTMLElement, selector: string) {
+        if (selector === ':focus-visible') {
+          return true;
+        }
+        return originalMatches.call(this, selector);
+      });
+
+    const { rerender } = render(
+      <ItemSettingsForm
+        {...props}
+        isExpanded={false}
+        formData={{ ...props.formData, is_active: false }}
+      />
+    );
+
+    const header = screen.getByRole('button', { name: 'Pengaturan Tambahan' });
+    expect(screen.queryByTestId('dropdown-is_active')).not.toBeInTheDocument();
+    expect(header.querySelector('svg')).not.toHaveClass('rotate-180');
+
+    fireEvent.focus(header);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    expect(props.onExpand).toHaveBeenCalled();
+
+    rerender(
+      <ItemSettingsForm
+        {...props}
+        isExpanded={true}
+        formData={{ ...props.formData, is_active: false }}
+      />
+    );
+
+    const expandedHeader = screen.getByRole('button', {
+      name: 'Pengaturan Tambahan',
+    });
+    fireEvent.keyDown(expandedHeader, { key: 'Escape' });
+    fireEvent.keyDown(expandedHeader, { key: 'Enter' });
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+
+    expect(screen.getByText('is_active:false')).toBeInTheDocument();
+    expect(document.activeElement).not.toBe(document.body);
+
+    matchesSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('handles tab-capture guard branches for non-expiry and missing callback', () => {
+    const props = baseProps();
+    const { rerender } = render(
+      <ItemSettingsForm {...props} onRequestNextSection={undefined} />
+    );
+
+    const section = screen
+      .getByRole('button', { name: 'Pengaturan Tambahan' })
+      .closest('section') as HTMLElement;
+
+    fireEvent.keyDown(section, { key: 'Tab' });
+    expect(props.onRequestNextSection).not.toHaveBeenCalled();
+
+    const expiryInput = screen.getByLabelText('Memiliki Tanggal Kadaluarsa');
+    fireEvent.keyDown(expiryInput, { key: 'Tab' });
+    expect(props.onRequestNextSection).not.toHaveBeenCalled();
+
+    rerender(<ItemSettingsForm {...props} />);
+    fireEvent.keyDown(section, { key: 'Tab', shiftKey: true });
+    expect(props.onRequestNextSection).not.toHaveBeenCalled();
   });
 });

@@ -123,4 +123,111 @@ describe('useEntity', () => {
       )
     ).toThrow('Unsupported entity type: categories');
   });
+
+  it('matches description/address/nci/abbreviation fields and uses secondary sorting fallback', () => {
+    getExternalHooksMock.mockReturnValue({
+      useData: () => ({
+        data: [
+          {
+            id: 'a',
+            code: 'B-2',
+            name: 'Beta Code',
+            address: 'token street',
+          },
+          {
+            id: 'b',
+            code: 'A-1',
+            name: 'Alpha Code',
+            address: 'token boulevard',
+          },
+          {
+            id: 'c',
+            name: 'Zulu Name',
+            description: 'token description',
+          },
+          {
+            id: 'd',
+            name: 'Alpha No Code',
+            description: 'token details',
+          },
+          {
+            id: 'e',
+            name: 'Package Entity',
+            nci_code: 'token-nci',
+          },
+          {
+            id: 'f',
+            name: 'Unit Entity',
+            abbreviation: 'token-abb',
+          },
+          {
+            id: 'g',
+            name: 'prefix token inside',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+        error: null,
+        isFetching: false,
+        isPlaceholderData: false,
+      }),
+      useMutations: () => ({ update: vi.fn() }),
+    });
+
+    const { result } = renderHook(() =>
+      useEntity({
+        entityType: 'manufacturers',
+        search: 'token',
+      })
+    );
+
+    const ids = result.current.data.map(item => item.id);
+    expect(ids).toEqual(
+      expect.arrayContaining(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
+    );
+
+    expect(ids.indexOf('b')).toBeLessThan(ids.indexOf('a'));
+    expect(ids.indexOf('d')).toBeLessThan(ids.indexOf('c'));
+  });
+
+  it('uses fuzzy name match when startsWith/includes checks do not match', () => {
+    fuzzyMatchMock.mockImplementation((value: string, query: string) => {
+      const normalizedValue = value.toLowerCase();
+      const normalizedQuery = query.toLowerCase();
+      return (
+        normalizedValue.includes(normalizedQuery) ||
+        (normalizedValue === 'cefalexin' && normalizedQuery === 'cfa')
+      );
+    });
+
+    getExternalHooksMock.mockReturnValue({
+      useData: () => ({
+        data: [
+          {
+            id: 'fuzzy-1',
+            name: 'Cefalexin',
+          },
+          {
+            id: 'fuzzy-2',
+            name: 'No Match',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+        error: null,
+        isFetching: false,
+        isPlaceholderData: false,
+      }),
+      useMutations: () => ({ create: vi.fn() }),
+    });
+
+    const { result } = renderHook(() =>
+      useEntity({
+        entityType: 'types',
+        search: 'cfa',
+      })
+    );
+
+    expect(result.current.data.map(item => item.id)).toEqual(['fuzzy-1']);
+  });
 });
