@@ -19,6 +19,9 @@ const setFilterValueMock = vi.hoisted(() => vi.fn());
 const capturedSearchBadgeProps = vi.hoisted(() => ({
   current: null as Record<string, unknown> | null,
 }));
+const capturedSearchIconProps = vi.hoisted(() => ({
+  current: null as Record<string, unknown> | null,
+}));
 const capturedColumnSelectorProps = vi.hoisted(() => ({
   current: null as Record<string, unknown> | null,
 }));
@@ -30,7 +33,10 @@ const capturedJoinSelectorProps = vi.hoisted(() => ({
 }));
 
 vi.mock('./components/SearchIcon', () => ({
-  default: () => <div data-testid="search-icon" />,
+  default: (props: Record<string, unknown>) => {
+    capturedSearchIconProps.current = props;
+    return <div data-testid="search-icon" />;
+  },
 }));
 
 vi.mock('./components/SearchBadge', () => ({
@@ -129,7 +135,9 @@ const makeOperator = (value: string): FilterOperator => ({
 
 describe('EnhancedSearchBar', () => {
   beforeEach(() => {
+    vi.useRealTimers();
     capturedSearchBadgeProps.current = null;
+    capturedSearchIconProps.current = null;
     capturedColumnSelectorProps.current = null;
     capturedOperatorSelectorProps.current = null;
     capturedJoinSelectorProps.current = null;
@@ -363,5 +371,552 @@ describe('EnhancedSearchBar', () => {
     expect(joinProps.currentValue).toBe('OR');
     expect(joinProps.operators).toHaveLength(1);
     expect(joinProps.operators?.[0]).toMatchObject({ value: 'or' });
+  });
+
+  it('exposes step-back delete handler through keyboard hook args', () => {
+    const onChange = vi.fn();
+
+    render(
+      <EnhancedSearchBar
+        value="#name #contains aspirin #and #stock #equals 10##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    const keyboardArgs = useSearchKeyboardMock.mock.calls[0]?.[0] as
+      | { onStepBackDelete?: () => boolean }
+      | undefined;
+    expect(keyboardArgs?.onStepBackDelete).toBeTypeOf('function');
+
+    expect(keyboardArgs?.onStepBackDelete?.()).toBe(true);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains aspirin #and #stock #equals ' },
+      })
+    );
+
+    expect(keyboardArgs?.onStepBackDelete?.()).toBe(true);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains aspirin #and #stock #' },
+      })
+    );
+  });
+
+  it('triggers and clears invalid-group input error state', () => {
+    vi.useFakeTimers();
+
+    render(
+      <EnhancedSearchBar value="#" onChange={vi.fn()} columns={columns} />
+    );
+
+    const keyboardArgs = useSearchKeyboardMock.mock.calls[0]?.[0] as
+      | { onInvalidGroupOpen?: () => void }
+      | undefined;
+
+    act(() => {
+      keyboardArgs?.onInvalidGroupOpen?.();
+    });
+    expect(capturedSearchIconProps.current).toMatchObject({ showError: true });
+
+    act(() => {
+      vi.advanceTimersByTime(800);
+    });
+    expect(capturedSearchIconProps.current).toMatchObject({ showError: false });
+  });
+
+  it('applies grouped edit/clear callbacks and propagates selector updates', () => {
+    const onChange = vi.fn();
+    const clearAll = vi.fn();
+
+    useBadgeHandlersMock.mockReturnValue({
+      clearConditionPart: vi.fn(),
+      clearJoin: vi.fn(),
+      clearAll,
+      editConditionPart: vi.fn(),
+      editJoin: vi.fn(),
+      editValueN: vi.fn(),
+    });
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        showColumnSelector: true,
+        showOperatorSelector: true,
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: 'aspirin',
+          operator: 'contains',
+          column: columns[0],
+          isExplicitOperator: true,
+          isConfirmed: true,
+          filterGroup: {
+            kind: 'group',
+            join: 'AND',
+            nodes: [
+              {
+                kind: 'condition',
+                field: 'name',
+                column: columns[0],
+                operator: 'contains',
+                value: 'aspirin',
+              },
+              {
+                kind: 'group',
+                join: 'OR',
+                nodes: [
+                  {
+                    kind: 'condition',
+                    field: 'stock',
+                    column: columns[1],
+                    operator: 'equals',
+                    value: '10',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    });
+    useSearchInputMock.mockReturnValue({
+      displayValue: '#',
+      showTargetedIndicator: false,
+      operatorSearchTerm: '',
+      handleInputChange: vi.fn(),
+      handleHoverChange: vi.fn(),
+      setBadgeRef: vi.fn(),
+      badgesContainerRef: { current: null },
+      getLazyColumnRef: () => ({ current: null }),
+      getLazyOperatorRef: () => ({ current: null }),
+      getLazyJoinRef: () => ({ current: null }),
+      getLazyBadgeRef: () => ({ current: null }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#( #name #contains aspirin #and #( #stock #equals 10 #) #)##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditColumn as
+          | ((path: number[]) => void)
+          | undefined
+      )?.([0]);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ target: { value: '#' } })
+    );
+
+    act(() => {
+      (
+        capturedColumnSelectorProps.current?.onSelect as
+          | ((column: SearchColumn) => void)
+          | undefined
+      )?.(columns[1]);
+    });
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: expect.stringContaining('#'),
+        }),
+      })
+    );
+
+    act(() => {
+      (
+        capturedOperatorSelectorProps.current?.onSelect as
+          | ((operator: FilterOperator) => void)
+          | undefined
+      )?.(makeOperator('equals'));
+    });
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: expect.stringContaining('#equals'),
+        }),
+      })
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupClearCondition as
+          | ((path: number[]) => void)
+          | undefined
+      )?.([1, 0]);
+    });
+    expect(onChange).toHaveBeenCalled();
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupTokenClear as
+          | ((type: 'groupOpen' | 'groupClose', idx: number) => void)
+          | undefined
+      )?.('groupOpen', 0);
+    });
+    expect(setFilterValueMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupClearGroup as
+          | ((path: number[]) => void)
+          | undefined
+      )?.([]);
+    });
+    expect(clearAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('reconstructs multi-condition keyboard change payloads and confirmation', () => {
+    const onChange = vi.fn();
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: 'aspirin',
+          operator: 'contains',
+          column: columns[0],
+          isExplicitOperator: true,
+          isConfirmed: true,
+          isMultiCondition: true,
+          conditions: [
+            { field: 'name', operator: 'contains', value: 'aspirin' },
+            { field: 'name', operator: 'equals', value: '10' },
+          ],
+          joinOperator: 'AND',
+        },
+      }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#name #contains aspirin #and #equals 10##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    const keyboardArgs = useSearchKeyboardMock.mock.calls[0]?.[0] as
+      | { onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }
+      | undefined;
+
+    keyboardArgs?.onChange?.({
+      target: { value: 'programmatic' },
+    } as React.ChangeEvent<HTMLInputElement>);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: 'programmatic' },
+      })
+    );
+
+    const realInput = document.createElement('input');
+    realInput.value = '250';
+    keyboardArgs?.onChange?.({
+      target: realInput,
+    } as React.ChangeEvent<HTMLInputElement>);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: '#name #contains aspirin #and #equals 250',
+        }),
+      })
+    );
+
+    realInput.value = '500##';
+    keyboardArgs?.onChange?.({
+      target: realInput,
+    } as React.ChangeEvent<HTMLInputElement>);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: '500 #and #equals 10##',
+        }),
+      })
+    );
+
+    realInput.value = '';
+    keyboardArgs?.onChange?.({
+      target: realInput,
+    } as React.ChangeEvent<HTMLInputElement>);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: '#name #contains aspirin #and #',
+        }),
+      })
+    );
+  });
+
+  it('handles global Ctrl+D capture when badge is selected', () => {
+    const onClearBadge = vi.fn();
+
+    render(
+      <EnhancedSearchBar value="asp" onChange={vi.fn()} columns={columns} />
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onBadgeCountChange as
+          | ((count: number) => void)
+          | undefined
+      )?.(1);
+      (
+        capturedSearchBadgeProps.current?.onBadgesChange as
+          | ((badges: Array<Record<string, unknown>>) => void)
+          | undefined
+      )?.([
+        {
+          id: 'condition-0-value',
+          type: 'value',
+          label: 'asp',
+          canEdit: true,
+          onEdit: vi.fn(),
+          canClear: true,
+          onClear: onClearBadge,
+        },
+      ]);
+    });
+
+    const input = screen.getByPlaceholderText('Cari...');
+    fireEvent.keyDown(input, { key: 'ArrowRight', ctrlKey: true });
+    fireEvent.keyDown(document.body, { key: 'd', ctrlKey: true });
+
+    expect(onClearBadge).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles grouped join editing and join-selector apply flow', () => {
+    const onChange = vi.fn();
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        showJoinOperatorSelector: true,
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: 'aspirin',
+          operator: 'contains',
+          column: columns[0],
+          isExplicitOperator: true,
+          isConfirmed: true,
+          filterGroup: {
+            kind: 'group',
+            join: 'AND',
+            nodes: [
+              {
+                kind: 'condition',
+                field: 'name',
+                column: columns[0],
+                operator: 'contains',
+                value: 'aspirin',
+              },
+              {
+                kind: 'condition',
+                field: 'stock',
+                column: columns[1],
+                operator: 'equals',
+                value: '10',
+              },
+            ],
+          },
+        },
+      }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#( #name #contains aspirin #and #stock #equals 10 #)##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditJoin as
+          | ((path: number[], joinIndex: number) => void)
+          | undefined
+      )?.([], 0);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: expect.stringContaining('#contains aspirin'),
+        }),
+      })
+    );
+
+    act(() => {
+      (
+        capturedJoinSelectorProps.current?.onSelect as
+          | ((joinOp: { value: string }) => void)
+          | undefined
+      )?.({ value: 'or' });
+    });
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: expect.stringContaining('#or'),
+        }),
+      })
+    );
+  });
+
+  it('handles grouped inline edit complete with range split and empty clear', () => {
+    const onChange = vi.fn();
+    const clearAll = vi.fn();
+
+    useBadgeHandlersMock.mockReturnValue({
+      clearConditionPart: vi.fn(),
+      clearJoin: vi.fn(),
+      clearAll,
+      editConditionPart: vi.fn(),
+      editJoin: vi.fn(),
+      editValueN: vi.fn(),
+    });
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'stock',
+          value: '10',
+          operator: 'inRange',
+          column: columns[1],
+          isExplicitOperator: true,
+          isConfirmed: true,
+          filterGroup: {
+            kind: 'group',
+            join: 'AND',
+            nodes: [
+              {
+                kind: 'condition',
+                field: 'stock',
+                column: columns[1],
+                operator: 'inRange',
+                value: '10',
+                valueTo: '20',
+              },
+            ],
+          },
+        },
+      }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#( #stock #inRange 10 #to 20 #)##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditStart as
+          | ((
+              path: number[],
+              field: 'value' | 'valueTo',
+              value: string
+            ) => void)
+          | undefined
+      )?.([0], 'value', '10');
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupInlineValueChange as
+          | ((value: string) => void)
+          | undefined
+      )?.('30-40');
+      (
+        capturedSearchBadgeProps.current?.onGroupInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.('30-40');
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: expect.stringContaining('#to 40'),
+        }),
+      })
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditStart as
+          | ((
+              path: number[],
+              field: 'value' | 'valueTo',
+              value: string
+            ) => void)
+          | undefined
+      )?.([0], 'value', '30');
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupInlineValueChange as
+          | ((value: string) => void)
+          | undefined
+      )?.('');
+      (
+        capturedSearchBadgeProps.current?.onGroupInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.('');
+    });
+    expect(clearAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles operator/join selector close flows', () => {
+    const onChange = vi.fn();
+    const onClearSearch = vi.fn();
+
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        showOperatorSelector: true,
+        showJoinOperatorSelector: true,
+        selectedColumn: columns[0],
+      }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#name #contains aspirin #"
+        onChange={onChange}
+        onClearSearch={onClearSearch}
+        columns={columns}
+      />
+    );
+
+    act(() => {
+      (
+        capturedOperatorSelectorProps.current?.onClose as
+          | (() => void)
+          | undefined
+      )?.();
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: expect.stringContaining('#name'),
+        }),
+      })
+    );
+
+    act(() => {
+      (
+        capturedJoinSelectorProps.current?.onClose as (() => void) | undefined
+      )?.();
+    });
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          value: '#name #contains aspirin##',
+        }),
+      })
+    );
+    expect(onClearSearch).not.toHaveBeenCalled();
   });
 });

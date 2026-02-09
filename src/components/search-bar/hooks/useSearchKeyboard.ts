@@ -8,18 +8,18 @@ import {
 } from '../utils/groupPatternUtils';
 import { PatternBuilder } from '../utils/PatternBuilder';
 
-const stripTrailingConfirmation = (input: string): string => {
+export const stripTrailingConfirmation = (input: string): string => {
   const trimmed = input.trimEnd();
   return trimmed.endsWith('##') ? trimmed.slice(0, -2).trimEnd() : trimmed;
 };
 
-const ensureTrailingHash = (input: string): string => {
+export const ensureTrailingHash = (input: string): string => {
   const trimmed = input.trimEnd();
   if (!trimmed) return '#';
   return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
 };
 
-const collapsePatternWhitespace = (input: string): string => {
+export const collapsePatternWhitespace = (input: string): string => {
   return input.replace(/\s{2,}/g, ' ').trimStart();
 };
 
@@ -35,7 +35,7 @@ const collapsePatternWhitespace = (input: string): string => {
  * Confirmation marker `##` is not a badge and is always stripped during deletion
  * to avoid re-applying filters while the user is editing via Delete key.
  */
-const deleteLastBadgeUnit = (input: string): string => {
+export const deleteLastBadgeUnit = (input: string): string => {
   const hasConfirmation = input.trimEnd().endsWith('##');
   const base = stripTrailingConfirmation(input);
   let working = base.trimEnd();
@@ -111,7 +111,7 @@ const deleteLastBadgeUnit = (input: string): string => {
   return finalize(prefix);
 };
 
-const deleteGroupedPartialTail = (input: string): string | null => {
+export const deleteGroupedPartialTail = (input: string): string | null => {
   const hasGroupTokens = input.includes('#(') || input.includes('#)');
   if (!hasGroupTokens) return null;
 

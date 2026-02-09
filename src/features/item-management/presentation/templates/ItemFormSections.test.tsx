@@ -1,7 +1,21 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ItemFormSections } from './ItemFormSections';
+import {
+  appendCacheBust,
+  applyItemCacheUpdates,
+  areImageSlotsEqual,
+  ItemFormSections,
+  normalizeNullableValue,
+  useDebouncedAutosave,
+} from './ItemFormSections';
 
 const useItemFormMock = vi.hoisted(() => vi.fn());
 const useItemModalMock = vi.hoisted(() => vi.fn());
@@ -30,6 +44,10 @@ const removeCachedImageBlobMock = vi.hoisted(() => vi.fn());
 const releaseCachedImageBlobsMock = vi.hoisted(() => vi.fn());
 const extractPathFromUrlMock = vi.hoisted(() => vi.fn());
 const getPublicUrlMock = vi.hoisted(() => vi.fn());
+const queryClientState = vi.hoisted(() => ({ setQueriesData: vi.fn() }));
+const cropperBlobState = vi.hoisted(() => ({
+  value: new Blob(['img'], { type: 'image/jpeg' }) as Blob | null,
+}));
 
 const capturedProps = vi.hoisted(() => ({
   header: null as Record<string, unknown> | null,
@@ -52,7 +70,7 @@ vi.mock('cropperjs', () => ({
     getCroppedCanvas() {
       return {
         toBlob(callback: (blob: Blob | null) => void) {
-          callback(new Blob(['img'], { type: 'image/jpeg' }));
+          callback(cropperBlobState.value);
         },
       };
     }
@@ -330,6 +348,7 @@ const createFormHook = () => ({
   isDirty: vi.fn(() => false),
   handleChange: vi.fn(),
   updateFormData: vi.fn(),
+  setInitialPackageConversions: vi.fn(),
 });
 
 describe('ItemFormSections', () => {
@@ -371,12 +390,13 @@ describe('ItemFormSections', () => {
     extractPathFromUrlMock.mockReset();
     getPublicUrlMock.mockReset();
     toastErrorMock.mockReset();
+    queryClientState.setQueriesData.mockReset();
+    cropperBlobState.value = new Blob(['img'], { type: 'image/jpeg' });
 
-    const queryClient = { setQueriesData: vi.fn() };
     const packageHook = createPackageHook();
     const formHook = createFormHook();
 
-    useQueryClientMock.mockReturnValue(queryClient);
+    useQueryClientMock.mockReturnValue(queryClientState);
     useItemFormMock.mockReturnValue(formHook);
     useItemModalMock.mockReturnValue({
       handleAddNewCategory: vi.fn(),
@@ -649,6 +669,148 @@ describe('ItemFormSections', () => {
     expect(listItemImagesMock).not.toHaveBeenCalled();
   });
 
+  it('runs autosave callbacks and cache writes for required/settings/pricing sections', async () => {
+    vi.useFakeTimers();
+    const onSaveCalls: Array<{
+      initialValue: string;
+      onSave: (value: string) => void;
+    }> = [];
+    useInlineEditorMock.mockImplementation(
+      ({
+        initialValue,
+        onSave,
+      }: {
+        initialValue: string;
+        onSave: (value: string) => void;
+      }) => {
+        onSaveCalls.push({ initialValue, onSave });
+        return {
+          isEditing: false,
+          value: initialValue,
+          startEditing: vi.fn(),
+          stopEditing: vi.fn(),
+          handleChange: vi.fn(),
+          handleKeyDown: vi.fn(() => onSave('15')),
+          setValue: vi.fn(),
+        };
+      }
+    );
+
+    render(<ItemFormSections.BasicInfoRequired itemId="item-1" />);
+    const requiredProps = capturedProps.basicInfoRequired as {
+      onChange: (
+        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => void;
+    };
+    requiredProps.onChange({
+      target: { name: 'name', value: 'Ibuprofen' },
+    } as React.ChangeEvent<HTMLInputElement>);
+
+    render(
+      <ItemFormSections.Settings
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+    const settingsProps = capturedProps.settings as {
+      onMinStockKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+    };
+    settingsProps.onMinStockKeyDown(
+      {} as React.KeyboardEvent<HTMLInputElement>
+    );
+
+    render(
+      <ItemFormSections.Pricing
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+    const pricingProps = capturedProps.pricing as {
+      onSellPriceChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+      onMarginKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+      onLevelPricingActiveChange: (active: boolean) => void;
+    };
+    pricingProps.onSellPriceChange({
+      target: { value: 'Rp 2500' },
+    } as React.ChangeEvent<HTMLInputElement>);
+    pricingProps.onMarginKeyDown({} as React.KeyboardEvent<HTMLInputElement>);
+    pricingProps.onLevelPricingActiveChange(false);
+
+    await act(async () => {
+      vi.advanceTimersByTime(650);
+      await Promise.resolve();
+    });
+
+    expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', {
+      name: 'Ibuprofen',
+    });
+    expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', {
+      sell_price: 2500,
+    });
+    expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', {
+      is_level_pricing_active: false,
+    });
+    expect(queryClientState.setQueriesData).toHaveBeenCalled();
+    expect(onSaveCalls).toHaveLength(2);
+
+    vi.useRealTimers();
+  });
+
+  it('handles package conversion validation failure and persist error flow', async () => {
+    const validateAndAddConversion = vi.fn(() => ({
+      success: false,
+      error: 'invalid conversion',
+    }));
+    useConversionLogicMock.mockReturnValue({ validateAndAddConversion });
+
+    const packageHook = createPackageHook();
+    useItemPriceMock.mockReturnValue({
+      packageConversionHook: packageHook,
+      displayBasePrice: 'Rp 1000',
+      displaySellPrice: 'Rp 1500',
+    });
+
+    const formHook = createFormHook();
+    useItemFormMock.mockReturnValue(formHook);
+
+    const { rerender } = render(
+      <ItemFormSections.PackageConversion
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    const packageProps = capturedProps.packageConversion as {
+      onAddConversion: () => void;
+      onRemoveConversion: (id: string) => void;
+    };
+    packageProps.onAddConversion();
+    expect(validateAndAddConversion).toHaveBeenCalled();
+    expect(updateItemFieldsMock).not.toHaveBeenCalledWith('item-1', {
+      package_conversions: expect.any(Array),
+    });
+
+    updateItemFieldsMock.mockRejectedValueOnce(new Error('persist failed'));
+    packageProps.onRemoveConversion('conv-1');
+    packageHook.conversions = [...packageHook.conversions];
+    rerender(
+      <ItemFormSections.PackageConversion
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', {
+        package_conversions: expect.any(Array),
+      });
+    });
+  });
+
   it('loads and updates persisted item images when optional section is in edit mode', async () => {
     render(
       <ItemFormSections.BasicInfoOptional
@@ -672,5 +834,199 @@ describe('ItemFormSections', () => {
     await waitFor(() => {
       expect(removeCachedImageBlobMock).toHaveBeenCalled();
     });
+  });
+
+  it('handles image loading failure, broken image cleanup, and preview toggle', async () => {
+    listItemImagesMock.mockResolvedValueOnce({
+      data: null,
+      error: new Error('storage failed'),
+    });
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('Gagal memuat gambar item.');
+    });
+
+    const formHook = createFormHook();
+    formHook.formData.image_urls = [
+      'https://cdn.pharmasys.test/items/item-1/slot-0?old=1',
+      '',
+      '',
+      '',
+    ];
+    useItemFormMock.mockReturnValue(formHook);
+    getCachedImageBlobUrlMock.mockResolvedValueOnce('blob://cached-image');
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    const image = await screen.findByAltText('Item image 1');
+    fireEvent.click(image);
+    expect(screen.getByAltText('Preview')).toBeInTheDocument();
+    fireEvent.click(document.body.querySelector('.fixed.inset-0.z-50')!);
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+
+    fireEvent.error(image);
+    await waitFor(() => {
+      expect(updateItemImagesMock).toHaveBeenCalled();
+    });
+  });
+
+  it('opens cropper for non-square image and surfaces crop confirm failure', async () => {
+    Object.defineProperty(HTMLImageElement.prototype, 'complete', {
+      configurable: true,
+      get: () => true,
+    });
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({
+        width: 120,
+        height: 80,
+        close: vi.fn(),
+      }))
+    );
+    cropperBlobState.value = null;
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    fireEvent.click(screen.getByText('upload-item-image-0'));
+    expect(await screen.findByText('Crop gambar (1:1)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Simpan'));
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('Gagal memproses gambar.');
+    });
+
+    fireEvent.click(screen.getByText('Batal'));
+    expect(screen.queryByText('Crop gambar (1:1)')).not.toBeInTheDocument();
+  });
+
+  it('covers item form helper utilities', () => {
+    expect(
+      areImageSlotsEqual([{ url: 'a', path: 'pa' }], [{ url: 'a', path: 'pa' }])
+    ).toBe(true);
+    expect(
+      areImageSlotsEqual([{ url: 'a', path: 'pa' }], [{ url: 'a', path: 'pb' }])
+    ).toBe(false);
+
+    const queryClient = { setQueriesData: vi.fn() };
+    applyItemCacheUpdates(queryClient as never, 'item-1', {
+      name: 'Updated',
+      non_existing: 'skip',
+    });
+    expect(queryClient.setQueriesData).toHaveBeenCalledTimes(2);
+
+    const listUpdater = queryClient.setQueriesData.mock.calls[0][1] as (
+      data: unknown
+    ) => unknown;
+    expect(
+      listUpdater([
+        { id: 'item-1', name: 'Old', untouched: true },
+        { id: 'item-2', name: 'Other' },
+      ])
+    ).toEqual([
+      { id: 'item-1', name: 'Updated', untouched: true },
+      { id: 'item-2', name: 'Other' },
+    ]);
+
+    const detailUpdater = queryClient.setQueriesData.mock.calls[1][1] as (
+      data: unknown
+    ) => unknown;
+    expect(detailUpdater({ id: 'item-1', name: 'Old' })).toEqual({
+      id: 'item-1',
+      name: 'Updated',
+    });
+    expect(detailUpdater({ id: 'item-2', name: 'No change' })).toEqual({
+      id: 'item-2',
+      name: 'No change',
+    });
+
+    expect(normalizeNullableValue('')).toBeNull();
+    expect(normalizeNullableValue('abc')).toBe('abc');
+    expect(appendCacheBust('https://cdn.dev/file.jpg', 1)).toBe(
+      'https://cdn.dev/file.jpg?t=1'
+    );
+    expect(appendCacheBust('https://cdn.dev/file.jpg?x=1', 'v2')).toBe(
+      'https://cdn.dev/file.jpg?x=1&t=v2'
+    );
+  });
+
+  it('handles debounced autosave success, replacement, guard, and error', async () => {
+    vi.useFakeTimers();
+    const onSaved = vi.fn();
+
+    const { result, unmount } = renderHook(() =>
+      useDebouncedAutosave({
+        itemId: 'item-1',
+        isEditMode: true,
+        isViewingOldVersion: false,
+        delayMs: 120,
+        onSaved,
+      })
+    );
+
+    act(() => {
+      result.current('name', 'A');
+      result.current('name', 'B');
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(120);
+      await Promise.resolve();
+    });
+    expect(updateItemFieldsMock).toHaveBeenCalledWith('item-1', { name: 'B' });
+    expect(onSaved).toHaveBeenCalledWith({ name: 'B' });
+
+    updateItemFieldsMock.mockResolvedValueOnce({
+      error: new Error('save failed'),
+    });
+    act(() => {
+      result.current('code', 'ITEM-2');
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(120);
+      await Promise.resolve();
+    });
+    expect(toastErrorMock).toHaveBeenCalledWith('Gagal menyimpan perubahan.');
+
+    const callsBeforeGuard = updateItemFieldsMock.mock.calls.length;
+    const { result: guardedResult } = renderHook(() =>
+      useDebouncedAutosave({
+        itemId: 'item-1',
+        isEditMode: false,
+        isViewingOldVersion: false,
+      })
+    );
+    act(() => {
+      guardedResult.current('name', 'guarded');
+      vi.advanceTimersByTime(600);
+    });
+    expect(updateItemFieldsMock.mock.calls.length).toBe(callsBeforeGuard);
+
+    act(() => {
+      result.current('description', 'pending');
+    });
+    unmount();
+    act(() => {
+      vi.advanceTimersByTime(120);
+    });
+    expect(updateItemFieldsMock.mock.calls.length).toBe(callsBeforeGuard);
+
+    vi.useRealTimers();
   });
 });

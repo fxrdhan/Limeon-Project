@@ -990,4 +990,412 @@ describe('useSearchInput', () => {
     });
     expect(buildColumnValueMock).toHaveBeenCalledWith('name', 'plain');
   });
+
+  it('reuses lazy column/badge refs from cache and covers displayValue edge branches', () => {
+    const onChange = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ value, searchMode }) =>
+        useSearchInput({
+          value,
+          searchMode,
+          onChange,
+        }),
+      {
+        initialProps: {
+          value: '#name #contains a #and #stock #equals',
+          searchMode: baseSearchMode({
+            activeConditionIndex: 2,
+            partialConditions: [
+              {
+                field: 'name',
+                operator: 'contains',
+                value: 'a',
+                column: nameColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'equals',
+                value: '10',
+                column: stockColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'equals',
+                column: stockColumn,
+              },
+            ],
+          }),
+        },
+      }
+    );
+
+    expect(result.current.displayValue).toBe('');
+
+    const lazyColumnA = result.current.getLazyColumnRef(0);
+    const lazyColumnB = result.current.getLazyColumnRef(0);
+    const lazyBadgeA = result.current.getLazyBadgeRef('condition-0-column');
+    const lazyBadgeB = result.current.getLazyBadgeRef('condition-0-column');
+
+    expect(lazyColumnA).toBe(lazyColumnB);
+    expect(lazyBadgeA).toBe(lazyBadgeB);
+
+    rerender({
+      value: '#( #name #contains a #)##',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          filterGroup: {
+            kind: 'group',
+            join: 'AND',
+            nodes: [
+              {
+                kind: 'condition',
+                field: 'name',
+                column: nameColumn,
+                operator: 'contains',
+                value: 'a',
+              },
+            ],
+          },
+        },
+      }),
+    });
+    expect(result.current.displayValue).toBe('');
+
+    rerender({
+      value: '#name #contains a #and #stock #equals current',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'equals',
+            value: 'current',
+            column: stockColumn,
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+    expect(result.current.displayValue).toBe('current');
+
+    rerender({
+      value: '#stock #inRange 10 #to 20##',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'stock',
+          value: '10',
+          valueTo: '20',
+          operator: 'inRange',
+          column: stockColumn,
+          isExplicitOperator: true,
+          isConfirmed: true,
+        },
+      }),
+    });
+    expect(result.current.displayValue).toBe('');
+  });
+
+  it('covers confirmed multi-condition rewrite loop and plain filter build fallback', () => {
+    const onChange = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ value, searchMode }) =>
+        useSearchInput({
+          value,
+          searchMode,
+          onChange,
+        }),
+      {
+        initialProps: {
+          value:
+            '#name #contains a #and #stock #equals 10 #or #name #equals b #and #code #equals c##',
+          searchMode: baseSearchMode({
+            isFilterMode: true,
+            filterSearch: {
+              field: 'name',
+              value: 'a',
+              operator: 'contains',
+              column: nameColumn,
+              isExplicitOperator: true,
+              isConfirmed: true,
+              isMultiCondition: true,
+              conditions: [
+                {
+                  field: 'name',
+                  column: nameColumn,
+                  operator: 'contains',
+                  value: 'a',
+                },
+                {
+                  field: 'stock',
+                  column: stockColumn,
+                  operator: 'equals',
+                  value: '10',
+                },
+                {
+                  field: 'name',
+                  column: nameColumn,
+                  operator: 'equals',
+                  value: 'b',
+                },
+                {
+                  field: 'code',
+                  column: {
+                    field: 'code',
+                    headerName: 'Code',
+                    searchable: true,
+                    type: 'text',
+                  },
+                  operator: 'equals',
+                  value: 'c',
+                },
+              ],
+              joins: ['AND', 'OR', 'AND'],
+            },
+          }),
+        },
+      }
+    );
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: 'updated' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: {
+          value:
+            '#name #contains a #and #stock #equals 10 #or #equals b #and #code #equals updated',
+        },
+      })
+    );
+
+    rerender({
+      value: '#name #contains old',
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: 'old',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+          isConfirmed: false,
+        },
+      }),
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: 'new' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(buildFilterValueMock).toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains new' },
+      })
+    );
+  });
+
+  it('covers incomplete multi-condition value editing branches with #to and fallbacks', () => {
+    const onChange = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ value, searchMode }) =>
+        useSearchInput({
+          value,
+          searchMode,
+          onChange,
+        }),
+      {
+        initialProps: {
+          value: '#name #contains a #and #stock #equals old',
+          searchMode: baseSearchMode({
+            partialJoin: 'AND',
+            selectedColumn: stockColumn,
+            activeConditionIndex: 1,
+            partialConditions: [
+              {
+                field: 'name',
+                operator: 'contains',
+                value: 'a',
+                column: nameColumn,
+              },
+              {
+                field: 'stock',
+                operator: 'equals',
+                value: 'old',
+                column: stockColumn,
+              },
+            ],
+            filterSearch: {
+              field: 'name',
+              value: 'a',
+              operator: 'contains',
+              column: nameColumn,
+              isExplicitOperator: true,
+            },
+          }),
+        },
+      }
+    );
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains a #and #stock #equals' },
+      })
+    );
+
+    rerender({
+      value: '#name #contains a #and #stock #inRange 10 #to',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'inRange',
+            value: '10',
+            waitingForValueTo: true,
+            column: stockColumn,
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '20' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains a #and #stock #inRange 10 #to 20' },
+      })
+    );
+
+    rerender({
+      value: '#name #contains a #and #stock #inRange',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'inRange',
+            value: '10',
+            waitingForValueTo: true,
+            column: stockColumn,
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '20' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains a #and #stock #inRange 10 #to 20' },
+      })
+    );
+
+    rerender({
+      value: '#name #contains a #and #stock #inRange 10',
+      searchMode: baseSearchMode({
+        partialJoin: 'AND',
+        selectedColumn: stockColumn,
+        activeConditionIndex: 1,
+        partialConditions: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: 'a',
+            column: nameColumn,
+          },
+          {
+            field: 'stock',
+            operator: 'inRange',
+            value: '10',
+            valueTo: '30',
+            column: stockColumn,
+          },
+        ],
+        filterSearch: {
+          field: 'name',
+          value: 'a',
+          operator: 'contains',
+          column: nameColumn,
+          isExplicitOperator: true,
+        },
+      }),
+    });
+    act(() => {
+      result.current.handleInputChange({
+        target: { value: '40' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { value: '#name #contains a #and #stock #inRange 10 #to 40' },
+      })
+    );
+  });
 });

@@ -1,4 +1,4 @@
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ItemMasterPage from './index';
@@ -109,7 +109,22 @@ vi.mock(
 vi.mock('@/components/SearchToolbar', () => ({
   default: (props: Record<string, unknown>) => {
     captured.searchToolbarProps = props;
-    return <div data-testid="search-toolbar" />;
+    const searchInputRef = props.searchInputRef as
+      | React.RefObject<HTMLInputElement>
+      | undefined;
+    return (
+      <div data-testid="search-toolbar">
+        <input
+          data-testid="toolbar-search-input"
+          ref={node => {
+            if (!searchInputRef) return;
+            (
+              searchInputRef as React.MutableRefObject<HTMLInputElement | null>
+            ).current = node;
+          }}
+        />
+      </div>
+    );
   },
 }));
 
@@ -784,5 +799,580 @@ describe('ItemMaster page', () => {
       await onConfirm();
     });
     expect(doctorDeleteSpy).toHaveBeenCalledWith('doc-1');
+  });
+
+  it('evaluates customer/patient/doctor column valueGetters fallback branches', () => {
+    locationMock.mockReturnValue({ pathname: '/master-data/customers' });
+    render(<ItemMasterPage />);
+    const customerColumns = (captured.entityGridProps?.entityColumnDefs ||
+      []) as Array<Record<string, unknown>>;
+    const customerLevelGetter = customerColumns.find(
+      col => col.field === 'customer_level_id'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const customerPhoneGetter = customerColumns.find(
+      col => col.field === 'phone'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const customerEmailGetter = customerColumns.find(
+      col => col.field === 'email'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const customerAddressGetter = customerColumns.find(
+      col => col.field === 'address'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+
+    expect(
+      customerLevelGetter?.({ data: { customer_level_id: 'lvl-1' } })
+    ).toBe('Gold');
+    expect(
+      customerLevelGetter?.({ data: { customer_level_id: 'missing' } })
+    ).toBe('-');
+    expect(customerPhoneGetter?.({ data: { phone: '' } })).toBe('-');
+    expect(customerEmailGetter?.({ data: { email: '' } })).toBe('-');
+    expect(customerAddressGetter?.({ data: { address: '' } })).toBe('-');
+
+    locationMock.mockReturnValue({ pathname: '/master-data/patients' });
+    render(<ItemMasterPage />);
+    const patientColumns = (captured.entityGridProps?.entityColumnDefs ||
+      []) as Array<Record<string, unknown>>;
+    const birthDateGetter = patientColumns.find(
+      col => col.field === 'birth_date'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const patientPhoneGetter = patientColumns.find(col => col.field === 'phone')
+      ?.valueGetter as
+      | ((params: Record<string, unknown>) => string)
+      | undefined;
+    const patientEmailGetter = patientColumns.find(col => col.field === 'email')
+      ?.valueGetter as
+      | ((params: Record<string, unknown>) => string)
+      | undefined;
+
+    const expectedDate = new Date('2020-01-01').toLocaleDateString('id-ID');
+    expect(birthDateGetter?.({ data: { birth_date: '2020-01-01' } })).toBe(
+      expectedDate
+    );
+    expect(birthDateGetter?.({ data: { birth_date: null } })).toBe('-');
+    expect(patientPhoneGetter?.({ data: { phone: '' } })).toBe('-');
+    expect(patientEmailGetter?.({ data: { email: '' } })).toBe('-');
+
+    locationMock.mockReturnValue({ pathname: '/master-data/doctors' });
+    render(<ItemMasterPage />);
+    const doctorColumns = (captured.entityGridProps?.entityColumnDefs ||
+      []) as Array<Record<string, unknown>>;
+    const genderGetter = doctorColumns.find(col => col.field === 'gender')
+      ?.valueGetter as
+      | ((params: Record<string, unknown>) => string)
+      | undefined;
+    const specializationGetter = doctorColumns.find(
+      col => col.field === 'specialization'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const licenseGetter = doctorColumns.find(
+      col => col.field === 'license_number'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const expGetter = doctorColumns.find(
+      col => col.field === 'experience_years'
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const doctorPhoneGetter = doctorColumns.find(col => col.field === 'phone')
+      ?.valueGetter as
+      | ((params: Record<string, unknown>) => string)
+      | undefined;
+    const doctorEmailGetter = doctorColumns.find(col => col.field === 'email')
+      ?.valueGetter as
+      | ((params: Record<string, unknown>) => string)
+      | undefined;
+
+    expect(genderGetter?.({ data: { gender: 'L' } })).toBe('Laki-laki');
+    expect(genderGetter?.({ data: { gender: 'P' } })).toBe('Perempuan');
+    expect(genderGetter?.({ data: { gender: 'X' } })).toBe('X');
+    expect(specializationGetter?.({ data: { specialization: '' } })).toBe('-');
+    expect(licenseGetter?.({ data: { license_number: '' } })).toBe('-');
+    expect(expGetter?.({ data: { experience_years: 7 } })).toBe('7 tahun');
+    expect(expGetter?.({ data: { experience_years: 0 } })).toBe('-');
+    expect(doctorPhoneGetter?.({ data: { phone: '' } })).toBe('-');
+    expect(doctorEmailGetter?.({ data: { email: '' } })).toBe('-');
+  });
+
+  it('builds entity columnDefs with nci/address branches and handles item modal close timeout', () => {
+    useEntityManagerMock.mockReturnValue({
+      search: '',
+      itemsPerPage: 10,
+      entityConfigs: {
+        categories: {
+          entityName: 'Kategori',
+          nameColumnHeader: 'Nama',
+          searchPlaceholder: 'Cari kategori',
+          hasNciCode: true,
+          hasAddress: true,
+          noDataMessage: 'Tidak ada',
+          searchNoDataMessage: 'Tidak ketemu',
+        },
+      },
+      handleSearch: vi.fn(),
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal: vi.fn(),
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingEntity: null,
+    });
+
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+    render(<ItemMasterPage />);
+
+    const entityColumns = (captured.entityGridProps?.entityColumnDefs ||
+      []) as Array<Record<string, unknown>>;
+    const codeGetter = entityColumns.find(col =>
+      String(col.field).includes('.code')
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const nameGetter = entityColumns.find(col =>
+      String(col.field).includes('.name')
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const nciGetter = entityColumns.find(col =>
+      String(col.field).includes('.nci_code')
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+    const addressGetter = entityColumns.find(col =>
+      String(col.field).includes('.address')
+    )?.valueGetter as ((params: Record<string, unknown>) => string) | undefined;
+
+    expect(codeGetter?.({ data: { code: '' } })).toBe('-');
+    expect(nameGetter?.({ data: { name: '' } })).toBe('-');
+    expect(nciGetter?.({ data: { nci_code: '' } })).toBe('-');
+    expect(addressGetter?.({ data: { address: '' } })).toBe('-');
+
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+    act(() => {
+      (captured.searchToolbarProps?.onAdd as (() => void) | undefined)?.();
+    });
+    expect(captured.itemModalProps?.isOpen).toBe(true);
+
+    act(() => {
+      (captured.itemModalProps?.onClose as (() => void) | undefined)?.();
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(captured.itemModalProps?.isOpen).toBe(false);
+    expect(captured.itemModalProps?.itemId).toBeUndefined();
+    expect(captured.itemModalProps?.initialItemData).toBeUndefined();
+  });
+
+  it('restores derived search pattern and keeps search input focused from keyboard/pointer flows', () => {
+    locationMock.mockReturnValue({ pathname: '/master-data/customers' });
+    sessionStorage.setItem(
+      'grid_state_customers',
+      JSON.stringify({ advancedFilterModel: { kind: 'mock' } })
+    );
+
+    render(<ItemMasterPage />);
+
+    const customerCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(
+        call =>
+          call.onSearch === useMasterDataManagementMock('customers').setSearch
+      );
+    expect(customerCall).toBeTruthy();
+    expect(deriveSearchPatternFromGridStateMock).toHaveBeenCalled();
+
+    const input = screen.getByTestId('toolbar-search-input');
+    (document.body as HTMLElement).focus();
+
+    fireEvent.keyDown(document.body, { key: 'a' });
+    expect(input).toHaveFocus();
+
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    document.body.appendChild(dialog);
+    input.blur();
+    fireEvent.keyDown(document.body, { key: 'b' });
+    expect(input).not.toHaveFocus();
+    dialog.remove();
+
+    (document.body as HTMLElement).focus();
+    fireEvent.pointerDown(document.body, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(input).toHaveFocus();
+  });
+
+  it('closes open auxiliary modals during tab switch and supports toolbar tab shortcuts', () => {
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      isAddModalOpen: true,
+      isEditModalOpen: true,
+      setIsAddModalOpen: vi.fn(),
+      setIsEditModalOpen: vi.fn(),
+    };
+    const patientState = {
+      ...createMasterDataHookState('patient'),
+      isAddModalOpen: true,
+      isEditModalOpen: true,
+      setIsAddModalOpen: vi.fn(),
+      setIsEditModalOpen: vi.fn(),
+    };
+    const doctorState = {
+      ...createMasterDataHookState('doctor'),
+      isAddModalOpen: true,
+      isEditModalOpen: true,
+      setIsAddModalOpen: vi.fn(),
+      setIsEditModalOpen: vi.fn(),
+    };
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') return customerState;
+      if (type === 'patients') return patientState;
+      if (type === 'doctors') return doctorState;
+      return createMasterDataHookState(type);
+    });
+
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+
+    act(() => {
+      (captured.searchToolbarProps?.onTabNext as (() => void) | undefined)?.();
+    });
+    expect(navigateMock).toHaveBeenCalledWith(
+      '/master-data/item-master/categories'
+    );
+    expect(customerState.setIsAddModalOpen).toHaveBeenCalledWith(false);
+    expect(customerState.setIsEditModalOpen).toHaveBeenCalledWith(false);
+    expect(patientState.setIsAddModalOpen).toHaveBeenCalledWith(false);
+    expect(patientState.setIsEditModalOpen).toHaveBeenCalledWith(false);
+    expect(doctorState.setIsAddModalOpen).toHaveBeenCalledWith(false);
+    expect(doctorState.setIsEditModalOpen).toHaveBeenCalledWith(false);
+
+    act(() => {
+      (
+        captured.searchToolbarProps?.onTabPrevious as (() => void) | undefined
+      )?.();
+      vi.advanceTimersByTime(250);
+    });
+    expect(navigateMock).toHaveBeenCalled();
+  });
+
+  it('routes add actions and keydown handlers for customer/patient/doctor tabs', () => {
+    const customerKeydown = vi.fn();
+    const patientKeydown = vi.fn();
+    const doctorKeydown = vi.fn();
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      handleKeyDown: customerKeydown,
+      setIsAddModalOpen: vi.fn(),
+    };
+    const patientState = {
+      ...createMasterDataHookState('patient'),
+      handleKeyDown: patientKeydown,
+      setIsAddModalOpen: vi.fn(),
+    };
+    const doctorState = {
+      ...createMasterDataHookState('doctor'),
+      handleKeyDown: doctorKeydown,
+      setIsAddModalOpen: vi.fn(),
+    };
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') {
+        return customerState;
+      }
+      if (type === 'patients') {
+        return patientState;
+      }
+      if (type === 'doctors') {
+        return doctorState;
+      }
+      return createMasterDataHookState(type);
+    });
+
+    locationMock.mockReturnValue({ pathname: '/master-data/customers' });
+    const customerView = render(<ItemMasterPage />);
+    act(() => {
+      (captured.searchToolbarProps?.onAdd as (() => void) | undefined)?.();
+      (
+        captured.searchToolbarProps?.onKeyDown as
+          | ((e: KeyboardEvent) => void)
+          | undefined
+      )?.({} as unknown as KeyboardEvent);
+    });
+    expect(customerKeydown).toHaveBeenCalled();
+    expect(customerState.setIsAddModalOpen).toHaveBeenCalledWith(true);
+
+    customerView.unmount();
+    locationMock.mockReturnValue({ pathname: '/master-data/patients' });
+    const patientView = render(<ItemMasterPage />);
+    act(() => {
+      (captured.searchToolbarProps?.onAdd as (() => void) | undefined)?.();
+      (
+        captured.searchToolbarProps?.onKeyDown as
+          | ((e: KeyboardEvent) => void)
+          | undefined
+      )?.({} as unknown as KeyboardEvent);
+    });
+    expect(patientKeydown).toHaveBeenCalled();
+    expect(patientState.setIsAddModalOpen).toHaveBeenCalledWith(true);
+
+    patientView.unmount();
+    locationMock.mockReturnValue({ pathname: '/master-data/doctors' });
+    render(<ItemMasterPage />);
+    act(() => {
+      (captured.searchToolbarProps?.onAdd as (() => void) | undefined)?.();
+      (
+        captured.searchToolbarProps?.onKeyDown as
+          | ((e: KeyboardEvent) => void)
+          | undefined
+      )?.({} as unknown as KeyboardEvent);
+    });
+    expect(doctorKeydown).toHaveBeenCalled();
+    expect(doctorState.setIsAddModalOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('falls back to items tab and logs warning when tab persistence fails', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const originalSetItem = sessionStorage.setItem.bind(sessionStorage);
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation((key: string, value: string) => {
+        if (key === 'item_master_last_tab') {
+          throw new Error('quota');
+        }
+        return originalSetItem(key, value);
+      });
+
+    locationMock.mockReturnValue({ pathname: '/master-data/item-master' });
+    render(<ItemMasterPage />);
+
+    expect(navigateMock).toHaveBeenCalledWith(
+      '/master-data/item-master/items',
+      {
+        replace: true,
+      }
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to save last tab to session storage:',
+      expect.any(Error)
+    );
+
+    setItemSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
+
+  it('handles item callbacks for search clear/filter/grid-ready and row edit flows', () => {
+    const setSearch = vi.fn();
+    useItemsManagementMock.mockReturnValue({
+      data: [
+        { id: 'item-1', name: 'Amoxicillin' },
+        { id: 'item-2', name: 'Paracetamol' },
+      ],
+      allData: [
+        { id: 'item-1', name: 'Amoxicillin' },
+        { id: 'item-2', name: 'Paracetamol' },
+      ],
+      setSearch,
+      itemsPerPage: 25,
+      isLoading: false,
+      isError: false,
+      queryError: null,
+    });
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+
+    render(<ItemMasterPage />);
+
+    const gridApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => []),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(gridApi);
+    });
+
+    const reversedItemCallIndex = [...unifiedSearchCalls]
+      .reverse()
+      .findIndex(
+        call =>
+          (call.columns as Array<{ field?: string }> | undefined)?.[0]
+            ?.field === 'items.name'
+      );
+    const itemCallIndex =
+      reversedItemCallIndex === -1
+        ? -1
+        : unifiedSearchCalls.length - 1 - reversedItemCallIndex;
+    const itemCall = unifiedSearchCalls[itemCallIndex] as
+      | {
+          onSearch?: (q: string) => void;
+          onClear?: () => void;
+          onFilterSearch?: (filter: Record<string, unknown> | null) => void;
+        }
+      | undefined;
+    const itemReturn = unifiedSearchReturns[itemCallIndex] as
+      | { onGridReady?: (params: unknown) => void }
+      | undefined;
+
+    act(() => {
+      itemCall?.onSearch?.('para');
+      itemCall?.onClear?.();
+    });
+    expect(setSearch).toHaveBeenCalledWith('para');
+    expect(setSearch).toHaveBeenCalledWith('');
+
+    const gridParams = { api: 'mock-grid' };
+    act(() => {
+      (
+        captured.entityGridProps?.onGridReady as
+          | ((params: unknown) => void)
+          | undefined
+      )?.(gridParams);
+    });
+    expect(itemReturn?.onGridReady).toHaveBeenCalledWith(gridParams);
+
+    const confirmed = {
+      field: 'items.name',
+      operator: 'contains',
+      value: 'amo',
+      isConfirmed: true,
+      isExplicitOperator: true,
+    };
+    act(() => {
+      itemCall?.onFilterSearch?.(confirmed);
+    });
+    expect(gridApi.setAdvancedFilterModel).toHaveBeenCalled();
+    expect(sessionStorage.getItem('item_master_search_items')).toBe(
+      '#name #contains aspirin##'
+    );
+
+    act(() => {
+      itemCall?.onFilterSearch?.(null);
+    });
+    expect(sessionStorage.getItem('item_master_search_items')).toBeNull();
+
+    act(() => {
+      (
+        captured.entityGridProps?.onRowClick as
+          | ((row: Record<string, unknown>) => void)
+          | undefined
+      )?.({ id: 'item-2', name: 'Paracetamol' });
+    });
+    expect(captured.itemModalProps?.itemId).toBe('item-2');
+
+    act(() => {
+      (
+        captured.searchToolbarProps?.onItemSelect as
+          | ((item: { id: string }) => void)
+          | undefined
+      )?.({ id: 'missing' });
+    });
+    expect(captured.itemModalProps?.itemId).toBeUndefined();
+  });
+
+  it('sorts supplier columns/data using visible columns and handles visibility update errors', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    useSupplierTabMock.mockReturnValue({
+      suppliersQuery: { isLoading: false, isError: false, error: null },
+      supplierMutations: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+      supplierFields: [{ key: 'name', label: 'Nama Supplier' }],
+      supplierColumnDefs: [{ field: 'suppliers.name' }],
+      suppliersData: [
+        { id: 'sup-1', name: 'Alpha Med', email: 'a@example.dev' },
+        { id: 'sup-2', name: 'Beta Pharma', phone: '08111' },
+        { id: 'sup-3', name: 'Medline', address: 'Alpha Street' },
+      ],
+      isAddSupplierModalOpen: false,
+      isEditSupplierModalOpen: false,
+      editingSupplier: null,
+      openAddSupplierModal: vi.fn(),
+      closeAddSupplierModal: vi.fn(),
+      openEditSupplierModal: vi.fn(),
+      closeEditSupplierModal: vi.fn(),
+    });
+    useUnifiedSearchMock.mockImplementation(
+      (options: Record<string, unknown>) => {
+        unifiedSearchCalls.push(options);
+        const ret = {
+          search: options.searchMode === 'client' ? 'alpha' : '',
+          setSearch: vi.fn(),
+          onGridReady: vi.fn(),
+          isExternalFilterPresent: vi.fn(() => false),
+          doesExternalFilterPass: vi.fn(() => true),
+          searchBarProps: { test: 'ok' },
+          clearSearchUIOnly: vi.fn(),
+        };
+        unifiedSearchReturns.push(ret);
+        return ret;
+      }
+    );
+    locationMock.mockReturnValue({ pathname: '/master-data/suppliers' });
+
+    render(<ItemMasterPage />);
+
+    const throwingApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => {
+        throw new Error('boom');
+      }),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(throwingApi);
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Failed to update visible columns:',
+      expect.any(Error)
+    );
+
+    const orderedApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => [
+        { getColId: () => 'suppliers.email' },
+        { getColId: () => 'suppliers.name' },
+      ]),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(orderedApi);
+      vi.runAllTimers();
+    });
+
+    const latestSupplierCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.searchMode === 'client');
+    const supplierFields = (
+      latestSupplierCall?.columns as Array<{ field: string }> | undefined
+    )?.map(col => col.field);
+    expect(supplierFields?.[0]).toBe('suppliers.email');
+    expect(supplierFields?.[1]).toBe('suppliers.name');
+
+    const suppliers = (captured.entityGridProps?.suppliersData || []) as Array<{
+      name: string;
+    }>;
+    expect(suppliers[0]?.name).toBe('Alpha Med');
+
+    errorSpy.mockRestore();
   });
 });

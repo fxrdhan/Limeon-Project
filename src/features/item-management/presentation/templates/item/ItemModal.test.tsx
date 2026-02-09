@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ItemModal from './ItemModal';
@@ -90,6 +96,9 @@ vi.mock('../ItemFormSections', () => ({
         <button type="button" onClick={() => onExpand?.()}>
           expand-optional
         </button>
+        <div data-section-content>
+          <button type="button">optional-focusable</button>
+        </div>
       </div>
     ),
     Settings: ({
@@ -109,6 +118,9 @@ vi.mock('../ItemFormSections', () => ({
         <button type="button" onClick={() => onRequestNextSection?.()}>
           next-pricing
         </button>
+        <div data-section-content>
+          <button type="button">settings-focusable</button>
+        </div>
       </div>
     ),
     Pricing: ({
@@ -131,6 +143,10 @@ vi.mock('../ItemFormSections', () => ({
         <button type="button" onClick={() => onLevelPricingToggle?.(false)}>
           level-off
         </button>
+        <div data-section-content>
+          <input name="base_price" aria-label="base-price-input" />
+          <button type="button">pricing-focusable</button>
+        </div>
       </div>
     ),
     PackageConversion: ({
@@ -168,8 +184,7 @@ vi.mock('../ItemModalTemplate', () => ({
       rightColumnProps,
     };
     return (
-      <div data-testid="item-modal-template">
-        <div data-testid="right-column" {...rightColumnProps} />
+      <div data-testid="item-modal-template" role="dialog" aria-modal="true">
         <button type="button" onClick={() => onBackdropClick?.()}>
           backdrop
         </button>
@@ -199,10 +214,13 @@ vi.mock('../ItemModalTemplate', () => ({
         ) : null}
         {children.header}
         {children.basicInfoRequired}
-        {children.basicInfoOptional}
-        {children.settingsForm}
-        {children.pricingForm}
-        {children.packageConversionManager}
+        <div data-testid="right-column" {...rightColumnProps}>
+          <div data-testid="stack-ignore" data-stack-ignore="true" />
+          {children.basicInfoOptional}
+          {children.settingsForm}
+          {children.pricingForm}
+          {children.packageConversionManager}
+        </div>
         {children.modals}
       </div>
     );
@@ -411,6 +429,82 @@ describe('ItemModal template/item', () => {
     expect(setIsClosing).toHaveBeenCalledWith(true);
   });
 
+  it('handles provider ui/modal actions and smart-update parsing variants', () => {
+    const onClose = vi.fn();
+    const setIsClosing = vi.fn();
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={onClose}
+        itemId="item-1"
+        isClosing={false}
+        setIsClosing={setIsClosing}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    const providerValue = captured.providerValue as {
+      uiActions: {
+        handleVersionSelect?: (
+          versionNumber: number,
+          entityData: Record<string, unknown>
+        ) => void;
+        handleClearVersionView: () => void;
+        handleBackdropClick: () => void;
+        handleClose: () => void;
+      };
+      modalActions: {
+        closeModalAndClearSearch: (setter: (open: boolean) => void) => void;
+      };
+    };
+    const handlers = useAddItemPageHandlersMock();
+
+    providerValue.uiActions.handleVersionSelect?.(5, { name: 'Versi Lama' });
+    expect(handlers.updateFormData).toHaveBeenCalledWith({
+      name: 'Versi Lama',
+    });
+    providerValue.uiActions.handleClearVersionView();
+    providerValue.uiActions.handleBackdropClick();
+    providerValue.uiActions.handleClose();
+    expect(setIsClosing).toHaveBeenCalledWith(true);
+
+    const setter = vi.fn();
+    providerValue.modalActions.closeModalAndClearSearch(setter);
+    expect(handlers.closeModalAndClearSearch).toHaveBeenCalledWith(setter);
+
+    const realtimeArgs = captured.realtimeArgs as {
+      onSmartUpdate: (updates: Record<string, unknown>) => void;
+    };
+    realtimeArgs.onSmartUpdate({
+      package_conversions: [
+        {
+          id: '',
+          to_unit_id: '',
+          unit_name: 'Unknown',
+          conversion_rate: 0,
+          base_price: 0,
+          sell_price: 0,
+        },
+      ],
+    });
+    expect(handlers.packageConversionHook.setConversions).toHaveBeenCalled();
+
+    realtimeArgs.onSmartUpdate({
+      package_conversions: '{invalid-json',
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to parse realtime package conversions',
+      expect.anything()
+    );
+    expect(loggerInfoMock).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it('handles reset shortcut in add mode and closes when isClosing is true', () => {
     const handlers = createHandlers();
     handlers.isEditMode = false;
@@ -484,5 +578,172 @@ describe('ItemModal template/item', () => {
     expect(useItemActionsMock().handleCancel).toHaveBeenCalled();
     expect(useItemActionsMock().handleDeleteItem).toHaveBeenCalled();
     expect(useItemUIMock().handleBackdropClick).toHaveBeenCalled();
+  });
+
+  it('auto-opens edit sections by data priority and moves focus on next-pricing', async () => {
+    const handlers = createHandlers();
+    handlers.formData = {
+      ...handlers.formData,
+      code: '',
+      name: '',
+      updated_at: null,
+      barcode: '',
+      quantity: 0,
+      description: '',
+      unit_id: '',
+      base_price: 0,
+      sell_price: 0,
+      is_active: true,
+      has_expiry_date: false,
+      min_stock: 10,
+    };
+    useAddItemPageHandlersMock.mockReturnValue(handlers);
+    useItemFormMock.mockReturnValue({
+      formData: handlers.formData,
+      loading: false,
+      handleSubmit: vi.fn((event?: React.FormEvent) => event?.preventDefault()),
+    });
+    useItemPriceMock.mockReturnValue({
+      packageConversionHook: { conversions: [] },
+    });
+
+    const { rerender } = render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId="item-1"
+        initialItemData={{ package_conversions: [{ id: 'conv-1' }] }}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('conversion-expanded')).toHaveTextContent(
+        'true'
+      );
+    });
+
+    rerender(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId="item-2"
+        initialItemData={{ is_active: false }}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('settings-expanded')).toHaveTextContent('true');
+    });
+
+    rerender(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId="item-3"
+        initialItemData={{ base_price: 1000 }}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('pricing-expanded')).toHaveTextContent('true');
+    });
+
+    fireEvent.click(screen.getByText('next-pricing'));
+    await waitFor(() => {
+      expect(screen.getByLabelText('base-price-input')).toHaveFocus();
+    });
+  });
+
+  it('handles stack mouse and touch interactions through right-column handlers', async () => {
+    vi.useFakeTimers();
+    const handlers = createHandlers();
+    handlers.isEditMode = false;
+    handlers.formData = {
+      ...handlers.formData,
+      code: '',
+      name: '',
+      updated_at: null,
+      barcode: '',
+      quantity: 0,
+      description: '',
+      unit_id: '',
+      base_price: 0,
+      sell_price: 0,
+    };
+    useAddItemPageHandlersMock.mockReturnValue(handlers);
+    useItemUIMock.mockReturnValue({
+      ...useItemUIMock(),
+      isEditMode: false,
+    });
+    useItemFormMock.mockReturnValue({
+      formData: handlers.formData,
+      loading: false,
+      handleSubmit: vi.fn((event?: React.FormEvent) => event?.preventDefault()),
+    });
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId={undefined}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    const conversionSection = document.querySelector(
+      '[data-stack-section="conversion"]'
+    ) as HTMLElement;
+    const stackIgnore = screen.getByTestId('stack-ignore');
+    const rightColumn = screen.getByTestId('right-column');
+
+    fireEvent.mouseMove(conversionSection);
+    act(() => {
+      vi.advanceTimersByTime(220);
+    });
+
+    fireEvent.mouseMove(stackIgnore);
+    fireEvent.mouseLeave(rightColumn);
+
+    fireEvent.pointerDown(conversionSection, { pointerType: 'touch' });
+    fireEvent.click(conversionSection);
+    act(() => {
+      vi.advanceTimersByTime(450);
+    });
+
+    expect(screen.getByTestId('right-column')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('hides delete action when ui edit mode is disabled', () => {
+    useItemUIMock.mockReturnValue({
+      ...useItemUIMock(),
+      isEditMode: false,
+    });
+    useItemActionsMock.mockReturnValue({
+      ...useItemActionsMock(),
+      handleDeleteItem: vi.fn(),
+    });
+
+    render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        itemId={undefined}
+        isClosing={false}
+        setIsClosing={vi.fn()}
+        refetchItems={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText('form-delete')).not.toBeInTheDocument();
   });
 });

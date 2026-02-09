@@ -202,4 +202,101 @@ describe('searchUtils.parseSearchValue', () => {
       })
     );
   });
+
+  it('parses operator-selector and join-operator partial branches', () => {
+    const operatorSelector = parseSearchValue('#name #', columns);
+    expect(operatorSelector).toEqual({
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: true,
+      showJoinOperatorSelector: false,
+      isFilterMode: false,
+      selectedColumn: columns[0],
+    });
+
+    const joinPartial = parseSearchValue('#name #and value', columns);
+    expect(joinPartial).toEqual({
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: false,
+      showJoinOperatorSelector: false,
+      isFilterMode: false,
+      selectedColumn: columns[0],
+      partialJoin: 'AND',
+      activeConditionIndex: 1,
+      partialConditions: [{ field: 'name', column: columns[0] }, {}],
+      joins: ['AND'],
+    });
+  });
+
+  it('parses inRange branches for waiting #to, #to complete, and join selector fallback', () => {
+    const waitingTo = parseSearchValue('#stock #inRange 10 #to', columns);
+    expect(waitingTo.filterSearch).toEqual(
+      expect.objectContaining({
+        operator: 'inRange',
+        value: '10',
+        waitingForValueTo: true,
+        isConfirmed: false,
+      })
+    );
+
+    const completeTo = parseSearchValue('#stock #inRange 10 #to 20##', columns);
+    expect(completeTo.filterSearch).toEqual(
+      expect.objectContaining({
+        operator: 'inRange',
+        value: '10',
+        valueTo: '20',
+        isConfirmed: true,
+      })
+    );
+
+    const incompleteJoinSelector = parseSearchValue(
+      '#stock #inRange 10 #',
+      columns
+    );
+    expect(incompleteJoinSelector).toEqual({
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: false,
+      showJoinOperatorSelector: false,
+      isFilterMode: true,
+      filterSearch: {
+        field: 'stock',
+        value: '10',
+        column: columns[1],
+        operator: 'inRange',
+        isExplicitOperator: true,
+        isConfirmed: false,
+      },
+    });
+  });
+
+  it('parses partial join for inRange and dashed inRange confirmations', () => {
+    const partialJoinInRange = parseSearchValue(
+      '#stock #inRange 10 #to 20 #and #',
+      columns
+    );
+    expect(partialJoinInRange.filterSearch).toEqual(
+      expect.objectContaining({
+        operator: 'inRange',
+        value: '10',
+        valueTo: '20',
+        isMultiCondition: false,
+      })
+    );
+    expect(partialJoinInRange.partialJoin).toBe('AND');
+
+    const dashedConfirmed = parseSearchValue(
+      '#stock #inRange 10-20##',
+      columns
+    );
+    expect(dashedConfirmed.filterSearch).toEqual(
+      expect.objectContaining({
+        operator: 'inRange',
+        value: '10',
+        valueTo: '20',
+        isConfirmed: true,
+      })
+    );
+  });
 });

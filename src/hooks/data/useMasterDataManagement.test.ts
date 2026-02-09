@@ -312,4 +312,180 @@ describe('useMasterDataManagement', () => {
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
     expect(handleSearchChange).toHaveBeenCalledTimes(1);
   });
+
+  it('handles hashtag debounce modes and extended/global-key guards', () => {
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    const focusSpy = vi.spyOn(input, 'focus');
+    const handleSearchChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier', {
+        searchInputRef: { current: input },
+        handleSearchChange,
+      })
+    );
+
+    act(() => {
+      result.current.setSearch('#');
+    });
+    expect(result.current.debouncedSearch).toBe('');
+
+    act(() => {
+      result.current.setSearch('#name');
+      vi.advanceTimersByTime(200);
+    });
+    expect(result.current.debouncedSearch).toBe('');
+
+    act(() => {
+      result.current.setSearch('#name:alpha');
+    });
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    expect(result.current.debouncedSearch).toBe('#name:alpha');
+
+    act(() => {
+      result.current.setIsAddModalOpen(true);
+    });
+    fireEvent.keyDown(document, { key: 'z' });
+    expect(handleSearchChange).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.setIsAddModalOpen(false);
+    });
+    fireEvent.keyDown(document, { key: 'z', altKey: true });
+    expect(handleSearchChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(document, { key: 'q' });
+    expect(focusSpy).toHaveBeenCalled();
+    expect(handleSearchChange).toHaveBeenCalledWith(
+      expect.objectContaining({ target: { value: 'q' } })
+    );
+  });
+
+  it('filters table-specific searchable fields for patients, doctors, and customers', () => {
+    usePatientsMock.mockReturnValue({
+      data: [
+        {
+          id: 'pat-1',
+          code: 'PAT-001',
+          name: 'Pasien A',
+          gender: 'male',
+          address: 'Bogor',
+          phone: '08123',
+          email: 'pat@example.com',
+          birth_date: '2000-01-01',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    const patients = renderHook(() =>
+      useMasterDataManagement('patients', 'Patient')
+    );
+    act(() => {
+      patients.result.current.setSearch('male');
+      vi.advanceTimersByTime(300);
+    });
+    expect(patients.result.current.data).toHaveLength(1);
+
+    useDoctorsMock.mockReturnValue({
+      data: [
+        {
+          id: 'doc-1',
+          code: 'DOC-001',
+          name: 'Dokter A',
+          specialization: 'cardiology',
+          license_number: 'SIP-001',
+          phone: '0888',
+          email: 'doc@example.com',
+          experience_years: 11,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    const doctors = renderHook(() =>
+      useMasterDataManagement('doctors', 'Doctor')
+    );
+    act(() => {
+      doctors.result.current.setSearch('cardiology');
+      vi.advanceTimersByTime(300);
+    });
+    expect(doctors.result.current.data).toHaveLength(1);
+
+    useCustomersMock.mockReturnValue({
+      data: [
+        {
+          id: 'cus-1',
+          code: 'CUS-001',
+          name: 'Customer A',
+          phone: '0899',
+          email: 'cust@example.com',
+          address: 'Depok',
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    const customers = renderHook(() =>
+      useMasterDataManagement('customers', 'Customer')
+    );
+    act(() => {
+      customers.result.current.setSearch('depok');
+      vi.advanceTimersByTime(300);
+    });
+    expect(customers.result.current.data).toHaveLength(1);
+  });
+
+  it('handles non-duplicate submit errors and catches global key handler exceptions', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    const handleSearchChange = vi.fn(() => {
+      throw new Error('keydown-failed');
+    });
+
+    createSupplierMutateAsyncMock.mockRejectedValueOnce(
+      new Error('server-boom')
+    );
+
+    const { result } = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier', {
+        searchInputRef: { current: input },
+        handleSearchChange,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleModalSubmit({
+        code: 'SUP-500',
+        name: 'Broken Supplier',
+      });
+    });
+
+    expect(alertErrorMock).toHaveBeenCalledWith(
+      'Gagal menambahkan Supplier: Error: server-boom'
+    );
+
+    fireEvent.keyDown(document, { key: 'w' });
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Error in global keydown handler:',
+      expect.any(Error)
+    );
+    consoleSpy.mockRestore();
+  });
 });

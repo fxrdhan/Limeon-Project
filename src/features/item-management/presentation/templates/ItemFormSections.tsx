@@ -71,7 +71,7 @@ interface BasicInfoRequiredProps {
   itemId?: string;
 }
 
-const areImageSlotsEqual = (
+export const areImageSlotsEqual = (
   left: Array<{ url: string; path: string }>,
   right: Array<{ url: string; path: string }>
 ) =>
@@ -81,7 +81,7 @@ const areImageSlotsEqual = (
       slot.url === right[index]?.url && slot.path === right[index]?.path
   );
 
-const updateItemFields = async (
+export const updateItemFields = async (
   itemId: string,
   updates: Record<string, unknown>
 ) => {
@@ -89,7 +89,7 @@ const updateItemFields = async (
   if (error) throw error;
 };
 
-const applyItemCacheUpdates = (
+export const applyItemCacheUpdates = (
   queryClient: QueryClient,
   itemId: string,
   updates: Record<string, unknown>
@@ -143,11 +143,11 @@ const applyItemCacheUpdates = (
   );
 };
 
-const normalizeNullableValue = (value: string) => (value ? value : null);
-const appendCacheBust = (url: string, token: string | number) =>
+export const normalizeNullableValue = (value: string) => (value ? value : null);
+export const appendCacheBust = (url: string, token: string | number) =>
   url.includes('?') ? `${url}&t=${token}` : `${url}?t=${token}`;
 
-const useDebouncedAutosave = ({
+export const useDebouncedAutosave = ({
   itemId,
   isEditMode,
   isViewingOldVersion,

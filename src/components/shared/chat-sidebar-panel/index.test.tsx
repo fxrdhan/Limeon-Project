@@ -460,4 +460,173 @@ describe('ChatSidebarPanel', () => {
 
     expect(container.firstChild).toBeNull();
   });
+
+  it('shows toast error when copy action fails', async () => {
+    clipboardWriteTextMock.mockRejectedValueOnce(new Error('copy-failed'));
+
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          ...targetUser,
+          profilephoto: 'https://example.com/target.png',
+        }}
+      />
+    );
+
+    await screen.findByText('Halo dari target');
+    fireEvent.click(screen.getByRole('button', { name: 'Halo dari target' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Salin' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalled();
+    });
+  });
+
+  it('falls back to insert presence and restores message input when send fails', async () => {
+    chatServiceMock.updateUserPresence.mockResolvedValueOnce({
+      data: [],
+      error: { code: 'NO_ROWS' },
+    });
+    chatServiceMock.insertMessage.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'insert-failed' },
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Halo dari target');
+
+    await waitFor(() => {
+      expect(chatServiceMock.insertUserPresence).toHaveBeenCalled();
+    });
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: 'Pesan gagal kirim' } });
+    const sendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(sendButton).toBeTruthy();
+    fireEvent.click(sendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.insertMessage).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Type a message...')).toHaveValue(
+        'Pesan gagal kirim'
+      );
+    });
+  });
+
+  it('handles update and delete errors without broadcasting mutations', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-own-error',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Pesan error',
+        }),
+      ],
+      error: null,
+    });
+    chatServiceMock.updateMessage.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'update-failed' },
+    });
+    chatServiceMock.deleteMessage.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'delete-failed' },
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Pesan error');
+    fireEvent.click(screen.getByRole('button', { name: 'Pesan error' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, {
+      target: { value: 'Pesan error diubah' },
+    });
+    const sendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(sendButton).toBeTruthy();
+    fireEvent.click(sendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.updateMessage).toHaveBeenCalled();
+    });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Pesan error/i })
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+
+    await waitFor(() => {
+      expect(chatServiceMock.deleteMessage).toHaveBeenCalledWith(
+        'msg-own-error'
+      );
+    });
+    expect(errorSpy).toHaveBeenCalled();
+
+    const chatChannel = channelRegistry.get('chat_dm_user-1_user-2');
+    expect(chatChannel?.send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'delete_message' })
+    );
+    errorSpy.mockRestore();
+  });
+
+  it('renders long messages with read more and read less toggles', async () => {
+    const veryLongMessage = `Long message ${'x'.repeat(280)}`;
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [createMessage({ id: 'msg-long', message: veryLongMessage })],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    expect(await screen.findByText('Read more')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Read more'));
+    expect(await screen.findByText('Read less')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Read less'));
+    expect(await screen.findByText('Read more')).toBeInTheDocument();
+  });
+
+  it('performs centralized close when isOpen changes from true to false', async () => {
+    const onClose = vi.fn();
+    const { rerender } = render(
+      <ChatSidebarPanel isOpen onClose={onClose} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Halo dari target');
+    rerender(
+      <ChatSidebarPanel
+        isOpen={false}
+        onClose={onClose}
+        targetUser={targetUser}
+      />
+    );
+
+    await waitFor(() => {
+      expect(chatServiceMock.updateUserPresence).toHaveBeenCalledWith(
+        currentUser.id,
+        expect.objectContaining({
+          is_online: false,
+          current_chat_channel: null,
+        })
+      );
+    });
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

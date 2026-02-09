@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import fuzzysort from 'fuzzysort';
 import React, {
   useCallback,
@@ -47,13 +48,9 @@ import {
 import { PatternBuilder } from './utils/PatternBuilder';
 import { restoreConfirmedPattern } from './utils/patternRestoration';
 import { isFilterSearchValid } from './utils/validationUtils';
-import {
-  buildColumnValue,
-  findColumn,
-  parseSearchValue,
-} from './utils/searchUtils';
+import { buildColumnValue, findColumn } from './utils/searchUtils';
 
-const updateGroupConditionValue = (
+export const updateGroupConditionValue = (
   group: FilterGroup,
   path: number[],
   field: 'value' | 'valueTo',
@@ -79,7 +76,7 @@ const updateGroupConditionValue = (
   return { ...group, nodes };
 };
 
-const updateGroupConditionColumn = (
+export const updateGroupConditionColumn = (
   group: FilterGroup,
   path: number[],
   column: SearchColumn
@@ -102,7 +99,7 @@ const updateGroupConditionColumn = (
   return { ...group, nodes };
 };
 
-const updateGroupConditionOperator = (
+export const updateGroupConditionOperator = (
   group: FilterGroup,
   path: number[],
   operator: string
@@ -126,7 +123,7 @@ const updateGroupConditionOperator = (
   return { ...group, nodes };
 };
 
-const updateGroupJoinAtPath = (
+export const updateGroupJoinAtPath = (
   group: FilterGroup,
   path: number[],
   join: 'AND' | 'OR'
@@ -143,7 +140,7 @@ const updateGroupJoinAtPath = (
   return { ...group, nodes };
 };
 
-const removeGroupNodeAtPath = (
+export const removeGroupNodeAtPath = (
   group: FilterGroup,
   path: number[]
 ): FilterGroup => {
@@ -160,7 +157,10 @@ const removeGroupNodeAtPath = (
   return { ...group, nodes };
 };
 
-const unwrapGroupAtPath = (group: FilterGroup, path: number[]): FilterGroup => {
+export const unwrapGroupAtPath = (
+  group: FilterGroup,
+  path: number[]
+): FilterGroup => {
   if (path.length === 0) return group;
   const [index, ...rest] = path;
   const nodes = group.nodes.flatMap((node, idx) => {
@@ -176,7 +176,7 @@ const unwrapGroupAtPath = (group: FilterGroup, path: number[]): FilterGroup => {
   return { ...group, nodes };
 };
 
-const findGroupNodeAtPath = (
+export const findGroupNodeAtPath = (
   group: FilterGroup,
   path: number[]
 ): FilterExpression | undefined => {
@@ -189,7 +189,7 @@ const findGroupNodeAtPath = (
   return findGroupNodeAtPath(node, rest);
 };
 
-const findFirstConditionInGroup = (
+export const findFirstConditionInGroup = (
   group: FilterGroup
 ): FilterConditionNode | undefined => {
   for (const node of group.nodes) {
@@ -200,7 +200,7 @@ const findFirstConditionInGroup = (
   return undefined;
 };
 
-const getActiveGroupJoin = (
+export const getActiveGroupJoin = (
   pattern: string
 ): { depth: number; join?: 'AND' | 'OR' } => {
   const tokenRegex = /#\(|#\)|#(?:and|or)\b/gi;
@@ -227,6 +227,131 @@ const getActiveGroupJoin = (
     depth,
     join: depth > 0 ? joinByDepth[depth] : undefined,
   };
+};
+
+export const stepBackPatternValue = (
+  inputValue: string,
+  carryConfirmation: boolean
+): { handled: boolean; nextValue: string; nextCarry: boolean } => {
+  const trimmedValue = inputValue.trimEnd();
+  if (!trimmedValue.startsWith('#')) {
+    return {
+      handled: false,
+      nextValue: inputValue,
+      nextCarry: carryConfirmation,
+    };
+  }
+
+  const hasConfirmation = carryConfirmation || trimmedValue.endsWith('##');
+  const stripConfirmation = (input: string): string => {
+    const cleaned = input.trimEnd();
+    return cleaned.endsWith('##') ? cleaned.slice(0, -2).trimEnd() : cleaned;
+  };
+  const collapseWhitespace = (input: string): string => {
+    return input.replace(/\s{2,}/g, ' ').trimStart();
+  };
+  const ensureTrailingHash = (input: string): string => {
+    const trimmed = input.trimEnd();
+    if (!trimmed) return '#';
+    return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
+  };
+
+  let working = stripConfirmation(trimmedValue).trimEnd();
+  if (!working) {
+    return {
+      handled: false,
+      nextValue: inputValue,
+      nextCarry: carryConfirmation,
+    };
+  }
+
+  if (working.endsWith('#')) {
+    working = working.replace(/\s*#\s*$/, '').trimEnd();
+  }
+
+  const finalize = (next: string): string => {
+    const collapsed = collapseWhitespace(next);
+    const trimmedEnd = collapsed.trimEnd();
+    if (!trimmedEnd) return '';
+    if (/#(?:and|or)$/i.test(trimmedEnd)) {
+      return `${trimmedEnd} `;
+    }
+    return trimmedEnd;
+  };
+
+  const maybeRestoreConfirmation = (next: string): string => {
+    if (!hasConfirmation) return next;
+    const trimmedNext = next.trimEnd();
+    if (!trimmedNext) return '';
+    if (trimmedNext.endsWith('#)')) {
+      return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
+    }
+    const endsWithHashToken = /(?:^|\s)#[^\s#]+$/.test(trimmedNext);
+    if (endsWithHashToken) return trimmedNext;
+    return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
+  };
+
+  const toResult = (nextValue: string) => {
+    if (nextValue === inputValue) {
+      return {
+        handled: false,
+        nextValue: inputValue,
+        nextCarry: carryConfirmation,
+      };
+    }
+    return {
+      handled: true,
+      nextValue,
+      nextCarry: nextValue.trimStart().startsWith('#'),
+    };
+  };
+
+  if (working.endsWith('#)')) {
+    return toResult(
+      maybeRestoreConfirmation(finalize(working.replace(/\s*#\)\s*$/, '')))
+    );
+  }
+
+  if (working.endsWith('#(')) {
+    return toResult(finalize(working.replace(/\s*#\(\s*$/, '')));
+  }
+
+  const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
+  if (trailingTokenMatch) {
+    const trailingToken = trailingTokenMatch[0].trim();
+    const tokenLower = trailingToken.toLowerCase();
+    const removed = working.replace(/(?:^|\s)#[^\s#]+$/, '').trimEnd();
+
+    if (tokenLower === '#and' || tokenLower === '#or') {
+      return toResult(maybeRestoreConfirmation(finalize(removed)));
+    }
+
+    const shouldOpenSelector = tokenLower !== '#to';
+    const nextValue = shouldOpenSelector
+      ? ensureTrailingHash(finalize(removed))
+      : finalize(removed);
+    return toResult(nextValue);
+  }
+
+  const tokenRegex = /#\(|#\)|#[^\s#]+/g;
+  let lastToken: RegExpExecArray | null = null;
+  let match: RegExpExecArray | null;
+  while ((match = tokenRegex.exec(working)) !== null) {
+    lastToken = match;
+  }
+  if (!lastToken) {
+    return {
+      handled: false,
+      nextValue: inputValue,
+      nextCarry: carryConfirmation,
+    };
+  }
+
+  const cutIndex = lastToken.index + lastToken[0].length;
+  const prefix = working.slice(0, cutIndex).trimEnd();
+  const finalizedPrefix = finalize(prefix);
+  const nextValue = finalizedPrefix ? `${finalizedPrefix} ` : '';
+  return toResult(nextValue);
 };
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
@@ -2504,167 +2629,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleStepBackDelete = useCallback((): boolean => {
     const liveValue = latestValueRef.current;
-    const liveSearchMode = parseSearchValue(liveValue, memoizedColumns);
-    const trimmedValue = liveValue.trimEnd();
+    const result = stepBackPatternValue(
+      liveValue,
+      deleteConfirmationCarryRef.current
+    );
 
-    const setValue = (nextValue: string) => {
-      latestValueRef.current = nextValue;
-      onChange({
-        target: { value: nextValue },
-      } as React.ChangeEvent<HTMLInputElement>);
-    };
-
-    if (!trimmedValue.startsWith('#')) {
+    if (!result.handled) {
       return false;
     }
 
-    if (
-      liveSearchMode.filterSearch?.filterGroup &&
-      liveSearchMode.filterSearch.isConfirmed
-    ) {
-      // For grouped patterns we still support step-back delete (1 press = 1 badge).
-      // useSearchState already prevents applying filters while parentheses are unbalanced.
-    }
-
-    const hasConfirmation =
-      deleteConfirmationCarryRef.current || trimmedValue.endsWith('##');
-
-    const stripConfirmation = (input: string): string => {
-      const cleaned = input.trimEnd();
-      return cleaned.endsWith('##') ? cleaned.slice(0, -2).trimEnd() : cleaned;
-    };
-
-    const collapseWhitespace = (input: string): string => {
-      return input.replace(/\s{2,}/g, ' ').trimStart();
-    };
-
-    const ensureTrailingHash = (input: string): string => {
-      const trimmed = input.trimEnd();
-      if (!trimmed) return '#';
-      return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
-    };
-
-    // Delete exactly 1 badge unit from the end. Group tokens (#( / #)) are
-    // treated like normal badges (no auto-inserting #)).
-    let working = stripConfirmation(trimmedValue).trimEnd();
-    if (!working) return false;
-
-    // Remove trailing selector marker first (invisible, not a badge).
-    if (working.endsWith('#')) {
-      working = working.replace(/\s*#\s*$/, '').trimEnd();
-    }
-
-    const finalize = (next: string): string => {
-      const collapsed = collapseWhitespace(next);
-      const trimmedEnd = collapsed.trimEnd();
-      if (!trimmedEnd) return '';
-
-      // Keep a whitespace after join tokens so they don't merge into values.
-      if (/#(?:and|or)$/i.test(trimmedEnd)) {
-        return `${trimmedEnd} `;
-      }
-
-      return trimmedEnd;
-    };
-
-    const maybeRestoreConfirmation = (next: string): string => {
-      if (!hasConfirmation) return next;
-      const trimmedNext = next.trimEnd();
-      if (!trimmedNext) return '';
-
-      if (trimmedNext.endsWith('#)')) {
-        return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
-      }
-
-      // Only restore confirmation when the pattern ends with a value segment.
-      // Never append after a hash token (e.g. "#contains") because it would break parsing.
-      const endsWithHashToken = /(?:^|\s)#[^\s#]+$/.test(trimmedNext);
-      if (endsWithHashToken) return trimmedNext;
-
-      return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
-    };
-
-    // 1) Group tokens as explicit badges.
-    if (working.endsWith('#)')) {
-      const nextValue = maybeRestoreConfirmation(
-        finalize(working.replace(/\s*#\)\s*$/, ''))
-      );
-      if (nextValue === liveValue) return false;
-      handleClearPreservedState();
-      setValue(nextValue);
-      deleteConfirmationCarryRef.current = nextValue
-        .trimStart()
-        .startsWith('#');
-      return true;
-    }
-
-    if (working.endsWith('#(')) {
-      const nextValue = finalize(working.replace(/\s*#\(\s*$/, ''));
-      if (nextValue === liveValue) return false;
-      handleClearPreservedState();
-      setValue(nextValue);
-      deleteConfirmationCarryRef.current = nextValue
-        .trimStart()
-        .startsWith('#');
-      return true;
-    }
-
-    // 2) Trailing hash token (column/operator/join/etc).
-    const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
-    if (trailingTokenMatch) {
-      const trailingToken = trailingTokenMatch[0].trim();
-      const tokenLower = trailingToken.toLowerCase();
-      const removed = working.replace(/(?:^|\s)#[^\s#]+$/, '').trimEnd();
-
-      // Deleting a join badge should behave like removing that badge only,
-      // not like opening a selector.
-      if (tokenLower === '#and' || tokenLower === '#or') {
-        const nextValue = maybeRestoreConfirmation(finalize(removed));
-        if (nextValue === liveValue) return false;
-        handleClearPreservedState();
-        setValue(nextValue);
-        deleteConfirmationCarryRef.current = nextValue
-          .trimStart()
-          .startsWith('#');
-        return true;
-      }
-
-      // For #to we don't open a selector; it's just a delimiter.
-      const shouldOpenSelector = tokenLower !== '#to';
-      const nextValue = shouldOpenSelector
-        ? ensureTrailingHash(finalize(removed))
-        : finalize(removed);
-
-      if (nextValue === liveValue) return false;
-      handleClearPreservedState();
-      setValue(nextValue);
-      deleteConfirmationCarryRef.current = nextValue
-        .trimStart()
-        .startsWith('#');
-      return true;
-    }
-
-    // 3) Trailing value segment (delete value only).
-    const tokenRegex = /#\(|#\)|#[^\s#]+/g;
-    let lastToken: RegExpExecArray | null = null;
-    let match: RegExpExecArray | null;
-    while ((match = tokenRegex.exec(working)) !== null) {
-      lastToken = match;
-    }
-    if (!lastToken) return false;
-
-    const cutIndex = lastToken.index + lastToken[0].length;
-    const prefix = working.slice(0, cutIndex).trimEnd();
-
-    // Ensure operators keep a trailing space so the next typed characters become the value.
-    const finalizedPrefix = finalize(prefix);
-    const nextValue = finalizedPrefix ? `${finalizedPrefix} ` : '';
-    if (nextValue === liveValue) return false;
+    latestValueRef.current = result.nextValue;
     handleClearPreservedState();
-    setValue(nextValue);
-    deleteConfirmationCarryRef.current = nextValue.trimStart().startsWith('#');
+    onChange({
+      target: { value: result.nextValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+    deleteConfirmationCarryRef.current = result.nextCarry;
     return true;
-  }, [handleClearPreservedState, memoizedColumns, onChange]);
+  }, [handleClearPreservedState, onChange]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
