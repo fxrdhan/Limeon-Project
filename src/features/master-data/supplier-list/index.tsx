@@ -141,6 +141,17 @@ const SupplierListNew = () => {
     handleEdit(event.data);
   };
 
+  const toSupplierPayload = (
+    data: Record<string, string | number | boolean | null>
+  ) => ({
+    name: String(data.name || ''),
+    address: data.address ? String(data.address) : null,
+    phone: data.phone ? String(data.phone) : null,
+    email: data.email ? String(data.email) : null,
+    contact_person: data.contact_person ? String(data.contact_person) : null,
+    image_url: data.image_url ? String(data.image_url) : null,
+  });
+
   return (
     <MasterDataListPage
       title="Daftar Supplier"
@@ -185,13 +196,13 @@ const SupplierListNew = () => {
         onClose={handleCloseAddModal}
         onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.address || ''),
+            data: toSupplierPayload(data),
             id: undefined,
           });
         }}
         mode="add"
         initialNameFromSearch={debouncedSearch}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -207,8 +218,7 @@ const SupplierListNew = () => {
         onClose={handleCloseEditModal}
         onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.address || ''),
+            data: toSupplierPayload(data),
             id: editingItem?.id,
           });
         }}
@@ -229,6 +239,7 @@ const SupplierListNew = () => {
         }
         mode="edit"
         imageUrl={(editingItem as SupplierType)?.image_url || undefined}
+        useInlineFieldActions={false}
       />
     </MasterDataListPage>
   );

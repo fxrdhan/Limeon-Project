@@ -504,15 +504,30 @@ describe('Master data list pages', () => {
     });
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
-      name: 'Supplier Baru',
-      description: 'Jl. Pusat',
+      data: {
+        name: 'Supplier Baru',
+        address: 'Jl. Pusat',
+        phone: null,
+        email: null,
+        contact_person: null,
+        image_url: null,
+      },
       id: undefined,
     });
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
-      name: 'Supplier Edit',
-      description: 'Jl. Cabang',
+      data: {
+        name: 'Supplier Edit',
+        address: 'Jl. Cabang',
+        phone: null,
+        email: null,
+        contact_person: null,
+        image_url: null,
+      },
       id: 'sup-4',
     });
+
+    expect(addModal.useInlineFieldActions).toBe(false);
+    expect(editModal.useInlineFieldActions).toBe(false);
 
     expect(editModal.onDeleteRequest).toBeDefined();
     editModal.onDeleteRequest?.();
@@ -755,14 +770,28 @@ describe('Master data list pages', () => {
     await editModal.onSave({});
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
-      name: '',
-      description: '',
+      data: {
+        name: '',
+        address: null,
+        phone: null,
+        email: null,
+        contact_person: null,
+        image_url: null,
+      },
       id: undefined,
     });
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
-      name: '',
-      description: '',
+      data: {
+        name: '',
+        address: null,
+        phone: null,
+        email: null,
+        contact_person: null,
+        image_url: null,
+      },
       id: undefined,
     });
+    expect(addModal.useInlineFieldActions).toBe(false);
+    expect(editModal.useInlineFieldActions).toBe(false);
   });
 });

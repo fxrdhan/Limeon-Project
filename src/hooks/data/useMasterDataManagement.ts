@@ -438,7 +438,7 @@ export const useMasterDataManagement = (
         setEditingIdentity(null);
 
         // Manually refetch to ensure current tab updates immediately after mutation
-        refetch();
+        await refetch();
       } catch (error: unknown) {
         // Check for duplicate code constraint error (409 Conflict)
         // PostgrestError structure: {message: string, details: string, hint: string, code: string}
@@ -511,7 +511,7 @@ export const useMasterDataManagement = (
         setEditingIdentity(null);
 
         // Manually refetch to ensure current tab updates immediately after mutation
-        refetch();
+        await refetch();
       } catch (error) {
         // Check for foreign key constraint error for delete operations
         const isForeignKeyError =

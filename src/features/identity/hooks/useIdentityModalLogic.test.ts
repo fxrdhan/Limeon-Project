@@ -55,6 +55,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   initialNameFromSearch: 'Cari Nama',
   imageAspectRatio: 'square' as const,
   showImageUploader: true,
+  useInlineFieldActions: true,
   ...overrides,
 });
 
@@ -104,6 +105,7 @@ describe('useIdentityModalLogic', () => {
         mode: props.mode,
         isOpen: props.isOpen,
         initialNameFromSearch: props.initialNameFromSearch,
+        useInlineFieldActions: props.useInlineFieldActions,
       })
     );
 

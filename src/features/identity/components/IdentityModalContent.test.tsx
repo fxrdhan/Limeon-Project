@@ -43,6 +43,7 @@ const buildContext = (overrides: Record<string, unknown> = {}) => ({
   formattedUpdateAt: '01 Februari 2026',
   imageAspectRatio: 'default' as const,
   showImageUploader: true,
+  useInlineFieldActions: true,
   imageUploadText: 'Unggah',
   imageNotAvailableText: 'Belum tersedia',
   imageFormatHint: 'PNG/JPG',
@@ -120,5 +121,27 @@ describe('IdentityModalContent', () => {
     expect(saveButton).toBeDisabled();
     fireEvent.click(saveButton);
     expect(contextValue.handleSaveAll).not.toHaveBeenCalled();
+  });
+
+  it('renders edit form-save footer when inline field actions are disabled', () => {
+    const contextValue = buildContext({
+      useInlineFieldActions: false,
+      isSubmitting: false,
+    });
+
+    render(
+      <IdentityModalProvider value={contextValue}>
+        <IdentityModalContent />
+      </IdentityModalProvider>
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Tutup' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Hapus Data' })
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    expect(contextValue.handleSaveAll).toHaveBeenCalledTimes(1);
   });
 });

@@ -26,6 +26,7 @@ interface UseIdentityModalLogicProps {
   initialNameFromSearch?: string;
   imageAspectRatio?: 'default' | 'square';
   showImageUploader?: boolean;
+  useInlineFieldActions?: boolean;
 }
 
 export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
@@ -51,6 +52,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     initialNameFromSearch,
     imageAspectRatio = 'default',
     showImageUploader = true,
+    useInlineFieldActions = true,
   } = props;
 
   // Use getDerivedStateFromProps to reset isClosing when isOpen changes
@@ -100,6 +102,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     mode,
     isOpen,
     initialNameFromSearch,
+    useInlineFieldActions,
   });
 
   // Auto-focus on name field when modal opens
@@ -162,6 +165,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     formattedUpdateAt,
     imageAspectRatio,
     showImageUploader,
+    useInlineFieldActions,
 
     // Image Config
     imageUploadText,

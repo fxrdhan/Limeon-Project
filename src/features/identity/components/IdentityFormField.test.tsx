@@ -82,6 +82,7 @@ const baseContext = () => ({
   loadingField: {},
   localData: {},
   mode: 'edit',
+  useInlineFieldActions: true,
   toggleEdit: vi.fn(),
   handleChange: vi.fn(),
   handleSaveField: vi.fn(),
@@ -229,5 +230,38 @@ describe('IdentityFormField', () => {
       'joined_date',
       '2024-05-20'
     );
+  });
+
+  it('renders direct edit field when inline actions are disabled', () => {
+    const context = baseContext();
+    useIdentityModalContextMock.mockReturnValue({
+      ...context,
+      useInlineFieldActions: false,
+      mode: 'edit',
+      editValues: {
+        name: 'Supplier A',
+      },
+      localData: {
+        name: 'Supplier A',
+      },
+    });
+
+    render(
+      <IdentityFormField
+        field={
+          {
+            key: 'name',
+            label: 'Nama Supplier',
+            type: 'text',
+          } as never
+        }
+      />
+    );
+
+    expect(screen.queryByTitle('Edit')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue('Supplier A'), {
+      target: { value: 'Supplier B' },
+    });
+    expect(context.handleChange).toHaveBeenCalledWith('name', 'Supplier B');
   });
 });

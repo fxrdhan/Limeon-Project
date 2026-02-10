@@ -14,6 +14,7 @@ interface UseIdentityFormProps {
   mode?: 'edit' | 'add';
   isOpen?: boolean;
   initialNameFromSearch?: string;
+  useInlineFieldActions?: boolean;
 }
 
 export const useIdentityForm = ({
@@ -27,6 +28,7 @@ export const useIdentityForm = ({
   mode = 'edit',
   isOpen,
   initialNameFromSearch,
+  useInlineFieldActions = true,
 }: UseIdentityFormProps) => {
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<
@@ -65,7 +67,9 @@ export const useIdentityForm = ({
       > = {};
 
       fields.forEach(field => {
-        initialEditState[field.key] = mode === 'add';
+        initialEditState[field.key] =
+          field.editable !== false &&
+          (mode === 'add' || (mode === 'edit' && !useInlineFieldActions));
         let value =
           initialData[field.key] ??
           (field.type === 'textarea' ||
@@ -112,6 +116,7 @@ export const useIdentityForm = ({
     initialImageUrl,
     mode,
     initialNameFromSearch,
+    useInlineFieldActions,
   ]);
 
   const setInputRef = useCallback(

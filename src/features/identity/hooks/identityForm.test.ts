@@ -19,6 +19,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onSave: vi.fn().mockResolvedValue(undefined),
   mode: 'edit' as const,
   isOpen: true,
+  useInlineFieldActions: true,
   ...overrides,
 });
 
@@ -232,5 +233,20 @@ describe('useIdentityForm', () => {
     });
     expect(onImageDelete).toHaveBeenCalledWith('entity-1');
     expect(editMode.result.current.localData.image_url).toBeNull();
+  });
+
+  it('enables all editable fields in edit mode when inline actions are disabled', () => {
+    const { result } = renderHook(
+      currentProps => useIdentityForm(currentProps),
+      {
+        initialProps: makeProps({
+          useInlineFieldActions: false,
+        }),
+      }
+    );
+
+    expect(result.current.editMode.name).toBe(true);
+    expect(result.current.editMode.address).toBe(true);
+    expect(result.current.editMode.birth_date).toBe(true);
   });
 });

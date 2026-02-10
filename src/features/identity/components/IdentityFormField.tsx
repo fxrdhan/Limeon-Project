@@ -19,6 +19,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
     loadingField,
     localData,
     mode,
+    useInlineFieldActions,
     toggleEdit,
     handleChange,
     handleSaveField,
@@ -26,12 +27,15 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
     setInputRef,
   } = useIdentityModalContext();
 
-  const isInEditMode = editMode[field.key] || mode === 'add';
+  const isFieldEditable = field.editable !== false;
+  const isInEditMode =
+    isFieldEditable &&
+    (mode === 'add' || !useInlineFieldActions || editMode[field.key]);
   const fieldValue = editValues[field.key];
   const displayValue = localData[field.key];
 
   const renderEditModeActions = () => {
-    if (field.editable === false || mode !== 'edit') {
+    if (!isFieldEditable || mode !== 'edit' || !useInlineFieldActions) {
       return null;
     }
 

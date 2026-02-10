@@ -20,6 +20,7 @@ const createContextValue = (): IdentityModalContextValue => ({
   formattedUpdateAt: '2026-02-10',
   imageAspectRatio: 'default',
   showImageUploader: true,
+  useInlineFieldActions: true,
   imageUploadText: 'Upload',
   imageNotAvailableText: 'N/A',
   imageFormatHint: 'JPG/PNG',

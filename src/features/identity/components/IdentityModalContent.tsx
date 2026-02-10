@@ -14,6 +14,7 @@ const IdentityModalContent: React.FC = () => {
     isSubmitting,
     localData,
     showImageUploader,
+    useInlineFieldActions,
     onDeleteRequest,
     deleteButtonLabel,
     handleSaveAll,
@@ -47,7 +48,7 @@ const IdentityModalContent: React.FC = () => {
       </div>
 
       {/* Footer */}
-      {mode === 'edit' ? (
+      {mode === 'edit' && useInlineFieldActions ? (
         <div className="p-4 border-t border-slate-200 flex justify-between items-center bg-white">
           {onDeleteRequest && (
             <Button variant="danger" onClick={() => onDeleteRequest(localData)}>
@@ -60,9 +61,19 @@ const IdentityModalContent: React.FC = () => {
         </div>
       ) : (
         <div className="p-4 border-t border-slate-200 flex justify-between items-center bg-white">
-          <Button type="button" variant="text" onClick={handleCloseModal}>
-            Batal
-          </Button>
+          {mode === 'edit' && onDeleteRequest ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => onDeleteRequest(localData)}
+            >
+              {deleteButtonLabel}
+            </Button>
+          ) : (
+            <Button type="button" variant="text" onClick={handleCloseModal}>
+              Batal
+            </Button>
+          )}
           <Button
             type="button"
             variant="primary"
@@ -74,6 +85,8 @@ const IdentityModalContent: React.FC = () => {
                 <TbLoader2 className="animate-spin mr-2" />
                 Menyimpan...
               </span>
+            ) : mode === 'edit' ? (
+              'Update'
             ) : (
               'Simpan'
             )}

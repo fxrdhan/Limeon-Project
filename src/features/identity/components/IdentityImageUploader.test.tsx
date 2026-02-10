@@ -72,6 +72,7 @@ const buildContext = (overrides: Record<string, unknown> = {}) => ({
   formattedUpdateAt: '-',
   imageAspectRatio: 'default' as const,
   showImageUploader: true,
+  useInlineFieldActions: true,
   imageUploadText: 'Unggah gambar',
   imageNotAvailableText: 'Tidak ada gambar',
   imageFormatHint: 'PNG/JPG',

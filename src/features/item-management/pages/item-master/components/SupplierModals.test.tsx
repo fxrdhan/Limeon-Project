@@ -47,6 +47,7 @@ describe('SupplierModals', () => {
       isOpen: true,
       mode: 'add',
       initialNameFromSearch: '',
+      useInlineFieldActions: false,
     });
 
     await (
@@ -113,6 +114,7 @@ describe('SupplierModals', () => {
       isOpen: true,
       mode: 'edit',
       imageUrl: 'https://img.test/sup-1.jpg',
+      useInlineFieldActions: false,
     });
 
     await (

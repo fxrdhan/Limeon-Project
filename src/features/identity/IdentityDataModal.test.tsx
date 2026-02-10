@@ -50,6 +50,7 @@ describe('IdentityDataModal', () => {
         formattedUpdateAt: '-',
         imageAspectRatio: 'default',
         showImageUploader: true,
+        useInlineFieldActions: true,
         imageUploadText: 'Unggah',
         imageNotAvailableText: 'Belum ada',
         imageFormatHint: 'PNG/JPG',
@@ -93,6 +94,7 @@ describe('IdentityDataModal', () => {
         mode: 'edit',
         imageAspectRatio: 'default',
         showImageUploader: true,
+        useInlineFieldActions: true,
       })
     );
 

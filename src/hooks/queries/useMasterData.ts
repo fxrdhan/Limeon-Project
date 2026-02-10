@@ -469,8 +469,11 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success('Supplier berhasil ditambahkan');
-      queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.suppliers(),
+      const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({
+          queryKey: keySet,
+        });
       });
     },
     onError: error => {
@@ -493,8 +496,11 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success('Supplier berhasil diperbarui');
-      queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.suppliers(),
+      const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({
+          queryKey: keySet,
+        });
       });
     },
     onError: error => {
@@ -511,8 +517,11 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success('Supplier berhasil dihapus');
-      queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.suppliers(),
+      const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({
+          queryKey: keySet,
+        });
       });
     },
     onError: error => {

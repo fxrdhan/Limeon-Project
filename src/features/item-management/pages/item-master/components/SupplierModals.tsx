@@ -44,7 +44,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
             phone: String(data.phone || '') || null,
             email: String(data.email || '') || null,
             contact_person: String(data.contact_person || '') || null,
-            image_url: null,
+            image_url: String(data.image_url || '') || null,
           });
           closeAddSupplierModal();
         }}
@@ -52,6 +52,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         initialNameFromSearch={
           supplierSearch.startsWith('#') ? '' : supplierSearch
         }
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -99,6 +100,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         }
         mode="edit"
         imageUrl={editingSupplier?.image_url || undefined}
+        useInlineFieldActions={false}
       />
     </>
   );
