@@ -200,4 +200,87 @@ test.describe('EnhancedSearchBar e2e interactions', () => {
 
     await expect(page.getByTestId('live-value')).toContainText('#to 15-25##');
   });
+
+  test('interrupted-column preset opens column selector state', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-interrupted-column').click();
+
+    await expect(page.getByTestId('live-value')).toContainText(
+      '#name #contains aspirin #and #'
+    );
+    await expect(page.getByText(COLUMN_SELECTOR_HEADER)).toBeVisible();
+  });
+
+  test('interrupted-join preset opens join selector state', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-interrupted-join').click();
+
+    await expect(page.getByTestId('live-value')).toContainText(
+      '#name #contains aspirin #'
+    );
+    await expect(page.getByText(JOIN_SELECTOR_HEADER)).toBeVisible();
+  });
+
+  test('interrupted-operator multicol preset opens operator selector state', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-interrupted-operator-multicol').click();
+
+    await expect(page.getByTestId('live-value')).toContainText(
+      '#name #contains aspirin #and #stock #'
+    );
+    await expect(page.getByText(OPERATOR_SELECTOR_HEADER)).toBeVisible();
+  });
+
+  test('interrupted-partial preset can be completed by typing value and Enter', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-interrupted-partial').click();
+    const searchInput = page.getByPlaceholder('Cari...');
+    await searchInput.click();
+    await page.keyboard.type('44');
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByTestId('live-value')).toContainText(
+      '#name #contains aspirin #and #stock #equals 44##'
+    );
+  });
+
+  test('insert-tail preset seeds three confirmed conditions', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-insert-tail-multicondition').click();
+
+    await expect(page.getByTestId('live-value')).toContainText(
+      '#name #contains aspirin #and #stock #equals 10 #and #category #contains pain##'
+    );
+  });
+
+  test('condition-n-building preset opens selector for the next condition', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-condition-n-building').click();
+
+    await expect(page.getByTestId('live-value')).toContainText(
+      '#name #contains aspirin #and #stock #equals 10 #and #'
+    );
+    await expect(page.getByText(COLUMN_SELECTOR_HEADER)).toBeVisible();
+  });
+
+  test('condition-n-building preset can continue keyboard-only selector flow', async ({
+    page,
+  }) => {
+    await page.getByTestId('preset-condition-n-building').click();
+    await expect(page.getByText(COLUMN_SELECTOR_HEADER)).toBeVisible();
+
+    await page.keyboard.press('Enter');
+    await expect(page.getByText(OPERATOR_SELECTOR_HEADER)).toBeVisible();
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('12');
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByTestId('live-value')).toContainText('12##');
+  });
 });

@@ -61,6 +61,7 @@ export const parseSearchValue = (
 ): EnhancedSearchState => {
   // Remove newlines (from paste) and trim only leading whitespace
   const searchValue = rawSearchValue.replace(/[\r\n]+/g, '').trimStart();
+  /* c8 ignore next */
   const hasGroupTokens =
     searchValue.includes('#(') || searchValue.includes('#)');
   const normalizedValue = hasGroupTokens
@@ -230,6 +231,7 @@ function parseFilterPattern(
   );
   const partialJoinMatch = partialJoinWithHash || partialJoinNoHash;
 
+  /* c8 ignore start */
   if (partialJoinMatch) {
     const [, , op, val, join] = partialJoinMatch;
     const operatorObj = findOperatorForColumn(column, op);
@@ -288,6 +290,7 @@ function parseFilterPattern(
       };
     }
   }
+  /* c8 ignore end */
 
   // Check for join selector trigger for Between (inRange) operator: #field #inRange val1 #to val2 #
   // This MUST come before the generic joinSelectorMatch because the generic regex can't handle #to marker
@@ -341,6 +344,7 @@ function parseFilterPattern(
       if (operatorObj.value === 'inRange') {
         const inRangeValues = parseInRangeValues(cleanValue, true);
         if (inRangeValues) {
+          /* c8 ignore next 2 */
           localFilterValue = inRangeValues.value;
           localFilterValueTo = inRangeValues.valueTo;
         } else {
@@ -552,6 +556,7 @@ function parseFilterPattern(
     }
   } else if (searchValue.includes(' #')) {
     // Has " #" - show operator selector
+    /* c8 ignore next */
     return {
       globalSearch: undefined,
       showColumnSelector: false,

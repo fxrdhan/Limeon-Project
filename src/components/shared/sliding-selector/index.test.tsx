@@ -167,4 +167,104 @@ describe('SlidingSelector', () => {
 
     expect(onSelectionChange).not.toHaveBeenCalled();
   });
+
+  it('covers hover leave blur/timeout cleanup and explicit-toggle focus behavior', () => {
+    const onSelectionChange = vi.fn();
+    const blurSpy = vi
+      .spyOn(HTMLButtonElement.prototype, 'blur')
+      .mockImplementation(() => undefined);
+    const focusSpy = vi
+      .spyOn(HTMLButtonElement.prototype, 'focus')
+      .mockImplementation(() => undefined);
+
+    const { unmount } = render(
+      <SlidingSelector
+        options={options}
+        activeKey="tab-1"
+        onSelectionChange={onSelectionChange}
+        collapsible={true}
+        defaultExpanded={true}
+        expandOnHover={true}
+        autoCollapseDelay={100}
+      />
+    );
+
+    const tabList = screen.getByRole('tablist');
+    const activeTab = screen.getByRole('tab', { name: 'Active One' });
+    const activeElementDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'activeElement'
+    );
+    Object.defineProperty(document, 'activeElement', {
+      configurable: true,
+      get: () => activeTab,
+    });
+
+    fireEvent.mouseLeave(tabList);
+    expect(blurSpy).toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(120);
+    });
+
+    fireEvent.mouseEnter(tabList);
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+    fireEvent.mouseEnter(tabList);
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    // Unmount while timers are active to cover cleanup branch.
+    unmount();
+
+    render(
+      <SlidingSelector
+        options={options}
+        activeKey="tab-2"
+        onSelectionChange={onSelectionChange}
+        collapsible={true}
+        defaultExpanded={false}
+        expandOnHover={false}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Expand tabs' }));
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(focusSpy).toHaveBeenCalled();
+
+    // Collapsed active-tab click should still emit selection
+    fireEvent.click(screen.getByRole('tab', { name: 'Tab Two' }));
+    expect(onSelectionChange).toHaveBeenCalledWith(
+      'tab-2',
+      2,
+      expect.any(Object)
+    );
+
+    blurSpy.mockRestore();
+    focusSpy.mockRestore();
+    if (activeElementDescriptor) {
+      Object.defineProperty(document, 'activeElement', activeElementDescriptor);
+    }
+  });
+
+  it('ignores repeated keydown events while expanded', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <SlidingSelector
+        options={options}
+        activeKey="tab-1"
+        onSelectionChange={onSelectionChange}
+        collapsible={true}
+        defaultExpanded={true}
+      />
+    );
+
+    fireEvent.keyDown(screen.getByRole('tablist'), {
+      key: 'Tab',
+      repeat: true,
+    });
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
 });

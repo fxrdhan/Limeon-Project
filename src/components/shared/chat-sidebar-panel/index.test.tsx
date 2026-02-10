@@ -1616,7 +1616,320 @@ describe('ChatSidebarPanel', () => {
     expect(removeChannelMock).toHaveBeenCalledWith(globalChannel);
 
     errorSpy.mockRestore();
-    setIntervalSpy.mockRestore();
     vi.useRealTimers();
+    setIntervalSpy.mockRestore();
+  });
+
+  it('scrolls menu into view when menu overflows top and bottom edges', async () => {
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    const bubble = await screen.findByRole('button', {
+      name: 'Halo dari target',
+    });
+    const container = document.querySelector(
+      'div.flex-1.px-3.pt-3.overflow-y-auto'
+    ) as HTMLDivElement | null;
+    expect(container).toBeTruthy();
+
+    let scrollTopValue = 140;
+    Object.defineProperty(container!, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTopValue,
+      set: (value: number) => {
+        scrollTopValue = value;
+      },
+    });
+
+    const scrollToMock = vi.fn(({ top }: { top: number }) => {
+      scrollTopValue = top;
+    });
+    const originalScrollTo = Element.prototype.scrollTo;
+    Object.defineProperty(Element.prototype, 'scrollTo', {
+      configurable: true,
+      value: scrollToMock,
+    });
+
+    const fallbackRect = {
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+    const containerRect = {
+      top: 100,
+      left: 0,
+      right: 420,
+      bottom: 320,
+      width: 420,
+      height: 220,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    };
+    const anchorRect = {
+      top: 120,
+      left: 300,
+      right: 360,
+      bottom: 150,
+      width: 60,
+      height: 30,
+      x: 300,
+      y: 120,
+      toJSON: () => ({}),
+    };
+    let activeMenuRect = {
+      top: 70,
+      left: 260,
+      right: 380,
+      bottom: 130,
+      width: 120,
+      height: 60,
+      x: 260,
+      y: 70,
+      toJSON: () => ({}),
+    };
+
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this === container) return containerRect as DOMRect;
+        if (this === bubble) return anchorRect as DOMRect;
+        if (this.dataset.chatMenuId === 'msg-1')
+          return activeMenuRect as DOMRect;
+        return fallbackRect as DOMRect;
+      });
+
+    try {
+      fireEvent.click(bubble);
+      await waitFor(() => {
+        expect(scrollToMock).toHaveBeenCalledTimes(1);
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Halo dari target' }));
+      await waitFor(() => {
+        expect(
+          screen.queryByRole('button', { name: 'Salin' })
+        ).not.toBeInTheDocument();
+      });
+
+      activeMenuRect = {
+        top: 280,
+        left: 260,
+        right: 380,
+        bottom: 370,
+        width: 120,
+        height: 90,
+        x: 260,
+        y: 280,
+        toJSON: () => ({}),
+      };
+      fireEvent.click(screen.getByRole('button', { name: 'Halo dari target' }));
+
+      await waitFor(() => {
+        expect(scrollToMock).toHaveBeenCalledTimes(2);
+      });
+    } finally {
+      rectSpy.mockRestore();
+      Object.defineProperty(Element.prototype, 'scrollTo', {
+        configurable: true,
+        value: originalScrollTo,
+      });
+    }
+  });
+
+  it('logs close presence error when close update returns error object', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.updateUserPresence
+      .mockResolvedValueOnce({
+        data: [
+          {
+            user_id: currentUser.id,
+            is_online: true,
+            current_chat_channel: 'dm_user-1_user-2',
+            last_seen: '2026-02-08T00:00:01.000Z',
+          },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'close-update-error' },
+      });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+    await screen.findByText('Halo dari target');
+
+    const closeButton = screen
+      .getAllByRole('button')
+      .find(button => button.textContent === '✕');
+    expect(closeButton).toBeTruthy();
+    fireEvent.click(closeButton!);
+
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        '❌ Error updating user chat close:',
+        expect.objectContaining({ message: 'close-update-error' })
+      );
+    });
+    errorSpy.mockRestore();
+  });
+
+  it('logs close rejection when close update throws', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.updateUserPresence
+      .mockResolvedValueOnce({
+        data: [
+          {
+            user_id: currentUser.id,
+            is_online: true,
+            current_chat_channel: 'dm_user-1_user-2',
+            last_seen: '2026-02-08T00:00:01.000Z',
+          },
+        ],
+        error: null,
+      })
+      .mockRejectedValueOnce(new Error('close-rejected'));
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+    await screen.findByText('Halo dari target');
+
+    const closeButton = screen
+      .getAllByRole('button')
+      .find(button => button.textContent === '✕');
+    expect(closeButton).toBeTruthy();
+    fireEvent.click(closeButton!);
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        '❌ Caught error updating user chat close:',
+        expect.any(Error)
+      );
+    });
+
+    errorSpy.mockRestore();
+  });
+
+  it('returns early on close when user is missing and still calls parent onClose', async () => {
+    useAuthStoreMock.mockReturnValueOnce({ user: null });
+    const onClose = vi.fn();
+    render(
+      <ChatSidebarPanel isOpen onClose={onClose} targetUser={targetUser} />
+    );
+
+    const closeButton = screen
+      .getAllByRole('button')
+      .find(button => button.textContent === '✕');
+    expect(closeButton).toBeTruthy();
+    fireEvent.click(closeButton!);
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('flags new messages when user is away from the bottom', async () => {
+    const rafSpy = vi
+      .spyOn(globalThis, 'requestAnimationFrame')
+      .mockImplementation((callback: FrameRequestCallback) => {
+        callback(0);
+        return 1;
+      });
+
+    try {
+      render(
+        <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+      );
+      await screen.findByText('Halo dari target');
+
+      const container = document.querySelector(
+        'div.flex-1.px-3.pt-3.overflow-y-auto'
+      ) as HTMLDivElement | null;
+      expect(container).toBeTruthy();
+
+      let scrollTopValue = 0;
+      Object.defineProperty(container!, 'scrollHeight', {
+        configurable: true,
+        get: () => 1500,
+      });
+      Object.defineProperty(container!, 'clientHeight', {
+        configurable: true,
+        get: () => 300,
+      });
+      Object.defineProperty(container!, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTopValue,
+        set: (next: number) => {
+          scrollTopValue = next;
+        },
+      });
+
+      const newMessageHandler = getHandler(
+        'chat_dm_user-1_user-2',
+        'broadcast',
+        'new_message'
+      );
+      act(() => {
+        newMessageHandler({
+          payload: createMessage({
+            id: 'msg-away-bottom',
+            message: 'Pesan jauh dari bawah',
+          }),
+        });
+      });
+      expect(
+        await screen.findByText('Pesan jauh dari bawah')
+      ).toBeInTheDocument();
+    } finally {
+      rafSpy.mockRestore();
+    }
+  });
+
+  it('clears pending composer layout timeout before scheduling the next one', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    const scrollHeightDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'scrollHeight'
+    );
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get: () => 96,
+    });
+
+    try {
+      render(
+        <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+      );
+      await screen.findByText('Halo dari target');
+
+      const textarea = screen.getByPlaceholderText(
+        'Type a message...'
+      ) as HTMLTextAreaElement;
+      fireEvent.change(textarea, { target: { value: 'multiline-1' } });
+      fireEvent.change(textarea, { target: { value: 'multiline-2' } });
+
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+    } finally {
+      if (scrollHeightDescriptor) {
+        Object.defineProperty(
+          HTMLTextAreaElement.prototype,
+          'scrollHeight',
+          scrollHeightDescriptor
+        );
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete (HTMLTextAreaElement.prototype as { scrollHeight?: number })
+          .scrollHeight;
+      }
+      clearTimeoutSpy.mockRestore();
+    }
   });
 });

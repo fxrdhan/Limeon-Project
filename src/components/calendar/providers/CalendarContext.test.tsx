@@ -11,6 +11,17 @@ const calendarStateStore = vi.hoisted(() => ({
   closeCalendar: vi.fn(),
   setIsOpening: vi.fn(),
 }));
+const calendarStateArgsStore = vi.hoisted(
+  () =>
+    ({
+      current: null as {
+        onOpen?: () => void;
+        onClose?: () => void;
+      } | null,
+    }) satisfies {
+      current: { onOpen?: () => void; onClose?: () => void } | null;
+    }
+);
 
 const calendarPositionStore = vi.hoisted(() => ({
   portalStyle: { left: '10px', top: '20px' },
@@ -37,7 +48,10 @@ const calendarKeyboardStore = vi.hoisted(() => ({
 }));
 
 vi.mock('../hooks/useCalendarState', () => ({
-  useCalendarState: () => calendarStateStore,
+  useCalendarState: (args: { onOpen?: () => void; onClose?: () => void }) => {
+    calendarStateArgsStore.current = args;
+    return calendarStateStore;
+  },
 }));
 
 vi.mock('../hooks/useCalendarPosition', () => ({
@@ -49,7 +63,24 @@ vi.mock('../hooks/useCalendarNavigation', () => ({
 }));
 
 vi.mock('../hooks/useCalendarHover', () => ({
-  useCalendarHover: () => calendarHoverStore,
+  useCalendarHover: ({
+    openCalendar,
+    closeCalendar,
+  }: {
+    openCalendar: () => void;
+    closeCalendar: () => void;
+  }) => ({
+    handleTriggerMouseEnter: () => {
+      calendarHoverStore.handleTriggerMouseEnter();
+      openCalendar();
+    },
+    handleTriggerMouseLeave: () => {
+      calendarHoverStore.handleTriggerMouseLeave();
+      closeCalendar();
+    },
+    handleCalendarMouseEnter: calendarHoverStore.handleCalendarMouseEnter,
+    handleCalendarMouseLeave: calendarHoverStore.handleCalendarMouseLeave,
+  }),
 }));
 
 vi.mock('../hooks/useCalendarKeyboard', () => ({
@@ -110,12 +141,24 @@ const Probe = () => {
       <button type="button" onClick={() => ctx.triggerMonthAnimation('prev')}>
         trigger-month-animation
       </button>
+      <button type="button" onClick={ctx.handleTriggerMouseEnter}>
+        trigger-hover-enter
+      </button>
+      <button type="button" onClick={ctx.handleTriggerMouseLeave}>
+        trigger-hover-leave
+      </button>
+      <button type="button" onClick={() => ctx.handleMonthSelect(0)}>
+        select-month-same
+      </button>
 
       <div data-testid="is-open">{String(ctx.isOpen)}</div>
       <div data-testid="is-closing">{String(ctx.isClosing)}</div>
       <div data-testid="is-opening">{String(ctx.isOpening)}</div>
       <div data-testid="current-view">{ctx.currentView}</div>
       <div data-testid="highlighted-month">{String(ctx.highlightedMonth)}</div>
+      <div data-testid="highlighted-date-day">
+        {ctx.highlightedDate ? String(ctx.highlightedDate.getDate()) : 'null'}
+      </div>
       <div data-testid="nav-direction">{ctx.navigationDirection ?? 'null'}</div>
       <div data-testid="year-nav-direction">
         {ctx.yearNavigationDirection ?? 'null'}
@@ -151,6 +194,7 @@ describe('CalendarProvider', () => {
     calendarStateStore.isClosing = false;
     calendarStateStore.isOpening = false;
     calendarPositionStore.isPositionReady = true;
+    calendarStateArgsStore.current = null;
 
     calendarStateStore.openCalendar.mockReset();
     calendarStateStore.closeCalendar.mockReset();
@@ -173,6 +217,23 @@ describe('CalendarProvider', () => {
 
     expect(calendarStateStore.openCalendar).toHaveBeenCalledTimes(1);
     expect(calendarPositionStore.calculatePosition).toHaveBeenCalledTimes(1);
+  });
+
+  it('executes onOpen/onClose callbacks from calendar state hook', () => {
+    renderProvider();
+
+    act(() => {
+      calendarStateArgsStore.current?.onOpen?.();
+    });
+    expect(screen.getByTestId('current-view')).toHaveTextContent('days');
+    expect(screen.getByTestId('highlighted-month')).toHaveTextContent('null');
+
+    act(() => {
+      calendarStateArgsStore.current?.onClose?.();
+    });
+    expect(screen.getByTestId('highlighted-date-day')).toHaveTextContent(
+      'null'
+    );
   });
 
   it('closes calendar from trigger click when already open', () => {
@@ -214,6 +275,9 @@ describe('CalendarProvider', () => {
     expect(screen.getByTestId('current-view')).toHaveTextContent('days');
     expect(calendarPositionStore.calculatePosition).toHaveBeenCalled();
 
+    fireEvent.click(screen.getByRole('button', { name: 'select-month-same' }));
+    expect(screen.getByTestId('highlighted-date-day')).toHaveTextContent('15');
+
     fireEvent.click(screen.getByRole('button', { name: 'select-year' }));
     expect(screen.getByTestId('current-view')).toHaveTextContent('months');
     expect(screen.getByTestId('highlighted-month')).toHaveTextContent('0');
@@ -249,6 +313,22 @@ describe('CalendarProvider', () => {
       vi.advanceTimersByTime(300);
     });
     expect(screen.getByTestId('year-nav-direction')).toHaveTextContent('null');
+  });
+
+  it('routes hover handlers through open/close wrapper callbacks', () => {
+    renderProvider();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'trigger-hover-enter' })
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'trigger-hover-leave' })
+    );
+
+    expect(calendarHoverStore.handleTriggerMouseEnter).toHaveBeenCalledTimes(1);
+    expect(calendarHoverStore.handleTriggerMouseLeave).toHaveBeenCalledTimes(1);
+    expect(calendarStateStore.openCalendar).toHaveBeenCalled();
+    expect(calendarStateStore.closeCalendar).toHaveBeenCalled();
   });
 
   it('runs opening timer effect and handles click-outside close rules', () => {

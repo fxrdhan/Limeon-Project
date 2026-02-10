@@ -330,4 +330,77 @@ describe('searchUtils.parseSearchValue', () => {
       },
     });
   });
+
+  it('covers exact column fallback and inRange partial/join edge paths', () => {
+    // Skip main filter regex, then resolve through exactColumnMatch branch
+    const exactFromTabbedInput = parseSearchValue('#name\t', columns);
+    expect(exactFromTabbedInput).toEqual({
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: false,
+      showJoinOperatorSelector: false,
+      isFilterMode: false,
+      selectedColumn: columns[0],
+    });
+
+    // Partial join with inRange should preserve both values and open next column selector
+    const inRangePartialJoin = parseSearchValue(
+      '#stock #inRange 10 #to 20 #or #',
+      columns
+    );
+    expect(inRangePartialJoin).toEqual(
+      expect.objectContaining({
+        showColumnSelector: true,
+        partialJoin: 'OR',
+        filterSearch: expect.objectContaining({
+          operator: 'inRange',
+          value: '10',
+          valueTo: '20',
+        }),
+      })
+    );
+
+    // Join selector with inRange complete values should open join selector
+    const inRangeJoinSelector = parseSearchValue(
+      '#stock #inRange 1 #to 2 #',
+      columns
+    );
+    expect(inRangeJoinSelector).toEqual(
+      expect.objectContaining({
+        showJoinOperatorSelector: true,
+        filterSearch: expect.objectContaining({
+          operator: 'inRange',
+          value: '1',
+          valueTo: '2',
+          isConfirmed: true,
+        }),
+      })
+    );
+
+    // Single-value inRange should stay in filter mode without valueTo
+    const inRangeSingleValue = parseSearchValue('#stock #inRange 99', columns);
+    expect(inRangeSingleValue).toEqual(
+      expect.objectContaining({
+        isFilterMode: true,
+        filterSearch: expect.objectContaining({
+          operator: 'inRange',
+          value: '99',
+        }),
+      })
+    );
+
+    // " #" trigger path for operator selector
+    const operatorSelectorFromSpaceHash = parseSearchValue(
+      '#name #foo',
+      columns
+    );
+    expect(operatorSelectorFromSpaceHash).toEqual({
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: true,
+      showJoinOperatorSelector: false,
+      isFilterMode: false,
+      selectedColumn: columns[0],
+    });
+  });
 });

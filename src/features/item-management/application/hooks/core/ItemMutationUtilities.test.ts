@@ -334,6 +334,71 @@ describe('ItemMutationUtilities', () => {
         isEditMode: false,
       })
     ).rejects.toBeInstanceOf(Error);
+
+    itemDataServiceMock.createItem.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+    await expect(
+      saveItemBusinessLogic({
+        formData: baseFormData(),
+        conversions: baseConversions(),
+        baseUnit: 'PCS',
+        isEditMode: false,
+      })
+    ).rejects.toThrow('Gagal mendapatkan ID item baru setelah insert.');
+  });
+
+  it('uploads blob/data temp images through fetch path and handles upload failures gracefully', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      blob: async () => new Blob(['img'], { type: 'image/webp' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await saveItemBusinessLogic({
+      formData: {
+        ...baseFormData(),
+        image_urls: ['blob:https://example.com/mock-image'],
+      },
+      conversions: baseConversions(),
+      baseUnit: 'PCS',
+      isEditMode: false,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'blob:https://example.com/mock-image'
+    );
+    expect(uploadFileMock).toHaveBeenCalledWith(
+      'item_images',
+      expect.any(File),
+      expect.stringContaining('items/item-1/history/slot-0-')
+    );
+    expect(itemDataServiceMock.updateItemImages).toHaveBeenCalledWith(
+      'item-1',
+      ['https://cdn.example/item-1.jpg']
+    );
+
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    uploadFileMock.mockRejectedValueOnce(new Error('upload failed'));
+
+    await saveItemBusinessLogic({
+      formData: {
+        ...baseFormData(),
+        image_urls: ['blob:https://example.com/upload-failed'],
+      },
+      conversions: baseConversions(),
+      baseUnit: 'PCS',
+      isEditMode: false,
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to upload item image',
+      expect.any(Error)
+    );
+    consoleErrorSpy.mockRestore();
+    vi.unstubAllGlobals();
   });
 
   it('saves related entities and reports domain errors', async () => {

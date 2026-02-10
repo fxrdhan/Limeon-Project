@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -257,10 +257,16 @@ describe('ItemPackageConversionForm', () => {
       data: { id: 'c-3' },
       newValue: 999,
     });
+    gridProps.onCellValueChanged({
+      colDef: { field: 'sell_price' },
+      data: { id: 'c-3' },
+      newValue: { invalid: true },
+    });
 
     expect(props.onUpdateSellPrice).toHaveBeenNthCalledWith(1, 'c-1', 12500);
     expect(props.onUpdateSellPrice).toHaveBeenNthCalledWith(2, 'c-3', 0);
     expect(props.onUpdateSellPrice).toHaveBeenNthCalledWith(3, 'c-3', 0);
+    expect(props.onUpdateSellPrice).toHaveBeenNthCalledWith(4, 'c-3', 0);
 
     fireEvent.click(screen.getByText('update-form-data'));
     fireEvent.click(screen.getByText('add-conversion'));
@@ -290,6 +296,11 @@ describe('ItemPackageConversionForm', () => {
     fireEvent.blur(section, { relatedTarget: outside });
     expect(props.onInteractionEnd).toHaveBeenCalledTimes(2);
 
+    const insideTarget = document.createElement('button');
+    section.appendChild(insideTarget);
+    fireEvent.blur(section, { relatedTarget: insideTarget });
+    expect(props.onInteractionEnd).toHaveBeenCalledTimes(2);
+
     const popup = document.createElement('div');
     popup.className = 'ag-popup';
     document.body.appendChild(popup);
@@ -315,6 +326,51 @@ describe('ItemPackageConversionForm', () => {
     expect(
       screen.queryByTestId('package-conversion-input')
     ).not.toBeInTheDocument();
+  });
+
+  it('focuses first field after expand shortcut when content becomes available', () => {
+    vi.useFakeTimers();
+    const props = baseProps();
+    const { rerender } = render(
+      <ItemPackageConversionForm {...props} isExpanded={false} />
+    );
+
+    const header = screen.getByRole('button', { name: 'Konversi Kemasan' });
+    const matchesSpy = vi
+      .spyOn(header, 'matches')
+      .mockImplementation(selector => selector === ':focus-visible');
+
+    fireEvent.focus(header);
+    expect(props.onExpand).toHaveBeenCalledTimes(1);
+
+    rerender(<ItemPackageConversionForm {...props} isExpanded={true} />);
+    fireEvent.keyDown(header, { key: 'Enter' });
+    expect(props.onExpand).toHaveBeenCalledTimes(2);
+
+    const gridProps = capturedGridProps.current as {
+      getRowId: (params: { data?: { id?: string } }) => string | undefined;
+      columnDefs: Array<{
+        field?: string;
+        cellRenderer?: (params: { data?: { id: string } }) => React.ReactNode;
+      }>;
+    };
+    expect(gridProps.getRowId({ data: { id: 'c-1' } })).toBe('c-1');
+
+    const actionColumn = gridProps.columnDefs.find(
+      column => column.field === 'actions'
+    );
+    render(<>{actionColumn?.cellRenderer?.({ data: { id: 'c-1' } })}</>);
+    fireEvent.click(screen.getAllByRole('button').at(-1)!);
+    expect(props.onRemoveConversion).toHaveBeenCalledWith('c-1');
+
+    fireEvent.keyDown(header, { key: ' ' });
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(document.activeElement?.textContent).toContain('update-form-data');
+
+    matchesSpy.mockRestore();
+    vi.useRealTimers();
   });
 
   it('disables interactions and editable column behavior when disabled', () => {

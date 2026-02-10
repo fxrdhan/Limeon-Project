@@ -480,4 +480,18 @@ describe('EnhancedSearchBar helpers', () => {
       nextCarry: true,
     });
   });
+
+  it('covers step-back no-op carry branch when compact hash payload cannot be reduced', () => {
+    expect(stepBackPatternValue('#t1e33crn)#aao ', false)).toEqual({
+      handled: false,
+      nextValue: '#t1e33crn)#aao ',
+      nextCarry: false,
+    });
+
+    expect(stepBackPatternValue('#t1e33crn)#aao ', true)).toEqual({
+      handled: false,
+      nextValue: '#t1e33crn)#aao ',
+      nextCarry: true,
+    });
+  });
 });

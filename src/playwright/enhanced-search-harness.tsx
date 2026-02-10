@@ -68,6 +68,56 @@ export function Harness() {
         </button>
         <button
           type="button"
+          onClick={() => setValue('#name #contains aspirin #and #')}
+          data-testid="preset-interrupted-column"
+        >
+          preset-interrupted-column
+        </button>
+        <button
+          type="button"
+          onClick={() => setValue('#name #contains aspirin #')}
+          data-testid="preset-interrupted-join"
+        >
+          preset-interrupted-join
+        </button>
+        <button
+          type="button"
+          onClick={() => setValue('#name #contains aspirin #and #stock #')}
+          data-testid="preset-interrupted-operator-multicol"
+        >
+          preset-interrupted-operator-multicol
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setValue('#name #contains aspirin #and #stock #equals ')
+          }
+          data-testid="preset-interrupted-partial"
+        >
+          preset-interrupted-partial
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setValue(
+              '#name #contains aspirin #and #stock #equals 10 #and #category #contains pain##'
+            )
+          }
+          data-testid="preset-insert-tail-multicondition"
+        >
+          preset-insert-tail-multicondition
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setValue('#name #contains aspirin #and #stock #equals 10 #and #')
+          }
+          data-testid="preset-condition-n-building"
+        >
+          preset-condition-n-building
+        </button>
+        <button
+          type="button"
           onClick={() => {
             setValue('');
             setClearCount(0);

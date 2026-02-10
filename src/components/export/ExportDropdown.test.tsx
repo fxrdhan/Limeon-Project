@@ -453,4 +453,133 @@ describe('ExportDropdown', () => {
       );
     });
   });
+
+  it('covers valueGetter fallback column helpers, nested nulls, and fallback direct-field recovery', async () => {
+    const user = userEvent.setup();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    isAuthorizedMock.mockReturnValue(true);
+    const placeholderTab = {
+      document: { write: vi.fn() },
+      location: { href: '' },
+      close: vi.fn(),
+      closed: false,
+    };
+    vi.spyOn(window, 'open').mockReturnValue(placeholderTab as never);
+
+    const gridApi = createGridApi({
+      getColumnDefs: vi.fn(() => [
+        { field: 'name', headerName: 'Name' },
+        { field: 'manufacturer.name', headerName: 'Manufacturer' },
+        {
+          field: 'withGetter',
+          headerName: 'WithGetter',
+          valueGetter: ({
+            column,
+          }: {
+            column: {
+              getColId: () => string;
+              getColDef: () => { headerName?: string };
+            };
+          }) => `${column.getColId()}:${column.getColDef().headerName}`,
+        },
+        {
+          field: 'errorField',
+          headerName: 'Err',
+          valueGetter: () => {
+            throw new Error('getter-failed');
+          },
+        },
+      ]),
+      forEachNode: vi.fn(callback => {
+        callback({
+          data: {
+            name: 'Paracetamol',
+            manufacturer: null,
+            errorField: 'recover-me',
+          },
+          group: false,
+        });
+      }),
+      getColumn: vi.fn(() => null),
+    });
+
+    render(<ExportDropdown gridApi={gridApi as never} filename="fallbacks" />);
+    await user.click(screen.getByTitle('Export Data'));
+    await user.click(screen.getByText('Export ke Google Sheets'));
+
+    await waitFor(() => {
+      expect(exportGridDataToSheetsMock).toHaveBeenCalledWith(
+        [['Paracetamol', '', 'withGetter:WithGetter', 'recover-me']],
+        ['Name', 'Manufacturer', 'WithGetter', 'Err'],
+        'fallbacks'
+      );
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('⚠️ ValueGetter error for column errorField:'),
+      expect.any(Error)
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('returns early from Google export when grid is destroyed after opening menu', async () => {
+    const user = userEvent.setup();
+    let destroyed = false;
+    const gridApi = createGridApi({
+      isDestroyed: vi.fn(() => destroyed),
+    });
+
+    render(<ExportDropdown gridApi={gridApi as never} />);
+    await user.click(screen.getByTitle('Export Data'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    destroyed = true;
+    await user.click(screen.getByText('Export ke Google Sheets'));
+    expect(initializeMock).not.toHaveBeenCalled();
+  });
+
+  it('runs auth-success path and retries token-expired export when user confirms', async () => {
+    const user = userEvent.setup();
+    isAuthorizedMock.mockReturnValue(false);
+    authorizeMock.mockResolvedValue('token-ok');
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    exportGridDataToSheetsMock
+      .mockRejectedValueOnce(new Error('Authentication token expired'))
+      .mockResolvedValueOnce('https://docs.google.com/spreadsheets/d/retried');
+
+    const firstTab = {
+      document: { write: vi.fn() },
+      location: { href: '' },
+      close: vi.fn(),
+      closed: false,
+    };
+    const retryTab = {
+      document: { write: vi.fn() },
+      location: { href: '' },
+      close: vi.fn(),
+      closed: false,
+    };
+    const openSpy = vi
+      .spyOn(window, 'open')
+      .mockReturnValueOnce(firstTab as never)
+      .mockReturnValueOnce(retryTab as never);
+
+    render(<ExportDropdown gridApi={createGridApi() as never} />);
+    await user.click(screen.getByTitle('Export Data'));
+    await user.click(screen.getByText('Export ke Google Sheets'));
+
+    await waitFor(() => {
+      expect(authorizeMock).toHaveBeenCalled();
+      expect(confirmSpy).toHaveBeenCalledWith(
+        'Your Google authentication has expired. Click OK to re-authenticate and try again.'
+      );
+      expect(retryTab.location.href).toBe(
+        'https://docs.google.com/spreadsheets/d/retried'
+      );
+    });
+    expect(openSpy).toHaveBeenCalledWith('about:blank', '_blank');
+
+    confirmSpy.mockRestore();
+  });
 });

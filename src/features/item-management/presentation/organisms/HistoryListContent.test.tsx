@@ -317,4 +317,71 @@ describe('HistoryListContent', () => {
     expect(hardRollbackEntityMock).not.toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
+
+  it('resets restore dialog state after close delay and clears pending reset timers', async () => {
+    vi.useFakeTimers();
+    render(<HistoryListContent />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-restore-v2' }));
+    fireEvent.click(screen.getByDisplayValue('hard'));
+    fireEvent.click(screen.getByDisplayValue('soft'));
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+
+    // Reopen and close again before the previous reset timer completes
+    fireEvent.click(screen.getByRole('button', { name: 'open-restore-v2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-restore-v2' }));
+    expect(screen.getByDisplayValue('soft')).toBeChecked();
+    expect(screen.getByDisplayValue('hard')).not.toBeChecked();
+    vi.useRealTimers();
+  });
+
+  it('shows rollback and soft-restore error paths from service errors', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    hardRollbackEntityMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'rpc-fail' },
+    });
+    softRestoreEntityMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'soft-fail' },
+    });
+
+    render(<HistoryListContent />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-restore-v2' }));
+    fireEvent.click(screen.getByDisplayValue('hard'));
+    fireEvent.click(screen.getByRole('button', { name: 'Hard Rollback' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal rollback: Error: Hard rollback failed: rpc-fail'
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'open-restore-v2' }));
+    fireEvent.click(screen.getByDisplayValue('soft'));
+    fireEvent.click(screen.getByRole('button', { name: 'Soft Restore' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        'Gagal restore: Error: soft-fail'
+      );
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Restore error:',
+      expect.any(Error)
+    );
+    consoleErrorSpy.mockRestore();
+  });
 });

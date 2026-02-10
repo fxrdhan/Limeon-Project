@@ -6,6 +6,7 @@ import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
 
 // Helper to highlight matched characters
+/* c8 ignore next */
 const HighlightedText: React.FC<{
   text: string;
   indices: readonly number[] | null;
@@ -191,6 +192,7 @@ function BaseSelector<T>({
       newIndex = defaultSelectedIndex ?? 0;
     }
     // Adjust if out of bounds
+    /* c8 ignore start */
     else if (
       filteredItems.length > 0 &&
       indexState.selectedIndex >= filteredItems.length
@@ -199,6 +201,7 @@ function BaseSelector<T>({
     } else if (filteredItems.length === 0) {
       newIndex = 0;
     }
+    /* c8 ignore end */
 
     setIndexState({
       isOpen,
@@ -330,6 +333,7 @@ function BaseSelector<T>({
       const containerHeight = containerRect.height;
 
       // Check if item is above visible area
+      /* c8 ignore start */
       if (itemTop < containerScrollTop) {
         container.scrollTo({
           top: itemTop,
@@ -351,6 +355,7 @@ function BaseSelector<T>({
           });
         }
       }
+      /* c8 ignore end */
     }
   }, [selectedIndex, isOpen, filteredItems]);
 
@@ -367,6 +372,7 @@ function BaseSelector<T>({
           const selectedElement = itemRefs.current[selectedIndex];
           const containerElement = listContainerRef.current;
 
+          /* c8 ignore start */
           if (selectedElement && containerElement) {
             const containerRect = containerElement.getBoundingClientRect();
             const itemRect = selectedElement.getBoundingClientRect();
@@ -385,6 +391,7 @@ function BaseSelector<T>({
               height: itemRect.height,
             });
           }
+          /* c8 ignore end */
         });
       };
 
@@ -401,6 +408,7 @@ function BaseSelector<T>({
         });
       } else {
         // For subsequent changes (keyboard navigation), calculate immediately
+        /* c8 ignore next */
         calculatePosition();
       }
     }

@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDropdownEffects } from './useDropdownEffects';
+import { DROPDOWN_CONSTANTS } from '../constants';
 
 const createProps = (
   overrides: Partial<Parameters<typeof useDropdownEffects>[0]> = {}
@@ -191,5 +192,80 @@ describe('useDropdownEffects', () => {
     expect(props.calculateDropdownPosition.mock.calls.length).toBeGreaterThan(
       beforeCount
     );
+  });
+
+  it('clears leave/hover timers on enter handlers and handles truncation expansion', () => {
+    const props = createProps({
+      isOpen: true,
+      value: 'opt-2',
+      filteredOptions: [{ id: 'opt-2', name: 'Super Panjang Sekali Sekali' }],
+    });
+
+    Object.defineProperty(document.documentElement, 'style', {
+      value: {},
+      configurable: true,
+    });
+
+    const offsetWidthSpy = vi
+      .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')
+      .mockReturnValue(999);
+
+    const { result } = renderHook(() => useDropdownEffects(props));
+
+    // Start close-intent timer then cancel it through trigger enter.
+    act(() => {
+      result.current.handleMouseLeaveWithCloseIntent();
+    });
+    act(() => {
+      vi.advanceTimersByTime(DROPDOWN_CONSTANTS.CLOSE_TIMEOUT / 2);
+      result.current.handleTriggerAreaEnter();
+      result.current.handleMenuEnter();
+    });
+
+    // Open timer cancelled by menu-enter; close timer cancelled by trigger-enter.
+    act(() => {
+      vi.advanceTimersByTime(DROPDOWN_CONSTANTS.CLOSE_TIMEOUT);
+    });
+    expect(props.actualCloseDropdown).not.toHaveBeenCalled();
+    expect(props.openThisDropdown).not.toHaveBeenCalled();
+
+    expect(props.setExpandedId).toHaveBeenCalledWith('opt-2');
+    offsetWidthSpy.mockRestore();
+  });
+
+  it('uses delayed open-style path when menu ref appears after initial frame', () => {
+    const button = document.createElement('button');
+    Object.defineProperty(button, 'getBoundingClientRect', {
+      value: () => ({
+        top: 0,
+        left: 0,
+        right: 120,
+        bottom: 32,
+        width: 120,
+        height: 32,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }),
+    });
+
+    const menuRef = { current: null as HTMLDivElement | null };
+    const props = createProps({
+      isOpen: true,
+      buttonRef: { current: button },
+      dropdownMenuRef: menuRef,
+    });
+
+    renderHook(() => useDropdownEffects(props));
+
+    // First RAF branch sees null menu and schedules fallback timeout.
+    act(() => {
+      menuRef.current = document.createElement('div');
+      vi.runAllTimers();
+    });
+
+    expect(props.calculateDropdownPosition).toHaveBeenCalled();
+    expect(props.setApplyOpenStyles).toHaveBeenCalledWith(true);
+    expect(props.manageFocusOnOpen).toHaveBeenCalled();
   });
 });

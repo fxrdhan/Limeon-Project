@@ -337,4 +337,125 @@ describe('useDropdownPosition', () => {
     });
     expect(result.current.dropDirection).toBe('down');
   });
+
+  it('calculates content width from canvas metrics and CSS variables', async () => {
+    const button = createButton({
+      top: 180,
+      left: 420,
+      width: 120,
+      height: 36,
+    });
+    const menu = createMenu(180);
+
+    const originalCreateElement = document.createElement.bind(document);
+    const measureTextMock = vi.fn((text: string) => ({
+      width: text.length * 10,
+    }));
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (String(tagName).toLowerCase() === 'canvas') {
+          return {
+            getContext: vi.fn(() => ({
+              font: '',
+              measureText: measureTextMock,
+            })),
+          } as unknown as HTMLCanvasElement;
+        }
+        return originalCreateElement(tagName);
+      });
+
+    const getComputedStyleSpy = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockImplementation(() => {
+        return {
+          getPropertyValue: (name: string) => {
+            if (name === '--font-sans') return 'MockSans';
+            if (name === '--font-size-base') return '14px';
+            return '';
+          },
+        } as unknown as CSSStyleDeclaration;
+      });
+
+    const { result } = renderHook(() =>
+      useDropdownPosition(
+        true,
+        { current: button },
+        { current: menu },
+        'content',
+        'bottom',
+        'right',
+        [
+          { id: '1', name: 'Paracetamol' },
+          { id: '2', name: 'AmoxicillinClavulanate' },
+        ]
+      )
+    );
+
+    await waitFor(() => {
+      expect(result.current.isPositionReady).toBe(true);
+    });
+
+    // 22 chars * 10 + 80 padding = 300
+    expect(result.current.portalStyle.width).toBe('300px');
+    expect(measureTextMock).toHaveBeenCalled();
+    createElementSpy.mockRestore();
+    getComputedStyleSpy.mockRestore();
+  });
+
+  it('uses left alignment fallback/right alignment and clamps viewport edges', async () => {
+    const edgeButton = createButton({
+      top: 220,
+      left: 10,
+      width: 100,
+      height: 40,
+    });
+    const edgeMenu = createMenu(160);
+
+    const { result } = renderHook(() =>
+      useDropdownPosition(
+        true,
+        { current: edgeButton },
+        { current: edgeMenu },
+        260,
+        'left',
+        'right',
+        [{ id: '1', name: 'X' }]
+      )
+    );
+
+    await waitFor(() => {
+      expect(result.current.isPositionReady).toBe(true);
+    });
+
+    // Fallback from left placement uses right alignment, then clamps to viewport margin.
+    expect(result.current.isLeftPositioning).toBe(false);
+    expect(result.current.portalStyle.left).toBe('16px');
+
+    const topClampButton = createButton({
+      top: 0,
+      left: 500,
+      width: 100,
+      height: 40,
+    });
+    const { result: topClampResult } = renderHook(() =>
+      useDropdownPosition(
+        true,
+        { current: topClampButton },
+        { current: edgeMenu },
+        120,
+        'left',
+        'left',
+        [{ id: '1', name: 'Y' }]
+      )
+    );
+
+    await waitFor(() => {
+      expect(topClampResult.current.isPositionReady).toBe(true);
+    });
+
+    // Left-position mode should clamp top to viewport margin when button is too close to top.
+    expect(topClampResult.current.isLeftPositioning).toBe(true);
+    expect(topClampResult.current.portalStyle.top).toBe('16px');
+  });
 });
