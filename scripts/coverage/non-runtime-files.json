@@ -76,6 +76,7 @@
   "src/hooks/queries/index.ts",
   "src/hooks/realtime/index.ts",
   "src/hooks/ui/index.ts",
+  "src/playwright/enhanced-search-harness.tsx",
   "src/schemas/index.ts",
   "src/schemas/manual/index.ts",
   "src/services/api/index.ts",

@@ -35,6 +35,7 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.*',
         '**/mockData/**',
+        'src/playwright/**',
         'dist/',
         ...nonRuntimeCoverageFiles,
       ],
