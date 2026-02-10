@@ -242,6 +242,30 @@ describe('useMasterDataManagement', () => {
     );
   });
 
+  it('handles field autosave with silent supplier updates and nullable normalization', async () => {
+    const { result } = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+
+    await act(async () => {
+      await result.current.handleFieldAutosave('sup-1', 'phone', '');
+    });
+
+    expect(updateSupplierMutateAsyncMock).toHaveBeenCalledWith({
+      id: 'sup-1',
+      data: { phone: null },
+      options: { silent: true },
+    });
+
+    updateSupplierMutateAsyncMock.mockClear();
+
+    await act(async () => {
+      await result.current.handleFieldAutosave('sup-1', 'name', '');
+    });
+
+    expect(updateSupplierMutateAsyncMock).not.toHaveBeenCalled();
+  });
+
   it('handles delete errors, add-modal enter flow, and unsupported table', async () => {
     const { result } = renderHook(() =>
       useMasterDataManagement('suppliers', 'Supplier')

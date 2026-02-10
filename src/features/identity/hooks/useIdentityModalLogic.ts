@@ -52,7 +52,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     initialNameFromSearch,
     imageAspectRatio = 'default',
     showImageUploader = true,
-    useInlineFieldActions = true,
+    useInlineFieldActions = false,
   } = props;
 
   // Use getDerivedStateFromProps to reset isClosing when isOpen changes

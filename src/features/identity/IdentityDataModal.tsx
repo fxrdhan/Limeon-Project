@@ -27,7 +27,7 @@ const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({
   initialNameFromSearch,
   imageAspectRatio = 'default',
   showImageUploader = true,
-  useInlineFieldActions = true,
+  useInlineFieldActions = false,
 }) => {
   const { contextValue, resetInternalState } = useIdentityModalLogic({
     title,

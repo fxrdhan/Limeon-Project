@@ -94,7 +94,7 @@ describe('IdentityDataModal', () => {
         mode: 'edit',
         imageAspectRatio: 'default',
         showImageUploader: true,
-        useInlineFieldActions: true,
+        useInlineFieldActions: false,
       })
     );
 

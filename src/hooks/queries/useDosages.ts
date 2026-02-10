@@ -4,6 +4,10 @@ import toast from 'react-hot-toast';
 import type { ItemDosage } from '@/types/database';
 import { itemDosageService } from '@/services/api/masterData.service';
 
+type MutationOptions = {
+  silent?: boolean;
+};
+
 // Simple dosages hook without realtime
 export const useDosages = ({ enabled = true }: { enabled?: boolean } = {}) => {
   return useQuery<ItemDosage[]>({
@@ -63,23 +67,28 @@ export const useDosageMutations = () => {
   const updateMutation = useMutation({
     mutationFn: async ({
       id,
+      options: _options,
       ...updateData
-    }: { id: string } & Partial<ItemDosage>) => {
+    }: { id: string; options?: MutationOptions } & Partial<ItemDosage>) => {
       const { data, error } = await itemDosageService.update(id, updateData);
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('Dosis berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Dosis berhasil diperbarui');
+      }
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating dosage:', error);
-      toast.error('Gagal memperbarui dosis');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui dosis');
+      }
     },
   });
 

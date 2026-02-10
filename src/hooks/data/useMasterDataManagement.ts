@@ -357,6 +357,155 @@ export const useMasterDataManagement = (
     setIsEditModalOpen(true);
   }, []);
 
+  const getUpdateMutation = useCallback(() => {
+    return (
+      ('updateSupplier' in mutations && mutations.updateSupplier) ||
+      ('updatePatient' in mutations && mutations.updatePatient) ||
+      ('updateDoctor' in mutations && mutations.updateDoctor) ||
+      ('updateCustomer' in mutations && mutations.updateCustomer)
+    );
+  }, [mutations]);
+
+  const normalizeAutosaveField = useCallback(
+    (
+      fieldKey: string,
+      value: unknown
+    ): { key: string; value: unknown } | null => {
+      const requiredFieldsByTable: Record<string, Set<string>> = {
+        suppliers: new Set(['name']),
+        patients: new Set(['name']),
+        doctors: new Set(['name']),
+        customers: new Set(['name', 'customer_level_id']),
+      };
+
+      const nullableFieldsByTable: Record<string, Set<string>> = {
+        suppliers: new Set([
+          'address',
+          'phone',
+          'email',
+          'contact_person',
+          'image_url',
+        ]),
+        patients: new Set([
+          'gender',
+          'birth_date',
+          'address',
+          'phone',
+          'email',
+        ]),
+        doctors: new Set([
+          'gender',
+          'specialization',
+          'license_number',
+          'experience_years',
+          'qualification',
+          'phone',
+          'email',
+          'address',
+          'birth_date',
+          'image_url',
+        ]),
+        customers: new Set(['phone', 'email', 'address']),
+      };
+
+      const mappedKey =
+        tableName === 'doctors' && fieldKey === 'education'
+          ? 'qualification'
+          : fieldKey;
+
+      if (mappedKey === 'experience_years') {
+        if (
+          value === null ||
+          value === undefined ||
+          String(value).trim() === ''
+        ) {
+          return { key: mappedKey, value: null };
+        }
+        const parsed = Number(value);
+        return Number.isFinite(parsed)
+          ? { key: mappedKey, value: parsed }
+          : null;
+      }
+
+      const requiredFields =
+        requiredFieldsByTable[tableName] ?? new Set(['name']);
+      if (requiredFields.has(mappedKey)) {
+        if (
+          value === null ||
+          value === undefined ||
+          String(value).trim() === ''
+        ) {
+          return null;
+        }
+        return { key: mappedKey, value: String(value) };
+      }
+
+      const nullableFields =
+        nullableFieldsByTable[tableName] ?? new Set<string>();
+      if (nullableFields.has(mappedKey)) {
+        if (
+          value === null ||
+          value === undefined ||
+          String(value).trim() === ''
+        ) {
+          return { key: mappedKey, value: null };
+        }
+        return { key: mappedKey, value: String(value) };
+      }
+
+      return { key: mappedKey, value };
+    },
+    [tableName]
+  );
+
+  const handleFieldAutosave = useCallback(
+    async (
+      identityId: string | undefined,
+      fieldKey: string,
+      value: unknown
+    ): Promise<void> => {
+      if (!identityId) return;
+
+      const updateMutation = getUpdateMutation();
+      if (
+        !updateMutation ||
+        typeof updateMutation !== 'object' ||
+        !('mutateAsync' in updateMutation)
+      ) {
+        return;
+      }
+
+      const normalizedField = normalizeAutosaveField(fieldKey, value);
+      if (!normalizedField) return;
+
+      await (
+        updateMutation as unknown as {
+          mutateAsync: (params: {
+            id: string;
+            data: Record<string, unknown>;
+            options?: { silent?: boolean };
+          }) => Promise<unknown>;
+        }
+      ).mutateAsync({
+        id: identityId,
+        data: { [normalizedField.key]: normalizedField.value },
+        options: { silent: true },
+      });
+
+      setEditingIdentity(prev => {
+        if (!prev || prev.id !== identityId) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [normalizedField.key]: normalizedField.value,
+        };
+      });
+    },
+    [getUpdateMutation, normalizeAutosaveField]
+  );
+
   const handleModalSubmit = useCallback(
     async (identityData: {
       id?: string;
@@ -385,11 +534,7 @@ export const useMasterDataManagement = (
 
         if (identityData.id) {
           // Update existing identity
-          const updateMutation =
-            ('updateSupplier' in mutations && mutations.updateSupplier) ||
-            ('updatePatient' in mutations && mutations.updatePatient) ||
-            ('updateDoctor' in mutations && mutations.updateDoctor) ||
-            ('updateCustomer' in mutations && mutations.updateCustomer);
+          const updateMutation = getUpdateMutation();
 
           if (
             updateMutation &&
@@ -482,7 +627,7 @@ export const useMasterDataManagement = (
         }
       }
     },
-    [mutations, entityNameLabel, alert, refetch]
+    [getUpdateMutation, mutations, entityNameLabel, alert, refetch]
   );
 
   const handleDelete = useCallback(
@@ -586,6 +731,7 @@ export const useMasterDataManagement = (
     handleEdit,
     handleModalSubmit,
     handleDelete,
+    handleFieldAutosave,
     handlePageChange,
     handleItemsPerPageChange: handleIdentitiesPerPageChange,
     handleKeyDown,

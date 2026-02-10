@@ -309,13 +309,31 @@ describe('Master data list pages', () => {
     });
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
-      name: 'Dr. Baru',
-      description: 'Umum',
+      data: {
+        name: 'Dr. Baru',
+        gender: null,
+        specialization: 'Umum',
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
-      name: 'Dr. Edit',
-      description: 'Jantung',
+      data: {
+        name: 'Dr. Edit',
+        gender: null,
+        specialization: 'Jantung',
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: 'doc-7',
     });
 
@@ -412,13 +430,27 @@ describe('Master data list pages', () => {
     });
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
-      name: 'Pasien Baru',
-      description: 'Jl. Sehat',
+      data: {
+        name: 'Pasien Baru',
+        gender: null,
+        birth_date: null,
+        address: 'Jl. Sehat',
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
-      name: 'Pasien Edit',
-      description: 'Jl. Baru',
+      data: {
+        name: 'Pasien Edit',
+        gender: null,
+        birth_date: null,
+        address: 'Jl. Baru',
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: 'pat-3',
     });
 
@@ -670,13 +702,31 @@ describe('Master data list pages', () => {
     await editModal.onSave({});
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
-      name: '',
-      description: '',
+      data: {
+        name: '',
+        gender: null,
+        specialization: null,
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
-      name: '',
-      description: '',
+      data: {
+        name: '',
+        gender: null,
+        specialization: null,
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
   });
@@ -720,13 +770,27 @@ describe('Master data list pages', () => {
     await editModal.onSave({});
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
-      name: '',
-      description: '',
+      data: {
+        name: '',
+        gender: null,
+        birth_date: null,
+        address: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
-      name: '',
-      description: '',
+      data: {
+        name: '',
+        gender: null,
+        birth_date: null,
+        address: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
   });

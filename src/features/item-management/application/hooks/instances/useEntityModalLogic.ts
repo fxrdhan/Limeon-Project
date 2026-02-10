@@ -19,6 +19,10 @@ interface UseEntityModalLogicProps {
     description?: string;
     address?: string;
   }) => Promise<void>;
+  onFieldAutosave?: (
+    id: string,
+    updates: Record<string, unknown>
+  ) => Promise<void>;
   onDelete?: (id: string) => Promise<void> | void;
   initialData?: EntityData | null;
   initialNameFromSearch?: string;
@@ -44,6 +48,7 @@ export const useEntityModalLogic = ({
   isOpen,
   onClose,
   onSubmit,
+  onFieldAutosave,
   onDelete,
   initialData = null,
   initialNameFromSearch,
@@ -123,6 +128,7 @@ export const useEntityModalLogic = ({
   );
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const autosaveTimersRef = useRef<Record<string, number>>({});
 
   // Track last synchronized state from database (for realtime updates)
   // This represents the "truth" from database, not the stale initialData snapshot
@@ -235,10 +241,106 @@ export const useEntityModalLogic = ({
 
   // Form actions
   const resetForm = useCallback(() => {
+    Object.values(autosaveTimersRef.current).forEach(timerId => {
+      window.clearTimeout(timerId);
+    });
+    autosaveTimersRef.current = {};
     setCode('');
     setName('');
     setDescription('');
     setAddress('');
+  }, []);
+
+  const scheduleFieldAutosave = useCallback(
+    (field: 'code' | 'name' | 'description' | 'address', rawValue: string) => {
+      if (!onFieldAutosave || !initialData?.id || !isEditMode || !isOpen) {
+        return;
+      }
+
+      if ((field === 'code' || field === 'name') && rawValue.trim() === '') {
+        return;
+      }
+
+      const normalizedValue =
+        field === 'description' || field === 'address'
+          ? rawValue.trim() === ''
+            ? null
+            : rawValue
+          : rawValue;
+
+      const existingTimer = autosaveTimersRef.current[field];
+      if (existingTimer) {
+        window.clearTimeout(existingTimer);
+      }
+
+      autosaveTimersRef.current[field] = window.setTimeout(() => {
+        void onFieldAutosave(initialData.id, { [field]: normalizedValue })
+          .then(() => {
+            setLastSyncedState(prev => ({
+              ...prev,
+              [field]:
+                typeof normalizedValue === 'string' ? normalizedValue : '',
+            }));
+          })
+          .catch(error => {
+            console.error(`Error autosaving ${field}:`, error);
+            toast.error('Gagal menyimpan perubahan.');
+          })
+          .finally(() => {
+            delete autosaveTimersRef.current[field];
+          });
+      }, 600);
+    },
+    [onFieldAutosave, initialData?.id, isEditMode, isOpen]
+  );
+
+  const setCodeWithAutosave = useCallback(
+    (nextCode: string) => {
+      setCode(nextCode);
+      scheduleFieldAutosave('code', nextCode);
+    },
+    [scheduleFieldAutosave]
+  );
+
+  const setNameWithAutosave = useCallback(
+    (nextName: string) => {
+      setName(nextName);
+      scheduleFieldAutosave('name', nextName);
+    },
+    [scheduleFieldAutosave]
+  );
+
+  const setDescriptionWithAutosave = useCallback(
+    (nextDescription: string) => {
+      setDescription(nextDescription);
+      scheduleFieldAutosave('description', nextDescription);
+    },
+    [scheduleFieldAutosave]
+  );
+
+  const setAddressWithAutosave = useCallback(
+    (nextAddress: string) => {
+      setAddress(nextAddress);
+      scheduleFieldAutosave('address', nextAddress);
+    },
+    [scheduleFieldAutosave]
+  );
+
+  useEffect(() => {
+    if (isOpen) return;
+    Object.values(autosaveTimersRef.current).forEach(timerId => {
+      window.clearTimeout(timerId);
+    });
+    autosaveTimersRef.current = {};
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(autosaveTimersRef.current).forEach(timerId => {
+        window.clearTimeout(timerId);
+      });
+      autosaveTimersRef.current = {};
+    };
   }, []);
 
   // Initialize mode and form data when modal opens
@@ -305,6 +407,11 @@ export const useEntityModalLogic = ({
   // comparisonData auto-resets when modal closes (getDerivedStateFromProps pattern)
 
   const handleSubmit = useCallback(async () => {
+    Object.values(autosaveTimersRef.current).forEach(timerId => {
+      window.clearTimeout(timerId);
+    });
+    autosaveTimersRef.current = {};
+
     if (!isValid) {
       toast.error(
         `Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`
@@ -568,10 +675,10 @@ export const useEntityModalLogic = ({
         }
       : undefined,
     formActions: {
-      setCode,
-      setName,
-      setDescription,
-      setAddress,
+      setCode: setCodeWithAutosave,
+      setName: setNameWithAutosave,
+      setDescription: setDescriptionWithAutosave,
+      setAddress: setAddressWithAutosave,
       handleSubmit,
       handleDelete,
       resetForm,

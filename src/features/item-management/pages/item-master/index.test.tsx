@@ -209,6 +209,7 @@ const createMasterDataHookState = (label: string) => ({
   itemsPerPage: 20,
   handleEdit: vi.fn(),
   handleModalSubmit: vi.fn(),
+  handleFieldAutosave: vi.fn(),
   handleDelete: vi.fn(),
   debouncedSearch: `${label}-search`,
   handleKeyDown: vi.fn(),
@@ -356,6 +357,7 @@ describe('ItemMaster page', () => {
       closeEditModal: vi.fn(),
       closeAddModal: vi.fn(),
       handleSubmit: vi.fn(),
+      handleFieldAutosave: vi.fn(),
       handleDelete: vi.fn(),
       isAddModalOpen: false,
       isEditModalOpen: false,
@@ -773,8 +775,15 @@ describe('ItemMaster page', () => {
       });
     });
     expect(patientSubmitSpy).toHaveBeenCalledWith({
-      name: 'Sinta',
-      description: 'Bandung',
+      data: {
+        name: 'Sinta',
+        gender: null,
+        birth_date: null,
+        address: 'Bandung',
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
 
@@ -789,8 +798,15 @@ describe('ItemMaster page', () => {
       });
     });
     expect(patientSubmitSpy).toHaveBeenCalledWith({
-      name: 'Sinta Edit',
-      description: 'Jakarta',
+      data: {
+        name: 'Sinta Edit',
+        gender: null,
+        birth_date: null,
+        address: 'Jakarta',
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: 'pat-1',
     });
 
@@ -847,8 +863,17 @@ describe('ItemMaster page', () => {
       });
     });
     expect(doctorSubmitSpy).toHaveBeenCalledWith({
-      name: 'Dr A',
-      description: 'Anak',
+      data: {
+        name: 'Dr A',
+        gender: null,
+        specialization: 'Anak',
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: undefined,
     });
 
@@ -863,8 +888,17 @@ describe('ItemMaster page', () => {
       });
     });
     expect(doctorSubmitSpy).toHaveBeenCalledWith({
-      name: 'Dr A Edit',
-      description: 'Bedah',
+      data: {
+        name: 'Dr A Edit',
+        gender: null,
+        specialization: 'Bedah',
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
       id: 'doc-1',
     });
 

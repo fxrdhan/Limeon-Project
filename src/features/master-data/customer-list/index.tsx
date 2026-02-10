@@ -36,6 +36,7 @@ const CustomerList = () => {
     currentPage: _currentPage, // eslint-disable-line @typescript-eslint/no-unused-vars
     itemsPerPage,
     handleDelete,
+    handleFieldAutosave,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -216,6 +217,7 @@ const CustomerList = () => {
         mode="add"
         initialNameFromSearch={debouncedSearch}
         showImageUploader={false}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -243,6 +245,9 @@ const CustomerList = () => {
             },
           });
         }}
+        onFieldSave={async (key, value) => {
+          await handleFieldAutosave(editingItem?.id, key, value);
+        }}
         onDeleteRequest={
           editingItem
             ? () => {
@@ -260,6 +265,7 @@ const CustomerList = () => {
         }
         mode="edit"
         showImageUploader={false}
+        useInlineFieldActions={false}
       />
     </MasterDataListPage>
   );

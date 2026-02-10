@@ -38,6 +38,7 @@ const PatientListNew = () => {
     currentPage: _currentPage, // eslint-disable-line @typescript-eslint/no-unused-vars
     itemsPerPage,
     handleDelete,
+    handleFieldAutosave,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -162,6 +163,18 @@ const PatientListNew = () => {
     handleEdit(event.data);
   };
 
+  const toPatientPayload = (
+    data: Record<string, string | number | boolean | null>
+  ) => ({
+    name: String(data.name || ''),
+    gender: data.gender ? String(data.gender) : null,
+    birth_date: data.birth_date ? String(data.birth_date) : null,
+    address: data.address ? String(data.address) : null,
+    phone: data.phone ? String(data.phone) : null,
+    email: data.email ? String(data.email) : null,
+    image_url: data.image_url ? String(data.image_url) : null,
+  });
+
   return (
     <MasterDataListPage
       title="Daftar Pasien"
@@ -206,13 +219,13 @@ const PatientListNew = () => {
         onClose={handleCloseAddModal}
         onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.address || ''),
+            data: toPatientPayload(data),
             id: undefined,
           });
         }}
         mode="add"
         initialNameFromSearch={debouncedSearch}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -228,10 +241,12 @@ const PatientListNew = () => {
         onClose={handleCloseEditModal}
         onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.address || ''),
+            data: toPatientPayload(data),
             id: editingItem?.id,
           });
+        }}
+        onFieldSave={async (key, value) => {
+          await handleFieldAutosave(editingItem?.id, key, value);
         }}
         onDeleteRequest={
           editingItem
@@ -250,6 +265,7 @@ const PatientListNew = () => {
         }
         mode="edit"
         imageUrl={(editingItem as PatientType)?.image_url || undefined}
+        useInlineFieldActions={false}
       />
     </MasterDataListPage>
   );

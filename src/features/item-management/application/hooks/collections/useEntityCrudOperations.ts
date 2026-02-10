@@ -213,6 +213,27 @@ export const useEntityCrudOperations = (
     [normalizedDelete, entityNameLabel, refetch]
   );
 
+  const handleFieldAutosave = useCallback(
+    async (itemId: string, updates: Record<string, unknown>) => {
+      if (!normalizedUpdate || !itemId || Object.keys(updates).length === 0) {
+        return;
+      }
+
+      try {
+        await normalizedUpdate.mutateAsync({
+          id: itemId,
+          ...updates,
+          options: { silent: true },
+        });
+      } catch (error) {
+        console.error(`Gagal autosave ${entityNameLabel}:`, error);
+        toast.error('Gagal menyimpan perubahan.');
+        throw error;
+      }
+    },
+    [normalizedUpdate, entityNameLabel]
+  );
+
   // Provide a deletion mutation-shaped object for compatibility with existing consumers
   const deleteMutation = {
     mutateAsync: handleDelete,
@@ -243,6 +264,7 @@ export const useEntityCrudOperations = (
 
   return {
     handleModalSubmit,
+    handleFieldAutosave,
     deleteMutation,
   };
 };

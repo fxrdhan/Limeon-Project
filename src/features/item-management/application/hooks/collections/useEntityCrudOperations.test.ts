@@ -117,6 +117,24 @@ describe('useEntityCrudOperations', () => {
     expect(result.current.deleteMutation.error).toBeNull();
   });
 
+  it('runs silent field autosave updates', async () => {
+    const { result } = renderHook(() =>
+      useEntityCrudOperations('item_categories', 'Kategori')
+    );
+
+    await act(async () => {
+      await result.current.handleFieldAutosave('cat-1', {
+        description: 'Autosave desc',
+      });
+    });
+
+    expect(updateMutateAsyncMock).toHaveBeenCalledWith({
+      id: 'cat-1',
+      description: 'Autosave desc',
+      options: { silent: true },
+    });
+  });
+
   it('shows duplicate-code and generic submit errors', async () => {
     const duplicateError = {
       code: '23505',

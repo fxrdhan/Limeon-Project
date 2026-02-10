@@ -38,6 +38,7 @@ const DoctorListNew = () => {
     currentPage: _currentPage, // eslint-disable-line @typescript-eslint/no-unused-vars
     itemsPerPage,
     handleDelete,
+    handleFieldAutosave,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -182,6 +183,34 @@ const DoctorListNew = () => {
     handleEdit(event.data);
   };
 
+  const toDoctorPayload = (
+    data: Record<string, string | number | boolean | null>
+  ) => {
+    const rawExperienceYears = data.experience_years;
+    const hasExperienceYears =
+      rawExperienceYears !== null &&
+      rawExperienceYears !== undefined &&
+      String(rawExperienceYears).trim() !== '';
+    const parsedExperienceYears = hasExperienceYears
+      ? Number(rawExperienceYears)
+      : null;
+
+    return {
+      name: String(data.name || ''),
+      gender: data.gender ? String(data.gender) : null,
+      specialization: data.specialization ? String(data.specialization) : null,
+      license_number: data.license_number ? String(data.license_number) : null,
+      experience_years:
+        parsedExperienceYears !== null && Number.isFinite(parsedExperienceYears)
+          ? parsedExperienceYears
+          : null,
+      qualification: data.education ? String(data.education) : null,
+      phone: data.phone ? String(data.phone) : null,
+      email: data.email ? String(data.email) : null,
+      image_url: data.image_url ? String(data.image_url) : null,
+    };
+  };
+
   return (
     <MasterDataListPage
       title="Daftar Dokter"
@@ -226,13 +255,13 @@ const DoctorListNew = () => {
         onClose={handleCloseAddModal}
         onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.specialization || ''),
+            data: toDoctorPayload(data),
             id: undefined,
           });
         }}
         mode="add"
         initialNameFromSearch={debouncedSearch}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -248,10 +277,12 @@ const DoctorListNew = () => {
         onClose={handleCloseEditModal}
         onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.specialization || ''),
+            data: toDoctorPayload(data),
             id: editingItem?.id,
           });
+        }}
+        onFieldSave={async (key, value) => {
+          await handleFieldAutosave(editingItem?.id, key, value);
         }}
         onDeleteRequest={
           editingItem
@@ -270,6 +301,7 @@ const DoctorListNew = () => {
         }
         mode="edit"
         imageUrl={(editingItem as DoctorType)?.image_url || undefined}
+        useInlineFieldActions={false}
       />
     </MasterDataListPage>
   );

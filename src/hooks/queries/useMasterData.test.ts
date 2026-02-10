@@ -521,6 +521,28 @@ describe('useMasterData hooks', () => {
     );
     expect(toastSuccessMock).toHaveBeenCalledWith('Supplier berhasil dihapus');
 
+    const supplierUpdateToastCount = toastSuccessMock.mock.calls.filter(
+      call => call[0] === 'Supplier berhasil diperbarui'
+    ).length;
+    masterDataServiceMock.suppliers.update.mockResolvedValueOnce({
+      data: { id: 'sup-1' },
+      error: null,
+    });
+
+    await act(async () => {
+      await result.current.updateSupplier.mutateAsync({
+        id: 'sup-1',
+        data: { phone: '0813' },
+        options: { silent: true },
+      });
+    });
+
+    expect(
+      toastSuccessMock.mock.calls.filter(
+        call => call[0] === 'Supplier berhasil diperbarui'
+      ).length
+    ).toBe(supplierUpdateToastCount);
+
     masterDataServiceMock.suppliers.delete.mockResolvedValueOnce({
       data: null,
       error: new Error('supplier delete failed'),

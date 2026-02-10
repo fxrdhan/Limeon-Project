@@ -12,6 +12,10 @@ import type {
 } from '@/types/database';
 import type { ItemUnit } from '@/services/api/masterData.service';
 
+type MutationOptions = {
+  silent?: boolean;
+};
+
 // Category Hooks
 export const useCategories = (options?: { enabled?: boolean }) => {
   return useQuery({
@@ -70,9 +74,11 @@ export const useCategoryMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<Category>;
+      options?: MutationOptions;
     }) => {
       const result = await masterDataService.categories.update(id, data);
       if (result.error) {
@@ -81,8 +87,10 @@ export const useCategoryMutations = () => {
       }
       return result.data;
     },
-    onSuccess: () => {
-      toast.success('Kategori berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Kategori berhasil diperbarui');
+      }
       // Local cache update
       queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
@@ -92,9 +100,11 @@ export const useCategoryMutations = () => {
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating category:', error);
-      toast.error('Gagal memperbarui kategori');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui kategori');
+      }
     },
   });
 
@@ -177,23 +187,29 @@ export const useMedicineTypeMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<MedicineType>;
+      options?: MutationOptions;
     }) => {
       const result = await masterDataService.types.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
-    onSuccess: () => {
-      toast.success('Jenis obat berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Jenis obat berhasil diperbarui');
+      }
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating medicine type:', error);
-      toast.error('Gagal memperbarui jenis obat');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui jenis obat');
+      }
     },
   });
 
@@ -268,23 +284,29 @@ export const usePackageMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<ItemPackage>;
+      options?: MutationOptions;
     }) => {
       const result = await masterDataService.packages.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
-    onSuccess: () => {
-      toast.success('Kemasan berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Kemasan berhasil diperbarui');
+      }
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating package:', error);
-      toast.error('Gagal memperbarui kemasan');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui kemasan');
+      }
     },
   });
 
@@ -360,24 +382,30 @@ export const useItemUnitMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<ItemUnit>;
+      options?: MutationOptions;
     }) => {
       const result = await masterDataService.itemUnits.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
-    onSuccess: () => {
-      toast.success('Satuan berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Satuan berhasil diperbarui');
+      }
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating item unit:', error);
-      toast.error('Gagal memperbarui satuan');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui satuan');
+      }
     },
   });
 
@@ -486,16 +514,20 @@ export const useSupplierMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<Supplier>;
+      options?: MutationOptions;
     }) => {
       const result = await masterDataService.suppliers.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
-    onSuccess: () => {
-      toast.success('Supplier berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Supplier berhasil diperbarui');
+      }
       const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({
@@ -503,9 +535,11 @@ export const useSupplierMutations = () => {
         });
       });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating supplier:', error);
-      toast.error('Gagal memperbarui supplier');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui supplier');
+      }
     },
   });
 

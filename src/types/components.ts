@@ -270,6 +270,10 @@ export interface AddEditModalProps {
     description?: string;
     address?: string;
   }) => Promise<void>;
+  onFieldAutosave?: (
+    id: string,
+    updates: Record<string, unknown>
+  ) => Promise<void>;
   initialData?: Category | null;
   onDelete?: (categoryId: string) => void;
   isLoading?: boolean;

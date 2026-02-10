@@ -352,6 +352,41 @@ describe('useEntityModalLogic', () => {
     expect(result.current.contextValue.comparison.isOpen).toBe(false);
   });
 
+  it('debounces autosave updates in edit mode when onFieldAutosave is provided', async () => {
+    const onFieldAutosave = vi.fn().mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose: vi.fn(),
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        onFieldAutosave,
+        entityName: 'Kategori',
+        initialData: {
+          id: 'cat-1',
+          code: 'CAT-1',
+          name: 'Kategori Awal',
+          description: 'desc',
+          updated_at: '2025-01-01T00:00:00.000Z',
+        },
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    act(() => {
+      result.current.contextValue.formActions.setName('Kategori Baru');
+    });
+    expect(onFieldAutosave).not.toHaveBeenCalled();
+
+    await flushTimers(600);
+
+    expect(onFieldAutosave).toHaveBeenCalledWith('cat-1', {
+      name: 'Kategori Baru',
+    });
+  });
+
   it('covers sequential handleClose path when comparison is open', async () => {
     const onClose = vi.fn();
     const setTimeoutSpy = vi.spyOn(global, 'setTimeout');

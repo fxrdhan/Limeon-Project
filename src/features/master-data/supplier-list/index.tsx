@@ -39,6 +39,7 @@ const SupplierListNew = () => {
     currentPage: _currentPage, // eslint-disable-line @typescript-eslint/no-unused-vars
     itemsPerPage,
     handleDelete,
+    handleFieldAutosave,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -221,6 +222,9 @@ const SupplierListNew = () => {
             data: toSupplierPayload(data),
             id: editingItem?.id,
           });
+        }}
+        onFieldSave={async (key, value) => {
+          await handleFieldAutosave(editingItem?.id, key, value);
         }}
         onDeleteRequest={
           editingItem

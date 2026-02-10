@@ -351,6 +351,7 @@ const ItemMasterNew = memo(() => {
     itemsPerPage: customerItemsPerPage,
     handleEdit: handleCustomerEdit,
     handleModalSubmit: handleCustomerModalSubmit,
+    handleFieldAutosave: handleCustomerFieldAutosave,
     handleDelete: handleCustomerDelete,
     debouncedSearch: customerDebouncedSearch,
     handleKeyDown: handleCustomerKeyDown,
@@ -370,6 +371,7 @@ const ItemMasterNew = memo(() => {
     itemsPerPage: patientItemsPerPage,
     handleEdit: handlePatientEdit,
     handleModalSubmit: handlePatientModalSubmit,
+    handleFieldAutosave: handlePatientFieldAutosave,
     handleDelete: handlePatientDelete,
     debouncedSearch: patientDebouncedSearch,
     handleKeyDown: handlePatientKeyDown,
@@ -389,6 +391,7 @@ const ItemMasterNew = memo(() => {
     itemsPerPage: doctorItemsPerPage,
     handleEdit: handleDoctorEdit,
     handleModalSubmit: handleDoctorModalSubmit,
+    handleFieldAutosave: handleDoctorFieldAutosave,
     handleDelete: handleDoctorDelete,
     debouncedSearch: doctorDebouncedSearch,
     handleKeyDown: handleDoctorKeyDown,
@@ -507,6 +510,66 @@ const ItemMasterNew = memo(() => {
   }, [customerLevels]);
 
   const defaultCustomerLevelId = customerLevels[0]?.id ?? null;
+
+  const toCustomerPayload = useCallback(
+    (data: Record<string, string | number | boolean | null>) => ({
+      name: String(data.name || ''),
+      customer_level_id: String(
+        data.customer_level_id || defaultCustomerLevelId || ''
+      ),
+      phone: data.phone ? String(data.phone) : null,
+      email: data.email ? String(data.email) : null,
+      address: data.address ? String(data.address) : null,
+    }),
+    [defaultCustomerLevelId]
+  );
+
+  const toPatientPayload = useCallback(
+    (data: Record<string, string | number | boolean | null>) => ({
+      name: String(data.name || ''),
+      gender: data.gender ? String(data.gender) : null,
+      birth_date: data.birth_date ? String(data.birth_date) : null,
+      address: data.address ? String(data.address) : null,
+      phone: data.phone ? String(data.phone) : null,
+      email: data.email ? String(data.email) : null,
+      image_url: data.image_url ? String(data.image_url) : null,
+    }),
+    []
+  );
+
+  const toDoctorPayload = useCallback(
+    (data: Record<string, string | number | boolean | null>) => {
+      const rawExperienceYears = data.experience_years;
+      const hasExperienceYears =
+        rawExperienceYears !== null &&
+        rawExperienceYears !== undefined &&
+        String(rawExperienceYears).trim() !== '';
+      const parsedExperienceYears = hasExperienceYears
+        ? Number(rawExperienceYears)
+        : null;
+
+      return {
+        name: String(data.name || ''),
+        gender: data.gender ? String(data.gender) : null,
+        specialization: data.specialization
+          ? String(data.specialization)
+          : null,
+        license_number: data.license_number
+          ? String(data.license_number)
+          : null,
+        experience_years:
+          parsedExperienceYears !== null &&
+          Number.isFinite(parsedExperienceYears)
+            ? parsedExperienceYears
+            : null,
+        qualification: data.education ? String(data.education) : null,
+        phone: data.phone ? String(data.phone) : null,
+        email: data.email ? String(data.email) : null,
+        image_url: data.image_url ? String(data.image_url) : null,
+      };
+    },
+    []
+  );
 
   const customerFields: FieldConfig[] = useMemo(
     () => [
@@ -2402,6 +2465,7 @@ const ItemMasterNew = memo(() => {
                 : entityManager.closeAddModal
             }
             onSubmit={entityManager.handleSubmit}
+            onFieldAutosave={entityManager.handleFieldAutosave}
             initialData={entityManager.editingEntity}
             onDelete={
               entityManager.editingEntity
@@ -2436,20 +2500,13 @@ const ItemMasterNew = memo(() => {
         onClose={() => setIsAddCustomerModalOpen(false)}
         onSave={async data => {
           await handleCustomerModalSubmit({
-            data: {
-              name: String(data.name || ''),
-              customer_level_id: String(
-                data.customer_level_id || defaultCustomerLevelId || ''
-              ),
-              phone: data.phone ? String(data.phone) : null,
-              email: data.email ? String(data.email) : null,
-              address: data.address ? String(data.address) : null,
-            },
+            data: toCustomerPayload(data),
           });
         }}
         mode="add"
         initialNameFromSearch={customerDebouncedSearch}
         showImageUploader={false}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -2466,16 +2523,11 @@ const ItemMasterNew = memo(() => {
         onSave={async data => {
           await handleCustomerModalSubmit({
             id: editingCustomer?.id,
-            data: {
-              name: String(data.name || ''),
-              customer_level_id: String(
-                data.customer_level_id || defaultCustomerLevelId || ''
-              ),
-              phone: data.phone ? String(data.phone) : null,
-              email: data.email ? String(data.email) : null,
-              address: data.address ? String(data.address) : null,
-            },
+            data: toCustomerPayload(data),
           });
+        }}
+        onFieldSave={async (key, value) => {
+          await handleCustomerFieldAutosave(editingCustomer?.id, key, value);
         }}
         onDeleteRequest={
           editingCustomer
@@ -2494,6 +2546,7 @@ const ItemMasterNew = memo(() => {
         }
         mode="edit"
         showImageUploader={false}
+        useInlineFieldActions={false}
       />
 
       {/* Patient Modals */}
@@ -2505,13 +2558,13 @@ const ItemMasterNew = memo(() => {
         onClose={() => setIsAddPatientModalOpen(false)}
         onSave={async data => {
           await handlePatientModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.address || ''),
+            data: toPatientPayload(data),
             id: undefined,
           });
         }}
         mode="add"
         initialNameFromSearch={patientDebouncedSearch}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -2527,10 +2580,12 @@ const ItemMasterNew = memo(() => {
         onClose={() => setIsEditPatientModalOpen(false)}
         onSave={async data => {
           await handlePatientModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.address || ''),
+            data: toPatientPayload(data),
             id: editingPatient?.id,
           });
+        }}
+        onFieldSave={async (key, value) => {
+          await handlePatientFieldAutosave(editingPatient?.id, key, value);
         }}
         onDeleteRequest={
           editingPatient
@@ -2549,6 +2604,7 @@ const ItemMasterNew = memo(() => {
         }
         mode="edit"
         imageUrl={(editingPatient as PatientType)?.image_url || undefined}
+        useInlineFieldActions={false}
       />
 
       {/* Doctor Modals */}
@@ -2560,13 +2616,13 @@ const ItemMasterNew = memo(() => {
         onClose={() => setIsAddDoctorModalOpen(false)}
         onSave={async data => {
           await handleDoctorModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.specialization || ''),
+            data: toDoctorPayload(data),
             id: undefined,
           });
         }}
         mode="add"
         initialNameFromSearch={doctorDebouncedSearch}
+        useInlineFieldActions={false}
       />
 
       <IdentityDataModal
@@ -2582,10 +2638,12 @@ const ItemMasterNew = memo(() => {
         onClose={() => setIsEditDoctorModalOpen(false)}
         onSave={async data => {
           await handleDoctorModalSubmit({
-            name: String(data.name || ''),
-            description: String(data.specialization || ''),
+            data: toDoctorPayload(data),
             id: editingDoctor?.id,
           });
+        }}
+        onFieldSave={async (key, value) => {
+          await handleDoctorFieldAutosave(editingDoctor?.id, key, value);
         }}
         onDeleteRequest={
           editingDoctor
@@ -2604,6 +2662,7 @@ const ItemMasterNew = memo(() => {
         }
         mode="edit"
         imageUrl={(editingDoctor as DoctorType)?.image_url || undefined}
+        useInlineFieldActions={false}
       />
     </>
   );

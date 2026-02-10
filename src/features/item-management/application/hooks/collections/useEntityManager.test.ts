@@ -4,6 +4,7 @@ import { useEntityManager } from './useEntityManager';
 
 const openConfirmDialogMock = vi.hoisted(() => vi.fn());
 const handleModalSubmitMock = vi.hoisted(() => vi.fn());
+const handleFieldAutosaveMock = vi.hoisted(() => vi.fn());
 const deleteMutateAsyncMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/components/dialog-box', () => ({
@@ -15,6 +16,7 @@ vi.mock('@/components/dialog-box', () => ({
 vi.mock('./useEntityCrudOperations', () => ({
   useEntityCrudOperations: () => ({
     handleModalSubmit: handleModalSubmitMock,
+    handleFieldAutosave: handleFieldAutosaveMock,
     deleteMutation: {
       mutateAsync: deleteMutateAsyncMock,
     },
@@ -25,9 +27,11 @@ describe('useEntityManager', () => {
   beforeEach(() => {
     openConfirmDialogMock.mockReset();
     handleModalSubmitMock.mockReset();
+    handleFieldAutosaveMock.mockReset();
     deleteMutateAsyncMock.mockReset();
 
     handleModalSubmitMock.mockResolvedValue(undefined);
+    handleFieldAutosaveMock.mockResolvedValue(undefined);
     deleteMutateAsyncMock.mockResolvedValue(undefined);
   });
 
@@ -129,6 +133,18 @@ describe('useEntityManager', () => {
     });
 
     await cancellation;
+  });
+
+  it('delegates field autosave to CRUD operations', async () => {
+    const { result } = renderHook(() => useEntityManager());
+
+    await act(async () => {
+      await result.current.handleFieldAutosave('cat-1', { name: 'Kategori X' });
+    });
+
+    expect(handleFieldAutosaveMock).toHaveBeenCalledWith('cat-1', {
+      name: 'Kategori X',
+    });
   });
 
   it('resets state on activeEntityType prop change while preserving itemsPerPage', async () => {

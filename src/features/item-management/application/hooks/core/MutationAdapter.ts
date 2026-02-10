@@ -32,7 +32,7 @@ export interface NormalizedMutations {
    * The adapter will convert to { id, data } for providers that require nested payloads.
    */
   update?: NormalizedMutationHandle<
-    { id: string } & Record<string, unknown>,
+    { id: string; options?: Record<string, unknown> } & Record<string, unknown>,
     unknown
   >;
 
@@ -168,9 +168,12 @@ export function toNormalizedMutations(
 
     normalized.update = {
       async mutateAsync(
-        input: { id: string } & Record<string, unknown>
+        input: { id: string; options?: Record<string, unknown> } & Record<
+          string,
+          unknown
+        >
       ): Promise<unknown> {
-        const { id, ...fields } = input ?? ({} as { id: string });
+        const { id, options, ...fields } = input ?? ({} as { id: string });
 
         // Some providers (generic "updateMutation") want a flat payload { id, ...fields }
         // Others want a nested payload { id, data: {...} }
@@ -183,11 +186,13 @@ export function toNormalizedMutations(
           return await updateRaw.value.mutateAsync({
             id,
             ...fields,
+            ...(options ? { options } : {}),
           });
         } else {
           return await updateRaw.value.mutateAsync({
             id,
             data: fields,
+            ...(options ? { options } : {}),
           });
         }
       },

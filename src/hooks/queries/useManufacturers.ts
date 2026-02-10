@@ -4,6 +4,10 @@ import toast from 'react-hot-toast';
 import type { ItemManufacturer } from '@/types/database';
 import { itemManufacturerService } from '@/services/api/masterData.service';
 
+type MutationOptions = {
+  silent?: boolean;
+};
+
 // Query hook for manufacturers with realtime
 export const useManufacturersRealtime = ({
   enabled = true,
@@ -70,8 +74,12 @@ export const useManufacturerMutations = () => {
   const updateMutation = useMutation({
     mutationFn: async ({
       id,
+      options: _options,
       ...updateData
-    }: { id: string } & Partial<ItemManufacturer>) => {
+    }: {
+      id: string;
+      options?: MutationOptions;
+    } & Partial<ItemManufacturer>) => {
       const { data, error } = await itemManufacturerService.update(
         id,
         updateData
@@ -80,16 +88,20 @@ export const useManufacturerMutations = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('Manufaktur berhasil diperbarui');
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Manufaktur berhasil diperbarui');
+      }
       const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: error => {
+    onError: (error, variables) => {
       console.error('Error updating manufacturer:', error);
-      toast.error('Gagal memperbarui manufaktur');
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui manufaktur');
+      }
     },
   });
 

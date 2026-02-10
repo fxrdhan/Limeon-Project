@@ -235,6 +235,34 @@ describe('useIdentityForm', () => {
     expect(editMode.result.current.localData.image_url).toBeNull();
   });
 
+  it('autosaves edited fields in non-inline edit mode with debounce', async () => {
+    const onFieldSave = vi.fn().mockResolvedValue(undefined);
+
+    const { result } = renderHook(
+      currentProps => useIdentityForm(currentProps),
+      {
+        initialProps: makeProps({
+          onFieldSave,
+          useInlineFieldActions: false,
+        }),
+      }
+    );
+
+    act(() => {
+      result.current.handleChange('name', 'Autosave Nama');
+    });
+    expect(onFieldSave).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+      await Promise.resolve();
+    });
+
+    expect(onFieldSave).toHaveBeenCalledWith('name', 'Autosave Nama');
+    expect(result.current.localData.name).toBe('Autosave Nama');
+    expect(result.current.loadingField.name).toBe(false);
+  });
+
   it('enables all editable fields in edit mode when inline actions are disabled', () => {
     const { result } = renderHook(
       currentProps => useIdentityForm(currentProps),

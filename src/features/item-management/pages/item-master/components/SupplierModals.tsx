@@ -29,6 +29,25 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
   closeAddSupplierModal,
   closeEditSupplierModal,
 }) => {
+  const normalizeSupplierFieldValue = (key: string, value: unknown) => {
+    if (key === 'name') {
+      const normalizedName = String(value ?? '').trim();
+      return normalizedName === '' ? null : normalizedName;
+    }
+
+    if (
+      key === 'address' ||
+      key === 'phone' ||
+      key === 'email' ||
+      key === 'contact_person'
+    ) {
+      const normalizedValue = String(value ?? '').trim();
+      return normalizedValue === '' ? null : normalizedValue;
+    }
+
+    return value;
+  };
+
   return (
     <>
       <IdentityDataModal
@@ -79,6 +98,22 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
             },
           });
           closeEditSupplierModal();
+        }}
+        onFieldSave={async (key, value) => {
+          if (!editingSupplier?.id) return;
+
+          const normalizedValue = normalizeSupplierFieldValue(key, value);
+          if (key === 'name' && normalizedValue === null) {
+            return;
+          }
+
+          await supplierMutations.updateSupplier.mutateAsync({
+            id: editingSupplier.id,
+            data: {
+              [key]: normalizedValue,
+            },
+            options: { silent: true },
+          });
         }}
         onDeleteRequest={
           editingSupplier

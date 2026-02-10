@@ -3,6 +3,10 @@ import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { customersService } from '@/services/api/customers.service';
 import type { Customer } from '@/types/database';
 
+type MutationOptions = {
+  silent?: boolean;
+};
+
 export const useCustomers = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: QueryKeys.customers.list(),
@@ -49,9 +53,11 @@ export const useCustomerMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<Omit<Customer, 'id' | 'created_at'>>;
+      options?: MutationOptions;
     }) => {
       const result = await customersService.update(id, data);
       if (result.error) throw result.error;

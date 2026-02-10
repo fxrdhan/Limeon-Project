@@ -8,6 +8,10 @@ import {
 } from '@/services/api/patients-doctors.service';
 import type { Patient, Doctor } from '@/types/database';
 
+type MutationOptions = {
+  silent?: boolean;
+};
+
 // Patient Hooks
 export const usePatients = (options?: { enabled?: boolean }) => {
   const query = useQuery({
@@ -111,9 +115,11 @@ export const usePatientMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<Omit<Patient, 'id' | 'created_at'>>;
+      options?: MutationOptions;
     }) => {
       const result = await patientsService.update(id, data);
       if (result.error) throw result.error;
@@ -271,9 +277,11 @@ export const useDoctorMutations = () => {
     mutationFn: async ({
       id,
       data,
+      options: _options,
     }: {
       id: string;
       data: Partial<Omit<Doctor, 'id' | 'created_at'>>;
+      options?: MutationOptions;
     }) => {
       const result = await doctorsService.update(id, data);
       if (result.error) throw result.error;

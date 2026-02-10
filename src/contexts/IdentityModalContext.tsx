@@ -31,7 +31,10 @@ export interface IdentityModalContextValue {
 
   // Actions
   toggleEdit: (fieldKey: string) => void;
-  handleChange: (fieldKey: string, value: string | number | boolean) => void;
+  handleChange: (
+    fieldKey: string,
+    value: string | number | boolean | null
+  ) => void;
   handleSaveField: (fieldKey: string) => Promise<void>;
   handleCancelEdit: (fieldKey: string) => void;
   handleSaveAll: () => Promise<void>;
