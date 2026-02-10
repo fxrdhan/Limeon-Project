@@ -933,10 +933,24 @@ describe('EnhancedSearchBar', () => {
     vi.useFakeTimers();
     const firstEdit = vi.fn();
     const secondEdit = vi.fn();
+    const firstClear = vi.fn();
 
     render(
       <EnhancedSearchBar value="asp" onChange={vi.fn()} columns={columns} />
     );
+
+    const badgeHookArgs = () =>
+      useBadgeHandlersMock.mock.calls.at(-1)?.[0] as
+        | {
+            setEditingBadge?: (
+              value: {
+                conditionIndex: number;
+                field: 'value' | 'valueTo';
+                value: string;
+              } | null
+            ) => void;
+          }
+        | undefined;
 
     act(() => {
       (
@@ -950,7 +964,13 @@ describe('EnhancedSearchBar', () => {
           | undefined
       )?.([
         { id: 'b0', canEdit: false },
-        { id: 'b1', canEdit: true, onEdit: firstEdit },
+        {
+          id: 'b1',
+          canEdit: true,
+          canClear: true,
+          onEdit: firstEdit,
+          onClear: firstClear,
+        },
         { id: 'b2', canEdit: true, onEdit: secondEdit },
       ]);
     });
@@ -974,6 +994,33 @@ describe('EnhancedSearchBar', () => {
       vi.advanceTimersByTime(60);
     });
     expect(secondEdit).toHaveBeenCalledTimes(1);
+
+    const input = screen.getByRole('textbox');
+    fireEvent.keyDown(input, { key: 'ArrowRight', ctrlKey: true });
+    fireEvent.keyDown(input, { key: 'd', ctrlKey: true });
+    expect(firstClear).toHaveBeenCalledTimes(0);
+    fireEvent.keyDown(input, { key: 'ArrowRight', ctrlKey: true });
+    fireEvent.keyDown(input, { key: 'ArrowRight', ctrlKey: true });
+    fireEvent.keyDown(input, { key: 'd', ctrlKey: true });
+    expect(firstClear).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      badgeHookArgs()?.setEditingBadge?.({
+        conditionIndex: 0,
+        field: 'value',
+        value: 'asp',
+      });
+    });
+    fireEvent.keyDown(input, { key: 'ArrowLeft', ctrlKey: true });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onNavigateEdit as
+          | ((direction: 'left' | 'right') => void)
+          | undefined
+      )?.('right');
+      vi.advanceTimersByTime(60);
+    });
+    expect(firstEdit).toHaveBeenCalledTimes(2);
   });
 
   it('focuses input from badge callback and closes open selector flows', () => {
@@ -1271,6 +1318,7 @@ describe('EnhancedSearchBar', () => {
   it('handles inline edit complete for between split value and waiting valueTo states', () => {
     vi.useFakeTimers();
     const onChange = vi.fn();
+    const externalInputRef = React.createRef<HTMLInputElement>();
 
     useSearchStateMock.mockReturnValue({
       searchMode: baseSearchMode({
@@ -1290,8 +1338,15 @@ describe('EnhancedSearchBar', () => {
       <EnhancedSearchBar
         value="#stock #inRange 10##"
         onChange={onChange}
+        inputRef={externalInputRef}
         columns={columns}
       />
+    );
+
+    expect(externalInputRef.current).toBeTruthy();
+    const setSelectionRangeSpy = vi.spyOn(
+      externalInputRef.current as HTMLInputElement,
+      'setSelectionRange'
     );
 
     const badgeHookArgs = useBadgeHandlersMock.mock.calls[0]?.[0] as
@@ -1351,6 +1406,7 @@ describe('EnhancedSearchBar', () => {
         }),
       })
     );
+    expect(setSelectionRangeSpy).toHaveBeenCalled();
   });
 
   it('runs insert-condition flow and selection-handler setter branches', () => {
@@ -2605,6 +2661,36 @@ describe('EnhancedSearchBar', () => {
       )?.('');
     });
     expect(clearConditionPart).toHaveBeenCalledWith(2, 'valueTo');
+
+    act(() => {
+      getBadgeHookArgs()?.setPreservedSearchMode?.({
+        ...baseSearchMode({
+          isFilterMode: true,
+          filterSearch: {
+            field: 'stock',
+            value: '',
+            valueTo: '20',
+            operator: 'inRange',
+            column: columns[1],
+            isExplicitOperator: true,
+            isConfirmed: true,
+          },
+        }),
+      });
+      getBadgeHookArgs()?.setEditingBadge?.({
+        conditionIndex: 0,
+        field: 'valueTo',
+        value: '20',
+      });
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.('');
+    });
+    expect(clearConditionPart).toHaveBeenCalledWith(0, 'valueTo');
 
     act(() => {
       getBadgeHookArgs()?.setEditingBadge?.({

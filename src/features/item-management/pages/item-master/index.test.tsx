@@ -525,6 +525,14 @@ describe('ItemMaster page', () => {
     expect(sessionStorage.getItem('item_master_search_suppliers')).toBe(
       '#name #contains aspirin##'
     );
+    act(() => {
+      (
+        supplierSearchCall?.onFilterSearch as
+          | ((value: Record<string, unknown> | null) => void)
+          | undefined
+      )?.(null);
+    });
+    expect(sessionStorage.getItem('item_master_search_suppliers')).toBeNull();
 
     act(() => {
       (
@@ -2161,6 +2169,10 @@ describe('ItemMaster page', () => {
       'categories.name',
       'categories.description',
     ]);
+    act(() => {
+      (entityCall?.onClear as (() => void) | undefined)?.();
+    });
+    expect(entityManagerState.handleSearch).toHaveBeenCalledWith('');
 
     const appliedCount = gridApi.setAdvancedFilterModel.mock.calls.length;
     act(() => {
@@ -2447,6 +2459,121 @@ describe('ItemMaster page', () => {
     expect(suppliers.at(-1)?.name).toBe('BB');
   });
 
+  it('applies entity filter model with exact visible-column ordering and session cleanup', () => {
+    const entityManagerState = {
+      ...createMasterDataHookState('category'),
+      handleSearch: vi.fn(),
+      entityConfigs: {
+        categories: {
+          entityName: 'Kategori',
+          nameColumnHeader: 'Nama',
+          searchPlaceholder: 'Cari kategori',
+          hasNciCode: false,
+          hasAddress: false,
+          noDataMessage: 'Tidak ada',
+          searchNoDataMessage: 'Tidak ketemu',
+        },
+      },
+      openEditModal: vi.fn(),
+      openAddModal: vi.fn(),
+      closeEditModal: vi.fn(),
+      closeAddModal: vi.fn(),
+      handleSubmit: vi.fn(),
+      handleDelete: vi.fn(),
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingEntity: null,
+    };
+    useEntityManagerMock.mockReturnValue(entityManagerState);
+    getSearchColumnsByEntityMock.mockImplementation((entity: string) => {
+      if (entity === 'categories') {
+        return [
+          {
+            field: 'categories.code',
+            headerName: 'Kode',
+            searchable: true,
+            type: 'text',
+          },
+          {
+            field: 'categories.name',
+            headerName: 'Nama',
+            searchable: true,
+            type: 'text',
+          },
+        ];
+      }
+      return [
+        { field: 'name', headerName: 'Nama', searchable: true, type: 'text' },
+      ];
+    });
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+
+    render(<ItemMasterPage />);
+
+    const listeners: Record<string, Array<() => void>> = {};
+    const gridApi = {
+      isDestroyed: vi.fn(() => false),
+      setAdvancedFilterModel: vi.fn(),
+      getAllDisplayedColumns: vi.fn(() => [
+        { getColId: () => 'categories.name' },
+        { getColId: () => 'categories.code' },
+      ]),
+      addEventListener: vi.fn((event: string, cb: () => void) => {
+        listeners[event] = [...(listeners[event] || []), cb];
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    act(() => {
+      (
+        captured.entityGridProps?.onGridApiReady as
+          | ((api: unknown) => void)
+          | undefined
+      )?.(gridApi);
+      listeners.columnVisible?.forEach(cb => cb());
+    });
+
+    const entityCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === entityManagerState.handleSearch) as
+      | {
+          columns?: Array<{ field: string }>;
+          onFilterSearch?: (filter: Record<string, unknown> | null) => void;
+        }
+      | undefined;
+
+    expect(entityCall?.columns?.map(col => col.field)).toEqual([
+      'categories.name',
+      'categories.code',
+    ]);
+
+    act(() => {
+      entityCall?.onFilterSearch?.({
+        field: 'categories.name',
+        operator: 'contains',
+        value: 'kategori',
+        isConfirmed: true,
+      });
+    });
+    expect(buildAdvancedFilterModelMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        field: 'categories.name',
+        value: 'kategori',
+      })
+    );
+    expect(gridApi.setAdvancedFilterModel).toHaveBeenCalled();
+    expect(sessionStorage.getItem('item_master_search_categories')).toBe(
+      '#name #contains aspirin##'
+    );
+
+    act(() => {
+      entityCall?.onFilterSearch?.(null);
+    });
+    expect(sessionStorage.getItem('item_master_search_categories')).toBeNull();
+  });
+
   it('covers supplier/entity/master-data onFilterSearch guard branches', () => {
     const customerState = {
       ...createMasterDataHookState('customer'),
@@ -2551,6 +2678,106 @@ describe('ItemMaster page', () => {
     });
     expect(buildAdvancedFilterModelMock).not.toHaveBeenCalledWith(
       expect.objectContaining({ value: 'master-on-items' })
+    );
+  });
+
+  it('guards supplier filter from non-supplier tabs and ignores keyboard focus hijack on dialog/input targets', () => {
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+
+    const supplierCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.searchMode === 'client') as
+      | { onFilterSearch?: (filter: Record<string, unknown> | null) => void }
+      | undefined;
+
+    const beforeNonSupplier = buildAdvancedFilterModelMock.mock.calls.length;
+    act(() => {
+      supplierCall?.onFilterSearch?.({
+        field: 'suppliers.name',
+        operator: 'contains',
+        value: 'blocked-on-items',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+    });
+    expect(buildAdvancedFilterModelMock.mock.calls.length).toBe(
+      beforeNonSupplier
+    );
+
+    const input = screen.getByTestId('toolbar-search-input');
+    input.blur();
+
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    const dialogButton = document.createElement('button');
+    dialogButton.type = 'button';
+    dialog.appendChild(dialogButton);
+    document.body.appendChild(dialog);
+    dialogButton.focus();
+    fireEvent.keyDown(dialogButton, { key: 'x' });
+    expect(dialogButton).toHaveFocus();
+    dialog.remove();
+
+    const externalInput = document.createElement('input');
+    document.body.appendChild(externalInput);
+    externalInput.focus();
+    fireEvent.keyDown(externalInput, { key: 'y' });
+    expect(input).not.toHaveFocus();
+
+    fireEvent.pointerDown(externalInput, { button: 1 });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(input).not.toHaveFocus();
+
+    const pointerDialog = document.createElement('div');
+    pointerDialog.setAttribute('role', 'dialog');
+    document.body.appendChild(pointerDialog);
+    fireEvent.pointerDown(pointerDialog, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(input).not.toHaveFocus();
+    pointerDialog.remove();
+
+    fireEvent.pointerDown(input, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(externalInput).toHaveFocus();
+
+    externalInput.remove();
+
+    const onSelectionChange = captured.slidingSelectorProps
+      ?.onSelectionChange as ((key: string, value: string) => void) | undefined;
+    const beforeSwitchGuard = buildAdvancedFilterModelMock.mock.calls.length;
+    act(() => {
+      onSelectionChange?.('categories', 'categories');
+      supplierCall?.onFilterSearch?.(null);
+    });
+    expect(buildAdvancedFilterModelMock.mock.calls.length).toBe(
+      beforeSwitchGuard
+    );
+
+    const masterCallOnItems = [...unifiedSearchCalls]
+      .reverse()
+      .find(
+        call =>
+          call.onSearch === useMasterDataManagementMock('customers').setSearch
+      ) as
+      | { onFilterSearch?: (filter: Record<string, unknown> | null) => void }
+      | undefined;
+    const beforeMasterSwitchGuard =
+      buildAdvancedFilterModelMock.mock.calls.length;
+    act(() => {
+      masterCallOnItems?.onFilterSearch?.(null);
+    });
+    expect(buildAdvancedFilterModelMock.mock.calls.length).toBe(
+      beforeMasterSwitchGuard
     );
   });
 });
