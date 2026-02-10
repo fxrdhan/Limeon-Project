@@ -292,17 +292,13 @@ export const stepBackPatternValue = (
   };
 
   const toResult = (nextValue: string) => {
-    if (nextValue === inputValue) {
-      return {
-        handled: false,
-        nextValue: inputValue,
-        nextCarry: carryConfirmation,
-      };
-    }
+    const isNoOp = nextValue === inputValue;
     return {
-      handled: true,
-      nextValue,
-      nextCarry: nextValue.trimStart().startsWith('#'),
+      handled: !isNoOp,
+      nextValue: isNoOp ? inputValue : nextValue,
+      nextCarry: isNoOp
+        ? carryConfirmation
+        : nextValue.trimStart().startsWith('#'),
     };
   };
 
@@ -763,6 +759,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setEditingSelectorTarget,
     setEditingBadge,
     setCurrentJoinOperator,
+    interruptedSelectorRef,
+    groupEditDraftRef,
+    insertTailRef,
+    setIsInsertFlowActive,
+    scrollAreaRef,
   });
 
   const handleInsertConditionAfter = useCallback(
@@ -1588,25 +1589,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         }
 
         let currentIndex = startIndex;
-        let attempts = 0;
-
-        while (attempts < badgeCount) {
-          // Move in direction
-          if (direction === 'left') {
-            currentIndex--;
-            if (currentIndex < 0) return null; // Reached start, deselect
-          } else {
-            currentIndex++;
-            if (currentIndex >= badgeCount) return null; // Reached end, deselect
+        for (let attempts = 0; attempts < badgeCount; attempts++) {
+          const nextIndex =
+            direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+          if (nextIndex < 0 || nextIndex >= badgeCount) {
+            break;
           }
 
+          currentIndex = nextIndex;
           if (isSelectable(currentIndex)) {
             return currentIndex;
           }
-          attempts++;
         }
 
-        return null; // No selectable badge found
+        return null;
       };
 
       if (e.key === 'ArrowLeft') {

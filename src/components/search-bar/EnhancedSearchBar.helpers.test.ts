@@ -143,6 +143,22 @@ describe('EnhancedSearchBar helpers', () => {
     expect(
       findFirstConditionInGroup({ kind: 'group', join: 'AND', nodes: [] })
     ).toBeUndefined();
+    expect(
+      findFirstConditionInGroup({
+        kind: 'group',
+        join: 'AND',
+        nodes: [
+          { kind: 'group', join: 'OR', nodes: [] },
+          {
+            kind: 'condition',
+            field: 'stock',
+            column: stockColumn,
+            operator: 'equals',
+            value: '7',
+          },
+        ],
+      })
+    ).toMatchObject({ field: 'stock' });
 
     expect(getActiveGroupJoin('#( #name #contains aspirin #or #')).toEqual({
       depth: 1,

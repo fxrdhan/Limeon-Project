@@ -10,11 +10,12 @@
  */
 
 import { RefObject, useCallback } from 'react';
-import { EnhancedSearchState } from '../types';
+import { EnhancedSearchState, FilterGroup } from '../types';
 import { PatternBuilder } from '../utils/PatternBuilder';
 import {
   extractMultiConditionPreservation,
   getConditionAt,
+  PreservedCondition,
   PreservedFilter,
   setFilterValue,
 } from '../utils/handlerHelpers';
@@ -60,6 +61,25 @@ export interface UseBadgeHandlersProps {
   ) => void;
   /** Set current join operator for selector highlighting */
   setCurrentJoinOperator?: (operator: 'AND' | 'OR' | undefined) => void;
+  /** Optional ref exposed for advanced edit-flow tests */
+  interruptedSelectorRef?: React.MutableRefObject<{
+    type: 'column' | 'join' | 'operator' | 'partial';
+    originalPattern: string;
+  } | null>;
+  /** Optional ref exposed for grouped-edit draft tests */
+  groupEditDraftRef?: React.MutableRefObject<FilterGroup | null>;
+  /** Optional ref exposed for insert-flow tests */
+  insertTailRef?: React.MutableRefObject<{
+    afterConditionIndex: number;
+    tailConditions: PreservedCondition[];
+    tailJoins: ('AND' | 'OR')[];
+    defaultField: string;
+    isMultiColumn: boolean;
+  } | null>;
+  /** Optional setter exposed for insert-flow tests */
+  setIsInsertFlowActive?: (next: boolean) => void;
+  /** Optional scroll area ref exposed for focus-scroll tests */
+  scrollAreaRef?: React.MutableRefObject<HTMLDivElement | null>;
 }
 
 export interface BadgeHandlersReturn {
