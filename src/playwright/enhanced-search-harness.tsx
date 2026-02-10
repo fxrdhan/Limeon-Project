@@ -52,6 +52,30 @@ export function Harness() {
         >
           preset-multi-between
         </button>
+        <button
+          type="button"
+          onClick={() => setValue('#stock #equals 10##')}
+          data-testid="preset-stock-single"
+        >
+          preset-stock-single
+        </button>
+        <button
+          type="button"
+          onClick={() => setValue('#name #contains aspirin #')}
+          data-testid="preset-join-selector"
+        >
+          preset-join-selector
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setValue('');
+            setClearCount(0);
+          }}
+          data-testid="preset-reset"
+        >
+          preset-reset
+        </button>
       </div>
 
       <EnhancedSearchBar

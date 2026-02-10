@@ -454,4 +454,30 @@ describe('EnhancedSearchBar helpers', () => {
       nextCarry: true,
     });
   });
+
+  it('covers additional step-back fallback branches for trailing hashes', () => {
+    expect(stepBackPatternValue('#name # #stock##', false)).toEqual({
+      handled: true,
+      nextValue: '#name #',
+      nextCarry: true,
+    });
+
+    expect(stepBackPatternValue('# # ###', false)).toEqual({
+      handled: false,
+      nextValue: '# # ###',
+      nextCarry: false,
+    });
+
+    expect(stepBackPatternValue('#name ####', false)).toEqual({
+      handled: true,
+      nextValue: '#name ',
+      nextCarry: true,
+    });
+
+    expect(stepBackPatternValue('#name #foo #bar####', false)).toEqual({
+      handled: true,
+      nextValue: '#name #foo #bar ',
+      nextCarry: true,
+    });
+  });
 });

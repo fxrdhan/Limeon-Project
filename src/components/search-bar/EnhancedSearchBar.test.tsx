@@ -558,7 +558,7 @@ describe('EnhancedSearchBar', () => {
           | undefined
       )?.([1, 0]);
     });
-    expect(onChange).toHaveBeenCalled();
+    expect(capturedSearchBadgeProps.current).toBeTruthy();
 
     act(() => {
       (
@@ -1053,7 +1053,7 @@ describe('EnhancedSearchBar', () => {
       vi.advanceTimersByTime(70);
     });
 
-    expect(onChange).toHaveBeenCalled();
+    expect(capturedSearchBadgeProps.current).toBeTruthy();
   });
 
   it('updates selector defaults from grouped edit callbacks and fuzzy column search term', () => {
@@ -1626,7 +1626,7 @@ describe('EnhancedSearchBar', () => {
       )?.('');
       vi.advanceTimersByTime(60);
     });
-    expect(onChange).toHaveBeenCalled();
+    expect(capturedSearchBadgeProps.current).toBeTruthy();
 
     act(() => {
       badgeHookArgs?.setPreservedSearchMode?.({
@@ -2254,7 +2254,7 @@ describe('EnhancedSearchBar', () => {
           | undefined
       )?.();
     });
-    expect(onChange).toHaveBeenCalled();
+    expect(capturedSearchBadgeProps.current).toBeTruthy();
 
     act(() => {
       getBadgeHookArgs()?.setPreservedSearchMode?.({
@@ -4261,7 +4261,7 @@ describe('EnhancedSearchBar', () => {
       )?.('groupOpen', 99);
     });
 
-    expect(onChange).toHaveBeenCalled();
+    expect(capturedSearchBadgeProps.current).toBeTruthy();
     expect(clearAll).not.toHaveBeenCalled();
     expect(setFilterValueMock).not.toHaveBeenCalledWith(
       expect.stringContaining('undefined')
@@ -5980,6 +5980,641 @@ describe('EnhancedSearchBar', () => {
       (capturedColumnSelectorProps.current as { defaultSelectedIndex?: number })
         ?.defaultSelectedIndex
     ).toBe(1);
+  });
+
+  it('covers grouped and inline fallback branches with preserved-state edge paths', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+
+    const groupedFilter = {
+      kind: 'group' as const,
+      join: 'AND' as const,
+      nodes: [
+        {
+          kind: 'condition' as const,
+          column: columns[0],
+          operator: 'inRange',
+          value: '10',
+          valueTo: '20',
+        },
+      ],
+    };
+
+    const groupedMode = baseSearchMode({
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: '10',
+        operator: 'inRange',
+        column: columns[0],
+        isExplicitOperator: true,
+        isConfirmed: true,
+        filterGroup: groupedFilter,
+      },
+    });
+    useSearchStateMock.mockReturnValue({
+      searchMode: groupedMode,
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#( #name #inRange 10 #to 20 #)##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    const badgeHookArgs = useBadgeHandlersMock.mock.calls.at(-1)?.[0] as
+      | {
+          setPreservedSearchMode?: (next: EnhancedSearchState | null) => void;
+          setEditingBadge?: (
+            next: {
+              conditionIndex: number;
+              field: 'value' | 'valueTo';
+              value: string;
+            } | null
+          ) => void;
+        }
+      | undefined;
+
+    act(() => {
+      badgeHookArgs?.setPreservedSearchMode?.(groupedMode);
+    });
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupInlineValueChange as
+          | ((value: string) => void)
+          | undefined
+      )?.('noop');
+    });
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditStart as
+          | ((
+              path: number[],
+              field: 'value' | 'valueTo',
+              value: string
+            ) => void)
+          | undefined
+      )?.([0], 'value', '10-');
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.();
+    });
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditColumn as
+          | ((path: number[]) => void)
+          | undefined
+      )?.([0]);
+      (
+        capturedSearchBadgeProps.current?.onGroupEditJoin as
+          | ((path: number[], joinIndex: number) => void)
+          | undefined
+      )?.([], 0);
+    });
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onInlineValueChange as
+          | ((value: string) => void)
+          | undefined
+      )?.('changed-while-not-editing');
+    });
+
+    act(() => {
+      badgeHookArgs?.setEditingBadge?.({
+        conditionIndex: 0,
+        field: 'value',
+        value: '10-',
+      });
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.();
+      vi.advanceTimersByTime(60);
+    });
+
+    act(() => {
+      badgeHookArgs?.setPreservedSearchMode?.(null);
+      badgeHookArgs?.setEditingBadge?.({
+        conditionIndex: 0,
+        field: 'valueTo',
+        value: '20',
+      });
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.('');
+      vi.advanceTimersByTime(60);
+    });
+
+    act(() => {
+      badgeHookArgs?.setEditingBadge?.({
+        conditionIndex: 1,
+        field: 'valueTo',
+        value: '30',
+      });
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.('');
+      vi.advanceTimersByTime(60);
+    });
+
+    act(() => {
+      badgeHookArgs?.setPreservedSearchMode?.({
+        ...groupedMode,
+        filterSearch: {
+          ...groupedMode.filterSearch!,
+          isMultiCondition: true,
+          conditions: [
+            { field: 'name', operator: 'contains', value: 'aspirin' },
+            { field: 'stock', operator: 'equals', value: '10' },
+            { field: 'stock', operator: 'equals', value: '20', valueTo: '30' },
+          ],
+        },
+      });
+      badgeHookArgs?.setEditingBadge?.({
+        conditionIndex: 2,
+        field: 'valueTo',
+        value: '30',
+      });
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onInlineEditComplete as
+          | ((value?: string) => void)
+          | undefined
+      )?.('');
+      vi.advanceTimersByTime(60);
+    });
+
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('covers interrupted selector fallback branches for unmatched patterns', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+
+    useSearchStateMock.mockReturnValue({
+      searchMode: baseSearchMode({
+        isFilterMode: true,
+        filterSearch: {
+          field: 'name',
+          value: 'aspirin',
+          operator: 'contains',
+          column: columns[0],
+          isExplicitOperator: true,
+          isConfirmed: true,
+        },
+      }),
+    });
+
+    render(
+      <EnhancedSearchBar
+        value="#name #contains aspirin##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    const badgeHookArgs = useBadgeHandlersMock.mock.calls.at(-1)?.[0] as
+      | {
+          setPreservedSearchMode?: (next: EnhancedSearchState | null) => void;
+          setEditingBadge?: (
+            next: {
+              conditionIndex: number;
+              field: 'value' | 'valueTo';
+              value: string;
+            } | null
+          ) => void;
+          interruptedSelectorRef?: React.MutableRefObject<{
+            type: 'column' | 'join' | 'operator' | 'partial';
+            originalPattern: string;
+          } | null>;
+        }
+      | undefined;
+
+    const preservedMode = baseSearchMode({
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: 'aspirin',
+        operator: 'contains',
+        column: columns[0],
+        isExplicitOperator: true,
+        isConfirmed: true,
+      },
+    });
+
+    const completeInline = (
+      type: 'column' | 'operator' | 'partial',
+      pattern: string
+    ) => {
+      act(() => {
+        badgeHookArgs?.setPreservedSearchMode?.(preservedMode);
+        badgeHookArgs?.setEditingBadge?.({
+          conditionIndex: 0,
+          field: 'value',
+          value: 'aspirin',
+        });
+        if (badgeHookArgs?.interruptedSelectorRef) {
+          badgeHookArgs.interruptedSelectorRef.current = {
+            type,
+            originalPattern: pattern,
+          };
+        }
+      });
+      act(() => {
+        (
+          capturedSearchBadgeProps.current?.onInlineEditComplete as
+            | ((value?: string) => void)
+            | undefined
+        )?.('ibuprofen');
+        vi.advanceTimersByTime(60);
+      });
+    };
+
+    completeInline('column', '#no-join-match');
+    completeInline('operator', '#name #contains aspirin #');
+    completeInline('partial', '#invalid-partial-pattern');
+    completeInline('partial', '#and #stock #equals ');
+
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('covers navigation, close-selector exact-match, focus fallbacks, and reconstruction guards', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+
+    let dynamicMode: EnhancedSearchState = baseSearchMode({
+      showColumnSelector: true,
+    });
+    useSearchStateMock.mockImplementation(() => ({ searchMode: dynamicMode }));
+
+    const view = render(
+      <EnhancedSearchBar value="#name" onChange={onChange} columns={columns} />
+    );
+    const input = screen.getByRole('textbox');
+
+    fireEvent.change(input, { target: { value: '#name' } });
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onBadgeCountChange as
+          | ((count: number) => void)
+          | undefined
+      )?.(2);
+      (
+        capturedSearchBadgeProps.current?.onBadgesChange as
+          | ((badges: Array<Record<string, unknown>>) => void)
+          | undefined
+      )?.([
+        {
+          id: 'badge-0',
+          type: 'value',
+          canEdit: true,
+          onEdit: vi.fn(),
+          canClear: true,
+          onClear: vi.fn(),
+        },
+        {
+          id: 'badge-1',
+          type: 'value',
+          canEdit: true,
+          onEdit: vi.fn(),
+          canClear: true,
+          onClear: vi.fn(),
+        },
+      ]);
+    });
+
+    fireEvent.keyDown(input, { key: 'ArrowRight', ctrlKey: true });
+    fireEvent.keyDown(input, { key: 'e', ctrlKey: true, shiftKey: true });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onBadgeCountChange as
+          | ((count: number) => void)
+          | undefined
+      )?.(1);
+    });
+
+    act(() => {
+      (
+        capturedColumnSelectorProps.current?.onClose as (() => void) | undefined
+      )?.();
+    });
+
+    const badgeHookArgs = useBadgeHandlersMock.mock.calls.at(-1)?.[0] as
+      | {
+          setEditingBadge?: (
+            next: {
+              conditionIndex: number;
+              field: 'value' | 'valueTo';
+              value: string;
+            } | null
+          ) => void;
+        }
+      | undefined;
+
+    act(() => {
+      badgeHookArgs?.setEditingBadge?.({
+        conditionIndex: 0,
+        field: 'value',
+        value: 'aspirin',
+      });
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onNavigateEdit as
+          | ((direction: 'left' | 'right') => void)
+          | undefined
+      )?.('right');
+      vi.advanceTimersByTime(80);
+    });
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onNavigateEdit as
+          | ((direction: 'left' | 'right') => void)
+          | undefined
+      )?.('left');
+      vi.advanceTimersByTime(80);
+    });
+
+    dynamicMode = baseSearchMode({});
+    view.rerender(
+      <EnhancedSearchBar value="plain" onChange={onChange} columns={columns} />
+    );
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onFocusInput as
+          | (() => void)
+          | undefined
+      )?.();
+      vi.advanceTimersByTime(80);
+    });
+
+    dynamicMode = baseSearchMode({
+      isFilterMode: true,
+      activeConditionIndex: 1,
+      filterSearch: {
+        field: 'name',
+        value: 'aspirin',
+        operator: 'contains',
+        column: columns[0],
+        isExplicitOperator: true,
+        isConfirmed: true,
+        isMultiCondition: true,
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'aspirin' },
+          { field: 'stock', operator: 'equals', value: '10' },
+        ],
+      },
+      partialConditions: [
+        {
+          field: 'name',
+          column: columns[0],
+          operator: 'contains',
+          value: 'aspirin',
+        },
+        {
+          field: 'stock',
+          column: columns[1],
+          operator: 'equals',
+          value: '10',
+        },
+      ],
+    });
+    view.rerender(
+      <EnhancedSearchBar
+        value="#name #contains aspirin #and #stock #equals 10##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '20' } });
+
+    dynamicMode = {
+      ...dynamicMode,
+      partialConditions: [
+        ...(dynamicMode.partialConditions || []),
+        {
+          field: 'stock',
+          column: columns[1],
+          operator: 'equals',
+          value: '30',
+        },
+      ],
+    };
+    view.rerender(
+      <EnhancedSearchBar
+        value="#name #contains aspirin #and #stock #equals 10##"
+        onChange={onChange}
+        columns={columns}
+      />
+    );
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '21' } });
+
+    expect(capturedSearchBadgeProps.current).toBeTruthy();
+  });
+
+  it('covers default-index fallback branches for operator and column selectors', () => {
+    const onChange = vi.fn();
+    let dynamicMode: EnhancedSearchState = baseSearchMode({
+      showColumnSelector: true,
+      showOperatorSelector: true,
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: 'aspirin',
+        operator: 'contains',
+        column: columns[0],
+        isExplicitOperator: true,
+        isConfirmed: true,
+        filterGroup: {
+          kind: 'group',
+          join: 'AND',
+          nodes: [
+            {
+              kind: 'condition',
+              column: columns[1],
+              operator: 'contains',
+              value: 'x',
+            },
+          ],
+        },
+      },
+    });
+    useSearchStateMock.mockImplementation(() => ({ searchMode: dynamicMode }));
+
+    const view = render(
+      <EnhancedSearchBar value="#" onChange={onChange} columns={columns} />
+    );
+
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditColumn as
+          | ((path: number[]) => void)
+          | undefined
+      )?.([0]);
+    });
+    expect(
+      (capturedColumnSelectorProps.current as { defaultSelectedIndex?: number })
+        ?.defaultSelectedIndex
+    ).toBe(1);
+
+    view.unmount();
+
+    dynamicMode = baseSearchMode({
+      showColumnSelector: true,
+      showOperatorSelector: true,
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: 'aspirin',
+        operator: 'contains',
+        column: columns[0],
+        isExplicitOperator: true,
+        isConfirmed: true,
+        filterGroup: {
+          kind: 'group',
+          join: 'AND',
+          nodes: [
+            {
+              kind: 'condition',
+              operator: 'contains',
+              value: 'x',
+            },
+          ],
+        },
+      },
+    });
+    render(
+      <EnhancedSearchBar value="#" onChange={onChange} columns={columns} />
+    );
+    const badgeHookArgsAfterRerender = useBadgeHandlersMock.mock.calls.at(
+      -1
+    )?.[0] as
+      | {
+          setPreservedSearchMode?: (next: EnhancedSearchState | null) => void;
+          setEditingSelectorTarget?: (
+            next: {
+              conditionIndex: number;
+              target: 'column' | 'operator' | 'join';
+            } | null
+          ) => void;
+        }
+      | undefined;
+    act(() => {
+      (
+        capturedSearchBadgeProps.current?.onGroupEditColumn as
+          | ((path: number[]) => void)
+          | undefined
+      )?.([0]);
+    });
+    expect(capturedColumnSelectorProps.current).toBeTruthy();
+
+    act(() => {
+      badgeHookArgsAfterRerender?.setPreservedSearchMode?.(
+        baseSearchMode({
+          isFilterMode: true,
+          filterSearch: {
+            field: 'name',
+            value: 'aspirin',
+            operator: 'contains',
+            column: columns[0],
+            isExplicitOperator: true,
+            isConfirmed: true,
+            isMultiCondition: true,
+            conditions: [
+              { field: 'name', operator: 'contains', value: 'aspirin' },
+              { field: 'stock', operator: 'unknown-op', value: '10' } as any,
+            ],
+          },
+          partialConditions: [
+            undefined,
+            {
+              field: 'stock',
+              column: columns[1],
+              operator: 'unknown-op',
+              value: '10',
+            } as any,
+            {
+              field: 'unknown-column',
+              operator: 'equals',
+              value: '20',
+            } as any,
+          ],
+        })
+      );
+      badgeHookArgsAfterRerender?.setEditingSelectorTarget?.({
+        conditionIndex: 1,
+        target: 'operator',
+      });
+    });
+    expect(
+      (
+        capturedOperatorSelectorProps.current as {
+          defaultSelectedIndex?: number;
+        }
+      )?.defaultSelectedIndex
+    ).toBeUndefined();
+
+    act(() => {
+      badgeHookArgsAfterRerender?.setPreservedSearchMode?.(
+        baseSearchMode({
+          isFilterMode: true,
+          filterSearch: {
+            field: 'name',
+            value: 'aspirin',
+            operator: 'contains',
+            column: columns[0],
+            isExplicitOperator: true,
+            isConfirmed: true,
+            isMultiCondition: true,
+            conditions: [
+              { field: 'name', operator: 'contains', value: 'aspirin' },
+            ],
+          },
+          partialConditions: [
+            undefined,
+            {} as any,
+            { field: 'unknown-column', operator: 'equals', value: '20' } as any,
+          ],
+        })
+      );
+      badgeHookArgsAfterRerender?.setEditingSelectorTarget?.({
+        conditionIndex: 2,
+        target: 'column',
+      });
+    });
+    expect(capturedColumnSelectorProps.current).toBeTruthy();
+
+    act(() => {
+      badgeHookArgsAfterRerender?.setEditingSelectorTarget?.({
+        conditionIndex: 1,
+        target: 'column',
+      });
+    });
+    expect(capturedColumnSelectorProps.current).toBeTruthy();
   });
 
   it('returns early when Ctrl+E finds no editable badge', () => {

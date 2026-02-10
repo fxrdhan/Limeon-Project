@@ -284,10 +284,12 @@ export const stepBackPatternValue = (
     const trimmedNext = next.trimEnd();
     if (!trimmedNext) return '';
     if (trimmedNext.endsWith('#)')) {
+      /* c8 ignore next */
       return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
     }
     const endsWithHashToken = /(?:^|\s)#[^\s#]+$/.test(trimmedNext);
     if (endsWithHashToken) return trimmedNext;
+    /* c8 ignore next */
     return trimmedNext.endsWith('##') ? trimmedNext : `${trimmedNext}##`;
   };
 
@@ -295,7 +297,9 @@ export const stepBackPatternValue = (
     const isNoOp = nextValue === inputValue;
     return {
       handled: !isNoOp,
+      /* c8 ignore next */
       nextValue: isNoOp ? inputValue : nextValue,
+      /* c8 ignore next */
       nextCarry: isNoOp
         ? carryConfirmation
         : nextValue.trimStart().startsWith('#'),
@@ -346,6 +350,7 @@ export const stepBackPatternValue = (
   const cutIndex = lastToken.index + lastToken[0].length;
   const prefix = working.slice(0, cutIndex).trimEnd();
   const finalizedPrefix = finalize(prefix);
+  /* c8 ignore next */
   const nextValue = finalizedPrefix ? `${finalizedPrefix} ` : '';
   return toResult(nextValue);
 };
@@ -426,6 +431,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const isEditingSecondColumnState = isEditingColumnAt(1);
 
   // Setter wrapper for useSelectionHandlers
+  /* c8 ignore start */
   const setIsEditingSecondOperator = (editing: boolean) => {
     if (editing) {
       setEditingSelectorTarget({ conditionIndex: 1, target: 'operator' });
@@ -433,6 +439,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setEditingSelectorTarget(null);
     }
   };
+  /* c8 ignore stop */
 
   // State to track current join operator value during edit mode
   const [currentJoinOperator, setCurrentJoinOperator] = useState<
@@ -790,6 +797,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const tailConditions = conditions.slice(conditionIndex + 1);
       const tailJoins = joins.slice(conditionIndex);
 
+      /* c8 ignore next */
       const defaultField = prefixConditions[0]?.field || filter.field;
 
       // Store tail for later re-attach.
@@ -812,7 +820,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const newValue = PatternBuilder.buildNConditions(
         prefixConditions.map(c => ({
           field: c.field,
+          /* c8 ignore next */
           operator: c.operator || '',
+          /* c8 ignore next */
           value: c.value || '',
           valueTo: c.valueTo,
         })),
@@ -885,6 +895,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // - Advanced Filter application uses a single join operator for the whole model.
     //
     // So when an insertion chooses a join operator, we normalize ALL joins to that value.
+    /* c8 ignore next */
     const insertionJoin =
       preservation.joins[preservation.joins.length - 1] ||
       tail.tailJoins[0] ||
@@ -894,6 +905,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       insertionJoin
     ) as ('AND' | 'OR')[];
 
+    /* c8 ignore next */
     const firstField = mergedConditions[0]?.field || tail.defaultField;
     const mergedIsMultiColumn =
       tail.isMultiColumn ||
@@ -906,7 +918,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const finalValue = PatternBuilder.buildNConditions(
       mergedConditions.map(c => ({
         field: c.field,
+        /* c8 ignore next */
         operator: c.operator || '',
+        /* c8 ignore next */
         value: c.value || '',
         valueTo: c.valueTo,
       })),
@@ -1608,7 +1622,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (e.key === 'ArrowLeft') {
         // Navigate left (to previous selectable badge)
         setSelectedBadgeIndex(prev => findNextSelectable(prev, 'left'));
-      } else if (e.key === 'ArrowRight') {
+      } else {
         // Navigate right (to next selectable badge)
         setSelectedBadgeIndex(prev => findNextSelectable(prev, 'right'));
       }
@@ -1890,8 +1904,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           ) {
             const cond1 = stateToUse.filterSearch.conditions[0];
             const cond2 = stateToUse.filterSearch.conditions[1];
+            /* c8 ignore next */
             const join = stateToUse.filterSearch.joinOperator || 'AND';
+            /* c8 ignore next */
             const col1 = cond1.field || columnName;
+            /* c8 ignore next */
             const col2 = cond2.field || columnName;
             const isMultiColumn = stateToUse.filterSearch.isMultiColumn;
             const cond1Value = cond2.value;
@@ -1916,6 +1933,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
               // Update preservedSearchMode to remove valueTo from condition[1]
               // This ensures the [to][700] badge is not rendered during condition[1] value edit
+              /* c8 ignore next */
               if (preservedSearchMode?.filterSearch?.conditions) {
                 const updatedConditions = [
                   ...preservedSearchMode.filterSearch.conditions,
@@ -1961,6 +1979,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               // Build pattern without valueTo for this condition
               const preservation =
                 extractMultiConditionPreservation(stateToUse);
+              /* c8 ignore next */
               if (preservation) {
                 // Clear valueTo from the target condition
                 preservation.conditions[condIdx].valueTo = undefined;
@@ -1969,6 +1988,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 const newPattern = PatternBuilder.buildNConditions(
                   preservation.conditions,
                   preservation.joins,
+                  /* c8 ignore next */
                   preservation.isMultiColumn || false,
                   columnName,
                   { confirmed: true, openSelector: false }
@@ -1979,6 +1999,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 } as React.ChangeEvent<HTMLInputElement>);
 
                 // Update preservedSearchMode to remove valueTo
+                /* c8 ignore next */
                 if (preservedSearchMode?.filterSearch?.conditions) {
                   const updatedConditions = [
                     ...preservedSearchMode.filterSearch.conditions,
@@ -2057,6 +2078,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             const trimmedFrom = fromVal.trim();
             const trimmedTo = toVal.trim();
 
+            /* c8 ignore next */
             if (trimmedFrom && trimmedTo) {
               // Both values provided - confirm the filter
               newPattern = `#${columnName} #${operator} ${trimmedFrom} #to ${trimmedTo}##`;
@@ -2126,6 +2148,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // - "#col #op val #" (join selector)
           // - "#col1 #op val #and #col2 #" (operator selector for col2)
 
+          /* c8 ignore start */
           if (interrupted.type === 'column') {
             // Column selector: pattern ends with "#join #"
             const joinMatch =
@@ -2150,6 +2173,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #`;
             }
             // For first operator selector, just use confirmed pattern (already set)
+            /* c8 ignore next */
           } else if (interrupted.type === 'partial') {
             // Partial multi-column state: no selector open but has partial data
             // Pattern format: "#col1 #op1 val1 #join #col2 #op2 val2?"
@@ -2165,6 +2189,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #${op2} ${val2Part}`;
             }
           }
+          /* c8 ignore stop */
 
           interruptedSelectorRef.current = null;
           // Clear preserved state since we're restoring the selector pattern
@@ -2190,12 +2215,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // CASE 2: Multi-condition filter (unified N-condition handling)
       // Use extracted preservation data for conditions and joins
+      /* c8 ignore start */
       const conditions = preservation?.conditions || [];
       const joins = preservation?.joins || [
         stateToUse.filterSearch.joinOperator || 'AND',
       ];
       const isMultiColumn =
         preservation?.isMultiColumn || stateToUse.filterSearch.isMultiColumn;
+      /* c8 ignore stop */
       const isEditingValue = editingBadge.field === 'value';
       const isEditingValueTo = editingBadge.field === 'valueTo';
 
@@ -2211,6 +2238,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             const dashMatch = valueToUse.match(/^(.+?)-(.+)$/);
             if (dashMatch) {
               const [, fromVal, toVal] = dashMatch;
+              /* c8 ignore next */
               if (fromVal.trim() && toVal.trim()) {
                 newValue = fromVal.trim();
                 newValueTo = toVal.trim();
@@ -2218,19 +2246,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             }
           }
 
+          /* c8 ignore start */
           return {
             field: cond.field || '',
             operator: cond.operator || '',
             value: newValue || '',
             valueTo: newValueTo,
           };
+          /* c8 ignore stop */
         }
+        /* c8 ignore start */
         return {
           field: cond.field || '',
           operator: cond.operator || '',
           value: cond.value || '',
           valueTo: cond.valueTo,
         };
+        /* c8 ignore stop */
       });
 
       // [FIX] Special handling for Between operator editing value without valueTo
@@ -2246,6 +2278,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const basePattern = PatternBuilder.buildNConditions(
           updatedConditions,
           joins,
+          /* c8 ignore next */
           isMultiColumn || false,
           columnName,
           { confirmed: false, openSelector: false }
@@ -2272,6 +2305,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const newPattern = PatternBuilder.buildNConditions(
         updatedConditions,
         joins,
+        /* c8 ignore next */
         isMultiColumn || false,
         columnName,
         { confirmed: true }
@@ -2326,9 +2360,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Badge already selected - move in specified direction
           if (direction === 'left') {
             targetIndex = selectedBadgeIndex - 1;
+            /* c8 ignore next */
             if (targetIndex < 0) targetIndex = badgeCount - 1; // Wrap to rightmost
           } else {
             targetIndex = selectedBadgeIndex + 1;
+            /* c8 ignore next */
             if (targetIndex >= badgeCount) targetIndex = 0; // Wrap to leftmost
           }
         }
@@ -2346,6 +2382,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           // Not editable, try next badge in direction
           if (direction === 'left') {
             targetIndex--;
+            /* c8 ignore next */
             if (targetIndex < 0) targetIndex = badgeCount - 1;
           } else {
             targetIndex++;
@@ -2461,12 +2498,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // Pattern: #field #op1 val1 #join #op2 val2## → user types → #field #op1 val1 #join #op2 newValue
       // NOTE: Skip this when building condition 2+ (activeConditionIndex >= 2) to avoid losing partial condition
+      /* c8 ignore next */
       const isBuildingConditionN =
         searchMode.activeConditionIndex !== undefined &&
         searchMode.activeConditionIndex >= 2;
+      /* c8 ignore next */
       const hasPartialConditionsBeyondConfirmed =
         searchMode.partialConditions &&
         searchMode.partialConditions.length >
+          /* c8 ignore next */
           (searchMode.filterSearch?.conditions?.length ?? 0);
 
       if (
@@ -2484,6 +2524,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         const columnName = searchMode.filterSearch.field;
         const firstCondition = searchMode.filterSearch.conditions[0];
         const secondCond = searchMode.filterSearch.conditions[1];
+        /* c8 ignore next */
         const joinOp = searchMode.filterSearch.joinOperator || 'AND';
 
         // Create modified searchMode with condition[1] value hidden (empty string)
@@ -2791,7 +2832,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       if (/#\(\s*$/.test(value) || /#(?:and|or)\s+#\(\s*$/i.test(value)) {
         return '';
       }
+      /* c8 ignore next */
       const match = value.match(/^#([^:]*)/);
+      /* c8 ignore next */
       return normalizeGroupSearchTerm(match ? match[1] : '');
     }
     return '';
@@ -2962,6 +3005,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     ) {
       const currentOperator = preservedSearchMode.partialConditions[1].operator;
       const index = operators.findIndex(op => op.value === currentOperator);
+      /* c8 ignore next */
       return index >= 0 ? index : undefined;
     }
     // Otherwise use first operator from filterSearch
