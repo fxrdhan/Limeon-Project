@@ -1257,4 +1257,366 @@ describe('ChatSidebarPanel', () => {
       'bottom-full'
     );
   });
+
+  it('handles Enter key and keeps empty Enter input unsent', async () => {
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Halo dari target');
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    const emptyPreventDefault = vi.fn();
+
+    fireEvent.keyDown(textarea, {
+      key: 'Enter',
+      preventDefault: emptyPreventDefault,
+    });
+    expect(chatServiceMock.insertMessage).not.toHaveBeenCalled();
+
+    fireEvent.change(textarea, { target: { value: 'Kirim pakai Enter' } });
+    await waitFor(() => {
+      expect(textarea).toHaveValue('Kirim pakai Enter');
+    });
+    const valuePreventDefault = vi.fn();
+    fireEvent.keyDown(textarea, {
+      key: 'Enter',
+      preventDefault: valuePreventDefault,
+    });
+    expect(valuePreventDefault).not.toBeNull();
+  });
+
+  it('handles edit guard for empty input', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-edit-guard',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Pesan edit guard',
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Pesan edit guard');
+    fireEvent.click(screen.getByRole('button', { name: 'Pesan edit guard' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: '   ' } });
+    const sendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(sendButton).toBeTruthy();
+    fireEvent.click(sendButton!);
+    expect(chatServiceMock.updateMessage).not.toHaveBeenCalled();
+  });
+
+  it('catches update rejection when editing message', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-edit-reject',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Pesan edit reject',
+        }),
+      ],
+      error: null,
+    });
+    chatServiceMock.updateMessage.mockRejectedValueOnce(
+      new Error('update-boom')
+    );
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Pesan edit reject');
+    fireEvent.click(screen.getByRole('button', { name: 'Pesan edit reject' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: 'Edit gagal reject' } });
+    await waitFor(() => {
+      expect(textarea).toHaveValue('Edit gagal reject');
+    });
+    const sendButton = document.querySelector(
+      'button.bg-violet-500'
+    ) as HTMLButtonElement | null;
+    expect(sendButton).toBeTruthy();
+    fireEvent.click(sendButton!);
+
+    await waitFor(() => {
+      expect(chatServiceMock.updateMessage).toHaveBeenCalledWith(
+        'msg-edit-reject',
+        expect.objectContaining({ message: 'Edit gagal reject' })
+      );
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error updating message:',
+      expect.any(Error)
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  it('catches delete rejection and keeps broadcast delete unsent', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-delete-reject',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Pesan delete reject',
+        }),
+      ],
+      error: null,
+    });
+    chatServiceMock.deleteMessage.mockRejectedValueOnce(
+      new Error('delete-boom')
+    );
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Pesan delete reject');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Pesan delete reject' })
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+
+    await waitFor(() => {
+      expect(chatServiceMock.deleteMessage).toHaveBeenCalledWith(
+        'msg-delete-reject'
+      );
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error deleting message:',
+      expect.any(Error)
+    );
+    expect(
+      channelRegistry.get('chat_dm_user-1_user-2')?.send
+    ).not.toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'delete_message' })
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  it('deduplicates realtime message ids and toggles scroll-to-bottom indicator', async () => {
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Halo dari target');
+
+    const container = document.querySelector(
+      'div.flex-1.px-3.pt-3.overflow-y-auto'
+    ) as HTMLDivElement | null;
+    expect(container).toBeTruthy();
+
+    let scrollTopValue = 0;
+    Object.defineProperty(container!, 'scrollHeight', {
+      configurable: true,
+      get: () => 1200,
+    });
+    Object.defineProperty(container!, 'clientHeight', {
+      configurable: true,
+      get: () => 300,
+    });
+    Object.defineProperty(container!, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTopValue,
+      set: (next: number) => {
+        scrollTopValue = next;
+      },
+    });
+
+    const newMessageHandler = getHandler(
+      'chat_dm_user-1_user-2',
+      'broadcast',
+      'new_message'
+    );
+    act(() => {
+      newMessageHandler({
+        payload: createMessage({
+          id: 'msg-1',
+          message: 'Harus di-skip karena duplikat',
+        }),
+      });
+      newMessageHandler({
+        payload: createMessage({
+          id: 'msg-scroll-new',
+          message: 'Pesan baru saat tidak di bawah',
+        }),
+      });
+    });
+
+    expect(
+      await screen.findByText('Pesan baru saat tidak di bawah')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Harus di-skip karena duplikat')
+    ).not.toBeInTheDocument();
+  });
+
+  it('updates overflow threshold and clears pending composer layout timers', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    const scrollHeightDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'scrollHeight'
+    );
+    let dynamicScrollHeight = 96;
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get: () => dynamicScrollHeight,
+    });
+
+    try {
+      render(
+        <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+      );
+
+      await screen.findByText('Halo dari target');
+
+      const textarea = screen.getByPlaceholderText(
+        'Type a message...'
+      ) as HTMLTextAreaElement;
+
+      fireEvent.change(textarea, { target: { value: '1234567890' } });
+      await waitFor(() => {
+        expect(
+          (
+            screen.getByPlaceholderText(
+              'Type a message...'
+            ) as HTMLTextAreaElement
+          ).style.height
+        ).toBe('96px');
+      });
+
+      dynamicScrollHeight = 22;
+      fireEvent.change(screen.getByPlaceholderText('Type a message...'), {
+        target: { value: '1' },
+      });
+      await waitFor(() => {
+        expect(clearTimeoutSpy).toHaveBeenCalled();
+      });
+    } finally {
+      if (scrollHeightDescriptor) {
+        Object.defineProperty(
+          HTMLTextAreaElement.prototype,
+          'scrollHeight',
+          scrollHeightDescriptor
+        );
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete (HTMLTextAreaElement.prototype as { scrollHeight?: number })
+          .scrollHeight;
+      }
+      clearTimeoutSpy.mockRestore();
+    }
+  });
+
+  it('switches composer layout to multiline after delay when input becomes tall', async () => {
+    const scrollHeightDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'scrollHeight'
+    );
+    let dynamicScrollHeight = 96;
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get: () => dynamicScrollHeight,
+    });
+
+    try {
+      const { container } = render(
+        <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+      );
+
+      await screen.findByText('Halo dari target');
+      const textarea = screen.getByPlaceholderText(
+        'Type a message...'
+      ) as HTMLTextAreaElement;
+      fireEvent.change(textarea, { target: { value: '1234567890' } });
+
+      await waitFor(() => {
+        const composerGrid = container.querySelector(
+          'div[class*="grid-cols-[auto_1fr_auto]"]'
+        );
+        expect(composerGrid).toBeTruthy();
+        expect(composerGrid?.className).toContain('grid-rows-[auto_auto]');
+      });
+    } finally {
+      if (scrollHeightDescriptor) {
+        Object.defineProperty(
+          HTMLTextAreaElement.prototype,
+          'scrollHeight',
+          scrollHeightDescriptor
+        );
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete (HTMLTextAreaElement.prototype as { scrollHeight?: number })
+          .scrollHeight;
+      }
+    }
+  });
+
+  it('handles presence load rejection and interval cleanup on unmount', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    chatServiceMock.getUserPresence.mockRejectedValue(
+      new Error('presence-rejected')
+    );
+
+    const { unmount } = render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        '❌ Caught error loading target user presence:',
+        expect.any(Error)
+      );
+    });
+
+    const intervalCallback = setIntervalSpy.mock.calls[0]?.[0] as
+      | (() => void)
+      | undefined;
+    expect(intervalCallback).toBeTypeOf('function');
+    const initialPresenceCalls =
+      chatServiceMock.getUserPresence.mock.calls.length;
+    act(() => {
+      intervalCallback?.();
+    });
+    expect(chatServiceMock.getUserPresence.mock.calls.length).toBeGreaterThan(
+      initialPresenceCalls
+    );
+
+    vi.useFakeTimers();
+    unmount();
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    const globalChannel = channelRegistry.get('global_presence_updates');
+    expect(removeChannelMock).toHaveBeenCalledWith(globalChannel);
+
+    errorSpy.mockRestore();
+    setIntervalSpy.mockRestore();
+    vi.useRealTimers();
+  });
 });

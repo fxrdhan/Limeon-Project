@@ -324,4 +324,118 @@ describe('EnhancedSearchBar helpers', () => {
       nextCarry: true,
     });
   });
+
+  it('covers deep recursive group mutation/unwrap branches', () => {
+    const deepGroup: FilterGroup = {
+      kind: 'group',
+      join: 'AND',
+      nodes: [
+        {
+          kind: 'condition',
+          field: 'name',
+          column: nameColumn,
+          operator: 'contains',
+          value: 'aspirin',
+        },
+        {
+          kind: 'group',
+          join: 'OR',
+          nodes: [
+            {
+              kind: 'group',
+              join: 'AND',
+              nodes: [
+                {
+                  kind: 'condition',
+                  field: 'stock',
+                  column: stockColumn,
+                  operator: 'equals',
+                  value: '10',
+                },
+                {
+                  kind: 'condition',
+                  field: 'name',
+                  column: nameColumn,
+                  operator: 'contains',
+                  value: 'ibu',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const updatedColumn = updateGroupConditionColumn(deepGroup, [1, 0, 1], {
+      field: 'category',
+      headerName: 'Category',
+      searchable: true,
+      type: 'text',
+    });
+    expect(updatedColumn.nodes[1]).toMatchObject({
+      nodes: [
+        {
+          nodes: [
+            expect.any(Object),
+            expect.objectContaining({ field: 'category' }),
+          ],
+        },
+      ],
+    });
+
+    const updatedOperator = updateGroupConditionOperator(
+      deepGroup,
+      [1, 0, 0],
+      'inRange'
+    );
+    expect(updatedOperator.nodes[1]).toEqual(
+      expect.objectContaining({
+        nodes: [
+          expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({ operator: 'inRange', valueTo: '10' }),
+            ]),
+          }),
+        ],
+      })
+    );
+
+    const removedNested = removeGroupNodeAtPath(deepGroup, [1, 0, 0]);
+    expect(removedNested.nodes[1]).toMatchObject({
+      nodes: [{ nodes: [expect.objectContaining({ field: 'name' })] }],
+    });
+
+    const unwrappedNested = unwrapGroupAtPath(deepGroup, [1, 0, 0]);
+    expect(unwrappedNested.nodes[1]).toEqual(
+      expect.objectContaining({
+        nodes: [
+          expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({ field: 'stock' }),
+            ]),
+          }),
+        ],
+      })
+    );
+  });
+
+  it('covers additional step-back no-op/and/token branches', () => {
+    expect(stepBackPatternValue('##', false)).toEqual({
+      handled: false,
+      nextValue: '##',
+      nextCarry: false,
+    });
+
+    expect(stepBackPatternValue('# #', false)).toEqual({
+      handled: false,
+      nextValue: '# #',
+      nextCarry: false,
+    });
+
+    expect(stepBackPatternValue('#name #and #stock #', false)).toEqual({
+      handled: true,
+      nextValue: '#name #and #',
+      nextCarry: true,
+    });
+  });
 });

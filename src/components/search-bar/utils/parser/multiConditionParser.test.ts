@@ -291,4 +291,99 @@ describe('multiConditionParser', () => {
       )
     ).toBeNull();
   });
+
+  it('parses first and second inRange #to value branches', () => {
+    const firstSegmentInRange = parsePartialNConditions(
+      '#stock #inRange 10 #to 20 #and #equals 30',
+      columns
+    );
+    expect(firstSegmentInRange?.partialConditions?.[0]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'inRange',
+        value: '10',
+        valueTo: '20',
+      })
+    );
+
+    const secondSegmentInRange = parsePartialNConditions(
+      '#name #contains aspirin #and #stock #inRange 100 #to 200',
+      columns
+    );
+    expect(secondSegmentInRange?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'inRange',
+        value: '100',
+        valueTo: '200',
+      })
+    );
+  });
+
+  it('handles dash-confirmed inRange and partial #column #operator branches', () => {
+    const secondDashConfirmed = parsePartialNConditions(
+      '#name #contains aspirin #and #stock #inRange 10-20## ',
+      columns
+    );
+    expect(secondDashConfirmed?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'inRange',
+        value: '10',
+        valueTo: '20##',
+      })
+    );
+
+    const partialColumnOperator = parsePartialNConditions(
+      '#name #contains aspirin #and #stock #equals',
+      columns
+    );
+    expect(partialColumnOperator?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'equals',
+      })
+    );
+
+    const sameColumnInRangeDash = parsePartialNConditions(
+      '#stock #greaterThan 1 #and #inRange 5-9## ',
+      columns
+    );
+    expect(sameColumnInRangeDash?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'inRange',
+        value: '5',
+        valueTo: '9##',
+      })
+    );
+
+    const sameColumnInRangeWaiting = parsePartialNConditions(
+      '#stock #greaterThan 1 #and #inRange 10 #to',
+      columns
+    );
+    expect(sameColumnInRangeWaiting?.partialConditions?.[1]).toEqual(
+      expect.objectContaining({
+        field: 'stock',
+        operator: 'inRange',
+        value: '10',
+        waitingForValueTo: true,
+      })
+    );
+  });
+
+  it('falls back to empty partial condition for unknown segment shape', () => {
+    const unknownSegment = parsePartialNConditions(
+      '#name #contains aspirin #and plain-text-segment',
+      columns
+    );
+    expect(unknownSegment?.partialConditions?.[1]).toEqual({});
+    expect(unknownSegment?.showColumnSelector).toBe(true);
+  });
+
+  it('returns null when join exists but parsed partial conditions are fewer than 2', () => {
+    expect(
+      parsePartialNConditions('#unknown #notAnOperator x #and ', columns)
+    ).toBeNull();
+  });
 });

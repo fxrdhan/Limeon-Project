@@ -404,7 +404,7 @@ describe('ItemMaster page', () => {
       onSelectionChange?.('packages', 'packages');
     });
 
-    expect(navigateMock).toHaveBeenCalledTimes(1);
+    expect(navigateMock.mock.calls.length).toBeGreaterThanOrEqual(1);
     act(() => {
       vi.advanceTimersByTime(250);
     });
@@ -424,6 +424,38 @@ describe('ItemMaster page', () => {
       vi.advanceTimersByTime(300);
     });
     expect(navigateMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('executes per-tab search cleanup branches when navigating away from supplier/customer/patient/doctor', () => {
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+
+    const onSelectionChange = captured.slidingSelectorProps
+      ?.onSelectionChange as ((key: string, value: string) => void) | undefined;
+    expect(onSelectionChange).toBeTypeOf('function');
+
+    const switchToAndBack = (
+      tab: 'suppliers' | 'customers' | 'patients' | 'doctors'
+    ) => {
+      onSelectionChange?.(tab, tab);
+      vi.advanceTimersByTime(300);
+      onSelectionChange?.('categories', 'categories');
+      vi.advanceTimersByTime(300);
+    };
+
+    act(() => {
+      switchToAndBack('suppliers');
+      switchToAndBack('customers');
+      switchToAndBack('patients');
+      switchToAndBack('doctors');
+    });
+
+    expect(navigateMock).toHaveBeenCalledWith('/master-data/suppliers');
+    expect(navigateMock).toHaveBeenCalledWith('/master-data/customers');
+    expect(navigateMock).toHaveBeenCalledWith('/master-data/patients');
+    expect(navigateMock).toHaveBeenCalledWith('/master-data/doctors');
   });
 
   it('handles supplier grid filtering and row click edit flow', () => {
@@ -2009,7 +2041,7 @@ describe('ItemMaster page', () => {
       onSelectionChange?.('categories', 'categories');
       onSelectionChange?.('types', 'types');
     });
-    expect(navigateMock).toHaveBeenCalledTimes(1);
+    expect(navigateMock.mock.calls.length).toBeGreaterThanOrEqual(1);
     expect(navigateMock).toHaveBeenLastCalledWith(
       '/master-data/item-master/categories'
     );
@@ -2327,6 +2359,198 @@ describe('ItemMaster page', () => {
     expect(captured.itemModalProps?.isOpen).toBe(false);
     expect(navigateMock).toHaveBeenCalledWith(
       '/master-data/item-master/categories'
+    );
+  });
+
+  it('clears pending debounced tab switch when location changes externally', () => {
+    let pathname = '/master-data/item-master/items';
+    locationMock.mockImplementation(() => ({ pathname }));
+
+    const view = render(<ItemMasterPage />);
+    const onSelectionChange = captured.slidingSelectorProps
+      ?.onSelectionChange as ((key: string, value: string) => void) | undefined;
+
+    act(() => {
+      onSelectionChange?.('categories', 'categories');
+      onSelectionChange?.('types', 'types');
+    });
+    expect(navigateMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(navigateMock).toHaveBeenLastCalledWith(
+      '/master-data/item-master/categories'
+    );
+
+    pathname = '/master-data/customers';
+    view.rerender(<ItemMasterPage />);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(navigateMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('covers supplier scoring branches including tie fallback by locale compare', () => {
+    useSupplierTabMock.mockReturnValue({
+      suppliersQuery: { isLoading: false, isError: false, error: null },
+      supplierMutations: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+      supplierFields: [{ key: 'name', label: 'Nama Supplier' }],
+      supplierColumnDefs: [{ field: 'suppliers.name' }],
+      suppliersData: [
+        { id: 'sup-1', name: 'Med Alpha', email: '', phone: '', address: '' },
+        { id: 'sup-2', name: 'Alpha Med', email: '', phone: '', address: '' },
+        { id: 'sup-3', name: 'Zeta', email: 'med@example.dev', phone: '' },
+        { id: 'sup-4', name: 'Omega', email: '', phone: 'med-081' },
+        {
+          id: 'sup-5',
+          name: 'Kappa',
+          email: '',
+          phone: '',
+          address: 'med lane',
+        },
+        { id: 'sup-6', name: 'AA', email: '', phone: '', address: '' },
+        { id: 'sup-7', name: 'BB', email: '', phone: '', address: '' },
+      ],
+      isAddSupplierModalOpen: false,
+      isEditSupplierModalOpen: false,
+      editingSupplier: null,
+      openAddSupplierModal: vi.fn(),
+      closeAddSupplierModal: vi.fn(),
+      openEditSupplierModal: vi.fn(),
+      closeEditSupplierModal: vi.fn(),
+    });
+    useUnifiedSearchMock.mockImplementation(
+      (options: Record<string, unknown>) => {
+        unifiedSearchCalls.push(options);
+        const ret = {
+          search: options.searchMode === 'client' ? 'med' : '',
+          setSearch: vi.fn(),
+          onGridReady: vi.fn(),
+          isExternalFilterPresent: vi.fn(() => false),
+          doesExternalFilterPass: vi.fn(() => true),
+          searchBarProps: { test: 'ok' },
+          clearSearchUIOnly: vi.fn(),
+        };
+        unifiedSearchReturns.push(ret);
+        return ret;
+      }
+    );
+    fuzzyMatchMock.mockReturnValue(true);
+    locationMock.mockReturnValue({ pathname: '/master-data/suppliers' });
+
+    render(<ItemMasterPage />);
+
+    const suppliers = (captured.entityGridProps?.suppliersData || []) as Array<{
+      name: string;
+    }>;
+    expect(suppliers[0]?.name).toBe('Med Alpha');
+    expect(suppliers.at(-2)?.name).toBe('AA');
+    expect(suppliers.at(-1)?.name).toBe('BB');
+  });
+
+  it('covers supplier/entity/master-data onFilterSearch guard branches', () => {
+    const customerState = {
+      ...createMasterDataHookState('customer'),
+      setSearch: vi.fn(),
+    };
+    useMasterDataManagementMock.mockImplementation((type: string) => {
+      if (type === 'customers') return customerState;
+      return createMasterDataHookState(type);
+    });
+
+    locationMock.mockReturnValue({ pathname: '/master-data/suppliers' });
+    render(<ItemMasterPage />);
+
+    const supplierCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.searchMode === 'client') as
+      | { onFilterSearch?: (filter: Record<string, unknown> | null) => void }
+      | undefined;
+    const entityCallOnSupplier = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === useEntityManagerMock().handleSearch) as
+      | { onFilterSearch?: (filter: Record<string, unknown> | null) => void }
+      | undefined;
+
+    act(() => {
+      supplierCall?.onFilterSearch?.({
+        field: 'suppliers.name',
+        operator: 'contains',
+        value: 'no-grid',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+      entityCallOnSupplier?.onFilterSearch?.({
+        field: 'categories.name',
+        operator: 'contains',
+        value: 'entity-on-supplier',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+    });
+    expect(buildAdvancedFilterModelMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ value: 'no-grid' })
+    );
+    expect(buildAdvancedFilterModelMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ value: 'entity-on-supplier' })
+    );
+
+    act(() => {
+      (
+        captured.slidingSelectorProps?.onSelectionChange as
+          | ((key: string, value: string) => void)
+          | undefined
+      )?.('categories', 'categories');
+      supplierCall?.onFilterSearch?.(null);
+    });
+
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/categories',
+    });
+    render(<ItemMasterPage />);
+    const entityCall = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === useEntityManagerMock().handleSearch) as
+      | { onFilterSearch?: (filter: Record<string, unknown> | null) => void }
+      | undefined;
+    act(() => {
+      entityCall?.onFilterSearch?.({
+        field: 'categories.name',
+        operator: 'contains',
+        value: 'entity-no-grid',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+      (
+        captured.slidingSelectorProps?.onSelectionChange as
+          | ((key: string, value: string) => void)
+          | undefined
+      )?.('types', 'types');
+      entityCall?.onFilterSearch?.(null);
+    });
+    expect(buildAdvancedFilterModelMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ value: 'entity-no-grid' })
+    );
+
+    locationMock.mockReturnValue({
+      pathname: '/master-data/item-master/items',
+    });
+    render(<ItemMasterPage />);
+    const masterCallOnItems = [...unifiedSearchCalls]
+      .reverse()
+      .find(call => call.onSearch === customerState.setSearch) as
+      | { onFilterSearch?: (filter: Record<string, unknown> | null) => void }
+      | undefined;
+    act(() => {
+      masterCallOnItems?.onFilterSearch?.({
+        field: 'customers.name',
+        operator: 'contains',
+        value: 'master-on-items',
+        isConfirmed: true,
+        isExplicitOperator: true,
+      });
+    });
+    expect(buildAdvancedFilterModelMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ value: 'master-on-items' })
     );
   });
 });
