@@ -149,6 +149,20 @@ describe('useUnifiedSearch', () => {
     });
 
     expect(onSearch).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.handleSearchChange({
+        target: { value: '#' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleSearchChange({
+        target: { value: 'queued' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleSearchChange({
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      vi.advanceTimersByTime(300);
+    });
+    expect(onSearch).not.toHaveBeenCalledWith('queued');
   });
 
   it('handles handleGlobalSearch with debounce and hashtag skip', () => {
@@ -190,6 +204,13 @@ describe('useUnifiedSearch', () => {
     });
 
     expect(onSearch).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.handleGlobalSearch('queued-global');
+      result.current.handleGlobalSearch('');
+      vi.advanceTimersByTime(200);
+    });
+    expect(onSearch).not.toHaveBeenCalledWith('queued-global');
   });
 
   it('handles targeted search conversion and fallback paths', () => {

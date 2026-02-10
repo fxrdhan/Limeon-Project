@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CustomerList from './customer-list';
 import DoctorListNew from './doctor-list';
@@ -13,18 +14,23 @@ type MasterDataPagePropsStub = {
   onAddClick: () => void;
   gridProps: {
     onRowClicked?: (event: { data: { id: string; name: string } }) => void;
+    onFirstDataRendered?: () => void;
     columnDefs: ColumnDefStub[];
     autoSizeColumns?: string[];
+    rowData?: unknown[];
+    paginationPageSize?: number;
   };
   pagination: {
     onPageSizeChange?: (pageSize: number) => void;
+    hideFloatingWhenModalOpen?: boolean;
   };
-  children?: unknown;
+  children?: ReactNode;
 };
 
 type IdentityModalPropsStub = {
   title: string;
   data?: Record<string, unknown>;
+  imageUrl?: string;
   initialNameFromSearch?: string;
   onClose: () => void;
   onSave: (data: Record<string, unknown>) => Promise<void>;
@@ -176,6 +182,7 @@ describe('Master data list pages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open-add-modal' }));
     fireEvent.click(screen.getByRole('button', { name: 'row-click' }));
     fireEvent.click(screen.getByRole('button', { name: 'set-page-size' }));
+    pagePropsStore.current?.gridProps.onFirstDataRendered?.();
 
     expect(management.setIsAddModalOpen).toHaveBeenCalledWith(true);
     expect(management.handleEdit).toHaveBeenCalledWith({
@@ -231,7 +238,8 @@ describe('Master data list pages', () => {
       },
     });
 
-    editModal.onDeleteRequest();
+    expect(editModal.onDeleteRequest).toBeDefined();
+    editModal.onDeleteRequest?.();
     const deleteDialogArgs = management.openConfirmDialog.mock.calls[0][0];
     expect(deleteDialogArgs.message).toContain('pelanggan "Pelanggan Lama"');
     await deleteDialogArgs.onConfirm();
@@ -275,6 +283,7 @@ describe('Master data list pages', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'open-add-modal' }));
     fireEvent.click(screen.getByRole('button', { name: 'row-click' }));
+    pagePropsStore.current?.gridProps.onFirstDataRendered?.();
 
     expect(management.setIsAddModalOpen).toHaveBeenCalledWith(true);
     expect(management.handleEdit).toHaveBeenCalledWith({
@@ -310,7 +319,8 @@ describe('Master data list pages', () => {
       id: 'doc-7',
     });
 
-    editModal.onDeleteRequest();
+    expect(editModal.onDeleteRequest).toBeDefined();
+    editModal.onDeleteRequest?.();
     const deleteDialogArgs = management.openConfirmDialog.mock.calls[0][0];
     expect(deleteDialogArgs.message).toContain('dokter "Dr. Tono"');
     await deleteDialogArgs.onConfirm();
@@ -377,6 +387,7 @@ describe('Master data list pages', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'open-add-modal' }));
     fireEvent.click(screen.getByRole('button', { name: 'row-click' }));
+    pagePropsStore.current?.gridProps.onFirstDataRendered?.();
     expect(management.setIsAddModalOpen).toHaveBeenCalledWith(true);
     expect(management.handleEdit).toHaveBeenCalledWith({
       id: 'row-1',
@@ -411,7 +422,8 @@ describe('Master data list pages', () => {
       id: 'pat-3',
     });
 
-    editModal.onDeleteRequest();
+    expect(editModal.onDeleteRequest).toBeDefined();
+    editModal.onDeleteRequest?.();
     const deleteDialogArgs = management.openConfirmDialog.mock.calls[0][0];
     expect(deleteDialogArgs.message).toContain('pasien "Sari"');
     await deleteDialogArgs.onConfirm();
@@ -467,6 +479,7 @@ describe('Master data list pages', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'open-add-modal' }));
     fireEvent.click(screen.getByRole('button', { name: 'row-click' }));
+    pagePropsStore.current?.gridProps.onFirstDataRendered?.();
     expect(management.setIsAddModalOpen).toHaveBeenCalledWith(true);
     expect(management.handleEdit).toHaveBeenCalledWith({
       id: 'row-1',
@@ -501,7 +514,8 @@ describe('Master data list pages', () => {
       id: 'sup-4',
     });
 
-    editModal.onDeleteRequest();
+    expect(editModal.onDeleteRequest).toBeDefined();
+    editModal.onDeleteRequest?.();
     const deleteDialogArgs = management.openConfirmDialog.mock.calls[0][0];
     expect(deleteDialogArgs.message).toContain('supplier "PT Sumber Makmur"');
     await deleteDialogArgs.onConfirm();
@@ -534,5 +548,221 @@ describe('Master data list pages', () => {
     expect(
       columnDefs[4].valueGetter?.({ data: { contact_person: null } })
     ).toBe('-');
+  });
+
+  it('covers customer list defaults when level and editing item are absent', async () => {
+    const management = createManagementState({
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingItem: null,
+      data: undefined,
+      itemsPerPage: undefined,
+    });
+    const list = createListState();
+
+    useMasterDataManagementMock.mockReturnValue(management);
+    useMasterDataListMock.mockReturnValue(list);
+    useCustomerLevelsMock.mockReturnValue({ levels: [] });
+
+    render(<CustomerList />);
+
+    const addModal = getModalProps('Tambah Pelanggan Baru');
+    const editModal = getModalProps('Edit Pelanggan');
+
+    expect(addModal.data).toEqual({ customer_level_id: null });
+    expect(editModal.data).toEqual({});
+    expect(editModal.onDeleteRequest).toBeUndefined();
+    expect(pagePropsStore.current?.gridProps.rowData).toEqual([]);
+    expect(pagePropsStore.current?.gridProps.paginationPageSize).toBe(25);
+    expect(pagePropsStore.current?.pagination.hideFloatingWhenModalOpen).toBe(
+      false
+    );
+
+    await addModal.onSave({});
+    await editModal.onSave({});
+    await editModal.onSave({
+      name: 'Fallback Edit Customer',
+      phone: '081111',
+      email: 'fallback@example.com',
+      address: 'Jl. Fallback',
+    });
+
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
+      data: {
+        name: '',
+        customer_level_id: '',
+        phone: null,
+        email: null,
+        address: null,
+      },
+    });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
+      id: undefined,
+      data: {
+        name: '',
+        customer_level_id: '',
+        phone: null,
+        email: null,
+        address: null,
+      },
+    });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(3, {
+      id: undefined,
+      data: {
+        name: 'Fallback Edit Customer',
+        customer_level_id: '',
+        phone: '081111',
+        email: 'fallback@example.com',
+        address: 'Jl. Fallback',
+      },
+    });
+  });
+
+  it('covers doctor list defaults without editing item', async () => {
+    const management = createManagementState({
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingItem: null,
+      data: undefined,
+      itemsPerPage: undefined,
+    });
+    const list = createListState();
+
+    useMasterDataManagementMock.mockReturnValue(management);
+    useMasterDataListMock.mockReturnValue(list);
+    useCustomerLevelsMock.mockReturnValue({ levels: [] });
+
+    render(<DoctorListNew />);
+
+    const editModal = getModalProps('Edit Dokter');
+
+    expect(editModal.data).toEqual({});
+    expect(editModal.onDeleteRequest).toBeUndefined();
+    expect(editModal.imageUrl).toBeUndefined();
+    expect(pagePropsStore.current?.gridProps.rowData).toEqual([]);
+    expect(pagePropsStore.current?.gridProps.paginationPageSize).toBe(25);
+    expect(pagePropsStore.current?.pagination.hideFloatingWhenModalOpen).toBe(
+      false
+    );
+
+    const columnDefs = pagePropsStore.current?.gridProps.columnDefs as Array<{
+      valueGetter?: (params: { data: Record<string, unknown> }) => unknown;
+    }>;
+    expect(columnDefs[1].valueGetter?.({ data: { gender: null } })).toBe('-');
+
+    const addModal = getModalProps('Tambah Dokter Baru');
+    await addModal.onSave({});
+    await editModal.onSave({});
+
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
+      name: '',
+      description: '',
+      id: undefined,
+    });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
+      name: '',
+      description: '',
+      id: undefined,
+    });
+  });
+
+  it('covers patient list fallback branches for non-string birth date and empty edit', async () => {
+    const management = createManagementState({
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingItem: null,
+      data: undefined,
+      itemsPerPage: undefined,
+    });
+    const list = createListState();
+
+    useMasterDataManagementMock.mockReturnValue(management);
+    useMasterDataListMock.mockReturnValue(list);
+    useCustomerLevelsMock.mockReturnValue({ levels: [] });
+
+    render(<PatientListNew />);
+
+    const editModal = getModalProps('Edit Pasien');
+
+    expect(editModal.data).toEqual({});
+    expect(editModal.onDeleteRequest).toBeUndefined();
+    expect(editModal.imageUrl).toBeUndefined();
+    expect(pagePropsStore.current?.gridProps.rowData).toEqual([]);
+    expect(pagePropsStore.current?.gridProps.paginationPageSize).toBe(25);
+    expect(pagePropsStore.current?.pagination.hideFloatingWhenModalOpen).toBe(
+      false
+    );
+
+    const columnDefs = pagePropsStore.current?.gridProps.columnDefs as Array<{
+      valueGetter?: (params: { data: Record<string, unknown> }) => unknown;
+    }>;
+    expect(columnDefs[2].valueGetter?.({ data: { birth_date: 12345 } })).toBe(
+      '-'
+    );
+
+    const addModal = getModalProps('Tambah Pasien Baru');
+    await addModal.onSave({});
+    await editModal.onSave({});
+
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
+      name: '',
+      description: '',
+      id: undefined,
+    });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
+      name: '',
+      description: '',
+      id: undefined,
+    });
+  });
+
+  it('covers supplier list defaults without editing item and contact value', async () => {
+    const management = createManagementState({
+      isAddModalOpen: false,
+      isEditModalOpen: false,
+      editingItem: null,
+      data: undefined,
+      itemsPerPage: undefined,
+    });
+    const list = createListState();
+
+    useMasterDataManagementMock.mockReturnValue(management);
+    useMasterDataListMock.mockReturnValue(list);
+    useCustomerLevelsMock.mockReturnValue({ levels: [] });
+
+    render(<SupplierListNew />);
+
+    const editModal = getModalProps('Edit Supplier');
+
+    expect(editModal.data).toEqual({});
+    expect(editModal.onDeleteRequest).toBeUndefined();
+    expect(editModal.imageUrl).toBeUndefined();
+    expect(pagePropsStore.current?.gridProps.rowData).toEqual([]);
+    expect(pagePropsStore.current?.gridProps.paginationPageSize).toBe(25);
+    expect(pagePropsStore.current?.pagination.hideFloatingWhenModalOpen).toBe(
+      false
+    );
+
+    const columnDefs = pagePropsStore.current?.gridProps.columnDefs as Array<{
+      valueGetter?: (params: { data: Record<string, unknown> }) => unknown;
+    }>;
+    expect(
+      columnDefs[4].valueGetter?.({ data: { contact_person: 'Dina' } })
+    ).toBe('Dina');
+
+    const addModal = getModalProps('Tambah Supplier Baru');
+    await addModal.onSave({});
+    await editModal.onSave({});
+
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
+      name: '',
+      description: '',
+      id: undefined,
+    });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(2, {
+      name: '',
+      description: '',
+      id: undefined,
+    });
   });
 });

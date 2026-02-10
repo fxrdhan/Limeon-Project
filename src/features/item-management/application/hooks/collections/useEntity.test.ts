@@ -230,4 +230,46 @@ describe('useEntity', () => {
 
     expect(result.current.data.map(item => item.id)).toEqual(['fuzzy-1']);
   });
+
+  it('applies fuzzy score sorting and empty pagination state', () => {
+    fuzzyMatchMock.mockImplementation((value: string, query: string) => {
+      const v = value.toLowerCase();
+      const q = query.toLowerCase();
+      return v.includes(q) || (v === 'cefalexin' && q === 'cfa');
+    });
+
+    getExternalHooksMock.mockReturnValue({
+      useData: () => ({
+        data: [
+          { id: 'fuzzy-only', name: 'Cefalexin' },
+          { id: 'contains', name: 'Cfa Item' },
+        ],
+        isLoading: false,
+        isError: false,
+        error: null,
+        isFetching: false,
+        isPlaceholderData: false,
+      }),
+      useMutations: () => ({}),
+    });
+
+    const { result, rerender } = renderHook(
+      ({ search }) =>
+        useEntity({
+          entityType: 'types',
+          search,
+          itemsPerPage: 10,
+        }),
+      { initialProps: { search: 'cfa' } }
+    );
+
+    expect(result.current.data.map(item => item.id)).toEqual([
+      'contains',
+      'fuzzy-only',
+    ]);
+
+    rerender({ search: 'zzzz' });
+    expect(result.current.isEmpty).toBe(true);
+    expect(result.current.totalPages).toBe(0);
+  });
 });

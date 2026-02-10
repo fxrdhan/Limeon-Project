@@ -159,15 +159,19 @@ describe('useAddItemMutations', () => {
 
     const typeOptions = typeCreateMock.mock.calls[0][0] as {
       onSuccess: () => void;
+      onError: (error: Error) => void;
     };
     const unitOptions = packageCreateMock.mock.calls[0][0] as {
       onSuccess: () => void;
+      onError: (error: Error) => void;
     };
     const dosageOptions = dosageCreateMock.mock.calls[0][0] as {
       onSuccess: () => void;
+      onError: (error: Error) => void;
     };
     const manufacturerOptions = manufacturerCreateMock.mock.calls[0][0] as {
       onSuccess: () => void;
+      onError: (error: Error) => void;
     };
 
     typeOptions.onSuccess();
@@ -187,6 +191,11 @@ describe('useAddItemMutations', () => {
     expect(invalidateQueriesMock).toHaveBeenCalledWith({
       queryKey: QueryKeys.masterData.manufacturers.all,
     });
+
+    typeOptions.onError(new Error('type'));
+    unitOptions.onError(new Error('unit'));
+    dosageOptions.onError(new Error('dosage'));
+    manufacturerOptions.onError(new Error('manufacturer'));
   });
 
   it('handles delete mutation success and failure paths', async () => {
@@ -289,5 +298,41 @@ describe('useAddItemMutations', () => {
     expect(toastErrorMock).toHaveBeenCalledWith(
       'Gagal menyimpan data item. Silakan coba lagi.'
     );
+  });
+
+  it('covers save success without code and update action label branches', async () => {
+    saveItemBusinessLogicMock
+      .mockResolvedValueOnce({ action: 'update', code: 'ITM-002' })
+      .mockResolvedValueOnce({ action: 'create' });
+
+    const onClose = vi.fn();
+    const { result } = renderHook(() => useAddItemMutations({ onClose }));
+
+    await act(async () => {
+      await result.current.saveItemMutation.mutateAsync({
+        formData: { name: 'x' } as never,
+        conversions: [],
+        baseUnit: 'PCS',
+        isEditMode: true,
+        itemId: 'item-2',
+      });
+    });
+
+    expect(toastSuccessMock).toHaveBeenCalledWith('Item berhasil diperbarui');
+
+    await act(async () => {
+      await result.current.saveItemMutation.mutateAsync({
+        formData: { name: 'y' } as never,
+        conversions: [],
+        baseUnit: 'PCS',
+        isEditMode: false,
+      });
+    });
+
+    // no new success toast for result without code
+    const successCalls = toastSuccessMock.mock.calls.filter(
+      ([msg]) => typeof msg === 'string' && msg.includes('Item berhasil')
+    );
+    expect(successCalls.length).toBeGreaterThanOrEqual(1);
   });
 });

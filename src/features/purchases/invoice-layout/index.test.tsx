@@ -191,4 +191,77 @@ describe('InvoiceLayout', () => {
 
     expect(screen.getByText('Kredit')).toBeInTheDocument();
   });
+
+  it('uses VAT-included empty-state colspan and renders zero VAT value as dash', () => {
+    const { rerender } = render(
+      <InvoiceLayout
+        purchase={{
+          id: 'p-5',
+          invoice_number: 'INV-5',
+          date: '2025-05-01',
+          due_date: null,
+          total: 0,
+          payment_status: 'unpaid',
+          payment_method: 'cash',
+          vat_percentage: 11,
+          is_vat_included: true,
+          vat_amount: 0,
+          notes: null,
+          supplier: {
+            name: 'Supplier E',
+            address: null,
+            contact_person: null,
+          },
+        }}
+        items={[]}
+        subtotals={baseSubtotals}
+      />
+    );
+
+    expect(screen.getByText('Tidak ada item')).toBeInTheDocument();
+
+    rerender(
+      <InvoiceLayout
+        purchase={{
+          id: 'p-6',
+          invoice_number: 'INV-6',
+          date: '2025-06-01',
+          due_date: null,
+          total: 1000,
+          payment_status: 'unpaid',
+          payment_method: 'cash',
+          vat_percentage: 11,
+          is_vat_included: false,
+          vat_amount: 0,
+          notes: null,
+          supplier: {
+            name: 'Supplier F',
+            address: null,
+            contact_person: null,
+          },
+        }}
+        items={[
+          {
+            id: 'i-6',
+            item_id: 'it-6',
+            item_name: 'Item VAT 0',
+            item: { code: 'IT-0', name: 'Item VAT 0' },
+            quantity: 1,
+            price: 1000,
+            discount: 0,
+            subtotal: 1000,
+            unit: 'Pcs',
+            vat_percentage: 0,
+            batch_no: null,
+            expiry_date: null,
+            unit_conversion_rate: 1,
+          },
+        ]}
+        subtotals={baseSubtotals}
+      />
+    );
+
+    const dashes = screen.getAllByText('-');
+    expect(dashes.length).toBeGreaterThan(0);
+  });
 });

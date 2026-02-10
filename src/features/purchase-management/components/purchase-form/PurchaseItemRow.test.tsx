@@ -166,7 +166,16 @@ describe('PurchaseItemRow', () => {
       item: makeItem({ quantity: 0 }),
     });
 
-    const quantityInput = screen.getByDisplayValue('0');
+    const quantityInput = screen.getByDisplayValue('0') as HTMLInputElement;
+    const selectSpy = vi.spyOn(quantityInput, 'select');
+
+    fireEvent.focus(quantityInput);
+    fireEvent.click(quantityInput);
+    expect(selectSpy).toHaveBeenCalledTimes(2);
+
+    fireEvent.change(quantityInput, { target: { value: 'abc' } });
+    expect(handlers.onQuantityChange).not.toHaveBeenCalledWith('row-1', NaN);
+
     fireEvent.change(quantityInput, { target: { value: '' } });
     expect(handlers.onQuantityChange).toHaveBeenCalledWith('row-1', 0);
 
@@ -181,6 +190,18 @@ describe('PurchaseItemRow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'clear-date' }));
     expect(handlers.onExpiryDateChange).toHaveBeenCalledWith('row-1', '');
+  });
+
+  it('does not trim percentage value when backspace is not at input end', () => {
+    const { handlers } = renderRow({
+      item: makeItem({ discount: 34 }),
+    });
+
+    const discountInput = screen.getByDisplayValue('34%') as HTMLInputElement;
+    discountInput.selectionStart = 1;
+    fireEvent.keyDown(discountInput, { key: 'Backspace' });
+
+    expect(handlers.onDiscountChange).not.toHaveBeenCalledWith('row-1', 3);
   });
 
   it('renders VAT input only when VAT is excluded from price', () => {

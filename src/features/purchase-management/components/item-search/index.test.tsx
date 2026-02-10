@@ -182,6 +182,10 @@ describe('ItemSearchBar (purchase management)', () => {
       expect(onOpenAddItemPortal).toHaveBeenCalledTimes(2);
       expect(input).toHaveFocus();
     });
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 250));
+    });
   });
 
   it('closes dropdown from outside click, blur, and escape', async () => {
@@ -212,6 +216,30 @@ describe('ItemSearchBar (purchase management)', () => {
 
     await waitFor(() => {
       expect(screen.queryByText(/ITM-001/)).not.toBeInTheDocument();
+    });
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 250));
+    });
+  });
+
+  it('handles hover highlight and closes when search is cleared', async () => {
+    render(<TestHarness initialSearch="para" />);
+
+    const input = screen.getByPlaceholderText('Cari nama atau kode item...');
+    fireEvent.focus(input);
+
+    const row = await screen.findByText(/ITM-001/);
+    fireEvent.mouseEnter(row);
+
+    fireEvent.change(input, { target: { value: '' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/ITM-001/)).not.toBeInTheDocument();
+    });
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 250));
     });
   });
 });

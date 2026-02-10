@@ -106,4 +106,26 @@ describe('shared test helpers', () => {
     expect(result.isValid).toBe(true);
     expect(result.errors).toEqual({});
   });
+
+  describe('partial numeric edge expectations', () => {
+    testNumericEdgeCases(n => n + 1, {
+      zero: 1,
+    });
+  });
+
+  testPriceCalculationScenario(
+    {
+      name: 'without warning expectation',
+      basePrice: 50,
+      sellPrice: 70,
+      expected: {
+        sellPrice: 70,
+        isValid: true,
+      },
+    },
+    (_basePrice, input) => ({
+      sellPrice: input,
+      isValid: true,
+    })
+  );
 });

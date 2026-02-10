@@ -221,6 +221,11 @@ describe('GenericHookFactories', () => {
     await expect((result.queryFn as () => Promise<unknown>)()).rejects.toThrow(
       'query failed'
     );
+
+    listMock.mockResolvedValueOnce({ data: null, error: null });
+    await expect((result.queryFn as () => Promise<unknown>)()).resolves.toEqual(
+      []
+    );
   });
 
   it('creates mutation hooks with invalidation and error handling', async () => {
@@ -261,6 +266,48 @@ describe('GenericHookFactories', () => {
       mutations.useCreate({ onError }).mutateAsync({ name: 'B' })
     ).rejects.toBeInstanceOf(Error);
     expect(onError).toHaveBeenCalled();
+
+    updateMock.mockResolvedValueOnce({
+      data: null,
+      error: new Error('update failed'),
+    });
+    await expect(
+      mutations
+        .useUpdate({ onError, invalidateQueries: false })
+        .mutateAsync({ id: 'cat-2', name: 'B' })
+    ).rejects.toBeInstanceOf(Error);
+
+    deleteMock.mockResolvedValueOnce({
+      error: new Error('delete failed'),
+    });
+    await expect(
+      mutations.useDelete({ onError }).mutateAsync('cat-2')
+    ).rejects.toBeInstanceOf(Error);
+
+    const invalidateCallsBefore = invalidateQueriesMock.mock.calls.length;
+    createMock.mockResolvedValueOnce({ data: { id: 'new-2' }, error: null });
+    await mutations
+      .useCreate({ invalidateQueries: false, onSuccess })
+      .mutateAsync({ name: 'NoInvalidate' });
+    expect(invalidateQueriesMock.mock.calls.length).toBe(invalidateCallsBefore);
+
+    const beforeUpdateNoInvalidate = invalidateQueriesMock.mock.calls.length;
+    updateMock.mockResolvedValueOnce({ data: { id: 'cat-3' }, error: null });
+    await mutations
+      .useUpdate({ invalidateQueries: false, onSuccess })
+      .mutateAsync({ id: 'cat-3', name: 'NoInvalidateUpdate' });
+    expect(invalidateQueriesMock.mock.calls.length).toBe(
+      beforeUpdateNoInvalidate
+    );
+
+    const beforeDeleteNoInvalidate = invalidateQueriesMock.mock.calls.length;
+    deleteMock.mockResolvedValueOnce({ error: null });
+    await mutations
+      .useDelete({ invalidateQueries: false })
+      .mutateAsync('cat-3');
+    expect(invalidateQueriesMock.mock.calls.length).toBe(
+      beforeDeleteNoInvalidate
+    );
   });
 
   it('exposes external/internal unified hooks and helper utilities', () => {

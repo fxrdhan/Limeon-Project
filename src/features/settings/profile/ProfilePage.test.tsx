@@ -156,6 +156,16 @@ describe('ProfilePage', () => {
         'Terjadi kesalahan saat membuat profil: network down'
       );
     });
+
+    createProfileMock.mockRejectedValueOnce('unknown');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tambah Profil' }));
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith(
+        'Terjadi kesalahan saat membuat profil: Kesalahan tidak diketahui'
+      );
+    });
   });
 
   it('edits, saves and cancels profile fields', async () => {
@@ -198,6 +208,13 @@ describe('ProfilePage', () => {
     expect(within(getNameFieldContainer()).getByRole('textbox')).toHaveValue(
       'PharmaSys'
     );
+
+    fireEvent.change(within(getNameFieldContainer()).getByRole('textbox'), {
+      target: { value: 'Another Name' },
+    });
+    fireEvent.click(within(getNameFieldContainer()).getAllByRole('button')[0]);
+
+    expect(within(getNameFieldContainer()).queryByRole('textbox')).toBeNull();
   });
 
   it('shows mutation errors when update fails and when profile id is missing', async () => {

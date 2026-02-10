@@ -223,4 +223,64 @@ describe('useItemData', () => {
 
     consoleErrorSpy.mockRestore();
   });
+
+  it('covers missing item fetch and conversion mapping by unit name fallback', async () => {
+    const formState = createFormState();
+    const packageConversionHook = createPackageConversionHook();
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const { result } = renderHook(() =>
+      useItemData({
+        formState,
+        packageConversionHook,
+      })
+    );
+
+    act(() => {
+      result.current.hydrateItemData({
+        name: 'Fallback',
+        package_conversions: [
+          {
+            unit_name: 'Box',
+            conversion_rate: 2,
+            base_price: 0,
+            sell_price: 0,
+          },
+        ],
+      });
+    });
+
+    expect(packageConversionHook.setConversions).toHaveBeenCalledWith([
+      expect.objectContaining({
+        to_unit_id: 'pkg-box',
+        unit: { id: 'pkg-box', name: 'Box' },
+      }),
+    ]);
+
+    fetchItemDataByIdMock.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    await act(async () => {
+      await result.current.fetchItemData('item-missing');
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching item data:',
+      expect.any(Error)
+    );
+
+    act(() => {
+      result.current.hydrateItemData({
+        name: 'No Conversion Field',
+        package_conversions: null,
+      });
+    });
+
+    expect(packageConversionHook.setConversions).toHaveBeenCalledWith([]);
+    consoleErrorSpy.mockRestore();
+  });
 });

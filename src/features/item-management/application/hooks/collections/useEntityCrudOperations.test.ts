@@ -180,4 +180,133 @@ describe('useEntityCrudOperations', () => {
       renderHook(() => useEntityCrudOperations('unknown_table', 'X'))
     ).toThrow('Unsupported table: unknown_table');
   });
+
+  it('handles missing hook functions and non-Error delete failures', async () => {
+    getExternalHooksMock.mockReturnValueOnce({
+      useData: undefined,
+      useMutations: undefined,
+    });
+
+    const { result } = renderHook(() =>
+      useEntityCrudOperations('item_categories', 'Kategori')
+    );
+
+    await act(async () => {
+      await result.current.handleModalSubmit({
+        name: 'No hooks',
+        address: 'Addr',
+        nci_code: 'NCI',
+      });
+    });
+
+    await act(async () => {
+      await result.current.deleteMutation.mutateAsync('id-1');
+    });
+  });
+
+  it('handles string/non-postgrest errors and generic delete stringify branch', async () => {
+    createMutateAsyncMock.mockRejectedValueOnce('simple error');
+
+    const { result } = renderHook(() =>
+      useEntityCrudOperations('item_categories', 'Kategori')
+    );
+
+    await expect(
+      result.current.handleModalSubmit({
+        code: 'CAT-9',
+        name: 'Kategori String',
+      })
+    ).rejects.toBe('simple error');
+
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Gagal menambahkan Kategori: simple error'
+    );
+
+    deleteMutateAsyncMock.mockRejectedValueOnce('hapus gagal');
+
+    await expect(
+      result.current.deleteMutation.mutateAsync('cat-z')
+    ).rejects.toBe('hapus gagal');
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Gagal menghapus Kategori: hapus gagal'
+    );
+  });
+
+  it('uses fallback refetch when useData returns object without refetch and handles edit without update mutation', async () => {
+    const localCreate = vi.fn().mockResolvedValue(undefined);
+
+    getExternalHooksMock.mockReturnValueOnce({
+      useData: () => ({}),
+      useMutations: () => ({
+        createMutation: {
+          mutateAsync: localCreate,
+          isLoading: false,
+          error: null,
+        },
+      }),
+    });
+
+    const { result } = renderHook(() =>
+      useEntityCrudOperations('item_categories', 'Kategori')
+    );
+
+    await act(async () => {
+      await result.current.handleModalSubmit({
+        id: 'no-update',
+        name: 'Edit tanpa mutation',
+      });
+    });
+
+    expect(localCreate).not.toHaveBeenCalled();
+  });
+
+  it('handles non-postgrest object submit error and non-foreign-key Error delete path', async () => {
+    createMutateAsyncMock.mockRejectedValueOnce({ details: 'no-message' });
+
+    const { result } = renderHook(() =>
+      useEntityCrudOperations('item_categories', 'Kategori')
+    );
+
+    await expect(
+      result.current.handleModalSubmit({
+        code: 'CAT-10',
+        name: 'Kategori Object Error',
+      })
+    ).rejects.toEqual({ details: 'no-message' });
+
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Gagal menambahkan Kategori: [object Object]'
+    );
+
+    deleteMutateAsyncMock.mockRejectedValueOnce(
+      new Error('hard delete failed')
+    );
+
+    await expect(
+      result.current.deleteMutation.mutateAsync('cat-error')
+    ).rejects.toBeInstanceOf(Error);
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Gagal menghapus Kategori: hard delete failed'
+    );
+  });
+
+  it('detects alternate foreign-key message variants', async () => {
+    const { result } = renderHook(() =>
+      useEntityCrudOperations('item_categories', 'Kategori')
+    );
+
+    deleteMutateAsyncMock.mockRejectedValueOnce(
+      new Error('violates foreign key')
+    );
+    await expect(
+      result.current.deleteMutation.mutateAsync('cat-fk-1')
+    ).rejects.toBeInstanceOf(Error);
+
+    deleteMutateAsyncMock.mockRejectedValueOnce(
+      new Error('still referenced by child')
+    );
+    await expect(
+      result.current.deleteMutation.mutateAsync('cat-fk-2')
+    ).rejects.toBeInstanceOf(Error);
+  });
 });

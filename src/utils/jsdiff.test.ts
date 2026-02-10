@@ -80,4 +80,35 @@ describe('jsdiff', () => {
       { type: 'removed', text: 'C' },
     ]);
   });
+
+  it('supports custom comparator and callback function shorthand', async () => {
+    vi.useFakeTimers();
+    const callback = vi.fn();
+
+    const result = diffChars('AA', 'BB', callback);
+    expect(result).toBeUndefined();
+
+    await vi.runAllTimersAsync();
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    const comparatorDiff = diffChars('A', 'B', {
+      comparator: () => true,
+    } as never);
+    expect(comparatorDiff).toEqual([
+      expect.objectContaining({ added: false, removed: false }),
+    ]);
+  });
+
+  it('aborts diff when timeout is exceeded', () => {
+    let now = 0;
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => {
+      now += 1000;
+      return now;
+    });
+
+    const result = diffChars('abcdefghij', '1234567890', { timeout: 1 });
+    expect(result).toBeUndefined();
+
+    nowSpy.mockRestore();
+  });
 });

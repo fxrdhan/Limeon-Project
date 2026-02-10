@@ -74,6 +74,27 @@ describe('groupPatternUtils', () => {
     ]);
   });
 
+  it('tokenizes marker-with-text as other and ignores trailing whitespace', () => {
+    const tokens = tokenizeGroupPattern('#( #name #contains aspirin #foo    ');
+    expect(tokens.map(token => token.type)).toEqual([
+      'groupOpen',
+      'other',
+      'other',
+      'other',
+      'other',
+    ]);
+  });
+
+  it('tokenizes trailing non-token text as other', () => {
+    const tokens = tokenizeGroupPattern('#( #name #contains aspirin tail');
+    expect(tokens.map(token => token.type)).toEqual([
+      'groupOpen',
+      'other',
+      'other',
+      'other',
+    ]);
+  });
+
   it('removes group token by occurrence index', () => {
     expect(
       removeGroupTokenAtIndex(

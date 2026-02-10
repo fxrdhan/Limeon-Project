@@ -78,6 +78,9 @@ describe('pagination hooks', () => {
 
     rerender({ itemsPerPage: 999 });
     expect(result.current.selectedPageSizeIndex).toBe(0);
+
+    rerender({ itemsPerPage: 50 });
+    expect(result.current.selectedPageSizeIndex).toBe(1);
   });
 
   it('observes pagination container and toggles floating visibility', async () => {
@@ -176,11 +179,58 @@ describe('pagination hooks', () => {
       document.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'ArrowRight' })
       );
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
     });
     expect(onPageChange).toHaveBeenCalledWith(1);
     expect(onPageChange).toHaveBeenCalledWith(3);
 
     unmount();
+  });
+
+  it('wraps keyboard page-size navigation at both ends', () => {
+    const onItemsPerPageChange = vi.fn();
+    const onPageChange = vi.fn();
+    const setSelectedPageSizeIndex = vi.fn();
+
+    const { rerender } = renderHook(
+      ({ selectedPageSizeIndex }) =>
+        useKeyboardNavigation({
+          showFloating: true,
+          hideFloatingWhenModalOpen: false,
+          selectedPageSizeIndex,
+          pageSizes: [10, 20, 50],
+          currentPage: 2,
+          totalPages: 5,
+          onItemsPerPageChange,
+          onPageChange,
+          setSelectedPageSizeIndex,
+        }),
+      { initialProps: { selectedPageSizeIndex: 2 } }
+    );
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    });
+
+    expect(setSelectedPageSizeIndex).toHaveBeenCalledWith(0);
+    expect(onItemsPerPageChange).toHaveBeenCalledWith({
+      target: { value: '10' },
+    });
+
+    setSelectedPageSizeIndex.mockReset();
+    onItemsPerPageChange.mockReset();
+
+    rerender({ selectedPageSizeIndex: 1 });
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown' })
+      );
+    });
+
+    expect(setSelectedPageSizeIndex).toHaveBeenCalledWith(0);
+    expect(onItemsPerPageChange).toHaveBeenCalledWith({
+      target: { value: '10' },
+    });
   });
 
   it('ignores keyboard navigation when floating is hidden/modal open', () => {
@@ -247,7 +297,11 @@ describe('pagination hooks', () => {
 
     expect(result.current.direction).toBe(0);
     expect(result.current.variants.enter(1).opacity).toBe(0);
+    expect(result.current.variants.enter(1).x).toBeGreaterThan(0);
+    expect(result.current.variants.enter(-1).x).toBeLessThan(0);
     expect(result.current.variants.exit(1).opacity).toBe(0);
+    expect(result.current.variants.exit(1).x).toBeLessThan(0);
+    expect(result.current.variants.exit(-1).x).toBeGreaterThan(0);
     expect(result.current.floatingVariants.initial.scale).toBeLessThan(1);
 
     rerender({ currentPage: 3 });

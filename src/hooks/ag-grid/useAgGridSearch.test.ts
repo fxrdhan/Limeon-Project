@@ -121,4 +121,14 @@ describe('useAgGridSearch', () => {
     expect(gridApi.onFilterChanged).not.toHaveBeenCalled();
     expect(gridApi.setGridOption).not.toHaveBeenCalled();
   });
+
+  it('returns true from external pass when search is empty', () => {
+    const { result } = renderHook(() =>
+      useAgGridSearch({ useFuzzySearch: true })
+    );
+
+    expect(
+      result.current.doesExternalFilterPass?.({ data: { name: 'Any' } })
+    ).toBe(true);
+  });
 });

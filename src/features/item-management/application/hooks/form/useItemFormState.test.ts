@@ -64,6 +64,9 @@ describe('useAddItemFormState', () => {
         target: { name: 'base_price', value: 'Rp12.500', type: 'text' },
       } as never);
       result.current.handleChange({
+        target: { name: 'sell_price', value: 'Rp15.000', type: 'text' },
+      } as never);
+      result.current.handleChange({
         target: { name: 'is_active', checked: false, type: 'checkbox' },
       } as never);
       result.current.handleChange({
@@ -78,6 +81,7 @@ describe('useAddItemFormState', () => {
     });
 
     expect(result.current.formData.base_price).toBe(12500);
+    expect(result.current.formData.sell_price).toBe(15000);
     expect(result.current.displayBasePrice).toContain('Rp');
     expect(result.current.formData.is_active).toBe(false);
     expect(result.current.formData.min_stock).toBe(7);
@@ -87,6 +91,8 @@ describe('useAddItemFormState', () => {
 
   it('sets initial data, computes dirty state, and compares conversions safely', () => {
     const { result } = renderHook(() => useAddItemFormState({}));
+
+    expect(result.current.isDirty()).toBe(false);
 
     const initialData = makeInitialData({
       customer_level_discounts: undefined,
@@ -122,6 +128,16 @@ describe('useAddItemFormState', () => {
     expect(
       result.current.isDirty([{ ...makeConversion(), unit: {} as never }])
     ).toBe(false);
+
+    expect(
+      result.current.isDirty([
+        {
+          ...makeConversion(),
+          unit: undefined as never,
+          to_unit_id: '',
+        },
+      ])
+    ).toBe(true);
   });
 
   it('resets form based on mode and captured initial state', () => {
@@ -162,5 +178,43 @@ describe('useAddItemFormState', () => {
 
     expect(result.current.formData.name).toBe('Nama Default');
     expect(result.current.formData.code).toBe('');
+  });
+
+  it('sorts conversion comparison by unit id regardless of order', () => {
+    const { result } = renderHook(() => useAddItemFormState({}));
+
+    act(() => {
+      result.current.setInitialDataForForm(makeInitialData());
+      result.current.setInitialPackageConversions([
+        makeConversion({
+          to_unit_id: 'unit-b',
+          conversion_rate: 2,
+          unit: undefined as never,
+        }),
+        makeConversion({
+          id: 'conv-2',
+          to_unit_id: 'unit-a',
+          conversion_rate: 3,
+          unit: undefined as never,
+        }),
+      ]);
+    });
+
+    expect(
+      result.current.isDirty([
+        makeConversion({
+          id: 'conv-x',
+          to_unit_id: 'unit-a',
+          conversion_rate: 3,
+          unit: undefined as never,
+        }),
+        makeConversion({
+          id: 'conv-y',
+          to_unit_id: 'unit-b',
+          conversion_rate: 2,
+          unit: undefined as never,
+        }),
+      ])
+    ).toBe(false);
   });
 });

@@ -104,4 +104,20 @@ describe('useVatPercentageEditor', () => {
 
     expect(onChange).toHaveBeenCalledWith(17.5);
   });
+
+  it('does not fail when input ref is absent and ignores unrelated keys', () => {
+    const onChange = vi.fn();
+    const { result } = renderHook(() =>
+      useVatPercentageEditor({ initialValue: 9, onChange })
+    );
+
+    act(() => {
+      result.current.startEditing();
+      vi.advanceTimersByTime(10);
+      result.current.handleKeyDown({ key: 'ArrowRight' } as KeyboardEvent);
+    });
+
+    expect(result.current.isEditing).toBe(true);
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

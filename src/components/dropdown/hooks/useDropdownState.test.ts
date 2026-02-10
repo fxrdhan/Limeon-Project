@@ -105,4 +105,37 @@ describe('useDropdownState', () => {
 
     expect(second.result.current.isOpen).toBe(false);
   });
+
+  it('cancels pending close timeout when reopened before animation ends', () => {
+    const { result } = renderHook(() => useDropdownState());
+
+    act(() => {
+      result.current.openThisDropdown();
+      result.current.actualCloseDropdown();
+    });
+
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.isClosing).toBe(true);
+
+    act(() => {
+      result.current.openThisDropdown();
+      vi.advanceTimersByTime(DROPDOWN_CONSTANTS.ANIMATION_DURATION);
+    });
+
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.isClosing).toBe(false);
+  });
+
+  it('keeps same instance open when reopened while already active', () => {
+    const { result } = renderHook(() => useDropdownState());
+
+    act(() => {
+      result.current.openThisDropdown();
+      result.current.openThisDropdown();
+      vi.advanceTimersByTime(DROPDOWN_CONSTANTS.ANIMATION_DURATION);
+    });
+
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.isClosing).toBe(false);
+  });
 });

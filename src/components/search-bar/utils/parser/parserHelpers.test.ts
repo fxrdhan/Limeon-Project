@@ -69,6 +69,7 @@ describe('parserHelpers', () => {
     expect(getOperatorSearchTerm('#name #contains asp #or #stock #gr')).toBe(
       'gr'
     );
+    expect(getOperatorSearchTerm('#name')).toBe('');
     expect(getOperatorSearchTerm('aspirin')).toBe('');
   });
 

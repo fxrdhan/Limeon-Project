@@ -388,4 +388,25 @@ describe('PurchaseItemsSection', () => {
     );
     expect(handlers.removeItem).toHaveBeenCalledWith('row-1');
   });
+
+  it('uses base unit only when package conversions are unavailable', () => {
+    const itemWithoutConversions = {
+      ...makeCatalogItem(),
+      id: 'item-2',
+      base_unit: 'Bottle',
+      package_conversions: null,
+    } as Item;
+
+    const { props, handlers } = buildProps({
+      formData: { is_vat_included: false, vat_percentage: 11 },
+      purchaseItems: [makePurchaseItem({ id: 'row-x', item_id: 'item-2' })],
+      getItemById: id => (id === 'item-2' ? itemWithoutConversions : undefined),
+      items: [itemWithoutConversions],
+    });
+
+    render(<PurchaseItemsSection {...props} />);
+
+    expect(screen.getByTestId('row-row-x')).toHaveTextContent('Bottle');
+    expect(handlers.updateItem).not.toHaveBeenCalled();
+  });
 });

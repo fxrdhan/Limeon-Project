@@ -59,6 +59,24 @@ describe('conditionParser', () => {
       field: 'stock',
       column: stockColumn,
     });
+
+    expect(
+      parseConditionSegment('#stock #inRange 100', nameColumn, columns)
+    ).toEqual({
+      operator: 'inRange',
+      value: '100',
+      field: 'stock',
+      column: stockColumn,
+    });
+
+    expect(parseConditionSegment('#inRange 100', stockColumn, columns)).toEqual(
+      {
+        operator: 'inRange',
+        value: '100',
+        field: 'stock',
+        column: stockColumn,
+      }
+    );
   });
 
   it('returns null for invalid segments', () => {

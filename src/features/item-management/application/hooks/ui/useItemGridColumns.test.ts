@@ -72,6 +72,23 @@ describe('useItemGridColumns', () => {
       packageConversionColumn?.cellRenderer?.({ value: '' } as never)
     ).toBe('-');
 
+    const barcodeColumn = result.current.columnDefs.find(
+      column => column.field === 'barcode'
+    );
+    const dosageColumn = result.current.columnDefs.find(
+      column => column.field === 'dosage.name'
+    );
+    expect(
+      barcodeColumn?.valueGetter?.({ data: { barcode: 'BC-1' } } as never)
+    ).toBe('BC-1');
+    expect(
+      dosageColumn?.valueGetter?.({
+        data: { dosage: { name: 'Tablet' } },
+      } as never)
+    ).toBe('Tablet');
+    expect(barcodeColumn?.valueGetter?.({ data: {} } as never)).toBe('-');
+    expect(dosageColumn?.valueGetter?.({ data: {} } as never)).toBe('-');
+
     const basePriceColumn = result.current.columnDefs.find(
       column => column.field === 'base_price'
     );

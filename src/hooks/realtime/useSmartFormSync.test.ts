@@ -115,4 +115,22 @@ describe('useSmartFormSync', () => {
     expect(firstUpdate).not.toHaveBeenCalled();
     expect(secondUpdate).toHaveBeenCalledWith({ code: 'AFTER-RERENDER' });
   });
+
+  it('returns empty payload when no pending updates exist', () => {
+    const onDataUpdate = vi.fn();
+    const { result } = renderHook(() =>
+      useSmartFormSync({
+        onDataUpdate,
+      })
+    );
+
+    let applied: Record<string, unknown> | undefined;
+    act(() => {
+      result.current.unregisterActiveField('unknown');
+      applied = result.current.applyAllPendingUpdates();
+    });
+
+    expect(applied).toEqual({});
+    expect(onDataUpdate).not.toHaveBeenCalled();
+  });
 });

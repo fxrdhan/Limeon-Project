@@ -69,6 +69,15 @@ describe('gridStateDebug utilities', () => {
 
     expect(groupSpy).toHaveBeenCalled();
     expect(groupEndSpy).toHaveBeenCalled();
+
+    const getItemSpy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockReturnValueOnce(null);
+    inspectAllGridStates();
+    expect(
+      logSpy.mock.calls.some(call => String(call[0]).includes('Empty'))
+    ).toBe(true);
+    getItemSpy.mockRestore();
   });
 
   it('compares and clears grid states', () => {

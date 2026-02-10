@@ -293,6 +293,79 @@ describe('useSearchState', () => {
     expect(onGlobalSearch).not.toHaveBeenCalled();
   });
 
+  it('clears pending debounce when grouped pattern becomes unbalanced', () => {
+    const onGlobalSearch = vi.fn();
+    const onFilterSearch = vi.fn();
+    const filterSearch = makeFilter({ isConfirmed: true });
+
+    parseSearchValueMock
+      .mockReturnValueOnce(
+        baseSearchMode({
+          isFilterMode: true,
+          filterSearch,
+        })
+      )
+      .mockReturnValueOnce(
+        baseSearchMode({
+          isFilterMode: true,
+          filterSearch,
+        })
+      );
+
+    countGroupDepthMock.mockReturnValueOnce(0).mockReturnValueOnce(1);
+
+    const { rerender } = renderHook(
+      ({ value }) =>
+        useSearchState({
+          value,
+          columns,
+          onGlobalSearch,
+          onFilterSearch,
+        }),
+      {
+        initialProps: { value: '#name #contains aspirin##' },
+      }
+    );
+
+    const beforeCalls = onFilterSearch.mock.calls.length;
+
+    rerender({ value: '#( #name #contains aspirin' });
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(onFilterSearch).toHaveBeenCalledTimes(beforeCalls + 1);
+    expect(onGlobalSearch).toHaveBeenCalledTimes(beforeCalls + 1);
+  });
+
+  it('skips updates when rerendered with unchanged value', () => {
+    const onGlobalSearch = vi.fn();
+    const onFilterSearch = vi.fn();
+
+    parseSearchValueMock.mockReturnValue(
+      baseSearchMode({ globalSearch: 'same' })
+    );
+
+    const { rerender } = renderHook(
+      ({ value }) =>
+        useSearchState({
+          value,
+          columns,
+          onGlobalSearch,
+          onFilterSearch,
+        }),
+      {
+        initialProps: { value: 'same' },
+      }
+    );
+
+    rerender({ value: 'same' });
+
+    expect(onGlobalSearch).toHaveBeenCalledTimes(1);
+    expect(onFilterSearch).toHaveBeenCalledTimes(1);
+  });
+
   it('cleans up pending debounce on unmount', () => {
     const onGlobalSearch = vi.fn();
     const onFilterSearch = vi.fn();

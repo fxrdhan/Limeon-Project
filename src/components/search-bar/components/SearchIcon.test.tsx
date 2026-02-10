@@ -157,4 +157,16 @@ describe('SearchIcon', () => {
     );
     expect(screen.getByTestId('icon-search')).toBeInTheDocument();
   });
+
+  it('evaluates typing color branch in default search mode', () => {
+    render(
+      <SearchIcon
+        searchMode={baseSearchMode()}
+        searchState="typing"
+        displayValue=""
+      />
+    );
+
+    expect(screen.getByTestId('icon-search')).toBeInTheDocument();
+  });
 });

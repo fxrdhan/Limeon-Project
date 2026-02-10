@@ -40,6 +40,36 @@ describe('useItemsDisplayTransform', () => {
     expect(transformed.category.name).toBe('Kategori A');
   });
 
+  it('returns input for non-object values and ignores unknown column keys', () => {
+    expect(
+      transformItemForDisplay(null as unknown as Record<string, unknown>, {
+        'manufacturer.name': 'code',
+      })
+    ).toBeNull();
+
+    const item = { id: 'x', manufacturer: { name: 'A', code: 'A1' } };
+    const transformed = transformItemForDisplay(item, {
+      unknown: 'code',
+    });
+
+    expect(transformed).toBe(item);
+  });
+
+  it('keeps reference unchanged when code mode is active but no replace is needed', () => {
+    const item = {
+      id: '2',
+      manufacturer: 'plain-string',
+      category: { name: 'CAT', code: 'CAT' },
+    };
+
+    const transformed = transformItemForDisplay(item as never, {
+      'manufacturer.name': 'code',
+      'category.name': 'code',
+    });
+
+    expect(transformed).toBe(item as never);
+  });
+
   it('transforms arrays only when needed and preserves unchanged array references', () => {
     const items = [
       { id: '1', package: { name: 'Strip', code: 'STR' } },

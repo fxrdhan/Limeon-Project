@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useContainerWidth } from './useContainerWidth';
 
@@ -112,5 +118,19 @@ describe('useContainerWidth', () => {
       'resize',
       expect.any(Function)
     );
+  });
+
+  it('falls back to viewport width when container ref is not attached', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      value: 900,
+      configurable: true,
+      writable: true,
+    });
+
+    const { result } = renderHook(() => useContainerWidth());
+
+    await waitFor(() => {
+      expect(result.current.width).toBe(860);
+    });
   });
 });

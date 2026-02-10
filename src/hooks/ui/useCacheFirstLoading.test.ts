@@ -143,4 +143,33 @@ describe('useCacheFirstLoading', () => {
     await flushTimers(120);
     expect(result.current.shouldSuppressOverlay).toBe(false);
   });
+
+  it('keeps skeleton through grace period when first load still has no data', async () => {
+    const { result, rerender } = renderHook(
+      ({ isLoading, hasData }) =>
+        useCacheFirstLoading({
+          isLoading,
+          hasData,
+          isInitialLoad: true,
+          minSkeletonTime: 300,
+          gracePeriod: 100,
+        }),
+      {
+        initialProps: {
+          isLoading: true,
+          hasData: false,
+        },
+      }
+    );
+
+    await flushTimers(0);
+    expect(result.current.showSkeleton).toBe(true);
+
+    rerender({ isLoading: false, hasData: false });
+    await flushTimers(100);
+    expect(result.current.showSkeleton).toBe(true);
+
+    await flushTimers(200);
+    expect(result.current.showSkeleton).toBe(false);
+  });
 });

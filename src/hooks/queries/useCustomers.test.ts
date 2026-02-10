@@ -116,6 +116,13 @@ describe('useCustomers', () => {
 
     const { result } = renderHook(() => useCustomers());
     await expect(result.current.queryFn()).rejects.toBe(error);
+
+    customersServiceMock.getById.mockResolvedValueOnce({
+      data: null,
+      error,
+    });
+    const { result: detailResult } = renderHook(() => useCustomer('cus-err'));
+    await expect(detailResult.current.queryFn()).rejects.toBe(error);
   });
 
   it('runs customer mutations and invalidates/removes cache keys', async () => {
@@ -162,5 +169,27 @@ describe('useCustomers', () => {
     expect(removeQueriesMock).toHaveBeenCalledWith({
       queryKey: QueryKeys.customers.detail('cus-1'),
     });
+  });
+
+  it('throws mutation errors from create/update/delete operations', async () => {
+    const error = new Error('mutation failed');
+    customersServiceMock.create.mockResolvedValueOnce({ data: null, error });
+    customersServiceMock.update.mockResolvedValueOnce({ data: null, error });
+    customersServiceMock.delete.mockResolvedValueOnce({ data: null, error });
+
+    const { result } = renderHook(() => useCustomerMutations());
+
+    await expect(
+      result.current.createCustomer.mutateAsync({ name: 'x' } as never)
+    ).rejects.toBe(error);
+    await expect(
+      result.current.updateCustomer.mutateAsync({
+        id: 'cus-1',
+        data: { name: 'x' } as never,
+      })
+    ).rejects.toBe(error);
+    await expect(
+      result.current.deleteCustomer.mutateAsync('cus-1')
+    ).rejects.toBe(error);
   });
 });

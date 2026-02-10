@@ -36,6 +36,16 @@ describe('skeleton components', () => {
 
     rerender(<Skeleton className="extra-class" />);
     expect(document.querySelector('.extra-class')).toBeInTheDocument();
+
+    rerender(<Skeleton />);
+    const defaultSkeleton = document.querySelector('.bg-slate-200');
+    expect(defaultSkeleton).toHaveClass('rounded');
+    expect(defaultSkeleton).toHaveClass('animate-pulse');
+
+    rerender(<Skeleton width={0} height={0} className="zero-size" />);
+    const zeroSized = document.querySelector('.zero-size') as HTMLDivElement;
+    expect(zeroSized.style.width).toBe('');
+    expect(zeroSized.style.height).toBe('');
   });
 
   it('renders SkeletonText single and multiline variants', () => {

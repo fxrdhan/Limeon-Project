@@ -334,4 +334,67 @@ describe('useCustomerLevels', () => {
       'Gagal menambahkan level pelanggan.'
     );
   });
+
+  it('covers seed skip/loading branches and delete rename no-op path', async () => {
+    useQueryMock.mockImplementationOnce(
+      (config: { queryFn: () => Promise<unknown> }) => ({
+        data: null,
+        isLoading: true,
+        isError: false,
+        error: null,
+        queryFn: config.queryFn,
+      })
+    );
+
+    customerLevelsServiceMock.delete.mockResolvedValueOnce({ error: null });
+
+    const { result } = renderHook(() => useCustomerLevels());
+
+    expect(mutationInstances[3].mutate).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.deleteLevel.mutateAsync({
+        id: 'lvl-1',
+        levels: [
+          { id: 'lvl-1', level_name: 'Level 1' },
+          { id: 'lvl-2', level_name: 'Level 1' },
+        ],
+      });
+    });
+
+    expect(customerLevelsServiceMock.update).not.toHaveBeenCalled();
+    expect(result.current.levels).toEqual([]);
+  });
+
+  it('covers seed error path and delete rename update failure branch', async () => {
+    customerLevelsServiceMock.seedDefaults.mockResolvedValueOnce({
+      error: new Error('seed failed now'),
+    });
+
+    const { result } = renderHook(() => useCustomerLevels());
+
+    // seed mutation runs on mount when levels are empty
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Gagal memuat level pelanggan.'
+    );
+
+    customerLevelsServiceMock.delete.mockResolvedValueOnce({ error: null });
+    customerLevelsServiceMock.update.mockResolvedValueOnce({
+      error: new Error('rename update failed'),
+    });
+
+    await expect(
+      result.current.deleteLevel.mutateAsync({
+        id: 'lvl-a',
+        levels: [
+          { id: 'lvl-a', level_name: 'Level 1' },
+          { id: 'lvl-b', level_name: 'Tier B' },
+        ],
+      })
+    ).rejects.toBeInstanceOf(Error);
+  });
 });

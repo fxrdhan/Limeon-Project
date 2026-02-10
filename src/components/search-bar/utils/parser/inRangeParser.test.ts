@@ -19,7 +19,9 @@ describe('inRangeParser', () => {
 
   it('returns null on incomplete and invalid patterns', () => {
     expect(parseInRangeValues('500 #to ')).toBeNull();
+    expect(parseInRangeValues(' #to 700')).toBeNull();
     expect(parseInRangeValues(' - 700', true)).toBeNull();
+    expect(parseInRangeValues('500 - ', true)).toBeNull();
     expect(parseInRangeValues('500')).toBeNull();
   });
 });

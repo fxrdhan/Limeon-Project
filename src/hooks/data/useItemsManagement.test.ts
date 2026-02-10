@@ -155,4 +155,41 @@ describe('useItemsManagement', () => {
     expect(result.current.isEmpty).toBe(true);
     expect(result.current.hasData).toBe(false);
   });
+
+  it('falls back to name sort when item search scores are tied', () => {
+    useItemsMock.mockReturnValue({
+      data: [
+        {
+          id: 'item-a',
+          name: 'Beta Item',
+          code: 'B-1',
+          package_conversions: [],
+          image_urls: [],
+        },
+        {
+          id: 'item-b',
+          name: 'Alpha Item',
+          code: 'A-1',
+          package_conversions: [],
+          image_urls: [],
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    getScoreMock.mockReturnValue(1);
+
+    const { result } = renderHook(() => useItemsManagement());
+    act(() => {
+      result.current.setSearch('item');
+    });
+
+    expect(result.current.data.map(item => item.name)).toEqual([
+      'Alpha Item',
+      'Beta Item',
+    ]);
+  });
 });

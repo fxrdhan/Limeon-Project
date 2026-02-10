@@ -471,6 +471,14 @@ describe('usePresence', () => {
     };
     presenceHook.rerender();
 
+    reconnectChannel.track.mockImplementationOnce(() => {
+      throw new Error('heartbeat-failed');
+    });
+    reconnectChannel.track.mockImplementationOnce(() => {
+      throw new Error('heartbeat-failed');
+    });
+    await advanceAndFlush(30000);
+
     expect(warnSpy).toHaveBeenCalledWith(
       'Failed to re-track presence on visibility change:',
       expect.any(Error)

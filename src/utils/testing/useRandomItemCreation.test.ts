@@ -180,4 +180,23 @@ describe('useRandomItemCreation', () => {
       queryKey: ['dashboard'],
     });
   });
+
+  it('maps missing entity data to empty arrays before validation', () => {
+    useEntityMock
+      .mockReturnValueOnce({ data: undefined, isLoading: false })
+      .mockReturnValueOnce({ data: undefined, isLoading: false })
+      .mockReturnValueOnce({ data: undefined, isLoading: false })
+      .mockReturnValueOnce({ data: undefined, isLoading: false })
+      .mockReturnValueOnce({ data: undefined, isLoading: false });
+
+    renderHook(() => useRandomItemCreation());
+
+    expect(validateEntitiesForGenerationMock).toHaveBeenCalledWith({
+      categories: [],
+      types: [],
+      packages: [],
+      dosages: [],
+      manufacturers: [],
+    });
+  });
 });

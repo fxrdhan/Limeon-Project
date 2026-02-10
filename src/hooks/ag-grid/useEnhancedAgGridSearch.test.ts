@@ -120,6 +120,40 @@ describe('useEnhancedAgGridSearch', () => {
     expect(gridApi.onFilterChanged).not.toHaveBeenCalled();
   });
 
+  it('updates quickFilterText when non-fuzzy grid is active', () => {
+    const gridApi = createGridApi({
+      isDestroyed: vi.fn(() => false),
+    });
+
+    const onDebouncedSearchChange = vi.fn();
+    const { result } = renderHook(() =>
+      useEnhancedAgGridSearch({
+        columns: SEARCH_COLUMNS,
+        useFuzzySearch: false,
+        enableDebouncedSearch: true,
+        onDebouncedSearchChange,
+      })
+    );
+
+    act(() => {
+      result.current.onGridReady({ api: gridApi } as never);
+      result.current.handleGlobalSearch('ibuprofen');
+    });
+
+    expect(gridApi.setGridOption).toHaveBeenCalledWith(
+      'quickFilterText',
+      'ibuprofen'
+    );
+    expect(onDebouncedSearchChange).toHaveBeenCalledWith('ibuprofen');
+
+    act(() => {
+      result.current.clearSearch();
+    });
+
+    expect(gridApi.setGridOption).toHaveBeenCalledWith('quickFilterText', '');
+    expect(onDebouncedSearchChange).toHaveBeenLastCalledWith('');
+  });
+
   it('handles direct input search changes and updates setSearch state', () => {
     const { result } = renderHook(() =>
       useEnhancedAgGridSearch({
@@ -138,5 +172,9 @@ describe('useEnhancedAgGridSearch', () => {
       result.current.setSearch('manual');
     });
     expect(result.current.search).toBe('manual');
+
+    expect(
+      result.current.doesExternalFilterPass?.({ data: { name: 'x' } })
+    ).toBe(false);
   });
 });

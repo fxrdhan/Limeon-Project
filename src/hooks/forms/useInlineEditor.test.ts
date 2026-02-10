@@ -128,5 +128,14 @@ describe('useInlineEditor', () => {
 
     expect(preventDefaultEscape).toHaveBeenCalledTimes(1);
     expect(result.current.value).toBe('12');
+
+    const preventDefaultTab = vi.fn();
+    act(() => {
+      result.current.handleKeyDown({
+        key: 'Tab',
+        preventDefault: preventDefaultTab,
+      } as unknown as KeyboardEvent<HTMLInputElement>);
+    });
+    expect(preventDefaultTab).not.toHaveBeenCalled();
   });
 });

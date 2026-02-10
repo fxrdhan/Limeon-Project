@@ -294,6 +294,17 @@ describe('PatternBuilder', () => {
     ).toBe('#name #contains asp #or  #equals ibu #and  #startsWith par #');
 
     expect(
+      PatternBuilder.buildWithSelectorOpen(
+        conditions,
+        joins,
+        false,
+        'name',
+        'operator',
+        99
+      )
+    ).toBe('#name #contains asp #or  #equals ibu #and  #startsWith par #');
+
+    expect(
       PatternBuilder.withJoinSelectorAtIndex(
         conditions,
         joins,

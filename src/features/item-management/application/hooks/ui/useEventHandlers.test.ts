@@ -160,4 +160,75 @@ describe('useAddItemEventHandlers', () => {
     expect(addItemForm.setMarginPercentage).toHaveBeenCalledWith('25.5');
     expect(addItemForm.handleCancel).toHaveBeenCalledWith(closingSetter);
   });
+
+  it('covers non-enter keyboard branches and invalid numeric guard paths', () => {
+    const addItemForm = buildAddItemForm();
+    addItemForm.formData.base_price = 0;
+    addItemForm.formData.is_medicine = false;
+
+    const { result } = renderHook(() =>
+      useAddItemEventHandlers({
+        addItemForm,
+        marginInputRef: { current: null },
+        minStockInputRef: { current: null },
+      })
+    );
+
+    const preventDefault = vi.fn();
+
+    act(() => {
+      result.current.handleSelectChange({
+        target: { name: 'unit_id', value: 'missing' },
+      } as React.ChangeEvent<HTMLSelectElement>);
+      result.current.handleMarginChange({
+        target: { value: 'NaN' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleMarginKeyDown({
+        key: 'Escape',
+        preventDefault,
+      } as React.KeyboardEvent<HTMLInputElement>);
+      result.current.handleMinStockKeyDown({
+        key: 'Escape',
+        preventDefault,
+      } as React.KeyboardEvent<HTMLInputElement>);
+    });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(addItemForm.updateFormData).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sell_price: expect.any(Number) })
+    );
+  });
+
+  it('covers guard branches for empty unit id and null profit update', () => {
+    const addItemForm = buildAddItemForm();
+    addItemForm.calculateProfitPercentage.mockImplementation(
+      () => null as unknown as number
+    );
+
+    const { result } = renderHook(() =>
+      useAddItemEventHandlers({
+        addItemForm,
+        marginInputRef: { current: null },
+        minStockInputRef: { current: null },
+      })
+    );
+
+    act(() => {
+      result.current.handleSelectChange({
+        target: { name: 'unit_id', value: '' },
+      } as React.ChangeEvent<HTMLSelectElement>);
+      result.current.handleSelectChange({
+        target: { name: 'other', value: 'u-1' },
+      } as React.ChangeEvent<HTMLSelectElement>);
+      result.current.handleSellPriceChange({
+        target: { value: '1' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(
+      addItemForm.packageConversionHook.setBaseUnit
+    ).not.toHaveBeenCalled();
+    expect(addItemForm.setMarginPercentage).not.toHaveBeenCalledWith('25.5');
+  });
 });

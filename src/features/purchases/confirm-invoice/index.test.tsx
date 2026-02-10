@@ -262,4 +262,21 @@ describe('ConfirmInvoicePage', () => {
 
     expect(await screen.findByText('DB offline')).toBeInTheDocument();
   });
+
+  it('navigates back to purchases when back button is clicked', async () => {
+    routerState.location = {
+      state: {
+        extractedData: buildExtractedData(),
+        imageIdentifier: 'img-back',
+      },
+    } as unknown;
+
+    render(<ConfirmInvoicePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Kembali/i }));
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith('/purchases');
+    });
+  });
 });

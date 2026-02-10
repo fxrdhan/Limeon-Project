@@ -72,6 +72,27 @@ describe('consoleCommands', () => {
     getItemSpy.mockRestore();
   });
 
+  it('prints zero size for keys with null values', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    localStorage.setItem('seed', '1');
+    const keySpy = vi
+      .spyOn(Storage.prototype, 'key')
+      .mockImplementation(() => 'ghost');
+    const getItemSpy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockReturnValue(null);
+
+    const { pharmaSysConsoleAPI } = await import('./consoleCommands');
+    pharmaSysConsoleAPI.storage.listAll();
+
+    expect(
+      logSpy.mock.calls.some(call => String(call[0]).includes('ghost (0 KB)'))
+    ).toBe(true);
+
+    keySpy.mockRestore();
+    getItemSpy.mockRestore();
+  });
+
   it('does nothing when window is unavailable', async () => {
     vi.stubGlobal('window', undefined);
     const { initConsoleAPI } = await import('./consoleCommands');

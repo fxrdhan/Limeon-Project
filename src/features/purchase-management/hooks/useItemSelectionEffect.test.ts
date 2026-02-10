@@ -98,4 +98,38 @@ describe('useItemSelectionEffect', () => {
     expect(onSelectItem).not.toHaveBeenCalled();
     expect(onSearchItemChange).not.toHaveBeenCalled();
   });
+
+  it('falls back to base unit and empty code when unit metadata is missing', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1700000001111);
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const addItem = vi.fn();
+    const onSelectItem = vi.fn();
+    const onSearchItemChange = vi.fn();
+    const getItemById = vi.fn().mockReturnValue({
+      id: 'item-2',
+      name: 'Ibuprofen',
+      base_price: 8000,
+      code: undefined,
+      unit: undefined,
+      base_unit: undefined,
+    });
+
+    renderHook(() =>
+      useItemSelectionEffect({
+        selectedItem: { id: 'item-2' } as never,
+        addItem,
+        onSelectItem,
+        onSearchItemChange,
+        getItemById,
+      })
+    );
+
+    expect(addItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        unit: 'Unit',
+        item: { name: 'Ibuprofen', code: '' },
+      })
+    );
+  });
 });

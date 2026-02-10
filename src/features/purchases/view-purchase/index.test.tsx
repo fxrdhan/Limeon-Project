@@ -217,6 +217,9 @@ describe('ViewPurchase', () => {
       fireEvent.click(zoomOut);
     }
     expect(screen.getByText('50%')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Kembali/i }));
+    expect(navigateMock).toHaveBeenCalledWith('/purchases');
   });
 
   it('skips fetch when route has no id', () => {
@@ -241,5 +244,27 @@ describe('ViewPurchase', () => {
         screen.getByText('Data pembelian tidak ditemukan')
       ).toBeInTheDocument();
     });
+  });
+
+  it('handles unknown payment labels and print window blocked state', async () => {
+    getPurchaseWithDetailsMock.mockResolvedValueOnce({
+      data: buildPurchase({
+        payment_status: 'custom-status',
+        payment_method: 'custom-method',
+      }),
+      error: null,
+    });
+
+    vi.spyOn(window, 'open').mockReturnValueOnce(null);
+
+    render(<ViewPurchase />);
+
+    expect(await screen.findByText('Belum Dibayar')).toBeInTheDocument();
+    expect(screen.getByText('custom-method')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Print View/i }));
+
+    const saved = JSON.parse(sessionStorage.getItem('purchaseData') || '{}');
+    expect(saved.purchase.invoice_number).toBe('INV-2026-001');
   });
 });

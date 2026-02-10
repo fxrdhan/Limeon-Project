@@ -146,4 +146,27 @@ describe('PrintPurchase', () => {
 
     expect(window.print).not.toHaveBeenCalled();
   });
+
+  it('renders unknown payment labels and no subtotals panel when missing', () => {
+    sessionStorage.setItem(
+      'purchaseData',
+      JSON.stringify({
+        ...buildPayload({
+          payment_status: 'unknown-status',
+          payment_method: 'other-method',
+          customer_name: null,
+          customer_address: '',
+        }),
+        subtotals: null,
+      })
+    );
+
+    render(<PrintPurchase />);
+
+    expect(screen.getByText('Belum Dibayar')).toBeInTheDocument();
+    expect(screen.getByText('other-method')).toBeInTheDocument();
+    expect(screen.getByText('Data belum tersedia')).toBeInTheDocument();
+    expect(screen.getByText('Alamat belum tersedia')).toBeInTheDocument();
+    expect(screen.queryByText('TOTAL')).not.toBeInTheDocument();
+  });
 });

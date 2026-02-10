@@ -200,5 +200,10 @@ describe('invoiceExtractor', () => {
     await expect(processInvoice(file)).rejects.toThrow(
       'Custom extractor error'
     );
+
+    postMock.mockRejectedValueOnce('not-an-error-instance');
+    await expect(processInvoice(file)).rejects.toThrow(
+      'Gagal mengekstrak data faktur. Silakan coba lagi.'
+    );
   });
 });

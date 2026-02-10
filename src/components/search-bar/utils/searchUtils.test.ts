@@ -269,6 +269,19 @@ describe('searchUtils.parseSearchValue', () => {
         isConfirmed: false,
       },
     });
+
+    const toMarkerWithTrailingHashes = parseSearchValue(
+      '#stock #inRange 10 #to 20## #',
+      columns
+    );
+    expect(toMarkerWithTrailingHashes.filterSearch).toEqual(
+      expect.objectContaining({
+        operator: 'inRange',
+        value: '10',
+        valueTo: '20',
+        isConfirmed: true,
+      })
+    );
   });
 
   it('parses partial join for inRange and dashed inRange confirmations', () => {
@@ -298,5 +311,23 @@ describe('searchUtils.parseSearchValue', () => {
         isConfirmed: true,
       })
     );
+  });
+
+  it('falls back to generic operator selector for malformed hash patterns', () => {
+    expect(parseSearchValue('#name #contains #and #', columns)).toEqual({
+      globalSearch: undefined,
+      showColumnSelector: false,
+      showOperatorSelector: false,
+      showJoinOperatorSelector: false,
+      isFilterMode: true,
+      filterSearch: {
+        field: 'name',
+        value: '#and #',
+        column: columns[0],
+        operator: 'contains',
+        isExplicitOperator: true,
+        isConfirmed: false,
+      },
+    });
   });
 });

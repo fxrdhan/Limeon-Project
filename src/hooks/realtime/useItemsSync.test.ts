@@ -95,7 +95,7 @@ describe('useItemsSync', () => {
     expect(createChannelMock).toHaveBeenCalledWith('item-master-realtime');
     expect(callbacks).toHaveLength(7);
 
-    callbacks[0]({ eventType: 'UPDATE' });
+    callbacks.forEach(callback => callback({ eventType: 'UPDATE' }));
 
     expect(invalidateQueriesMock).toHaveBeenCalledWith({
       queryKey: ['items'],

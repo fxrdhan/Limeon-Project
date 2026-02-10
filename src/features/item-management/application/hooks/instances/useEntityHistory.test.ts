@@ -270,4 +270,38 @@ describe('useEntityHistory', () => {
       'restore failed'
     );
   });
+
+  it('covers rerender channel cleanup, null diff, and insert error path', async () => {
+    const { result, rerender } = renderHook(
+      ({ table, id }) => useEntityHistory(table, id),
+      {
+        initialProps: { table: 'item_categories', id: 'cat-1' },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.history.length).toBeGreaterThan(0);
+    });
+
+    expect(result.current.getVersionDiff(100, 101)).toBeNull();
+
+    insertHistoryEntryMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'insert failed' },
+    });
+
+    await act(async () => {
+      await result.current.addHistoryEntry('UPDATE', { id: 'cat-1' });
+    });
+
+    const firstHistoryChannel = createChannelMock.mock.results[0]
+      .value as MockChannel;
+    const firstEntityChannel = createChannelMock.mock.results[1]
+      .value as MockChannel;
+
+    rerender({ table: 'item_types', id: 'type-1' });
+
+    expect(firstHistoryChannel.unsubscribe).toHaveBeenCalled();
+    expect(firstEntityChannel.unsubscribe).toHaveBeenCalled();
+  });
 });

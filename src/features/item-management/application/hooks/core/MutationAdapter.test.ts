@@ -82,6 +82,11 @@ describe('MutationAdapter', () => {
         code: 'C1',
       },
     });
+
+    const fallbackResult = await normalized.update?.mutateAsync(
+      undefined as never
+    );
+    expect(fallbackResult).toEqual({ id: undefined, data: {} });
   });
 
   it('forces flat update style when createMutation key exists', async () => {

@@ -14,6 +14,12 @@ const createKeyboardEvent = (key: string, shiftKey = false) =>
     preventDefault: vi.fn(),
   }) as unknown as DropdownKeyEvent;
 
+const flushMicrotasks = async () => {
+  await act(async () => {
+    await Promise.resolve();
+  });
+};
+
 describe('useKeyboardNavigation', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -45,9 +51,7 @@ describe('useKeyboardNavigation', () => {
       })
     );
 
-    await act(async () => {
-      await Promise.resolve();
-    });
+    await flushMicrotasks();
 
     expect(result.current.highlightedIndex).toBe(1);
     expect(setExpandedId).toHaveBeenCalledWith('b');
@@ -86,9 +90,7 @@ describe('useKeyboardNavigation', () => {
       })
     );
 
-    await act(async () => {
-      await Promise.resolve();
-    });
+    await flushMicrotasks();
 
     act(() => {
       result.current.handleDropdownKeyDown(createKeyboardEvent('ArrowDown'));
@@ -198,5 +200,173 @@ describe('useKeyboardNavigation', () => {
     });
 
     expect(result.current.isKeyboardNavigation).toBe(false);
+  });
+
+  it('resets highlight and keyboard mode after dropdown closes', async () => {
+    const setExpandedId = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ isOpen }) =>
+        useKeyboardNavigation({
+          isOpen,
+          currentFilteredOptions: [
+            { id: 'a', name: 'A' },
+            { id: 'b', name: 'B' },
+          ],
+          setExpandedId,
+          searchState: SEARCH_STATES.IDLE,
+          searchTerm: '',
+          onSelect: vi.fn(),
+          onCloseDropdown: vi.fn(),
+          onCloseValidation: vi.fn(),
+          optionsContainerRef: { current: document.createElement('div') },
+        }),
+      { initialProps: { isOpen: true } }
+    );
+
+    await flushMicrotasks();
+
+    act(() => {
+      result.current.handleDropdownKeyDown(createKeyboardEvent('ArrowDown'));
+    });
+
+    expect(result.current.isKeyboardNavigation).toBe(true);
+    expect(result.current.highlightedIndex).toBe(1);
+
+    rerender({ isOpen: false });
+    await flushMicrotasks();
+
+    expect(result.current.isKeyboardNavigation).toBe(false);
+    expect(result.current.highlightedIndex).toBe(-1);
+  });
+
+  it('auto-highlights first option when opened without value', async () => {
+    const setExpandedId = vi.fn();
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        isOpen: true,
+        currentFilteredOptions: [
+          { id: 'a', name: 'A' },
+          { id: 'b', name: 'B' },
+        ],
+        setExpandedId,
+        searchState: SEARCH_STATES.IDLE,
+        searchTerm: '',
+        onSelect: vi.fn(),
+        onCloseDropdown: vi.fn(),
+        onCloseValidation: vi.fn(),
+        optionsContainerRef: { current: document.createElement('div') },
+      })
+    );
+
+    await flushMicrotasks();
+
+    expect(result.current.highlightedIndex).toBe(0);
+    expect(setExpandedId).toHaveBeenCalledWith('a');
+  });
+
+  it('does not auto-highlight on open when feature is disabled', async () => {
+    const setExpandedId = vi.fn();
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        isOpen: true,
+        currentFilteredOptions: [
+          { id: 'a', name: 'A' },
+          { id: 'b', name: 'B' },
+        ],
+        setExpandedId,
+        searchState: SEARCH_STATES.IDLE,
+        searchTerm: '',
+        onSelect: vi.fn(),
+        onCloseDropdown: vi.fn(),
+        onCloseValidation: vi.fn(),
+        optionsContainerRef: { current: document.createElement('div') },
+        autoHighlightOnOpen: false,
+      })
+    );
+
+    await flushMicrotasks();
+
+    expect(result.current.highlightedIndex).toBe(-1);
+    expect(setExpandedId).not.toHaveBeenCalled();
+  });
+
+  it('ignores unsupported keys when there are no options', () => {
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        isOpen: true,
+        currentFilteredOptions: [],
+        setExpandedId: vi.fn(),
+        searchState: SEARCH_STATES.IDLE,
+        searchTerm: '',
+        onSelect: vi.fn(),
+        onCloseDropdown: vi.fn(),
+        onCloseValidation: vi.fn(),
+        optionsContainerRef: { current: document.createElement('div') },
+      })
+    );
+
+    const event = createKeyboardEvent('ArrowDown');
+
+    act(() => {
+      result.current.handleDropdownKeyDown(event);
+    });
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(result.current.highlightedIndex).toBe(-1);
+  });
+
+  it('ignores keyboard handling while dropdown is closed', () => {
+    const onCloseDropdown = vi.fn();
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        isOpen: false,
+        currentFilteredOptions: [{ id: 'a', name: 'A' }],
+        setExpandedId: vi.fn(),
+        searchState: SEARCH_STATES.IDLE,
+        searchTerm: '',
+        onSelect: vi.fn(),
+        onCloseDropdown,
+        onCloseValidation: vi.fn(),
+        optionsContainerRef: { current: document.createElement('div') },
+      })
+    );
+
+    const event = createKeyboardEvent('Escape');
+
+    act(() => {
+      result.current.handleDropdownKeyDown(event);
+    });
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(onCloseDropdown).not.toHaveBeenCalled();
+  });
+
+  it('does not trigger add-new for blank search terms', () => {
+    const onAddNew = vi.fn();
+    const onCloseDropdown = vi.fn();
+    const onCloseValidation = vi.fn();
+
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        isOpen: true,
+        currentFilteredOptions: [],
+        setExpandedId: vi.fn(),
+        searchState: SEARCH_STATES.NOT_FOUND,
+        searchTerm: '   ',
+        onSelect: vi.fn(),
+        onAddNew,
+        onCloseDropdown,
+        onCloseValidation,
+        optionsContainerRef: { current: document.createElement('div') },
+      })
+    );
+
+    act(() => {
+      result.current.handleDropdownKeyDown(createKeyboardEvent('Enter'));
+    });
+
+    expect(onAddNew).not.toHaveBeenCalled();
+    expect(onCloseDropdown).not.toHaveBeenCalled();
+    expect(onCloseValidation).not.toHaveBeenCalled();
   });
 });

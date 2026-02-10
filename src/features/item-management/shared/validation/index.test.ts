@@ -52,6 +52,12 @@ describe('item-management validation rules', () => {
       })
     ).toContain('Kode NCI maksimal 20 karakter');
 
+    expect(
+      EntityValidation.packages.validate({
+        name: 'Kemasan tanpa NCI',
+      })
+    ).toEqual([]);
+
     expect(EntityValidation.manufacturers.validate({})).toContain(
       'Nama manufaktur wajib diisi'
     );
@@ -70,5 +76,11 @@ describe('item-management validation rules', () => {
         address: 'Jakarta',
       })
     ).toEqual([]);
+
+    expect(
+      EntityValidation.manufacturers.validate({
+        name: 'x'.repeat(101),
+      })
+    ).toContain('Nama manufaktur maksimal 100 karakter');
   });
 });

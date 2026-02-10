@@ -49,4 +49,31 @@ describe('useDynamicGridHeight', () => {
     // actual rows: max(minRows=5, min(2, 2)) = 5
     expect(result.current.gridHeight).toBe(268);
   });
+
+  it('handles undefined data by using zero data length', () => {
+    useTableHeightMock.mockReturnValue('400px');
+
+    const { result } = renderHook(() =>
+      useDynamicGridHeight({
+        data: undefined,
+        currentPageSize: 25,
+      })
+    );
+
+    // dataLength=0 -> displayedRows=0 -> minRows=5
+    expect(result.current.gridHeight).toBe(268);
+  });
+
+  it('handles null-like data branch in dataLength fallback', () => {
+    useTableHeightMock.mockReturnValue('360px');
+
+    const { result } = renderHook(() =>
+      useDynamicGridHeight({
+        data: null as unknown as unknown[],
+        currentPageSize: 10,
+      })
+    );
+
+    expect(result.current.gridHeight).toBe(268);
+  });
 });

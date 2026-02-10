@@ -155,4 +155,17 @@ describe('groupParser', () => {
       parseGroupedFilterPattern('#( #name #contains aspirin #) ####', columns)
     ).toBeNull();
   });
+
+  it('returns null when top-level sequence has multiple nodes without join', () => {
+    expect(
+      parseGroupedFilterPattern(
+        '#( #name #contains aspirin #) #( #stock #greaterThan 1 #)##',
+        columns
+      )
+    ).toBeNull();
+  });
+
+  it('returns null when no condition exists in nested group tree', () => {
+    expect(parseGroupedFilterPattern('#( #( #) #)##', columns)).toBeNull();
+  });
 });

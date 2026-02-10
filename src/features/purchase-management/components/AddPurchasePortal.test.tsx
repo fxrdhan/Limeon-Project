@@ -5,6 +5,7 @@ import AddPurchasePortal from './AddPurchasePortal';
 
 const handleSubmitMock = vi.hoisted(() => vi.fn());
 const handleChangeMock = vi.hoisted(() => vi.fn());
+const handleUnitChangeMock = vi.hoisted(() => vi.fn());
 const handleItemSearchChangeMock = vi.hoisted(() => vi.fn());
 const handleSelectItemMock = vi.hoisted(() => vi.fn());
 const refetchItemsMock = vi.hoisted(() => vi.fn());
@@ -51,7 +52,7 @@ vi.mock('@/features/purchase-management/hooks/purchaseForm', () => ({
     handleChange: handleChangeMock,
     addItem: vi.fn(),
     updateItem: vi.fn(),
-    handleUnitChange: vi.fn(),
+    handleUnitChange: handleUnitChangeMock,
     updateItemVat: vi.fn(),
     updateItemExpiry: vi.fn(),
     updateItemBatchNo: vi.fn(),
@@ -147,7 +148,13 @@ vi.mock(
 vi.mock(
   '@/features/purchase-management/components/purchase-form/PurchaseInfoSection',
   () => ({
-    default: () => <div>purchase-info-section</div>,
+    default: ({
+      invoiceNumberInputRef,
+    }: {
+      invoiceNumberInputRef: React.RefObject<HTMLInputElement | null>;
+    }) => (
+      <input ref={invoiceNumberInputRef} aria-label="invoice-number-input" />
+    ),
   })
 );
 
@@ -157,9 +164,11 @@ vi.mock(
     default: ({
       onOpenAddItemPortal,
       itemSearchBarRef,
+      onHandleUnitChange,
     }: {
       onOpenAddItemPortal: () => void;
       itemSearchBarRef: React.MutableRefObject<{ focus: () => void } | null>;
+      onHandleUnitChange: (id: string, unitName: string) => void;
     }) => {
       itemSearchBarRef.current = { focus: itemSearchFocusMock };
 
@@ -167,6 +176,12 @@ vi.mock(
         <div>
           <button type="button" onClick={onOpenAddItemPortal}>
             open-add-item-portal
+          </button>
+          <button
+            type="button"
+            onClick={() => onHandleUnitChange('row-1', 'Box')}
+          >
+            trigger-unit-change
           </button>
         </div>
       );
@@ -180,6 +195,7 @@ describe('AddPurchasePortal', () => {
 
     handleSubmitMock.mockReset();
     handleChangeMock.mockReset();
+    handleUnitChangeMock.mockReset();
     handleItemSearchChangeMock.mockReset();
     handleSelectItemMock.mockReset();
     refetchItemsMock.mockReset();
@@ -261,5 +277,65 @@ describe('AddPurchasePortal', () => {
 
     expect(refetchItemsMock).toHaveBeenCalledTimes(1);
     expect(itemSearchFocusMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('focuses invoice input on open and proxies unit change with getItemById', async () => {
+    const onClose = vi.fn();
+    const setIsClosing = vi.fn();
+    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
+
+    render(
+      <AddPurchasePortal
+        isOpen
+        onClose={onClose}
+        isClosing={false}
+        setIsClosing={setIsClosing}
+      />
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(150);
+    });
+
+    expect(focusSpy).toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'trigger-unit-change' })
+    );
+    expect(handleUnitChangeMock).toHaveBeenCalledWith(
+      'row-1',
+      'Box',
+      expect.any(Function)
+    );
+  });
+
+  it('ignores backdrop close while closing and does not render form when closed', () => {
+    const onClose = vi.fn();
+    const setIsClosing = vi.fn();
+
+    const { rerender } = render(
+      <AddPurchasePortal
+        isOpen
+        onClose={onClose}
+        isClosing={true}
+        setIsClosing={setIsClosing}
+      />
+    );
+
+    const backdrop = document.querySelector('.fixed.inset-0') as HTMLElement;
+    fireEvent.click(backdrop);
+    expect(setIsClosing).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+
+    rerender(
+      <AddPurchasePortal
+        isOpen={false}
+        onClose={onClose}
+        isClosing={false}
+        setIsClosing={setIsClosing}
+      />
+    );
+
+    expect(document.querySelector('form')).toBeNull();
   });
 });

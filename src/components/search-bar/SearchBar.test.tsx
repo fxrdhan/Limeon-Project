@@ -82,5 +82,16 @@ describe('SearchBar', () => {
     firstIconClass =
       screen.getAllByTestId('tb-search')[0].getAttribute('class') || '';
     expect(firstIconClass).toContain('text-slate-800');
+
+    rerender(
+      <SearchBar
+        value="x"
+        onChange={vi.fn()}
+        searchState={'unexpected' as never}
+      />
+    );
+    firstIconClass =
+      screen.getAllByTestId('tb-search')[0].getAttribute('class') || '';
+    expect(firstIconClass).toContain('text-slate-400');
   });
 });

@@ -204,6 +204,18 @@ describe('patternRestoration', () => {
         { openSelector: 'join' }
       )
     ).toBe('#name #contains aspirin #or #stock #greaterThan 10 #');
+
+    expect(
+      buildPartialPattern({
+        field: 'name',
+        value: 'aspirin',
+        column: textColumn,
+        operator: 'contains',
+        isExplicitOperator: true,
+        isMultiCondition: true,
+        joinOperator: 'AND',
+      })
+    ).toBe('');
   });
 
   it('builds N-condition patterns directly', () => {

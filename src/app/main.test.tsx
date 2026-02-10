@@ -56,4 +56,38 @@ describe('app main bootstrap', () => {
 
     console.error = previousConsoleError;
   });
+
+  it('bootstraps without console patching when not in dev mode', async () => {
+    const renderMock = vi.fn();
+    const createRootMock = vi.fn(() => ({ render: renderMock }));
+    const configurePersistenceMock = vi.fn().mockResolvedValue(undefined);
+    const preloadCachedImagesMock = vi.fn();
+    const originalConsoleError = console.error;
+
+    vi.stubEnv('DEV', false);
+
+    vi.doMock('react-dom/client', () => ({
+      createRoot: createRootMock,
+    }));
+    vi.doMock('@/lib/queryPersistence', () => ({
+      configurePersistence: configurePersistenceMock,
+    }));
+    vi.doMock('@/utils/imageCache', () => ({
+      preloadCachedImages: preloadCachedImagesMock,
+    }));
+    vi.doMock('./App', () => ({
+      default: () => null,
+    }));
+
+    await import('./main');
+    await Promise.resolve();
+
+    expect(configurePersistenceMock).toHaveBeenCalledTimes(1);
+    expect(preloadCachedImagesMock).toHaveBeenCalledTimes(1);
+    expect(createRootMock).toHaveBeenCalledWith(
+      document.getElementById('root')
+    );
+    expect(renderMock).toHaveBeenCalledTimes(1);
+    expect(console.error).toBe(originalConsoleError);
+  });
 });

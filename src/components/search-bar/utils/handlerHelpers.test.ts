@@ -130,6 +130,39 @@ describe('handlerHelpers', () => {
     });
   });
 
+  it('extracts confirmed preservation with multiple extra partial conditions and fallback joins', () => {
+    const searchMode: EnhancedSearchState = {
+      showColumnSelector: false,
+      showOperatorSelector: false,
+      showJoinOperatorSelector: false,
+      isFilterMode: true,
+      partialJoin: 'OR',
+      partialConditions: [
+        { field: 'name', operator: 'contains', value: 'aspirin' },
+        { field: 'name', operator: 'equals', value: 'ibuprofen' },
+        { field: 'stock', operator: 'greaterThan', value: '10' },
+        { field: 'code', operator: 'startsWith', value: 'RX' },
+      ],
+      filterSearch: {
+        field: 'name',
+        value: 'aspirin',
+        column: textColumn,
+        operator: 'contains',
+        isExplicitOperator: true,
+        isMultiCondition: true,
+        conditions: [
+          { field: 'name', operator: 'contains', value: 'aspirin' },
+          { field: 'name', operator: 'equals', value: 'ibuprofen' },
+        ],
+      },
+    };
+
+    const result = extractMultiConditionPreservation(searchMode);
+
+    expect(result?.joins).toEqual(['AND', 'OR', 'OR']);
+    expect(result?.conditions).toHaveLength(4);
+  });
+
   it('extracts preservation from partial join state', () => {
     const searchMode: EnhancedSearchState = {
       showColumnSelector: false,
@@ -171,6 +204,19 @@ describe('handlerHelpers', () => {
       joins: ['AND'],
       isMultiColumn: false,
     });
+
+    const withExtraJoin: EnhancedSearchState = {
+      ...searchMode,
+      joins: ['AND', 'OR'],
+      partialConditions: [
+        { field: 'name', operator: 'contains', value: 'aspirin' },
+        { field: 'code', operator: 'equals', value: 'A-1' },
+        { field: 'stock', operator: 'greaterThan', value: '10' },
+      ],
+    };
+
+    const extraResult = extractMultiConditionPreservation(withExtraJoin);
+    expect(extraResult?.joins).toEqual(['AND', 'OR']);
   });
 
   it('returns single-condition preservation and null fallback', () => {
@@ -313,6 +359,16 @@ describe('handlerHelpers', () => {
     };
 
     expect(getJoinAt(filter, stateWithoutJoins, 0)).toBe('AND');
+    expect(
+      getJoinAt(
+        {
+          ...filter,
+          joinOperator: undefined,
+        },
+        stateWithoutJoins,
+        0
+      )
+    ).toBe('OR');
     expect(getJoinAt(filter, undefined, 1)).toBeUndefined();
 
     expect(
@@ -327,5 +383,7 @@ describe('handlerHelpers', () => {
     expect(
       getConditionOperatorAt(filter, undefined, 2, '#name #contains aspirin')
     ).toBeUndefined();
+
+    expect(getConditionOperatorAt(filter, undefined, 0)).toBe('contains');
   });
 });

@@ -252,6 +252,7 @@ describe('pagination components', () => {
 
     const mainContainer = container.querySelector('div.custom-class');
     expect(mainContainer).toHaveClass('mt-4');
+    expect(mainContainer).not.toHaveStyle({ willChange: 'transform' });
 
     usePaginationContextMock.mockReturnValue({
       currentPage: 1,
@@ -277,6 +278,21 @@ describe('pagination components', () => {
     );
     expect(floatingContainer).toBeInTheDocument();
     expect(floatingContainer).toHaveStyle({ willChange: 'transform' });
+
+    usePaginationContextMock.mockReturnValue({
+      currentPage: 3,
+      totalPages: 3,
+      itemsPerPage: 10,
+      onPageChange,
+      handleItemsPerPageClick,
+      direction: 1,
+      className: 'custom-class',
+      pageSizes: [10, 20],
+    });
+
+    rerender(<PaginationContent />);
+    fireEvent.click(screen.getByLabelText('Halaman berikutnya'));
+    expect(onPageChange).toHaveBeenCalledTimes(2);
   });
 
   it('renders current page display and exposes motion variants for both directions', () => {

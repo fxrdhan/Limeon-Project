@@ -141,4 +141,16 @@ describe('useItemSelection', () => {
 
     expect(useItemsMock).toHaveBeenCalledWith({ enabled: false });
   });
+
+  it('returns empty list when items query does not return an array', () => {
+    useItemsMock.mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useItemSelection());
+    expect(result.current.items).toEqual([]);
+  });
 });

@@ -39,6 +39,12 @@ describe('operatorUtils', () => {
   it('returns operators for specific column', () => {
     expect(getOperatorsForColumn(numberColumn)).toBe(NUMBER_FILTER_OPERATORS);
     expect(getOperatorsForColumn(textColumn)).toBe(DEFAULT_FILTER_OPERATORS);
+    expect(
+      getOperatorsForColumn({
+        ...textColumn,
+        type: undefined,
+      })
+    ).toBe(DEFAULT_FILTER_OPERATORS);
   });
 
   it('finds operators by value and label format', () => {
@@ -53,6 +59,9 @@ describe('operatorUtils', () => {
       'inRange'
     );
     expect(findOperatorForColumn(textColumn, 'inRange')).toBeUndefined();
+    expect(
+      findOperatorForColumn({ ...textColumn, type: undefined }, 'contains')
+    ).toEqual(expect.objectContaining({ value: 'contains' }));
   });
 
   it('checks compatibility helpers', () => {
@@ -61,6 +70,12 @@ describe('operatorUtils', () => {
 
     expect(isOperatorCompatibleWithColumn(numberColumn, 'inRange')).toBe(true);
     expect(isOperatorCompatibleWithColumn(textColumn, 'inRange')).toBe(false);
+    expect(
+      isOperatorCompatibleWithColumn(
+        { ...numberColumn, type: undefined },
+        'contains'
+      )
+    ).toBe(true);
   });
 
   it('returns operator labels with fallback across operator groups', () => {
@@ -68,5 +83,11 @@ describe('operatorUtils', () => {
     expect(getOperatorLabel('text', 'inRange')).toBe('Between');
     expect(getOperatorLabel('text', 'unknownOperator')).toBe('unknownOperator');
     expect(getOperatorLabelForColumn(numberColumn, 'inRange')).toBe('Between');
+    expect(
+      getOperatorLabelForColumn(
+        { ...numberColumn, type: undefined },
+        'contains'
+      )
+    ).toBe('Contains');
   });
 });

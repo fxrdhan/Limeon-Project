@@ -60,4 +60,21 @@ describe('VatPercentageEditor', () => {
 
     expect(onVatPercentageChange).not.toHaveBeenCalled();
   });
+
+  it('ignores unrelated keys while editing', () => {
+    const onVatPercentageChange = vi.fn();
+    render(
+      <VatPercentageEditor
+        vatPercentage={8}
+        onVatPercentageChange={onVatPercentageChange}
+      />
+    );
+
+    fireEvent.click(screen.getByText('8%'));
+    const input = screen.getByDisplayValue('8');
+    fireEvent.keyDown(input, { key: 'Tab' });
+
+    expect(onVatPercentageChange).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue('8')).toBeInTheDocument();
+  });
 });

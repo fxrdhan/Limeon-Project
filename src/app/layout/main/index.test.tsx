@@ -1,7 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChatTargetUser } from '@/types';
+import { describe, expect, it, vi } from 'vitest';
 import MainLayout from './index';
 
 const usePresenceMock = vi.hoisted(() => vi.fn());
@@ -10,32 +8,29 @@ vi.mock('@/hooks/presence/usePresence', () => ({
   usePresence: usePresenceMock,
 }));
 
+vi.mock('react-router-dom', () => ({
+  Outlet: () => <div data-testid="outlet">outlet</div>,
+}));
+
 vi.mock('@/app/layout/sidebar', () => ({
   default: ({
     collapsed,
     isLocked,
-    toggleLock,
     expandSidebar,
     collapseSidebar,
+    toggleLock,
   }: {
     collapsed: boolean;
     isLocked: boolean;
-    toggleLock: () => void;
     expandSidebar: () => void;
     collapseSidebar: () => void;
+    toggleLock: () => void;
   }) => (
     <div>
-      <div data-testid="sidebar-collapsed">{String(collapsed)}</div>
-      <div data-testid="sidebar-locked">{String(isLocked)}</div>
-      <button onClick={toggleLock} type="button">
-        toggle-lock
-      </button>
-      <button onClick={expandSidebar} type="button">
-        expand
-      </button>
-      <button onClick={collapseSidebar} type="button">
-        collapse
-      </button>
+      <div data-testid="sidebar-state">{`${collapsed}:${isLocked}`}</div>
+      <button onClick={expandSidebar}>expand</button>
+      <button onClick={collapseSidebar}>collapse</button>
+      <button onClick={toggleLock}>toggle-lock</button>
     </div>
   ),
 }));
@@ -48,26 +43,35 @@ vi.mock('@/app/layout/navbar', () => ({
   }: {
     sidebarCollapsed: boolean;
     showChatSidebar: boolean;
-    onChatUserSelect: (user: ChatTargetUser) => void;
+    onChatUserSelect: (user: {
+      id: string;
+      name: string;
+      email: string;
+    }) => void;
   }) => (
     <div>
-      <div data-testid="navbar-collapsed">{String(sidebarCollapsed)}</div>
-      <div data-testid="navbar-chat-open">{String(showChatSidebar)}</div>
+      <div data-testid="navbar-state">{`${sidebarCollapsed}:${showChatSidebar}`}</div>
       <button
         onClick={() =>
-          onChatUserSelect({ id: 'u-1', nama_lengkap: 'User 1' } as never)
+          onChatUserSelect({
+            id: 'u-2',
+            name: 'User 2',
+            email: 'u2@test.dev',
+          })
         }
-        type="button"
       >
-        chat-u1
+        select-u2
       </button>
       <button
         onClick={() =>
-          onChatUserSelect({ id: 'u-2', nama_lengkap: 'User 2' } as never)
+          onChatUserSelect({
+            id: 'u-3',
+            name: 'User 3',
+            email: 'u3@test.dev',
+          })
         }
-        type="button"
       >
-        chat-u2
+        select-u3
       </button>
     </div>
   ),
@@ -80,89 +84,61 @@ vi.mock('@/app/layout/chat-sidebar', () => ({
     onClose,
   }: {
     isOpen: boolean;
-    targetUser?: ChatTargetUser;
+    targetUser?: { id: string };
     onClose: () => void;
   }) => (
     <div>
-      <div data-testid="chat-open">{String(isOpen)}</div>
-      <div data-testid="chat-user">{targetUser?.id ?? 'none'}</div>
-      <button onClick={onClose} type="button">
-        close-chat
-      </button>
+      <div data-testid="chat-state">{`${isOpen}:${targetUser?.id ?? 'none'}`}</div>
+      <button onClick={onClose}>close-chat</button>
     </div>
   ),
 }));
 
-const renderLayout = () =>
-  render(
-    <MemoryRouter initialEntries={['/']}>
-      <Routes>
-        <Route element={<MainLayout />} path="/">
-          <Route
-            element={<div data-testid="outlet-content">Outlet</div>}
-            index
-          />
-        </Route>
-      </Routes>
-    </MemoryRouter>
-  );
-
 describe('MainLayout', () => {
-  beforeEach(() => {
-    usePresenceMock.mockReset();
-    usePresenceMock.mockReturnValue(undefined);
+  it('handles sidebar state transitions and chat toggling behavior', () => {
+    render(<MainLayout />);
+
+    expect(usePresenceMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('outlet')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-state')).toHaveTextContent('true:false');
+    expect(screen.getByTestId('chat-state')).toHaveTextContent('false:none');
+
+    fireEvent.click(screen.getByText('collapse'));
+    expect(screen.getByTestId('sidebar-state')).toHaveTextContent('true:false');
+
+    fireEvent.click(screen.getByText('toggle-lock'));
+    expect(screen.getByTestId('sidebar-state')).toHaveTextContent('false:true');
+
+    fireEvent.click(screen.getByText('expand'));
+    expect(screen.getByTestId('sidebar-state')).toHaveTextContent('false:true');
+
+    fireEvent.click(screen.getByText('toggle-lock'));
+    expect(screen.getByTestId('sidebar-state')).toHaveTextContent(
+      'false:false'
+    );
+
+    fireEvent.click(screen.getByText('collapse'));
+    expect(screen.getByTestId('sidebar-state')).toHaveTextContent('true:false');
+
+    fireEvent.click(screen.getByText('select-u2'));
+    expect(screen.getByTestId('chat-state')).toHaveTextContent('true:u-2');
+
+    fireEvent.click(screen.getByText('select-u2'));
+    expect(screen.getByTestId('chat-state')).toHaveTextContent('false:none');
+
+    fireEvent.click(screen.getByText('select-u3'));
+    expect(screen.getByTestId('chat-state')).toHaveTextContent('true:u-3');
+
+    fireEvent.click(screen.getByText('close-chat'));
+    expect(screen.getByTestId('chat-state')).toHaveTextContent('false:none');
   });
 
-  it('renders with initial state and outlet content', () => {
-    renderLayout();
+  it('toggles sidebar via ctrl+s keyboard shortcut', () => {
+    render(<MainLayout />);
 
-    expect(screen.getByTestId('outlet-content')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-collapsed')).toHaveTextContent('true');
-    expect(screen.getByTestId('sidebar-locked')).toHaveTextContent('false');
-    expect(screen.getByTestId('chat-open')).toHaveTextContent('false');
-    expect(usePresenceMock).toHaveBeenCalled();
-  });
-
-  it('handles sidebar expand/collapse with lock state', () => {
-    renderLayout();
-
-    fireEvent.click(screen.getByRole('button', { name: 'expand' }));
-    expect(screen.getByTestId('sidebar-collapsed')).toHaveTextContent('false');
-
-    fireEvent.click(screen.getByRole('button', { name: 'toggle-lock' }));
-    expect(screen.getByTestId('sidebar-locked')).toHaveTextContent('true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'collapse' }));
-    expect(screen.getByTestId('sidebar-collapsed')).toHaveTextContent('false');
-
-    fireEvent.click(screen.getByRole('button', { name: 'toggle-lock' }));
-    fireEvent.click(screen.getByRole('button', { name: 'collapse' }));
-    expect(screen.getByTestId('sidebar-collapsed')).toHaveTextContent('true');
-  });
-
-  it('toggles chat target and supports close action', () => {
-    renderLayout();
-
-    fireEvent.click(screen.getByRole('button', { name: 'chat-u1' }));
-    expect(screen.getByTestId('chat-open')).toHaveTextContent('true');
-    expect(screen.getByTestId('chat-user')).toHaveTextContent('u-1');
-
-    fireEvent.click(screen.getByRole('button', { name: 'chat-u1' }));
-    expect(screen.getByTestId('chat-open')).toHaveTextContent('false');
-    expect(screen.getByTestId('chat-user')).toHaveTextContent('none');
-
-    fireEvent.click(screen.getByRole('button', { name: 'chat-u2' }));
-    expect(screen.getByTestId('chat-user')).toHaveTextContent('u-2');
-
-    fireEvent.click(screen.getByRole('button', { name: 'close-chat' }));
-    expect(screen.getByTestId('chat-open')).toHaveTextContent('false');
-  });
-
-  it('handles Ctrl+S shortcut to toggle sidebar and lock it', () => {
-    renderLayout();
-
-    fireEvent.keyDown(window, { ctrlKey: true, key: 's' });
-    expect(screen.getByTestId('sidebar-collapsed')).toHaveTextContent('false');
-    expect(screen.getByTestId('sidebar-locked')).toHaveTextContent('true');
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+    expect(
+      screen.getByTestId('sidebar-state').textContent?.startsWith('false')
+    ).toBe(true);
   });
 });

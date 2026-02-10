@@ -244,6 +244,15 @@ describe('Navbar', () => {
 
     fireEvent.click(screen.getByText('Current User'));
     expect(onChatUserSelect).not.toHaveBeenCalled();
+
+    fireEvent.mouseEnter(screen.getByText('No Photo'));
+    expect(
+      screen.getByTitle('Click to chat with this user')
+    ).toBeInTheDocument();
+    fireEvent.mouseLeave(screen.getByText('No Photo'));
+    expect(
+      screen.getByTitle('Click to chat with this user')
+    ).toBeInTheDocument();
   });
 
   it('supports presence list when user is logged out', () => {
@@ -263,5 +272,49 @@ describe('Navbar', () => {
 
     expect(screen.getByText('0 Online')).toBeInTheDocument();
     expect(screen.getByTestId('avatar-stack')).toHaveTextContent('1:false');
+  });
+
+  it('handles empty online user list and user-not-in-list ordering paths', async () => {
+    usePresenceStoreMock.mockReturnValue({
+      onlineUsers: 0,
+      onlineUsersList: [],
+    });
+
+    const { unmount } = render(
+      <Navbar
+        onChatUserSelect={vi.fn()}
+        showChatSidebar={false}
+        sidebarCollapsed={true}
+      />
+    );
+
+    expect(screen.getByText('1 Online')).toBeInTheDocument();
+    unmount();
+
+    usePresenceStoreMock.mockReturnValue({
+      onlineUsers: 2,
+      onlineUsersList: [
+        {
+          id: 'u-9',
+          name: 'Another User',
+          email: 'another@example.com',
+          profilephoto: 'https://images/another.jpg',
+        },
+      ],
+    });
+
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    render(
+      <Navbar
+        onChatUserSelect={vi.fn()}
+        showChatSidebar={false}
+        sidebarCollapsed={false}
+      />
+    );
+
+    const hoverRegion = screen.getByText('2 Online').closest('div');
+    fireEvent.mouseEnter(hoverRegion!);
+    fireEvent.mouseEnter(hoverRegion!);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
   });
 });

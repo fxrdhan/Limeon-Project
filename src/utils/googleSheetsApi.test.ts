@@ -430,6 +430,21 @@ describe('GoogleSheetsService', () => {
     ).rejects.toThrow('quota exceeded');
   });
 
+  it('handles non-Error auth failures containing invalid token text', async () => {
+    setupGoogleApis();
+    const { default: GoogleSheetsService } = await import('./googleSheetsApi');
+    const service = new GoogleSheetsService('client-id');
+    await service.initialize();
+
+    vi.spyOn(service, 'createSpreadsheetWithData').mockRejectedValueOnce(
+      'invalid token payload'
+    );
+
+    await expect(
+      service.exportGridDataToSheets([['x']], ['h'], 'report')
+    ).rejects.toThrow('Authentication token expired. Please try again.');
+  });
+
   it('returns spreadsheet URL on successful export workflow', async () => {
     setupGoogleApis();
     const { default: GoogleSheetsService } = await import('./googleSheetsApi');

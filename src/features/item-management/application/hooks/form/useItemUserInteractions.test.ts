@@ -145,4 +145,51 @@ describe('useItemUserInteractions', () => {
     // keep explicit check that the dirty callback branch was exercised earlier
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('uses onClose for dirty confirm without setter and setter for clean flow', () => {
+    const onClose = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ dirty }) =>
+        useItemUserInteractions({
+          formState: {
+            formData: { name: 'Item Y' } as never,
+            isDirty: vi.fn(() => dirty),
+          },
+          packageConversionHook: {
+            conversions: [],
+          },
+          mutations: {
+            deleteItemMutation: { mutate: vi.fn() } as never,
+          },
+          cache: { clearCache: vi.fn() },
+          onClose,
+          itemId: 'item-2',
+        }),
+      {
+        initialProps: { dirty: true },
+      }
+    );
+
+    act(() => {
+      result.current.handleCancel();
+    });
+
+    const dirtyPayload = openConfirmDialogMock.mock.calls[0][0] as {
+      onConfirm: () => void;
+    };
+    dirtyPayload.onConfirm();
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    openConfirmDialogMock.mockReset();
+    const setIsClosing = vi.fn();
+    rerender({ dirty: false });
+
+    act(() => {
+      result.current.handleCancel(setIsClosing);
+    });
+
+    expect(openConfirmDialogMock).not.toHaveBeenCalled();
+    expect(setIsClosing).toHaveBeenCalledWith(true);
+  });
 });

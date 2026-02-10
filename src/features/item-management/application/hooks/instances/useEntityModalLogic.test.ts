@@ -568,4 +568,43 @@ describe('useEntityModalLogic', () => {
     rerender(false);
     expect(result.current.contextValue.comparison.isOpen).toBe(false);
   });
+
+  it('handles empty initialData fields and goBack branch while in history mode', async () => {
+    const { result } = renderHook(() =>
+      useEntityModalLogic({
+        isOpen: true,
+        onClose: vi.fn(),
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        entityName: 'Kategori',
+        initialData: {
+          id: 'cat-empty',
+          code: undefined,
+          name: undefined,
+          description: undefined,
+          address: undefined,
+          updated_at: '2025-01-01T00:00:00.000Z',
+        } as never,
+      })
+    );
+
+    await flushTimers();
+    await flushTimers(100);
+
+    expect(result.current.contextValue.form.code).toBe('');
+    expect(result.current.contextValue.form.name).toBeUndefined();
+
+    act(() => {
+      result.current.contextValue.uiActions.openHistory(
+        'item_categories',
+        'cat-empty'
+      );
+    });
+    act(() => {
+      result.current.contextValue.uiActions.openComparison(baseVersion);
+      result.current.contextValue.uiActions.goBack();
+    });
+
+    await flushTimers(250);
+    expect(result.current.contextValue.ui.mode).toBe('edit');
+  });
 });

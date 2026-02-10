@@ -127,4 +127,90 @@ describe('useItemFormReset', () => {
     expect(setSellPrice).toHaveBeenCalledWith(0);
     expect(clearCache).toHaveBeenCalledTimes(1);
   });
+
+  it('uses fallback values for missing conversion fields in edit mode', () => {
+    const addPackageConversion = vi.fn();
+    const setBaseUnit = vi.fn();
+
+    const { result } = renderHook(() =>
+      useItemFormReset({
+        formState: {
+          resetForm: vi.fn(),
+          isEditMode: true,
+          initialFormData: {
+            unit_id: 'unit-base',
+            base_price: undefined,
+            sell_price: undefined,
+          } as never,
+          initialPackageConversions: [
+            {
+              unit_name: 'Strip',
+              conversion_rate: 2,
+            },
+          ] as never,
+          units: [
+            { id: 'unit-base', name: 'Base' },
+            { id: 'unit-strip', name: 'Strip' },
+          ] as never,
+        },
+        packageConversionHook: {
+          resetConversions: vi.fn(),
+          setBaseUnit,
+          setBasePrice: vi.fn(),
+          setSellPrice: vi.fn(),
+          skipNextRecalculation: vi.fn(),
+          addPackageConversion,
+        },
+        cache: {
+          clearCache: vi.fn(),
+        },
+      })
+    );
+
+    act(() => {
+      result.current.resetForm();
+    });
+
+    expect(addPackageConversion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.stringContaining('temp-'),
+        base_price: 0,
+        sell_price: 0,
+      })
+    );
+    expect(setBaseUnit).toHaveBeenCalledWith('Base');
+
+    const { result: noUnitMatchResult } = renderHook(() =>
+      useItemFormReset({
+        formState: {
+          resetForm: vi.fn(),
+          isEditMode: true,
+          initialFormData: {
+            unit_id: 'unknown-unit',
+            base_price: 1,
+            sell_price: 2,
+          } as never,
+          initialPackageConversions: [] as never,
+          units: [{ id: 'unit-strip', name: 'Strip' }] as never,
+        },
+        packageConversionHook: {
+          resetConversions: vi.fn(),
+          setBaseUnit,
+          setBasePrice: vi.fn(),
+          setSellPrice: vi.fn(),
+          skipNextRecalculation: vi.fn(),
+          addPackageConversion: vi.fn(),
+        },
+        cache: {
+          clearCache: vi.fn(),
+        },
+      })
+    );
+
+    act(() => {
+      noUnitMatchResult.current.resetForm();
+    });
+
+    expect(setBaseUnit).toHaveBeenCalledWith('');
+  });
 });

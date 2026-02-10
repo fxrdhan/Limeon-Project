@@ -87,6 +87,22 @@ describe('useColumnState', () => {
     ).toBeNull();
   });
 
+  it('ignores state updates without columnVisibility payload', () => {
+    const { result } = renderHook(() =>
+      useColumnState({ tableType: 'items', enabled: true })
+    );
+
+    act(() => {
+      result.current.onStateUpdated({ state: {} } as never);
+      result.current.onGridPreDestroyed({ state: {} } as never);
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(
+      localStorage.getItem('pharmasys_entity_column_visibility_items')
+    ).toBeNull();
+  });
+
   it('skips persistence when disabled and supports helper utilities', () => {
     const { result } = renderHook(() =>
       useColumnState({ tableType: 'types', enabled: false })

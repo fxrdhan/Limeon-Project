@@ -132,13 +132,20 @@ describe('useEntityManager', () => {
   });
 
   it('resets state on activeEntityType prop change while preserving itemsPerPage', async () => {
+    const input = document.createElement('input');
+    input.value = 'seed';
+
     const { result, rerender } = renderHook(
       ({
         activeEntityType,
       }: {
         activeEntityType: 'categories' | 'manufacturers';
-      }) => useEntityManager({ activeEntityType }),
-      { initialProps: { activeEntityType: 'categories' as const } }
+      }) =>
+        useEntityManager({
+          activeEntityType,
+          searchInputRef: { current: input },
+        }),
+      { initialProps: { activeEntityType: 'categories' } }
     );
 
     act(() => {
@@ -157,5 +164,65 @@ describe('useEntityManager', () => {
     expect(result.current.search).toBe('');
     expect(result.current.currentPage).toBe(1);
     expect(result.current.isAddModalOpen).toBe(false);
+  });
+
+  it('covers close modal actions and reject path from delete confirm', async () => {
+    const { result } = renderHook(() => useEntityManager());
+
+    act(() => {
+      result.current.openAddModal();
+      result.current.closeAddModal();
+      result.current.openEditModal({ id: 'e-1', name: 'Entity' } as never);
+      result.current.closeEditModal();
+    });
+
+    expect(result.current.isAddModalOpen).toBe(false);
+    expect(result.current.isEditModalOpen).toBe(false);
+
+    deleteMutateAsyncMock.mockRejectedValueOnce(new Error('delete failed'));
+
+    let confirmConfig:
+      | {
+          onConfirm: () => Promise<void>;
+        }
+      | undefined;
+
+    openConfirmDialogMock.mockImplementation(config => {
+      confirmConfig = config as {
+        onConfirm: () => Promise<void>;
+      };
+    });
+
+    const promise = result.current.handleDelete({
+      id: 'bad-1',
+      name: 'Bad',
+    } as never);
+
+    const rejection = expect(promise).rejects.toThrow('delete failed');
+
+    await act(async () => {
+      await confirmConfig?.onConfirm();
+    });
+
+    await rejection;
+  });
+
+  it('does not reset when selecting the same entity type', () => {
+    const onEntityChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useEntityManager({
+        activeEntityType: 'categories',
+        onEntityChange,
+      })
+    );
+
+    act(() => {
+      result.current.handleSearch('persist');
+      result.current.handleEntityTypeChange('categories');
+    });
+
+    expect(result.current.search).toBe('persist');
+    expect(onEntityChange).not.toHaveBeenCalled();
   });
 });

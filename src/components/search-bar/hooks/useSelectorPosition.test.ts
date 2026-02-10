@@ -107,7 +107,13 @@ describe('useSelectorPosition', () => {
     const anchorRef = { current: anchor };
 
     const { result, rerender } = renderHook(
-      ({ anchorAlign, anchorOffsetRatio }) =>
+      ({
+        anchorAlign,
+        anchorOffsetRatio,
+      }: {
+        anchorAlign: 'left' | 'right' | 'center';
+        anchorOffsetRatio?: number;
+      }) =>
         useSelectorPosition({
           isOpen: true,
           containerRef,
@@ -128,18 +134,33 @@ describe('useSelectorPosition', () => {
     });
     expect(result.current).toEqual({ top: 60, left: 150 });
 
-    rerender({ anchorAlign: 'center' as const, anchorOffsetRatio: undefined });
+    rerender({
+      anchorAlign: 'center',
+      anchorOffsetRatio: undefined,
+    } as unknown as { anchorAlign: 'right'; anchorOffsetRatio: undefined });
     act(() => {
       vi.runAllTimers();
     });
     expect(result.current).toEqual({ top: 60, left: 125 });
 
-    rerender({ anchorAlign: 'left' as const, anchorOffsetRatio: 0.2 });
+    rerender({
+      anchorAlign: 'left',
+      anchorOffsetRatio: 0.2,
+    } as unknown as { anchorAlign: 'right'; anchorOffsetRatio: undefined });
     act(() => {
       vi.runAllTimers();
     });
     expect(result.current).toEqual({ top: 60, left: 110 });
     expect(observeMock).toHaveBeenCalledWith(anchor);
+
+    rerender({
+      anchorAlign: 'left',
+      anchorOffsetRatio: undefined,
+    } as unknown as { anchorAlign: 'right'; anchorOffsetRatio: undefined });
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(result.current).toEqual({ top: 60, left: 100 });
   });
 
   it('updates on resize/scroll and cleans listeners plus observers on unmount', () => {

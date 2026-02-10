@@ -101,6 +101,10 @@ describe('useFieldFocus', () => {
 
     expect(focusSpy).not.toHaveBeenCalled();
 
+    input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    flushRaf();
+    expect(focusSpy).not.toHaveBeenCalled();
+
     plainDiv.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     flushRaf();
 

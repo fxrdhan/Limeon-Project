@@ -109,6 +109,21 @@ describe('validationUtils', () => {
     };
 
     expect(isFilterSearchValid(invalidFallbackType)).toBe(false);
+
+    const invalidMultiRange: FilterSearch = {
+      ...validMulti,
+      conditions: [
+        {
+          field: 'stock',
+          operator: 'inRange',
+          value: '10',
+          valueTo: 'abc',
+          column: numberColumn,
+        },
+      ],
+    };
+
+    expect(isFilterSearchValid(invalidMultiRange)).toBe(false);
   });
 
   it('validates nested filter groups recursively', () => {
@@ -169,6 +184,25 @@ describe('validationUtils', () => {
     };
 
     expect(isFilterSearchValid(invalidFilter)).toBe(false);
+
+    const invalidPrimaryValue: FilterSearch = {
+      ...filter,
+      filterGroup: {
+        kind: 'group',
+        join: 'AND',
+        nodes: [
+          {
+            kind: 'condition',
+            field: 'price',
+            operator: 'equals',
+            value: '',
+            column: currencyColumn,
+          },
+        ],
+      },
+    };
+
+    expect(isFilterSearchValid(invalidPrimaryValue)).toBe(false);
     expect(isFilterSearchValid(null)).toBe(false);
     expect(isFilterSearchValid(undefined)).toBe(false);
   });

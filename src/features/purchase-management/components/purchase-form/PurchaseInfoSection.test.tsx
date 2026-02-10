@@ -217,4 +217,21 @@ describe('PurchaseInfoSection', () => {
 
     expect(screen.getByTestId('due-date-min')).toHaveTextContent('2026-04-01');
   });
+
+  it('omits minimum due date when purchase date is empty', () => {
+    render(
+      <PurchaseInfoSection
+        formData={{
+          ...baseFormData,
+          date: '',
+          due_date: null,
+        }}
+        suppliers={suppliers}
+        invoiceNumberInputRef={createRef<HTMLInputElement>()}
+        handleChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('due-date-min')).toHaveTextContent('none');
+  });
 });

@@ -385,6 +385,13 @@ describe('PurchaseListPage', () => {
     expect(screen.getByTestId('add-purchase-portal')).toHaveTextContent(
       'add-open:true'
     );
+
+    act(() => {
+      captured.uploadPortalProps?.onClose();
+    });
+    expect(screen.getByTestId('upload-portal')).toHaveTextContent(
+      'upload-open:false'
+    );
   });
 
   it('handles queryFn, empty-search states, and pagination/search updates', async () => {
@@ -411,6 +418,14 @@ describe('PurchaseListPage', () => {
     });
     await expect(captured.latestQueryConfig?.queryFn()).rejects.toThrow(
       'fetch-error'
+    );
+
+    getPaginatedPurchasesMock.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+    await expect(captured.latestQueryConfig?.queryFn()).rejects.toThrow(
+      'Gagal memuat data pembelian'
     );
 
     fireEvent.change(screen.getByLabelText('purchase-search'), {
@@ -475,15 +490,23 @@ describe('PurchaseListPage', () => {
           payment_status: 'unknown-status',
           payment_method: 'unknown-method',
         }),
+        makePurchase({
+          id: 'pur-4',
+          invoice_number: 'INV-004',
+          payment_status: 'unpaid',
+          payment_method: 'cash',
+        }),
       ],
-      totalItems: 3,
+      totalItems: 4,
     };
 
     render(<PurchaseListPage />);
 
     expect(screen.getByText('Lunas')).toBeInTheDocument();
     expect(screen.getByText('Sebagian')).toBeInTheDocument();
+    expect(screen.getByText('Belum Bayar')).toBeInTheDocument();
     expect(screen.getByText('unknown-status')).toBeInTheDocument();
+    expect(screen.getByText('Tunai')).toBeInTheDocument();
     expect(screen.getByText('Transfer')).toBeInTheDocument();
     expect(screen.getByText('Kredit')).toBeInTheDocument();
     expect(screen.getByText('unknown-method')).toBeInTheDocument();
@@ -494,7 +517,7 @@ describe('PurchaseListPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sort-reverse' }));
     const rowsAfterSort = screen.getAllByRole('row');
-    expect(rowsAfterSort[1]).toHaveTextContent('INV-003');
+    expect(rowsAfterSort[1]).toHaveTextContent('INV-004');
 
     const deleteButtons = Array.from(
       document.querySelectorAll('button[variant="danger"]')
@@ -515,7 +538,7 @@ describe('PurchaseListPage', () => {
       await confirmConfig.onConfirm();
     });
 
-    expect(deletePurchaseWithStockRestoreMock).toHaveBeenCalledWith('pur-3');
+    expect(deletePurchaseWithStockRestoreMock).toHaveBeenCalledWith('pur-4');
     expect(invalidateQueriesMock).toHaveBeenCalledWith({
       queryKey: ['purchases'],
     });

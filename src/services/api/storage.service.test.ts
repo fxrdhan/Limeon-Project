@@ -150,6 +150,13 @@ describe('StorageService', () => {
         'profiles'
       )
     ).toBeNull();
+
+    expect(
+      StorageService.extractPathFromUrl(
+        'https://x.supabase.co/no-match',
+        null as never
+      )
+    ).toBeNull();
   });
 
   it('returns public URL from bucket/path', () => {

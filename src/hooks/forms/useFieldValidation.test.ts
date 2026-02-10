@@ -96,4 +96,29 @@ describe('useFieldValidation', () => {
       showError: false,
     });
   });
+
+  it('ignores non-Zod errors thrown by schema.parse', () => {
+    const schema = {
+      parse: () => {
+        throw new Error('unexpected parser error');
+      },
+    } as unknown as z.ZodSchema;
+
+    const { result } = renderHook(() =>
+      useFieldValidation({
+        schema,
+        value: 'abc',
+      })
+    );
+
+    act(() => {
+      result.current.forceValidate();
+    });
+
+    expect(result.current.validation).toMatchObject({
+      isValid: true,
+      error: null,
+      showError: false,
+    });
+  });
 });

@@ -194,6 +194,7 @@ describe('useMasterDataManagement', () => {
         code: 'SUP-003',
         name: 'Supplier Gamma',
         address: 'Surabaya',
+        description: 'desc gamma',
       });
     });
 
@@ -202,6 +203,7 @@ describe('useMasterDataManagement', () => {
         code: 'SUP-003',
         name: 'Supplier Gamma',
         address: 'Surabaya',
+        description: 'desc gamma',
       })
     );
     expect(refetchMock).toHaveBeenCalled();
@@ -870,6 +872,30 @@ describe('useMasterDataManagement', () => {
     expect(tieByName.result.current.data.map(item => item.id)).toEqual([
       'tie-name-a',
       'tie-name-b',
+    ]);
+
+    useSuppliersMock.mockReturnValue({
+      data: [
+        { id: 'score-zero-1', code: '', name: 'phone route', phone: '08111' },
+        { id: 'score-zero-2', code: '', name: 'phone route 2', phone: '08111' },
+      ],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: refetchMock,
+      isFetching: false,
+      isPlaceholderData: false,
+    });
+    const scoreZeroSort = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+    act(() => {
+      scoreZeroSort.result.current.setSearch('08111');
+      vi.advanceTimersByTime(300);
+    });
+    expect(scoreZeroSort.result.current.data.map(item => item.id)).toEqual([
+      'score-zero-1',
+      'score-zero-2',
     ]);
   });
 });

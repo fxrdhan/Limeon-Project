@@ -306,4 +306,170 @@ describe('usePurchaseForm', () => {
     alertSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
+
+  it('logs supplier/profile fetch failures and keeps suppliers empty', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    getActiveSuppliersMock.mockResolvedValueOnce({
+      data: null,
+      error: new Error('supplier failed'),
+    });
+    getProfileMock.mockResolvedValueOnce({
+      data: null,
+      error: new Error('profile failed'),
+    });
+
+    const { result } = renderHook(() => usePurchaseForm());
+
+    await waitFor(() => {
+      expect(getActiveSuppliersMock).toHaveBeenCalled();
+      expect(getProfileMock).toHaveBeenCalled();
+    });
+
+    expect(result.current.suppliers).toEqual([]);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles unit conversion fallback branches and ignores unknown item updates', async () => {
+    const { result } = renderHook(() => usePurchaseForm());
+
+    await waitFor(() => {
+      expect(getActiveSuppliersMock).toHaveBeenCalled();
+    });
+
+    act(() => {
+      result.current.addItem(
+        makeItem({
+          id: 'row-a',
+          item_id: 'item-a',
+          quantity: 4,
+          discount: 25,
+          price: 200,
+        })
+      );
+    });
+    act(() => {
+      result.current.addItem(
+        makeItem({
+          id: 'row-b',
+          item_id: 'item-b',
+          quantity: 1,
+          discount: 0,
+          price: 100,
+        })
+      );
+    });
+
+    act(() => {
+      result.current.handleUnitChange('row-a', 'Pack', itemId => {
+        if (itemId === 'item-a') {
+          return {
+            base_price: 200,
+            base_unit: 'Unit',
+            package_conversions: [
+              {
+                conversion_rate: 5,
+                base_price: 0,
+                unit: { name: 'Pack' },
+              },
+            ],
+          } as never;
+        }
+        return undefined;
+      });
+    });
+
+    const rowAAfterConversion = result.current.purchaseItems.find(
+      item => item.id === 'row-a'
+    );
+    expect(rowAAfterConversion?.price).toBe(40);
+    expect(rowAAfterConversion?.subtotal).toBe(120);
+    expect(rowAAfterConversion?.unit_conversion_rate).toBe(5);
+
+    act(() => {
+      result.current.handleUnitChange(
+        'row-b',
+        'Unit',
+        () =>
+          ({
+            base_price: 100,
+            base_unit: 'Unit',
+            package_conversions: null,
+          }) as never
+      );
+      result.current.handleUnitChange('row-b', 'Box', () => undefined);
+      result.current.updateItem('missing-id', 'price', 999);
+      result.current.updateItemVat('missing-id', 20);
+    });
+
+    const rowBAfterUpdates = result.current.purchaseItems.find(
+      item => item.id === 'row-b'
+    );
+    expect(rowBAfterUpdates?.price).toBe(100);
+  });
+
+  it('handles empty validation errors fallback message', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    validatePurchaseFormMock.mockReturnValue({
+      isValid: false,
+      formErrors: [],
+      itemErrors: [],
+    });
+
+    const { result } = renderHook(() => usePurchaseForm());
+    await waitFor(() => {
+      expect(getActiveSuppliersMock).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('Form tidak valid.');
+    alertSpy.mockRestore();
+  });
+
+  it('handles supplier/profile fetch exceptions and create submit exception', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    getActiveSuppliersMock.mockRejectedValueOnce(new Error('supplier throw'));
+    getProfileMock.mockRejectedValueOnce(new Error('profile throw'));
+
+    const { result } = renderHook(() => usePurchaseForm());
+
+    await waitFor(() => {
+      expect(getActiveSuppliersMock).toHaveBeenCalled();
+      expect(getProfileMock).toHaveBeenCalled();
+    });
+
+    createPurchaseWithItemsMock.mockRejectedValueOnce(
+      new Error('create throw')
+    );
+
+    act(() => {
+      result.current.handleChange({
+        target: { name: 'supplier_id', value: 'sup-1', type: 'text' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.addItem(makeItem());
+    });
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Gagal menyimpan pembelian. Silakan coba lagi.'
+    );
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    alertSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+  });
 });
