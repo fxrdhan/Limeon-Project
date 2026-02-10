@@ -12,6 +12,8 @@ const IdentityModalContent: React.FC = () => {
     formattedUpdateAt,
     fields,
     isSubmitting,
+    isDirty,
+    loadingField,
     localData,
     showImageUploader,
     useInlineFieldActions,
@@ -20,6 +22,11 @@ const IdentityModalContent: React.FC = () => {
     handleSaveAll,
     handleCloseModal,
   } = useIdentityModalContext();
+
+  const isAutosaving = Object.values(loadingField).some(Boolean);
+  const isEditFullFormMode = mode === 'edit' && !useInlineFieldActions;
+  const isSaveDisabled =
+    isSubmitting || isAutosaving || (isEditFullFormMode && !isDirty);
 
   return (
     <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4 flex flex-col">
@@ -78,15 +85,13 @@ const IdentityModalContent: React.FC = () => {
             type="button"
             variant="primary"
             onClick={handleSaveAll}
-            disabled={isSubmitting}
+            disabled={isSaveDisabled}
           >
-            {isSubmitting ? (
+            {isSubmitting || isAutosaving ? (
               <span className="flex items-center">
                 <TbLoader2 className="animate-spin mr-2" />
                 Menyimpan...
               </span>
-            ) : mode === 'edit' ? (
-              'Update'
             ) : (
               'Simpan'
             )}

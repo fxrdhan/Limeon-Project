@@ -74,6 +74,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     isUploadingImage,
     loadingField,
     isSubmitting,
+    isDirty,
     localData,
     toggleEdit,
     handleChange,
@@ -157,6 +158,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     isUploadingImage,
     loadingField,
     isSubmitting,
+    isDirty,
     localData: localData as Record<string, string | number | boolean | null>,
 
     // UI State

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { FieldConfig } from '@/types';
 
 interface UseIdentityFormProps {
@@ -317,6 +317,25 @@ export const useIdentityForm = ({
     }
   }, [onImageDeleteProp, mode, initialData]);
 
+  const isDirty = useMemo(() => {
+    if (mode !== 'edit' || useInlineFieldActions) {
+      return true;
+    }
+
+    return fields.some(field => {
+      const key = field.key;
+      const currentValue = editValues[key];
+      const savedValue = localData[key];
+
+      const normalizeValue = (value: unknown) => {
+        if (value === null || value === undefined) return '';
+        return String(value);
+      };
+
+      return normalizeValue(currentValue) !== normalizeValue(savedValue);
+    });
+  }, [mode, useInlineFieldActions, fields, editValues, localData]);
+
   return {
     editMode,
     editValues,
@@ -324,6 +343,7 @@ export const useIdentityForm = ({
     isUploadingImage,
     loadingField,
     isSubmitting,
+    isDirty,
     localData,
     toggleEdit,
     handleChange,

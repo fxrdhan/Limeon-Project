@@ -44,6 +44,7 @@ describe('IdentityDataModal', () => {
         isUploadingImage: false,
         loadingField: {},
         isSubmitting: false,
+        isDirty: false,
         localData: {},
         title: 'Context Title',
         mode: 'edit',

@@ -21,6 +21,7 @@ const baseIdentityFormState = () => ({
   isUploadingImage: false,
   loadingField: { name: false },
   isSubmitting: false,
+  isDirty: false,
   localData: { id: 'id-1', name: 'Awal' },
   toggleEdit: vi.fn(),
   handleChange: vi.fn(),

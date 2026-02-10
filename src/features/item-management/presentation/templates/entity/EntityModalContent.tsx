@@ -93,6 +93,7 @@ const EntityModalFooter: React.FC<{
   const { handleClose } = uiActions;
 
   const isDisabled = isLoading || !isValid || (isEditMode && !isDirty);
+  const submitLabel = 'Simpan';
 
   // Special footer for history mode with toggle button
   if (mode === 'history') {
@@ -138,7 +139,7 @@ const EntityModalFooter: React.FC<{
           isLoading={isLoading}
           disabled={isDisabled}
         >
-          {isEditMode ? 'Update' : 'Simpan'}
+          {submitLabel}
         </Button>
       </div>
     </div>

@@ -37,6 +37,7 @@ const buildContext = (overrides: Record<string, unknown> = {}) => ({
   isUploadingImage: false,
   loadingField: {},
   isSubmitting: false,
+  isDirty: false,
   localData: { id: 'id-1', name: 'Entity Name' },
   title: 'Detail Entity',
   mode: 'edit' as const,
@@ -127,6 +128,7 @@ describe('IdentityModalContent', () => {
     const contextValue = buildContext({
       useInlineFieldActions: false,
       isSubmitting: false,
+      isDirty: true,
     });
 
     render(
@@ -141,7 +143,7 @@ describe('IdentityModalContent', () => {
     expect(
       screen.getByRole('button', { name: 'Hapus Data' })
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Simpan' }));
     expect(contextValue.handleSaveAll).toHaveBeenCalledTimes(1);
   });
 });

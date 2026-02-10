@@ -206,7 +206,7 @@ describe('EntityModalContent', () => {
       )
     );
     fireEvent.click(screen.getByRole('button', { name: 'Hapus' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Simpan' }));
 
     expect(ctx.uiActions.openHistory).toHaveBeenCalledWith(
       'item_categories',
@@ -216,7 +216,7 @@ describe('EntityModalContent', () => {
     expect(ctx.formActions.handleSubmit).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back history table map and disables update when form is not submittable', () => {
+  it('falls back history table map and disables submit when form is not submittable', () => {
     const ctx = buildContext({
       ui: { mode: 'edit', entityName: 'Unknown Entity', isEditMode: true },
       form: { isDirty: false, isValid: true },
@@ -238,7 +238,7 @@ describe('EntityModalContent', () => {
     );
 
     expect(ctx.uiActions.openHistory).toHaveBeenCalledWith('items', 'raw-1');
-    expect(screen.getByRole('button', { name: 'Update' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Simpan' })).toBeDisabled();
   });
 
   it('renders history mode controls, toggles compare mode, and switches mode across rerenders', () => {

@@ -14,6 +14,7 @@ const createContextValue = (): IdentityModalContextValue => ({
   isUploadingImage: false,
   loadingField: {},
   isSubmitting: false,
+  isDirty: false,
   localData: {},
   title: 'Identity',
   mode: 'edit',

@@ -9,6 +9,7 @@ export interface IdentityModalContextValue {
   isUploadingImage: boolean;
   loadingField: Record<string, boolean>;
   isSubmitting: boolean;
+  isDirty: boolean;
   localData: Record<string, string | number | boolean | null>;
 
   // UI State
