@@ -20,6 +20,9 @@ const refetchMock = vi.hoisted(() => vi.fn());
 const createSupplierMutateAsyncMock = vi.hoisted(() => vi.fn());
 const updateSupplierMutateAsyncMock = vi.hoisted(() => vi.fn());
 const deleteSupplierMutateAsyncMock = vi.hoisted(() => vi.fn());
+const uploadFileMock = vi.hoisted(() => vi.fn());
+const deleteEntityImageMock = vi.hoisted(() => vi.fn());
+const extractPathFromUrlMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/components/dialog-box', () => ({
   useConfirmDialog: () => ({
@@ -46,6 +49,14 @@ vi.mock('@/hooks/queries', () => ({
   useDoctorMutations: useDoctorMutationsMock,
   useCustomers: useCustomersMock,
   useCustomerMutations: useCustomerMutationsMock,
+}));
+
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: {
+    uploadFile: (...args: unknown[]) => uploadFileMock(...args),
+    deleteEntityImage: (...args: unknown[]) => deleteEntityImageMock(...args),
+    extractPathFromUrl: (...args: unknown[]) => extractPathFromUrlMock(...args),
+  },
 }));
 
 const supplierRows = [
@@ -90,6 +101,9 @@ describe('useMasterDataManagement', () => {
     createSupplierMutateAsyncMock.mockReset();
     updateSupplierMutateAsyncMock.mockReset();
     deleteSupplierMutateAsyncMock.mockReset();
+    uploadFileMock.mockReset();
+    deleteEntityImageMock.mockReset();
+    extractPathFromUrlMock.mockReset();
 
     fuzzyMatchMock.mockImplementation((text: string, term: string) =>
       String(text).toLowerCase().includes(String(term).toLowerCase())
@@ -145,6 +159,12 @@ describe('useMasterDataManagement', () => {
     createSupplierMutateAsyncMock.mockResolvedValue({ id: 'sup-3' });
     updateSupplierMutateAsyncMock.mockResolvedValue({ id: 'sup-1' });
     deleteSupplierMutateAsyncMock.mockResolvedValue({ id: 'sup-1' });
+    uploadFileMock.mockResolvedValue({
+      publicUrl: 'https://cdn.example.com/profiles/suppliers/sup-1/image.jpg',
+      path: 'suppliers/sup-1/image.jpg',
+    });
+    deleteEntityImageMock.mockResolvedValue(undefined);
+    extractPathFromUrlMock.mockReturnValue('suppliers/sup-1/old-image.jpg');
   });
 
   it('filters, paginates, and supports enter-key edit flow', () => {
@@ -264,6 +284,49 @@ describe('useMasterDataManagement', () => {
     });
 
     expect(updateSupplierMutateAsyncMock).not.toHaveBeenCalled();
+  });
+
+  it('uploads and deletes supplier image with silent DB sync', async () => {
+    const { result } = renderHook(() =>
+      useMasterDataManagement('suppliers', 'Supplier')
+    );
+
+    await act(async () => {
+      result.current.handleEdit(supplierRows[0]);
+    });
+
+    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      await result.current.handleImageSave({ entityId: 'sup-1', file });
+    });
+
+    expect(uploadFileMock).toHaveBeenCalledWith(
+      'profiles',
+      file,
+      'suppliers/sup-1/image.jpg'
+    );
+    expect(updateSupplierMutateAsyncMock).toHaveBeenCalledWith({
+      id: 'sup-1',
+      data: {
+        image_url: 'https://cdn.example.com/profiles/suppliers/sup-1/image.jpg',
+      },
+      options: { silent: true },
+    });
+
+    updateSupplierMutateAsyncMock.mockClear();
+    await act(async () => {
+      await result.current.handleImageDelete('sup-1');
+    });
+
+    expect(deleteEntityImageMock).toHaveBeenCalledWith(
+      'profiles',
+      'suppliers/sup-1/old-image.jpg'
+    );
+    expect(updateSupplierMutateAsyncMock).toHaveBeenCalledWith({
+      id: 'sup-1',
+      data: { image_url: null },
+      options: { silent: true },
+    });
   });
 
   it('handles delete errors, add-modal enter flow, and unsupported table', async () => {

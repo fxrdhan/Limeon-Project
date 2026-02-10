@@ -212,7 +212,9 @@ describe('useIdentityForm', () => {
     });
     expect(addMode.result.current.currentImageUrl).toBeUndefined();
 
-    const onImageSave = vi.fn().mockResolvedValue(undefined);
+    const onImageSave = vi
+      .fn()
+      .mockResolvedValue('https://img.example.com/new.png');
     const onImageDelete = vi.fn().mockResolvedValue(undefined);
     const editModeProps = makeProps({
       mode: 'edit',
@@ -227,6 +229,12 @@ describe('useIdentityForm', () => {
       await editMode.result.current.handleImageUpload(file);
     });
     expect(onImageSave).toHaveBeenCalledWith({ entityId: 'entity-1', file });
+    expect(editMode.result.current.currentImageUrl).toBe(
+      'https://img.example.com/new.png'
+    );
+    expect(editMode.result.current.localData.image_url).toBe(
+      'https://img.example.com/new.png'
+    );
 
     await act(async () => {
       await editMode.result.current.handleImageDeleteInternal();

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { fuzzyMatch } from '@/utils/search';
 import { useAlert } from '@/components/alert/hooks';
+import { StorageService } from '@/services/api/storage.service';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type {
   Supplier,
@@ -26,6 +27,8 @@ import {
 } from '@/hooks/queries';
 
 type MasterDataIdentity = Supplier | Patient | Doctor | Customer;
+const IDENTITY_IMAGE_BUCKET = 'profiles';
+const IMAGE_ENABLED_TABLES = new Set(['suppliers', 'patients', 'doctors']);
 
 // Simplified hook selector - realtime always enabled for simplicity
 const getHooksForTable = (tableName: string) => {
@@ -458,6 +461,19 @@ export const useMasterDataManagement = (
     [tableName]
   );
 
+  const getIdentityImageUrl = useCallback(
+    (identity: MasterDataIdentity | null | undefined): string | null => {
+      if (!identity || !('image_url' in identity)) {
+        return null;
+      }
+      const imageUrl = identity.image_url;
+      return typeof imageUrl === 'string' && imageUrl.trim() !== ''
+        ? imageUrl
+        : null;
+    },
+    []
+  );
+
   const handleFieldAutosave = useCallback(
     async (
       identityId: string | undefined,
@@ -504,6 +520,166 @@ export const useMasterDataManagement = (
       });
     },
     [getUpdateMutation, normalizeAutosaveField]
+  );
+
+  const handleImageSave = useCallback(
+    async ({
+      entityId,
+      file,
+    }: {
+      entityId?: string;
+      file: File;
+    }): Promise<string | void> => {
+      if (!entityId || !IMAGE_ENABLED_TABLES.has(tableName)) return;
+
+      const updateMutation = getUpdateMutation();
+      if (
+        !updateMutation ||
+        typeof updateMutation !== 'object' ||
+        !('mutateAsync' in updateMutation)
+      ) {
+        return;
+      }
+
+      const extension =
+        file.name.split('.').pop()?.toLowerCase().trim() || 'jpg';
+      const nextImagePath = `${tableName}/${entityId}/image.${extension}`;
+      const existingImageUrl =
+        editingIdentity?.id === entityId
+          ? getIdentityImageUrl(editingIdentity)
+          : getIdentityImageUrl(
+              (allData as MasterDataIdentity[]).find(
+                identity => identity.id === entityId
+              )
+            );
+
+      const { publicUrl } = await StorageService.uploadFile(
+        IDENTITY_IMAGE_BUCKET,
+        file,
+        nextImagePath
+      );
+
+      const oldImagePath =
+        typeof existingImageUrl === 'string'
+          ? StorageService.extractPathFromUrl(
+              existingImageUrl,
+              IDENTITY_IMAGE_BUCKET
+            )
+          : null;
+      if (oldImagePath && oldImagePath !== nextImagePath) {
+        await StorageService.deleteEntityImage(
+          IDENTITY_IMAGE_BUCKET,
+          oldImagePath
+        );
+      }
+
+      await (
+        updateMutation as unknown as {
+          mutateAsync: (params: {
+            id: string;
+            data: Record<string, unknown>;
+            options?: { silent?: boolean };
+          }) => Promise<unknown>;
+        }
+      ).mutateAsync({
+        id: entityId,
+        data: { image_url: publicUrl },
+        options: { silent: true },
+      });
+
+      setEditingIdentity(prev => {
+        if (!prev || prev.id !== entityId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          image_url: publicUrl,
+        } as MasterDataIdentity;
+      });
+
+      await refetch();
+      return publicUrl;
+    },
+    [
+      tableName,
+      getUpdateMutation,
+      editingIdentity,
+      allData,
+      refetch,
+      getIdentityImageUrl,
+    ]
+  );
+
+  const handleImageDelete = useCallback(
+    async (entityId?: string): Promise<void> => {
+      if (!entityId || !IMAGE_ENABLED_TABLES.has(tableName)) return;
+
+      const updateMutation = getUpdateMutation();
+      if (
+        !updateMutation ||
+        typeof updateMutation !== 'object' ||
+        !('mutateAsync' in updateMutation)
+      ) {
+        return;
+      }
+
+      const existingImageUrl =
+        editingIdentity?.id === entityId
+          ? getIdentityImageUrl(editingIdentity)
+          : getIdentityImageUrl(
+              (allData as MasterDataIdentity[]).find(
+                identity => identity.id === entityId
+              )
+            );
+
+      const oldImagePath =
+        typeof existingImageUrl === 'string'
+          ? StorageService.extractPathFromUrl(
+              existingImageUrl,
+              IDENTITY_IMAGE_BUCKET
+            )
+          : null;
+      if (oldImagePath) {
+        await StorageService.deleteEntityImage(
+          IDENTITY_IMAGE_BUCKET,
+          oldImagePath
+        );
+      }
+
+      await (
+        updateMutation as unknown as {
+          mutateAsync: (params: {
+            id: string;
+            data: Record<string, unknown>;
+            options?: { silent?: boolean };
+          }) => Promise<unknown>;
+        }
+      ).mutateAsync({
+        id: entityId,
+        data: { image_url: null },
+        options: { silent: true },
+      });
+
+      setEditingIdentity(prev => {
+        if (!prev || prev.id !== entityId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          image_url: null,
+        } as MasterDataIdentity;
+      });
+
+      await refetch();
+    },
+    [
+      tableName,
+      getUpdateMutation,
+      editingIdentity,
+      allData,
+      refetch,
+      getIdentityImageUrl,
+    ]
   );
 
   const handleModalSubmit = useCallback(
@@ -732,6 +908,8 @@ export const useMasterDataManagement = (
     handleModalSubmit,
     handleDelete,
     handleFieldAutosave,
+    handleImageSave,
+    handleImageDelete,
     handlePageChange,
     handleItemsPerPageChange: handleIdentitiesPerPageChange,
     handleKeyDown,

@@ -301,7 +301,10 @@ export interface GenericIdentityModalProps {
     data: Record<string, string | number | boolean | null>
   ) => Promise<void>;
   onFieldSave?: (key: string, value: unknown) => Promise<void>;
-  onImageSave?: (data: { entityId?: string; file: File }) => Promise<void>;
+  onImageSave?: (data: {
+    entityId?: string;
+    file: File;
+  }) => Promise<string | void>;
   onImageDelete?: (entityId: string) => Promise<void>;
   imageUrl?: string;
   defaultImageUrl?: string;

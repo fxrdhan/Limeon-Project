@@ -39,6 +39,8 @@ const PatientListNew = () => {
     itemsPerPage,
     handleDelete,
     handleFieldAutosave,
+    handleImageSave,
+    handleImageDelete,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -265,6 +267,8 @@ const PatientListNew = () => {
         }
         mode="edit"
         imageUrl={(editingItem as PatientType)?.image_url || undefined}
+        onImageSave={handleImageSave}
+        onImageDelete={handleImageDelete}
         useInlineFieldActions={false}
       />
     </MasterDataListPage>

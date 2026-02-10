@@ -372,6 +372,8 @@ const ItemMasterNew = memo(() => {
     handleEdit: handlePatientEdit,
     handleModalSubmit: handlePatientModalSubmit,
     handleFieldAutosave: handlePatientFieldAutosave,
+    handleImageSave: handlePatientImageSave,
+    handleImageDelete: handlePatientImageDelete,
     handleDelete: handlePatientDelete,
     debouncedSearch: patientDebouncedSearch,
     handleKeyDown: handlePatientKeyDown,
@@ -392,6 +394,8 @@ const ItemMasterNew = memo(() => {
     handleEdit: handleDoctorEdit,
     handleModalSubmit: handleDoctorModalSubmit,
     handleFieldAutosave: handleDoctorFieldAutosave,
+    handleImageSave: handleDoctorImageSave,
+    handleImageDelete: handleDoctorImageDelete,
     handleDelete: handleDoctorDelete,
     debouncedSearch: doctorDebouncedSearch,
     handleKeyDown: handleDoctorKeyDown,
@@ -2604,6 +2608,8 @@ const ItemMasterNew = memo(() => {
         }
         mode="edit"
         imageUrl={(editingPatient as PatientType)?.image_url || undefined}
+        onImageSave={handlePatientImageSave}
+        onImageDelete={handlePatientImageDelete}
         useInlineFieldActions={false}
       />
 
@@ -2662,6 +2668,8 @@ const ItemMasterNew = memo(() => {
         }
         mode="edit"
         imageUrl={(editingDoctor as DoctorType)?.image_url || undefined}
+        onImageSave={handleDoctorImageSave}
+        onImageDelete={handleDoctorImageDelete}
         useInlineFieldActions={false}
       />
     </>

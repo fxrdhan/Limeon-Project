@@ -40,6 +40,8 @@ const SupplierListNew = () => {
     itemsPerPage,
     handleDelete,
     handleFieldAutosave,
+    handleImageSave,
+    handleImageDelete,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
@@ -243,6 +245,8 @@ const SupplierListNew = () => {
         }
         mode="edit"
         imageUrl={(editingItem as SupplierType)?.image_url || undefined}
+        onImageSave={handleImageSave}
+        onImageDelete={handleImageDelete}
         useInlineFieldActions={false}
       />
     </MasterDataListPage>

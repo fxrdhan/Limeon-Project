@@ -160,7 +160,7 @@ const IdentityImageUploader: React.FC = () => {
           onImageUpload={handleImageUpload}
           onImageDelete={handleImageDeleteInternal}
           hasImage={hasImage}
-          disabled={isUploadingImage || mode !== 'add'}
+          disabled={isUploadingImage}
           interaction="direct"
           loadingIcon={null}
           validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}

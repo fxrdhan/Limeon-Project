@@ -8,8 +8,11 @@ interface UseIdentityFormProps {
     updatedData: Record<string, string | number | boolean | null>
   ) => Promise<void>;
   onFieldSave?: (key: string, value: unknown) => Promise<void>;
-  onImageSave?: (data: { entityId?: string; file: File }) => Promise<void>;
-  onImageDelete?: (supplierId?: string) => Promise<void>;
+  onImageSave?: (data: {
+    entityId?: string;
+    file: File;
+  }) => Promise<string | void>;
+  onImageDelete?: (entityId?: string) => Promise<void>;
   initialImageUrl?: string;
   mode?: 'edit' | 'add';
   isOpen?: boolean;
@@ -289,7 +292,14 @@ export const useIdentityForm = ({
           const tempUrl = URL.createObjectURL(file);
           setCurrentImageUrl(tempUrl);
         } else if (onImageSaveProp && initialData?.id) {
-          await onImageSaveProp({ entityId: String(initialData.id), file });
+          const uploadedUrl = await onImageSaveProp({
+            entityId: String(initialData.id),
+            file,
+          });
+          if (typeof uploadedUrl === 'string' && uploadedUrl.trim() !== '') {
+            setCurrentImageUrl(uploadedUrl);
+            setLocalData(prev => ({ ...prev, image_url: uploadedUrl }));
+          }
         }
       } catch (error) {
         console.error('Error pada handleImageUpload:', error);

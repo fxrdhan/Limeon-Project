@@ -154,7 +154,7 @@ describe('IdentityImageUploader', () => {
     expect(image.src).toContain('blob://cached-image');
     expect(image.className).toContain('aspect-square');
     expect(imageUploaderPropsStore.current?.hasImage).toBe(true);
-    expect(imageUploaderPropsStore.current?.disabled).toBe(true);
+    expect(imageUploaderPropsStore.current?.disabled).toBe(false);
   });
 
   it('falls back to cacheImageBlob/source url and handles non-http source directly', async () => {

@@ -1,8 +1,12 @@
+import React, { useEffect, useRef } from 'react';
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
 import type { useConfirmDialog } from '@/components/dialog-box';
 import type { useSupplierMutations } from '@/hooks/queries';
 
 import IdentityDataModal from '@/components/IdentityDataModal';
+import { StorageService } from '@/services/api/storage.service';
+
+const SUPPLIER_IMAGE_BUCKET = 'profiles';
 
 interface SupplierModalsProps {
   isActive: boolean;
@@ -29,6 +33,14 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
   closeAddSupplierModal,
   closeEditSupplierModal,
 }) => {
+  const latestImageUrlRef = useRef<string | null>(
+    editingSupplier?.image_url ?? null
+  );
+
+  useEffect(() => {
+    latestImageUrlRef.current = editingSupplier?.image_url ?? null;
+  }, [editingSupplier?.id, editingSupplier?.image_url]);
+
   const normalizeSupplierFieldValue = (key: string, value: unknown) => {
     if (key === 'name') {
       const normalizedName = String(value ?? '').trim();
@@ -135,6 +147,65 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         }
         mode="edit"
         imageUrl={editingSupplier?.image_url || undefined}
+        onImageSave={async ({ entityId, file }) => {
+          if (!entityId) return;
+
+          const extension =
+            file.name.split('.').pop()?.toLowerCase().trim() || 'jpg';
+          const nextImagePath = `suppliers/${entityId}/image.${extension}`;
+          const { publicUrl } = await StorageService.uploadFile(
+            SUPPLIER_IMAGE_BUCKET,
+            file,
+            nextImagePath
+          );
+
+          const oldImagePath =
+            latestImageUrlRef.current &&
+            StorageService.extractPathFromUrl(
+              latestImageUrlRef.current,
+              SUPPLIER_IMAGE_BUCKET
+            );
+          if (oldImagePath && oldImagePath !== nextImagePath) {
+            await StorageService.deleteEntityImage(
+              SUPPLIER_IMAGE_BUCKET,
+              oldImagePath
+            );
+          }
+
+          await supplierMutations.updateSupplier.mutateAsync({
+            id: entityId,
+            data: { image_url: publicUrl },
+            options: { silent: true },
+          });
+
+          latestImageUrlRef.current = publicUrl;
+          return publicUrl;
+        }}
+        onImageDelete={async entityId => {
+          if (!entityId) return;
+
+          const currentImageUrl = latestImageUrlRef.current;
+          const oldImagePath = currentImageUrl
+            ? StorageService.extractPathFromUrl(
+                currentImageUrl,
+                SUPPLIER_IMAGE_BUCKET
+              )
+            : null;
+          if (oldImagePath) {
+            await StorageService.deleteEntityImage(
+              SUPPLIER_IMAGE_BUCKET,
+              oldImagePath
+            );
+          }
+
+          await supplierMutations.updateSupplier.mutateAsync({
+            id: entityId,
+            data: { image_url: null },
+            options: { silent: true },
+          });
+
+          latestImageUrlRef.current = null;
+        }}
         useInlineFieldActions={false}
       />
     </>
