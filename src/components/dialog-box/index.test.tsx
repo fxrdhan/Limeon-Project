@@ -55,6 +55,15 @@ const Harness = ({
   );
 };
 
+const HookConsumer = () => {
+  const { closeConfirmDialog } = useConfirmDialog();
+  return (
+    <button type="button" onClick={closeConfirmDialog}>
+      close
+    </button>
+  );
+};
+
 describe('ConfirmDialog', () => {
   beforeEach(() => {
     vi.useRealTimers();
@@ -89,6 +98,9 @@ describe('ConfirmDialog', () => {
     );
 
     fireEvent.click(screen.getByText('open'));
+    fireEvent.click(screen.getByText('Konfirmasi'));
+    expect(onCancel).toHaveBeenCalledTimes(0);
+
     fireEvent.click(screen.getByRole('dialog'));
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onConfirm).not.toHaveBeenCalled();
@@ -139,6 +151,12 @@ describe('ConfirmDialog', () => {
         offsetParentDescriptor
       );
     }
+  });
+
+  it('throws when useConfirmDialog is called outside provider', () => {
+    expect(() => render(<HookConsumer />)).toThrowError(
+      'useConfirmDialog must be used within a ConfirmDialogProvider'
+    );
   });
 });
 

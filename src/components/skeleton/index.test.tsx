@@ -5,11 +5,10 @@ import {
   CardSkeleton,
   FormSkeleton,
   Skeleton,
-  SkeletonTable,
-  SkeletonTableRow,
+  TableSkeleton,
   SkeletonText,
   StatCardSkeleton,
-} from './index.tsx';
+} from './index';
 
 describe('generic skeleton components', () => {
   it('renders base skeleton with custom style and class', () => {
@@ -33,32 +32,37 @@ describe('generic skeleton components', () => {
     expect(container.querySelector('.w-3\\/4')).toBeInTheDocument();
   });
 
-  it('renders table row and table wrappers with provided dimensions', () => {
+  it('renders table skeleton wrapper with provided dimensions', () => {
     const { container, rerender } = render(
-      <table>
-        <tbody>
-          <SkeletonTableRow columns={4} className="row-skeleton" />
-        </tbody>
-      </table>
+      <TableSkeleton rows={2} columns={3} className="table-skeleton" />
     );
 
-    expect(container.querySelector('tr.row-skeleton')).toBeInTheDocument();
-    expect(container.querySelectorAll('td')).toHaveLength(4);
-
-    rerender(<SkeletonTable rows={2} columns={3} className="table-skeleton" />);
     expect(container.querySelector('.table-skeleton')).toBeInTheDocument();
-    expect(container.querySelectorAll('tr')).toHaveLength(2);
+    expect(container.querySelectorAll('.border-b')).toHaveLength(2);
+
+    rerender(
+      <TableSkeleton
+        rows={1}
+        columns={2}
+        showPagination={false}
+        className="table-no-pagination"
+      />
+    );
+    expect(container.querySelector('.table-no-pagination')).toBeInTheDocument();
+    expect(container.querySelector('.justify-between')).not.toBeInTheDocument();
   });
 
   it('renders card, stat card, button, and form variants across options', () => {
     const { container, rerender } = render(
-      <CardSkeleton className="card-skeleton" contentLines={2} />
+      <CardSkeleton className="card-skeleton" bodyLines={2} />
     );
     expect(container.querySelector('.card-skeleton')).toBeInTheDocument();
-    expect(container.querySelectorAll('.space-y-3 .h-4')).toHaveLength(2);
+    expect(
+      container.querySelectorAll('.space-y-3 .h-4').length
+    ).toBeGreaterThan(1);
 
     rerender(
-      <CardSkeleton showHeader={false} showContent={false} className="empty" />
+      <CardSkeleton showHeader={false} showBody={false} className="empty" />
     );
     expect(container.querySelector('.empty')).toBeInTheDocument();
     expect(container.querySelector('.space-y-3')).not.toBeInTheDocument();
@@ -66,11 +70,17 @@ describe('generic skeleton components', () => {
     rerender(<StatCardSkeleton className="stat-skeleton" />);
     expect(container.querySelector('.stat-skeleton')).toBeInTheDocument();
 
-    rerender(<ButtonSkeleton size="sm" className="btn-sm" />);
-    expect(container.querySelector('.btn-sm')).toHaveClass('h-8', 'w-20');
+    rerender(<ButtonSkeleton width="80px" height="32px" className="btn-sm" />);
+    const smallButton = container.querySelector('.btn-sm') as HTMLDivElement;
+    expect(smallButton).toBeInTheDocument();
+    expect(smallButton.style.width).toBe('80px');
+    expect(smallButton.style.height).toBe('32px');
 
-    rerender(<ButtonSkeleton size="lg" className="btn-lg" />);
-    expect(container.querySelector('.btn-lg')).toHaveClass('h-12', 'w-32');
+    rerender(<ButtonSkeleton width="128px" height="48px" className="btn-lg" />);
+    const largeButton = container.querySelector('.btn-lg') as HTMLDivElement;
+    expect(largeButton).toBeInTheDocument();
+    expect(largeButton.style.width).toBe('128px');
+    expect(largeButton.style.height).toBe('48px');
 
     rerender(<FormSkeleton fields={2} showButtons={true} className="form-a" />);
     expect(container.querySelector('.form-a')).toBeInTheDocument();

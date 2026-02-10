@@ -18,6 +18,7 @@ vi.mock('@/components/input', () => ({
         data-testid="calendar-input"
         value={String(props.value ?? '')}
         readOnly
+        onChange={props.onChange as React.ChangeEventHandler<HTMLInputElement>}
       />
     );
   },
@@ -71,6 +72,9 @@ describe('CalendarButton', () => {
       .nextElementSibling as HTMLElement;
     fireEvent.click(wrapper);
     fireEvent.keyDown(wrapper, { key: 'Enter' });
+    fireEvent.change(screen.getByTestId('calendar-input'), {
+      target: { value: '2026-02-08' },
+    });
 
     expect(handleTriggerClick).toHaveBeenCalledTimes(1);
     expect(handleInputKeyDown).toHaveBeenCalledTimes(1);

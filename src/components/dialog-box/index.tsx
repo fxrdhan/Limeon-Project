@@ -12,7 +12,10 @@ import React, {
   useEffect,
 } from 'react';
 
-const initialState: ConfirmDialogContextType = {
+const initialState: Omit<
+  ConfirmDialogContextType,
+  'openConfirmDialog' | 'closeConfirmDialog'
+> = {
   isOpen: false,
   title: '',
   message: '',
@@ -21,12 +24,11 @@ const initialState: ConfirmDialogContextType = {
   onConfirm: () => {},
   onCancel: () => {},
   variant: 'primary',
-  openConfirmDialog: () => {},
-  closeConfirmDialog: () => {},
 };
 
-const ConfirmDialogContext =
-  createContext<ConfirmDialogContextType>(initialState);
+const ConfirmDialogContext = createContext<
+  ConfirmDialogContextType | undefined
+>(undefined);
 
 export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -81,8 +83,20 @@ export const useConfirmDialog = () => {
 };
 
 export const ConfirmDialogComponent: React.FC = () => {
+  const context = useContext(ConfirmDialogContext);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const isOpen = context?.isOpen ?? false;
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => cancelButtonRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
+  if (!context) return null;
+
   const {
-    isOpen,
     title,
     message,
     confirmText,
@@ -91,9 +105,7 @@ export const ConfirmDialogComponent: React.FC = () => {
     onCancel,
     variant,
     closeConfirmDialog,
-  } = useContext(ConfirmDialogContext);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  } = context;
 
   const handleConfirm = () => {
     onConfirm();
@@ -110,12 +122,6 @@ export const ConfirmDialogComponent: React.FC = () => {
       handleCancel();
     }
   };
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => cancelButtonRef.current?.focus(), 50);
-    }
-  }, [isOpen]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Tab') {

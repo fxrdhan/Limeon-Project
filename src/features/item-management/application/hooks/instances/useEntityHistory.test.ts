@@ -225,4 +225,49 @@ describe('useEntityHistory', () => {
       'Version 99 not found'
     );
   });
+
+  it('handles fetch and mutation errors in history workflows', async () => {
+    fetchHistoryMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'fetch failed' },
+    });
+    const { result } = renderHook(() =>
+      useEntityHistory('item_categories', 'cat-1')
+    );
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('fetch failed');
+    });
+
+    getNextVersionNumberMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'next version failed' },
+    });
+
+    await act(async () => {
+      await result.current.addHistoryEntry('UPDATE', { id: 'cat-1' });
+    });
+
+    // Silent failure branch should not throw
+    expect(insertHistoryEntryMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ versionNumber: expect.any(Number) })
+    );
+
+    fetchHistoryMock.mockResolvedValueOnce({
+      data: makeHistory(),
+      error: null,
+    });
+    await act(async () => {
+      await result.current.fetchHistory();
+    });
+
+    softRestoreEntityMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'restore failed' },
+    });
+
+    await expect(result.current.restoreVersion(2)).rejects.toThrow(
+      'restore failed'
+    );
+  });
 });

@@ -190,4 +190,46 @@ describe('useItemModalOrchestrator', () => {
       'Gagal menyimpan produsen baru.'
     );
   });
+
+  it('handles save handlers when no updated arrays and no new ids are returned', async () => {
+    const formState = createFormState();
+    const mutations = createMutations();
+
+    mutations.saveCategory.mockResolvedValue({});
+    mutations.saveType.mockResolvedValue({});
+    mutations.saveUnit.mockResolvedValue({});
+    mutations.saveDosage.mockResolvedValue({});
+    mutations.saveManufacturer.mockResolvedValue({});
+
+    const { result } = renderHook(() =>
+      useItemModalOrchestrator({
+        formState,
+        mutations,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleSaveCategory({ name: 'A' });
+      await result.current.handleSaveType({ name: 'B' });
+      await result.current.handleSaveUnit({ name: 'C' });
+      await result.current.handleSaveDosage({ name: 'D' });
+      await result.current.handleSaveManufacturer({ name: 'E' });
+    });
+
+    expect(formState.setCategories).not.toHaveBeenCalled();
+    expect(formState.setTypes).not.toHaveBeenCalled();
+    expect(formState.setPackages).not.toHaveBeenCalled();
+    expect(formState.setDosages).not.toHaveBeenCalled();
+    expect(formState.setManufacturers).not.toHaveBeenCalled();
+    expect(formState.updateFormData).not.toHaveBeenCalled();
+
+    expect(formState.setIsAddEditModalOpen).toHaveBeenCalledWith(false);
+    expect(formState.setIsAddTypeModalOpen).toHaveBeenCalledWith(false);
+    expect(formState.setIsAddUnitModalOpen).toHaveBeenCalledWith(false);
+    expect(formState.setIsAddDosageModalOpen).toHaveBeenCalledWith(false);
+    expect(formState.setIsAddManufacturerModalOpen).toHaveBeenCalledWith(false);
+    expect(formState.setCurrentSearchTermForModal).toHaveBeenCalledWith(
+      undefined
+    );
+  });
 });

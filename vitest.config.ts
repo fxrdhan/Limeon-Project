@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import fs from 'fs';
+
+const nonRuntimeCoverageFiles = JSON.parse(
+  fs.readFileSync(
+    path.resolve(__dirname, 'scripts/coverage/non-runtime-files.json'),
+    'utf8'
+  )
+) as string[];
 
 export default defineConfig({
   // @ts-expect-error - Plugin type mismatch between Vite and Vitest's bundled Vite
@@ -27,6 +35,7 @@ export default defineConfig({
         '**/*.config.*',
         '**/mockData/**',
         'dist/',
+        ...nonRuntimeCoverageFiles,
       ],
       thresholds: {
         lines: 15,

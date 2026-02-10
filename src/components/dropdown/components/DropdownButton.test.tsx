@@ -18,6 +18,16 @@ vi.mock('./button/Button', () => ({
         ref={ref as React.Ref<HTMLButtonElement>}
         data-testid="inner-button"
         onClick={props.onClick as React.MouseEventHandler<HTMLButtonElement>}
+        onKeyDown={
+          props.onKeyDown as React.KeyboardEventHandler<HTMLButtonElement>
+        }
+        onMouseEnter={
+          props.onMouseEnter as React.MouseEventHandler<HTMLButtonElement>
+        }
+        onMouseLeave={
+          props.onMouseLeave as React.MouseEventHandler<HTMLButtonElement>
+        }
+        onFocus={props.onFocus as React.FocusEventHandler<HTMLButtonElement>}
         onBlur={props.onBlur as React.FocusEventHandler<HTMLButtonElement>}
       >
         {String(props.displayText)}
@@ -64,6 +74,10 @@ describe('DropdownButton', () => {
 
   it('forwards selected option text and blur handler to inner button', () => {
     const onBlur = vi.fn();
+    const onKeyDown = vi.fn();
+    useTextExpansionMock.mockReturnValue({
+      isButtonTextExpanded: true,
+    });
 
     render(
       <DropdownButton
@@ -77,6 +91,7 @@ describe('DropdownButton', () => {
         tabIndex={0}
         disabled={true}
         onClick={vi.fn()}
+        onKeyDown={onKeyDown}
         onBlur={onBlur}
       />
     );
@@ -97,7 +112,13 @@ describe('DropdownButton', () => {
       })
     );
 
+    fireEvent.keyDown(screen.getByTestId('inner-button'), { key: 'Enter' });
+    fireEvent.mouseEnter(screen.getByTestId('inner-button'));
+    fireEvent.mouseLeave(screen.getByTestId('inner-button'));
+    fireEvent.focus(screen.getByTestId('inner-button'));
     fireEvent.blur(screen.getByTestId('inner-button'));
+
+    expect(onKeyDown).toHaveBeenCalledTimes(1);
     expect(onBlur).toHaveBeenCalledTimes(1);
   });
 });
