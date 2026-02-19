@@ -117,7 +117,7 @@ const ChatSidebarPanel = memo(
     const inlineOverflowThresholdRef = useRef<number | null>(null);
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
-      message.length >= inlineOverflowThresholdRef.current - 2;
+      message.length >= inlineOverflowThresholdRef.current;
     const isTargetMultiline =
       messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2 ||
       isHoldingMultilineByInlineOverflow;
@@ -1062,7 +1062,7 @@ const ChatSidebarPanel = memo(
           }
         } else if (
           currentThreshold !== null &&
-          value.length < currentThreshold - 2
+          value.length < currentThreshold
         ) {
           inlineOverflowThresholdRef.current = null;
         }
@@ -1679,13 +1679,11 @@ const ChatSidebarPanel = memo(
                   style={{ height: `${messageInputHeight}px` }}
                   className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-[85ms] ease-out ${
                     isMessageInputMultiline
-                      ? 'col-span-3 row-start-1'
-                      : 'col-start-2 row-start-1'
+                      ? 'col-span-3 row-start-1 self-start'
+                      : 'col-start-2 row-start-1 self-center'
                   }`}
                 />
-                <motion.button
-                  layout="position"
-                  transition={{ layout: TEXT_MOVE_TRANSITION }}
+                <button
                   type="button"
                   className={`h-8 w-8 rounded-full text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0 ${
                     isMessageInputMultiline
@@ -1694,10 +1692,8 @@ const ChatSidebarPanel = memo(
                   }`}
                 >
                   <TbPlus size={20} />
-                </motion.button>
-                <motion.button
-                  layout="position"
-                  transition={{ layout: TEXT_MOVE_TRANSITION }}
+                </button>
+                <button
                   onClick={handleSendMessage}
                   className={`h-9 w-9 rounded-full bg-violet-500 text-white flex items-center justify-center transition-colors whitespace-nowrap hover:bg-violet-600 shrink-0 ${
                     isMessageInputMultiline
@@ -1706,7 +1702,7 @@ const ChatSidebarPanel = memo(
                   }`}
                 >
                   <TbSend2 size={20} className="text-white" />
-                </motion.button>
+                </button>
               </div>
             </div>
           </div>
