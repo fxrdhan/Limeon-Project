@@ -6,8 +6,10 @@
 
 # Guidelines:
 
-- Always run 'npx oxlint [filenames path] --fix && npx tsc -b --noEmit' after editing MASSIVE code files.
+- Always run 'npx oxlint [filenames path] --fix && npx tsc -b --noEmit' after editing/adding complex line in code files.
 - When creating Git commits, use git-commit skills.
+- Only update or add the related test code in the corresponding test file(s) after the user has reviewed and approved the code changes.
+- Once approved, ensure the updated tests are executed and passing, and keep required coverage targets satisfied.
 
 # Code Exploration
 
