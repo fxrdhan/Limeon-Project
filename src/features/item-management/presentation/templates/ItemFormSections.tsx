@@ -837,6 +837,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     Array.from({ length: 4 }, () => false)
   );
   const [previewSlotIndex, setPreviewSlotIndex] = useState<number | null>(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [displayUrls, setDisplayUrls] = useState<
     Array<{ source: string; display: string }>
   >([]);
@@ -848,6 +849,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const [isCropping, setIsCropping] = useState(false);
   const cropperRef = useRef<Cropper | null>(null);
   const cropperImageRef = useRef<HTMLImageElement | null>(null);
+  const previewCloseTimerRef = useRef<number | null>(null);
   const localPreviewUrlsRef = useRef<Record<number, string>>({});
   const retainedDisplaySourcesRef = useRef<string[]>([]);
   const imageTabIndexMap = useMemo(() => {
@@ -1545,12 +1547,43 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       ? getDisplayUrlForSlot(imageSlots[previewSlotIndex], previewSlotIndex)
       : null;
 
+  const closePreview = useCallback(() => {
+    setIsPreviewVisible(false);
+    if (previewCloseTimerRef.current) {
+      window.clearTimeout(previewCloseTimerRef.current);
+    }
+    previewCloseTimerRef.current = window.setTimeout(() => {
+      setPreviewSlotIndex(null);
+      previewCloseTimerRef.current = null;
+    }, 140);
+  }, []);
+
+  const openPreview = useCallback((slotIndex: number) => {
+    if (previewCloseTimerRef.current) {
+      window.clearTimeout(previewCloseTimerRef.current);
+      previewCloseTimerRef.current = null;
+    }
+    setPreviewSlotIndex(slotIndex);
+    window.requestAnimationFrame(() => {
+      setIsPreviewVisible(true);
+    });
+  }, []);
+
   useEffect(() => {
     if (previewSlotIndex === null) return;
     if (!imageSlots[previewSlotIndex]?.url) {
-      setPreviewSlotIndex(null);
+      closePreview();
     }
-  }, [imageSlots, previewSlotIndex]);
+  }, [closePreview, imageSlots, previewSlotIndex]);
+
+  useEffect(
+    () => () => {
+      if (previewCloseTimerRef.current) {
+        window.clearTimeout(previewCloseTimerRef.current);
+      }
+    },
+    []
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -1590,7 +1623,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 onError={() => handleBrokenImage(index, slot.url)}
                 onClick={event => {
                   event.stopPropagation();
-                  setPreviewSlotIndex(index);
+                  openPreview(index);
                 }}
               />
             ) : (
@@ -1606,11 +1639,19 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         previewImageUrl &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            onClick={() => setPreviewSlotIndex(null)}
+            className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-150 ${
+              isPreviewVisible
+                ? 'bg-black/70 opacity-100 pointer-events-auto'
+                : 'bg-black/70 opacity-0 pointer-events-none'
+            }`}
+            onClick={closePreview}
           >
             <div
-              className="max-h-[90vh] max-w-[90vw] p-3"
+              className={`max-h-[90vh] max-w-[90vw] p-3 transition-all duration-150 ease-out ${
+                isPreviewVisible
+                  ? 'opacity-100 scale-100'
+                  : 'opacity-0 scale-95'
+              }`}
               onClick={event => event.stopPropagation()}
             >
               <ImageUploader
@@ -1618,17 +1659,17 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 id={`item-image-preview-${previewSlotIndex}`}
                 shape="rounded"
                 hasImage={true}
-                onPopupClose={() => setPreviewSlotIndex(null)}
+                onPopupClose={closePreview}
                 className="max-h-[90vh] max-w-[90vw]"
                 popupTrigger="click"
                 onImageUpload={async file => {
                   const slotIndex = previewSlotIndex;
-                  setPreviewSlotIndex(null);
+                  closePreview();
                   await handleImageUpload(slotIndex, file);
                 }}
                 onImageDelete={async () => {
                   const slotIndex = previewSlotIndex;
-                  setPreviewSlotIndex(null);
+                  closePreview();
                   await handleImageDelete(slotIndex);
                 }}
                 validTypes={[
