@@ -16,23 +16,23 @@
 }
 
 .scrollbar-gutter-stable::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
   border-radius: 4px;
 }
 
 .scrollbar-gutter-stable::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 .scrollbar-gutter-stable::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #94a3b8;
 }
 
 /* Firefox scrollbar styling */
 .scrollbar-gutter-stable {
   scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 #f1f1f1;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 /* Hide scrollbar for history list only */
