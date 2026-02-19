@@ -28,11 +28,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPopupMounted, setIsPopupMounted] = useState(false);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [popupPosition, setPopupPosition] = useState<'left' | 'right'>('right');
   const [popupCoordinates, setPopupCoordinates] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
+  const popupCloseTimerRef = useRef<number | null>(null);
   const containerHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const popupHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Use explicit hasImage prop instead of trying to detect from children
@@ -45,6 +48,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     ? isFocused || isHoveringPopup
     : isHoveringContainer || isHoveringPopup || isFocused;
   const shouldShowPopup = !isDirect || hasImage;
+  const canShowPopup =
+    shouldShowPopup &&
+    isVisible &&
+    !isPopupSuppressed &&
+    !disabled &&
+    !isUploading &&
+    !isDeleting;
 
   const clearHoverTimeout = useCallback((target: 'container' | 'popup') => {
     const timeoutRef =
@@ -231,11 +241,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
 
       if (isClickTrigger) {
+        if (isFocused) {
+          closePortal();
+          return;
+        }
         positionPopupAtClick(event.clientX, event.clientY);
         setIsFocused(true);
       }
     },
-    [handleUploadClick, isClickTrigger, isDirect, positionPopupAtClick]
+    [
+      handleUploadClick,
+      isClickTrigger,
+      isDirect,
+      positionPopupAtClick,
+      isFocused,
+      closePortal,
+    ]
   );
 
   const handleMouseEnter = (target: 'container' | 'popup') => {
@@ -331,6 +352,32 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   }, [isPopupSuppressed, closePortal]);
 
   useEffect(() => {
+    if (canShowPopup) {
+      if (popupCloseTimerRef.current) {
+        window.clearTimeout(popupCloseTimerRef.current);
+        popupCloseTimerRef.current = null;
+      }
+      if (!isPopupMounted) {
+        setIsPopupMounted(true);
+      }
+      window.requestAnimationFrame(() => {
+        setIsPopupVisible(true);
+      });
+      return;
+    }
+
+    if (!isPopupMounted) return;
+    setIsPopupVisible(false);
+    if (popupCloseTimerRef.current) {
+      window.clearTimeout(popupCloseTimerRef.current);
+    }
+    popupCloseTimerRef.current = window.setTimeout(() => {
+      setIsPopupMounted(false);
+      popupCloseTimerRef.current = null;
+    }, 150);
+  }, [canShowPopup, isPopupMounted]);
+
+  useEffect(() => {
     if (!isVisible || isClickTrigger) return;
 
     // Initial calculation
@@ -385,6 +432,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   useEffect(() => {
     // Cleanup timeout on unmount
     return () => {
+      if (popupCloseTimerRef.current) {
+        window.clearTimeout(popupCloseTimerRef.current);
+      }
       clearHoverTimeout('container');
       clearHoverTimeout('popup');
     };
@@ -435,12 +485,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       </div>
 
       {/* Mini popup modal rendered via Portal */}
-      {shouldShowPopup &&
-        isVisible &&
-        !isPopupSuppressed &&
-        !disabled &&
-        !isUploading &&
-        !isDeleting &&
+      {isPopupMounted &&
         createPortal(
           <div
             ref={portalRef}
@@ -453,41 +498,49 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             onMouseEnter={() => handleMouseEnter('popup')}
             onMouseLeave={() => handleMouseLeave('popup')}
           >
-            <div className="px-1 py-1 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[90px] animate-in fade-in-0 zoom-in-95 duration-200">
-              {getPopupOptions().map(option => (
-                <Button
-                  key={option.label}
-                  variant={option.label === 'Hapus' ? 'text-danger' : 'text'}
-                  size="sm"
-                  withUnderline={false}
-                  onClick={event => {
-                    event.stopPropagation();
-                    option.action();
-                  }}
-                  disabled={option.disabled}
-                  className={`w-full px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start ${
-                    option.label === 'Hapus'
-                      ? ''
-                      : 'hover:bg-slate-200 text-slate-700 hover:text-slate-900'
-                  }`}
-                >
-                  {option.icon}
-                  {option.label}
-                </Button>
-              ))}
+            <div
+              className={`transition-all duration-150 ease-out ${
+                isPopupVisible
+                  ? 'opacity-100 scale-100'
+                  : 'opacity-0 scale-95 pointer-events-none'
+              }`}
+            >
+              <div className="px-1 py-1 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[90px]">
+                {getPopupOptions().map(option => (
+                  <Button
+                    key={option.label}
+                    variant={option.label === 'Hapus' ? 'text-danger' : 'text'}
+                    size="sm"
+                    withUnderline={false}
+                    onClick={event => {
+                      event.stopPropagation();
+                      option.action();
+                    }}
+                    disabled={option.disabled}
+                    className={`w-full px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start ${
+                      option.label === 'Hapus'
+                        ? ''
+                        : 'hover:bg-slate-200 text-slate-700 hover:text-slate-900'
+                    }`}
+                  >
+                    {option.icon}
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+              {!isClickTrigger &&
+                (popupPosition === 'right' ? (
+                  <div className="absolute right-full top-1/2 transform -translate-y-1/2">
+                    <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200"></div>
+                    <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
+                  </div>
+                ) : (
+                  <div className="absolute left-full top-1/2 transform -translate-y-1/2">
+                    <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200"></div>
+                    <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
+                  </div>
+                ))}
             </div>
-            {!isClickTrigger &&
-              (popupPosition === 'right' ? (
-                <div className="absolute right-full top-1/2 transform -translate-y-1/2">
-                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200"></div>
-                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
-                </div>
-              ) : (
-                <div className="absolute left-full top-1/2 transform -translate-y-1/2">
-                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200"></div>
-                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
-                </div>
-              ))}
           </div>,
           document.body
         )}
