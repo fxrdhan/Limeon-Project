@@ -194,6 +194,7 @@ export interface ImageUploaderProps {
   id: string;
   onImageUpload: (file: File) => Promise<void> | void;
   onImageDelete?: () => Promise<void> | void;
+  onPopupClose?: () => void;
   children: React.ReactNode;
   hasImage?: boolean; // Explicit prop to indicate if image exists
   maxSizeMB?: number;
@@ -205,6 +206,8 @@ export interface ImageUploaderProps {
   defaultIcon?: React.ReactNode;
   shape?: 'rounded' | 'rounded-sm' | 'square' | 'full';
   interaction?: 'menu' | 'direct';
+  popupTrigger?: 'hover' | 'click';
+  isPopupSuppressed?: boolean;
 }
 
 export interface DescriptiveTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {

@@ -836,7 +836,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const [uploadingSlots, setUploadingSlots] = useState<boolean[]>(
     Array.from({ length: 4 }, () => false)
   );
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewSlotIndex, setPreviewSlotIndex] = useState<number | null>(null);
   const [displayUrls, setDisplayUrls] = useState<
     Array<{ source: string; display: string }>
   >([]);
@@ -1532,6 +1532,26 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     ]
   );
 
+  const getDisplayUrlForSlot = useCallback(
+    (slot: { url: string }, index: number) =>
+      displayUrls[index]?.source === slot.url
+        ? displayUrls[index]?.display || slot.url
+        : slot.url,
+    [displayUrls]
+  );
+
+  const previewImageUrl =
+    previewSlotIndex !== null
+      ? getDisplayUrlForSlot(imageSlots[previewSlotIndex], previewSlotIndex)
+      : null;
+
+  useEffect(() => {
+    if (previewSlotIndex === null) return;
+    if (!imageSlots[previewSlotIndex]?.url) {
+      setPreviewSlotIndex(null);
+    }
+  }, [imageSlots, previewSlotIndex]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-4 gap-3" data-stack-ignore="true">
@@ -1547,6 +1567,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
               uploadingSlots[index]
             }
             interaction="direct"
+            isPopupSuppressed={Boolean(previewSlotIndex !== null || cropState)}
             onImageUpload={file => handleImageUpload(index, file)}
             onImageDelete={() => handleImageDelete(index)}
             className="w-full"
@@ -1556,11 +1577,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           >
             {slot.url ? (
               <img
-                src={
-                  displayUrls[index]?.source === slot.url
-                    ? displayUrls[index]?.display
-                    : slot.url
-                }
+                src={getDisplayUrlForSlot(slot, index)}
                 alt={`Item ${index + 1}`}
                 className={`aspect-square w-full rounded-lg border border-slate-200 object-cover cursor-zoom-in transition duration-200 group-hover:brightness-95 group-focus-visible:brightness-95 ${
                   uploadingSlots[index] ? 'animate-pulse' : ''
@@ -1573,11 +1590,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 onError={() => handleBrokenImage(index, slot.url)}
                 onClick={event => {
                   event.stopPropagation();
-                  setPreviewUrl(
-                    displayUrls[index]?.source === slot.url
-                      ? displayUrls[index]?.display
-                      : slot.url
-                  );
+                  setPreviewSlotIndex(index);
                 }}
               />
             ) : (
@@ -1589,19 +1602,48 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           </ImageUploader>
         ))}
       </div>
-      {previewUrl &&
+      {previewSlotIndex !== null &&
+        previewImageUrl &&
         createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            onClick={() => setPreviewUrl(null)}
+            onClick={() => setPreviewSlotIndex(null)}
           >
-            <div className="max-h-[90vh] max-w-[90vw] p-3">
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-xl"
-                onClick={event => event.stopPropagation()}
-              />
+            <div
+              className="max-h-[90vh] max-w-[90vw] p-3"
+              onClick={event => event.stopPropagation()}
+            >
+              <ImageUploader
+                key={`preview-${previewSlotIndex}`}
+                id={`item-image-preview-${previewSlotIndex}`}
+                shape="rounded"
+                hasImage={true}
+                onPopupClose={() => setPreviewSlotIndex(null)}
+                className="max-h-[90vh] max-w-[90vw]"
+                popupTrigger="click"
+                onImageUpload={async file => {
+                  const slotIndex = previewSlotIndex;
+                  setPreviewSlotIndex(null);
+                  await handleImageUpload(slotIndex, file);
+                }}
+                onImageDelete={async () => {
+                  const slotIndex = previewSlotIndex;
+                  setPreviewSlotIndex(null);
+                  await handleImageDelete(slotIndex);
+                }}
+                validTypes={[
+                  'image/png',
+                  'image/jpeg',
+                  'image/jpg',
+                  'image/webp',
+                ]}
+              >
+                <img
+                  src={previewImageUrl}
+                  alt="Preview"
+                  className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-xl"
+                />
+              </ImageUploader>
             </div>
           </div>,
           document.body

@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { ImageUploaderProps } from '@/types';
 import { ClipLoader } from 'react-spinners';
-import { TbEdit, TbTrash, TbUpload } from 'react-icons/tb';
+import { TbEdit, TbTrash, TbUpload, TbX } from 'react-icons/tb';
 import Button from '@/components/button';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   id,
   onImageUpload,
   onImageDelete,
+  onPopupClose,
   children,
   hasImage = false,
   validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
@@ -18,6 +19,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   loadingIcon = <ClipLoader color="#ffffff" size={20} loading={true} />,
   shape = 'full',
   interaction = 'menu',
+  popupTrigger = 'hover',
+  isPopupSuppressed = false,
 }) => {
   const [isHoveringContainer, setIsHoveringContainer] = useState(false);
   const [isHoveringPopup, setIsHoveringPopup] = useState(false);
@@ -35,9 +38,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   // Use explicit hasImage prop instead of trying to detect from children
 
   const isDirect = interaction === 'direct';
+  const isClickTrigger = popupTrigger === 'click';
 
   // Combined hover and focus state
-  const isVisible = isHoveringContainer || isHoveringPopup || isFocused;
+  const isVisible = isClickTrigger
+    ? isFocused || isHoveringPopup
+    : isHoveringContainer || isHoveringPopup || isFocused;
   const shouldShowPopup = !isDirect || hasImage;
 
   const clearHoverTimeout = useCallback((target: 'container' | 'popup') => {
@@ -137,11 +143,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     fileInputRef.current.click();
   }, [disabled, isUploading, isDeleting]);
 
-  const handleContainerClick = useCallback(() => {
-    if (!isDirect) return;
-    handleUploadClick();
-  }, [handleUploadClick, isDirect]);
-
   const getPopupOptions = useCallback(() => {
     const options = [];
 
@@ -153,6 +154,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         disabled: isUploading || isDeleting,
       });
     } else {
+      if (onPopupClose) {
+        options.push({
+          label: 'Tutup',
+          icon: <TbX className="w-4 h-4" />,
+          action: () => {
+            closePortal();
+            onPopupClose();
+          },
+          disabled: isUploading || isDeleting,
+        });
+      }
+
       options.push({
         label: 'Edit',
         icon: <TbEdit className="w-4 h-4" />,
@@ -180,9 +193,55 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     isDeleting,
     onImageDelete,
     handleDeleteImage,
+    onPopupClose,
+    closePortal,
   ]);
 
+  const positionPopupAtClick = useCallback(
+    (clickX: number, clickY: number) => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const popupRect = portalRef.current?.getBoundingClientRect();
+      const options = getPopupOptions();
+      const hasDelete = options.some(option => option.label === 'Hapus');
+
+      const popupWidth = popupRect?.width || (hasDelete ? 120 : 100);
+      const popupHeight = popupRect?.height || options.length * 36 + 8;
+      const margin = 8;
+
+      const clampedX = Math.min(
+        Math.max(clickX, margin),
+        viewportWidth - popupWidth - margin
+      );
+      const clampedY = Math.min(
+        Math.max(clickY, margin),
+        viewportHeight - popupHeight - margin
+      );
+
+      setPopupCoordinates({ x: clampedX, y: clampedY });
+    },
+    [getPopupOptions]
+  );
+
+  const handleContainerClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (isDirect) {
+        handleUploadClick();
+        return;
+      }
+
+      if (isClickTrigger) {
+        positionPopupAtClick(event.clientX, event.clientY);
+        setIsFocused(true);
+      }
+    },
+    [handleUploadClick, isClickTrigger, isDirect, positionPopupAtClick]
+  );
+
   const handleMouseEnter = (target: 'container' | 'popup') => {
+    if (target === 'container' && isClickTrigger) {
+      return;
+    }
     clearHoverTimeout(target);
 
     if (target === 'container') {
@@ -193,6 +252,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   const handleMouseLeave = (target: 'container' | 'popup') => {
+    if (target === 'container' && isClickTrigger) {
+      return;
+    }
     clearHoverTimeout(target);
 
     const timeoutRef =
@@ -263,25 +325,31 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   }, [getPopupOptions]);
 
   useEffect(() => {
-    if (isVisible) {
-      // Initial calculation
-      calculatePopupPosition();
-
-      // Recalculate after popup is rendered to get accurate dimensions
-      const timer = setTimeout(() => {
-        calculatePopupPosition();
-      }, 10);
-
-      // Recalculate on window resize
-      const handleResize = () => calculatePopupPosition();
-      window.addEventListener('resize', handleResize);
-
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('resize', handleResize);
-      };
+    if (isPopupSuppressed) {
+      closePortal();
     }
-  }, [isVisible, hasImage, calculatePopupPosition]); // Added hasImage dependency to recalculate when popup content changes
+  }, [isPopupSuppressed, closePortal]);
+
+  useEffect(() => {
+    if (!isVisible || isClickTrigger) return;
+
+    // Initial calculation
+    calculatePopupPosition();
+
+    // Recalculate after popup is rendered to get accurate dimensions
+    const timer = setTimeout(() => {
+      calculatePopupPosition();
+    }, 10);
+
+    // Recalculate on window resize
+    const handleResize = () => calculatePopupPosition();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isVisible, hasImage, calculatePopupPosition, isClickTrigger]); // Added hasImage dependency to recalculate when popup content changes
 
   useEffect(() => {
     // Handle click outside and escape key
@@ -330,8 +398,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         onMouseEnter={() => handleMouseEnter('container')}
         onMouseLeave={() => handleMouseLeave('container')}
         onClick={handleContainerClick}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={() => {
+          if (!isClickTrigger) {
+            setIsFocused(true);
+          }
+        }}
+        onBlur={() => {
+          if (!isClickTrigger) {
+            setIsFocused(false);
+          }
+        }}
         tabIndex={disabled ? -1 : (tabIndex ?? 0)}
         role="button"
         aria-label={hasImage ? 'Edit or delete image' : 'Upload image'}
@@ -361,6 +437,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       {/* Mini popup modal rendered via Portal */}
       {shouldShowPopup &&
         isVisible &&
+        !isPopupSuppressed &&
         !disabled &&
         !isUploading &&
         !isDeleting &&
@@ -371,7 +448,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             style={{
               left: popupCoordinates.x,
               top: popupCoordinates.y,
-              transform: 'translateY(-50%)',
+              transform: isClickTrigger ? 'none' : 'translateY(-50%)',
             }}
             onMouseEnter={() => handleMouseEnter('popup')}
             onMouseLeave={() => handleMouseLeave('popup')}
@@ -399,18 +476,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 </Button>
               ))}
             </div>
-            {/* Dynamic Arrow */}
-            {popupPosition === 'right' ? (
-              <div className="absolute right-full top-1/2 transform -translate-y-1/2">
-                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200"></div>
-                <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
-              </div>
-            ) : (
-              <div className="absolute left-full top-1/2 transform -translate-y-1/2">
-                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200"></div>
-                <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
-              </div>
-            )}
+            {!isClickTrigger &&
+              (popupPosition === 'right' ? (
+                <div className="absolute right-full top-1/2 transform -translate-y-1/2">
+                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200"></div>
+                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
+                </div>
+              ) : (
+                <div className="absolute left-full top-1/2 transform -translate-y-1/2">
+                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200"></div>
+                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
+                </div>
+              ))}
           </div>,
           document.body
         )}
