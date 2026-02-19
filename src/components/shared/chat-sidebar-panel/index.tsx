@@ -41,7 +41,7 @@ interface ChatSidebarPanelProps {
   };
 }
 
-type MenuPlacement = 'left' | 'up' | 'down';
+type MenuPlacement = 'left' | 'right' | 'up' | 'down';
 
 const MENU_GAP = 8;
 const MENU_WIDTH = 140;
@@ -74,6 +74,7 @@ const ChatSidebarPanel = memo(
       null
     );
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
+    const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
       () => new Set()
     );
@@ -86,6 +87,7 @@ const ChatSidebarPanel = memo(
     const messageInputRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const composerContainerRef = useRef<HTMLDivElement>(null);
     const channelRef = useRef<RealtimeChannel | null>(null);
     const presenceChannelRef = useRef<RealtimeChannel | null>(null);
     const globalPresenceChannelRef = useRef<RealtimeChannel | null>(null);
@@ -121,44 +123,76 @@ const ChatSidebarPanel = memo(
       isHoldingMultilineByInlineOverflow;
     const isMessageInputMultiline = composerLayoutMode === 'multiline';
 
+    const getVisibleMessagesBounds = useCallback(() => {
+      const containerRect =
+        messagesContainerRef.current?.getBoundingClientRect() ?? null;
+      if (!containerRect) return null;
+
+      const composerTop =
+        composerContainerRef.current?.getBoundingClientRect().top;
+      const visibleBottom =
+        typeof composerTop === 'number'
+          ? Math.min(containerRect.bottom, composerTop)
+          : containerRect.bottom;
+
+      return {
+        containerRect,
+        visibleBottom,
+      };
+    }, []);
+
     const getMenuPlacement = useCallback(
-      (anchorRect: DOMRect): MenuPlacement => {
-        const containerRect =
-          messagesContainerRef.current?.getBoundingClientRect();
+      (anchorRect: DOMRect, preferredSide: 'left' | 'right'): MenuPlacement => {
+        const bounds = getVisibleMessagesBounds();
+        if (!bounds) return 'up';
 
-        if (!containerRect) return 'up';
-
+        const { containerRect, visibleBottom } = bounds;
+        const spaceLeft = anchorRect.left - containerRect.left;
         const spaceRight = containerRect.right - anchorRect.right;
         const spaceAbove = anchorRect.top - containerRect.top;
-        const spaceBelow = containerRect.bottom - anchorRect.bottom;
-        const canSideFit =
+        const spaceBelow = visibleBottom - anchorRect.bottom;
+        const canFitLeft =
+          spaceLeft >= MENU_WIDTH + MENU_GAP &&
+          spaceAbove >= MENU_HEIGHT / 2 &&
+          spaceBelow >= MENU_HEIGHT / 2;
+        const canFitRight =
           spaceRight >= MENU_WIDTH + MENU_GAP &&
           spaceAbove >= MENU_HEIGHT / 2 &&
           spaceBelow >= MENU_HEIGHT / 2;
 
-        if (canSideFit) return 'left';
+        if (preferredSide === 'left' && canFitLeft) return 'left';
+        if (preferredSide === 'right' && canFitRight) return 'right';
+        if (canFitLeft) return 'left';
+        if (canFitRight) return 'right';
+
         if (spaceBelow >= MENU_HEIGHT + MENU_GAP) return 'up';
         if (spaceAbove >= MENU_HEIGHT + MENU_GAP) return 'down';
 
         return spaceBelow >= spaceAbove ? 'up' : 'down';
       },
-      []
+      [getVisibleMessagesBounds]
     );
 
     const closeMessageMenu = useCallback(() => {
       setOpenMenuMessageId(null);
+      setMenuOffsetX(0);
     }, []);
 
     const toggleMessageMenu = useCallback(
-      (anchor: HTMLElement, messageId: string) => {
+      (
+        anchor: HTMLElement,
+        messageId: string,
+        preferredSide: 'left' | 'right'
+      ) => {
         if (openMenuMessageId === messageId) {
           closeMessageMenu();
           return;
         }
 
         const anchorRect = anchor.getBoundingClientRect();
-        const nextPlacement = getMenuPlacement(anchorRect);
+        const nextPlacement = getMenuPlacement(anchorRect, preferredSide);
 
+        setMenuOffsetX(0);
         setMenuPlacement(nextPlacement);
         setOpenMenuMessageId(messageId);
       },
@@ -177,34 +211,53 @@ const ChatSidebarPanel = memo(
       });
     }, []);
 
-    const ensureMenuFullyVisible = useCallback((messageId: string) => {
-      const container = messagesContainerRef.current;
-      if (!container) return;
+    const ensureMenuFullyVisible = useCallback(
+      (messageId: string) => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
 
-      const menuElement = container.querySelector<HTMLElement>(
-        `[data-chat-menu-id="${messageId}"]`
-      );
+        const menuElement = container.querySelector<HTMLElement>(
+          `[data-chat-menu-id="${messageId}"]`
+        );
 
-      if (!menuElement) return;
+        if (!menuElement) return;
 
-      const containerRect = container.getBoundingClientRect();
-      const menuRect = menuElement.getBoundingClientRect();
+        const bounds = getVisibleMessagesBounds();
+        if (!bounds) return;
 
-      let scrollOffset = 0;
-      /* c8 ignore next 2 */
-      if (menuRect.top < containerRect.top) {
-        scrollOffset = menuRect.top - containerRect.top - MENU_GAP;
-      } else if (menuRect.bottom > containerRect.bottom) {
-        scrollOffset = menuRect.bottom - containerRect.bottom;
-      }
+        const { containerRect, visibleBottom } = bounds;
+        const menuRect = menuElement.getBoundingClientRect();
 
-      if (scrollOffset !== 0) {
-        container.scrollTo({
-          top: container.scrollTop + scrollOffset,
-          behavior: 'auto',
-        });
-      }
-    }, []);
+        let scrollOffset = 0;
+        /* c8 ignore next 2 */
+        if (menuRect.top < containerRect.top) {
+          scrollOffset = menuRect.top - containerRect.top - MENU_GAP;
+        } else if (menuRect.bottom > visibleBottom) {
+          scrollOffset = menuRect.bottom - visibleBottom + MENU_GAP;
+        }
+
+        if (scrollOffset !== 0) {
+          container.scrollTo({
+            top: container.scrollTop + scrollOffset,
+            behavior: 'auto',
+          });
+        }
+
+        const minMenuLeft = containerRect.left + MENU_GAP;
+        const maxMenuRight = containerRect.right - MENU_GAP;
+        const shiftMin = minMenuLeft - menuRect.left;
+        const shiftMax = maxMenuRight - menuRect.right;
+        const nextOffsetX =
+          shiftMin > shiftMax
+            ? shiftMin
+            : Math.min(Math.max(0, shiftMin), shiftMax);
+
+        setMenuOffsetX(prevOffset =>
+          Math.abs(prevOffset - nextOffsetX) < 0.5 ? prevOffset : nextOffsetX
+        );
+      },
+      [getVisibleMessagesBounds]
+    );
 
     useLayoutEffect(() => {
       if (!openMenuMessageId) return;
@@ -1349,14 +1402,22 @@ const ChatSidebarPanel = memo(
                           }}
                           onClick={event => {
                             event.stopPropagation();
-                            toggleMessageMenu(event.currentTarget, msg.id);
+                            toggleMessageMenu(
+                              event.currentTarget,
+                              msg.id,
+                              isCurrentUser ? 'left' : 'right'
+                            );
                           }}
                           role="button"
                           tabIndex={0}
                           onKeyDown={event => {
                             if (event.key === 'Enter' || event.key === ' ') {
                               event.preventDefault();
-                              toggleMessageMenu(event.currentTarget, msg.id);
+                              toggleMessageMenu(
+                                event.currentTarget,
+                                msg.id,
+                                isCurrentUser ? 'left' : 'right'
+                              );
                             }
                           }}
                         >
@@ -1418,31 +1479,53 @@ const ChatSidebarPanel = memo(
                               initial={{
                                 opacity: 0,
                                 scale: 0.96,
-                                y: menuPlacement === 'down' ? 6 : -6,
+                                x:
+                                  menuOffsetX +
+                                  (menuPlacement === 'left'
+                                    ? -6
+                                    : menuPlacement === 'right'
+                                      ? 6
+                                      : 0),
+                                y:
+                                  menuPlacement === 'down'
+                                    ? 6
+                                    : menuPlacement === 'up'
+                                      ? -6
+                                      : 0,
                               }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              animate={{
+                                opacity: 1,
+                                scale: 1,
+                                x: menuOffsetX,
+                                y: 0,
+                              }}
                               exit={{
                                 opacity: 0,
                                 scale: 0.98,
+                                x: menuOffsetX,
                                 y: 0,
                               }}
                               transition={{ duration: 0.12, ease: 'easeOut' }}
                               className={`absolute z-20 min-w-[120px] overflow-hidden rounded-xl bg-white text-slate-900 shadow-lg ${
                                 menuPlacement === 'left'
-                                  ? 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
-                                  : menuPlacement === 'down'
-                                    ? 'bottom-full mb-2 right-0 origin-bottom-right'
-                                    : 'top-full mt-2 right-0 origin-top-right'
+                                  ? 'right-full mr-2 top-1/2 -translate-y-1/2 origin-right'
+                                  : menuPlacement === 'right'
+                                    ? 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
+                                    : menuPlacement === 'down'
+                                      ? 'bottom-full mb-2 left-0 origin-bottom-left'
+                                      : 'top-full mt-2 left-0 origin-top-left'
                               }`}
                               onClick={event => event.stopPropagation()}
                             >
                               <span
                                 className={`absolute w-0 h-0 border-6 border-transparent ${
                                   menuPlacement === 'left'
-                                    ? 'left-0 top-1/2 -translate-x-full -translate-y-1/2 border-r-white'
-                                    : menuPlacement === 'down'
-                                      ? 'bottom-0 right-3 translate-y-full border-t-white'
-                                      : 'top-0 right-3 -translate-y-full border-b-white'
+                                    ? 'right-0 top-1/2 translate-x-full -translate-y-1/2 border-l-white'
+                                    : menuPlacement === 'right'
+                                      ? 'left-0 top-1/2 -translate-x-full -translate-y-1/2 border-r-white'
+                                      : menuPlacement === 'down'
+                                        ? 'bottom-0 left-3 translate-y-full border-t-white'
+                                        : 'top-0 left-3 -translate-y-full border-b-white'
                                 }`}
                               />
                               <button
@@ -1572,7 +1655,10 @@ const ChatSidebarPanel = memo(
           </AnimatePresence>
 
           {/* Message Input */}
-          <div className="absolute bottom-2 left-0 right-0 px-3 pb-4">
+          <div
+            ref={composerContainerRef}
+            className="absolute bottom-2 left-0 right-0 px-3 pb-4"
+          >
             <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-2.5 transition-[height] duration-[85ms] ease-out">
               <div
                 className={`grid grid-cols-[auto_1fr_auto] gap-x-2 ${
