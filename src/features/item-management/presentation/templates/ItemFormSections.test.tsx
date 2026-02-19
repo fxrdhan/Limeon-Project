@@ -1016,6 +1016,35 @@ describe('ItemFormSections', () => {
     expect(listItemImagesMock).not.toHaveBeenCalled();
   });
 
+  it('renders image slots from form data while loading without storage fallback fetch', async () => {
+    const formHook = createFormHook();
+    formHook.loading = true;
+    formHook.formData.image_urls = [
+      'https://cdn.pharmasys.test/items/item-1/slot-0?seed=1',
+      '',
+      '',
+      '',
+    ];
+    useItemFormMock.mockReturnValue(formHook);
+    getCachedImageBlobUrlMock.mockResolvedValueOnce('blob://cached-image-fast');
+
+    render(
+      <ItemFormSections.BasicInfoOptional
+        isExpanded={true}
+        onExpand={vi.fn()}
+        itemId="item-1"
+      />
+    );
+
+    expect(listItemImagesMock).not.toHaveBeenCalled();
+    expect(await screen.findByAltText('Item 1')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getCachedImageBlobUrlMock).toHaveBeenCalledWith(
+        'https://cdn.pharmasys.test/items/item-1/slot-0?seed=1'
+      );
+    });
+  });
+
   it('covers optional image delete error and preview click propagation', async () => {
     const formHook = createFormHook();
     formHook.loading = false;

@@ -1142,15 +1142,15 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   useEffect(() => {
     if (!itemId) return;
 
-    if (loading) {
-      return;
-    }
-
     if (formImageUrls.length > 0) {
       const nextSlots = buildSlotsFromUrls(formImageUrls);
       setImageSlots(nextSlots);
       updateImageCache(nextSlots);
       setIsLoadingImages(false);
+      return;
+    }
+
+    if (loading) {
       return;
     }
 
@@ -1219,7 +1219,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   ]);
 
   useEffect(() => {
-    if (!itemId || loading) return;
+    if (!itemId) return;
 
     const nextSlots = buildSlotsFromUrls(formImageUrls);
     setImageSlots(prevSlots =>
@@ -1227,7 +1227,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     );
     updateImageCache(nextSlots);
     setIsLoadingImages(false);
-  }, [buildSlotsFromUrls, formImageUrls, itemId, loading, updateImageCache]);
+  }, [buildSlotsFromUrls, formImageUrls, itemId, updateImageCache]);
 
   const saveDropdownUpdate = useCallback(
     (updates: Record<string, unknown>) => {
