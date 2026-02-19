@@ -34,6 +34,7 @@ type IdentityModalPropsStub = {
   initialNameFromSearch?: string;
   onClose: () => void;
   onSave: (data: Record<string, unknown>) => Promise<void>;
+  onFieldSave?: (key: string, value: unknown) => Promise<void>;
   onDeleteRequest?: () => void;
 };
 
@@ -120,6 +121,7 @@ const createManagementState = (overrides: Record<string, unknown> = {}) => ({
   currentPage: 1,
   itemsPerPage: 25,
   handleDelete: vi.fn().mockResolvedValue(undefined),
+  handleFieldAutosave: vi.fn().mockResolvedValue(undefined),
   openConfirmDialog: vi.fn(),
   debouncedSearch: 'debounced keyword',
   handleKeyDown: vi.fn(),
@@ -217,6 +219,7 @@ describe('Master data list pages', () => {
       email: null,
       address: null,
     });
+    await editModal.onFieldSave?.('phone', '08129999');
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
       data: {
@@ -237,6 +240,11 @@ describe('Master data list pages', () => {
         address: null,
       },
     });
+    expect(management.handleFieldAutosave).toHaveBeenCalledWith(
+      'cust-9',
+      'phone',
+      '08129999'
+    );
 
     expect(editModal.onDeleteRequest).toBeDefined();
     editModal.onDeleteRequest?.();
@@ -307,6 +315,22 @@ describe('Master data list pages', () => {
       name: 'Dr. Edit',
       specialization: 'Jantung',
     });
+    await editModal.onSave({
+      name: 'Dr. Lengkap',
+      gender: 'L',
+      specialization: 'Saraf',
+      license_number: 'SIP-123',
+      experience_years: '8',
+      education: 'Sp.KJ',
+      phone: '081234',
+      email: 'doctor@hospital.id',
+      image_url: 'https://img.example.com/doc.jpg',
+    });
+    await editModal.onSave({
+      name: 'Dr. Invalid',
+      experience_years: 'bukan-angka',
+    });
+    await editModal.onFieldSave?.('specialization', 'Anak');
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
       data: {
@@ -336,6 +360,39 @@ describe('Master data list pages', () => {
       },
       id: 'doc-7',
     });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(3, {
+      data: {
+        name: 'Dr. Lengkap',
+        gender: 'L',
+        specialization: 'Saraf',
+        license_number: 'SIP-123',
+        experience_years: 8,
+        qualification: 'Sp.KJ',
+        phone: '081234',
+        email: 'doctor@hospital.id',
+        image_url: 'https://img.example.com/doc.jpg',
+      },
+      id: 'doc-7',
+    });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(4, {
+      data: {
+        name: 'Dr. Invalid',
+        gender: null,
+        specialization: null,
+        license_number: null,
+        experience_years: null,
+        qualification: null,
+        phone: null,
+        email: null,
+        image_url: null,
+      },
+      id: 'doc-7',
+    });
+    expect(management.handleFieldAutosave).toHaveBeenCalledWith(
+      'doc-7',
+      'specialization',
+      'Anak'
+    );
 
     expect(editModal.onDeleteRequest).toBeDefined();
     editModal.onDeleteRequest?.();
@@ -428,6 +485,16 @@ describe('Master data list pages', () => {
       name: 'Pasien Edit',
       address: 'Jl. Baru',
     });
+    await editModal.onSave({
+      name: 'Pasien Lengkap',
+      gender: 'P',
+      birth_date: '2001-05-02',
+      address: 'Jl. Test',
+      phone: '089999',
+      email: 'pasien@test.id',
+      image_url: 'https://img.example.com/patient.jpg',
+    });
+    await editModal.onFieldSave?.('gender', 'P');
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
       data: {
@@ -453,6 +520,23 @@ describe('Master data list pages', () => {
       },
       id: 'pat-3',
     });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(3, {
+      data: {
+        name: 'Pasien Lengkap',
+        gender: 'P',
+        birth_date: '2001-05-02',
+        address: 'Jl. Test',
+        phone: '089999',
+        email: 'pasien@test.id',
+        image_url: 'https://img.example.com/patient.jpg',
+      },
+      id: 'pat-3',
+    });
+    expect(management.handleFieldAutosave).toHaveBeenCalledWith(
+      'pat-3',
+      'gender',
+      'P'
+    );
 
     expect(editModal.onDeleteRequest).toBeDefined();
     editModal.onDeleteRequest?.();
@@ -534,6 +618,15 @@ describe('Master data list pages', () => {
       name: 'Supplier Edit',
       address: 'Jl. Cabang',
     });
+    await editModal.onSave({
+      name: 'Supplier Lengkap',
+      address: 'Jl. Lengkap',
+      phone: '022000',
+      email: 'supplier@company.id',
+      contact_person: 'Rahmat',
+      image_url: 'https://img.example.com/supplier.jpg',
+    });
+    await editModal.onFieldSave?.('phone', '022000');
 
     expect(management.handleModalSubmit).toHaveBeenNthCalledWith(1, {
       data: {
@@ -557,6 +650,22 @@ describe('Master data list pages', () => {
       },
       id: 'sup-4',
     });
+    expect(management.handleModalSubmit).toHaveBeenNthCalledWith(3, {
+      data: {
+        name: 'Supplier Lengkap',
+        address: 'Jl. Lengkap',
+        phone: '022000',
+        email: 'supplier@company.id',
+        contact_person: 'Rahmat',
+        image_url: 'https://img.example.com/supplier.jpg',
+      },
+      id: 'sup-4',
+    });
+    expect(management.handleFieldAutosave).toHaveBeenCalledWith(
+      'sup-4',
+      'phone',
+      '022000'
+    );
 
     expect(addModal.useInlineFieldActions).toBe(false);
     expect(editModal.useInlineFieldActions).toBe(false);

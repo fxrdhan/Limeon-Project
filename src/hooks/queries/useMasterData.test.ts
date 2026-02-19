@@ -332,6 +332,22 @@ describe('useMasterData hooks', () => {
     expect(invalidateQueriesMock).toHaveBeenCalled();
     expect(refetchQueriesMock).toHaveBeenCalled();
 
+    const categoryUpdateToastCount = toastSuccessMock.mock.calls.filter(
+      call => call[0] === 'Kategori berhasil diperbarui'
+    ).length;
+    await act(async () => {
+      await result.current.updateCategory.mutateAsync({
+        id: 'cat-1',
+        data: { name: 'Kategori C' },
+        options: { silent: true },
+      });
+    });
+    expect(
+      toastSuccessMock.mock.calls.filter(
+        call => call[0] === 'Kategori berhasil diperbarui'
+      ).length
+    ).toBe(categoryUpdateToastCount);
+
     masterDataServiceMock.categories.create.mockResolvedValueOnce({
       data: null,
       error: new Error('create failed'),
@@ -442,6 +458,54 @@ describe('useMasterData hooks', () => {
     expect(toastSuccessMock).toHaveBeenCalledWith('Satuan berhasil dihapus');
     expect(invalidateQueriesMock).toHaveBeenCalled();
 
+    const medicineTypeUpdateToastCount = toastSuccessMock.mock.calls.filter(
+      call => call[0] === 'Jenis obat berhasil diperbarui'
+    ).length;
+    await act(async () => {
+      await typesMutations.current.updateMedicineType.mutateAsync({
+        id: 'type-1',
+        data: { name: 'T3' },
+        options: { silent: true },
+      });
+    });
+    expect(
+      toastSuccessMock.mock.calls.filter(
+        call => call[0] === 'Jenis obat berhasil diperbarui'
+      ).length
+    ).toBe(medicineTypeUpdateToastCount);
+
+    const itemUnitUpdateToastCount = toastSuccessMock.mock.calls.filter(
+      call => call[0] === 'Satuan berhasil diperbarui'
+    ).length;
+    await act(async () => {
+      await itemUnitMutations.current.updateItemUnit.mutateAsync({
+        id: 'unit-1',
+        data: { name: 'Unit3' },
+        options: { silent: true },
+      });
+    });
+    expect(
+      toastSuccessMock.mock.calls.filter(
+        call => call[0] === 'Satuan berhasil diperbarui'
+      ).length
+    ).toBe(itemUnitUpdateToastCount);
+
+    const packageUpdateToastCount = toastSuccessMock.mock.calls.filter(
+      call => call[0] === 'Kemasan berhasil diperbarui'
+    ).length;
+    await act(async () => {
+      await packageMutations.current.updatePackage.mutateAsync({
+        id: 'pkg-1',
+        data: { name: 'P3' },
+        options: { silent: true },
+      });
+    });
+    expect(
+      toastSuccessMock.mock.calls.filter(
+        call => call[0] === 'Kemasan berhasil diperbarui'
+      ).length
+    ).toBe(packageUpdateToastCount);
+
     masterDataServiceMock.types.update.mockResolvedValueOnce({
       data: null,
       error: new Error('type update failed'),
@@ -453,6 +517,26 @@ describe('useMasterData hooks', () => {
       })
     ).rejects.toThrow('type update failed');
     expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui jenis obat');
+
+    const typeUpdateErrorToastCount = toastErrorMock.mock.calls.filter(
+      call => call[0] === 'Gagal memperbarui jenis obat'
+    ).length;
+    masterDataServiceMock.types.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('type update silent failed'),
+    });
+    await expect(
+      typesMutations.current.updateMedicineType.mutateAsync({
+        id: 'type-1',
+        data: { name: 'fail-silent' },
+        options: { silent: true },
+      })
+    ).rejects.toThrow('type update silent failed');
+    expect(
+      toastErrorMock.mock.calls.filter(
+        call => call[0] === 'Gagal memperbarui jenis obat'
+      ).length
+    ).toBe(typeUpdateErrorToastCount);
   });
 
   it('runs supplier mutations and supplier image caching effect', async () => {
@@ -749,6 +833,26 @@ describe('useMasterData hooks', () => {
     ).rejects.toThrow('category update failed');
     expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui kategori');
 
+    const categoryUpdateErrorToastCount = toastErrorMock.mock.calls.filter(
+      call => call[0] === 'Gagal memperbarui kategori'
+    ).length;
+    masterDataServiceMock.categories.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('category update silent failed'),
+    });
+    await expect(
+      categoryMutations.current.updateCategory.mutateAsync({
+        id: 'cat-1',
+        data: { name: 'x-silent' },
+        options: { silent: true },
+      })
+    ).rejects.toThrow('category update silent failed');
+    expect(
+      toastErrorMock.mock.calls.filter(
+        call => call[0] === 'Gagal memperbarui kategori'
+      ).length
+    ).toBe(categoryUpdateErrorToastCount);
+
     masterDataServiceMock.categories.delete.mockResolvedValueOnce({
       data: null,
       error: new Error('category delete failed'),
@@ -797,6 +901,26 @@ describe('useMasterData hooks', () => {
     ).rejects.toThrow('package update failed');
     expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui kemasan');
 
+    const packageUpdateErrorToastCount = toastErrorMock.mock.calls.filter(
+      call => call[0] === 'Gagal memperbarui kemasan'
+    ).length;
+    masterDataServiceMock.packages.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('package update silent failed'),
+    });
+    await expect(
+      packageMutations.current.updatePackage.mutateAsync({
+        id: 'pkg-1',
+        data: { name: 'Pkg silent' },
+        options: { silent: true },
+      })
+    ).rejects.toThrow('package update silent failed');
+    expect(
+      toastErrorMock.mock.calls.filter(
+        call => call[0] === 'Gagal memperbarui kemasan'
+      ).length
+    ).toBe(packageUpdateErrorToastCount);
+
     masterDataServiceMock.packages.delete.mockResolvedValueOnce({
       data: null,
       error: new Error('package delete failed'),
@@ -827,6 +951,26 @@ describe('useMasterData hooks', () => {
     ).rejects.toThrow('item unit update failed');
     expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui satuan');
 
+    const itemUnitUpdateErrorToastCount = toastErrorMock.mock.calls.filter(
+      call => call[0] === 'Gagal memperbarui satuan'
+    ).length;
+    masterDataServiceMock.itemUnits.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('item unit update silent failed'),
+    });
+    await expect(
+      itemUnitMutations.current.updateItemUnit.mutateAsync({
+        id: 'unit-1',
+        data: { name: 'Unit Silent' },
+        options: { silent: true },
+      })
+    ).rejects.toThrow('item unit update silent failed');
+    expect(
+      toastErrorMock.mock.calls.filter(
+        call => call[0] === 'Gagal memperbarui satuan'
+      ).length
+    ).toBe(itemUnitUpdateErrorToastCount);
+
     masterDataServiceMock.itemUnits.delete.mockResolvedValueOnce({
       data: null,
       error: new Error('item unit delete failed'),
@@ -856,5 +1000,25 @@ describe('useMasterData hooks', () => {
       })
     ).rejects.toThrow('supplier update failed');
     expect(toastErrorMock).toHaveBeenCalledWith('Gagal memperbarui supplier');
+
+    const supplierUpdateErrorToastCount = toastErrorMock.mock.calls.filter(
+      call => call[0] === 'Gagal memperbarui supplier'
+    ).length;
+    masterDataServiceMock.suppliers.update.mockResolvedValueOnce({
+      data: null,
+      error: new Error('supplier update silent failed'),
+    });
+    await expect(
+      supplierMutations.current.updateSupplier.mutateAsync({
+        id: 'sup-1',
+        data: { name: 'Sup silent' },
+        options: { silent: true },
+      })
+    ).rejects.toThrow('supplier update silent failed');
+    expect(
+      toastErrorMock.mock.calls.filter(
+        call => call[0] === 'Gagal memperbarui supplier'
+      ).length
+    ).toBe(supplierUpdateErrorToastCount);
   });
 });
