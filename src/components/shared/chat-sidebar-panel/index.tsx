@@ -1778,26 +1778,23 @@ const ChatSidebarPanel = memo(
             className="absolute bottom-2 left-0 right-0 px-3 pb-4"
           >
             <div className="relative z-10 rounded-2xl border border-slate-200 bg-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-[box-shadow] duration-[120ms] ease-out">
-              <AnimatePresence initial={false}>
-                {isSendSuccessGlowVisible ? (
-                  <motion.div
-                    key={sendSuccessGlowKey}
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      opacity: [0, 1, 0.7, 0.42, 0.24, 0.1, 0],
-                    }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      opacity: {
-                        duration: SEND_SUCCESS_GLOW_DURATION / 1000,
-                        times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
-                        ease: 'easeOut',
-                      },
-                    }}
-                    className="pointer-events-none absolute inset-0 z-0 rounded-2xl shadow-[inset_0_0_0_1px_oklch(50.8%_0.118_165.612_/_0.55),0_0_18px_oklch(50.8%_0.118_165.612_/_0.32),0_0_30px_oklch(50.8%_0.118_165.612_/_0.18)]"
-                  />
-                ) : null}
-              </AnimatePresence>
+              {isSendSuccessGlowVisible ? (
+                <motion.div
+                  key={sendSuccessGlowKey}
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0.7, 0.42, 0.24, 0.1, 0],
+                  }}
+                  transition={{
+                    opacity: {
+                      duration: SEND_SUCCESS_GLOW_DURATION / 1000,
+                      times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
+                      ease: 'easeOut',
+                    },
+                  }}
+                  className="pointer-events-none absolute inset-0 z-0 rounded-2xl shadow-[inset_0_0_0_1px_oklch(50.8%_0.118_165.612_/_0.55),0_0_18px_oklch(50.8%_0.118_165.612_/_0.32),0_0_30px_oklch(50.8%_0.118_165.612_/_0.18)]"
+                />
+              ) : null}
               <div className="relative z-10 m-px rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
                 <div
                   className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
