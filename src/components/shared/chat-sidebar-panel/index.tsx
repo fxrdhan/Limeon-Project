@@ -1547,17 +1547,27 @@ const ChatSidebarPanel = memo(
                               }`}
                               onClick={event => event.stopPropagation()}
                             >
-                              <span
-                                className={`absolute w-0 h-0 border-6 border-transparent ${
-                                  menuPlacement === 'left'
-                                    ? 'right-0 top-1/2 translate-x-full -translate-y-1/2 border-l-white'
-                                    : menuPlacement === 'right'
-                                      ? 'left-0 top-1/2 -translate-x-full -translate-y-1/2 border-r-white'
-                                      : menuPlacement === 'down'
-                                        ? 'bottom-0 left-3 translate-y-full border-t-white'
-                                        : 'top-0 left-3 -translate-y-full border-b-white'
-                                }`}
-                              />
+                              {menuPlacement === 'left' ? (
+                                <div className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2">
+                                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200" />
+                                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2" />
+                                </div>
+                              ) : menuPlacement === 'right' ? (
+                                <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2">
+                                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200" />
+                                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2" />
+                                </div>
+                              ) : menuPlacement === 'down' ? (
+                                <div className="absolute bottom-0 left-3 translate-y-full">
+                                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-200" />
+                                  <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white left-1/2 top-[-1px] -translate-x-1/2" />
+                                </div>
+                              ) : (
+                                <div className="absolute top-0 left-3 -translate-y-full">
+                                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-slate-200" />
+                                  <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-white left-1/2 bottom-[-1px] -translate-x-1/2" />
+                                </div>
+                              )}
                               <PopupMenuContent
                                 actions={menuActions}
                                 minWidthClassName="min-w-[120px]"
