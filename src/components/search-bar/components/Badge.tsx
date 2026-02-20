@@ -319,7 +319,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   return (
     <div
-      className={`rounded-md text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
+      className={`rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
       style={{
         ...shakeStyle,

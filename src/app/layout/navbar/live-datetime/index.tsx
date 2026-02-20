@@ -88,7 +88,7 @@ const DateTimeDisplay = () => {
           value={selectedDate}
           onChange={setSelectedDate}
         >
-          <div className="inline-flex items-center space-x-3 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-md transition-colors">
+          <div className="inline-flex items-center space-x-3 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-lg transition-colors">
             <span className="text-sm text-slate-600 tracking-tight font-medium">
               {datePart}
             </span>
@@ -100,7 +100,7 @@ const DateTimeDisplay = () => {
 
         {/* Time */}
         <div
-          className="text-sm text-slate-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-md transition-colors group"
+          className="text-sm text-slate-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-lg transition-colors group"
           onClick={handleTimeFormatToggle}
           title={`Click to switch to ${is24HourFormat ? '12' : '24'}-hour format`}
         >

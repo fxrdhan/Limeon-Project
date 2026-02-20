@@ -30,7 +30,7 @@ const FormSkeleton: React.FC<FormSkeletonProps> = ({
         {Array.from({ length: fields }, (_, index) => (
           <div key={index} className="space-y-2">
             <Skeleton className="h-4 w-24" animate={animate} />
-            <Skeleton className="h-10 w-full rounded-md" animate={animate} />
+            <Skeleton className="h-10 w-full rounded-lg" animate={animate} />
           </div>
         ))}
 

@@ -162,7 +162,7 @@ export const FormLoadingFallback = () => {
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="space-y-2">
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         ))}
 

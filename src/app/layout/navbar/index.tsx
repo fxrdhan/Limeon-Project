@@ -260,7 +260,7 @@ const Navbar = ({
           {/* Avatar Stack + Online Text Group */}
           <div className="relative">
             <div
-              className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-md hover:bg-slate-50 transition-colors"
+              className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
               onMouseEnter={handleOnlineTextEnter}
               onMouseLeave={handleOnlineTextLeave}
             >

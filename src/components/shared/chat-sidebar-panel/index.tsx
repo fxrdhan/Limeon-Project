@@ -11,13 +11,16 @@ import {
 } from 'react';
 import {
   TbCircleArrowDownFilled,
+  TbArrowUp,
   TbCopy,
   TbPencil,
   TbPlus,
-  TbSend2,
   TbTrash,
 } from 'react-icons/tb';
 import toast, { Toaster } from 'react-hot-toast';
+import PopupMenuContent, {
+  type PopupMenuAction,
+} from '@/components/image-manager/PopupMenuContent';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -1332,7 +1335,7 @@ const ChatSidebarPanel = memo(
             className="flex-1 px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
             style={{
               overflowAnchor: 'none',
-              paddingBottom: messageInputHeight + 108,
+              paddingBottom: messageInputHeight + 84,
             }}
             onClick={closeMessageMenu}
           >
@@ -1363,6 +1366,33 @@ const ChatSidebarPanel = memo(
                 const displayMessage = isMessageLong
                   ? msg.message.slice(0, MAX_MESSAGE_CHARS).trimEnd()
                   : msg.message;
+                const menuActions: PopupMenuAction[] = [
+                  {
+                    label: 'Salin',
+                    icon: <TbCopy className="h-4 w-4" />,
+                    onClick: () => {
+                      void handleCopyMessage(msg);
+                    },
+                  },
+                ];
+
+                if (isCurrentUser) {
+                  menuActions.push(
+                    {
+                      label: 'Edit',
+                      icon: <TbPencil className="h-4 w-4" />,
+                      onClick: () => handleEditMessage(msg),
+                    },
+                    {
+                      label: 'Hapus',
+                      icon: <TbTrash className="h-4 w-4" />,
+                      onClick: () => {
+                        void handleDeleteMessage(msg);
+                      },
+                      tone: 'danger',
+                    }
+                  );
+                }
 
                 return (
                   <motion.div
@@ -1506,7 +1536,7 @@ const ChatSidebarPanel = memo(
                                 y: 0,
                               }}
                               transition={{ duration: 0.12, ease: 'easeOut' }}
-                              className={`absolute z-20 min-w-[120px] overflow-hidden rounded-xl bg-white text-slate-900 shadow-lg ${
+                              className={`absolute z-20 text-slate-900 ${
                                 menuPlacement === 'left'
                                   ? 'right-full mr-2 top-1/2 -translate-y-1/2 origin-right'
                                   : menuPlacement === 'right'
@@ -1528,34 +1558,10 @@ const ChatSidebarPanel = memo(
                                         : 'top-0 left-3 -translate-y-full border-b-white'
                                 }`}
                               />
-                              <button
-                                type="button"
-                                onClick={() => handleCopyMessage(msg)}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
-                              >
-                                <TbCopy className="h-4 w-4" />
-                                Salin
-                              </button>
-                              {isCurrentUser ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleEditMessage(msg)}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-100 transition-colors"
-                                  >
-                                    <TbPencil className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteMessage(msg)}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-700 hover:bg-slate-100 transition-colors"
-                                  >
-                                    <TbTrash className="h-4 w-4" />
-                                    Hapus
-                                  </button>
-                                </>
-                              ) : null}
+                              <PopupMenuContent
+                                actions={menuActions}
+                                minWidthClassName="min-w-[120px]"
+                              />
                             </motion.div>
                           ) : null}
                         </AnimatePresence>
@@ -1659,9 +1665,9 @@ const ChatSidebarPanel = memo(
             ref={composerContainerRef}
             className="absolute bottom-2 left-0 right-0 px-3 pb-4"
           >
-            <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-2.5 transition-[height] duration-[85ms] ease-out">
+            <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
               <div
-                className={`grid grid-cols-[auto_1fr_auto] gap-x-2 ${
+                className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                   isMessageInputMultiline
                     ? 'grid-rows-[auto_auto] gap-y-1 items-end'
                     : 'grid-rows-[auto] gap-y-0 items-center'
@@ -1685,7 +1691,7 @@ const ChatSidebarPanel = memo(
                 />
                 <button
                   type="button"
-                  className={`h-8 w-8 rounded-full text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0 ${
+                  className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 ${
                     isMessageInputMultiline
                       ? 'col-start-1 row-start-2'
                       : 'col-start-1 row-start-1'
@@ -1695,13 +1701,13 @@ const ChatSidebarPanel = memo(
                 </button>
                 <button
                   onClick={handleSendMessage}
-                  className={`h-9 w-9 rounded-full bg-violet-500 text-white flex items-center justify-center transition-colors whitespace-nowrap hover:bg-violet-600 shrink-0 ${
+                  className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                     isMessageInputMultiline
                       ? 'col-start-3 row-start-2'
                       : 'col-start-3 row-start-1'
                   }`}
                 >
-                  <TbSend2 size={20} className="text-white" />
+                  <TbArrowUp size={20} className="text-white" />
                 </button>
               </div>
             </div>

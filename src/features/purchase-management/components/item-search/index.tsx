@@ -351,7 +351,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   ref={itemDropdownRef}
                   style={portalStyle}
                   className={classNames(
-                    'bg-white shadow-lg rounded-md border border-slate-200 max-h-60 overflow-y-auto',
+                    'bg-white shadow-lg rounded-lg border border-slate-200 max-h-60 overflow-y-auto',
                     'transition-all duration-200 ease-out',
                     {
                       'origin-top': dropDirection === 'down',

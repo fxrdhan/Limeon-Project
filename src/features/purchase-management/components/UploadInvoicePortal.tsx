@@ -643,7 +643,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           <motion.div
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="flex items-center p-3 pr-4 bg-slate-50 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="flex items-center p-3 pr-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
                             onClick={e => {
                               const target = e.target as HTMLElement;
                               const isRemoveButton = target.closest(
@@ -669,7 +669,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             {(() => {
                               const safeUrl = getSafeImageUrl(previewUrl);
                               return safeUrl ? (
-                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-slate-200 shrink-0">
+                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-lg border border-slate-200 shrink-0">
                                   <img
                                     src={safeUrl}
                                     alt="Thumbnail"
@@ -677,7 +677,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                   />
                                 </div>
                               ) : (
-                                <div className="h-16 w-16 rounded-md bg-slate-200 flex items-center justify-center shrink-0">
+                                <div className="h-16 w-16 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
                                   <TbPhoto className="h-8 w-8 text-slate-400" />
                                 </div>
                               );

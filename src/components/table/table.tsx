@@ -165,7 +165,7 @@ export const Table = memo(
               value={localValue}
               onChange={e => handleChange(e.target.value)}
               placeholder={`Search ${columnHeader.toLowerCase()}...`}
-              className="w-full pl-8 pr-2 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-8 pr-2 py-1 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         );
@@ -607,7 +607,7 @@ export const TableHeader = ({
         'overflow-hidden whitespace-nowrap text-ellipsis',
         'group-hover:whitespace-normal group-hover:overflow-visible',
         'bg-slate-200 border-r border-slate-300 last:border-r-0',
-        'first:rounded-tl-md last:rounded-tr-md',
+        'first:rounded-tl-lg last:rounded-tr-lg',
         {
           'sticky top-0 z-30 bg-slate-200': stickyHeader,
           'cursor-pointer select-none hover:bg-slate-300 transition-colors duration-150':

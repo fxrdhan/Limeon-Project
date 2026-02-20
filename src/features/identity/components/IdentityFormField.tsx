@@ -159,7 +159,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
   };
 
   return (
-    <div className="bg-white rounded-md">
+    <div className="bg-white rounded-lg">
       <div className="flex justify-between items-center mb-1">
         <label
           htmlFor={field.key}
@@ -173,7 +173,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       {isInEditMode ? (
         renderEditableField()
       ) : (
-        <div className="p-2 bg-slate-50 rounded-md min-h-[40px] text-sm">
+        <div className="p-2 bg-slate-50 rounded-lg min-h-[40px] text-sm">
           {renderDisplayValue()}
         </div>
       )}

@@ -716,7 +716,7 @@ export default function ItemPricingForm({
               >
                 <button
                   type="button"
-                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors cursor-pointer ${
+                  className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
                     showLevelPricing
                       ? 'text-emerald-600 bg-emerald-50'
                       : 'text-slate-700 hover:bg-slate-100'
@@ -812,7 +812,7 @@ export default function ItemPricingForm({
                 </div>
                 {baselineAddOpen ? (
                   <div className="px-3 pb-3">
-                    <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-2 space-y-2">
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-2 space-y-2">
                       <Input
                         ref={baselineNameInputRef}
                         value={baselineNewName}

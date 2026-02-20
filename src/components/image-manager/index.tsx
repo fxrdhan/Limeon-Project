@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { ImageUploaderProps } from '@/types';
 import { ClipLoader } from 'react-spinners';
 import { TbEdit, TbTrash, TbUpload, TbX } from 'react-icons/tb';
-import Button from '@/components/button';
+import PopupMenuContent from './PopupMenuContent';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   id,
@@ -79,7 +79,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       case 'rounded':
         return 'rounded-lg';
       case 'rounded-sm':
-        return 'rounded-md';
+        return 'rounded-lg';
       case 'square':
         return 'rounded-none';
       case 'full':
@@ -505,29 +505,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
-              <div className="px-1 py-1 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[90px]">
-                {getPopupOptions().map(option => (
-                  <Button
-                    key={option.label}
-                    variant={option.label === 'Hapus' ? 'text-danger' : 'text'}
-                    size="sm"
-                    withUnderline={false}
-                    onClick={event => {
-                      event.stopPropagation();
-                      option.action();
-                    }}
-                    disabled={option.disabled}
-                    className={`w-full px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start ${
-                      option.label === 'Hapus'
-                        ? ''
-                        : 'hover:bg-slate-200 text-slate-700 hover:text-slate-900'
-                    }`}
-                  >
-                    {option.icon}
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
+              <PopupMenuContent
+                actions={getPopupOptions().map(option => ({
+                  label: option.label,
+                  icon: option.icon,
+                  onClick: option.action,
+                  disabled: option.disabled,
+                  tone: option.label === 'Hapus' ? 'danger' : 'default',
+                }))}
+              />
               {!isClickTrigger &&
                 (popupPosition === 'right' ? (
                   <div className="absolute right-full top-1/2 transform -translate-y-1/2">

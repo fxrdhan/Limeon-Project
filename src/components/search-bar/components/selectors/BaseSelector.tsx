@@ -546,7 +546,7 @@ function BaseSelector<T>({
                       {/* Sliding Background Indicator - only render when positioned */}
                       {indicatorStyle.height > 0 && (
                         <motion.div
-                          className={`absolute rounded-md pointer-events-none ${
+                          className={`absolute rounded-lg pointer-events-none ${
                             config.theme === 'blue'
                               ? 'bg-blue-100'
                               : config.theme === 'orange'
@@ -599,7 +599,7 @@ function BaseSelector<T>({
                             ref={el => {
                               itemRefs.current[index] = el;
                             }}
-                            className={`px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-md relative z-10 transition-colors duration-150 ${
+                            className={`px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative z-10 transition-colors duration-150 ${
                               isSelected ? '' : hoverClass
                             }`}
                             onClick={() => onSelect(item)}

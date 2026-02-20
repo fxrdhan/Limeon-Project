@@ -53,7 +53,7 @@ export default function FefoTooltip({
               transform: 'translate(-50%, -100%)',
               zIndex: 1000,
             }}
-            className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-md shadow-lg"
+            className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-lg shadow-lg"
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={handleMouseLeave}
           >

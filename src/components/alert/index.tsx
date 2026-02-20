@@ -75,7 +75,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
       <div className="grow text-sm break-words">{message}</div>
       <button
         onClick={onClose}
-        className="ml-4 p-1 rounded-md hover:bg-black/10 focus:outline-hidden focus:ring-2 focus:ring-current transition-colors text-inherit"
+        className="ml-4 p-1 rounded-lg hover:bg-black/10 focus:outline-hidden focus:ring-2 focus:ring-current transition-colors text-inherit"
         aria-label="Tutup notifikasi"
       >
         <TbX size={14} />
