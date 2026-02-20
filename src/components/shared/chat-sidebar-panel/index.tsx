@@ -154,10 +154,12 @@ const ChatSidebarPanel = memo(
         const spaceRight = containerRect.right - anchorRect.right;
         const spaceAbove = anchorRect.top - containerRect.top;
         const spaceBelow = visibleBottom - anchorRect.bottom;
+        const hasBottomAnchoredSideRoom =
+          spaceAbove >= MENU_HEIGHT - anchorRect.height + MENU_GAP;
         const canFitLeft =
           spaceLeft >= MENU_WIDTH + MENU_GAP &&
-          spaceAbove >= MENU_HEIGHT / 2 &&
-          spaceBelow >= MENU_HEIGHT / 2;
+          (hasBottomAnchoredSideRoom ||
+            (spaceAbove >= MENU_HEIGHT / 2 && spaceBelow >= MENU_HEIGHT / 2));
         const canFitRight =
           spaceRight >= MENU_WIDTH + MENU_GAP &&
           spaceAbove >= MENU_HEIGHT / 2 &&
@@ -1393,6 +1395,24 @@ const ChatSidebarPanel = memo(
                     }
                   );
                 }
+                const isBottomAnchoredSideMenu =
+                  isCurrentUser &&
+                  (menuPlacement === 'left' || menuPlacement === 'right');
+                const sidePlacementClass =
+                  menuPlacement === 'left'
+                    ? isBottomAnchoredSideMenu
+                      ? 'right-full mr-2 bottom-0 origin-bottom-right'
+                      : 'right-full mr-2 top-1/2 -translate-y-1/2 origin-right'
+                    : menuPlacement === 'right'
+                      ? isBottomAnchoredSideMenu
+                        ? 'left-full ml-2 bottom-0 origin-bottom-left'
+                        : 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
+                      : menuPlacement === 'down'
+                        ? 'bottom-full mb-2 left-0 origin-bottom-left'
+                        : 'top-full mt-2 left-0 origin-top-left';
+                const sideArrowAnchorClass = isBottomAnchoredSideMenu
+                  ? 'top-[78%] -translate-y-1/2'
+                  : 'top-1/2 -translate-y-1/2';
 
                 return (
                   <motion.div
@@ -1536,24 +1556,20 @@ const ChatSidebarPanel = memo(
                                 y: 0,
                               }}
                               transition={{ duration: 0.12, ease: 'easeOut' }}
-                              className={`absolute z-20 text-slate-900 ${
-                                menuPlacement === 'left'
-                                  ? 'right-full mr-2 top-1/2 -translate-y-1/2 origin-right'
-                                  : menuPlacement === 'right'
-                                    ? 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
-                                    : menuPlacement === 'down'
-                                      ? 'bottom-full mb-2 left-0 origin-bottom-left'
-                                      : 'top-full mt-2 left-0 origin-top-left'
-                              }`}
+                              className={`absolute z-20 text-slate-900 ${sidePlacementClass}`}
                               onClick={event => event.stopPropagation()}
                             >
                               {menuPlacement === 'left' ? (
-                                <div className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2">
+                                <div
+                                  className={`absolute right-0 translate-x-full ${sideArrowAnchorClass}`}
+                                >
                                   <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200" />
                                   <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2" />
                                 </div>
                               ) : menuPlacement === 'right' ? (
-                                <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2">
+                                <div
+                                  className={`absolute left-0 -translate-x-full ${sideArrowAnchorClass}`}
+                                >
                                   <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200" />
                                   <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2" />
                                 </div>
