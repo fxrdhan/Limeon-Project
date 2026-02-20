@@ -54,7 +54,8 @@ const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 const MESSAGE_INPUT_MIN_HEIGHT = 22;
 const MESSAGE_INPUT_MAX_HEIGHT = 170;
 const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
-const SEND_SUCCESS_GLOW_DURATION = 1120;
+const SEND_SUCCESS_GLOW_DURATION = 1760;
+const MESSAGE_BOTTOM_GAP = 12;
 const TEXT_MOVE_TRANSITION = {
   type: 'tween' as const,
   duration: 0.07,
@@ -122,6 +123,9 @@ const ChatSidebarPanel = memo(
     const [sendSuccessGlowKey, setSendSuccessGlowKey] = useState(0);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
+    const shouldPinToBottomOnOpenRef = useRef(false);
+    const hasCompletedInitialOpenLoadRef = useRef(false);
     const inlineOverflowThresholdRef = useRef<number | null>(null);
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
@@ -148,6 +152,39 @@ const ChatSidebarPanel = memo(
         visibleBottom,
       };
     }, []);
+
+    const scrollMessagesToBottom = useCallback(
+      (behavior: ScrollBehavior) => {
+        const container = messagesContainerRef.current;
+        const endMarker = messagesEndRef.current;
+        const bounds = getVisibleMessagesBounds();
+        if (!container || !endMarker || !bounds) return;
+
+        const hiddenBottom = Math.max(
+          0,
+          bounds.containerRect.bottom - bounds.visibleBottom
+        );
+        const visibleHeight = container.clientHeight - hiddenBottom;
+        if (visibleHeight <= 0) return;
+
+        const endTopInContent =
+          endMarker.getBoundingClientRect().top -
+          bounds.containerRect.top +
+          container.scrollTop;
+        const targetScrollTop =
+          endTopInContent - Math.max(visibleHeight - MESSAGE_BOTTOM_GAP, 0);
+        const maxScrollTop = Math.max(
+          0,
+          container.scrollHeight - container.clientHeight
+        );
+
+        container.scrollTo({
+          top: Math.min(Math.max(targetScrollTop, 0), maxScrollTop),
+          behavior,
+        });
+      },
+      [getVisibleMessagesBounds]
+    );
 
     const getMenuPlacement = useCallback(
       (anchorRect: DOMRect, preferredSide: 'left' | 'right'): MenuPlacement => {
@@ -573,17 +610,17 @@ const ChatSidebarPanel = memo(
                 : targetUser.name || 'Unknown',
           }));
 
+          // Skip enter animation for messages that exist on initial load/open.
+          initialMessageAnimationKeysRef.current = new Set(
+            transformedMessages.map(
+              messageItem => messageItem.stableKey || messageItem.id
+            )
+          );
           setMessages(transformedMessages);
-
-          // Auto-scroll to bottom after messages are loaded
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            setIsAtBottom(true);
-            setHasNewMessages(false);
-          }, 100);
         } catch (error) {
           console.error('Error loading messages:', error);
         } finally {
+          hasCompletedInitialOpenLoadRef.current = true;
           setLoading(false);
         }
       };
@@ -786,6 +823,7 @@ const ChatSidebarPanel = memo(
       currentChannelId,
       updateUserChatOpen,
       loadTargetUserPresence,
+      scrollMessagesToBottom,
     ]);
 
     // Cleanup presence on component unmount
@@ -869,6 +907,12 @@ const ChatSidebarPanel = memo(
 
     // Auto-scroll to bottom only if user is at bottom
     useEffect(() => {
+      if (
+        shouldPinToBottomOnOpenRef.current ||
+        !hasCompletedInitialOpenLoadRef.current
+      )
+        return;
+
       if (messages.length > 0) {
         // Check current scroll position before new message
         const wasAtBottom = checkIfAtBottom();
@@ -876,7 +920,7 @@ const ChatSidebarPanel = memo(
         if (wasAtBottom) {
           // User was at bottom, auto-scroll and don't show arrow
           setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            scrollMessagesToBottom('auto');
           }, 10);
           setHasNewMessages(false);
         } else {
@@ -885,7 +929,19 @@ const ChatSidebarPanel = memo(
           setHasNewMessages(true);
         }
       }
-    }, [messages, checkIfAtBottom]);
+    }, [messages, checkIfAtBottom, scrollMessagesToBottom]);
+
+    useLayoutEffect(() => {
+      if (!isOpen || !shouldPinToBottomOnOpenRef.current) return;
+
+      scrollMessagesToBottom('auto');
+      setIsAtBottom(true);
+      setHasNewMessages(false);
+
+      if (hasCompletedInitialOpenLoadRef.current && !loading) {
+        shouldPinToBottomOnOpenRef.current = false;
+      }
+    }, [isOpen, loading, messages, messageInputHeight, scrollMessagesToBottom]);
 
     // Add scroll event listener
     useEffect(() => {
@@ -898,15 +954,12 @@ const ChatSidebarPanel = memo(
 
     // Initialize scroll position when chat opens
     useEffect(() => {
-      if (isOpen && messagesContainerRef.current) {
-        // Reset states when chat opens
-        setIsAtBottom(true);
-        setHasNewMessages(false);
-        // Ensure we're at bottom when chat opens (longer delay to ensure rendering)
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 200);
-      }
+      if (!isOpen) return;
+
+      shouldPinToBottomOnOpenRef.current = true;
+      hasCompletedInitialOpenLoadRef.current = false;
+      setIsAtBottom(true);
+      setHasNewMessages(false);
     }, [isOpen]);
 
     // Helper functions for avatar display
@@ -940,7 +993,7 @@ const ChatSidebarPanel = memo(
     // Scroll to bottom function
     /* c8 ignore next 5 */
     const scrollToBottom = () => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollMessagesToBottom('smooth');
       setHasNewMessages(false);
       setIsAtBottom(true);
     };
@@ -1388,6 +1441,8 @@ const ChatSidebarPanel = memo(
 
                 // Use stableKey from message if available, otherwise fall back to ID
                 const animationKey = msg.stableKey || msg.id;
+                const shouldAnimateEnter =
+                  !initialMessageAnimationKeysRef.current.has(animationKey);
 
                 const isExpanded = expandedMessageIds.has(msg.id);
                 const isMessageLong =
@@ -1444,7 +1499,11 @@ const ChatSidebarPanel = memo(
                 return (
                   <motion.div
                     key={animationKey}
-                    initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                    initial={
+                      shouldAnimateEnter
+                        ? { opacity: 0, scale: 0.7, y: 10 }
+                        : false
+                    }
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{
                       duration: 0.3,
@@ -1725,17 +1784,17 @@ const ChatSidebarPanel = memo(
                     key={sendSuccessGlowKey}
                     initial={{ opacity: 0 }}
                     animate={{
-                      opacity: [0, 1, 0.58, 0.34, 0.2, 0.11, 0.05, 0],
+                      opacity: [0, 1, 0.7, 0.42, 0.24, 0.1, 0],
                     }}
                     exit={{ opacity: 0 }}
                     transition={{
                       opacity: {
                         duration: SEND_SUCCESS_GLOW_DURATION / 1000,
-                        times: [0, 0.06, 0.2, 0.36, 0.52, 0.7, 0.86, 1],
+                        times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
                         ease: 'easeOut',
                       },
                     }}
-                    className="pointer-events-none absolute inset-0 z-0 rounded-2xl shadow-[inset_0_0_0_1px_oklch(50.8%_0.118_165.612),0_0_22px_oklch(50.8%_0.118_165.612_/_0.4),0_0_34px_oklch(50.8%_0.118_165.612_/_0.24)]"
+                    className="pointer-events-none absolute inset-0 z-0 rounded-2xl shadow-[inset_0_0_0_1px_oklch(50.8%_0.118_165.612_/_0.55),0_0_18px_oklch(50.8%_0.118_165.612_/_0.32),0_0_30px_oklch(50.8%_0.118_165.612_/_0.18)]"
                   />
                 ) : null}
               </AnimatePresence>
