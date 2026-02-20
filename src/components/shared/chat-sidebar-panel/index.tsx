@@ -54,6 +54,7 @@ const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 const MESSAGE_INPUT_MIN_HEIGHT = 22;
 const MESSAGE_INPUT_MAX_HEIGHT = 170;
 const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
+const SEND_SUCCESS_GLOW_DURATION = 1120;
 const TEXT_MOVE_TRANSITION = {
   type: 'tween' as const,
   duration: 0.07,
@@ -116,7 +117,11 @@ const ChatSidebarPanel = memo(
     const [composerLayoutMode, setComposerLayoutMode] = useState<
       'inline' | 'multiline'
     >('inline');
+    const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
+      useState(false);
+    const [sendSuccessGlowKey, setSendSuccessGlowKey] = useState(0);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
+    const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const inlineOverflowThresholdRef = useRef<number | null>(null);
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
@@ -391,6 +396,18 @@ const ChatSidebarPanel = memo(
         isActive = false;
       };
     }, [targetProfilePhotoUrl]);
+
+    const triggerSendSuccessGlow = useCallback(() => {
+      setSendSuccessGlowKey(prev => prev + 1);
+      setIsSendSuccessGlowVisible(true);
+      if (sendSuccessGlowTimeoutRef.current) {
+        clearTimeout(sendSuccessGlowTimeoutRef.current);
+      }
+      sendSuccessGlowTimeoutRef.current = setTimeout(() => {
+        setIsSendSuccessGlowVisible(false);
+        sendSuccessGlowTimeoutRef.current = null;
+      }, SEND_SUCCESS_GLOW_DURATION);
+    }, []);
 
     // Centralized close logic (used by close button AND external triggers)
     const performClose = useCallback(async () => {
@@ -797,6 +814,15 @@ const ChatSidebarPanel = memo(
       };
     }, [user, performClose]);
 
+    useEffect(() => {
+      return () => {
+        if (sendSuccessGlowTimeoutRef.current) {
+          clearTimeout(sendSuccessGlowTimeoutRef.current);
+          sendSuccessGlowTimeoutRef.current = null;
+        }
+      };
+    }, []);
+
     // Handle browser tab close/refresh
     useEffect(() => {
       const handleBeforeUnload = () => {
@@ -1151,6 +1177,7 @@ const ChatSidebarPanel = memo(
       setMessages(prev => [...prev, optimisticMessage]);
       setIsAtBottom(true);
       setHasNewMessages(false);
+      triggerSendSuccessGlow();
 
       try {
         // Insert message into database (simplified query)
@@ -1691,50 +1718,72 @@ const ChatSidebarPanel = memo(
             ref={composerContainerRef}
             className="absolute bottom-2 left-0 right-0 px-3 pb-4"
           >
-            <div className="relative z-10 rounded-2xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
-              <div
-                className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
-                  isMessageInputMultiline
-                    ? 'grid-rows-[auto_auto] gap-y-1 items-end'
-                    : 'grid-rows-[auto] gap-y-0 items-center'
-                }`}
-              >
-                <motion.textarea
-                  layout="position"
-                  transition={{ layout: TEXT_MOVE_TRANSITION }}
-                  ref={messageInputRef}
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Type a message..."
-                  rows={1}
-                  style={{ height: `${messageInputHeight}px` }}
-                  className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-[85ms] ease-out ${
+            <div className="relative z-10 rounded-2xl border border-slate-200 bg-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-[box-shadow] duration-[120ms] ease-out">
+              <AnimatePresence initial={false}>
+                {isSendSuccessGlowVisible ? (
+                  <motion.div
+                    key={sendSuccessGlowKey}
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: [0, 1, 0.58, 0.34, 0.2, 0.11, 0.05, 0],
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      opacity: {
+                        duration: SEND_SUCCESS_GLOW_DURATION / 1000,
+                        times: [0, 0.06, 0.2, 0.36, 0.52, 0.7, 0.86, 1],
+                        ease: 'easeOut',
+                      },
+                    }}
+                    className="pointer-events-none absolute inset-0 z-0 rounded-2xl shadow-[inset_0_0_0_1px_oklch(50.8%_0.118_165.612),0_0_22px_oklch(50.8%_0.118_165.612_/_0.4),0_0_34px_oklch(50.8%_0.118_165.612_/_0.24)]"
+                  />
+                ) : null}
+              </AnimatePresence>
+              <div className="relative z-10 m-px rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
+                <div
+                  className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                     isMessageInputMultiline
-                      ? 'col-span-3 row-start-1 self-start'
-                      : 'col-start-2 row-start-1 self-center'
-                  }`}
-                />
-                <button
-                  type="button"
-                  className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 ${
-                    isMessageInputMultiline
-                      ? 'col-start-1 row-start-2'
-                      : 'col-start-1 row-start-1'
+                      ? 'grid-rows-[auto_auto] gap-y-1 items-end'
+                      : 'grid-rows-[auto] gap-y-0 items-center'
                   }`}
                 >
-                  <TbPlus size={20} />
-                </button>
-                <button
-                  onClick={handleSendMessage}
-                  className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
-                    isMessageInputMultiline
-                      ? 'col-start-3 row-start-2'
-                      : 'col-start-3 row-start-1'
-                  }`}
-                >
-                  <TbArrowUp size={20} className="text-white" />
-                </button>
+                  <motion.textarea
+                    layout="position"
+                    transition={{ layout: TEXT_MOVE_TRANSITION }}
+                    ref={messageInputRef}
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Type a message..."
+                    rows={1}
+                    style={{ height: `${messageInputHeight}px` }}
+                    className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-[85ms] ease-out ${
+                      isMessageInputMultiline
+                        ? 'col-span-3 row-start-1 self-start'
+                        : 'col-start-2 row-start-1 self-center'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 ${
+                      isMessageInputMultiline
+                        ? 'col-start-1 row-start-2'
+                        : 'col-start-1 row-start-1'
+                    }`}
+                  >
+                    <TbPlus size={20} />
+                  </button>
+                  <button
+                    onClick={handleSendMessage}
+                    className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
+                      isMessageInputMultiline
+                        ? 'col-start-3 row-start-2'
+                        : 'col-start-3 row-start-1'
+                    }`}
+                  >
+                    <TbArrowUp size={20} className="text-white" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
