@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
 import { UseFieldFocusOptions } from '@/types';
 
+const isChatSidebarOpen = () =>
+  typeof document !== 'undefined' &&
+  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
+
 export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
   const {
     searchInputRef,
@@ -12,9 +16,15 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
   } = options;
 
   useEffect(() => {
-    if (searchInputRef?.current && !isModalOpen && !isLoading && !isFetching) {
+    if (
+      searchInputRef?.current &&
+      !isModalOpen &&
+      !isLoading &&
+      !isFetching &&
+      !isChatSidebarOpen()
+    ) {
       requestAnimationFrame(() => {
-        if (searchInputRef.current && !isModalOpen) {
+        if (searchInputRef.current && !isModalOpen && !isChatSidebarOpen()) {
           searchInputRef.current.focus({ preventScroll: true });
         }
       });
@@ -31,8 +41,10 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
   useEffect(() => {
     const handlePageClick = (event: MouseEvent) => {
       if (isModalOpen || !searchInputRef?.current) return;
+      if (isChatSidebarOpen()) return;
 
       const target = event.target as HTMLElement;
+      if (target.closest('[data-chat-sidebar-open="true"]')) return;
 
       if (searchInputRef.current.contains(target)) {
         return;
@@ -59,7 +71,10 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
 
     const handleFocusOut = (event: FocusEvent) => {
       if (!isModalOpen && searchInputRef?.current) {
+        if (isChatSidebarOpen()) return;
+
         const relatedTarget = event.relatedTarget as HTMLElement;
+        if (relatedTarget?.closest('[data-chat-sidebar-open="true"]')) return;
 
         // Don't refocus if moving to table input or other interactive elements
         if (
@@ -75,7 +90,11 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
 
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            if (searchInputRef.current && !isModalOpen) {
+            if (
+              searchInputRef.current &&
+              !isModalOpen &&
+              !isChatSidebarOpen()
+            ) {
               searchInputRef.current.focus({ preventScroll: true });
             }
           });

@@ -44,6 +44,10 @@ interface Purchase {
   } | null;
 }
 
+const isChatSidebarOpen = () =>
+  typeof document !== 'undefined' &&
+  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
+
 const PurchaseList = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -435,7 +439,7 @@ const PurchaseList = () => {
               queryKey: QueryKeys.purchases.all,
             });
             setTimeout(() => {
-              if (searchInputRef.current) {
+              if (searchInputRef.current && !isChatSidebarOpen()) {
                 searchInputRef.current.focus();
               }
             }, 100);

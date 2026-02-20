@@ -29,6 +29,9 @@ import {
 type MasterDataIdentity = Supplier | Patient | Doctor | Customer;
 const IDENTITY_IMAGE_BUCKET = 'profiles';
 const IMAGE_ENABLED_TABLES = new Set(['suppliers', 'patients', 'doctors']);
+const isChatSidebarOpen = () =>
+  typeof document !== 'undefined' &&
+  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
 
 // Simplified hook selector - realtime always enabled for simplicity
 const getHooksForTable = (tableName: string) => {
@@ -144,12 +147,14 @@ export const useMasterDataManagement = (
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable;
         const isModalOpen = actualIsModalOpen;
+        const isChatOpen = isChatSidebarOpen();
         const isTypeable =
           /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
 
         if (
           !isInputFocused &&
           !isModalOpen &&
+          !isChatOpen &&
           isTypeable &&
           !e.ctrlKey &&
           !e.altKey &&

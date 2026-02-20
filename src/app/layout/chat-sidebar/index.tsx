@@ -18,6 +18,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           animate={{ width: 420, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
+          data-chat-sidebar-open="true"
           className="h-full overflow-hidden border-l border-slate-200 bg-white"
         >
           <ChatSidebarPanel

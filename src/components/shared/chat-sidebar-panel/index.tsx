@@ -952,6 +952,33 @@ const ChatSidebarPanel = memo(
       }
     }, [handleScroll]);
 
+    const focusMessageComposer = useCallback(() => {
+      const textarea = messageInputRef.current;
+      if (!textarea) return;
+
+      textarea.focus();
+      const cursorPosition = textarea.value.length;
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }, []);
+
+    const handleChatPortalBackgroundClick = useCallback(
+      (event: React.MouseEvent<HTMLDivElement>) => {
+        const target = event.target as HTMLElement;
+        if (!target) return;
+
+        if (
+          target.closest(
+            'button, [role="button"], a, input, textarea, select, [contenteditable="true"]'
+          )
+        ) {
+          return;
+        }
+
+        focusMessageComposer();
+      },
+      [focusMessageComposer]
+    );
+
     // Initialize scroll position when chat opens
     useEffect(() => {
       if (!isOpen) return;
@@ -961,6 +988,18 @@ const ChatSidebarPanel = memo(
       setIsAtBottom(true);
       setHasNewMessages(false);
     }, [isOpen]);
+
+    useEffect(() => {
+      if (!isOpen) return;
+
+      const rafId = requestAnimationFrame(focusMessageComposer);
+      const timeoutId = setTimeout(focusMessageComposer, 120);
+
+      return () => {
+        cancelAnimationFrame(rafId);
+        clearTimeout(timeoutId);
+      };
+    }, [isOpen, focusMessageComposer]);
 
     // Helper functions for avatar display
     const getInitials = (name: string) => {
@@ -1102,6 +1141,8 @@ const ChatSidebarPanel = memo(
       setEditingMessageId(targetMessage.id);
       setMessage(targetMessage.message);
       closeMessageMenu();
+      requestAnimationFrame(focusMessageComposer);
+      setTimeout(focusMessageComposer, 60);
     };
 
     const handleCopyMessage = useCallback(
@@ -1312,6 +1353,7 @@ const ChatSidebarPanel = memo(
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="relative h-full w-full"
+        onClickCapture={handleChatPortalBackgroundClick}
       >
         <Toaster
           toasterId={CHAT_SIDEBAR_TOASTER_ID}
@@ -1437,6 +1479,12 @@ const ChatSidebarPanel = memo(
                     minute: '2-digit',
                   }
                 );
+                const createdTimestamp = new Date(msg.created_at).getTime();
+                const updatedTimestamp = new Date(msg.updated_at).getTime();
+                const isEdited =
+                  Number.isFinite(createdTimestamp) &&
+                  Number.isFinite(updatedTimestamp) &&
+                  updatedTimestamp > createdTimestamp;
                 const isMenuOpen = openMenuMessageId === msg.id;
 
                 // Use stableKey from message if available, otherwise fall back to ID
@@ -1685,7 +1733,13 @@ const ChatSidebarPanel = memo(
                       >
                         {isCurrentUser ? (
                           <>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                              {isEdited ? (
+                                <>
+                                  <span className="text-slate-400">Diedit</span>
+                                  <span className="text-slate-500">•</span>
+                                </>
+                              ) : null}
                               {displayTime}
                             </span>
                             <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
@@ -1723,8 +1777,14 @@ const ChatSidebarPanel = memo(
                                 </div>
                               )}
                             </div>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
                               {displayTime}
+                              {isEdited ? (
+                                <>
+                                  <span className="text-slate-500">•</span>
+                                  <span className="text-slate-400">Diedit</span>
+                                </>
+                              ) : null}
                             </span>
                           </>
                         )}
