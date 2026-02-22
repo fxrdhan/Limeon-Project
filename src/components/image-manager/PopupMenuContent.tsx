@@ -21,6 +21,7 @@ interface PopupMenuContentProps {
   minWidthClassName?: string;
   enableArrowNavigation?: boolean;
   autoFocusFirstItem?: boolean;
+  useMenuItemRole?: boolean;
   initialPreselectedIndex?: number;
   onPreselectedIndexChange?: (index: number) => void;
 }
@@ -30,6 +31,7 @@ const PopupMenuContent = ({
   minWidthClassName = 'min-w-[90px]',
   enableArrowNavigation = false,
   autoFocusFirstItem = false,
+  useMenuItemRole = true,
   initialPreselectedIndex,
   onPreselectedIndexChange,
 }: PopupMenuContentProps) => {
@@ -150,7 +152,9 @@ const PopupMenuContent = ({
               action.onClick();
             }}
             disabled={action.disabled}
-            role={enableArrowNavigation ? 'menuitem' : undefined}
+            role={
+              enableArrowNavigation && useMenuItemRole ? 'menuitem' : undefined
+            }
             data-preselected={isPreselected ? 'true' : undefined}
             onFocus={() => {
               if (!action.disabled) {

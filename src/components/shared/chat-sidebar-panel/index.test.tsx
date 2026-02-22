@@ -312,7 +312,9 @@ describe('ChatSidebarPanel', () => {
         }),
       });
     });
-    expect(await screen.findByText('Realtime masuk')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Realtime masuk')).toBeInTheDocument();
+    });
 
     const updateMessageHandler = getHandler(
       'chat_dm_user-1_user-2',

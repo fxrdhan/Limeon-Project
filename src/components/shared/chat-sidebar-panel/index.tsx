@@ -93,10 +93,6 @@ const ChatSidebarPanel = memo(
     const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
       null
     );
-    const [
-      menuPreselectedActionIndexByMessageId,
-      setMenuPreselectedActionIndexByMessageId,
-    ] = useState<Record<string, number>>({});
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
     const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
@@ -166,10 +162,14 @@ const ChatSidebarPanel = memo(
 
       const composerTop =
         composerContainerRef.current?.getBoundingClientRect().top;
-      const visibleBottom =
-        typeof composerTop === 'number'
-          ? Math.min(containerRect.bottom, composerTop)
-          : containerRect.bottom;
+      const hasValidComposerTop =
+        typeof composerTop === 'number' &&
+        Number.isFinite(composerTop) &&
+        composerTop > containerRect.top &&
+        composerTop < containerRect.bottom;
+      const visibleBottom = hasValidComposerTop
+        ? composerTop
+        : containerRect.bottom;
 
       return {
         containerRect,
@@ -222,14 +222,15 @@ const ChatSidebarPanel = memo(
         const spaceBelow = visibleBottom - anchorRect.bottom;
         const hasBottomAnchoredSideRoom =
           spaceAbove >= MENU_HEIGHT - anchorRect.height + MENU_GAP;
+        const hasSideVerticalRoom =
+          spaceAbove >= MENU_HEIGHT / 2 && spaceBelow >= MENU_HEIGHT / 2;
         const canFitLeft =
           spaceLeft >= MENU_WIDTH + MENU_GAP &&
-          (hasBottomAnchoredSideRoom ||
-            (spaceAbove >= MENU_HEIGHT / 2 && spaceBelow >= MENU_HEIGHT / 2));
+          (preferredSide === 'left'
+            ? hasBottomAnchoredSideRoom || hasSideVerticalRoom
+            : hasSideVerticalRoom);
         const canFitRight =
-          spaceRight >= MENU_WIDTH + MENU_GAP &&
-          spaceAbove >= MENU_HEIGHT / 2 &&
-          spaceBelow >= MENU_HEIGHT / 2;
+          spaceRight >= MENU_WIDTH + MENU_GAP && hasSideVerticalRoom;
 
         if (preferredSide === 'left' && canFitLeft) return 'left';
         if (preferredSide === 'right' && canFitRight) return 'right';
@@ -642,7 +643,20 @@ const ChatSidebarPanel = memo(
               messageItem => messageItem.stableKey || messageItem.id
             )
           );
-          setMessages(transformedMessages);
+          setMessages(previousMessages => {
+            if (previousMessages.length === 0) {
+              return transformedMessages;
+            }
+
+            const transformedIds = new Set(
+              transformedMessages.map(messageItem => messageItem.id)
+            );
+            const pendingMessages = previousMessages.filter(
+              messageItem => !transformedIds.has(messageItem.id)
+            );
+
+            return [...transformedMessages, ...pendingMessages];
+          });
         } catch (error) {
           console.error('Error loading messages:', error);
         } finally {
@@ -1562,8 +1576,6 @@ const ChatSidebarPanel = memo(
                   Number.isFinite(updatedTimestamp) &&
                   updatedTimestamp > createdTimestamp;
                 const isMenuOpen = openMenuMessageId === msg.id;
-                const savedPreselectedActionIndex =
-                  menuPreselectedActionIndexByMessageId[msg.id];
 
                 // Use stableKey from message if available, otherwise fall back to ID
                 const animationKey = msg.stableKey || msg.id;
@@ -1809,25 +1821,7 @@ const ChatSidebarPanel = memo(
                               <PopupMenuContent
                                 actions={menuActions}
                                 minWidthClassName="min-w-[120px]"
-                                enableArrowNavigation
-                                autoFocusFirstItem
-                                initialPreselectedIndex={
-                                  savedPreselectedActionIndex
-                                }
-                                onPreselectedIndexChange={nextIndex => {
-                                  setMenuPreselectedActionIndexByMessageId(
-                                    previousState => {
-                                      if (previousState[msg.id] === nextIndex) {
-                                        return previousState;
-                                      }
-
-                                      return {
-                                        ...previousState,
-                                        [msg.id]: nextIndex,
-                                      };
-                                    }
-                                  );
-                                }}
+                                enableArrowNavigation={false}
                               />
                             </motion.div>
                           ) : null}
@@ -2057,7 +2051,7 @@ const ChatSidebarPanel = memo(
                     layout="position"
                     transition={{ layout: TEXT_MOVE_TRANSITION }}
                     onClick={handleSendMessage}
-                    className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
+                    className={`h-8 w-8 rounded-xl bg-primary bg-violet-500 text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                       isMessageInputMultiline
                         ? 'col-start-3 row-start-2'
                         : 'col-start-3 row-start-1'
