@@ -16,6 +16,7 @@ import {
   TbPencil,
   TbPlus,
   TbTrash,
+  TbX,
 } from 'react-icons/tb';
 import toast, { Toaster } from 'react-hot-toast';
 import PopupMenuContent, {
@@ -1164,6 +1165,13 @@ const ChatSidebarPanel = memo(
       setTimeout(focusMessageComposer, 60);
     };
 
+    const handleCancelEditMessage = useCallback(() => {
+      setEditingMessageId(null);
+      setMessage('');
+      closeMessageMenu();
+      requestAnimationFrame(focusMessageComposer);
+    }, [closeMessageMenu, focusMessageComposer]);
+
     const handleCopyMessage = useCallback(
       async (targetMessage: ChatMessage) => {
         try {
@@ -1904,15 +1912,26 @@ const ChatSidebarPanel = memo(
             >
               {editingMessagePreview ? (
                 <div
-                  className="pointer-events-none absolute inset-x-5 z-0 rounded-t-[14px] rounded-b-xl border border-slate-300/70 bg-slate-100 px-3 py-2 shadow-[0_8px_16px_rgba(15,23,42,0.1)]"
+                  className="absolute left-2.5 right-2.5 z-0 rounded-t-[14px] rounded-b-none border border-slate-300/70 bg-slate-100 px-3 pt-2 pb-3 shadow-[0_8px_16px_rgba(15,23,42,0.1)]"
                   style={{
                     top: 0,
-                    transform: 'translateY(calc(-100% + 10px))',
+                    transform: 'translateY(calc(-100% + 8px))',
                   }}
                 >
-                  <p className="text-sm leading-5 text-slate-700 truncate">
-                    {editingMessagePreview}
-                  </p>
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <button
+                      type="button"
+                      aria-label="Cancel editing message"
+                      onClick={handleCancelEditMessage}
+                      className="-ml-0.5 group inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                    >
+                      <TbPencil className="h-4 w-4 group-hover:hidden" />
+                      <TbX className="hidden h-4 w-4 group-hover:block" />
+                    </button>
+                    <p className="pointer-events-none text-sm leading-5 truncate">
+                      {editingMessagePreview}
+                    </p>
+                  </div>
                 </div>
               ) : null}
               <div className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
