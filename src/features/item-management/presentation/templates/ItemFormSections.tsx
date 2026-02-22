@@ -1551,11 +1551,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     setIsPreviewVisible(false);
     if (previewCloseTimerRef.current) {
       window.clearTimeout(previewCloseTimerRef.current);
-    }
-    previewCloseTimerRef.current = window.setTimeout(() => {
-      setPreviewSlotIndex(null);
       previewCloseTimerRef.current = null;
-    }, 150);
+    }
+    setPreviewSlotIndex(null);
   }, []);
 
   const openPreview = useCallback((slotIndex: number) => {
