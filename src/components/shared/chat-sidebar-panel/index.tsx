@@ -13,7 +13,10 @@ import {
   TbCircleArrowDownFilled,
   TbArrowUp,
   TbCopy,
+  TbFileDescription,
+  TbMusic,
   TbPencil,
+  TbPhoto,
   TbPlus,
   TbTrash,
   TbX,
@@ -137,9 +140,12 @@ const ChatSidebarPanel = memo(
     >('inline');
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
+    const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const attachButtonRef = useRef<HTMLButtonElement>(null);
+    const attachModalRef = useRef<HTMLDivElement>(null);
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
     const hasCompletedInitialOpenLoadRef = useRef(false);
@@ -902,6 +908,47 @@ const ChatSidebarPanel = memo(
         }
       };
     }, []);
+
+    const closeAttachModal = useCallback(() => {
+      setIsAttachModalOpen(false);
+    }, []);
+
+    const handleAttachButtonClick = useCallback(() => {
+      if (isAttachModalOpen) {
+        closeAttachModal();
+        return;
+      }
+
+      setIsAttachModalOpen(true);
+    }, [isAttachModalOpen, closeAttachModal]);
+
+    useEffect(() => {
+      if (!isAttachModalOpen) return;
+
+      const handleMouseDown = (event: MouseEvent) => {
+        const eventTarget = event.target;
+        if (!(eventTarget instanceof Node)) return;
+
+        if (attachModalRef.current?.contains(eventTarget)) return;
+        if (attachButtonRef.current?.contains(eventTarget)) return;
+
+        closeAttachModal();
+      };
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          closeAttachModal();
+        }
+      };
+
+      document.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.removeEventListener('mousedown', handleMouseDown);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [isAttachModalOpen, closeAttachModal]);
 
     // Handle browser tab close/refresh
     useEffect(() => {
@@ -2060,6 +2107,11 @@ const ChatSidebarPanel = memo(
                     layout="position"
                     transition={{ layout: TEXT_MOVE_TRANSITION }}
                     type="button"
+                    ref={attachButtonRef}
+                    onClick={handleAttachButtonClick}
+                    aria-label="Attach file"
+                    aria-expanded={isAttachModalOpen}
+                    aria-haspopup="dialog"
                     className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 ${
                       isMessageInputMultiline
                         ? 'col-start-1 row-start-2'
@@ -2081,6 +2133,46 @@ const ChatSidebarPanel = memo(
                     <TbArrowUp size={20} className="text-white" />
                   </motion.button>
                 </motion.div>
+
+                <AnimatePresence>
+                  {isAttachModalOpen ? (
+                    <motion.div
+                      ref={attachModalRef}
+                      role="dialog"
+                      aria-label="Attach file"
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="absolute bottom-[calc(100%+10px)] left-0 z-20 inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-xl"
+                    >
+                      <button
+                        type="button"
+                        onClick={closeAttachModal}
+                        className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
+                      >
+                        <TbPhoto className="h-4 w-4 text-slate-500" />
+                        <span>Gambar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeAttachModal}
+                        className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
+                      >
+                        <TbFileDescription className="h-4 w-4 text-slate-500" />
+                        <span>Dokumen</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeAttachModal}
+                        className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
+                      >
+                        <TbMusic className="h-4 w-4 text-slate-500" />
+                        <span>Audio</span>
+                      </button>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </motion.div>
             </motion.div>
           </div>

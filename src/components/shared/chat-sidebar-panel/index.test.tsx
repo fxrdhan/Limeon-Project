@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatSidebarPanel from './index';
 
@@ -72,6 +73,35 @@ vi.mock('react-hot-toast', () => ({
     error: toastErrorMock,
   },
   Toaster: () => <div data-testid="chat-toaster" />,
+}));
+
+vi.mock('@/components/image-manager/PopupMenuContent', () => ({
+  default: ({
+    actions,
+  }: {
+    actions: Array<{
+      label: string;
+      onClick: () => void;
+      disabled?: boolean;
+    }>;
+  }) => (
+    <div role="menu">
+      {actions.map(action => (
+        <button
+          key={action.label}
+          type="button"
+          role="menuitem"
+          disabled={action.disabled}
+          onClick={event => {
+            event.stopPropagation();
+            action.onClick();
+          }}
+        >
+          {action.label}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock('motion/react', async () => {
@@ -383,7 +413,9 @@ describe('ChatSidebarPanel', () => {
 
     await screen.findByText('Pesan saya');
     fireEvent.click(screen.getByRole('button', { name: 'Pesan saya' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Salin' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Salin' })
+    );
 
     await waitFor(() => {
       expect(clipboardWriteTextMock).toHaveBeenCalledWith('Pesan saya');
@@ -391,7 +423,9 @@ describe('ChatSidebarPanel', () => {
     expect(toastSuccessMock).toHaveBeenCalled();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Pesan saya' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Edit' })
+    );
 
     const textarea = screen.getByPlaceholderText('Type a message...');
     expect(textarea).toHaveValue('Pesan saya');
@@ -417,7 +451,9 @@ describe('ChatSidebarPanel', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Pesan sudah diedit' })
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Hapus' })
+    );
 
     await waitFor(() => {
       expect(chatServiceMock.deleteMessage).toHaveBeenCalledWith('msg-self');
@@ -479,7 +515,9 @@ describe('ChatSidebarPanel', () => {
 
     await screen.findByText('Halo dari target');
     fireEvent.click(screen.getByRole('button', { name: 'Halo dari target' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Salin' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Salin' })
+    );
 
     await waitFor(() => {
       expect(toastErrorMock).toHaveBeenCalled();
@@ -552,7 +590,9 @@ describe('ChatSidebarPanel', () => {
 
     await screen.findByText('Pesan error');
     fireEvent.click(screen.getByRole('button', { name: 'Pesan error' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Edit' })
+    );
 
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, {
@@ -571,7 +611,9 @@ describe('ChatSidebarPanel', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: /Pesan error/i })
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Hapus' })
+    );
 
     await waitFor(() => {
       expect(chatServiceMock.deleteMessage).toHaveBeenCalledWith(
@@ -655,7 +697,7 @@ describe('ChatSidebarPanel', () => {
     });
     fireEvent.keyDown(bubble, { key: 'Enter' });
     expect(
-      await screen.findByRole('button', { name: 'Salin' })
+      await screen.findByRole('menuitem', { name: 'Salin' })
     ).toBeInTheDocument();
     const refreshedBubble = screen.getByRole('button', {
       name: /Keyboard long/i,
@@ -663,7 +705,7 @@ describe('ChatSidebarPanel', () => {
     fireEvent.keyDown(refreshedBubble, { key: 'Enter' });
     await waitFor(() => {
       expect(
-        screen.queryByRole('button', { name: 'Salin' })
+        screen.queryByRole('menuitem', { name: 'Salin' })
       ).not.toBeInTheDocument();
     });
 
@@ -700,7 +742,9 @@ describe('ChatSidebarPanel', () => {
     await screen.findByText('Pesan temp lokal');
 
     fireEvent.click(screen.getByRole('button', { name: 'Pesan temp lokal' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Edit' })
+    );
 
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: 'Pesan temp diubah' } });
@@ -716,13 +760,17 @@ describe('ChatSidebarPanel', () => {
     expect(await screen.findByText('Pesan temp diubah')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Pesan temp diubah' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Edit' })
+    );
     expect(screen.getByPlaceholderText('Type a message...')).toHaveValue(
       'Pesan temp diubah'
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Pesan temp diubah' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Hapus' })
+    );
 
     await waitFor(() => {
       expect(screen.queryByText('Pesan temp diubah')).not.toBeInTheDocument();
@@ -1222,7 +1270,7 @@ describe('ChatSidebarPanel', () => {
       name: 'Halo dari target',
     });
     fireEvent.click(reopenButton);
-    const copyButton = await screen.findByRole('button', { name: 'Salin' });
+    const copyButton = await screen.findByRole('menuitem', { name: 'Salin' });
     expect(copyButton.closest('[data-chat-menu-id]')).toHaveClass('left-full');
 
     const refreshedButton = screen.getByRole('button', {
@@ -1231,7 +1279,7 @@ describe('ChatSidebarPanel', () => {
     fireEvent.click(refreshedButton);
     await waitFor(() => {
       expect(
-        screen.queryByRole('button', { name: 'Salin' })
+        screen.queryByRole('menuitem', { name: 'Salin' })
       ).not.toBeInTheDocument();
     });
 
@@ -1254,7 +1302,9 @@ describe('ChatSidebarPanel', () => {
     });
 
     fireEvent.click(downButton);
-    const copyButtonDown = await screen.findByRole('button', { name: 'Salin' });
+    const copyButtonDown = await screen.findByRole('menuitem', {
+      name: 'Salin',
+    });
     expect(copyButtonDown.closest('[data-chat-menu-id]')).toHaveClass(
       'bottom-full'
     );
@@ -1306,7 +1356,9 @@ describe('ChatSidebarPanel', () => {
 
     await screen.findByText('Pesan edit guard');
     fireEvent.click(screen.getByRole('button', { name: 'Pesan edit guard' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Edit' })
+    );
 
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: '   ' } });
@@ -1341,7 +1393,9 @@ describe('ChatSidebarPanel', () => {
 
     await screen.findByText('Pesan edit reject');
     fireEvent.click(screen.getByRole('button', { name: 'Pesan edit reject' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Edit' })
+    );
 
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: 'Edit gagal reject' } });
@@ -1393,7 +1447,9 @@ describe('ChatSidebarPanel', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Pesan delete reject' })
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Hapus' })
+    );
 
     await waitFor(() => {
       expect(chatServiceMock.deleteMessage).toHaveBeenCalledWith(
@@ -1717,7 +1773,7 @@ describe('ChatSidebarPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Halo dari target' }));
       await waitFor(() => {
         expect(
-          screen.queryByRole('button', { name: 'Salin' })
+          screen.queryByRole('menuitem', { name: 'Salin' })
         ).not.toBeInTheDocument();
       });
 
