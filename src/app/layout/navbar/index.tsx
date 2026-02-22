@@ -13,11 +13,7 @@ import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
 
-const Navbar = ({
-  sidebarCollapsed,
-  showChatSidebar,
-  onChatUserSelect,
-}: NavbarProps) => {
+const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const [showPortal, setShowPortal] = useState(false);
@@ -144,17 +140,16 @@ const Navbar = ({
       hoverTimeoutRef.current = null;
     }
 
-    // Don't close avatar portal if chat sidebar is open
-    if (!showChatSidebar) {
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShowPortal(false);
-        hoverTimeoutRef.current = null;
-      }, 100);
-    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowPortal(false);
+      hoverTimeoutRef.current = null;
+    }, 100);
   };
 
   // Chat handlers
   const handleChatOpen = (targetUser: ChatTargetUser) => {
+    setShowPortal(false);
+    setHoveredUser(null);
     onChatUserSelect(targetUser);
   };
 

@@ -54,11 +54,24 @@ const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 const MESSAGE_INPUT_MIN_HEIGHT = 22;
 const MESSAGE_INPUT_MAX_HEIGHT = 170;
 const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
-const SEND_SUCCESS_GLOW_DURATION = 1760;
+const SEND_SUCCESS_GLOW_DURATION = 700;
+const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 const MESSAGE_BOTTOM_GAP = 12;
+const EDITING_STACK_OFFSET = 24;
+const COMPOSER_BASE_BORDER_COLOR = 'rgba(226, 232, 240, 0.65)';
+const COMPOSER_BASE_SHADOW = '0 2px 8px rgba(15, 23, 42, 0.08)';
+const COMPOSER_GLOW_SHADOW_PEAK =
+  '0 0 18px oklch(50.8% 0.118 165.612 / 0.32),0 0 30px oklch(50.8% 0.118 165.612 / 0.18),0 2px 8px rgba(15, 23, 42, 0.08)';
+const COMPOSER_GLOW_SHADOW_HIGH =
+  '0 0 16px oklch(50.8% 0.118 165.612 / 0.28),0 0 27px oklch(50.8% 0.118 165.612 / 0.16),0 2px 8px rgba(15, 23, 42, 0.08)';
+const COMPOSER_GLOW_SHADOW_MID =
+  '0 0 14px oklch(50.8% 0.118 165.612 / 0.24),0 0 24px oklch(50.8% 0.118 165.612 / 0.14),0 2px 8px rgba(15, 23, 42, 0.08)';
+const COMPOSER_GLOW_SHADOW_FADE =
+  '0 0 11px oklch(50.8% 0.118 165.612 / 0.18),0 0 19px oklch(50.8% 0.118 165.612 / 0.11),0 2px 8px rgba(15, 23, 42, 0.08)';
+const COMPOSER_GLOW_SHADOW_LOW =
+  '0 0 8px oklch(50.8% 0.118 165.612 / 0.12),0 0 14px oklch(50.8% 0.118 165.612 / 0.08),0 2px 8px rgba(15, 23, 42, 0.08)';
 const TEXT_MOVE_TRANSITION = {
   type: 'tween' as const,
-  duration: 0.07,
   ease: 'easeOut' as const,
 };
 
@@ -120,7 +133,6 @@ const ChatSidebarPanel = memo(
     >('inline');
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
-    const [sendSuccessGlowKey, setSendSuccessGlowKey] = useState(0);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
@@ -134,6 +146,11 @@ const ChatSidebarPanel = memo(
       messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2 ||
       isHoldingMultilineByInlineOverflow;
     const isMessageInputMultiline = composerLayoutMode === 'multiline';
+    const editingMessagePreview =
+      editingMessageId === null
+        ? null
+        : (messages.find(candidate => candidate.id === editingMessageId)
+            ?.message ?? null);
 
     const getVisibleMessagesBounds = useCallback(() => {
       const containerRect =
@@ -435,15 +452,17 @@ const ChatSidebarPanel = memo(
     }, [targetProfilePhotoUrl]);
 
     const triggerSendSuccessGlow = useCallback(() => {
-      setSendSuccessGlowKey(prev => prev + 1);
-      setIsSendSuccessGlowVisible(true);
       if (sendSuccessGlowTimeoutRef.current) {
         clearTimeout(sendSuccessGlowTimeoutRef.current);
       }
+      setIsSendSuccessGlowVisible(false);
+      requestAnimationFrame(() => {
+        setIsSendSuccessGlowVisible(true);
+      });
       sendSuccessGlowTimeoutRef.current = setTimeout(() => {
         setIsSendSuccessGlowVisible(false);
         sendSuccessGlowTimeoutRef.current = null;
-      }, SEND_SUCCESS_GLOW_DURATION);
+      }, SEND_SUCCESS_GLOW_DURATION + SEND_SUCCESS_GLOW_RESET_BUFFER);
     }, []);
 
     // Centralized close logic (used by close button AND external triggers)
@@ -1352,7 +1371,7 @@ const ChatSidebarPanel = memo(
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="relative h-full w-full"
+        className="relative h-full w-full select-none"
         onClickCapture={handleChatPortalBackgroundClick}
       >
         <Toaster
@@ -1459,7 +1478,10 @@ const ChatSidebarPanel = memo(
             className="flex-1 px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
             style={{
               overflowAnchor: 'none',
-              paddingBottom: messageInputHeight + 84,
+              paddingBottom:
+                messageInputHeight +
+                84 +
+                (editingMessagePreview ? EDITING_STACK_OFFSET : 0),
             }}
             onClick={closeMessageMenu}
           >
@@ -1837,25 +1859,63 @@ const ChatSidebarPanel = memo(
             ref={composerContainerRef}
             className="absolute bottom-2 left-0 right-0 px-3 pb-4"
           >
-            <div className="relative z-10 rounded-2xl border border-slate-200 bg-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-[box-shadow] duration-[120ms] ease-out">
-              {isSendSuccessGlowVisible ? (
-                <motion.div
-                  key={sendSuccessGlowKey}
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0, 1, 0.7, 0.42, 0.24, 0.1, 0],
-                  }}
-                  transition={{
-                    opacity: {
+            <motion.div
+              initial={false}
+              animate={
+                isSendSuccessGlowVisible
+                  ? {
+                      borderColor: [
+                        COMPOSER_BASE_BORDER_COLOR,
+                        'oklch(50.8% 0.118 165.612 / 0.55)',
+                        'oklch(50.8% 0.118 165.612 / 0.48)',
+                        'oklch(50.8% 0.118 165.612 / 0.42)',
+                        'oklch(50.8% 0.118 165.612 / 0.32)',
+                        'oklch(50.8% 0.118 165.612 / 0.22)',
+                        COMPOSER_BASE_BORDER_COLOR,
+                      ],
+                      boxShadow: [
+                        COMPOSER_BASE_SHADOW,
+                        COMPOSER_GLOW_SHADOW_PEAK,
+                        COMPOSER_GLOW_SHADOW_HIGH,
+                        COMPOSER_GLOW_SHADOW_MID,
+                        COMPOSER_GLOW_SHADOW_FADE,
+                        COMPOSER_GLOW_SHADOW_LOW,
+                        COMPOSER_BASE_SHADOW,
+                      ],
+                    }
+                  : {
+                      borderColor: COMPOSER_BASE_BORDER_COLOR,
+                      boxShadow: COMPOSER_BASE_SHADOW,
+                    }
+              }
+              transition={
+                isSendSuccessGlowVisible
+                  ? {
                       duration: SEND_SUCCESS_GLOW_DURATION / 1000,
                       times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
                       ease: 'easeOut',
-                    },
+                    }
+                  : {
+                      duration: 0.12,
+                      ease: 'easeOut',
+                    }
+              }
+              className="relative z-10 rounded-2xl border bg-white"
+            >
+              {editingMessagePreview ? (
+                <div
+                  className="pointer-events-none absolute inset-x-5 z-0 rounded-t-[14px] rounded-b-xl border border-slate-300/70 bg-slate-100 px-3 py-2 shadow-[0_8px_16px_rgba(15,23,42,0.1)]"
+                  style={{
+                    top: 0,
+                    transform: 'translateY(calc(-100% + 10px))',
                   }}
-                  className="pointer-events-none absolute inset-0 z-0 rounded-2xl shadow-[inset_0_0_0_1px_oklch(50.8%_0.118_165.612_/_0.55),0_0_18px_oklch(50.8%_0.118_165.612_/_0.32),0_0_30px_oklch(50.8%_0.118_165.612_/_0.18)]"
-                />
+                >
+                  <p className="text-sm leading-5 text-slate-700 truncate">
+                    {editingMessagePreview}
+                  </p>
+                </div>
               ) : null}
-              <div className="relative z-10 m-px rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
+              <div className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
                 <div
                   className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                     isMessageInputMultiline
@@ -1901,7 +1961,7 @@ const ChatSidebarPanel = memo(
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </motion.div>
