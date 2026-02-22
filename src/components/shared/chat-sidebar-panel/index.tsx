@@ -74,6 +74,7 @@ const COMPOSER_GLOW_SHADOW_LOW =
 const TEXT_MOVE_TRANSITION = {
   type: 'tween' as const,
   ease: 'easeOut' as const,
+  duration: 0.16,
 };
 
 // Generate channel ID for direct messages
@@ -135,6 +136,7 @@ const ChatSidebarPanel = memo(
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
+    const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
@@ -1196,6 +1198,13 @@ const ChatSidebarPanel = memo(
         const textarea = messageInputRef.current;
         if (!textarea) return;
 
+        if (messageInputHeightRafRef.current !== null) {
+          cancelAnimationFrame(messageInputHeightRafRef.current);
+          messageInputHeightRafRef.current = null;
+        }
+
+        const currentHeight =
+          textarea.getBoundingClientRect().height || MESSAGE_INPUT_MIN_HEIGHT;
         textarea.style.height = 'auto';
 
         const hasValue = value.length > 0;
@@ -1226,20 +1235,49 @@ const ChatSidebarPanel = memo(
           Math.max(contentHeight, MESSAGE_INPUT_MIN_HEIGHT),
           MESSAGE_INPUT_MAX_HEIGHT
         );
-        textarea.style.height = `${nextHeight}px`;
-        textarea.style.overflowY =
-          textarea.scrollHeight > MESSAGE_INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+
+        const isOverflowingMaxHeight = contentHeight > MESSAGE_INPUT_MAX_HEIGHT;
+        textarea.style.overflowY = isOverflowingMaxHeight ? 'auto' : 'hidden';
+        if (!isOverflowingMaxHeight) {
+          textarea.scrollTop = 0;
+        }
+
+        const shouldAnimateHeight =
+          Math.abs(nextHeight - currentHeight) > 0.5 &&
+          messageInputHeight !== nextHeight;
+        if (shouldAnimateHeight) {
+          textarea.style.height = `${currentHeight}px`;
+          messageInputHeightRafRef.current = requestAnimationFrame(() => {
+            const currentTextarea = messageInputRef.current;
+            if (currentTextarea) {
+              currentTextarea.style.height = `${nextHeight}px`;
+            }
+            messageInputHeightRafRef.current = null;
+          });
+        } else {
+          textarea.style.height = `${nextHeight}px`;
+        }
+
         setMessageInputHeight(prevHeight =>
           prevHeight === nextHeight ? prevHeight : nextHeight
         );
       },
-      [composerLayoutMode]
+      [composerLayoutMode, messageInputHeight]
     );
 
     useLayoutEffect(() => {
       if (!isOpen) return;
       resizeMessageInput(message);
     }, [isOpen, message, resizeMessageInput]);
+
+    useEffect(() => {
+      return () => {
+        if (messageInputHeightRafRef.current !== null) {
+          cancelAnimationFrame(messageInputHeightRafRef.current);
+          messageInputHeightRafRef.current = null;
+        }
+      };
+    }, []);
 
     useEffect(() => {
       const nextMode = isTargetMultiline ? 'multiline' : 'inline';
@@ -1934,8 +1972,14 @@ const ChatSidebarPanel = memo(
                   </div>
                 </div>
               ) : null}
-              <div className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-[85ms] ease-out">
-                <div
+              <motion.div
+                layout
+                transition={{ layout: TEXT_MOVE_TRANSITION }}
+                className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-150 ease-out"
+              >
+                <motion.div
+                  layout
+                  transition={{ layout: TEXT_MOVE_TRANSITION }}
                   className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                     isMessageInputMultiline
                       ? 'grid-rows-[auto_auto] gap-y-1 items-end'
@@ -1952,13 +1996,15 @@ const ChatSidebarPanel = memo(
                     placeholder="Type a message..."
                     rows={1}
                     style={{ height: `${messageInputHeight}px` }}
-                    className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-[85ms] ease-out ${
+                    className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-150 ease-out ${
                       isMessageInputMultiline
                         ? 'col-span-3 row-start-1 self-start'
                         : 'col-start-2 row-start-1 self-center'
                     }`}
                   />
-                  <button
+                  <motion.button
+                    layout="position"
+                    transition={{ layout: TEXT_MOVE_TRANSITION }}
                     type="button"
                     className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 ${
                       isMessageInputMultiline
@@ -1967,8 +2013,10 @@ const ChatSidebarPanel = memo(
                     }`}
                   >
                     <TbPlus size={20} />
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    layout="position"
+                    transition={{ layout: TEXT_MOVE_TRANSITION }}
                     onClick={handleSendMessage}
                     className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                       isMessageInputMultiline
@@ -1977,9 +2025,9 @@ const ChatSidebarPanel = memo(
                     }`}
                   >
                     <TbArrowUp size={20} className="text-white" />
-                  </button>
-                </div>
-              </div>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
             </motion.div>
           </div>
         </div>
