@@ -132,11 +132,11 @@ const PopupMenuContent = ({
         const toneClassName =
           action.tone === 'danger'
             ? isPreselected
-              ? 'bg-red-200'
+              ? 'bg-red-100'
               : ''
             : isPreselected
-              ? 'bg-slate-200'
-              : 'text-slate-700 hover:bg-slate-200 hover:text-slate-900';
+              ? 'bg-slate-100'
+              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900';
 
         return (
           <Button
@@ -172,7 +172,7 @@ const PopupMenuContent = ({
             onKeyDown={event => {
               handleActionKeyDown(event, actionIndex);
             }}
-            className={`w-full px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 ${toneClassName}`}
+            className={`w-full !opacity-100 px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 hover:!opacity-100 data-[preselected=true]:!opacity-100 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 ${toneClassName}`}
           >
             {action.icon}
             {action.label}

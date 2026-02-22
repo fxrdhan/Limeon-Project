@@ -42,7 +42,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
         >
           {/* Container with layout animation - resizes first, NO text animation */}
           <motion.div
-            className="bg-white rounded-lg shadow-xl border border-slate-200 p-4 min-w-[250px] max-w-[500px] w-max relative"
+            className="group pointer-events-auto bg-white hover:bg-slate-100 transition-colors duration-150 rounded-lg shadow-xl border border-slate-200 p-4 min-w-[250px] max-w-[500px] w-max relative"
             layout
             layoutId={`hover-detail-${data.id}`}
             transition={{
@@ -100,29 +100,21 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
 
             {/* Dynamic arrow based on position - always visible */}
             <div
-              className="absolute pointer-events-none"
+              className={`absolute pointer-events-none h-3 w-3 border border-slate-300 bg-white transition-colors duration-150 group-hover:bg-slate-100 ${
+                position.direction === 'right'
+                  ? 'border-r-0 border-t-0'
+                  : 'border-l-0 border-b-0'
+              }`}
               style={
                 position.direction === 'right'
                   ? {
                       left: '-6px',
                       top: '18px',
-                      width: '12px',
-                      height: '12px',
-                      background: 'white',
-                      border: '1px solid #D1D5DB',
-                      borderRight: 'none',
-                      borderTop: 'none',
                       transform: 'rotate(45deg)',
                     }
                   : {
                       right: '-6px',
                       top: '18px',
-                      width: '12px',
-                      height: '12px',
-                      background: 'white',
-                      border: '1px solid #D1D5DB',
-                      borderLeft: 'none',
-                      borderBottom: 'none',
                       transform: 'rotate(45deg)',
                     }
               }

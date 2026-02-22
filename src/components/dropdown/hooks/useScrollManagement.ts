@@ -94,6 +94,7 @@ export const useScrollManagement = ({
       ) ||
       Array.from(optionElements).find(
         el =>
+          el.classList.contains('bg-slate-100') ||
           el.classList.contains('bg-slate-300/50') ||
           el.classList.contains('bg-slate-300/30')
       );

@@ -119,10 +119,10 @@ const OptionRow: React.FC<OptionRowProps> = ({
       : 'text-slate-800';
 
   const backgroundClass = isHighlighted
-    ? 'bg-slate-300/50'
+    ? 'bg-slate-100'
     : isSelected
       ? 'bg-slate-100'
-      : 'hover:bg-slate-200/40';
+      : 'hover:bg-slate-100';
 
   return (
     <button
