@@ -2,6 +2,10 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Badge from '@/components/badge';
+import {
+  POPUP_HOVER_BG_CLASS,
+  POPUP_SURFACE_CLASS,
+} from '@/components/shared/popup-styles';
 import type { HoverDetailData } from '@/types';
 
 interface HoverDetailPortalProps {
@@ -42,7 +46,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
         >
           {/* Container with layout animation - resizes first, NO text animation */}
           <motion.div
-            className="group pointer-events-auto bg-white hover:bg-slate-100 transition-colors duration-150 rounded-lg shadow-xl border border-slate-200 p-4 min-w-[250px] max-w-[500px] w-max relative"
+            className={`group pointer-events-auto transition-colors duration-150 rounded-lg p-4 min-w-[250px] max-w-[500px] w-max relative shadow-xl ${POPUP_SURFACE_CLASS} ${POPUP_HOVER_BG_CLASS}`}
             layout
             layoutId={`hover-detail-${data.id}`}
             transition={{

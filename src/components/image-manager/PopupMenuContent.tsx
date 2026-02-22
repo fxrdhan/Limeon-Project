@@ -7,6 +7,12 @@ import {
   type ReactNode,
 } from 'react';
 import Button from '@/components/button';
+import {
+  POPUP_ACTIVE_BG_CLASS,
+  POPUP_DANGER_ACTIVE_BG_CLASS,
+  POPUP_HOVER_BG_CLASS,
+  POPUP_SURFACE_CLASS,
+} from '@/components/shared/popup-styles';
 
 export interface PopupMenuAction {
   label: string;
@@ -118,7 +124,7 @@ const PopupMenuContent = ({
 
   return (
     <div
-      className={`px-1 py-1 bg-white border border-slate-200 rounded-xl shadow-lg ${minWidthClassName}`}
+      className={`px-1 py-1 rounded-xl shadow-lg ${POPUP_SURFACE_CLASS} ${minWidthClassName}`}
       role={enableArrowNavigation ? 'menu' : undefined}
       onMouseLeave={() => {
         setHoveredActionIndex(null);
@@ -132,11 +138,11 @@ const PopupMenuContent = ({
         const toneClassName =
           action.tone === 'danger'
             ? isPreselected
-              ? 'bg-red-100'
+              ? POPUP_DANGER_ACTIVE_BG_CLASS
               : ''
             : isPreselected
-              ? 'bg-slate-100'
-              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900';
+              ? POPUP_ACTIVE_BG_CLASS
+              : `text-slate-700 ${POPUP_HOVER_BG_CLASS} hover:text-slate-900`;
 
         return (
           <Button
