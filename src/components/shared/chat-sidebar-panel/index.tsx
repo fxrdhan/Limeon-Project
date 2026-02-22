@@ -93,6 +93,10 @@ const ChatSidebarPanel = memo(
     const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
       null
     );
+    const [
+      menuPreselectedActionIndexByMessageId,
+      setMenuPreselectedActionIndexByMessageId,
+    ] = useState<Record<string, number>>({});
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
     const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
@@ -1558,6 +1562,8 @@ const ChatSidebarPanel = memo(
                   Number.isFinite(updatedTimestamp) &&
                   updatedTimestamp > createdTimestamp;
                 const isMenuOpen = openMenuMessageId === msg.id;
+                const savedPreselectedActionIndex =
+                  menuPreselectedActionIndexByMessageId[msg.id];
 
                 // Use stableKey from message if available, otherwise fall back to ID
                 const animationKey = msg.stableKey || msg.id;
@@ -1803,6 +1809,25 @@ const ChatSidebarPanel = memo(
                               <PopupMenuContent
                                 actions={menuActions}
                                 minWidthClassName="min-w-[120px]"
+                                enableArrowNavigation
+                                autoFocusFirstItem
+                                initialPreselectedIndex={
+                                  savedPreselectedActionIndex
+                                }
+                                onPreselectedIndexChange={nextIndex => {
+                                  setMenuPreselectedActionIndexByMessageId(
+                                    previousState => {
+                                      if (previousState[msg.id] === nextIndex) {
+                                        return previousState;
+                                      }
+
+                                      return {
+                                        ...previousState,
+                                        [msg.id]: nextIndex,
+                                      };
+                                    }
+                                  );
+                                }}
                               />
                             </motion.div>
                           ) : null}

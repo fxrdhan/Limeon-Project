@@ -24,6 +24,10 @@
 .button {
   @include button-base();
 
+  &:not(.button--glow):not(:disabled)[data-preselected='true'] {
+    opacity: 0.8;
+  }
+
   // Size modifiers
   &--sm {
     @apply px-3 py-1.5 text-sm;
@@ -55,6 +59,10 @@
       @apply text-black;
     }
 
+    &:not(:disabled)[data-preselected='true'] {
+      @apply text-black;
+    }
+
     &.button--underline:not(:disabled):hover {
       @apply underline underline-offset-2 decoration-2;
     }
@@ -75,6 +83,11 @@
     opacity: 0.8;
 
     &:not(:disabled):hover {
+      @apply bg-red-200;
+      opacity: 1 !important;
+    }
+
+    &:not(:disabled)[data-preselected='true'] {
       @apply bg-red-200;
       opacity: 1 !important;
     }
