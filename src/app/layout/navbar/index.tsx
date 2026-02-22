@@ -148,8 +148,6 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
 
   // Chat handlers
   const handleChatOpen = (targetUser: ChatTargetUser) => {
-    setShowPortal(false);
-    setHoveredUser(null);
     onChatUserSelect(targetUser);
   };
 
