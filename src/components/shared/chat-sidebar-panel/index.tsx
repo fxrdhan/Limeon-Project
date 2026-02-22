@@ -93,6 +93,8 @@ const ChatSidebarPanel = memo(
     const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
       null
     );
+    const [lastPreselectedMenuActionIndex, setLastPreselectedMenuActionIndex] =
+      useState<number | null>(null);
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
     const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
@@ -1615,6 +1617,16 @@ const ChatSidebarPanel = memo(
                     }
                   );
                 }
+                const hasValidLastPreselectedMenuActionIndex =
+                  Number.isInteger(lastPreselectedMenuActionIndex) &&
+                  lastPreselectedMenuActionIndex !== null &&
+                  lastPreselectedMenuActionIndex >= 0 &&
+                  lastPreselectedMenuActionIndex < menuActions.length &&
+                  !menuActions[lastPreselectedMenuActionIndex]?.disabled;
+                const initialPreselectedMenuActionIndex =
+                  hasValidLastPreselectedMenuActionIndex
+                    ? lastPreselectedMenuActionIndex
+                    : undefined;
                 const isBottomAnchoredSideMenu =
                   isCurrentUser &&
                   (menuPlacement === 'left' || menuPlacement === 'right');
@@ -1821,7 +1833,16 @@ const ChatSidebarPanel = memo(
                               <PopupMenuContent
                                 actions={menuActions}
                                 minWidthClassName="min-w-[120px]"
-                                enableArrowNavigation={false}
+                                enableArrowNavigation
+                                autoFocusFirstItem
+                                initialPreselectedIndex={
+                                  initialPreselectedMenuActionIndex
+                                }
+                                onPreselectedIndexChange={index => {
+                                  setLastPreselectedMenuActionIndex(prev =>
+                                    prev === index ? prev : index
+                                  );
+                                }}
                               />
                             </motion.div>
                           ) : null}
