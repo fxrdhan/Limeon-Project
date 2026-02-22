@@ -1289,6 +1289,10 @@ const ChatSidebarPanel = memo(
         composerLayoutDelayRef.current = null;
       }
 
+      if (nextMode === 'multiline') {
+        setComposerLayoutMode(nextMode);
+      }
+
       composerLayoutDelayRef.current = setTimeout(() => {
         setComposerLayoutMode(nextMode);
         composerLayoutDelayRef.current = null;
@@ -1521,7 +1525,7 @@ const ChatSidebarPanel = memo(
           {/* Messages Area */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
+            className="flex-1 overflow-x-hidden px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
             style={{
               overflowAnchor: 'none',
               paddingBottom:
@@ -1617,10 +1621,20 @@ const ChatSidebarPanel = memo(
                     key={animationKey}
                     initial={
                       shouldAnimateEnter
-                        ? { opacity: 0, scale: 0.7, y: 10 }
+                        ? {
+                            opacity: 0,
+                            scale: 0.7,
+                            x: isCurrentUser ? 18 : -18,
+                            y: 10,
+                          }
                         : false
                     }
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                    style={{
+                      transformOrigin: isCurrentUser
+                        ? 'right bottom'
+                        : 'left bottom',
+                    }}
                     transition={{
                       duration: 0.3,
                       ease: [0.23, 1, 0.32, 1],
