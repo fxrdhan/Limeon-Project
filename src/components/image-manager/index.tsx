@@ -79,7 +79,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       case 'rounded':
         return 'rounded-lg';
       case 'rounded-sm':
-        return 'rounded-lg';
+        return 'rounded-md';
       case 'square':
         return 'rounded-none';
       case 'full':
