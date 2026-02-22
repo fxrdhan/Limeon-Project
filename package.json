@@ -44,7 +44,7 @@
     "postinstall": "bun scripts/patch-baseline-browser-mapping.cjs"
   },
   "dependencies": {
-    "@ag-grid-community/locale": "35.0.0",
+    "@ag-grid-community/locale": "35.1.0",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.95.3",
