@@ -277,7 +277,7 @@ describe('ChatSidebarPanel', () => {
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: 'Balasan cepat' } });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -399,7 +399,7 @@ describe('ChatSidebarPanel', () => {
       target: { value: 'Pesan sudah diedit' },
     });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -509,7 +509,7 @@ describe('ChatSidebarPanel', () => {
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: 'Pesan gagal kirim' } });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -559,7 +559,7 @@ describe('ChatSidebarPanel', () => {
       target: { value: 'Pesan error diubah' },
     });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -705,7 +705,7 @@ describe('ChatSidebarPanel', () => {
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: 'Pesan temp diubah' } });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -748,7 +748,7 @@ describe('ChatSidebarPanel', () => {
 
     fireEvent.change(textarea, { target: { value: 'Tanpa data response' } });
     const firstSendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(firstSendButton).toBeTruthy();
     fireEvent.click(firstSendButton!);
@@ -764,7 +764,7 @@ describe('ChatSidebarPanel', () => {
       target: { value: 'Kena exception' },
     });
     const secondSendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(secondSendButton).toBeTruthy();
     fireEvent.click(secondSendButton!);
@@ -1160,7 +1160,7 @@ describe('ChatSidebarPanel', () => {
     expect(chatServiceMock.insertMessage).not.toHaveBeenCalled();
 
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -1311,7 +1311,7 @@ describe('ChatSidebarPanel', () => {
     const textarea = screen.getByPlaceholderText('Type a message...');
     fireEvent.change(textarea, { target: { value: '   ' } });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);
@@ -1349,7 +1349,7 @@ describe('ChatSidebarPanel', () => {
       expect(textarea).toHaveValue('Edit gagal reject');
     });
     const sendButton = document.querySelector(
-      'button.bg-violet-500'
+      'button.bg-primary'
     ) as HTMLButtonElement | null;
     expect(sendButton).toBeTruthy();
     fireEvent.click(sendButton!);

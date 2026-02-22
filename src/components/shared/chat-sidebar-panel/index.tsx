@@ -2072,7 +2072,7 @@ const ChatSidebarPanel = memo(
                     layout="position"
                     transition={{ layout: TEXT_MOVE_TRANSITION }}
                     onClick={handleSendMessage}
-                    className={`h-8 w-8 rounded-xl bg-primary bg-violet-500 text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
+                    className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                       isMessageInputMultiline
                         ? 'col-start-3 row-start-2'
                         : 'col-start-3 row-start-1'
