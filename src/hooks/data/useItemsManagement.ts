@@ -3,6 +3,7 @@ import { useItems } from '@/hooks/queries/useItems';
 import { fuzzyMatch, getScore } from '@/utils/search';
 import { useEffect } from 'react';
 import type { Item } from '@/types/database';
+import { filterAndRank } from './searchCore';
 import {
   preloadImages,
   removeCachedImageSet,
@@ -71,10 +72,10 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
       return allData;
     }
 
-    const searchTermLower = search.toLowerCase();
-
-    return (allData as Item[])
-      .filter(item => {
+    return filterAndRank<Item>({
+      data: allData as Item[],
+      searchTerm: search,
+      matcher: (item, searchTermLower) => {
         return (
           fuzzyMatch(item.name, searchTermLower) ||
           (item.code && fuzzyMatch(item.code, searchTermLower)) ||
@@ -93,13 +94,10 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
               uc => uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
             ))
         );
-      })
-      .sort((a, b) => {
-        const scoreA = getScore(a, searchTermLower);
-        const scoreB = getScore(b, searchTermLower);
-        if (scoreA !== scoreB) return scoreB - scoreA;
-        return a.name.localeCompare(b.name);
-      });
+      },
+      scorer: (item, searchTermLower) => getScore(item, searchTermLower),
+      tieBreaker: (a, b) => a.name.localeCompare(b.name),
+    });
   }, [allData, search]);
 
   // Calculate pagination metrics

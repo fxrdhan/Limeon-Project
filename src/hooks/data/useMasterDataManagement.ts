@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { fuzzyMatch } from '@/utils/search';
+import { filterAndRank } from './searchCore';
 import { useAlert } from '@/components/alert/hooks';
 import { StorageService } from '@/services/api/storage.service';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -204,11 +205,11 @@ export const useMasterDataManagement = (
 
     // Apply search filter
     if (debouncedSearch) {
-      const searchTermLower = debouncedSearch.toLowerCase();
-
       // Standard filtering for master data (suppliers, patients, doctors)
-      filteredData = filteredData
-        .filter(identity => {
+      filteredData = filterAndRank<MasterDataIdentity>({
+        data: filteredData,
+        searchTerm: debouncedSearch,
+        matcher: (identity, searchTermLower) => {
           // Check for code field if it exists (all master data now uses 'code')
           if (
             'code' in identity &&
@@ -296,43 +297,40 @@ export const useMasterDataManagement = (
               return true;
           }
           return false;
-        })
-        .sort((a, b) => {
-          const getScore = (identityToSort: MasterDataIdentity) => {
-            // Check code field (all master data tables now use 'code')
-            if (
-              'code' in identityToSort &&
-              typeof identityToSort.code === 'string' &&
-              identityToSort.code.toLowerCase().startsWith(searchTermLower)
-            )
-              return 5;
-            if (
-              'code' in identityToSort &&
-              typeof identityToSort.code === 'string' &&
-              identityToSort.code.toLowerCase().includes(searchTermLower)
-            )
-              return 4;
-            // Then check name
-            if (
-              identityToSort.name &&
-              identityToSort.name.toLowerCase().startsWith(searchTermLower)
-            )
-              return 3;
-            if (
-              identityToSort.name &&
-              identityToSort.name.toLowerCase().includes(searchTermLower)
-            )
-              return 2;
-            if (
-              identityToSort.name &&
-              fuzzyMatch(identityToSort.name, searchTermLower)
-            )
-              return 1;
-            return 0;
-          };
-          const scoreA = getScore(a);
-          const scoreB = getScore(b);
-          if (scoreA !== scoreB) return scoreB - scoreA;
+        },
+        scorer: (identityToSort, searchTermLower) => {
+          // Check code field (all master data tables now use 'code')
+          if (
+            'code' in identityToSort &&
+            typeof identityToSort.code === 'string' &&
+            identityToSort.code.toLowerCase().startsWith(searchTermLower)
+          )
+            return 5;
+          if (
+            'code' in identityToSort &&
+            typeof identityToSort.code === 'string' &&
+            identityToSort.code.toLowerCase().includes(searchTermLower)
+          )
+            return 4;
+          // Then check name
+          if (
+            identityToSort.name &&
+            identityToSort.name.toLowerCase().startsWith(searchTermLower)
+          )
+            return 3;
+          if (
+            identityToSort.name &&
+            identityToSort.name.toLowerCase().includes(searchTermLower)
+          )
+            return 2;
+          if (
+            identityToSort.name &&
+            fuzzyMatch(identityToSort.name, searchTermLower)
+          )
+            return 1;
+          return 0;
+        },
+        tieBreaker: (a, b) => {
           // Secondary sort by code if available, then name
           if (
             'code' in a &&
@@ -343,7 +341,8 @@ export const useMasterDataManagement = (
             return a.code.localeCompare(b.code);
           }
           return a.name.localeCompare(b.name);
-        });
+        },
+      });
     }
 
     // Apply pagination

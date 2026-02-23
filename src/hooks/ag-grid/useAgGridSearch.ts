@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import { useEnhancedAgGridSearch } from './useEnhancedAgGridSearch';
 import { fuzzySearchMatch } from '@/utils/search';
 
 interface UseAgGridSearchOptions {
@@ -41,8 +42,8 @@ interface UseAgGridSearchReturn {
 }
 
 /**
- * Custom hook for managing AG-Grid search functionality
- * Handles both client-side fuzzy search and optional server-side debounced search
+ * Legacy AG Grid search API kept for compatibility.
+ * Internally delegates state/grid wiring to useEnhancedAgGridSearch.
  */
 export const useAgGridSearch = (
   options: UseAgGridSearchOptions = {}
@@ -54,82 +55,40 @@ export const useAgGridSearch = (
     useFuzzySearch = true,
   } = options;
 
-  const [search, _setSearch] = useState(initialSearch);
-  const gridRef = useRef<GridApi>(null);
-  const searchRef = useRef(search);
-
-  // Wrapper for setSearch that also updates searchRef immediately
-  const setSearch = useCallback((value: string) => {
-    _setSearch(value);
-    searchRef.current = value;
-  }, []);
-
-  // Keep searchRef in sync with search state
-  useEffect(() => {
-    searchRef.current = search;
-  }, [search]);
+  const {
+    search,
+    setSearch,
+    gridRef,
+    onGridReady,
+    clearSearch,
+    handleSearchChange: enhancedHandleSearchChange,
+    handleGlobalSearch,
+  } = useEnhancedAgGridSearch({
+    enableDebouncedSearch,
+    onDebouncedSearchChange,
+    initialSearch,
+    useFuzzySearch,
+    columns: [],
+  });
 
   const isExternalFilterPresent = useFuzzySearch
-    ? () => {
-        const currentSearch = searchRef.current;
-        return Boolean(currentSearch && currentSearch.trim().length > 0);
-      }
+    ? () => Boolean(search && search.trim().length > 0)
     : undefined;
 
   const doesExternalFilterPass = useFuzzySearch
     ? (node: { data: Record<string, unknown> }) => {
-        const currentSearch = searchRef.current;
-        if (!currentSearch || currentSearch.trim().length === 0) return true;
-        return fuzzySearchMatch(node.data, currentSearch);
+        if (!search || search.trim().length === 0) return true;
+        return fuzzySearchMatch(node.data, search);
       }
     : undefined;
 
-  const onGridReady = useCallback((params: GridReadyEvent) => {
-    gridRef.current = params.api;
-  }, []);
-
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setSearch(value);
-
-      if (gridRef.current && !gridRef.current.isDestroyed()) {
-        if (useFuzzySearch) {
-          // Use external filter for fuzzy search
-          gridRef.current.onFilterChanged();
-        } else {
-          // Use built-in quickFilter for exact search
-          gridRef.current.setGridOption('quickFilterText', value);
-        }
-      }
-
-      // Optional: trigger server-side debounced search
-      if (enableDebouncedSearch && onDebouncedSearchChange) {
-        onDebouncedSearchChange(value);
-      }
+      enhancedHandleSearchChange(e);
+      handleGlobalSearch(e.target.value);
     },
-    [enableDebouncedSearch, onDebouncedSearchChange, useFuzzySearch, setSearch]
+    [enhancedHandleSearchChange, handleGlobalSearch]
   );
-
-  const clearSearch = useCallback(() => {
-    setSearch('');
-
-    if (gridRef.current && !gridRef.current.isDestroyed()) {
-      if (useFuzzySearch) {
-        gridRef.current.onFilterChanged();
-      } else {
-        gridRef.current.setGridOption('quickFilterText', '');
-      }
-    }
-    if (enableDebouncedSearch && onDebouncedSearchChange) {
-      onDebouncedSearchChange('');
-    }
-  }, [
-    enableDebouncedSearch,
-    onDebouncedSearchChange,
-    useFuzzySearch,
-    setSearch,
-  ]);
 
   return {
     search,

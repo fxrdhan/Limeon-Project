@@ -13,6 +13,7 @@
 
 import { useMemo } from 'react';
 import { fuzzyMatch } from '@/utils/search';
+import { filterAndRank } from '@/hooks/data/searchCore';
 import type { EntityData, EntityType } from './useEntityManager';
 import {
   getExternalHooks,
@@ -68,9 +69,10 @@ export const useEntity = (options: EntityOptions) => {
 
     // Apply search filter
     if (search) {
-      const searchTermLower = search.toLowerCase();
-      filteredData = filteredData
-        .filter(entity => {
+      filteredData = filterAndRank<EntityData>({
+        data: filteredData,
+        searchTerm: search,
+        matcher: (entity, searchTermLower) => {
           // Check for code field (all entities now use 'code')
           if (
             'code' in entity &&
@@ -116,44 +118,38 @@ export const useEntity = (options: EntityOptions) => {
             return true;
 
           return false;
-        })
-        .sort((a, b) => {
-          const getScore = (entity: EntityData) => {
-            // Check code first (highest priority)
-            if (
-              'code' in entity &&
-              typeof entity.code === 'string' &&
-              entity.code.toLowerCase().startsWith(searchTermLower)
-            )
-              return 5;
-            if (
-              'code' in entity &&
-              typeof entity.code === 'string' &&
-              entity.code.toLowerCase().includes(searchTermLower)
-            )
-              return 4;
+        },
+        scorer: (entity, searchTermLower) => {
+          // Check code first (highest priority)
+          if (
+            'code' in entity &&
+            typeof entity.code === 'string' &&
+            entity.code.toLowerCase().startsWith(searchTermLower)
+          )
+            return 5;
+          if (
+            'code' in entity &&
+            typeof entity.code === 'string' &&
+            entity.code.toLowerCase().includes(searchTermLower)
+          )
+            return 4;
 
-            // Then check name
-            if (
-              entity.name &&
-              entity.name.toLowerCase().startsWith(searchTermLower)
-            )
-              return 3;
-            if (
-              entity.name &&
-              entity.name.toLowerCase().includes(searchTermLower)
-            )
-              return 2;
-            if (entity.name && fuzzyMatch(entity.name, searchTermLower))
-              return 1;
+          // Then check name
+          if (
+            entity.name &&
+            entity.name.toLowerCase().startsWith(searchTermLower)
+          )
+            return 3;
+          if (
+            entity.name &&
+            entity.name.toLowerCase().includes(searchTermLower)
+          )
+            return 2;
+          if (entity.name && fuzzyMatch(entity.name, searchTermLower)) return 1;
 
-            return 0;
-          };
-
-          const scoreA = getScore(a);
-          const scoreB = getScore(b);
-          if (scoreA !== scoreB) return scoreB - scoreA;
-
+          return 0;
+        },
+        tieBreaker: (a, b) => {
           // Secondary sort by code if available, then name
           if (
             'code' in a &&
@@ -164,7 +160,8 @@ export const useEntity = (options: EntityOptions) => {
             return a.code.localeCompare(b.code);
           }
           return a.name.localeCompare(b.name);
-        });
+        },
+      });
     }
 
     return filteredData;
