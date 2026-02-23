@@ -272,6 +272,7 @@ const ChatSidebarPanel = memo(
         const anchorRect = anchor.getBoundingClientRect();
         const nextPlacement = getMenuPlacement(anchorRect, preferredSide);
 
+        setIsAttachModalOpen(false);
         setMenuOffsetX(0);
         setMenuPlacement(nextPlacement);
         setOpenMenuMessageId(messageId);
@@ -919,8 +920,9 @@ const ChatSidebarPanel = memo(
         return;
       }
 
+      closeMessageMenu();
       setIsAttachModalOpen(true);
-    }, [isAttachModalOpen, closeAttachModal]);
+    }, [isAttachModalOpen, closeAttachModal, closeMessageMenu]);
 
     useEffect(() => {
       if (!isAttachModalOpen) return;
