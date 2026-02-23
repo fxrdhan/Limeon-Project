@@ -64,6 +64,11 @@ const MESSAGE_BOTTOM_GAP = 12;
 const EDITING_COMPOSER_OFFSET = 44;
 const EDIT_TARGET_FOCUS_PADDING = 12;
 const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
+const COMPOSER_SYNC_LAYOUT_TRANSITION = {
+  type: 'tween' as const,
+  ease: [0.22, 1, 0.36, 1] as const,
+  duration: 0.22,
+};
 const COMPOSER_BASE_BORDER_COLOR = 'rgba(226, 232, 240, 0.65)';
 const COMPOSER_BASE_SHADOW = '0 2px 8px rgba(15, 23, 42, 0.08)';
 const COMPOSER_GLOW_SHADOW_PEAK =
@@ -76,12 +81,6 @@ const COMPOSER_GLOW_SHADOW_FADE =
   '0 0 11px oklch(50.8% 0.118 165.612 / 0.18),0 0 19px oklch(50.8% 0.118 165.612 / 0.11),0 2px 8px rgba(15, 23, 42, 0.08)';
 const COMPOSER_GLOW_SHADOW_LOW =
   '0 0 8px oklch(50.8% 0.118 165.612 / 0.12),0 0 14px oklch(50.8% 0.118 165.612 / 0.08),0 2px 8px rgba(15, 23, 42, 0.08)';
-const TEXT_MOVE_TRANSITION = {
-  type: 'tween' as const,
-  ease: 'easeOut' as const,
-  duration: 0.16,
-};
-
 // Generate channel ID for direct messages
 const generateChannelId = (userId1: string, userId2: string): string => {
   const sortedIds = [userId1, userId2].sort();
@@ -2143,6 +2142,7 @@ const ChatSidebarPanel = memo(
             className="absolute bottom-2 left-0 right-0 px-3 pb-4"
           >
             <motion.div
+              layout
               initial={false}
               animate={
                 isSendSuccessGlowVisible
@@ -2174,11 +2174,13 @@ const ChatSidebarPanel = memo(
               transition={
                 isSendSuccessGlowVisible
                   ? {
+                      layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
                       duration: SEND_SUCCESS_GLOW_DURATION / 1000,
                       times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
                       ease: 'easeOut',
                     }
                   : {
+                      layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
                       duration: 0.12,
                       ease: 'easeOut',
                     }
@@ -2187,17 +2189,22 @@ const ChatSidebarPanel = memo(
             >
               <motion.div
                 layout
-                transition={{ layout: TEXT_MOVE_TRANSITION }}
-                className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-150 ease-out"
+                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
               >
                 <AnimatePresence initial={false}>
                   {editingMessagePreview ? (
                     <motion.div
+                      layout
                       key="editing-preview-inline"
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.14, ease: 'easeOut' }}
+                      transition={{
+                        duration: 0.18,
+                        ease: [0.22, 1, 0.36, 1],
+                        layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+                      }}
                       className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700 transition-colors hover:border-primary/30 hover:bg-slate-100"
                       role="button"
                       tabIndex={0}
@@ -2230,7 +2237,7 @@ const ChatSidebarPanel = memo(
                 </AnimatePresence>
                 <motion.div
                   layout
-                  transition={{ layout: TEXT_MOVE_TRANSITION }}
+                  transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                   className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                     isMessageInputMultiline
                       ? 'grid-rows-[auto_auto] gap-y-1 items-end'
@@ -2239,7 +2246,7 @@ const ChatSidebarPanel = memo(
                 >
                   <motion.textarea
                     layout="position"
-                    transition={{ layout: TEXT_MOVE_TRANSITION }}
+                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                     ref={messageInputRef}
                     value={message}
                     onChange={e => setMessage(e.target.value)}
@@ -2247,7 +2254,7 @@ const ChatSidebarPanel = memo(
                     placeholder="Type a message..."
                     rows={1}
                     style={{ height: `${messageInputHeight}px` }}
-                    className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-150 ease-out ${
+                    className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       isMessageInputMultiline
                         ? 'col-span-3 row-start-1 self-start'
                         : 'col-start-2 row-start-1 self-center'
@@ -2255,7 +2262,7 @@ const ChatSidebarPanel = memo(
                   />
                   <motion.button
                     layout="position"
-                    transition={{ layout: TEXT_MOVE_TRANSITION }}
+                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                     type="button"
                     ref={attachButtonRef}
                     onClick={handleAttachButtonClick}
@@ -2278,7 +2285,7 @@ const ChatSidebarPanel = memo(
                   </motion.button>
                   <motion.button
                     layout="position"
-                    transition={{ layout: TEXT_MOVE_TRANSITION }}
+                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                     onClick={handleSendMessage}
                     className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                       isMessageInputMultiline
