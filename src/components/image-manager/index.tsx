@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { ImageUploaderProps } from '@/types';
 import { ClipLoader } from 'react-spinners';
-import { TbEdit, TbTrash, TbUpload, TbX } from 'react-icons/tb';
+import { TbPhotoEdit, TbTrash, TbUpload, TbX } from 'react-icons/tb';
 import PopupMenuContent from './PopupMenuContent';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -178,7 +178,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
       options.push({
         label: 'Edit',
-        icon: <TbEdit className="w-4 h-4" />,
+        icon: <TbPhotoEdit className="w-4 h-4" />,
         action: handleUploadClick,
         disabled: isUploading || isDeleting,
       });

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import ImageUploader from '@/components/image-manager';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -7,7 +8,12 @@ import {
   setCachedImage,
 } from '@/utils/imageCache';
 import { motion, AnimatePresence } from 'motion/react';
-import { TbLogout, TbPencil, TbSettings, TbUserCircle } from 'react-icons/tb';
+import {
+  TbLogout,
+  TbPhotoEdit,
+  TbSettings,
+  TbUserCircle,
+} from 'react-icons/tb';
 
 const Profile = () => {
   const { user, logout } = useAuthStore();
@@ -176,6 +182,7 @@ const Profile = () => {
         className="flex items-center space-x-3 rounded-xl hover:bg-slate-50 transition-all duration-200 group"
         aria-expanded={portalOpen}
         aria-haspopup="true"
+        data-profile-trigger="true"
       >
         <div className="relative">
           <AnimatePresence>
@@ -212,199 +219,210 @@ const Profile = () => {
         </div>
       </button>
 
-      <AnimatePresence>
-        {portalOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-xs z-40"
-            />
-            <motion.div
-              ref={portalRef}
-              initial={{
-                opacity: 0,
-                scale: 0.8,
-                transformOrigin: 'top right',
-              }}
-              animate={{
-                opacity: 1,
-                scale: [0.8, 1.05, 1],
-                transformOrigin: 'top right',
-              }}
-              exit={{
-                opacity: 0,
-                scale: 0.8,
-                transformOrigin: 'top right',
-              }}
-              transition={{
-                duration: 0.3,
-                ease: 'easeOut',
-                scale: {
-                  times: [0, 0.6, 1],
-                  duration: 0.3,
-                },
-              }}
-              className="fixed top-0 right-0 w-72 bg-white rounded-bl-2xl shadow-xl z-50 border border-slate-100 overflow-hidden backdrop-blur-xs"
-              style={{ marginTop: '0px' }}
-            >
-              <div className="p-4 pt-6">
-                <div className="flex flex-col items-center">
-                  <div className="mb-4">
-                    <motion.div
-                      className="text-white px-4 py-1.5 rounded-full text-xs font-medium relative overflow-hidden"
-                      initial={{
-                        y: -20,
-                        opacity: 0,
-                        backgroundImage:
-                          'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-                        boxShadow:
-                          '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
-                      }}
-                      animate={{
-                        y: 0,
-                        opacity: 1,
-                        backgroundImage: backgroundGradients,
-                        boxShadow: glowShadows,
-                      }}
-                      exit={{
-                        y: -20,
-                        opacity: 0,
-                      }}
-                      transition={{
-                        y: { duration: 0.3, delay: 0.1, ease: 'easeOut' },
-                        opacity: {
-                          duration: 0.3,
-                          delay: 0.1,
-                          ease: 'easeOut',
-                        },
-                        backgroundImage: {
-                          repeat: Infinity,
-                          duration: 5,
-                          ease: 'easeInOut',
-                          delay: 0.4,
-                        },
-                        boxShadow: {
-                          ...glowTransition,
-                          duration: 5,
-                          delay: 0.4,
-                        },
-                      }}
-                    >
-                      <span className="flex items-center space-x-1.5">
-                        <svg
-                          className="w-3 h-3"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span className="font-bold">Pro Plan</span>
-                      </span>
-                    </motion.div>
-                  </div>
-                  <div className="relative group/upload">
-                    <motion.div
-                      initial={{
-                        scale: 0.4,
-                        y: -40,
-                        x: 40,
-                        opacity: animatingPortal ? 0 : 1,
-                      }}
-                      animate={{
-                        scale: 1,
-                        y: 0,
-                        x: 0,
-                        opacity: 1,
-                      }}
-                      exit={{
-                        scale: 0.4,
-                        y: -40,
-                        x: 40,
-                        opacity: 0,
-                      }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      <ImageUploader
-                        id="profile-upload"
-                        className="w-32 h-32"
-                        shape="full"
-                        hasImage={!!user?.profilephoto}
-                        onImageUpload={async (file: File) => {
-                          setIsUploading(true);
-                          try {
-                            await useAuthStore
-                              .getState()
-                              .updateProfilePhoto(file);
-                          } finally {
-                            setIsUploading(false);
-                          }
-                        }}
-                        onImageDelete={async () => {
-                          setIsUploading(true);
-                          try {
-                            await useAuthStore.getState().deleteProfilePhoto();
-                          } finally {
-                            setIsUploading(false);
-                          }
-                        }}
-                        disabled={isUploading}
-                        defaultIcon={
-                          <TbPencil className="text-white text-sm" />
-                        }
+      {typeof document !== 'undefined'
+        ? createPortal(
+            <AnimatePresence>
+              {portalOpen ? (
+                <>
+                  <motion.div
+                    key="profile-backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 bg-black/20 backdrop-blur-xs z-40"
+                    data-profile-portal="true"
+                  />
+                  <motion.div
+                    key="profile-panel"
+                    ref={portalRef}
+                    initial={{
+                      opacity: 0,
+                      scale: 0.8,
+                      transformOrigin: 'top right',
+                    }}
+                    animate={{
+                      opacity: 1,
+                      scale: [0.8, 1.05, 1],
+                      transformOrigin: 'top right',
+                    }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.8,
+                      transformOrigin: 'top right',
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      ease: 'easeOut',
+                      scale: {
+                        times: [0, 0.6, 1],
+                        duration: 0.3,
+                      },
+                    }}
+                    className="fixed top-0 right-0 w-72 bg-white rounded-bl-2xl shadow-xl z-50 border border-slate-100 overflow-hidden backdrop-blur-xs"
+                    style={{ marginTop: '0px' }}
+                    data-profile-portal="true"
+                  >
+                    <div className="p-4 pt-6">
+                      <div className="flex flex-col items-center">
+                        <div className="mb-4">
+                          <motion.div
+                            className="text-white px-4 py-1.5 rounded-full text-xs font-medium relative overflow-hidden"
+                            initial={{
+                              y: -20,
+                              opacity: 0,
+                              backgroundImage:
+                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+                              boxShadow:
+                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
+                            }}
+                            animate={{
+                              y: 0,
+                              opacity: 1,
+                              backgroundImage: backgroundGradients,
+                              boxShadow: glowShadows,
+                            }}
+                            exit={{
+                              y: -20,
+                              opacity: 0,
+                            }}
+                            transition={{
+                              y: { duration: 0.3, delay: 0.1, ease: 'easeOut' },
+                              opacity: {
+                                duration: 0.3,
+                                delay: 0.1,
+                                ease: 'easeOut',
+                              },
+                              backgroundImage: {
+                                repeat: Infinity,
+                                duration: 5,
+                                ease: 'easeInOut',
+                                delay: 0.4,
+                              },
+                              boxShadow: {
+                                ...glowTransition,
+                                duration: 5,
+                                delay: 0.4,
+                              },
+                            }}
+                          >
+                            <span className="flex items-center space-x-1.5">
+                              <svg
+                                className="w-3 h-3"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <span className="font-bold">Pro Plan</span>
+                            </span>
+                          </motion.div>
+                        </div>
+                        <div className="relative group/upload">
+                          <motion.div
+                            initial={{
+                              scale: 0.4,
+                              y: -40,
+                              x: 40,
+                              opacity: animatingPortal ? 0 : 1,
+                            }}
+                            animate={{
+                              scale: 1,
+                              y: 0,
+                              x: 0,
+                              opacity: 1,
+                            }}
+                            exit={{
+                              scale: 0.4,
+                              y: -40,
+                              x: 40,
+                              opacity: 0,
+                            }}
+                            transition={{ duration: 0.25 }}
+                          >
+                            <ImageUploader
+                              id="profile-upload"
+                              className="w-32 h-32"
+                              shape="full"
+                              hasImage={!!user?.profilephoto}
+                              onImageUpload={async (file: File) => {
+                                setIsUploading(true);
+                                try {
+                                  await useAuthStore
+                                    .getState()
+                                    .updateProfilePhoto(file);
+                                } finally {
+                                  setIsUploading(false);
+                                }
+                              }}
+                              onImageDelete={async () => {
+                                setIsUploading(true);
+                                try {
+                                  await useAuthStore
+                                    .getState()
+                                    .deleteProfilePhoto();
+                                } finally {
+                                  setIsUploading(false);
+                                }
+                              }}
+                              disabled={isUploading}
+                              defaultIcon={
+                                <TbPhotoEdit className="text-white text-sm" />
+                              }
+                            >
+                              <ProfileImage
+                                size="large"
+                                className="border-4 border-slate-100 group-hover/upload:border-slate/30 transition-all duration-200"
+                              />
+                            </ImageUploader>
+                          </motion.div>
+                        </div>
+                        <div className="mt-3 text-center">
+                          <h3 className="font-semibold text-slate-800 text-lg">
+                            {user?.name || 'User'}
+                          </h3>
+                          <p className="text-sm text-slate-500 mb-1">
+                            {user?.role || 'Staff'}
+                          </p>
+                          <p
+                            className="text-xs text-slate-400 truncate max-w-[200px]"
+                            title={user?.email || ''}
+                          >
+                            {user?.email || 'Email tidak tersedia'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100"></div>
+
+                    <div className="p-2">
+                      <button
+                        onClick={() => setPortalOpen(false)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors duration-150 group"
                       >
-                        <ProfileImage
-                          size="large"
-                          className="border-4 border-slate-100 group-hover/upload:border-slate/30 transition-all duration-200"
-                        />
-                      </ImageUploader>
-                    </motion.div>
-                  </div>
-                  <div className="mt-3 text-center">
-                    <h3 className="font-semibold text-slate-800 text-lg">
-                      {user?.name || 'User'}
-                    </h3>
-                    <p className="text-sm text-slate-500 mb-1">
-                      {user?.role || 'Staff'}
-                    </p>
-                    <p
-                      className="text-xs text-slate-400 truncate max-w-[200px]"
-                      title={user?.email || ''}
-                    >
-                      {user?.email || 'Email tidak tersedia'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-100"></div>
-
-              <div className="p-2">
-                <button
-                  onClick={() => setPortalOpen(false)}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors duration-150 group"
-                >
-                  <TbSettings className="text-slate-400 group-hover:text-slate-600 transition-colors" />
-                  <span>Pengaturan Profil</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
-                >
-                  <TbLogout className="text-red-500 group-hover:text-red-600 transition-colors" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                        <TbSettings className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+                        <span>Pengaturan Profil</span>
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
+                      >
+                        <TbLogout className="text-red-500 group-hover:text-red-600 transition-colors" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              ) : null}
+            </AnimatePresence>,
+            document.body
+          )
+        : null}
     </div>
   );
 };

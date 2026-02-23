@@ -928,6 +928,12 @@ const ChatSidebarPanel = memo(
       const handleMouseDown = (event: MouseEvent) => {
         const eventTarget = event.target;
         if (!(eventTarget instanceof Node)) return;
+        if (eventTarget instanceof Element) {
+          const profileLayer = eventTarget.closest(
+            '[data-profile-trigger="true"], [data-profile-portal="true"]'
+          );
+          if (profileLayer) return;
+        }
 
         if (attachModalRef.current?.contains(eventTarget)) return;
         if (attachButtonRef.current?.contains(eventTarget)) return;
@@ -2144,7 +2150,7 @@ const ChatSidebarPanel = memo(
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.95 }}
                       transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="absolute bottom-[calc(100%+10px)] left-0 z-20 inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-xl"
+                      className="absolute bottom-[calc(100%+10px)] left-0 z-20 inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
                     >
                       <button
                         type="button"
