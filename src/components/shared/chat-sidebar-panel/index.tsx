@@ -1848,7 +1848,7 @@ const ChatSidebarPanel = memo(
                               messageBubbleRefs.current.delete(msg.id);
                             }
                           }}
-                          className={`px-3 py-2 text-sm inline-block ${bubbleToneClass} ${bubbleOpacityClass} ${
+                          className={`px-3 py-2 text-sm inline-block whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
                             isCurrentUser
                               ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
                               : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
