@@ -58,12 +58,10 @@ const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 const MESSAGE_INPUT_MIN_HEIGHT = 22;
 const MESSAGE_INPUT_MAX_HEIGHT = 170;
 const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
-const EDIT_PREVIEW_FOLLOW_DELAY = 70;
-const EDIT_PREVIEW_FOLLOW_DURATION = 160;
 const SEND_SUCCESS_GLOW_DURATION = 700;
 const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 const MESSAGE_BOTTOM_GAP = 12;
-const EDITING_STACK_OFFSET = 24;
+const EDITING_COMPOSER_OFFSET = 44;
 const COMPOSER_BASE_BORDER_COLOR = 'rgba(226, 232, 240, 0.65)';
 const COMPOSER_BASE_SHADOW = '0 2px 8px rgba(15, 23, 42, 0.08)';
 const COMPOSER_GLOW_SHADOW_PEAK =
@@ -143,18 +141,9 @@ const ChatSidebarPanel = memo(
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
     const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
-    const [editPreviewFollowOffset, setEditPreviewFollowOffset] = useState(0);
-    const [
-      isEditPreviewFollowTransitionEnabled,
-      setIsEditPreviewFollowTransitionEnabled,
-    ] = useState(false);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const editPreviewFollowResetTimeoutRef = useRef<NodeJS.Timeout | null>(
-      null
-    );
-    const previousMessageInputHeightRef = useRef(MESSAGE_INPUT_MIN_HEIGHT);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
@@ -921,15 +910,6 @@ const ChatSidebarPanel = memo(
       };
     }, []);
 
-    useEffect(() => {
-      return () => {
-        if (editPreviewFollowResetTimeoutRef.current) {
-          clearTimeout(editPreviewFollowResetTimeoutRef.current);
-          editPreviewFollowResetTimeoutRef.current = null;
-        }
-      };
-    }, []);
-
     const closeAttachModal = useCallback(() => {
       setIsAttachModalOpen(false);
     }, []);
@@ -1401,38 +1381,6 @@ const ChatSidebarPanel = memo(
       };
     }, [composerLayoutMode, isTargetMultiline]);
 
-    useEffect(() => {
-      if (!editingMessagePreview) {
-        if (editPreviewFollowResetTimeoutRef.current) {
-          clearTimeout(editPreviewFollowResetTimeoutRef.current);
-          editPreviewFollowResetTimeoutRef.current = null;
-        }
-        previousMessageInputHeightRef.current = messageInputHeight;
-        setEditPreviewFollowOffset(0);
-        setIsEditPreviewFollowTransitionEnabled(false);
-        return;
-      }
-
-      const previousHeight = previousMessageInputHeightRef.current;
-      previousMessageInputHeightRef.current = messageInputHeight;
-      const heightDelta = messageInputHeight - previousHeight;
-      if (heightDelta <= 0) return;
-
-      if (editPreviewFollowResetTimeoutRef.current) {
-        clearTimeout(editPreviewFollowResetTimeoutRef.current);
-        editPreviewFollowResetTimeoutRef.current = null;
-      }
-
-      setIsEditPreviewFollowTransitionEnabled(false);
-      setEditPreviewFollowOffset(prevOffset => prevOffset + heightDelta);
-
-      editPreviewFollowResetTimeoutRef.current = setTimeout(() => {
-        setIsEditPreviewFollowTransitionEnabled(true);
-        setEditPreviewFollowOffset(0);
-        editPreviewFollowResetTimeoutRef.current = null;
-      }, EDIT_PREVIEW_FOLLOW_DELAY);
-    }, [editingMessagePreview, messageInputHeight]);
-
     const handleSendMessage = async () => {
       if (editingMessageId) {
         await handleUpdateMessage();
@@ -1658,7 +1606,7 @@ const ChatSidebarPanel = memo(
               paddingBottom:
                 messageInputHeight +
                 84 +
-                (editingMessagePreview ? EDITING_STACK_OFFSET : 0),
+                (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0),
             }}
             onClick={closeMessageMenu}
           >
@@ -2050,7 +1998,10 @@ const ChatSidebarPanel = memo(
                 onClick={scrollToBottom}
                 className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-[color,bottom] duration-[110ms] ease-out"
                 style={{
-                  bottom: messageInputHeight + 78,
+                  bottom:
+                    messageInputHeight +
+                    78 +
+                    (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0),
                   filter: 'drop-shadow(0 0 0 white)',
                   background:
                     'radial-gradient(circle at center, white 30%, transparent 30%)',
@@ -2118,39 +2069,36 @@ const ChatSidebarPanel = memo(
               }
               className="relative z-10 rounded-2xl border bg-white"
             >
-              {editingMessagePreview ? (
-                <div
-                  className="absolute left-2.5 right-2.5 z-0 rounded-t-[14px] rounded-b-none border border-slate-300/70 bg-slate-100 px-3 pt-2 pb-3 shadow-[0_8px_16px_rgba(15,23,42,0.1)]"
-                  style={{
-                    top: 0,
-                    transform: `translateY(calc(-100% + 8px + ${editPreviewFollowOffset}px))`,
-                    transition: isEditPreviewFollowTransitionEnabled
-                      ? `transform ${EDIT_PREVIEW_FOLLOW_DURATION}ms cubic-bezier(0.22, 1, 0.36, 1)`
-                      : 'none',
-                    willChange: 'transform',
-                  }}
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <button
-                      type="button"
-                      aria-label="Cancel editing message"
-                      onClick={handleCancelEditMessage}
-                      className="-ml-0.5 group inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                    >
-                      <TbPencil className="h-4 w-4 group-hover:hidden" />
-                      <TbX className="hidden h-4 w-4 group-hover:block" />
-                    </button>
-                    <p className="pointer-events-none text-sm leading-5 truncate">
-                      {editingMessagePreview}
-                    </p>
-                  </div>
-                </div>
-              ) : null}
               <motion.div
                 layout
                 transition={{ layout: TEXT_MOVE_TRANSITION }}
                 className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height] duration-150 ease-out"
               >
+                <AnimatePresence initial={false}>
+                  {editingMessagePreview ? (
+                    <motion.div
+                      key="editing-preview-inline"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.14, ease: 'easeOut' }}
+                      className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700"
+                    >
+                      <button
+                        type="button"
+                        aria-label="Cancel editing message"
+                        onClick={handleCancelEditMessage}
+                        className="group inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                      >
+                        <TbPencil className="h-4 w-4 group-hover:hidden" />
+                        <TbX className="hidden h-4 w-4 group-hover:block" />
+                      </button>
+                      <p className="pointer-events-none text-sm leading-5 truncate">
+                        {editingMessagePreview}
+                      </p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
                 <motion.div
                   layout
                   transition={{ layout: TEXT_MOVE_TRANSITION }}
