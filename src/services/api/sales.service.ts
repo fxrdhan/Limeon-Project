@@ -7,6 +7,11 @@ import {
   isUniqueByColumn,
   replaceLinkedItems,
 } from './transaction.helpers';
+import {
+  applyStockUpdates,
+  buildStockUpdates,
+  updateRecordWithLinkedItems,
+} from './transaction.base';
 
 interface DBSale {
   id: string;
@@ -293,47 +298,37 @@ export class SalesService extends BaseService<DBSale> {
     saleData: Partial<Omit<DBSale, 'id' | 'created_at'>>,
     items?: Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>[]
   ): Promise<ServiceResponse<{ sale: DBSale; items?: DBSaleItem[] }>> {
-    try {
-      // Update sale
-      const { data: sale, error: saleError } = await this.update(id, saleData);
-
-      if (saleError || !sale) {
-        return { data: null, error: saleError };
-      }
-
-      if (items) {
-        // Get existing items to calculate stock differences
-        const { data: existingItems } = await this.getSaleItems(id);
-
-        const replaceResult = await replaceLinkedItems<
-          Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>
-        >({
+    const result = await updateRecordWithLinkedItems<
+      DBSale,
+      SaleItemWithDetails,
+      Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>,
+      Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>
+    >({
+      updateRecord: () => this.update(id, saleData),
+      nextItems: items,
+      fetchExistingItems: () => this.getSaleItems(id),
+      replaceItems: nextItems =>
+        replaceLinkedItems({
           tableName: 'sale_items',
           foreignKey: 'sale_id',
           parentId: id,
-          items,
-        });
+          items: nextItems,
+        }),
+      recalculateStockDifferences: (oldItems, newItems) =>
+        this.recalculateStockDifferences(oldItems, newItems),
+    });
 
-        if (replaceResult.error) {
-          return { data: null, error: replaceResult.error };
-        }
-
-        // Update stock based on differences
-        await this.recalculateStockDifferences(existingItems || [], items);
-
-        return {
-          data: {
-            sale,
-            items: (replaceResult.data || []) as DBSaleItem[],
-          },
-          error: null,
-        };
-      }
-
-      return { data: { sale }, error: null };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
+    if (result.error || !result.data) {
+      return { data: null, error: result.error };
     }
+
+    return {
+      data: {
+        sale: result.data.record,
+        items: result.data.items as DBSaleItem[] | undefined,
+      },
+      error: null,
+    };
   }
 
   // Delete sale and restore stocks
@@ -454,66 +449,43 @@ export class SalesService extends BaseService<DBSale> {
     );
   }
 
-  // Private helper methods
   private async updateItemStocks(
     updates: { id: string; increment?: number; decrement?: number }[]
   ) {
-    try {
-      for (const update of updates) {
-        const { data: item } = await supabase
-          .from('items')
-          .select('stock')
-          .eq('id', update.id)
-          .single();
+    const normalizedUpdates = updates
+      .map(update => ({
+        id: update.id,
+        increment: (update.increment || 0) - (update.decrement || 0),
+      }))
+      .filter(update => update.increment !== 0);
 
-        if (item) {
-          let newStock = item.stock;
-          if (update.increment) {
-            newStock += update.increment;
-          }
-          if (update.decrement) {
-            newStock -= update.decrement;
-          }
-
-          await supabase
-            .from('items')
-            .update({ stock: newStock })
-            .eq('id', update.id);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating item stocks:', error);
-    }
+    await applyStockUpdates(normalizedUpdates);
   }
 
   private async recalculateStockDifferences(
     oldItems: SaleItemWithDetails[],
     newItems: Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>[]
   ) {
-    const stockMap = new Map<string, number>();
-
-    // Calculate old stock impact (restore)
-    oldItems.forEach(item => {
-      const currentValue = stockMap.get(item.item_id) || 0;
-      stockMap.set(item.item_id, currentValue + item.quantity);
+    const updates = buildStockUpdates({
+      oldItems,
+      newItems,
+      getOldDelta: item => ({
+        itemId: item.item_id,
+        delta: item.quantity,
+      }),
+      getNewDelta: item => ({
+        itemId: item.item_id,
+        delta: -item.quantity,
+      }),
     });
 
-    // Calculate new stock impact (remove)
-    newItems.forEach(item => {
-      const currentValue = stockMap.get(item.item_id) || 0;
-      stockMap.set(item.item_id, currentValue - item.quantity);
-    });
-
-    // Apply stock differences
-    const updates = Array.from(stockMap.entries())
-      .filter(([, difference]) => difference !== 0)
-      .map(([id, difference]) => ({
-        id,
-        increment: difference > 0 ? difference : undefined,
-        decrement: difference < 0 ? Math.abs(difference) : undefined,
-      }));
-
-    await this.updateItemStocks(updates);
+    await this.updateItemStocks(
+      updates.map(update =>
+        update.increment > 0
+          ? { id: update.id, increment: update.increment }
+          : { id: update.id, decrement: Math.abs(update.increment) }
+      )
+    );
   }
 }
 
