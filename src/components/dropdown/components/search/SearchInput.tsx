@@ -1,5 +1,11 @@
 import React, { forwardRef, RefObject } from 'react';
 import { SEARCH_STATES } from '../../constants';
+import {
+  FORM_CONTROL_BORDER_DEFAULT_CLASS,
+  FORM_CONTROL_BORDER_ERROR_CLASS,
+  FORM_CONTROL_FOCUS_CLASS,
+  FORM_CONTROL_FOCUS_ERROR_CLASS,
+} from '@/styles/uiPrimitives';
 
 interface SearchInputProps {
   searchTerm: string;
@@ -34,8 +40,8 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         type="text"
         className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
           searchState === SEARCH_STATES.NOT_FOUND
-            ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-200'
-            : 'border-slate-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
+            ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`
+            : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
         }`}
         placeholder="Cari..."
         value={searchTerm}

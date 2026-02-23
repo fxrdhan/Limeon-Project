@@ -12,6 +12,10 @@ import {
 import { useContainerWidth } from '@/hooks/ui/useContainerWidth';
 import { calculateColumnWidths, sortData, filterData } from '@/utils/table';
 import type { ColumnConfig, SortState } from '@/types/table';
+import {
+  FORM_CONTROL_BORDER_DEFAULT_CLASS,
+  FORM_CONTROL_FOCUS_CLASS,
+} from '@/styles/uiPrimitives';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TableData = any;
@@ -165,7 +169,7 @@ export const Table = memo(
               value={localValue}
               onChange={e => handleChange(e.target.value)}
               placeholder={`Search ${columnHeader.toLowerCase()}...`}
-              className="w-full pl-8 pr-2 py-1 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full pl-8 pr-2 py-1 text-sm border rounded-lg ${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`}
             />
           </div>
         );

@@ -2,6 +2,12 @@ import React, { useRef, useEffect, useState } from 'react';
 import { TbArrowBack, TbSearch } from 'react-icons/tb';
 import { TableSearchProps } from './types';
 import { SEARCH_CONSTANTS } from './constants';
+import {
+  FORM_CONTROL_BORDER_DEFAULT_CLASS,
+  FORM_CONTROL_BORDER_ERROR_CLASS,
+  FORM_CONTROL_FOCUS_CLASS,
+  FORM_CONTROL_FOCUS_ERROR_SOFT_CLASS,
+} from '@/styles/uiPrimitives';
 
 const SearchBar: React.FC<TableSearchProps> = ({
   value,
@@ -63,9 +69,9 @@ const SearchBar: React.FC<TableSearchProps> = ({
               hasValue ? 'pl-3' : 'pl-10'
             } ${
               searchState === 'not-found'
-                ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
-                : 'border-slate-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
-            } focus:outline-none rounded-lg`}
+                ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_SOFT_CLASS}`
+                : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
+            } rounded-lg`}
             value={value}
             onChange={onChange}
             onKeyDown={onKeyDown}

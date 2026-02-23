@@ -1,5 +1,11 @@
 import React, { forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import {
+  FORM_CONTROL_BORDER_DEFAULT_CLASS,
+  FORM_CONTROL_BORDER_ERROR_CLASS,
+  FORM_CONTROL_FOCUS_CLASS,
+  FORM_CONTROL_FOCUS_ERROR_CLASS,
+} from '@/styles/uiPrimitives';
 
 interface SmartInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -102,11 +108,13 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(
-              'w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm',
-              'focus:ring-blue-500 focus:border-blue-500',
+              'w-full px-3 py-2 border rounded-lg shadow-sm',
+              FORM_CONTROL_BORDER_DEFAULT_CLASS,
+              FORM_CONTROL_FOCUS_CLASS,
               'placeholder-slate-400',
               // Error state
-              error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
+              error &&
+                `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`,
               className
             )}
             {...props}

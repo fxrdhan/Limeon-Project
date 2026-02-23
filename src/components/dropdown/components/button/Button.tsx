@@ -2,6 +2,12 @@ import React, { forwardRef } from 'react';
 import ButtonText from './ButtonText';
 import ButtonIcon from './ButtonIcon';
 import type { DropdownMode } from '@/types';
+import {
+  FORM_CONTROL_BORDER_DEFAULT_CLASS,
+  FORM_CONTROL_BORDER_ERROR_CLASS,
+  FORM_CONTROL_FOCUS_CLASS,
+  FORM_CONTROL_FOCUS_ERROR_CLASS,
+} from '@/styles/uiPrimitives';
 
 interface ButtonProps {
   mode?: DropdownMode;
@@ -97,8 +103,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disabled
             ? 'bg-slate-100 text-slate-800 cursor-not-allowed border-slate-200'
             : hasError
-              ? 'bg-white text-slate-800 hover:bg-slate-50 border-danger focus:border-danger focus:ring-3 focus:ring-red-200 focus:outline-hidden'
-              : 'bg-white text-slate-800 hover:bg-slate-50 border-slate-300 focus:border-primary focus:ring-3 focus:ring-emerald-200 focus:outline-hidden'
+              ? `bg-white text-slate-800 hover:bg-slate-50 ${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`
+              : `bg-white text-slate-800 hover:bg-slate-50 ${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
         }`}
         aria-haspopup="menu"
         aria-expanded={isOpen || isClosing}

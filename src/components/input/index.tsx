@@ -11,6 +11,11 @@ import type { InputProps } from '@/types';
 import classNames from 'classnames';
 import { useFieldValidation } from '@/hooks/forms/useFieldValidation';
 import ValidationOverlay from '@/components/validation-overlay';
+import {
+  FORM_CONTROL_BORDER_DEFAULT_CLASS,
+  FORM_CONTROL_DISABLED_READONLY_FOCUS_RESET_CLASS,
+  FORM_CONTROL_FOCUS_CLASS,
+} from '@/styles/uiPrimitives';
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
@@ -235,16 +240,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                     !validation.validation.isValid &&
                     validation.validation.error &&
                     !isFocused),
-                'border-slate-300':
+                [FORM_CONTROL_BORDER_DEFAULT_CLASS]:
                   !error &&
                   (!validate ||
                     validation.validation.isValid ||
                     !validation.validation.error ||
                     isFocused),
               },
-              'focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200',
+              FORM_CONTROL_FOCUS_CLASS,
               'disabled:bg-slate-100 disabled:cursor-not-allowed read-only:bg-slate-100 read-only:cursor-default',
-              'disabled:focus:ring-0 disabled:focus:border-slate-300 read-only:focus:ring-0 read-only:focus:border-slate-300',
+              FORM_CONTROL_DISABLED_READONLY_FOCUS_RESET_CLASS,
               'transition-all duration-200 ease-in-out',
               {
                 'w-full': fullWidth,
@@ -268,7 +273,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                     (validate &&
                       !validation.validation.isValid &&
                       validation.validation.error),
-                  'border-slate-300':
+                  [FORM_CONTROL_BORDER_DEFAULT_CLASS]:
                     !error &&
                     (!validate ||
                       validation.validation.isValid ||
