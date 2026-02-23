@@ -141,8 +141,12 @@ const PopupMenuContent = ({
               ? POPUP_DANGER_ACTIVE_BG_CLASS
               : ''
             : isPreselected
-              ? POPUP_ACTIVE_BG_CLASS
-              : `text-slate-700 ${POPUP_HOVER_BG_CLASS} hover:text-slate-900`;
+              ? `${POPUP_ACTIVE_BG_CLASS} !text-slate-700 data-[preselected=true]:!text-slate-700 hover:!text-slate-700`
+              : `!text-slate-700 ${POPUP_HOVER_BG_CLASS} hover:!text-slate-700`;
+        const iconToneClassName =
+          action.tone === 'danger'
+            ? ''
+            : '[&>svg]:text-slate-500 hover:[&>svg]:text-slate-500 data-[preselected=true]:[&>svg]:text-slate-500';
 
         return (
           <Button
@@ -178,7 +182,7 @@ const PopupMenuContent = ({
             onKeyDown={event => {
               handleActionKeyDown(event, actionIndex);
             }}
-            className={`w-full !opacity-100 px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 hover:!opacity-100 data-[preselected=true]:!opacity-100 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 ${toneClassName}`}
+            className={`w-full !opacity-100 px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 hover:!opacity-100 data-[preselected=true]:!opacity-100 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 focus-visible:ring-0 ${toneClassName} ${iconToneClassName}`}
           >
             {action.icon}
             {action.label}
