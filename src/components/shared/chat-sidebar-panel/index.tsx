@@ -62,6 +62,8 @@ const SEND_SUCCESS_GLOW_DURATION = 700;
 const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 const MESSAGE_BOTTOM_GAP = 12;
 const EDITING_COMPOSER_OFFSET = 44;
+const EDIT_TARGET_FOCUS_PADDING = 12;
+const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
 const COMPOSER_BASE_BORDER_COLOR = 'rgba(226, 232, 240, 0.65)';
 const COMPOSER_BASE_SHADOW = '0 2px 8px rgba(15, 23, 42, 0.08)';
 const COMPOSER_GLOW_SHADOW_PEAK =
@@ -141,11 +143,18 @@ const ChatSidebarPanel = memo(
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
     const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
+    const [flashingMessageId, setFlashingMessageId] = useState<string | null>(
+      null
+    );
+    const [isFlashHighlightVisible, setIsFlashHighlightVisible] =
+      useState(false);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
+    const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
     const hasCompletedInitialOpenLoadRef = useRef(false);
@@ -907,8 +916,84 @@ const ChatSidebarPanel = memo(
           clearTimeout(sendSuccessGlowTimeoutRef.current);
           sendSuccessGlowTimeoutRef.current = null;
         }
+
+        if (flashMessageIntervalRef.current) {
+          clearInterval(flashMessageIntervalRef.current);
+          flashMessageIntervalRef.current = null;
+        }
       };
     }, []);
+
+    const triggerMessageFlash = useCallback((messageId: string) => {
+      if (flashMessageIntervalRef.current) {
+        clearInterval(flashMessageIntervalRef.current);
+        flashMessageIntervalRef.current = null;
+      }
+
+      setFlashingMessageId(messageId);
+      setIsFlashHighlightVisible(true);
+
+      let flashSteps = 0;
+      flashMessageIntervalRef.current = setInterval(() => {
+        flashSteps += 1;
+        setIsFlashHighlightVisible(prev => !prev);
+
+        if (flashSteps >= 3) {
+          if (flashMessageIntervalRef.current) {
+            clearInterval(flashMessageIntervalRef.current);
+            flashMessageIntervalRef.current = null;
+          }
+          setIsFlashHighlightVisible(false);
+          setFlashingMessageId(currentId =>
+            currentId === messageId ? null : currentId
+          );
+        }
+      }, EDIT_TARGET_FLASH_PHASE_DURATION);
+    }, []);
+
+    const focusEditingTargetMessage = useCallback(() => {
+      if (!editingMessageId) return;
+      closeMessageMenu();
+
+      const bubble = messageBubbleRefs.current.get(editingMessageId);
+      const container = messagesContainerRef.current;
+      const bounds = getVisibleMessagesBounds();
+      if (!bubble || !container || !bounds) {
+        triggerMessageFlash(editingMessageId);
+        return;
+      }
+
+      const minVisibleTop =
+        bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
+      const maxVisibleBottom = bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING;
+      const bubbleRect = bubble.getBoundingClientRect();
+      const isFullyVisible =
+        bubbleRect.top >= minVisibleTop &&
+        bubbleRect.bottom <= maxVisibleBottom;
+
+      if (!isFullyVisible) {
+        let scrollOffset = 0;
+        if (bubbleRect.top < minVisibleTop) {
+          scrollOffset = bubbleRect.top - minVisibleTop;
+        } else if (bubbleRect.bottom > maxVisibleBottom) {
+          scrollOffset = bubbleRect.bottom - maxVisibleBottom;
+        }
+
+        if (scrollOffset !== 0) {
+          container.scrollTo({
+            top: container.scrollTop + scrollOffset,
+            behavior: 'smooth',
+          });
+        }
+      }
+
+      triggerMessageFlash(editingMessageId);
+    }, [
+      closeMessageMenu,
+      editingMessageId,
+      getVisibleMessagesBounds,
+      triggerMessageFlash,
+    ]);
 
     const closeAttachModal = useCallback(() => {
       setIsAttachModalOpen(false);
@@ -1633,6 +1718,19 @@ const ChatSidebarPanel = memo(
                   Number.isFinite(updatedTimestamp) &&
                   updatedTimestamp > createdTimestamp;
                 const isMenuOpen = openMenuMessageId === msg.id;
+                const isFlashSequenceTarget = flashingMessageId === msg.id;
+                const isFlashingTarget =
+                  isFlashSequenceTarget && isFlashHighlightVisible;
+                const bubbleToneClass = isFlashingTarget
+                  ? 'bg-primary text-white'
+                  : isCurrentUser
+                    ? 'bg-emerald-200 text-slate-900'
+                    : 'bg-slate-100 text-slate-800';
+                const bubbleOpacityClass = isFlashSequenceTarget
+                  ? isFlashHighlightVisible
+                    ? 'opacity-100'
+                    : 'opacity-60'
+                  : 'opacity-100';
 
                 // Use stableKey from message if available, otherwise fall back to ID
                 const animationKey = msg.stableKey || msg.id;
@@ -1741,11 +1839,21 @@ const ChatSidebarPanel = memo(
                       {/* Message Bubble */}
                       <div className="relative">
                         <div
-                          className={`px-3 py-2 text-sm inline-block ${
+                          ref={bubbleElement => {
+                            if (bubbleElement) {
+                              messageBubbleRefs.current.set(
+                                msg.id,
+                                bubbleElement
+                              );
+                            } else {
+                              messageBubbleRefs.current.delete(msg.id);
+                            }
+                          }}
+                          className={`px-3 py-2 text-sm inline-block ${bubbleToneClass} ${bubbleOpacityClass} ${
                             isCurrentUser
-                              ? 'bg-emerald-200 text-slate-900 rounded-tl-xl rounded-tr-xl rounded-bl-xl'
-                              : 'bg-slate-100 text-slate-800 rounded-tl-xl rounded-tr-xl rounded-br-xl'
-                          } cursor-pointer select-none`}
+                              ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
+                              : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
+                          } cursor-pointer select-none transition-[background-color,color,opacity] duration-300 ease-in-out`}
                           style={{
                             [isCurrentUser
                               ? 'borderBottomRightRadius'
@@ -1777,7 +1885,11 @@ const ChatSidebarPanel = memo(
                             <>
                               <span>... </span>
                               <span
-                                className="text-primary font-medium"
+                                className={`font-medium ${
+                                  isFlashingTarget
+                                    ? 'text-white/95'
+                                    : 'text-primary'
+                                }`}
                                 role="button"
                                 tabIndex={0}
                                 onClick={event => {
@@ -1800,7 +1912,11 @@ const ChatSidebarPanel = memo(
                             </>
                           ) : isExpanded ? (
                             <span
-                              className="block text-primary font-medium"
+                              className={`block font-medium ${
+                                isFlashingTarget
+                                  ? 'text-white/95'
+                                  : 'text-primary'
+                              }`}
                               role="button"
                               tabIndex={0}
                               onClick={event => {
@@ -2082,18 +2198,31 @@ const ChatSidebarPanel = memo(
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.14, ease: 'easeOut' }}
-                      className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700"
+                      className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700 transition-colors hover:border-primary/30 hover:bg-slate-100"
+                      role="button"
+                      tabIndex={0}
+                      title="Klik untuk lihat pesan asal"
+                      onClick={focusEditingTargetMessage}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          focusEditingTargetMessage();
+                        }
+                      }}
                     >
                       <button
                         type="button"
                         aria-label="Cancel editing message"
-                        onClick={handleCancelEditMessage}
-                        className="group inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                        onClick={event => {
+                          event.stopPropagation();
+                          handleCancelEditMessage();
+                        }}
+                        className="group inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
                       >
                         <TbPencil className="h-4 w-4 group-hover:hidden" />
                         <TbX className="hidden h-4 w-4 group-hover:block" />
                       </button>
-                      <p className="pointer-events-none text-sm leading-5 truncate">
+                      <p className="min-w-0 flex-1 truncate text-left text-sm leading-5 text-slate-700">
                         {editingMessagePreview}
                       </p>
                     </motion.div>
