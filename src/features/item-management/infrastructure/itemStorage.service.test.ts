@@ -3,6 +3,7 @@ import { itemStorageService } from './itemStorage.service';
 
 const listMock = vi.fn();
 const uploadMock = vi.fn();
+const getPublicUrlMock = vi.fn();
 const storageFromMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase', () => ({
@@ -17,8 +18,16 @@ describe('itemStorageService', () => {
   beforeEach(() => {
     listMock.mockReset();
     uploadMock.mockReset();
+    getPublicUrlMock.mockReset();
     storageFromMock.mockReset();
-    storageFromMock.mockReturnValue({ list: listMock, upload: uploadMock });
+    getPublicUrlMock.mockReturnValue({
+      data: { publicUrl: 'https://example.com/items/1/img.png' },
+    });
+    storageFromMock.mockReturnValue({
+      list: listMock,
+      upload: uploadMock,
+      getPublicUrl: getPublicUrlMock,
+    });
   });
 
   it('lists item images', async () => {
@@ -44,7 +53,10 @@ describe('itemStorageService', () => {
   });
 
   it('uploads item image', async () => {
-    uploadMock.mockResolvedValue({ error: null });
+    uploadMock.mockResolvedValue({
+      data: { path: 'items/1/img.png' },
+      error: null,
+    });
     const file = new File([new Uint8Array(10)], 'img.png', {
       type: 'image/png',
     });
@@ -61,7 +73,7 @@ describe('itemStorageService', () => {
   });
 
   it('handles upload and list exceptions', async () => {
-    uploadMock.mockResolvedValue({ error: new Error('fail') });
+    uploadMock.mockResolvedValue({ data: null, error: new Error('fail') });
     const file = new File([new Uint8Array(10)], 'img.png', {
       type: 'image/png',
     });

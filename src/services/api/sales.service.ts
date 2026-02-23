@@ -1,6 +1,12 @@
 import { BaseService, ServiceResponse } from './base.service';
 import { supabase } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
+import {
+  fetchRecordWithItems,
+  getRecordsByDateRange,
+  isUniqueByColumn,
+  replaceLinkedItems,
+} from './transaction.helpers';
 
 interface DBSale {
   id: string;
@@ -258,27 +264,22 @@ export class SalesService extends BaseService<DBSale> {
         return { data: null, error: saleError };
       }
 
-      const { data: sale, error: fetchSaleError } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('id', saleId)
-        .single();
+      const result = await fetchRecordWithItems<DBSale, DBSaleItem>({
+        parentTable: 'sales',
+        parentId: saleId,
+        itemsTable: 'sale_items',
+        itemsForeignKey: 'sale_id',
+      });
 
-      if (fetchSaleError || !sale) {
-        return { data: null, error: fetchSaleError };
-      }
-
-      const { data: insertedItems, error: itemsError } = await supabase
-        .from('sale_items')
-        .select('*')
-        .eq('sale_id', saleId);
-
-      if (itemsError) {
-        return { data: null, error: itemsError };
+      if (result.error || !result.data) {
+        return { data: null, error: result.error };
       }
 
       return {
-        data: { sale, items: insertedItems || [] },
+        data: {
+          sale: result.data.record,
+          items: result.data.items,
+        },
         error: null,
       };
     } catch (error) {
@@ -304,29 +305,27 @@ export class SalesService extends BaseService<DBSale> {
         // Get existing items to calculate stock differences
         const { data: existingItems } = await this.getSaleItems(id);
 
-        // Delete existing items
-        await supabase.from('sale_items').delete().eq('sale_id', id);
+        const replaceResult = await replaceLinkedItems<
+          Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>
+        >({
+          tableName: 'sale_items',
+          foreignKey: 'sale_id',
+          parentId: id,
+          items,
+        });
 
-        // Insert new items
-        const saleItems = items.map(item => ({
-          ...item,
-          sale_id: id,
-        }));
-
-        const { data: insertedItems, error: itemsError } = await supabase
-          .from('sale_items')
-          .insert(saleItems)
-          .select();
-
-        if (itemsError) {
-          return { data: null, error: itemsError };
+        if (replaceResult.error) {
+          return { data: null, error: replaceResult.error };
         }
 
         // Update stock based on differences
         await this.recalculateStockDifferences(existingItems || [], items);
 
         return {
-          data: { sale, items: insertedItems || [] },
+          data: {
+            sale,
+            items: (replaceResult.data || []) as DBSaleItem[],
+          },
           error: null,
         };
       }
@@ -368,11 +367,9 @@ export class SalesService extends BaseService<DBSale> {
 
   // Get sales by date range
   async getSalesByDateRange(startDate: string, endDate: string) {
-    try {
-      const { data, error } = await supabase
-        .from('sales')
-        .select(
-          `
+    return getRecordsByDateRange<SaleWithDetails>({
+      tableName: 'sales',
+      select: `
           *,
           patients (
             id,
@@ -384,16 +381,10 @@ export class SalesService extends BaseService<DBSale> {
             name,
             specialization
           )
-        `
-        )
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: false });
-
-      return { data, error };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
-    }
+        `,
+      startDate,
+      endDate,
+    });
   }
 
   // Get sales by payment method
@@ -455,27 +446,12 @@ export class SalesService extends BaseService<DBSale> {
     invoiceNumber: string,
     excludeId?: string
   ): Promise<boolean> {
-    try {
-      let query = supabase
-        .from('sales')
-        .select('id')
-        .eq('invoice_number', invoiceNumber);
-
-      if (excludeId) {
-        query = query.neq('id', excludeId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error checking invoice uniqueness:', error);
-        return false;
-      }
-
-      return !data || data.length === 0;
-    } catch {
-      return false;
-    }
+    return isUniqueByColumn(
+      'sales',
+      'invoice_number',
+      invoiceNumber,
+      excludeId
+    );
   }
 
   // Private helper methods

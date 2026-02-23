@@ -2,6 +2,12 @@ import { BaseService, ServiceResponse } from './base.service';
 import { supabase } from '@/lib/supabase';
 import type { PurchaseData, PurchaseItem } from '@/types/purchase';
 import type { PostgrestError } from '@supabase/supabase-js';
+import {
+  fetchRecordWithItems,
+  getRecordsByDateRange,
+  isUniqueByColumn,
+  replaceLinkedItems,
+} from './transaction.helpers';
 
 interface DBPurchase {
   id: string;
@@ -265,27 +271,22 @@ export class PurchasesService extends BaseService<DBPurchase> {
         return { data: null, error: purchaseError };
       }
 
-      const { data: purchase, error: fetchPurchaseError } = await supabase
-        .from('purchases')
-        .select('*')
-        .eq('id', purchaseId)
-        .single();
+      const result = await fetchRecordWithItems<DBPurchase, DBPurchaseItem>({
+        parentTable: 'purchases',
+        parentId: purchaseId,
+        itemsTable: 'purchase_items',
+        itemsForeignKey: 'purchase_id',
+      });
 
-      if (fetchPurchaseError || !purchase) {
-        return { data: null, error: fetchPurchaseError };
-      }
-
-      const { data: insertedItems, error: itemsError } = await supabase
-        .from('purchase_items')
-        .select('*')
-        .eq('purchase_id', purchaseId);
-
-      if (itemsError) {
-        return { data: null, error: itemsError };
+      if (result.error || !result.data) {
+        return { data: null, error: result.error };
       }
 
       return {
-        data: { purchase, items: insertedItems || [] },
+        data: {
+          purchase: result.data.record,
+          items: result.data.items,
+        },
         error: null,
       };
     } catch (error) {
@@ -316,29 +317,27 @@ export class PurchasesService extends BaseService<DBPurchase> {
         // Get existing items to calculate stock differences
         const { data: existingItems } = await this.getPurchaseItems(id);
 
-        // Delete existing items
-        await supabase.from('purchase_items').delete().eq('purchase_id', id);
+        const replaceResult = await replaceLinkedItems<
+          Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>
+        >({
+          tableName: 'purchase_items',
+          foreignKey: 'purchase_id',
+          parentId: id,
+          items,
+        });
 
-        // Insert new items
-        const purchaseItems = items.map(item => ({
-          ...item,
-          purchase_id: id,
-        }));
-
-        const { data: insertedItems, error: itemsError } = await supabase
-          .from('purchase_items')
-          .insert(purchaseItems)
-          .select();
-
-        if (itemsError) {
-          return { data: null, error: itemsError };
+        if (replaceResult.error) {
+          return { data: null, error: replaceResult.error };
         }
 
         // Update stock based on differences
         await this.recalculateStockDifferences(existingItems || [], items);
 
         return {
-          data: { purchase, items: insertedItems || [] },
+          data: {
+            purchase,
+            items: (replaceResult.data || []) as DBPurchaseItem[],
+          },
           error: null,
         };
       }
@@ -385,11 +384,9 @@ export class PurchasesService extends BaseService<DBPurchase> {
 
   // Get purchases by date range
   async getPurchasesByDateRange(startDate: string, endDate: string) {
-    try {
-      const { data, error } = await supabase
-        .from('purchases')
-        .select(
-          `
+    return getRecordsByDateRange<PurchaseData>({
+      tableName: 'purchases',
+      select: `
           *,
           suppliers (
             id,
@@ -397,16 +394,10 @@ export class PurchasesService extends BaseService<DBPurchase> {
             address,
             contact_person
           )
-        `
-        )
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: false });
-
-      return { data, error };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
-    }
+        `,
+      startDate,
+      endDate,
+    });
   }
 
   // Check if invoice number exists
@@ -414,27 +405,12 @@ export class PurchasesService extends BaseService<DBPurchase> {
     invoiceNumber: string,
     excludeId?: string
   ): Promise<boolean> {
-    try {
-      let query = supabase
-        .from('purchases')
-        .select('id')
-        .eq('invoice_number', invoiceNumber);
-
-      if (excludeId) {
-        query = query.neq('id', excludeId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error checking invoice uniqueness:', error);
-        return false;
-      }
-
-      return !data || data.length === 0;
-    } catch {
-      return false;
-    }
+    return isUniqueByColumn(
+      'purchases',
+      'invoice_number',
+      invoiceNumber,
+      excludeId
+    );
   }
 
   // Private helper methods

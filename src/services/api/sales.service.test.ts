@@ -312,7 +312,14 @@ describe('SalesService', () => {
     });
     fromMock.mockReturnValueOnce(deleteQuery).mockReturnValueOnce(insertQuery);
 
-    const result = await service.updateSaleWithItems('s1', { total: 100 }, []);
+    const result = await service.updateSaleWithItems('s1', { total: 100 }, [
+      {
+        item_id: 'i1',
+        quantity: 1,
+        price: 10,
+        subtotal: 10,
+      },
+    ]);
     expect(result.data).toBeNull();
   });
 

@@ -598,11 +598,20 @@ describe('PurchasesService', () => {
 
     fromMock.mockReturnValueOnce(deleteQuery).mockReturnValueOnce(insertQuery);
 
-    const result = await service.updatePurchaseWithItems(
-      'p1',
-      { notes: 'x' },
-      []
-    );
+    const result = await service.updatePurchaseWithItems('p1', { notes: 'x' }, [
+      {
+        item_id: 'i1',
+        quantity: 1,
+        price: 10,
+        discount: 0,
+        subtotal: 10,
+        unit: 'pcs',
+        vat_percentage: 0,
+        batch_no: null,
+        expiry_date: null,
+        unit_conversion_rate: 1,
+      },
+    ]);
     expect(result.data).toBeNull();
   });
 

@@ -1,24 +1,40 @@
 import { supabase } from '@/lib/supabase';
 import { compressImageIfNeeded } from '@/utils/image';
+import type { FileObject } from '@supabase/storage-js';
 
 export interface UploadResult {
   path: string;
   publicUrl: string;
 }
 
+interface ListFilesOptions {
+  limit?: number;
+  offset?: number;
+  sortBy?: { column: string; order: 'asc' | 'desc' };
+  search?: string;
+}
+
+interface UploadOptions {
+  contentType?: string;
+  compress?: boolean;
+}
+
 export class StorageService {
-  public static async uploadFile(
+  private static async uploadInternal(
     bucket: string,
     file: File,
-    path: string
+    path: string,
+    options: UploadOptions = {}
   ): Promise<UploadResult> {
-    const compressedFile = await compressImageIfNeeded(file);
+    const { contentType, compress = true } = options;
+    const fileToUpload = compress ? await compressImageIfNeeded(file) : file;
 
     const { data, error } = await supabase.storage
       .from(bucket)
-      .upload(path, compressedFile, {
+      .upload(path, fileToUpload, {
         cacheControl: '3600',
         upsert: true,
+        ...(contentType ? { contentType } : {}),
       });
 
     if (error) {
@@ -33,6 +49,26 @@ export class StorageService {
       path: data.path,
       publicUrl,
     };
+  }
+
+  public static async uploadFile(
+    bucket: string,
+    file: File,
+    path: string
+  ): Promise<UploadResult> {
+    return this.uploadInternal(bucket, file, path, { compress: true });
+  }
+
+  public static async uploadRawFile(
+    bucket: string,
+    file: File,
+    path: string,
+    contentType?: string
+  ): Promise<UploadResult> {
+    return this.uploadInternal(bucket, file, path, {
+      compress: false,
+      contentType,
+    });
   }
 
   public static async deleteFile(bucket: string, path: string): Promise<void> {
@@ -56,6 +92,22 @@ export class StorageService {
 
   static async deleteEntityImage(bucket: string, path: string): Promise<void> {
     return this.deleteFile(bucket, path);
+  }
+
+  static async listFiles(
+    bucket: string,
+    path: string,
+    options?: ListFilesOptions
+  ): Promise<FileObject[]> {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .list(path, options);
+
+    if (error) {
+      throw new Error(`List failed: ${error.message}`);
+    }
+
+    return data || [];
   }
 
   static extractPathFromUrl(url: string, bucket: string): string | null {
