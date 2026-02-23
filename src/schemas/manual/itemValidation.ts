@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DBItemSchema } from '@/schemas/generated/database.zod';
 
 // Schema untuk validasi field nama item
 export const itemNameSchema = z
@@ -70,25 +71,32 @@ export const sellPriceComparisonSchema = (basePrice: string) =>
       return sellPriceNum > basePriceNum;
     }, 'Harga jual harus lebih tinggi dari harga pokok');
 
+const itemSchemaBase = DBItemSchema.pick({
+  name: true,
+  category_id: true,
+  type_id: true,
+  base_price: true,
+  sell_price: true,
+  barcode: true,
+  description: true,
+  rack: true,
+  is_medicine: true,
+  is_active: true,
+  has_expiry_date: true,
+  min_stock: true,
+}).extend({
+  manufacturer: z.string().optional(),
+  unit_id: z.string().optional(),
+});
+
 // Schema lengkap untuk item (akan digunakan nanti)
-export const itemSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Nama item harus diisi')
-    .refine(
-      value => value.trim().length > 0,
-      'Nama item tidak boleh hanya berisi spasi'
-    ),
+export const itemSchema = itemSchemaBase.extend({
+  name: itemNameSchema,
   category_id: z.string().min(1, 'Kategori harus dipilih'),
   type_id: z.string().min(1, 'Jenis harus dipilih'),
   unit_id: z.string().min(1, 'Kemasan harus dipilih'),
   base_price: z.number().min(0.01, 'Harga pokok harus lebih dari 0'),
   sell_price: z.number().min(0.01, 'Harga jual harus lebih dari 0'),
-  // Field opsional
-  manufacturer: z.string().optional(),
-  barcode: z.string().optional(),
-  description: z.string().optional(),
-  rack: z.string().optional(),
   is_medicine: z.boolean().default(false),
   is_active: z.boolean().default(true),
   has_expiry_date: z.boolean().default(false),

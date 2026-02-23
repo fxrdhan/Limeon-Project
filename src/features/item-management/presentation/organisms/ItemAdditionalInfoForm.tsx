@@ -13,6 +13,10 @@ import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 import { itemQuantitySchema } from '@/schemas/manual/itemValidation';
+import {
+  COLLAPSIBLE_SECTION_HEADER_CLASS,
+  SURFACE_CARD_CLASS,
+} from '@/styles/uiPrimitives';
 import type { DropdownOption } from '@/types/components';
 import { createOptimizedUnitDetailFetcher } from '@/utils/optimizedCategoryDetailFetcher';
 
@@ -119,12 +123,12 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
   return (
     <div
       ref={sectionRef}
-      className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+      className={`${SURFACE_CARD_CLASS} ${stackClassName || ''}`}
       style={stackStyle}
       data-stack-card="true"
     >
       <div
-        className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+        className={COLLAPSIBLE_SECTION_HEADER_CLASS}
         onClick={() => onExpand?.()}
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {

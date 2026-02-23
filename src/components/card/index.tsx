@@ -1,11 +1,12 @@
 import type { CardProps } from '@/types';
 import classNames from 'classnames';
+import { SURFACE_CARD_CLASS } from '@/styles/uiPrimitives';
 
 export const Card = ({ children, className }: CardProps) => {
   return (
     <div
       className={classNames(
-        'p-6 outline-none bg-white shadow-lg rounded-xl!',
+        `${SURFACE_CARD_CLASS} p-6 outline-none shadow-lg`,
         className
       )}
     >

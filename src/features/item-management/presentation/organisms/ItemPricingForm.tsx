@@ -15,6 +15,11 @@ import FormField from '@/components/form-field';
 import Button from '@/components/button';
 import { formatRupiah } from '@/lib/formatters';
 import type { CustomerLevel } from '@/types/database';
+import {
+  COLLAPSIBLE_SECTION_HEADER_CLASS,
+  POPOVER_SURFACE_CLASS,
+  SURFACE_CARD_CLASS,
+} from '@/styles/uiPrimitives';
 import { PriceInput, MarginEditor } from '../atoms';
 import {
   basePriceSchema,
@@ -525,12 +530,12 @@ export default function ItemPricingForm({
   return (
     <section
       ref={sectionRef}
-      className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+      className={`${SURFACE_CARD_CLASS} ${stackClassName || ''}`}
       style={stackStyle}
       data-stack-card="true"
     >
       <div
-        className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+        className={COLLAPSIBLE_SECTION_HEADER_CLASS}
         onClick={handleHeaderToggle}
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
@@ -712,7 +717,7 @@ export default function ItemPricingForm({
             >
               <div
                 ref={menuRef}
-                className="w-[190px] rounded-lg border border-slate-200 bg-white shadow-lg p-1"
+                className={`w-[190px] ${POPOVER_SURFACE_CLASS} p-1`}
               >
                 <button
                   type="button"
@@ -751,7 +756,7 @@ export default function ItemPricingForm({
             >
               <div
                 ref={baselineRef}
-                className="w-[260px] rounded-lg border border-slate-200 bg-white shadow-lg"
+                className={`w-[260px] ${POPOVER_SURFACE_CLASS}`}
               >
                 <div className="px-3 py-2 border-b border-slate-200 text-sm font-semibold text-slate-700">
                   Atur baseline

@@ -4,6 +4,10 @@ import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { DropdownOption } from '@/types/components';
+import {
+  SECTION_HEADER_CLASS,
+  SURFACE_CARD_CLASS,
+} from '@/styles/uiPrimitives';
 import { useItemCodeGenerator } from '../../application/hooks/utils';
 import { useItemRealtime } from '../../shared/contexts/useItemFormContext';
 import {
@@ -148,8 +152,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
         : codeGeneration.generatedCode || formData.code || 'Auto-generated';
 
     return (
-      <div className="rounded-xl border border-slate-200 bg-white mb-6 overflow-hidden">
-        <div className="bg-white px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+      <div className={`${SURFACE_CARD_CLASS} mb-6`}>
+        <div className={SECTION_HEADER_CLASS}>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
             Data Umum
           </h2>

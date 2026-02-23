@@ -4,6 +4,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import Dropdown from '@/components/dropdown';
 import Checkbox from '@/components/checkbox';
 import FormField from '@/components/form-field';
+import {
+  COLLAPSIBLE_SECTION_HEADER_CLASS,
+  SURFACE_CARD_CLASS,
+} from '@/styles/uiPrimitives';
 import { MinStockEditor } from '../atoms';
 import FefoTooltip from '../molecules/FefoTooltip';
 
@@ -65,7 +69,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     return (
       <section
         ref={sectionRef}
-        className={`rounded-xl border border-slate-200 bg-white overflow-hidden ${stackClassName || ''}`}
+        className={`${SURFACE_CARD_CLASS} ${stackClassName || ''}`}
         style={stackStyle}
         data-stack-card="true"
         onKeyDownCapture={event => {
@@ -85,7 +89,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
         }}
       >
         <div
-          className="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+          className={COLLAPSIBLE_SECTION_HEADER_CLASS}
           onClick={() => onExpand?.()}
           onFocus={event => {
             if (!isExpanded && event.currentTarget.matches(':focus-visible')) {

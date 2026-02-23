@@ -39,6 +39,10 @@ import { useCustomerLevels } from '../../application/hooks/data';
 import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 import { itemDataService } from '../../infrastructure/itemData.service';
 import { itemStorageService } from '../../infrastructure/itemStorage.service';
+import {
+  toPricingFields,
+  toPricingPatch,
+} from '../../shared/utils/pricingFieldAdapter';
 
 // Child components
 import { ItemFormHeader } from '../molecules';
@@ -546,18 +550,28 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     onExpand();
   }, [isExpanded, onExpand, showLevelPricing]);
 
+  const pricingFields = useMemo(
+    () =>
+      toPricingFields({
+        base_price: formData.base_price,
+        sell_price: formData.sell_price,
+        is_level_pricing_active: formData.is_level_pricing_active,
+      }),
+    [formData.base_price, formData.sell_price, formData.is_level_pricing_active]
+  );
+
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
-    basePrice: formData.base_price || 0,
-    sellPrice: formData.sell_price || 0,
+    basePrice: pricingFields.basePrice,
+    sellPrice: pricingFields.sellPrice,
   });
 
   const marginEditor = useInlineEditor({
     initialValue: (calcMargin || 0).toString(),
     onSave: value => {
-      const basePrice = formData.base_price || 0;
+      const basePrice = pricingFields.basePrice;
       const marginPercentage = parseFloat(value.toString()) || 0;
       const newSellPrice = basePrice + (basePrice * marginPercentage) / 100;
-      updateFormData({ sell_price: newSellPrice });
+      updateFormData(toPricingPatch({ sellPrice: newSellPrice }));
     },
   });
 
@@ -567,7 +581,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       .replace(/^Rp\s*/, '')
       .replace(/[^0-9]/g, '');
     const value = parseFloat(cleanValue) || 0;
-    updateFormData({ sell_price: value });
+    updateFormData(toPricingPatch({ sellPrice: value }));
     marginEditor.setValue((calcMargin || 0).toString());
     scheduleAutosave('sell_price', value);
   };
@@ -625,9 +639,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     <ItemPricingForm
       key={resetKey} // Force re-mount on reset to clear validation
       formData={{
-        base_price: formData.base_price || 0,
-        sell_price: formData.sell_price || 0,
-        is_level_pricing_active: formData.is_level_pricing_active ?? true,
+        base_price: pricingFields.basePrice,
+        sell_price: pricingFields.sellPrice,
+        is_level_pricing_active: pricingFields.isLevelPricingActive,
       }}
       displayBasePrice={displayBasePrice}
       displaySellPrice={displaySellPrice}
@@ -668,9 +682,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       onStopEditMargin={marginEditor.stopEditing}
       onMarginInputChange={marginEditor.handleChange}
       onMarginKeyDown={marginEditor.handleKeyDown}
-      isLevelPricingActive={formData.is_level_pricing_active ?? true}
+      isLevelPricingActive={pricingFields.isLevelPricingActive}
       onLevelPricingActiveChange={active => {
-        updateFormData({ is_level_pricing_active: active });
+        updateFormData(toPricingPatch({ isLevelPricingActive: active }));
         scheduleAutosave('is_level_pricing_active', active);
       }}
     />
