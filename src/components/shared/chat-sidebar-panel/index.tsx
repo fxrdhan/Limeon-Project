@@ -2009,6 +2009,15 @@ const ChatSidebarPanel = memo(
             )}
           </AnimatePresence>
 
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 left-0 right-0 z-[5] h-12"
+            style={{
+              background:
+                'linear-gradient(to top, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.72) 46%, rgba(255,255,255,0) 100%)',
+            }}
+          />
+
           {/* Message Input */}
           <div
             ref={composerContainerRef}
