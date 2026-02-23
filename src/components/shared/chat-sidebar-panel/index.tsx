@@ -58,6 +58,8 @@ const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 const MESSAGE_INPUT_MIN_HEIGHT = 22;
 const MESSAGE_INPUT_MAX_HEIGHT = 170;
 const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
+const EDIT_PREVIEW_FOLLOW_DELAY = 70;
+const EDIT_PREVIEW_FOLLOW_DURATION = 160;
 const SEND_SUCCESS_GLOW_DURATION = 700;
 const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 const MESSAGE_BOTTOM_GAP = 12;
@@ -141,9 +143,18 @@ const ChatSidebarPanel = memo(
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
     const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
+    const [editPreviewFollowOffset, setEditPreviewFollowOffset] = useState(0);
+    const [
+      isEditPreviewFollowTransitionEnabled,
+      setIsEditPreviewFollowTransitionEnabled,
+    ] = useState(false);
     const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const editPreviewFollowResetTimeoutRef = useRef<NodeJS.Timeout | null>(
+      null
+    );
+    const previousMessageInputHeightRef = useRef(MESSAGE_INPUT_MIN_HEIGHT);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
@@ -910,6 +921,15 @@ const ChatSidebarPanel = memo(
       };
     }, []);
 
+    useEffect(() => {
+      return () => {
+        if (editPreviewFollowResetTimeoutRef.current) {
+          clearTimeout(editPreviewFollowResetTimeoutRef.current);
+          editPreviewFollowResetTimeoutRef.current = null;
+        }
+      };
+    }, []);
+
     const closeAttachModal = useCallback(() => {
       setIsAttachModalOpen(false);
     }, []);
@@ -1380,6 +1400,38 @@ const ChatSidebarPanel = memo(
         }
       };
     }, [composerLayoutMode, isTargetMultiline]);
+
+    useEffect(() => {
+      if (!editingMessagePreview) {
+        if (editPreviewFollowResetTimeoutRef.current) {
+          clearTimeout(editPreviewFollowResetTimeoutRef.current);
+          editPreviewFollowResetTimeoutRef.current = null;
+        }
+        previousMessageInputHeightRef.current = messageInputHeight;
+        setEditPreviewFollowOffset(0);
+        setIsEditPreviewFollowTransitionEnabled(false);
+        return;
+      }
+
+      const previousHeight = previousMessageInputHeightRef.current;
+      previousMessageInputHeightRef.current = messageInputHeight;
+      const heightDelta = messageInputHeight - previousHeight;
+      if (heightDelta <= 0) return;
+
+      if (editPreviewFollowResetTimeoutRef.current) {
+        clearTimeout(editPreviewFollowResetTimeoutRef.current);
+        editPreviewFollowResetTimeoutRef.current = null;
+      }
+
+      setIsEditPreviewFollowTransitionEnabled(false);
+      setEditPreviewFollowOffset(prevOffset => prevOffset + heightDelta);
+
+      editPreviewFollowResetTimeoutRef.current = setTimeout(() => {
+        setIsEditPreviewFollowTransitionEnabled(true);
+        setEditPreviewFollowOffset(0);
+        editPreviewFollowResetTimeoutRef.current = null;
+      }, EDIT_PREVIEW_FOLLOW_DELAY);
+    }, [editingMessagePreview, messageInputHeight]);
 
     const handleSendMessage = async () => {
       if (editingMessageId) {
@@ -2071,7 +2123,11 @@ const ChatSidebarPanel = memo(
                   className="absolute left-2.5 right-2.5 z-0 rounded-t-[14px] rounded-b-none border border-slate-300/70 bg-slate-100 px-3 pt-2 pb-3 shadow-[0_8px_16px_rgba(15,23,42,0.1)]"
                   style={{
                     top: 0,
-                    transform: 'translateY(calc(-100% + 8px))',
+                    transform: `translateY(calc(-100% + 8px + ${editPreviewFollowOffset}px))`,
+                    transition: isEditPreviewFollowTransitionEnabled
+                      ? `transform ${EDIT_PREVIEW_FOLLOW_DURATION}ms cubic-bezier(0.22, 1, 0.36, 1)`
+                      : 'none',
+                    willChange: 'transform',
                   }}
                 >
                   <div className="flex items-center gap-2 text-slate-700">
