@@ -1,55 +1,44 @@
+import type {
+  EnhancedSearchBarProps as CoreEnhancedSearchBarProps,
+  EnhancedSearchState as CoreEnhancedSearchState,
+  FilterCondition as CoreFilterCondition,
+  FilterConditionNode as CoreFilterConditionNode,
+  FilterGroup as CoreFilterGroup,
+  FilterSearch as CoreFilterSearch,
+  SearchColumn as CoreSearchColumn,
+} from '@/types/search';
 import { SearchState } from '../constants';
 
-export interface SearchColumn {
-  field: string;
-  headerName: string;
-  type?: 'text' | 'number' | 'date' | 'currency';
-  description?: string;
-  searchable: boolean;
-  isMultiFilter?: boolean; // Indicates if column uses AG Grid multi-filter
+export type SearchColumn = CoreSearchColumn & {
   activeColor?: string;
+};
+
+export interface FilterCondition extends Omit<CoreFilterCondition, 'column'> {
+  column?: SearchColumn;
 }
 
-export interface FilterCondition {
-  operator: string;
-  value: string;
-  valueTo?: string; // For inRange operator (Between) - second value
-  // Multi-column support: each condition can have its own column
-  field?: string; // Column field name for this condition
-  column?: SearchColumn; // Column reference for this condition
+export interface FilterConditionNode extends Omit<
+  CoreFilterConditionNode,
+  'column'
+> {
+  column?: SearchColumn;
 }
 
-export interface FilterConditionNode extends FilterCondition {
-  kind: 'condition';
-}
-
-export interface FilterGroup {
-  kind: 'group';
-  join: 'AND' | 'OR';
+export interface FilterGroup extends Omit<CoreFilterGroup, 'nodes'> {
   nodes: FilterExpression[];
-  isClosed?: boolean;
-  isExplicit?: boolean;
 }
 
 export type FilterExpression = FilterConditionNode | FilterGroup;
 
-export interface FilterSearch {
-  field: string;
-  value: string; // For single condition (backward compat)
-  valueTo?: string; // For inRange (Between) operator - second value
+export interface FilterSearch extends Omit<
+  CoreFilterSearch,
+  'column' | 'conditions' | 'filterGroup'
+> {
   column: SearchColumn;
-  operator: string; // For single condition (backward compat)
   isExplicitOperator: boolean;
-  // Multi-condition support
-  conditions?: FilterCondition[]; // Array of conditions for AND/OR
-  joinOperator?: 'AND' | 'OR'; // Primary join operator (backward compat)
-  joins?: ('AND' | 'OR')[]; // Full joins array for N-condition (joins[i] between condition[i] and condition[i+1])
-  isMultiCondition?: boolean; // Flag to indicate multi-condition filter
-  isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
-  filterGroup?: FilterGroup; // Nested group representation for advanced filter
-  // Confirmed state (user pressed Enter to lock filter value as badge)
-  isConfirmed?: boolean; // Flag to show value as gray badge instead of in input
-  // Between operator waiting state (first value entered, waiting for second)
+  conditions?: FilterCondition[];
+  joins?: ('AND' | 'OR')[];
+  filterGroup?: FilterGroup;
   waitingForValueTo?: boolean;
 }
 
@@ -65,70 +54,13 @@ export interface TableSearchProps {
   searchState?: SearchState;
 }
 
-export interface EnhancedSearchBarProps extends TableSearchProps {
-  resultsCount?: number;
+export interface EnhancedSearchBarProps
+  extends
+    Omit<CoreEnhancedSearchBarProps, 'columns' | 'onFilterSearch'>,
+    TableSearchProps {
   columns: SearchColumn[];
   onGlobalSearch?: (term: string) => void;
-  onClearSearch?: () => void;
   onFilterSearch?: (filter: FilterSearch | null) => void;
-}
-
-export interface EnhancedSearchState {
-  showColumnSelector: boolean;
-  showOperatorSelector: boolean;
-  showJoinOperatorSelector: boolean; // for #and/#or selection
-  isFilterMode: boolean;
-  selectedColumn?: SearchColumn;
-  filterSearch?: FilterSearch;
-  globalSearch?: string;
-  partialJoin?: 'AND' | 'OR'; // selected join operator before next condition
-
-  // ============ Scalable N-condition support ============
-
-  /**
-   * Index of the condition currently being BUILT (input phase)
-   * 0 = first condition, 1 = second condition, etc.
-   * undefined means first condition (default)
-   *
-   * Usage: activeConditionIndex > 0 means we're building a subsequent condition
-   */
-  activeConditionIndex?: number;
-
-  /**
-   * Index of the condition currently being EDITED (badge edit mode)
-   * undefined means no specific condition is being edited
-   *
-   * This is different from activeConditionIndex:
-   * - activeConditionIndex: building NEW condition
-   * - editingConditionIndex: editing EXISTING condition badge
-   */
-  editingConditionIndex?: number;
-
-  /**
-   * Partial conditions being built (not yet confirmed)
-   * Each entry contains partial data for a condition being typed
-   * partialConditions[0] = first condition data
-   * partialConditions[1] = second condition data (column, operator, value, etc.)
-   */
-  partialConditions?: PartialCondition[];
-
-  /**
-   * Array of join operators between conditions
-   * joins[0] = join between condition 0 and 1
-   * joins[1] = join between condition 1 and 2
-   * etc.
-   */
-  joins?: ('AND' | 'OR')[];
-
-  /**
-   * Index of the join operator currently being EDITED
-   * undefined means no specific join is being edited (or building new join at end)
-   *
-   * editingJoinIndex[0] = editing join between condition 0 and 1
-   * editingJoinIndex[1] = editing join between condition 1 and 2
-   * etc.
-   */
-  editingJoinIndex?: number;
 }
 
 /**
@@ -148,4 +80,22 @@ export interface PartialCondition {
   valueTo?: string;
   /** Flag: waiting for user to enter valueTo (Between operator) */
   waitingForValueTo?: boolean;
+}
+
+export interface EnhancedSearchState extends Omit<
+  CoreEnhancedSearchState,
+  | 'showJoinOperatorSelector'
+  | 'selectedColumn'
+  | 'filterSearch'
+  | 'joins'
+  | 'partialConditions'
+> {
+  showJoinOperatorSelector: boolean;
+  selectedColumn?: SearchColumn;
+  filterSearch?: FilterSearch;
+  partialConditions?: PartialCondition[];
+  joins?: ('AND' | 'OR')[];
+  activeConditionIndex?: number;
+  editingConditionIndex?: number;
+  editingJoinIndex?: number;
 }

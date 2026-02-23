@@ -5,7 +5,6 @@ import {
   GetMainMenuItems,
   GridApi,
   GridReadyEvent,
-  GridState,
   IRowNode,
   RowClickedEvent,
   RowGroupOpenedEvent,
@@ -22,7 +21,9 @@ import { useColumnDisplayMode } from '@/features/item-management/application/hoo
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 // Simple grid state utilities
-import { hasSavedState, type TableType } from '@/utils/gridStateManager';
+import * as gridStateManager from '@/utils/gridStateManager';
+import type { TableType } from '@/utils/gridStateManager';
+import type { MasterDataType } from '@/features/item-management/shared/types';
 
 // Types
 import type {
@@ -32,10 +33,7 @@ import type {
   Patient,
   Supplier,
 } from '@/types/database';
-import {
-  EntityData,
-  EntityType,
-} from '../../application/hooks/collections/useEntityManager';
+import { EntityData } from '../../application/hooks/collections/useEntityManager';
 
 // Extended entity types with code property for display mode
 type EntityWithCode = {
@@ -56,14 +54,6 @@ interface ItemWithExtendedEntities
   dosage?: EntityWithCode;
   manufacturer?: EntityWithCode;
 }
-
-type MasterDataType =
-  | 'items'
-  | EntityType
-  | 'suppliers'
-  | 'customers'
-  | 'patients'
-  | 'doctors';
 
 interface EntityConfig {
   entityName: string;
@@ -170,47 +160,76 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<AgGridReact>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
+  const readSavedGridState = useCallback((tableType: TableType) => {
+    let stateFromHelper: unknown = undefined;
+    if ('loadSavedStateForInit' in gridStateManager) {
+      stateFromHelper = (
+        gridStateManager as {
+          loadSavedStateForInit: (table: TableType) => unknown;
+        }
+      ).loadSavedStateForInit(tableType);
+    }
+    if (!stateFromHelper && 'getSavedStateInfo' in gridStateManager) {
+      stateFromHelper = (
+        gridStateManager as {
+          getSavedStateInfo: (table: TableType) => unknown;
+        }
+      ).getSavedStateInfo(tableType);
+    }
+
+    if (stateFromHelper) {
+      return stateFromHelper;
+    }
+
+    const storageKey = `grid_state_${tableType}`;
+    const raw = sessionStorage.getItem(storageKey);
+    if (!raw) {
+      return undefined;
+    }
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return undefined;
+    }
+  }, []);
+
+  const hasSavedGridState = useCallback(
+    (tableType: TableType) => {
+      if (typeof gridStateManager.hasSavedState === 'function') {
+        return gridStateManager.hasSavedState(tableType);
+      }
+      return Boolean(readSavedGridState(tableType));
+    },
+    [readSavedGridState]
+  );
 
   // 🎯 Load initial grid state for AG Grid's initialState prop
   // AG Grid Best Practice: Use initialState for initial restore
   const initialGridState = useMemo(() => {
-    const tableType = activeTab as TableType;
-    const storageKey = `grid_state_${tableType}`;
-
-    const loadFromStorage = (storage: Storage): GridState | undefined => {
-      const raw = storage.getItem(storageKey);
-      if (!raw) return undefined;
-      try {
-        return JSON.parse(raw) as GridState;
-        /* c8 ignore start */
-      } catch (error) {
-        console.warn('Failed to parse initial grid state:', error);
-        return undefined;
-        /* c8 ignore end */
-      }
-    };
-
-    return loadFromStorage(sessionStorage);
-  }, [activeTab]);
+    return readSavedGridState(activeTab as TableType);
+  }, [activeTab, readSavedGridState]);
 
   // 💾 AG Grid Best Practice: Auto-save on state changes
   // Simple onStateUpdated handler - saves to sessionStorage automatically
-  const handleStateUpdated = useCallback(
-    (event: { state: GridState }) => {
-      /* c8 ignore start */
-      const tableType = activeTab as TableType;
-      try {
-        sessionStorage.setItem(
-          `grid_state_${tableType}`,
-          JSON.stringify(event.state)
-        );
-      } catch (error) {
-        console.error('Failed to save grid state:', error);
-      }
-      /* c8 ignore end */
-    },
-    [activeTab]
-  );
+  const handleStateUpdated = useCallback(() => {
+    if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    const tableType = activeTab as TableType;
+    if ('autoSaveGridState' in gridStateManager) {
+      (
+        gridStateManager as {
+          autoSaveGridState: (api: GridApi, table: TableType) => boolean;
+        }
+      ).autoSaveGridState(gridApi, tableType);
+      return;
+    }
+
+    const storageKey = `grid_state_${tableType}`;
+    sessionStorage.setItem(storageKey, JSON.stringify(gridApi.getState()));
+  }, [activeTab, gridApi]);
 
   // 🔄 Handle tab switching - restore state when activeTab changes
   // Note: initialState only works on initial mount, need setState for runtime changes
@@ -228,23 +247,15 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     if (previousActiveTabRef.current !== tableType && gridApi) {
       previousActiveTabRef.current = tableType;
 
-      const storageKey = `grid_state_${tableType}`;
-      const savedState = sessionStorage.getItem(storageKey);
+      const savedState = readSavedGridState(tableType);
 
       if (savedState) {
-        try {
-          const parsedState = JSON.parse(savedState);
-          // Apply state after a brief delay to ensure columnDefs are applied
-          requestAnimationFrame(() => {
-            if (gridApi && !gridApi.isDestroyed()) {
-              gridApi.setState(parsedState);
-            }
-          });
-          /* c8 ignore start */
-        } catch (error) {
-          console.error('Failed to restore grid state:', error);
-          /* c8 ignore end */
-        }
+        // Apply state after a brief delay to ensure columnDefs are applied
+        requestAnimationFrame(() => {
+          if (gridApi && !gridApi.isDestroyed()) {
+            gridApi.setState(savedState);
+          }
+        });
       } else {
         // No saved state, autosize columns for first-time users
         requestAnimationFrame(() => {
@@ -254,7 +265,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         });
       }
     }
-  }, [activeTab, gridApi]);
+  }, [activeTab, gridApi, readSavedGridState]);
 
   // Column display mode for items (reference columns)
   const {
@@ -399,12 +410,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       const tableType = activeTab as TableType;
 
       // Only autosize if no saved state (first time user)
-      if (api && !api.isDestroyed() && !hasSavedState(tableType)) {
+      if (api && !api.isDestroyed() && !hasSavedGridState(tableType)) {
         api.autoSizeAllColumns();
       }
       /* c8 ignore end */
     },
-    [activeTab]
+    [activeTab, hasSavedGridState]
   );
 
   // Track row data updates (for future use if needed)
@@ -540,27 +551,26 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Sidebar configuration that considers saved state
   const sideBarConfig = useMemo(() => {
     const tableType = activeTab as TableType;
-    const storageKey = `grid_state_${tableType}`;
-    const savedState = hasSavedState(tableType)
-      ? sessionStorage.getItem(storageKey)
+    const savedState = hasSavedGridState(tableType)
+      ? readSavedGridState(tableType)
       : null;
 
     // Parse saved state to determine if sidebar should be open by default
     let defaultToolPanel = undefined;
     if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        // Check if sidebar was visible and had an open tool panel
-        if (
-          parsedState.sideBar?.visible &&
-          parsedState.sideBar?.openToolPanelId
-        ) {
-          defaultToolPanel = parsedState.sideBar.openToolPanelId;
-        }
-        /* c8 ignore start */
-      } catch (e) {
-        console.warn('Failed to parse saved state for sidebar config', e);
-        /* c8 ignore end */
+      const sideBarState = savedState.sideBar as
+        | {
+            visible?: boolean;
+            openToolPanel?: string;
+            openToolPanelId?: string;
+          }
+        | undefined;
+      const openToolPanel =
+        sideBarState?.openToolPanel || sideBarState?.openToolPanelId;
+
+      // Check if sidebar was visible and had an open tool panel
+      if (sideBarState?.visible && openToolPanel) {
+        defaultToolPanel = openToolPanel;
       }
     }
 
@@ -582,7 +592,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       ],
       defaultToolPanel, // Set default tool panel based on saved state
     };
-  }, [activeTab]);
+  }, [activeTab, hasSavedGridState, readSavedGridState]);
 
   // No data overlay template
   const overlayNoRowsTemplate = useMemo(() => {

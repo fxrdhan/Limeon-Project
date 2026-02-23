@@ -31,10 +31,20 @@ import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
+import { getSavedStateInfo, type TableType } from '@/utils/gridStateManager';
 import { deriveSearchPatternFromGridState } from './utils/advancedFilterToSearchPattern';
 import SupplierModals from './components/SupplierModals';
 import { useSupplierTab } from './hooks/useSupplierTab';
 import { useCustomerLevels } from '@/features/item-management/application/hooks/data/useCustomerLevels';
+import {
+  LAST_ITEM_MASTER_TAB_SESSION_KEY,
+  MasterDataType,
+  OtherMasterDataTab,
+  getItemMasterSearchSessionKey,
+  isItemMasterEntityTab,
+  isItemMasterTab,
+  isOtherMasterDataTab,
+} from '@/features/item-management/shared/types';
 
 // Entity management hooks
 import {
@@ -59,48 +69,9 @@ import { FilterSearch } from '@/types/search';
 
 import { fuzzyMatch } from '@/utils/search';
 
-type MasterDataType =
-  | 'items'
-  | 'categories'
-  | 'types'
-  | 'packages'
-  | 'dosages'
-  | 'manufacturers'
-  | 'units'
-  | 'suppliers'
-  | 'customers'
-  | 'patients'
-  | 'doctors';
-
-const ITEM_MASTER_TABS = [
-  'items',
-  'categories',
-  'types',
-  'packages',
-  'dosages',
-  'manufacturers',
-  'units',
-] as const;
-
-type ItemMasterTab = (typeof ITEM_MASTER_TABS)[number];
-
-const isItemMasterTab = (tab: MasterDataType): tab is ItemMasterTab =>
-  ITEM_MASTER_TABS.includes(tab as ItemMasterTab);
-
-const OTHER_MASTER_DATA_TABS = ['customers', 'patients', 'doctors'] as const;
-
-type OtherMasterDataTab = (typeof OTHER_MASTER_DATA_TABS)[number];
-
-const isOtherMasterDataTab = (tab: MasterDataType): tab is OtherMasterDataTab =>
-  OTHER_MASTER_DATA_TABS.includes(tab as OtherMasterDataTab);
-
 const isChatSidebarOpen = () =>
   typeof document !== 'undefined' &&
   Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
-
-/* c8 ignore next */
-const isItemMasterEntityTab = (tab: MasterDataType): tab is EntityType =>
-  tab !== 'items' && isItemMasterTab(tab);
 
 // Transform to SlidingSelector format
 const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [
@@ -212,34 +183,15 @@ const OTHER_MASTER_DATA_CONFIG: Record<
   },
 };
 
-// Session storage key for last visited tab
-const LAST_TAB_SESSION_KEY = 'item_master_last_tab';
-
-const ITEM_MASTER_SEARCH_SESSION_PREFIX = 'item_master_search_';
-
-const getItemMasterSearchSessionKey = (tab: MasterDataType): string => {
-  return `${ITEM_MASTER_SEARCH_SESSION_PREFIX}${tab}`;
-};
-
 const readGridStateForTab = (tab: MasterDataType): unknown | null => {
-  const storageKey = `grid_state_${tab}`;
-
-  try {
-    const sessionState = sessionStorage.getItem(storageKey);
-    if (sessionState) {
-      return JSON.parse(sessionState);
-    }
-  } catch {
-    // ignore
-  }
-  return null;
+  return getSavedStateInfo(tab as TableType);
 };
 
 // Session storage utility
 const saveLastTabToSession = (tab: MasterDataType): void => {
   if (!isItemMasterTab(tab)) return;
   try {
-    sessionStorage.setItem(LAST_TAB_SESSION_KEY, tab);
+    sessionStorage.setItem(LAST_ITEM_MASTER_TAB_SESSION_KEY, tab);
   } catch (error) {
     console.warn('Failed to save last tab to session storage:', error);
   }
@@ -247,9 +199,9 @@ const saveLastTabToSession = (tab: MasterDataType): void => {
 
 const getLastTabFromSession = (): MasterDataType => {
   try {
-    const savedTab = sessionStorage.getItem(LAST_TAB_SESSION_KEY);
-    if (savedTab && isItemMasterTab(savedTab as MasterDataType)) {
-      return savedTab as MasterDataType;
+    const savedTab = sessionStorage.getItem(LAST_ITEM_MASTER_TAB_SESSION_KEY);
+    if (savedTab && isItemMasterTab(savedTab)) {
+      return savedTab;
     }
   } catch {
     // ignore

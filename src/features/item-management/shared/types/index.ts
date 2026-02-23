@@ -5,3 +5,4 @@ export * from './FormTypes';
 export * from './ComponentTypes';
 export * from './HookTypes';
 export * from './ContextTypes';
+export * from './MasterDataTabs';
