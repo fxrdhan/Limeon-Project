@@ -13,6 +13,7 @@ import {
   TbPhotoEdit,
   TbSettings,
   TbUserCircle,
+  TbX,
 } from 'react-icons/tb';
 
 const Profile = () => {
@@ -179,7 +180,7 @@ const Profile = () => {
     <div className="relative w-12 h-12 flex items-center justify-center">
       <button
         onClick={handleProfileClick}
-        className="flex items-center space-x-3 rounded-xl hover:bg-slate-50 transition-all duration-200 group"
+        className="flex items-center space-x-3 rounded-xl hover:bg-slate-50 transition-all duration-200 group cursor-pointer"
         aria-expanded={portalOpen}
         aria-haspopup="true"
         data-profile-trigger="true"
@@ -263,6 +264,15 @@ const Profile = () => {
                     style={{ marginTop: '0px' }}
                     data-profile-portal="true"
                   >
+                    <button
+                      type="button"
+                      onClick={() => setPortalOpen(false)}
+                      aria-label="Tutup Profil"
+                      className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 transition-colors duration-150 group cursor-pointer"
+                    >
+                      <span className="absolute inset-0 rounded-full bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity duration-150"></span>
+                      <TbX className="relative text-base" />
+                    </button>
                     <div className="p-4 pt-6">
                       <div className="flex flex-col items-center">
                         <div className="mb-4">
