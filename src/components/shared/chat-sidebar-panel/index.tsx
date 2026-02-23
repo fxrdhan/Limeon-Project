@@ -2118,13 +2118,19 @@ const ChatSidebarPanel = memo(
                     aria-label="Attach file"
                     aria-expanded={isAttachModalOpen}
                     aria-haspopup="dialog"
-                    className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 ${
+                    className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 cursor-pointer ${
                       isMessageInputMultiline
                         ? 'col-start-1 row-start-2'
                         : 'col-start-1 row-start-1'
                     }`}
                   >
-                    <TbPlus size={20} />
+                    <motion.span
+                      animate={{ rotate: isAttachModalOpen ? 45 : 0 }}
+                      transition={{ duration: 0.16, ease: 'easeOut' }}
+                      className="flex items-center justify-center"
+                    >
+                      <TbPlus size={20} />
+                    </motion.span>
                   </motion.button>
                   <motion.button
                     layout="position"
