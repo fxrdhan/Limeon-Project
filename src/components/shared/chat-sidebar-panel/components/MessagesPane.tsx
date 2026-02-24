@@ -83,7 +83,7 @@ const formatFileSize = (sizeBytes?: number) => {
     !Number.isFinite(sizeBytes) ||
     sizeBytes < 0
   ) {
-    return 'Unknown size';
+    return null;
   }
 
   const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
@@ -97,6 +97,14 @@ const formatFileSize = (sizeBytes?: number) => {
 
   const digits = unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
   return `${value.toFixed(digits)} ${units[unitIndex]}`;
+};
+
+const formatFileFallbackLabel = (
+  fileExtension: string,
+  fileKind: ComposerPendingFileKind
+) => {
+  if (fileExtension) return fileExtension.toUpperCase();
+  return fileKind === 'audio' ? 'AUDIO' : 'FILE';
 };
 
 interface MessagesPaneProps {
@@ -241,6 +249,9 @@ const MessagesPane = ({
                 : '';
               const fileSizeLabel = isFileMessage
                 ? formatFileSize(msg.file_size)
+                : null;
+              const fileFallbackLabel = isFileMessage
+                ? formatFileFallbackLabel(fileExtension, fileKind)
                 : null;
               const fileIcon = isAudioFileMessage ? (
                 <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />
@@ -506,7 +517,7 @@ const MessagesPane = ({
                                 {fileName}
                               </p>
                               <p className="text-xs text-slate-500">
-                                {fileSizeLabel}
+                                {fileSizeLabel || fileFallbackLabel}
                               </p>
                             </div>
                           </div>

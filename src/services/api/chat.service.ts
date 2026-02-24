@@ -37,6 +37,10 @@ export interface ChatMessageInsertInput {
   channel_id: string | null;
   message: string;
   message_type: 'text' | 'image' | 'file';
+  file_name?: string;
+  file_kind?: 'audio' | 'document';
+  file_mime_type?: string;
+  file_size?: number;
   reply_to_id?: string | null;
 }
 

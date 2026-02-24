@@ -1387,6 +1387,10 @@ const ChatSidebarPanel = memo(
             channel_id: currentChannelId,
             message: publicUrl,
             message_type: 'file',
+            file_name: pendingFile.fileName,
+            file_kind: pendingFile.fileKind,
+            file_mime_type: pendingFile.mimeType,
+            file_size: pendingFile.file.size,
           });
 
           if (error || !newMessage) {
