@@ -40,6 +40,7 @@ import {
   EDIT_TARGET_FLASH_PHASE_DURATION,
   EDIT_TARGET_FOCUS_PADDING,
   EDITING_COMPOSER_OFFSET,
+  MAX_PENDING_COMPOSER_ATTACHMENTS,
   MAX_MESSAGE_CHARS,
   MENU_GAP,
   MENU_HEIGHT,
@@ -53,6 +54,7 @@ import {
 } from './constants';
 import type {
   ChatSidebarPanelProps,
+  PendingComposerAttachment,
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
@@ -127,16 +129,12 @@ const ChatSidebarPanel = memo(
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
     const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
-    const [pendingComposerImage, setPendingComposerImage] = useState<{
-      file: File;
-      previewUrl: string;
-      fileName: string;
-      fileTypeLabel: string;
-    } | null>(null);
-    const [pendingComposerFile, setPendingComposerFile] =
-      useState<PendingComposerFile | null>(null);
-    const [pendingComposerPdfCoverUrl, setPendingComposerPdfCoverUrl] =
-      useState<string | null>(null);
+    const [pendingComposerAttachments, setPendingComposerAttachments] =
+      useState<PendingComposerAttachment[]>([]);
+    const [
+      composerImagePreviewAttachmentId,
+      setComposerImagePreviewAttachmentId,
+    ] = useState<string | null>(null);
     const [isComposerImageExpanded, setIsComposerImageExpanded] =
       useState(false);
     const [isComposerImageExpandedVisible, setIsComposerImageExpandedVisible] =
@@ -156,6 +154,10 @@ const ChatSidebarPanel = memo(
     const imageInputRef = useRef<HTMLInputElement>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
     const audioInputRef = useRef<HTMLInputElement>(null);
+    const replaceComposerImageAttachmentIdRef = useRef<string | null>(null);
+    const pendingComposerAttachmentsRef = useRef<PendingComposerAttachment[]>(
+      []
+    );
     const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
@@ -175,11 +177,20 @@ const ChatSidebarPanel = memo(
         ? null
         : (messages.find(candidate => candidate.id === editingMessageId)
             ?.message ?? null);
+    const previewComposerImageAttachment = pendingComposerAttachments.find(
+      attachment =>
+        attachment.id === composerImagePreviewAttachmentId &&
+        attachment.fileKind === 'image'
+    );
     const composerContextualOffset =
       (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0) +
-      (pendingComposerImage || pendingComposerFile
+      (pendingComposerAttachments.length > 0
         ? COMPOSER_IMAGE_PREVIEW_OFFSET
         : 0);
+
+    useEffect(() => {
+      pendingComposerAttachmentsRef.current = pendingComposerAttachments;
+    }, [pendingComposerAttachments]);
 
     const getVisibleMessagesBounds = useCallback(() => {
       const containerRect =
@@ -1003,95 +1014,101 @@ const ChatSidebarPanel = memo(
           URL.revokeObjectURL(previewUrl);
         });
         pendingImagePreviewUrls.clear();
+
+        pendingComposerAttachmentsRef.current.forEach(attachment => {
+          if (attachment.previewUrl) {
+            URL.revokeObjectURL(attachment.previewUrl);
+          }
+        });
+        pendingComposerAttachmentsRef.current = [];
       };
     }, []);
 
     useEffect(() => {
-      if (!pendingComposerImage) return;
-
-      return () => {
-        URL.revokeObjectURL(pendingComposerImage.previewUrl);
-      };
-    }, [pendingComposerImage]);
-
-    useEffect(() => {
       let isCancelled = false;
-
-      const activeFile = pendingComposerFile;
-      const isPdfFile = Boolean(
-        activeFile &&
-        activeFile.fileKind === 'document' &&
-        (activeFile.mimeType === 'application/pdf' ||
-          activeFile.fileName.toLowerCase().endsWith('.pdf'))
+      const pendingPdfAttachments = pendingComposerAttachments.filter(
+        attachment =>
+          attachment.fileKind === 'document' &&
+          attachment.pdfCoverUrl === null &&
+          (attachment.mimeType === 'application/pdf' ||
+            attachment.fileName.toLowerCase().endsWith('.pdf'))
       );
+      if (pendingPdfAttachments.length === 0) return;
 
-      if (!isPdfFile || !activeFile) {
-        setPendingComposerPdfCoverUrl(null);
-        return;
-      }
-
-      const renderPdfCover = async () => {
+      const renderPdfCovers = async () => {
         try {
           const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
           const pdfWorkerModule =
             await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
           pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
-          const fileBuffer = await activeFile.file.arrayBuffer();
-          const loadingTask = pdfjsLib.getDocument(new Uint8Array(fileBuffer));
-          const pdfDocument = await loadingTask.promise;
-          const firstPage = await pdfDocument.getPage(1);
-          const baseViewport = firstPage.getViewport({ scale: 1 });
-          const targetWidth = 44;
-          const scale = targetWidth / Math.max(baseViewport.width, 1);
-          const viewport = firstPage.getViewport({ scale });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          if (!context) {
-            if (!isCancelled) setPendingComposerPdfCoverUrl(null);
-            return;
-          }
 
-          canvas.width = Math.max(1, Math.round(viewport.width));
-          canvas.height = Math.max(1, Math.round(viewport.height));
+          for (const pendingAttachment of pendingPdfAttachments) {
+            if (isCancelled) return;
 
-          await firstPage.render({
-            canvas,
-            canvasContext: context,
-            viewport,
-            background: 'rgb(255, 255, 255)',
-          }).promise;
-          if (isCancelled) {
+            const fileBuffer = await pendingAttachment.file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument(
+              new Uint8Array(fileBuffer)
+            );
+            const pdfDocument = await loadingTask.promise;
+            const firstPage = await pdfDocument.getPage(1);
+            const baseViewport = firstPage.getViewport({ scale: 1 });
+            const targetWidth = 44;
+            const scale = targetWidth / Math.max(baseViewport.width, 1);
+            const viewport = firstPage.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            if (!context) {
+              pdfDocument.cleanup();
+              pdfDocument.destroy();
+              continue;
+            }
+
+            canvas.width = Math.max(1, Math.round(viewport.width));
+            canvas.height = Math.max(1, Math.round(viewport.height));
+
+            await firstPage.render({
+              canvas,
+              canvasContext: context,
+              viewport,
+              background: 'rgb(255, 255, 255)',
+            }).promise;
+
+            pdfDocument.cleanup();
             pdfDocument.destroy();
-            return;
-          }
+            if (isCancelled) return;
 
-          pdfDocument.cleanup();
-          pdfDocument.destroy();
-          setPendingComposerPdfCoverUrl(canvas.toDataURL('image/png'));
+            const coverDataUrl = canvas.toDataURL('image/png');
+            setPendingComposerAttachments(prev =>
+              prev.map(attachment =>
+                attachment.id === pendingAttachment.id
+                  ? { ...attachment, pdfCoverUrl: coverDataUrl }
+                  : attachment
+              )
+            );
+          }
         } catch (error) {
           console.error('Error rendering PDF cover preview:', error);
-          if (!isCancelled) {
-            setPendingComposerPdfCoverUrl(null);
-          }
         }
       };
 
-      void renderPdfCover();
+      void renderPdfCovers();
 
       return () => {
         isCancelled = true;
       };
-    }, [pendingComposerFile]);
+    }, [pendingComposerAttachments]);
 
     useEffect(() => {
-      if (pendingComposerImage || !isComposerImageExpanded) return;
+      if (previewComposerImageAttachment || !isComposerImageExpanded) return;
       if (composerImagePreviewCloseTimerRef.current) {
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
         composerImagePreviewCloseTimerRef.current = null;
       }
       setIsComposerImageExpandedVisible(false);
       setIsComposerImageExpanded(false);
-    }, [isComposerImageExpanded, pendingComposerImage]);
+      setComposerImagePreviewAttachmentId(null);
+    }, [isComposerImageExpanded, previewComposerImageAttachment]);
 
     useEffect(() => {
       if (!isComposerImageExpanded) return;
@@ -1105,6 +1122,7 @@ const ChatSidebarPanel = memo(
         }
         composerImagePreviewCloseTimerRef.current = window.setTimeout(() => {
           setIsComposerImageExpanded(false);
+          setComposerImagePreviewAttachmentId(null);
           composerImagePreviewCloseTimerRef.current = null;
         }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
       };
@@ -1456,18 +1474,47 @@ const ChatSidebarPanel = memo(
       ]
     );
 
-    const clearPendingComposerImage = useCallback(() => {
+    const removePendingComposerAttachment = useCallback(
+      (attachmentId: string) => {
+        setPendingComposerAttachments(prevAttachments => {
+          const targetAttachment = prevAttachments.find(
+            attachment => attachment.id === attachmentId
+          );
+          if (targetAttachment?.previewUrl) {
+            URL.revokeObjectURL(targetAttachment.previewUrl);
+          }
+          return prevAttachments.filter(
+            attachment => attachment.id !== attachmentId
+          );
+        });
+        setComposerImagePreviewAttachmentId(currentId =>
+          currentId === attachmentId ? null : currentId
+        );
+        replaceComposerImageAttachmentIdRef.current =
+          replaceComposerImageAttachmentIdRef.current === attachmentId
+            ? null
+            : replaceComposerImageAttachmentIdRef.current;
+      },
+      []
+    );
+
+    const clearPendingComposerAttachments = useCallback(() => {
       if (composerImagePreviewCloseTimerRef.current) {
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
         composerImagePreviewCloseTimerRef.current = null;
       }
       setIsComposerImageExpandedVisible(false);
       setIsComposerImageExpanded(false);
-      setPendingComposerImage(null);
-    }, []);
-
-    const clearPendingComposerFile = useCallback(() => {
-      setPendingComposerFile(null);
+      setComposerImagePreviewAttachmentId(null);
+      replaceComposerImageAttachmentIdRef.current = null;
+      setPendingComposerAttachments(prevAttachments => {
+        prevAttachments.forEach(attachment => {
+          if (attachment.previewUrl) {
+            URL.revokeObjectURL(attachment.previewUrl);
+          }
+        });
+        return [];
+      });
     }, []);
 
     const closeComposerImagePreview = useCallback(() => {
@@ -1478,38 +1525,48 @@ const ChatSidebarPanel = memo(
       }
       composerImagePreviewCloseTimerRef.current = window.setTimeout(() => {
         setIsComposerImageExpanded(false);
+        setComposerImagePreviewAttachmentId(null);
         composerImagePreviewCloseTimerRef.current = null;
       }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
     }, []);
 
-    const openComposerImagePreview = useCallback(() => {
-      if (!pendingComposerImage) return;
-      closeAttachModal();
-      closeMessageMenu();
-      if (composerImagePreviewCloseTimerRef.current) {
-        window.clearTimeout(composerImagePreviewCloseTimerRef.current);
-        composerImagePreviewCloseTimerRef.current = null;
-      }
-      setIsComposerImageExpanded(true);
-      window.requestAnimationFrame(() => {
-        setIsComposerImageExpandedVisible(true);
-      });
-    }, [closeAttachModal, closeMessageMenu, pendingComposerImage]);
+    const openComposerImagePreview = useCallback(
+      (attachmentId: string) => {
+        const targetAttachment = pendingComposerAttachments.find(
+          attachment =>
+            attachment.id === attachmentId && attachment.fileKind === 'image'
+        );
+        if (!targetAttachment) return;
+
+        closeAttachModal();
+        closeMessageMenu();
+        if (composerImagePreviewCloseTimerRef.current) {
+          window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+          composerImagePreviewCloseTimerRef.current = null;
+        }
+        setComposerImagePreviewAttachmentId(attachmentId);
+        setIsComposerImageExpanded(true);
+        window.requestAnimationFrame(() => {
+          setIsComposerImageExpandedVisible(true);
+        });
+      },
+      [closeAttachModal, closeMessageMenu, pendingComposerAttachments]
+    );
 
     const queueComposerImage = useCallback(
-      (file: File) => {
+      (file: File, replaceAttachmentId?: string) => {
         if (!file.type.startsWith('image/')) {
           toast.error('File harus berupa gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         if (editingMessageId) {
           toast.error('Selesaikan edit pesan terlebih dahulu', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         const mimeSubtype = file.type.split('/')[1];
@@ -1519,14 +1576,56 @@ const ChatSidebarPanel = memo(
           extensionFromName ||
           'image'
         ).toUpperCase();
-
-        setPendingComposerImage({
+        const nextAttachment: PendingComposerAttachment = {
+          id: `pending_image_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           file,
           previewUrl: URL.createObjectURL(file),
           fileName: file.name || 'Gambar',
           fileTypeLabel,
+          fileKind: 'image',
+          mimeType: file.type,
+          pdfCoverUrl: null,
+        };
+        let exceededAttachmentLimit = false;
+
+        setPendingComposerAttachments(prevAttachments => {
+          if (replaceAttachmentId) {
+            const replaceIndex = prevAttachments.findIndex(
+              attachment =>
+                attachment.id === replaceAttachmentId &&
+                attachment.fileKind === 'image'
+            );
+            if (replaceIndex !== -1) {
+              const targetAttachment = prevAttachments[replaceIndex];
+              if (targetAttachment.previewUrl) {
+                URL.revokeObjectURL(targetAttachment.previewUrl);
+              }
+              const nextAttachments = [...prevAttachments];
+              nextAttachments[replaceIndex] = nextAttachment;
+              return nextAttachments;
+            }
+          }
+
+          if (prevAttachments.length >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
+            exceededAttachmentLimit = true;
+            return prevAttachments;
+          }
+
+          return [...prevAttachments, nextAttachment];
         });
-        setPendingComposerFile(null);
+
+        if (exceededAttachmentLimit) {
+          if (nextAttachment.previewUrl) {
+            URL.revokeObjectURL(nextAttachment.previewUrl);
+          }
+          toast.error(
+            `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
+          );
+          return false;
+        }
 
         requestAnimationFrame(() => {
           const textarea = messageInputRef.current;
@@ -1536,6 +1635,8 @@ const ChatSidebarPanel = memo(
           const cursorPosition = textarea.value.length;
           textarea.setSelectionRange(cursorPosition, cursorPosition);
         });
+
+        return true;
       },
       [editingMessageId]
     );
@@ -1546,7 +1647,7 @@ const ChatSidebarPanel = memo(
           toast.error('Untuk gambar gunakan opsi Gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         const isAudioFile = file.type.startsWith('audio/');
@@ -1554,21 +1655,21 @@ const ChatSidebarPanel = memo(
           toast.error('File harus berupa audio', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         if (fileKind === 'document' && isAudioFile) {
           toast.error('Untuk audio gunakan opsi Audio', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         if (editingMessageId) {
           toast.error('Selesaikan edit pesan terlebih dahulu', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         const mimeSubtype = file.type.split('/')[1];
@@ -1578,21 +1679,34 @@ const ChatSidebarPanel = memo(
           extensionFromName ||
           (fileKind === 'audio' ? 'audio' : 'document')
         ).toUpperCase();
-        const isPdfDocument =
-          fileKind === 'document' &&
-          (file.type === 'application/pdf' ||
-            file.name.toLowerCase().endsWith('.pdf'));
-
-        setPendingComposerFile({
+        const nextAttachment: PendingComposerAttachment = {
+          id: `pending_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           file,
           fileName: file.name || (fileKind === 'audio' ? 'Audio' : 'Dokumen'),
           fileTypeLabel,
           fileKind,
           mimeType: file.type,
+          previewUrl: null,
+          pdfCoverUrl: null,
+        };
+        let exceededAttachmentLimit = false;
+
+        setPendingComposerAttachments(prevAttachments => {
+          if (prevAttachments.length >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
+            exceededAttachmentLimit = true;
+            return prevAttachments;
+          }
+          return [...prevAttachments, nextAttachment];
         });
-        clearPendingComposerImage();
-        if (!isPdfDocument) {
-          setPendingComposerPdfCoverUrl(null);
+
+        if (exceededAttachmentLimit) {
+          toast.error(
+            `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
+          );
+          return false;
         }
 
         requestAnimationFrame(() => {
@@ -1603,51 +1717,76 @@ const ChatSidebarPanel = memo(
           const cursorPosition = textarea.value.length;
           textarea.setSelectionRange(cursorPosition, cursorPosition);
         });
+
+        return true;
       },
-      [clearPendingComposerImage, editingMessageId]
+      [editingMessageId]
     );
 
-    const handleAttachImageClick = useCallback(() => {
-      closeAttachModal();
-      imageInputRef.current?.click();
-    }, [closeAttachModal]);
+    const handleAttachImageClick = useCallback(
+      (replaceAttachmentId?: string) => {
+        replaceComposerImageAttachmentIdRef.current =
+          replaceAttachmentId ?? null;
+        closeAttachModal();
+        imageInputRef.current?.click();
+      },
+      [closeAttachModal]
+    );
 
     const handleAttachDocumentClick = useCallback(() => {
+      replaceComposerImageAttachmentIdRef.current = null;
       closeAttachModal();
       documentInputRef.current?.click();
     }, [closeAttachModal]);
 
     const handleAttachAudioClick = useCallback(() => {
+      replaceComposerImageAttachmentIdRef.current = null;
       closeAttachModal();
       audioInputRef.current?.click();
     }, [closeAttachModal]);
 
     const handleImageFileChange = useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0];
+        const selectedFiles = Array.from(event.target.files ?? []);
         event.target.value = '';
-        if (!selectedFile) return;
-        queueComposerImage(selectedFile);
+        if (selectedFiles.length === 0) return;
+
+        const replaceAttachmentId = replaceComposerImageAttachmentIdRef.current;
+        replaceComposerImageAttachmentIdRef.current = null;
+
+        for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
+          const didQueue = queueComposerImage(
+            selectedFile,
+            fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined
+          );
+          if (!didQueue) break;
+        }
       },
       [queueComposerImage]
     );
 
     const handleDocumentFileChange = useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0];
+        const selectedFiles = Array.from(event.target.files ?? []);
         event.target.value = '';
-        if (!selectedFile) return;
-        queueComposerFile(selectedFile, 'document');
+        if (selectedFiles.length === 0) return;
+        for (const selectedFile of selectedFiles) {
+          const didQueue = queueComposerFile(selectedFile, 'document');
+          if (!didQueue) break;
+        }
       },
       [queueComposerFile]
     );
 
     const handleAudioFileChange = useCallback(
       (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0];
+        const selectedFiles = Array.from(event.target.files ?? []);
         event.target.value = '';
-        if (!selectedFile) return;
-        queueComposerFile(selectedFile, 'audio');
+        if (selectedFiles.length === 0) return;
+        for (const selectedFile of selectedFiles) {
+          const didQueue = queueComposerFile(selectedFile, 'audio');
+          if (!didQueue) break;
+        }
       },
       [queueComposerFile]
     );
@@ -1948,8 +2087,7 @@ const ChatSidebarPanel = memo(
     };
 
     const handleEditMessage = (targetMessage: ChatMessage) => {
-      clearPendingComposerImage();
-      clearPendingComposerFile();
+      clearPendingComposerAttachments();
       setEditingMessageId(targetMessage.id);
       setMessage(targetMessage.message);
       closeMessageMenu();
@@ -2275,32 +2413,28 @@ const ChatSidebarPanel = memo(
         return;
       }
 
-      const hasPendingImage = Boolean(pendingComposerImage);
-      const hasPendingFile = Boolean(pendingComposerFile);
+      const hasPendingAttachments = pendingComposerAttachments.length > 0;
       const messageText = message.trim();
 
-      if (!hasPendingImage && !hasPendingFile && !messageText) return;
+      if (!hasPendingAttachments && !messageText) return;
 
-      if (pendingComposerImage) {
-        const didSendImage = await handleSendImageMessage(
-          pendingComposerImage.file
-        );
+      for (const pendingAttachment of pendingComposerAttachments) {
+        const didSendAttachment =
+          pendingAttachment.fileKind === 'image'
+            ? await handleSendImageMessage(pendingAttachment.file)
+            : await handleSendFileMessage({
+                file: pendingAttachment.file,
+                fileName: pendingAttachment.fileName,
+                fileTypeLabel: pendingAttachment.fileTypeLabel,
+                fileKind: pendingAttachment.fileKind,
+                mimeType: pendingAttachment.mimeType,
+              });
 
-        if (!didSendImage) {
+        if (!didSendAttachment) {
           return;
         }
 
-        clearPendingComposerImage();
-      }
-
-      if (pendingComposerFile) {
-        const didSendFile = await handleSendFileMessage(pendingComposerFile);
-
-        if (!didSendFile) {
-          return;
-        }
-
-        clearPendingComposerFile();
+        removePendingComposerAttachment(pendingAttachment.id);
       }
 
       if (messageText) {
@@ -2427,9 +2561,8 @@ const ChatSidebarPanel = memo(
             isMessageInputMultiline={isMessageInputMultiline}
             isSendSuccessGlowVisible={isSendSuccessGlowVisible}
             isAttachModalOpen={isAttachModalOpen}
-            pendingComposerImage={pendingComposerImage}
-            pendingComposerFile={pendingComposerFile}
-            pendingComposerPdfCoverUrl={pendingComposerPdfCoverUrl}
+            pendingComposerAttachments={pendingComposerAttachments}
+            previewComposerImageAttachment={previewComposerImageAttachment}
             isComposerImageExpanded={isComposerImageExpanded}
             isComposerImageExpandedVisible={isComposerImageExpandedVisible}
             messageInputRef={messageInputRef}
@@ -2463,8 +2596,7 @@ const ChatSidebarPanel = memo(
             onFocusEditingTargetMessage={focusEditingTargetMessage}
             onOpenComposerImagePreview={openComposerImagePreview}
             onCloseComposerImagePreview={closeComposerImagePreview}
-            onClearPendingComposerImage={clearPendingComposerImage}
-            onClearPendingComposerFile={clearPendingComposerFile}
+            onRemovePendingComposerAttachment={removePendingComposerAttachment}
             onQueueComposerImage={queueComposerImage}
           />
         </div>

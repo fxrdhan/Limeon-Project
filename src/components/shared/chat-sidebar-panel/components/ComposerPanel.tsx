@@ -24,7 +24,7 @@ import {
 } from 'react-icons/tb';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import type { PendingComposerFile } from '../types';
+import type { PendingComposerAttachment } from '../types';
 
 interface ComposerPanelProps {
   message: string;
@@ -33,14 +33,8 @@ interface ComposerPanelProps {
   isMessageInputMultiline: boolean;
   isSendSuccessGlowVisible: boolean;
   isAttachModalOpen: boolean;
-  pendingComposerImage: {
-    file: File;
-    previewUrl: string;
-    fileName: string;
-    fileTypeLabel: string;
-  } | null;
-  pendingComposerFile: PendingComposerFile | null;
-  pendingComposerPdfCoverUrl: string | null;
+  pendingComposerAttachments: PendingComposerAttachment[];
+  previewComposerImageAttachment: PendingComposerAttachment | undefined;
   isComposerImageExpanded: boolean;
   isComposerImageExpandedVisible: boolean;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
@@ -68,7 +62,7 @@ interface ComposerPanelProps {
   onPaste: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   onSendMessage: () => void;
   onAttachButtonClick: () => void;
-  onAttachImageClick: () => void;
+  onAttachImageClick: (replaceAttachmentId?: string) => void;
   onAttachDocumentClick: () => void;
   onAttachAudioClick: () => void;
   onImageFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -76,11 +70,10 @@ interface ComposerPanelProps {
   onAudioFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCancelEditMessage: () => void;
   onFocusEditingTargetMessage: () => void;
-  onOpenComposerImagePreview: () => void;
+  onOpenComposerImagePreview: (attachmentId: string) => void;
   onCloseComposerImagePreview: () => void;
-  onClearPendingComposerImage: () => void;
-  onClearPendingComposerFile: () => void;
-  onQueueComposerImage: (file: File) => void;
+  onRemovePendingComposerAttachment: (attachmentId: string) => void;
+  onQueueComposerImage: (file: File, replaceAttachmentId?: string) => void;
 }
 
 const ComposerPanel = ({
@@ -90,9 +83,8 @@ const ComposerPanel = ({
   isMessageInputMultiline,
   isSendSuccessGlowVisible,
   isAttachModalOpen,
-  pendingComposerImage,
-  pendingComposerFile,
-  pendingComposerPdfCoverUrl,
+  pendingComposerAttachments,
+  previewComposerImageAttachment,
   isComposerImageExpanded,
   isComposerImageExpandedVisible,
   messageInputRef,
@@ -126,27 +118,32 @@ const ComposerPanel = ({
   onFocusEditingTargetMessage,
   onOpenComposerImagePreview,
   onCloseComposerImagePreview,
-  onClearPendingComposerImage,
-  onClearPendingComposerFile,
+  onRemovePendingComposerAttachment,
   onQueueComposerImage,
 }: ComposerPanelProps) => {
-  const [isImageActionsMenuOpen, setIsImageActionsMenuOpen] = useState(false);
+  const [openImageActionsAttachmentId, setOpenImageActionsAttachmentId] =
+    useState<string | null>(null);
   const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
+
   const closeImageActionsMenu = useCallback(() => {
-    setIsImageActionsMenuOpen(false);
-  }, []);
-  const toggleImageActionsMenu = useCallback(() => {
-    setIsImageActionsMenuOpen(prev => !prev);
+    setOpenImageActionsAttachmentId(null);
   }, []);
 
   useEffect(() => {
-    if (pendingComposerImage) return;
-    setIsImageActionsMenuOpen(false);
-  }, [pendingComposerImage]);
+    if (!openImageActionsAttachmentId) return;
+    const isOpenTargetStillPresent = pendingComposerAttachments.some(
+      attachment =>
+        attachment.id === openImageActionsAttachmentId &&
+        attachment.fileKind === 'image'
+    );
+    if (!isOpenTargetStillPresent) {
+      setOpenImageActionsAttachmentId(null);
+    }
+  }, [openImageActionsAttachmentId, pendingComposerAttachments]);
 
   useEffect(() => {
-    if (!isImageActionsMenuOpen) return;
+    if (!openImageActionsAttachmentId) return;
 
     const handleMouseDown = (event: MouseEvent) => {
       const target = event.target;
@@ -169,27 +166,7 @@ const ComposerPanel = ({
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [closeImageActionsMenu, isImageActionsMenuOpen]);
-
-  const imageActions: PopupMenuAction[] = [
-    {
-      label: 'Ganti',
-      icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
-      onClick: () => {
-        closeImageActionsMenu();
-        onAttachImageClick();
-      },
-    },
-    {
-      label: 'Hapus',
-      icon: <TbPhotoMinus className="h-4 w-4" />,
-      tone: 'danger',
-      onClick: () => {
-        closeImageActionsMenu();
-        onClearPendingComposerImage();
-      },
-    },
-  ];
+  }, [closeImageActionsMenu, openImageActionsAttachmentId]);
 
   const contextualPanelTransition = {
     duration: composerSyncLayoutTransition.duration,
@@ -305,132 +282,180 @@ const ComposerPanel = ({
             </AnimatePresence>
 
             <AnimatePresence initial={false} mode="popLayout">
-              {pendingComposerImage ? (
+              {pendingComposerAttachments.length > 0 ? (
                 <motion.div
                   layout
-                  key="composer-image-preview"
+                  key="composer-attachments-preview"
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 2 }}
                   transition={contextualPanelTransition}
-                  onClick={onOpenComposerImagePreview}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Perbesar preview gambar"
-                  title="Klik untuk perbesar gambar"
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onOpenComposerImagePreview();
-                    }
-                  }}
-                  className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+                  className="mb-2"
                 >
-                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90">
-                    <img
-                      src={pendingComposerImage.previewUrl}
-                      alt={pendingComposerImage.fileName}
-                      className="h-11 w-11 rounded-lg object-cover"
-                      draggable={false}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-800">
-                        {pendingComposerImage.fileName}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {pendingComposerImage.fileTypeLabel}
-                      </p>
-                    </div>
+                  <div className="mb-1 px-0.5 text-[11px] text-slate-500">
+                    Lampiran {pendingComposerAttachments.length}/5
                   </div>
-                  <div className="relative shrink-0">
-                    <button
-                      ref={imageActionsButtonRef}
-                      type="button"
-                      aria-label="Aksi gambar"
-                      title="Aksi gambar"
-                      aria-haspopup="menu"
-                      aria-expanded={isImageActionsMenuOpen}
-                      onClick={event => {
-                        event.stopPropagation();
-                        toggleImageActionsMenu();
-                      }}
-                      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                    >
-                      <TbDotsVertical className="h-4 w-4" />
-                    </button>
-                    <PopupMenuPopover
-                      isOpen={isImageActionsMenuOpen}
-                      className="absolute right-0 top-full z-30 mt-1 origin-top-right"
-                    >
-                      <div
-                        ref={imageActionsMenuRef}
-                        onClick={event => event.stopPropagation()}
-                      >
-                        <PopupMenuContent
-                          actions={imageActions}
-                          minWidthClassName="min-w-[132px]"
-                        />
-                      </div>
-                    </PopupMenuPopover>
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
+                  <div className="flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
+                    {pendingComposerAttachments.map(attachment => {
+                      const isImageAttachment = attachment.fileKind === 'image';
+                      const isAudioAttachment = attachment.fileKind === 'audio';
+                      const isMenuOpen =
+                        openImageActionsAttachmentId === attachment.id;
+                      const attachmentActions: PopupMenuAction[] = [
+                        {
+                          label: 'Ganti',
+                          icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
+                          onClick: () => {
+                            closeImageActionsMenu();
+                            onAttachImageClick(attachment.id);
+                          },
+                        },
+                        {
+                          label: 'Hapus',
+                          icon: <TbPhotoMinus className="h-4 w-4" />,
+                          tone: 'danger',
+                          onClick: () => {
+                            closeImageActionsMenu();
+                            onRemovePendingComposerAttachment(attachment.id);
+                          },
+                        },
+                      ];
 
-            <AnimatePresence initial={false} mode="popLayout">
-              {pendingComposerFile ? (
-                <motion.div
-                  layout
-                  key="composer-file-preview"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 2 }}
-                  transition={contextualPanelTransition}
-                  className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
-                    {pendingComposerFile.fileKind === 'audio' ? (
-                      <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                    ) : pendingComposerPdfCoverUrl ? (
-                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
-                        <img
-                          src={pendingComposerPdfCoverUrl}
-                          alt="PDF cover preview"
-                          className="h-full w-full object-cover"
-                          draggable={false}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
-                        {(
-                          pendingComposerFile.fileName
-                            .split('.')
-                            .pop()
-                            ?.toUpperCase() || pendingComposerFile.fileTypeLabel
-                        ).slice(0, 4)}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-800">
-                        {pendingComposerFile.fileName}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {pendingComposerFile.fileTypeLabel}
-                      </p>
-                    </div>
+                      return (
+                        <div
+                          key={attachment.id}
+                          className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+                        >
+                          {isImageAttachment ? (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
+                              onClick={() => {
+                                onOpenComposerImagePreview(attachment.id);
+                              }}
+                              onKeyDown={event => {
+                                if (
+                                  event.key === 'Enter' ||
+                                  event.key === ' '
+                                ) {
+                                  event.preventDefault();
+                                  onOpenComposerImagePreview(attachment.id);
+                                }
+                              }}
+                            >
+                              <img
+                                src={attachment.previewUrl ?? ''}
+                                alt={attachment.fileName}
+                                className="h-11 w-11 rounded-lg object-cover"
+                                draggable={false}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                  {attachment.fileName}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {attachment.fileTypeLabel}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
+                              {isAudioAttachment ? (
+                                <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
+                              ) : attachment.pdfCoverUrl ? (
+                                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
+                                  <img
+                                    src={attachment.pdfCoverUrl}
+                                    alt="PDF cover preview"
+                                    className="h-full w-full object-cover"
+                                    draggable={false}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
+                                  {(
+                                    attachment.fileName
+                                      .split('.')
+                                      .pop()
+                                      ?.toUpperCase() ||
+                                    attachment.fileTypeLabel
+                                  ).slice(0, 4)}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                  {attachment.fileName}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {attachment.fileTypeLabel}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {isImageAttachment ? (
+                            <div className="relative shrink-0">
+                              <button
+                                ref={
+                                  isMenuOpen ? imageActionsButtonRef : undefined
+                                }
+                                type="button"
+                                aria-label="Aksi gambar"
+                                title="Aksi gambar"
+                                aria-haspopup="menu"
+                                aria-expanded={isMenuOpen}
+                                onClick={event => {
+                                  event.stopPropagation();
+                                  setOpenImageActionsAttachmentId(currentId =>
+                                    currentId === attachment.id
+                                      ? null
+                                      : attachment.id
+                                  );
+                                }}
+                                className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                              >
+                                <TbDotsVertical className="h-4 w-4" />
+                              </button>
+                              <PopupMenuPopover
+                                isOpen={isMenuOpen}
+                                className="absolute right-0 top-full z-30 mt-1 origin-top-right"
+                              >
+                                <div
+                                  ref={
+                                    isMenuOpen ? imageActionsMenuRef : undefined
+                                  }
+                                  onClick={event => event.stopPropagation()}
+                                >
+                                  <PopupMenuContent
+                                    actions={attachmentActions}
+                                    minWidthClassName="min-w-[132px]"
+                                  />
+                                </div>
+                              </PopupMenuPopover>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              aria-label={
+                                isAudioAttachment
+                                  ? 'Hapus audio'
+                                  : 'Hapus dokumen'
+                              }
+                              onClick={() => {
+                                onRemovePendingComposerAttachment(
+                                  attachment.id
+                                );
+                              }}
+                              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                            >
+                              <TbX className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <button
-                    type="button"
-                    aria-label={
-                      pendingComposerFile.fileKind === 'audio'
-                        ? 'Hapus audio'
-                        : 'Hapus dokumen'
-                    }
-                    onClick={onClearPendingComposerFile}
-                    className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                  >
-                    <TbX className="h-4 w-4" />
-                  </button>
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -500,6 +525,7 @@ const ComposerPanel = ({
                 ref={imageInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 onChange={onImageFileChange}
               />
@@ -507,6 +533,7 @@ const ComposerPanel = ({
                 ref={documentInputRef}
                 type="file"
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv"
+                multiple
                 className="hidden"
                 onChange={onDocumentFileChange}
               />
@@ -514,6 +541,7 @@ const ComposerPanel = ({
                 ref={audioInputRef}
                 type="file"
                 accept="audio/*"
+                multiple
                 className="hidden"
                 onChange={onAudioFileChange}
               />
@@ -533,7 +561,7 @@ const ComposerPanel = ({
                 >
                   <button
                     type="button"
-                    onClick={onAttachImageClick}
+                    onClick={() => onAttachImageClick()}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbPhoto className="h-4 w-4 text-slate-500" />
@@ -563,7 +591,9 @@ const ComposerPanel = ({
       </div>
 
       <ImageExpandPreview
-        isOpen={Boolean(pendingComposerImage && isComposerImageExpanded)}
+        isOpen={Boolean(
+          previewComposerImageAttachment && isComposerImageExpanded
+        )}
         isVisible={isComposerImageExpandedVisible}
         onClose={onCloseComposerImagePreview}
         backdropClassName="z-[70] px-4 py-6"
@@ -578,7 +608,7 @@ const ComposerPanel = ({
           }
         }}
       >
-        {pendingComposerImage ? (
+        {previewComposerImageAttachment ? (
           <ImageUploader
             id="chat-composer-image-preview"
             shape="rounded"
@@ -588,16 +618,18 @@ const ComposerPanel = ({
             popupTrigger="click"
             onImageUpload={async file => {
               onCloseComposerImagePreview();
-              onQueueComposerImage(file);
+              onQueueComposerImage(file, previewComposerImageAttachment.id);
             }}
             onImageDelete={async () => {
-              onClearPendingComposerImage();
+              onRemovePendingComposerAttachment(
+                previewComposerImageAttachment.id
+              );
             }}
             validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
           >
             <img
-              src={pendingComposerImage.previewUrl}
-              alt={pendingComposerImage.fileName}
+              src={previewComposerImageAttachment.previewUrl ?? ''}
+              alt={previewComposerImageAttachment.fileName}
               className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
               draggable={false}
             />

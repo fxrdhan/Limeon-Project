@@ -22,3 +22,16 @@ export type PendingComposerFile = {
   fileKind: ComposerPendingFileKind;
   mimeType: string;
 };
+
+export type PendingComposerAttachmentKind = 'image' | ComposerPendingFileKind;
+
+export type PendingComposerAttachment = {
+  id: string;
+  file: File;
+  fileName: string;
+  fileTypeLabel: string;
+  fileKind: PendingComposerAttachmentKind;
+  mimeType: string;
+  previewUrl: string | null;
+  pdfCoverUrl: string | null;
+};

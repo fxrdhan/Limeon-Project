@@ -6,6 +6,7 @@ export const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
 export const MESSAGE_INPUT_MIN_HEIGHT = 22;
 export const MESSAGE_INPUT_MAX_HEIGHT = 170;
 export const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
+export const MAX_PENDING_COMPOSER_ATTACHMENTS = 5;
 export const SEND_SUCCESS_GLOW_DURATION = 700;
 export const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 export const MESSAGE_BOTTOM_GAP = 12;
