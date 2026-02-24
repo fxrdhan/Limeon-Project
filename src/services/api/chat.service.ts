@@ -9,6 +9,9 @@ export interface ChatMessage {
   channel_id: string | null;
   message: string;
   message_type: 'text' | 'image' | 'file';
+  file_name?: string;
+  file_kind?: 'audio' | 'document';
+  file_mime_type?: string;
   created_at: string;
   updated_at: string;
   is_read: boolean;

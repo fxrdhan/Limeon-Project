@@ -52,6 +52,14 @@ interface ChatSidebarPanelProps {
 }
 
 type MenuPlacement = 'left' | 'right' | 'up' | 'down';
+type ComposerPendingFileKind = 'audio' | 'document';
+type PendingComposerFile = {
+  file: File;
+  fileName: string;
+  fileTypeLabel: string;
+  fileKind: ComposerPendingFileKind;
+  mimeType: string;
+};
 
 const MENU_GAP = 8;
 const MENU_WIDTH = 140;
@@ -71,6 +79,7 @@ const EDIT_TARGET_FOCUS_PADDING = 12;
 const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
 const CHAT_IMAGE_BUCKET = 'chat';
 const CHAT_IMAGE_FOLDER = 'images';
+const CHAT_FILE_FOLDER = 'files';
 const COMPOSER_SYNC_LAYOUT_TRANSITION = {
   type: 'tween' as const,
   ease: [0.22, 1, 0.36, 1] as const,
@@ -155,6 +164,10 @@ const ChatSidebarPanel = memo(
       fileName: string;
       fileTypeLabel: string;
     } | null>(null);
+    const [pendingComposerFile, setPendingComposerFile] =
+      useState<PendingComposerFile | null>(null);
+    const [pendingComposerPdfCoverUrl, setPendingComposerPdfCoverUrl] =
+      useState<string | null>(null);
     const [isComposerImageExpanded, setIsComposerImageExpanded] =
       useState(false);
     const [isComposerImageExpandedVisible, setIsComposerImageExpandedVisible] =
@@ -172,6 +185,8 @@ const ChatSidebarPanel = memo(
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const documentInputRef = useRef<HTMLInputElement>(null);
+    const audioInputRef = useRef<HTMLInputElement>(null);
     const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
@@ -193,7 +208,9 @@ const ChatSidebarPanel = memo(
             ?.message ?? null);
     const composerContextualOffset =
       (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0) +
-      (pendingComposerImage ? COMPOSER_IMAGE_PREVIEW_OFFSET : 0);
+      (pendingComposerImage || pendingComposerFile
+        ? COMPOSER_IMAGE_PREVIEW_OFFSET
+        : 0);
 
     const getVisibleMessagesBounds = useCallback(() => {
       const containerRect =
@@ -972,6 +989,75 @@ const ChatSidebarPanel = memo(
     }, [pendingComposerImage]);
 
     useEffect(() => {
+      let isCancelled = false;
+
+      const activeFile = pendingComposerFile;
+      const isPdfFile = Boolean(
+        activeFile &&
+        activeFile.fileKind === 'document' &&
+        (activeFile.mimeType === 'application/pdf' ||
+          activeFile.fileName.toLowerCase().endsWith('.pdf'))
+      );
+
+      if (!isPdfFile || !activeFile) {
+        setPendingComposerPdfCoverUrl(null);
+        return;
+      }
+
+      const renderPdfCover = async () => {
+        try {
+          const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+          const pdfWorkerModule =
+            await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
+          const fileBuffer = await activeFile.file.arrayBuffer();
+          const loadingTask = pdfjsLib.getDocument(new Uint8Array(fileBuffer));
+          const pdfDocument = await loadingTask.promise;
+          const firstPage = await pdfDocument.getPage(1);
+          const baseViewport = firstPage.getViewport({ scale: 1 });
+          const targetWidth = 44;
+          const scale = targetWidth / Math.max(baseViewport.width, 1);
+          const viewport = firstPage.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) {
+            if (!isCancelled) setPendingComposerPdfCoverUrl(null);
+            return;
+          }
+
+          canvas.width = Math.max(1, Math.round(viewport.width));
+          canvas.height = Math.max(1, Math.round(viewport.height));
+
+          await firstPage.render({
+            canvas,
+            canvasContext: context,
+            viewport,
+            background: 'rgb(255, 255, 255)',
+          }).promise;
+          if (isCancelled) {
+            pdfDocument.destroy();
+            return;
+          }
+
+          pdfDocument.cleanup();
+          pdfDocument.destroy();
+          setPendingComposerPdfCoverUrl(canvas.toDataURL('image/png'));
+        } catch (error) {
+          console.error('Error rendering PDF cover preview:', error);
+          if (!isCancelled) {
+            setPendingComposerPdfCoverUrl(null);
+          }
+        }
+      };
+
+      void renderPdfCover();
+
+      return () => {
+        isCancelled = true;
+      };
+    }, [pendingComposerFile]);
+
+    useEffect(() => {
       if (pendingComposerImage || !isComposerImageExpanded) return;
       if (composerImagePreviewCloseTimerRef.current) {
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
@@ -1101,6 +1187,19 @@ const ChatSidebarPanel = memo(
       []
     );
 
+    const buildChatFilePath = useCallback(
+      (channelId: string, senderId: string, file: File) => {
+        const extensionFromName = file.name.split('.').pop()?.toLowerCase();
+        const extensionFromType = file.type.split('/')[1]?.toLowerCase();
+        const rawExtension = extensionFromName || extensionFromType || 'bin';
+        const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'bin';
+        const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+        return `${CHAT_FILE_FOLDER}/${safeChannelId}/${senderId}_${Date.now()}.${safeExtension}`;
+      },
+      []
+    );
+
     const handleSendImageMessage = useCallback(
       async (file: File) => {
         if (!user || !targetUser || !currentChannelId) return false;
@@ -1214,6 +1313,140 @@ const ChatSidebarPanel = memo(
       ]
     );
 
+    const handleSendFileMessage = useCallback(
+      async (pendingFile: PendingComposerFile) => {
+        if (!user || !targetUser || !currentChannelId) return false;
+
+        if (pendingFile.file.type.startsWith('image/')) {
+          toast.error('Untuk gambar gunakan opsi Gambar', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return false;
+        }
+
+        if (editingMessageId) {
+          toast.error('Selesaikan edit pesan terlebih dahulu', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return false;
+        }
+
+        const tempId = `temp_file_${Date.now()}`;
+        const stableKey = `${user.id}-${Date.now()}-file`;
+        const localPreviewUrl = URL.createObjectURL(pendingFile.file);
+        pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
+
+        const optimisticMessage: ChatMessage = {
+          id: tempId,
+          sender_id: user.id,
+          receiver_id: targetUser.id,
+          channel_id: currentChannelId,
+          message: localPreviewUrl,
+          message_type: 'file',
+          file_name: pendingFile.fileName,
+          file_kind: pendingFile.fileKind,
+          file_mime_type: pendingFile.mimeType,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_read: false,
+          reply_to_id: null,
+          sender_name: user.name || 'You',
+          receiver_name: targetUser.name || 'Unknown',
+          stableKey,
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+        setIsAtBottom(true);
+        setHasNewMessages(false);
+        triggerSendSuccessGlow();
+
+        try {
+          const filePath = buildChatFilePath(
+            currentChannelId,
+            user.id,
+            pendingFile.file
+          );
+          const { publicUrl } = await StorageService.uploadRawFile(
+            CHAT_IMAGE_BUCKET,
+            pendingFile.file,
+            filePath,
+            pendingFile.mimeType || undefined
+          );
+
+          const { data: newMessage, error } = await chatService.insertMessage({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: publicUrl,
+            message_type: 'file',
+          });
+
+          if (error || !newMessage) {
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            toast.error(
+              pendingFile.fileKind === 'audio'
+                ? 'Gagal mengirim audio'
+                : 'Gagal mengirim dokumen',
+              {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              }
+            );
+            return false;
+          }
+
+          const realMessage: ChatMessage = {
+            ...newMessage,
+            file_name: pendingFile.fileName,
+            file_kind: pendingFile.fileKind,
+            file_mime_type: pendingFile.mimeType,
+            sender_name: user.name || 'You',
+            receiver_name: targetUser.name || 'Unknown',
+            stableKey,
+          };
+
+          setMessages(prev =>
+            prev.map(msg => (msg.id === tempId ? realMessage : msg))
+          );
+
+          if (channelRef.current) {
+            channelRef.current.send({
+              type: 'broadcast',
+              event: 'new_message',
+              payload: realMessage,
+            });
+          }
+
+          return true;
+        } catch (error) {
+          console.error('Error sending file message:', error);
+          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          toast.error(
+            pendingFile.fileKind === 'audio'
+              ? 'Gagal mengirim audio'
+              : 'Gagal mengirim dokumen',
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
+          );
+          return false;
+        } finally {
+          const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
+          if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            pendingImagePreviewUrlsRef.current.delete(tempId);
+          }
+        }
+      },
+      [
+        user,
+        targetUser,
+        currentChannelId,
+        editingMessageId,
+        triggerSendSuccessGlow,
+        buildChatFilePath,
+      ]
+    );
+
     const clearPendingComposerImage = useCallback(() => {
       if (composerImagePreviewCloseTimerRef.current) {
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
@@ -1222,6 +1455,10 @@ const ChatSidebarPanel = memo(
       setIsComposerImageExpandedVisible(false);
       setIsComposerImageExpanded(false);
       setPendingComposerImage(null);
+    }, []);
+
+    const clearPendingComposerFile = useCallback(() => {
+      setPendingComposerFile(null);
     }, []);
 
     const closeComposerImagePreview = useCallback(() => {
@@ -1280,6 +1517,7 @@ const ChatSidebarPanel = memo(
           fileName: file.name || 'Gambar',
           fileTypeLabel,
         });
+        setPendingComposerFile(null);
 
         requestAnimationFrame(() => {
           const textarea = messageInputRef.current;
@@ -1293,9 +1531,86 @@ const ChatSidebarPanel = memo(
       [editingMessageId]
     );
 
+    const queueComposerFile = useCallback(
+      (file: File, fileKind: ComposerPendingFileKind) => {
+        if (file.type.startsWith('image/')) {
+          toast.error('Untuk gambar gunakan opsi Gambar', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        const isAudioFile = file.type.startsWith('audio/');
+        if (fileKind === 'audio' && !isAudioFile) {
+          toast.error('File harus berupa audio', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        if (fileKind === 'document' && isAudioFile) {
+          toast.error('Untuk audio gunakan opsi Audio', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        if (editingMessageId) {
+          toast.error('Selesaikan edit pesan terlebih dahulu', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        const mimeSubtype = file.type.split('/')[1];
+        const extensionFromName = file.name.split('.').pop();
+        const fileTypeLabel = (
+          mimeSubtype ||
+          extensionFromName ||
+          (fileKind === 'audio' ? 'audio' : 'document')
+        ).toUpperCase();
+        const isPdfDocument =
+          fileKind === 'document' &&
+          (file.type === 'application/pdf' ||
+            file.name.toLowerCase().endsWith('.pdf'));
+
+        setPendingComposerFile({
+          file,
+          fileName: file.name || (fileKind === 'audio' ? 'Audio' : 'Dokumen'),
+          fileTypeLabel,
+          fileKind,
+          mimeType: file.type,
+        });
+        clearPendingComposerImage();
+        if (!isPdfDocument) {
+          setPendingComposerPdfCoverUrl(null);
+        }
+
+        requestAnimationFrame(() => {
+          const textarea = messageInputRef.current;
+          if (!textarea) return;
+
+          textarea.focus();
+          const cursorPosition = textarea.value.length;
+          textarea.setSelectionRange(cursorPosition, cursorPosition);
+        });
+      },
+      [clearPendingComposerImage, editingMessageId]
+    );
+
     const handleAttachImageClick = useCallback(() => {
       closeAttachModal();
       imageInputRef.current?.click();
+    }, [closeAttachModal]);
+
+    const handleAttachDocumentClick = useCallback(() => {
+      closeAttachModal();
+      documentInputRef.current?.click();
+    }, [closeAttachModal]);
+
+    const handleAttachAudioClick = useCallback(() => {
+      closeAttachModal();
+      audioInputRef.current?.click();
     }, [closeAttachModal]);
 
     const handleImageFileChange = useCallback(
@@ -1306,6 +1621,26 @@ const ChatSidebarPanel = memo(
         queueComposerImage(selectedFile);
       },
       [queueComposerImage]
+    );
+
+    const handleDocumentFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0];
+        event.target.value = '';
+        if (!selectedFile) return;
+        queueComposerFile(selectedFile, 'document');
+      },
+      [queueComposerFile]
+    );
+
+    const handleAudioFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0];
+        event.target.value = '';
+        if (!selectedFile) return;
+        queueComposerFile(selectedFile, 'audio');
+      },
+      [queueComposerFile]
     );
 
     const handleComposerPaste = useCallback(
@@ -1528,6 +1863,40 @@ const ChatSidebarPanel = memo(
       return colors[index % colors.length];
     };
 
+    const getAttachmentFileName = (targetMessage: ChatMessage) => {
+      if (targetMessage.file_name) return targetMessage.file_name;
+
+      try {
+        const normalizedUrl = targetMessage.message.split(/[?#]/)[0];
+        const rawName = normalizedUrl.split('/').pop();
+        if (!rawName) return 'Lampiran';
+        const decodedName = decodeURIComponent(rawName);
+        return decodedName || 'Lampiran';
+      } catch {
+        return 'Lampiran';
+      }
+    };
+
+    const getAttachmentFileKind = (
+      targetMessage: ChatMessage
+    ): ComposerPendingFileKind => {
+      if (targetMessage.file_kind) return targetMessage.file_kind;
+
+      const detectionSource = [
+        targetMessage.file_mime_type || '',
+        targetMessage.file_name || '',
+        targetMessage.message || '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      const isAudio =
+        /(audio\/|\.mp3\b|\.wav\b|\.ogg\b|\.m4a\b|\.aac\b|\.flac\b)/.test(
+          detectionSource
+        );
+
+      return isAudio ? 'audio' : 'document';
+    };
+
     // Scroll to bottom function
     /* c8 ignore next 5 */
     const scrollToBottom = () => {
@@ -1638,6 +2007,7 @@ const ChatSidebarPanel = memo(
 
     const handleEditMessage = (targetMessage: ChatMessage) => {
       clearPendingComposerImage();
+      clearPendingComposerFile();
       setEditingMessageId(targetMessage.id);
       setMessage(targetMessage.message);
       closeMessageMenu();
@@ -1998,9 +2368,10 @@ const ChatSidebarPanel = memo(
       }
 
       const hasPendingImage = Boolean(pendingComposerImage);
+      const hasPendingFile = Boolean(pendingComposerFile);
       const messageText = message.trim();
 
-      if (!hasPendingImage && !messageText) return;
+      if (!hasPendingImage && !hasPendingFile && !messageText) return;
 
       if (pendingComposerImage) {
         const didSendImage = await handleSendImageMessage(
@@ -2012,6 +2383,16 @@ const ChatSidebarPanel = memo(
         }
 
         clearPendingComposerImage();
+      }
+
+      if (pendingComposerFile) {
+        const didSendFile = await handleSendFileMessage(pendingComposerFile);
+
+        if (!didSendFile) {
+          return;
+        }
+
+        clearPendingComposerFile();
       }
 
       if (messageText) {
@@ -2183,6 +2564,15 @@ const ChatSidebarPanel = memo(
                 const isFlashingTarget =
                   isFlashSequenceTarget && isFlashHighlightVisible;
                 const isImageMessage = msg.message_type === 'image';
+                const isFileMessage = msg.message_type === 'file';
+                const fileKind = isFileMessage
+                  ? getAttachmentFileKind(msg)
+                  : 'document';
+                const isAudioFileMessage =
+                  isFileMessage && fileKind === 'audio';
+                const fileName = isFileMessage
+                  ? getAttachmentFileName(msg)
+                  : null;
                 const bubbleToneClass = isFlashingTarget
                   ? 'bg-primary text-white'
                   : isCurrentUser
@@ -2225,6 +2615,7 @@ const ChatSidebarPanel = memo(
                 const isExpanded = expandedMessageIds.has(msg.id);
                 const isMessageLong =
                   !isImageMessage &&
+                  !isFileMessage &&
                   !isExpanded &&
                   msg.message.length > MAX_MESSAGE_CHARS;
                 const displayMessage = isMessageLong
@@ -2240,7 +2631,7 @@ const ChatSidebarPanel = memo(
                   },
                 ];
 
-                if (isCurrentUser && isImageMessage) {
+                if (isCurrentUser && (isImageMessage || isFileMessage)) {
                   menuActions.push({
                     label: 'Hapus',
                     icon: <TbTrash className="h-4 w-4" />,
@@ -2385,6 +2776,30 @@ const ChatSidebarPanel = memo(
                               loading="lazy"
                               draggable={false}
                             />
+                          ) : isFileMessage ? (
+                            <div className="flex min-w-[220px] max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
+                              {isAudioFileMessage ? (
+                                <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
+                              ) : (
+                                <TbFileDescription className="h-5 w-5 shrink-0 text-slate-600" />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                  {fileName}
+                                </p>
+                                <a
+                                  href={msg.message}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={event => event.stopPropagation()}
+                                  className="text-xs text-primary underline"
+                                >
+                                  {isAudioFileMessage
+                                    ? 'Buka audio'
+                                    : 'Buka dokumen'}
+                                </a>
+                              </div>
+                            </div>
                           ) : (
                             <>
                               {displayMessage}
@@ -2799,6 +3214,68 @@ const ChatSidebarPanel = memo(
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
+                <AnimatePresence initial={false} mode="popLayout">
+                  {pendingComposerFile ? (
+                    <motion.div
+                      layout
+                      key="composer-file-preview"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{
+                        duration: 0.18,
+                        ease: [0.22, 1, 0.36, 1],
+                        layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+                      }}
+                      className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
+                        {pendingComposerFile.fileKind === 'audio' ? (
+                          <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
+                        ) : pendingComposerPdfCoverUrl ? (
+                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
+                            <img
+                              src={pendingComposerPdfCoverUrl}
+                              alt="PDF cover preview"
+                              className="h-full w-full object-cover"
+                              draggable={false}
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
+                            {(
+                              pendingComposerFile.fileName
+                                .split('.')
+                                .pop()
+                                ?.toUpperCase() ||
+                              pendingComposerFile.fileTypeLabel
+                            ).slice(0, 4)}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-800">
+                            {pendingComposerFile.fileName}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {pendingComposerFile.fileTypeLabel}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={
+                          pendingComposerFile.fileKind === 'audio'
+                            ? 'Hapus audio'
+                            : 'Hapus dokumen'
+                        }
+                        onClick={clearPendingComposerFile}
+                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                      >
+                        <TbX className="h-4 w-4" />
+                      </button>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
                 <motion.div
                   layout
                   transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
@@ -2867,6 +3344,20 @@ const ChatSidebarPanel = memo(
                     className="hidden"
                     onChange={handleImageFileChange}
                   />
+                  <input
+                    ref={documentInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv"
+                    className="hidden"
+                    onChange={handleDocumentFileChange}
+                  />
+                  <input
+                    ref={audioInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={handleAudioFileChange}
+                  />
                 </motion.div>
 
                 <AnimatePresence>
@@ -2891,7 +3382,7 @@ const ChatSidebarPanel = memo(
                       </button>
                       <button
                         type="button"
-                        onClick={closeAttachModal}
+                        onClick={handleAttachDocumentClick}
                         className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                       >
                         <TbFileDescription className="h-4 w-4 text-slate-500" />
@@ -2899,7 +3390,7 @@ const ChatSidebarPanel = memo(
                       </button>
                       <button
                         type="button"
-                        onClick={closeAttachModal}
+                        onClick={handleAttachAudioClick}
                         className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                       >
                         <TbMusic className="h-4 w-4 text-slate-500" />
