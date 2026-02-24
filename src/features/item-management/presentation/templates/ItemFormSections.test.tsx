@@ -1600,7 +1600,9 @@ describe('ItemFormSections', () => {
     fireEvent.click(image);
     expect(screen.getByAltText('Preview')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Tutup preview gambar'));
-    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+    });
 
     fireEvent.error(image);
     await waitFor(() => {

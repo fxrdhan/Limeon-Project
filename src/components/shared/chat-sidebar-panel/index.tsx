@@ -1245,7 +1245,9 @@ const ChatSidebarPanel = memo(
         composerImagePreviewCloseTimerRef.current = null;
       }
       setIsComposerImageExpanded(true);
-      setIsComposerImageExpandedVisible(true);
+      window.requestAnimationFrame(() => {
+        setIsComposerImageExpandedVisible(true);
+      });
     }, [closeAttachModal, closeMessageMenu, pendingComposerImage]);
 
     const queueComposerImage = useCallback(

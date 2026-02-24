@@ -1581,7 +1581,9 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       previewCloseTimerRef.current = null;
     }
     setPreviewSlotIndex(slotIndex);
-    setIsPreviewVisible(true);
+    window.requestAnimationFrame(() => {
+      setIsPreviewVisible(true);
+    });
   }, []);
 
   useEffect(() => {

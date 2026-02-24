@@ -30,7 +30,7 @@ const ImageExpandPreview = ({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-150 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 ${
         isVisible
           ? 'bg-black/70 opacity-100 pointer-events-auto'
           : 'bg-black/70 opacity-0 pointer-events-none'
@@ -42,12 +42,12 @@ const ImageExpandPreview = ({
       onKeyDown={onBackdropKeyDown}
     >
       <div
-        className={`max-h-[90vh] max-w-[90vw] p-3 transition-all duration-150 ease-out ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        className={`max-h-[90vh] max-w-[90vw] p-3 transform-gpu will-change-transform transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
         } ${contentClassName}`}
         onClick={event => event.stopPropagation()}
       >
-        {isVisible ? children : null}
+        {children}
       </div>
     </div>,
     document.body
