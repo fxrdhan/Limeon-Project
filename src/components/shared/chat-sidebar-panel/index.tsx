@@ -2756,15 +2756,20 @@ const ChatSidebarPanel = memo(
                         ease: [0.22, 1, 0.36, 1],
                         layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
                       }}
-                      className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2"
+                      onClick={openComposerImagePreview}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Perbesar preview gambar"
+                      title="Klik untuk perbesar gambar"
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openComposerImagePreview();
+                        }
+                      }}
+                      className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
                     >
-                      <button
-                        type="button"
-                        onClick={openComposerImagePreview}
-                        className="flex min-w-0 flex-1 cursor-zoom-in items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors hover:bg-slate-100/90"
-                        title="Klik untuk perbesar gambar"
-                        aria-label="Perbesar preview gambar"
-                      >
+                      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90">
                         <img
                           src={pendingComposerImage.previewUrl}
                           alt={pendingComposerImage.fileName}
@@ -2779,7 +2784,7 @@ const ChatSidebarPanel = memo(
                             {pendingComposerImage.fileTypeLabel}
                           </p>
                         </div>
-                      </button>
+                      </div>
                       <button
                         type="button"
                         aria-label="Hapus gambar"
