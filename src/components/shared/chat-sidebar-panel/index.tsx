@@ -63,6 +63,7 @@ const SEND_SUCCESS_GLOW_DURATION = 700;
 const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 const MESSAGE_BOTTOM_GAP = 12;
 const EDITING_COMPOSER_OFFSET = 44;
+const COMPOSER_IMAGE_PREVIEW_OFFSET = 68;
 const EDIT_TARGET_FOCUS_PADDING = 12;
 const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
 const CHAT_IMAGE_BUCKET = 'chat';
@@ -145,6 +146,12 @@ const ChatSidebarPanel = memo(
     const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
       useState(false);
     const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
+    const [pendingComposerImage, setPendingComposerImage] = useState<{
+      file: File;
+      previewUrl: string;
+      fileName: string;
+      fileTypeLabel: string;
+    } | null>(null);
     const [flashingMessageId, setFlashingMessageId] = useState<string | null>(
       null
     );
@@ -176,6 +183,9 @@ const ChatSidebarPanel = memo(
         ? null
         : (messages.find(candidate => candidate.id === editingMessageId)
             ?.message ?? null);
+    const composerContextualOffset =
+      (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0) +
+      (pendingComposerImage ? COMPOSER_IMAGE_PREVIEW_OFFSET : 0);
 
     const getVisibleMessagesBounds = useCallback(() => {
       const containerRect =
@@ -940,6 +950,14 @@ const ChatSidebarPanel = memo(
       };
     }, []);
 
+    useEffect(() => {
+      if (!pendingComposerImage) return;
+
+      return () => {
+        URL.revokeObjectURL(pendingComposerImage.previewUrl);
+      };
+    }, [pendingComposerImage]);
+
     const triggerMessageFlash = useCallback((messageId: string) => {
       if (flashMessageIntervalRef.current) {
         clearInterval(flashMessageIntervalRef.current);
@@ -1040,20 +1058,20 @@ const ChatSidebarPanel = memo(
 
     const handleSendImageMessage = useCallback(
       async (file: File) => {
-        if (!user || !targetUser || !currentChannelId) return;
+        if (!user || !targetUser || !currentChannelId) return false;
 
         if (!file.type.startsWith('image/')) {
           toast.error('File harus berupa gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         if (editingMessageId) {
           toast.error('Selesaikan edit pesan terlebih dahulu', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return;
+          return false;
         }
 
         const tempId = `temp_image_${Date.now()}`;
@@ -1103,7 +1121,7 @@ const ChatSidebarPanel = memo(
             toast.error('Gagal mengirim gambar', {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
-            return;
+            return false;
           }
 
           const realMessage: ChatMessage = {
@@ -1124,12 +1142,15 @@ const ChatSidebarPanel = memo(
               payload: realMessage,
             });
           }
+
+          return true;
         } catch (error) {
           console.error('Error sending image message:', error);
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
           toast.error('Gagal mengirim gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
+          return false;
         } finally {
           const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
           if (previewUrl) {
@@ -1148,6 +1169,53 @@ const ChatSidebarPanel = memo(
       ]
     );
 
+    const clearPendingComposerImage = useCallback(() => {
+      setPendingComposerImage(null);
+    }, []);
+
+    const queueComposerImage = useCallback(
+      (file: File) => {
+        if (!file.type.startsWith('image/')) {
+          toast.error('File harus berupa gambar', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        if (editingMessageId) {
+          toast.error('Selesaikan edit pesan terlebih dahulu', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        const mimeSubtype = file.type.split('/')[1];
+        const extensionFromName = file.name.split('.').pop();
+        const fileTypeLabel = (
+          mimeSubtype ||
+          extensionFromName ||
+          'image'
+        ).toUpperCase();
+
+        setPendingComposerImage({
+          file,
+          previewUrl: URL.createObjectURL(file),
+          fileName: file.name || 'Gambar',
+          fileTypeLabel,
+        });
+
+        requestAnimationFrame(() => {
+          const textarea = messageInputRef.current;
+          if (!textarea) return;
+
+          textarea.focus();
+          const cursorPosition = textarea.value.length;
+          textarea.setSelectionRange(cursorPosition, cursorPosition);
+        });
+      },
+      [editingMessageId]
+    );
+
     const handleAttachImageClick = useCallback(() => {
       closeAttachModal();
       imageInputRef.current?.click();
@@ -1158,9 +1226,9 @@ const ChatSidebarPanel = memo(
         const selectedFile = event.target.files?.[0];
         event.target.value = '';
         if (!selectedFile) return;
-        void handleSendImageMessage(selectedFile);
+        queueComposerImage(selectedFile);
       },
-      [handleSendImageMessage]
+      [queueComposerImage]
     );
 
     const handleComposerPaste = useCallback(
@@ -1176,9 +1244,9 @@ const ChatSidebarPanel = memo(
         event.preventDefault();
         closeAttachModal();
         closeMessageMenu();
-        void handleSendImageMessage(imageFile);
+        queueComposerImage(imageFile);
       },
-      [closeAttachModal, closeMessageMenu, handleSendImageMessage]
+      [closeAttachModal, closeMessageMenu, queueComposerImage]
     );
 
     useEffect(() => {
@@ -1492,6 +1560,7 @@ const ChatSidebarPanel = memo(
     };
 
     const handleEditMessage = (targetMessage: ChatMessage) => {
+      clearPendingComposerImage();
       setEditingMessageId(targetMessage.id);
       setMessage(targetMessage.message);
       closeMessageMenu();
@@ -1752,92 +1821,124 @@ const ChatSidebarPanel = memo(
       };
     }, [composerLayoutMode, isTargetMultiline]);
 
+    const sendTextMessage = useCallback(
+      async (messageText: string) => {
+        if (!user || !targetUser || !currentChannelId) return false;
+
+        if (!messageText.trim()) return false;
+
+        const normalizedMessageText = messageText.trim();
+        setMessage(''); // Clear input immediately for better UX
+
+        const tempId = `temp_${Date.now()}`;
+        const stableKey = `${user.id}-${Date.now()}-${normalizedMessageText.slice(0, 10)}`;
+
+        // Optimistic update - show message immediately
+        const optimisticMessage: ChatMessage = {
+          id: tempId,
+          sender_id: user.id,
+          receiver_id: targetUser.id,
+          channel_id: currentChannelId,
+          message: normalizedMessageText,
+          message_type: 'text',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_read: false,
+          reply_to_id: null,
+          sender_name: user.name || 'You',
+          receiver_name: targetUser.name || 'Unknown',
+          // Add stable key for consistent animation
+          stableKey,
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+        setIsAtBottom(true);
+        setHasNewMessages(false);
+        triggerSendSuccessGlow();
+
+        try {
+          // Insert message into database (simplified query)
+          const { data: newMessage, error } = await chatService.insertMessage({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: normalizedMessageText,
+            message_type: 'text',
+          });
+
+          if (error) {
+            console.error('Error sending message:', error);
+            // Remove optimistic message and restore input
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            setMessage(normalizedMessageText);
+            return false;
+          }
+
+          if (!newMessage) {
+            console.error('Error sending message: missing response data');
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            setMessage(normalizedMessageText);
+            return false;
+          }
+
+          // Replace optimistic message with real message (keep same stableKey)
+          const realMessage: ChatMessage = {
+            ...newMessage,
+            sender_name: user.name || 'You',
+            receiver_name: targetUser.name || 'Unknown',
+            stableKey, // Keep same stable key to prevent re-animation
+          };
+
+          setMessages(prev =>
+            prev.map(msg => (msg.id === tempId ? realMessage : msg))
+          );
+
+          // Broadcast to all subscribers in this channel
+          if (channelRef.current) {
+            channelRef.current.send({
+              type: 'broadcast',
+              event: 'new_message',
+              payload: realMessage,
+            });
+          }
+
+          return true;
+        } catch (error) {
+          console.error('Error sending message:', error);
+          // Remove optimistic message and restore input
+          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          setMessage(normalizedMessageText);
+          return false;
+        }
+      },
+      [user, targetUser, currentChannelId, triggerSendSuccessGlow]
+    );
+
     const handleSendMessage = async () => {
       if (editingMessageId) {
         await handleUpdateMessage();
         return;
       }
 
-      if (!message.trim() || !user || !targetUser || !currentChannelId) return;
-
+      const hasPendingImage = Boolean(pendingComposerImage);
       const messageText = message.trim();
-      const tempId = `temp_${Date.now()}`;
-      const stableKey = `${user.id}-${Date.now()}-${messageText.slice(0, 10)}`;
-      setMessage(''); // Clear input immediately for better UX
 
-      // Optimistic update - show message immediately
-      const optimisticMessage: ChatMessage = {
-        id: tempId,
-        sender_id: user.id,
-        receiver_id: targetUser.id,
-        channel_id: currentChannelId,
-        message: messageText,
-        message_type: 'text',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_read: false,
-        reply_to_id: null,
-        sender_name: user.name || 'You',
-        receiver_name: targetUser.name || 'Unknown',
-        // Add stable key for consistent animation
-        stableKey,
-      };
+      if (!hasPendingImage && !messageText) return;
 
-      setMessages(prev => [...prev, optimisticMessage]);
-      setIsAtBottom(true);
-      setHasNewMessages(false);
-      triggerSendSuccessGlow();
-
-      try {
-        // Insert message into database (simplified query)
-        const { data: newMessage, error } = await chatService.insertMessage({
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: messageText,
-          message_type: 'text',
-        });
-
-        if (error) {
-          console.error('Error sending message:', error);
-          // Remove optimistic message and restore input
-          setMessages(prev => prev.filter(msg => msg.id !== tempId));
-          setMessage(messageText);
-          return;
-        }
-
-        if (!newMessage) {
-          console.error('Error sending message: missing response data');
-          setMessages(prev => prev.filter(msg => msg.id !== tempId));
-          setMessage(messageText);
-          return;
-        }
-
-        // Replace optimistic message with real message (keep same stableKey)
-        const realMessage: ChatMessage = {
-          ...newMessage,
-          sender_name: user.name || 'You',
-          receiver_name: targetUser.name || 'Unknown',
-          stableKey, // Keep same stable key to prevent re-animation
-        };
-
-        setMessages(prev =>
-          prev.map(msg => (msg.id === tempId ? realMessage : msg))
+      if (pendingComposerImage) {
+        const didSendImage = await handleSendImageMessage(
+          pendingComposerImage.file
         );
 
-        // Broadcast to all subscribers in this channel
-        if (channelRef.current) {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'new_message',
-            payload: realMessage,
-          });
+        if (!didSendImage) {
+          return;
         }
-      } catch (error) {
-        console.error('Error sending message:', error);
-        // Remove optimistic message and restore input
-        setMessages(prev => prev.filter(msg => msg.id !== tempId));
-        setMessage(messageText);
+
+        clearPendingComposerImage();
+      }
+
+      if (messageText) {
+        await sendTextMessage(messageText);
       }
     };
 
@@ -1974,10 +2075,7 @@ const ChatSidebarPanel = memo(
             className="flex-1 overflow-x-hidden px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
             style={{
               overflowAnchor: 'none',
-              paddingBottom:
-                messageInputHeight +
-                84 +
-                (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0),
+              paddingBottom: messageInputHeight + 84 + composerContextualOffset,
             }}
             onClick={closeMessageMenu}
           >
@@ -2448,10 +2546,7 @@ const ChatSidebarPanel = memo(
                 onClick={scrollToBottom}
                 className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-[color,bottom] duration-[110ms] ease-out"
                 style={{
-                  bottom:
-                    messageInputHeight +
-                    78 +
-                    (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0),
+                  bottom: messageInputHeight + 78 + composerContextualOffset,
                   filter: 'drop-shadow(0 0 0 white)',
                   background:
                     'radial-gradient(circle at center, white 30%, transparent 30%)',
@@ -2567,6 +2662,46 @@ const ChatSidebarPanel = memo(
                       <p className="min-w-0 flex-1 truncate text-left text-sm leading-5 text-slate-700">
                         {editingMessagePreview}
                       </p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+                <AnimatePresence initial={false}>
+                  {pendingComposerImage ? (
+                    <motion.div
+                      layout
+                      key="composer-image-preview"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{
+                        duration: 0.18,
+                        ease: [0.22, 1, 0.36, 1],
+                        layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+                      }}
+                      className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2"
+                    >
+                      <img
+                        src={pendingComposerImage.previewUrl}
+                        alt={pendingComposerImage.fileName}
+                        className="h-11 w-11 rounded-lg object-cover"
+                        draggable={false}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-slate-800">
+                          {pendingComposerImage.fileName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {pendingComposerImage.fileTypeLabel}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Hapus gambar"
+                        onClick={clearPendingComposerImage}
+                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                      >
+                        <TbX className="h-4 w-4" />
+                      </button>
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
