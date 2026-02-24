@@ -152,6 +152,8 @@ const ChatSidebarPanel = memo(
       fileName: string;
       fileTypeLabel: string;
     } | null>(null);
+    const [isComposerImageExpanded, setIsComposerImageExpanded] =
+      useState(false);
     const [flashingMessageId, setFlashingMessageId] = useState<string | null>(
       null
     );
@@ -958,6 +960,25 @@ const ChatSidebarPanel = memo(
       };
     }, [pendingComposerImage]);
 
+    useEffect(() => {
+      if (pendingComposerImage || !isComposerImageExpanded) return;
+      setIsComposerImageExpanded(false);
+    }, [isComposerImageExpanded, pendingComposerImage]);
+
+    useEffect(() => {
+      if (!isComposerImageExpanded) return;
+
+      const handleEscapeKey = (event: KeyboardEvent) => {
+        if (event.key !== 'Escape') return;
+        setIsComposerImageExpanded(false);
+      };
+
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }, [isComposerImageExpanded]);
+
     const triggerMessageFlash = useCallback((messageId: string) => {
       if (flashMessageIntervalRef.current) {
         clearInterval(flashMessageIntervalRef.current);
@@ -1170,8 +1191,20 @@ const ChatSidebarPanel = memo(
     );
 
     const clearPendingComposerImage = useCallback(() => {
+      setIsComposerImageExpanded(false);
       setPendingComposerImage(null);
     }, []);
+
+    const closeComposerImagePreview = useCallback(() => {
+      setIsComposerImageExpanded(false);
+    }, []);
+
+    const openComposerImagePreview = useCallback(() => {
+      if (!pendingComposerImage) return;
+      closeAttachModal();
+      closeMessageMenu();
+      setIsComposerImageExpanded(true);
+    }, [closeAttachModal, closeMessageMenu, pendingComposerImage]);
 
     const queueComposerImage = useCallback(
       (file: File) => {
@@ -2680,24 +2713,35 @@ const ChatSidebarPanel = memo(
                       }}
                       className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2"
                     >
-                      <img
-                        src={pendingComposerImage.previewUrl}
-                        alt={pendingComposerImage.fileName}
-                        className="h-11 w-11 rounded-lg object-cover"
-                        draggable={false}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-800">
-                          {pendingComposerImage.fileName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {pendingComposerImage.fileTypeLabel}
-                        </p>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={openComposerImagePreview}
+                        className="flex min-w-0 flex-1 cursor-zoom-in items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors hover:bg-slate-100/90"
+                        title="Klik untuk perbesar gambar"
+                        aria-label="Perbesar preview gambar"
+                      >
+                        <img
+                          src={pendingComposerImage.previewUrl}
+                          alt={pendingComposerImage.fileName}
+                          className="h-11 w-11 rounded-lg object-cover"
+                          draggable={false}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-800">
+                            {pendingComposerImage.fileName}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {pendingComposerImage.fileTypeLabel}
+                          </p>
+                        </div>
+                      </button>
                       <button
                         type="button"
                         aria-label="Hapus gambar"
-                        onClick={clearPendingComposerImage}
+                        onClick={event => {
+                          event.stopPropagation();
+                          clearPendingComposerImage();
+                        }}
                         className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
                       >
                         <TbX className="h-4 w-4" />
@@ -2818,6 +2862,51 @@ const ChatSidebarPanel = memo(
             </motion.div>
           </div>
         </div>
+        <AnimatePresence>
+          {pendingComposerImage && isComposerImageExpanded ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm"
+              role="button"
+              tabIndex={0}
+              aria-label="Tutup preview gambar"
+              onClick={closeComposerImagePreview}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  closeComposerImagePreview();
+                }
+              }}
+            >
+              <button
+                type="button"
+                aria-label="Tutup preview gambar"
+                onClick={closeComposerImagePreview}
+                className="fixed right-4 top-4 z-[71] inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-black/70"
+              >
+                <TbX className="h-5 w-5" />
+              </button>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="relative max-h-[92vh] max-w-[92vw]"
+                onClick={event => event.stopPropagation()}
+              >
+                <img
+                  src={pendingComposerImage.previewUrl}
+                  alt={pendingComposerImage.fileName}
+                  className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-2xl"
+                  draggable={false}
+                />
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </motion.div>
     );
   }
