@@ -155,6 +155,7 @@ const ChatSidebarPanel = memo(
     const attachModalRef = useRef<HTMLDivElement>(null);
     const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
+    const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
     const hasCompletedInitialOpenLoadRef = useRef(false);
     const inlineOverflowThresholdRef = useRef<number | null>(null);
@@ -655,10 +656,14 @@ const ChatSidebarPanel = memo(
           }));
 
           // Skip enter animation for messages that exist on initial load/open.
-          initialMessageAnimationKeysRef.current = new Set(
+          const initialMessageAnimationKeys = new Set(
             transformedMessages.map(
               messageItem => messageItem.stableKey || messageItem.id
             )
+          );
+          initialMessageAnimationKeysRef.current = initialMessageAnimationKeys;
+          initialOpenJumpAnimationKeysRef.current = new Set(
+            initialMessageAnimationKeys
           );
           setMessages(previousMessages => {
             if (previousMessages.length === 0) {
@@ -1735,6 +1740,29 @@ const ChatSidebarPanel = memo(
                 const animationKey = msg.stableKey || msg.id;
                 const shouldAnimateEnter =
                   !initialMessageAnimationKeysRef.current.has(animationKey);
+                const shouldAnimateOpenJump =
+                  !shouldAnimateEnter &&
+                  initialOpenJumpAnimationKeysRef.current.has(animationKey);
+                const targetAnimation = shouldAnimateOpenJump
+                  ? {
+                      opacity: 1,
+                      scale: [1, 1.04, 1],
+                      x: 0,
+                      y: [0, -8, 0],
+                    }
+                  : { opacity: 1, scale: 1, x: 0, y: 0 };
+                const animationTransition = shouldAnimateOpenJump
+                  ? {
+                      duration: 0.36,
+                      ease: [0.22, 1, 0.36, 1] as const,
+                    }
+                  : {
+                      duration: 0.3,
+                      ease: [0.23, 1, 0.32, 1] as const,
+                      type: 'spring' as const,
+                      stiffness: 300,
+                      damping: 24,
+                    };
 
                 const isExpanded = expandedMessageIds.has(msg.id);
                 const isMessageLong =
@@ -1811,18 +1839,19 @@ const ChatSidebarPanel = memo(
                           }
                         : false
                     }
-                    animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                    animate={targetAnimation}
                     style={{
                       transformOrigin: isCurrentUser
                         ? 'right bottom'
                         : 'left bottom',
                     }}
-                    transition={{
-                      duration: 0.3,
-                      ease: [0.23, 1, 0.32, 1],
-                      type: 'spring',
-                      stiffness: 300,
-                      damping: 24,
+                    transition={animationTransition}
+                    onAnimationComplete={() => {
+                      if (shouldAnimateOpenJump) {
+                        initialOpenJumpAnimationKeysRef.current.delete(
+                          animationKey
+                        );
+                      }
                     }}
                     className={`flex w-full transition-all duration-200 ease-out ${
                       isCurrentUser ? 'justify-end' : 'justify-start'
