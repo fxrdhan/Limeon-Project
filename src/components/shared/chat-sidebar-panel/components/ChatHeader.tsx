@@ -1,5 +1,15 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PopupMenuContent, {
+  type PopupMenuAction,
+} from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { UserPresence } from '@/services/api/chat.service';
-import { TbDotsVertical, TbLayoutSidebarRightCollapse } from 'react-icons/tb';
+import {
+  TbCheckbox,
+  TbDotsVertical,
+  TbLayoutSidebarRightCollapse,
+  TbSearch,
+} from 'react-icons/tb';
 import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface ChatHeaderProps {
@@ -40,6 +50,56 @@ const ChatHeader = ({
   getInitials,
   getInitialsColor,
 }: ChatHeaderProps) => {
+  const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
+  const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const optionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const closeOptionsMenu = useCallback(() => {
+    setIsOptionsMenuOpen(false);
+  }, []);
+
+  const toggleOptionsMenu = useCallback(() => {
+    setIsOptionsMenuOpen(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    if (!isOptionsMenuOpen) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (optionsMenuRef.current?.contains(target)) return;
+      if (optionsButtonRef.current?.contains(target)) return;
+      closeOptionsMenu();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeOptionsMenu();
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeOptionsMenu, isOptionsMenuOpen]);
+
+  const optionsActions: PopupMenuAction[] = [
+    {
+      label: 'Pilih pesan',
+      icon: <TbCheckbox className="h-4 w-4" />,
+      onClick: closeOptionsMenu,
+    },
+    {
+      label: 'Cari',
+      icon: <TbSearch className="h-4 w-4" />,
+      onClick: closeOptionsMenu,
+    },
+  ];
+
   return (
     <div className="px-4 py-3.5 border-b border-slate-100">
       <div className="flex items-center justify-between">
@@ -94,14 +154,35 @@ const ChatHeader = ({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Chat options"
-            title="Chat options"
-            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
-          >
-            <TbDotsVertical size={20} />
-          </button>
+          <div className="relative">
+            <button
+              ref={optionsButtonRef}
+              type="button"
+              aria-label="Chat options"
+              title="Chat options"
+              aria-haspopup="menu"
+              aria-expanded={isOptionsMenuOpen}
+              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+              onClick={toggleOptionsMenu}
+            >
+              <TbDotsVertical size={20} />
+            </button>
+
+            <PopupMenuPopover
+              isOpen={isOptionsMenuOpen}
+              className="absolute right-0 top-full z-30 mt-2 origin-top-right"
+            >
+              <div
+                ref={optionsMenuRef}
+                onClick={event => event.stopPropagation()}
+              >
+                <PopupMenuContent
+                  actions={optionsActions}
+                  minWidthClassName="min-w-[140px]"
+                />
+              </div>
+            </PopupMenuPopover>
+          </div>
           <button
             onClick={onClose}
             aria-label="Collapse chat sidebar"

@@ -16,11 +16,13 @@ import {
 import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { ChatMessage } from '@/services/api/chat.service';
 import type {
   ChatSidebarPanelTargetUser,
   ComposerPendingFileKind,
   MenuPlacement,
+  MenuSideAnchor,
 } from '../types';
 
 interface ChatPanelUser {
@@ -39,6 +41,7 @@ interface MessagesPaneProps {
   composerContextualOffset: number;
   openMenuMessageId: string | null;
   menuPlacement: MenuPlacement;
+  menuSideAnchor: MenuSideAnchor;
   menuOffsetX: number;
   lastPreselectedMenuActionIndex: number | null;
   expandedMessageIds: Set<string>;
@@ -82,6 +85,7 @@ const MessagesPane = ({
   composerContextualOffset,
   openMenuMessageId,
   menuPlacement,
+  menuSideAnchor,
   menuOffsetX,
   lastPreselectedMenuActionIndex,
   expandedMessageIds,
@@ -242,24 +246,38 @@ const MessagesPane = ({
               hasValidLastPreselectedMenuActionIndex
                 ? lastPreselectedMenuActionIndex
                 : undefined;
-            const isBottomAnchoredSideMenu =
-              isCurrentUser &&
-              (menuPlacement === 'left' || menuPlacement === 'right');
+            const sideMenuPositionClass =
+              menuSideAnchor === 'bottom'
+                ? 'bottom-0'
+                : menuSideAnchor === 'top'
+                  ? 'top-0'
+                  : 'top-1/2 -translate-y-1/2';
             const sidePlacementClass =
               menuPlacement === 'left'
-                ? isBottomAnchoredSideMenu
-                  ? 'right-full mr-2 bottom-0 origin-bottom-right'
-                  : 'right-full mr-2 top-1/2 -translate-y-1/2 origin-right'
+                ? `right-full mr-2 ${sideMenuPositionClass} ${
+                    menuSideAnchor === 'bottom'
+                      ? 'origin-bottom-right'
+                      : menuSideAnchor === 'top'
+                        ? 'origin-top-right'
+                        : 'origin-right'
+                  }`
                 : menuPlacement === 'right'
-                  ? isBottomAnchoredSideMenu
-                    ? 'left-full ml-2 bottom-0 origin-bottom-left'
-                    : 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
+                  ? `left-full ml-2 ${sideMenuPositionClass} ${
+                      menuSideAnchor === 'bottom'
+                        ? 'origin-bottom-left'
+                        : menuSideAnchor === 'top'
+                          ? 'origin-top-left'
+                          : 'origin-left'
+                    }`
                   : menuPlacement === 'down'
                     ? 'bottom-full mb-2 left-0 origin-bottom-left'
                     : 'top-full mt-2 left-0 origin-top-left';
-            const sideArrowAnchorClass = isBottomAnchoredSideMenu
-              ? 'top-[78%] -translate-y-1/2'
-              : 'top-1/2 -translate-y-1/2';
+            const sideArrowAnchorClass =
+              menuSideAnchor === 'bottom'
+                ? 'top-[78%] -translate-y-1/2'
+                : menuSideAnchor === 'top'
+                  ? 'top-[22%] -translate-y-1/2'
+                  : 'top-1/2 -translate-y-1/2';
 
             return (
               <motion.div
@@ -438,85 +456,82 @@ const MessagesPane = ({
                       )}
                     </div>
 
-                    <AnimatePresence>
-                      {isMenuOpen ? (
-                        <motion.div
-                          data-chat-menu-id={msg.id}
-                          initial={{
-                            opacity: 0,
-                            scale: 0.96,
-                            x:
-                              menuOffsetX +
-                              (menuPlacement === 'left'
-                                ? -6
-                                : menuPlacement === 'right'
-                                  ? 6
-                                  : 0),
-                            y:
-                              menuPlacement === 'down'
-                                ? 6
-                                : menuPlacement === 'up'
-                                  ? -6
-                                  : 0,
-                          }}
-                          animate={{
-                            opacity: 1,
-                            scale: 1,
-                            x: menuOffsetX,
-                            y: 0,
-                          }}
-                          exit={{
-                            opacity: 0,
-                            scale: 0.98,
-                            x: menuOffsetX,
-                            y: 0,
-                          }}
-                          transition={{ duration: 0.12, ease: 'easeOut' }}
-                          className={`absolute z-20 text-slate-900 ${sidePlacementClass}`}
-                          onClick={event => event.stopPropagation()}
+                    <PopupMenuPopover
+                      isOpen={isMenuOpen}
+                      menuId={msg.id}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.96,
+                        x:
+                          menuOffsetX +
+                          (menuPlacement === 'left'
+                            ? -6
+                            : menuPlacement === 'right'
+                              ? 6
+                              : 0),
+                        y:
+                          menuPlacement === 'down'
+                            ? 6
+                            : menuPlacement === 'up'
+                              ? -6
+                              : 0,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        x: menuOffsetX,
+                        y: 0,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.98,
+                        x: menuOffsetX,
+                        y: 0,
+                      }}
+                      transition={{ duration: 0.12, ease: 'easeOut' }}
+                      className={`absolute z-20 text-slate-900 ${sidePlacementClass}`}
+                      onClick={event => event.stopPropagation()}
+                    >
+                      {menuPlacement === 'left' ? (
+                        <div
+                          className={`absolute right-0 translate-x-full ${sideArrowAnchorClass}`}
                         >
-                          {menuPlacement === 'left' ? (
-                            <div
-                              className={`absolute right-0 translate-x-full ${sideArrowAnchorClass}`}
-                            >
-                              <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200" />
-                              <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2" />
-                            </div>
-                          ) : menuPlacement === 'right' ? (
-                            <div
-                              className={`absolute left-0 -translate-x-full ${sideArrowAnchorClass}`}
-                            >
-                              <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200" />
-                              <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2" />
-                            </div>
-                          ) : menuPlacement === 'down' ? (
-                            <div className="absolute bottom-0 left-3 translate-y-full">
-                              <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-200" />
-                              <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white left-1/2 top-[-1px] -translate-x-1/2" />
-                            </div>
-                          ) : (
-                            <div className="absolute top-0 left-3 -translate-y-full">
-                              <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-slate-200" />
-                              <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-white left-1/2 bottom-[-1px] -translate-x-1/2" />
-                            </div>
-                          )}
-                          <PopupMenuContent
-                            actions={menuActions}
-                            minWidthClassName="min-w-[120px]"
-                            enableArrowNavigation
-                            autoFocusFirstItem
-                            initialPreselectedIndex={
-                              initialPreselectedMenuActionIndex
-                            }
-                            onPreselectedIndexChange={index => {
-                              setLastPreselectedMenuActionIndex(prev =>
-                                prev === index ? prev : index
-                              );
-                            }}
-                          />
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
+                          <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200" />
+                          <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2" />
+                        </div>
+                      ) : menuPlacement === 'right' ? (
+                        <div
+                          className={`absolute left-0 -translate-x-full ${sideArrowAnchorClass}`}
+                        >
+                          <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200" />
+                          <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2" />
+                        </div>
+                      ) : menuPlacement === 'down' ? (
+                        <div className="absolute bottom-0 left-3 translate-y-full">
+                          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-200" />
+                          <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white left-1/2 top-[-1px] -translate-x-1/2" />
+                        </div>
+                      ) : (
+                        <div className="absolute top-0 left-3 -translate-y-full">
+                          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-slate-200" />
+                          <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-white left-1/2 bottom-[-1px] -translate-x-1/2" />
+                        </div>
+                      )}
+                      <PopupMenuContent
+                        actions={menuActions}
+                        minWidthClassName="min-w-[120px]"
+                        enableArrowNavigation
+                        autoFocusFirstItem
+                        initialPreselectedIndex={
+                          initialPreselectedMenuActionIndex
+                        }
+                        onPreselectedIndexChange={index => {
+                          setLastPreselectedMenuActionIndex(prev =>
+                            prev === index ? prev : index
+                          );
+                        }}
+                      />
+                    </PopupMenuPopover>
                   </div>
 
                   <div

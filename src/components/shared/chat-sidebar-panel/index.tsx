@@ -56,6 +56,7 @@ import type {
   ChatSidebarPanelProps,
   ComposerPendingFileKind,
   MenuPlacement,
+  MenuSideAnchor,
   PendingComposerFile,
 } from './types';
 import {
@@ -81,6 +82,8 @@ const ChatSidebarPanel = memo(
     const [lastPreselectedMenuActionIndex, setLastPreselectedMenuActionIndex] =
       useState<number | null>(null);
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
+    const [menuSideAnchor, setMenuSideAnchor] =
+      useState<MenuSideAnchor>('middle');
     const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
       () => new Set()
@@ -238,37 +241,72 @@ const ChatSidebarPanel = memo(
       });
     }, [scrollMessagesToBottom]);
 
-    const getMenuPlacement = useCallback(
-      (anchorRect: DOMRect, preferredSide: 'left' | 'right'): MenuPlacement => {
+    const getMenuLayout = useCallback(
+      (
+        anchorRect: DOMRect,
+        preferredSide: 'left' | 'right'
+      ): {
+        placement: MenuPlacement;
+        sideAnchor: MenuSideAnchor;
+      } => {
         const bounds = getVisibleMessagesBounds();
-        if (!bounds) return 'up';
+        if (!bounds) {
+          return { placement: 'up', sideAnchor: 'middle' };
+        }
 
         const { containerRect, visibleBottom } = bounds;
         const spaceLeft = anchorRect.left - containerRect.left;
         const spaceRight = containerRect.right - anchorRect.right;
         const spaceAbove = anchorRect.top - containerRect.top;
         const spaceBelow = visibleBottom - anchorRect.bottom;
+        const hasTopAnchoredSideRoom =
+          spaceBelow >= MENU_HEIGHT - anchorRect.height + MENU_GAP;
         const hasBottomAnchoredSideRoom =
           spaceAbove >= MENU_HEIGHT - anchorRect.height + MENU_GAP;
-        const hasSideVerticalRoom =
+        const hasCenteredSideRoom =
           spaceAbove >= MENU_HEIGHT / 2 && spaceBelow >= MENU_HEIGHT / 2;
+        const hasSideVerticalRoom =
+          hasTopAnchoredSideRoom ||
+          hasBottomAnchoredSideRoom ||
+          hasCenteredSideRoom;
+        const sideAnchor: MenuSideAnchor = hasCenteredSideRoom
+          ? 'middle'
+          : hasBottomAnchoredSideRoom
+            ? 'bottom'
+            : hasTopAnchoredSideRoom
+              ? 'top'
+              : spaceAbove >= spaceBelow
+                ? 'bottom'
+                : 'top';
         const canFitLeft =
-          spaceLeft >= MENU_WIDTH + MENU_GAP &&
-          (preferredSide === 'left'
-            ? hasBottomAnchoredSideRoom || hasSideVerticalRoom
-            : hasSideVerticalRoom);
+          spaceLeft >= MENU_WIDTH + MENU_GAP && hasSideVerticalRoom;
         const canFitRight =
           spaceRight >= MENU_WIDTH + MENU_GAP && hasSideVerticalRoom;
 
-        if (preferredSide === 'left' && canFitLeft) return 'left';
-        if (preferredSide === 'right' && canFitRight) return 'right';
-        if (canFitLeft) return 'left';
-        if (canFitRight) return 'right';
+        if (preferredSide === 'left' && canFitLeft) {
+          return { placement: 'left', sideAnchor };
+        }
+        if (preferredSide === 'right' && canFitRight) {
+          return { placement: 'right', sideAnchor };
+        }
+        if (canFitLeft) {
+          return { placement: 'left', sideAnchor };
+        }
+        if (canFitRight) {
+          return { placement: 'right', sideAnchor };
+        }
 
-        if (spaceBelow >= MENU_HEIGHT + MENU_GAP) return 'up';
-        if (spaceAbove >= MENU_HEIGHT + MENU_GAP) return 'down';
+        if (spaceBelow >= MENU_HEIGHT + MENU_GAP) {
+          return { placement: 'up', sideAnchor };
+        }
+        if (spaceAbove >= MENU_HEIGHT + MENU_GAP) {
+          return { placement: 'down', sideAnchor };
+        }
 
-        return spaceBelow >= spaceAbove ? 'up' : 'down';
+        return {
+          placement: spaceBelow >= spaceAbove ? 'up' : 'down',
+          sideAnchor,
+        };
       },
       [getVisibleMessagesBounds]
     );
@@ -290,14 +328,15 @@ const ChatSidebarPanel = memo(
         }
 
         const anchorRect = anchor.getBoundingClientRect();
-        const nextPlacement = getMenuPlacement(anchorRect, preferredSide);
+        const nextMenuLayout = getMenuLayout(anchorRect, preferredSide);
 
         setIsAttachModalOpen(false);
         setMenuOffsetX(0);
-        setMenuPlacement(nextPlacement);
+        setMenuPlacement(nextMenuLayout.placement);
+        setMenuSideAnchor(nextMenuLayout.sideAnchor);
         setOpenMenuMessageId(messageId);
       },
-      [closeMessageMenu, getMenuPlacement, openMenuMessageId]
+      [closeMessageMenu, getMenuLayout, openMenuMessageId]
     );
 
     const handleToggleExpand = useCallback((messageId: string) => {
@@ -364,7 +403,12 @@ const ChatSidebarPanel = memo(
       if (!openMenuMessageId) return;
 
       ensureMenuFullyVisible(openMenuMessageId);
-    }, [openMenuMessageId, menuPlacement, ensureMenuFullyVisible]);
+    }, [
+      openMenuMessageId,
+      menuPlacement,
+      menuSideAnchor,
+      ensureMenuFullyVisible,
+    ]);
 
     // Update user last seen when chat closes
     const updateUserChatClose = useCallback(async () => {
@@ -2277,6 +2321,7 @@ const ChatSidebarPanel = memo(
             composerContextualOffset={composerContextualOffset}
             openMenuMessageId={openMenuMessageId}
             menuPlacement={menuPlacement}
+            menuSideAnchor={menuSideAnchor}
             menuOffsetX={menuOffsetX}
             lastPreselectedMenuActionIndex={lastPreselectedMenuActionIndex}
             expandedMessageIds={expandedMessageIds}

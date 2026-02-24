@@ -12,6 +12,7 @@ export interface ChatSidebarPanelProps {
 }
 
 export type MenuPlacement = 'left' | 'right' | 'up' | 'down';
+export type MenuSideAnchor = 'top' | 'middle' | 'bottom';
 export type ComposerPendingFileKind = 'audio' | 'document';
 
 export type PendingComposerFile = {
