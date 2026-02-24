@@ -189,7 +189,7 @@ const MessagesPane = ({
     <>
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-x-hidden px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
+        className="flex-1 overflow-x-hidden px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{
           overflowAnchor: 'none',
           paddingBottom: messageInputHeight + 84 + composerContextualOffset,

@@ -117,6 +117,12 @@ const ComposerPanel = ({
   onClearPendingComposerFile,
   onQueueComposerImage,
 }: ComposerPanelProps) => {
+  const contextualPanelTransition = {
+    duration: composerSyncLayoutTransition.duration,
+    ease: composerSyncLayoutTransition.ease,
+    layout: composerSyncLayoutTransition,
+  } as const;
+
   return (
     <>
       <div
@@ -183,19 +189,15 @@ const ComposerPanel = ({
             transition={{ layout: composerSyncLayoutTransition }}
             className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
           >
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} mode="popLayout">
               {editingMessagePreview ? (
                 <motion.div
                   layout
                   key="editing-preview-inline"
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{
-                    duration: 0.18,
-                    ease: [0.22, 1, 0.36, 1],
-                    layout: composerSyncLayoutTransition,
-                  }}
+                  exit={{ opacity: 0, y: 2 }}
+                  transition={contextualPanelTransition}
                   className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700 transition-colors hover:border-primary/30 hover:bg-slate-100"
                   role="button"
                   tabIndex={0}
@@ -233,14 +235,10 @@ const ComposerPanel = ({
                 <motion.div
                   layout
                   key="composer-image-preview"
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{
-                    duration: 0.18,
-                    ease: [0.22, 1, 0.36, 1],
-                    layout: composerSyncLayoutTransition,
-                  }}
+                  exit={{ opacity: 0, y: 2 }}
+                  transition={contextualPanelTransition}
                   onClick={onOpenComposerImagePreview}
                   role="button"
                   tabIndex={0}
@@ -290,14 +288,10 @@ const ComposerPanel = ({
                 <motion.div
                   layout
                   key="composer-file-preview"
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{
-                    duration: 0.18,
-                    ease: [0.22, 1, 0.36, 1],
-                    layout: composerSyncLayoutTransition,
-                  }}
+                  exit={{ opacity: 0, y: 2 }}
+                  transition={contextualPanelTransition}
                   className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">

@@ -36,7 +36,6 @@ import {
   COMPOSER_GLOW_SHADOW_PEAK,
   COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
   COMPOSER_IMAGE_PREVIEW_OFFSET,
-  COMPOSER_LAYOUT_SWITCH_DELAY,
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   EDIT_TARGET_FLASH_PHASE_DURATION,
   EDIT_TARGET_FOCUS_PADDING,
@@ -147,7 +146,6 @@ const ChatSidebarPanel = memo(
     );
     const [isFlashHighlightVisible, setIsFlashHighlightVisible] =
       useState(false);
-    const composerLayoutDelayRef = useRef<NodeJS.Timeout | null>(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -2164,32 +2162,12 @@ const ChatSidebarPanel = memo(
       };
     }, []);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const nextMode = isTargetMultiline ? 'multiline' : 'inline';
-      if (nextMode === composerLayoutMode) return;
-
-      /* c8 ignore next 3 */
-      if (composerLayoutDelayRef.current) {
-        clearTimeout(composerLayoutDelayRef.current);
-        composerLayoutDelayRef.current = null;
-      }
-
-      if (nextMode === 'multiline') {
-        setComposerLayoutMode(nextMode);
-      }
-
-      composerLayoutDelayRef.current = setTimeout(() => {
-        setComposerLayoutMode(nextMode);
-        composerLayoutDelayRef.current = null;
-      }, COMPOSER_LAYOUT_SWITCH_DELAY);
-
-      return () => {
-        if (composerLayoutDelayRef.current) {
-          clearTimeout(composerLayoutDelayRef.current);
-          composerLayoutDelayRef.current = null;
-        }
-      };
-    }, [composerLayoutMode, isTargetMultiline]);
+      setComposerLayoutMode(prevMode =>
+        prevMode === nextMode ? prevMode : nextMode
+      );
+    }, [isTargetMultiline]);
 
     const sendTextMessage = useCallback(
       async (messageText: string) => {
