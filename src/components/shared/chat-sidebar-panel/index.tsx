@@ -25,6 +25,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
+import { StorageService } from '@/services/api/storage.service';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -64,6 +65,8 @@ const MESSAGE_BOTTOM_GAP = 12;
 const EDITING_COMPOSER_OFFSET = 44;
 const EDIT_TARGET_FOCUS_PADDING = 12;
 const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
+const CHAT_IMAGE_BUCKET = 'chat';
+const CHAT_IMAGE_FOLDER = 'images';
 const COMPOSER_SYNC_LAYOUT_TRANSITION = {
   type: 'tween' as const,
   ease: [0.22, 1, 0.36, 1] as const,
@@ -153,7 +156,9 @@ const ChatSidebarPanel = memo(
     const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
     const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
     const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
@@ -915,6 +920,8 @@ const ChatSidebarPanel = memo(
     }, [user, performClose]);
 
     useEffect(() => {
+      const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
+
       return () => {
         if (sendSuccessGlowTimeoutRef.current) {
           clearTimeout(sendSuccessGlowTimeoutRef.current);
@@ -925,6 +932,11 @@ const ChatSidebarPanel = memo(
           clearInterval(flashMessageIntervalRef.current);
           flashMessageIntervalRef.current = null;
         }
+
+        pendingImagePreviewUrls.forEach(previewUrl => {
+          URL.revokeObjectURL(previewUrl);
+        });
+        pendingImagePreviewUrls.clear();
       };
     }, []);
 
@@ -1012,6 +1024,144 @@ const ChatSidebarPanel = memo(
       closeMessageMenu();
       setIsAttachModalOpen(true);
     }, [isAttachModalOpen, closeAttachModal, closeMessageMenu]);
+
+    const buildChatImagePath = useCallback(
+      (channelId: string, senderId: string, file: File) => {
+        const extensionFromName = file.name.split('.').pop()?.toLowerCase();
+        const extensionFromType = file.type.split('/')[1]?.toLowerCase();
+        const rawExtension = extensionFromName || extensionFromType || 'jpg';
+        const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'jpg';
+        const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+        return `${CHAT_IMAGE_FOLDER}/${safeChannelId}/${senderId}_${Date.now()}.${safeExtension}`;
+      },
+      []
+    );
+
+    const handleSendImageMessage = useCallback(
+      async (file: File) => {
+        if (!user || !targetUser || !currentChannelId) return;
+
+        if (!file.type.startsWith('image/')) {
+          toast.error('File harus berupa gambar', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        if (editingMessageId) {
+          toast.error('Selesaikan edit pesan terlebih dahulu', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return;
+        }
+
+        const tempId = `temp_image_${Date.now()}`;
+        const stableKey = `${user.id}-${Date.now()}-image`;
+        const localPreviewUrl = URL.createObjectURL(file);
+        pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
+
+        const optimisticMessage: ChatMessage = {
+          id: tempId,
+          sender_id: user.id,
+          receiver_id: targetUser.id,
+          channel_id: currentChannelId,
+          message: localPreviewUrl,
+          message_type: 'image',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_read: false,
+          reply_to_id: null,
+          sender_name: user.name || 'You',
+          receiver_name: targetUser.name || 'Unknown',
+          stableKey,
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+        setIsAtBottom(true);
+        setHasNewMessages(false);
+        triggerSendSuccessGlow();
+
+        try {
+          const imagePath = buildChatImagePath(currentChannelId, user.id, file);
+          const { publicUrl } = await StorageService.uploadFile(
+            CHAT_IMAGE_BUCKET,
+            file,
+            imagePath
+          );
+
+          const { data: newMessage, error } = await chatService.insertMessage({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: publicUrl,
+            message_type: 'image',
+          });
+
+          if (error || !newMessage) {
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            toast.error('Gagal mengirim gambar', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+            return;
+          }
+
+          const realMessage: ChatMessage = {
+            ...newMessage,
+            sender_name: user.name || 'You',
+            receiver_name: targetUser.name || 'Unknown',
+            stableKey,
+          };
+
+          setMessages(prev =>
+            prev.map(msg => (msg.id === tempId ? realMessage : msg))
+          );
+
+          if (channelRef.current) {
+            channelRef.current.send({
+              type: 'broadcast',
+              event: 'new_message',
+              payload: realMessage,
+            });
+          }
+        } catch (error) {
+          console.error('Error sending image message:', error);
+          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          toast.error('Gagal mengirim gambar', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        } finally {
+          const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
+          if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            pendingImagePreviewUrlsRef.current.delete(tempId);
+          }
+        }
+      },
+      [
+        user,
+        targetUser,
+        currentChannelId,
+        editingMessageId,
+        triggerSendSuccessGlow,
+        buildChatImagePath,
+      ]
+    );
+
+    const handleAttachImageClick = useCallback(() => {
+      closeAttachModal();
+      imageInputRef.current?.click();
+    }, [closeAttachModal]);
+
+    const handleImageFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0];
+        event.target.value = '';
+        if (!selectedFile) return;
+        void handleSendImageMessage(selectedFile);
+      },
+      [handleSendImageMessage]
+    );
 
     useEffect(() => {
       if (!isAttachModalOpen) return;
@@ -1725,6 +1875,7 @@ const ChatSidebarPanel = memo(
                 const isFlashSequenceTarget = flashingMessageId === msg.id;
                 const isFlashingTarget =
                   isFlashSequenceTarget && isFlashHighlightVisible;
+                const isImageMessage = msg.message_type === 'image';
                 const bubbleToneClass = isFlashingTarget
                   ? 'bg-primary text-white'
                   : isCurrentUser
@@ -1766,13 +1917,15 @@ const ChatSidebarPanel = memo(
 
                 const isExpanded = expandedMessageIds.has(msg.id);
                 const isMessageLong =
-                  !isExpanded && msg.message.length > MAX_MESSAGE_CHARS;
+                  !isImageMessage &&
+                  !isExpanded &&
+                  msg.message.length > MAX_MESSAGE_CHARS;
                 const displayMessage = isMessageLong
                   ? msg.message.slice(0, MAX_MESSAGE_CHARS).trimEnd()
                   : msg.message;
                 const menuActions: PopupMenuAction[] = [
                   {
-                    label: 'Salin',
+                    label: isImageMessage ? 'Salin link gambar' : 'Salin',
                     icon: <TbCopy className="h-4 w-4" />,
                     onClick: () => {
                       void handleCopyMessage(msg);
@@ -1780,7 +1933,7 @@ const ChatSidebarPanel = memo(
                   },
                 ];
 
-                if (isCurrentUser) {
+                if (isCurrentUser && !isImageMessage) {
                   menuActions.push(
                     {
                       label: 'Edit',
@@ -1908,63 +2061,75 @@ const ChatSidebarPanel = memo(
                             }
                           }}
                         >
-                          {displayMessage}
-                          {isMessageLong ? (
+                          {isImageMessage ? (
+                            <img
+                              src={msg.message}
+                              alt="Chat attachment"
+                              className="max-h-72 w-auto max-w-full rounded-lg object-cover"
+                              loading="lazy"
+                              draggable={false}
+                            />
+                          ) : (
                             <>
-                              <span>... </span>
-                              <span
-                                className={`font-medium ${
-                                  isFlashingTarget
-                                    ? 'text-white/95'
-                                    : 'text-primary'
-                                }`}
-                                role="button"
-                                tabIndex={0}
-                                onClick={event => {
-                                  event.stopPropagation();
-                                  handleToggleExpand(msg.id);
-                                }}
-                                onKeyDown={event => {
-                                  if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                  ) {
-                                    event.preventDefault();
+                              {displayMessage}
+                              {isMessageLong ? (
+                                <>
+                                  <span>... </span>
+                                  <span
+                                    className={`font-medium ${
+                                      isFlashingTarget
+                                        ? 'text-white/95'
+                                        : 'text-primary'
+                                    }`}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={event => {
+                                      event.stopPropagation();
+                                      handleToggleExpand(msg.id);
+                                    }}
+                                    onKeyDown={event => {
+                                      if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                      ) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleToggleExpand(msg.id);
+                                      }
+                                    }}
+                                  >
+                                    Read more
+                                  </span>
+                                </>
+                              ) : isExpanded ? (
+                                <span
+                                  className={`block font-medium ${
+                                    isFlashingTarget
+                                      ? 'text-white/95'
+                                      : 'text-primary'
+                                  }`}
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={event => {
                                     event.stopPropagation();
                                     handleToggleExpand(msg.id);
-                                  }
-                                }}
-                              >
-                                Read more
-                              </span>
+                                  }}
+                                  onKeyDown={event => {
+                                    if (
+                                      event.key === 'Enter' ||
+                                      event.key === ' '
+                                    ) {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      handleToggleExpand(msg.id);
+                                    }
+                                  }}
+                                >
+                                  Read less
+                                </span>
+                              ) : null}
                             </>
-                          ) : isExpanded ? (
-                            <span
-                              className={`block font-medium ${
-                                isFlashingTarget
-                                  ? 'text-white/95'
-                                  : 'text-primary'
-                              }`}
-                              role="button"
-                              tabIndex={0}
-                              onClick={event => {
-                                event.stopPropagation();
-                                handleToggleExpand(msg.id);
-                              }}
-                              onKeyDown={event => {
-                                if (
-                                  event.key === 'Enter' ||
-                                  event.key === ' '
-                                ) {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  handleToggleExpand(msg.id);
-                                }
-                              }}
-                            >
-                              Read less
-                            </span>
-                          ) : null}
+                          )}
                         </div>
 
                         <AnimatePresence>
@@ -2324,6 +2489,13 @@ const ChatSidebarPanel = memo(
                   >
                     <TbArrowUp size={20} className="text-white" />
                   </motion.button>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageFileChange}
+                  />
                 </motion.div>
 
                 <AnimatePresence>
@@ -2340,7 +2512,7 @@ const ChatSidebarPanel = memo(
                     >
                       <button
                         type="button"
-                        onClick={closeAttachModal}
+                        onClick={handleAttachImageClick}
                         className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                       >
                         <TbPhoto className="h-4 w-4 text-slate-500" />
