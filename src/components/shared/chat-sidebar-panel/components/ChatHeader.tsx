@@ -1,5 +1,5 @@
 import type { UserPresence } from '@/services/api/chat.service';
-import { TbLayoutSidebarRightCollapse } from 'react-icons/tb';
+import { TbDotsVertical, TbLayoutSidebarRightCollapse } from 'react-icons/tb';
 import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface ChatHeaderProps {
@@ -93,14 +93,24 @@ const ChatHeader = ({
             })()}
           </div>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Collapse chat sidebar"
-          title="Collapse chat sidebar"
-          className="shrink-0 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <TbLayoutSidebarRightCollapse size={24} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Chat options"
+            title="Chat options"
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+          >
+            <TbDotsVertical size={20} />
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="Collapse chat sidebar"
+            title="Collapse chat sidebar"
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+          >
+            <TbLayoutSidebarRightCollapse size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );

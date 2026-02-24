@@ -232,6 +232,12 @@ const ChatSidebarPanel = memo(
       [getVisibleMessagesBounds]
     );
 
+    const scheduleScrollMessagesToBottom = useCallback(() => {
+      requestAnimationFrame(() => {
+        scrollMessagesToBottom('auto');
+      });
+    }, [scrollMessagesToBottom]);
+
     const getMenuPlacement = useCallback(
       (anchorRect: DOMRect, preferredSide: 'left' | 'right'): MenuPlacement => {
         const bounds = getVisibleMessagesBounds();
@@ -1162,6 +1168,7 @@ const ChatSidebarPanel = memo(
         setIsAtBottom(true);
         setHasNewMessages(false);
         triggerSendSuccessGlow();
+        scheduleScrollMessagesToBottom();
 
         try {
           const imagePath = buildChatImagePath(currentChannelId, user.id, file);
@@ -1228,6 +1235,7 @@ const ChatSidebarPanel = memo(
         currentChannelId,
         editingMessageId,
         triggerSendSuccessGlow,
+        scheduleScrollMessagesToBottom,
       ]
     );
 
@@ -1277,6 +1285,7 @@ const ChatSidebarPanel = memo(
         setIsAtBottom(true);
         setHasNewMessages(false);
         triggerSendSuccessGlow();
+        scheduleScrollMessagesToBottom();
 
         try {
           const filePath = buildChatFilePath(
@@ -1362,6 +1371,7 @@ const ChatSidebarPanel = memo(
         currentChannelId,
         editingMessageId,
         triggerSendSuccessGlow,
+        scheduleScrollMessagesToBottom,
       ]
     );
 
@@ -1666,14 +1676,9 @@ const ChatSidebarPanel = memo(
         return;
 
       if (messages.length > 0) {
-        // Check current scroll position before new message
-        const wasAtBottom = checkIfAtBottom();
-
-        if (wasAtBottom) {
+        if (isAtBottom) {
           // User was at bottom, auto-scroll and don't show arrow
-          setTimeout(() => {
-            scrollMessagesToBottom('auto');
-          }, 10);
+          scheduleScrollMessagesToBottom();
           setHasNewMessages(false);
         } else {
           // User was not at bottom, show arrow
@@ -1681,7 +1686,7 @@ const ChatSidebarPanel = memo(
           setHasNewMessages(true);
         }
       }
-    }, [messages, checkIfAtBottom, scrollMessagesToBottom]);
+    }, [messages, isAtBottom, scheduleScrollMessagesToBottom]);
 
     useLayoutEffect(() => {
       if (!isOpen || !shouldPinToBottomOnOpenRef.current) return;
@@ -2083,6 +2088,7 @@ const ChatSidebarPanel = memo(
         setIsAtBottom(true);
         setHasNewMessages(false);
         triggerSendSuccessGlow();
+        scheduleScrollMessagesToBottom();
 
         try {
           // Insert message into database (simplified query)
@@ -2139,7 +2145,13 @@ const ChatSidebarPanel = memo(
           return false;
         }
       },
-      [user, targetUser, currentChannelId, triggerSendSuccessGlow]
+      [
+        user,
+        targetUser,
+        currentChannelId,
+        triggerSendSuccessGlow,
+        scheduleScrollMessagesToBottom,
+      ]
     );
 
     const handleSendMessage = async () => {
