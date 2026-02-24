@@ -3,7 +3,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 
 interface PopupMenuPopoverProps extends Pick<
   MotionProps,
-  'initial' | 'animate' | 'exit' | 'transition'
+  'initial' | 'animate' | 'exit' | 'transition' | 'layout' | 'layoutId'
 > {
   isOpen: boolean;
   children: ReactNode;
@@ -40,6 +40,8 @@ const PopupMenuPopover = ({
   animate = DEFAULT_ANIMATE,
   exit = DEFAULT_EXIT,
   transition = DEFAULT_TRANSITION,
+  layout,
+  layoutId,
 }: PopupMenuPopoverProps) => {
   return (
     <AnimatePresence initial={presenceInitial}>
@@ -50,6 +52,8 @@ const PopupMenuPopover = ({
           animate={animate}
           exit={exit}
           transition={transition}
+          layout={layout}
+          layoutId={layoutId}
           className={className}
           style={style}
           onClick={onClick}
