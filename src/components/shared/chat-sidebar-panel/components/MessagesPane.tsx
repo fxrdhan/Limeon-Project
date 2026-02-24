@@ -9,7 +9,15 @@ import {
   TbCircleArrowDownFilled,
   TbCopy,
   TbDownload,
-  TbFileDescription,
+  TbFileTypeCsv,
+  TbFileTypeDoc,
+  TbFileTypeDocx,
+  TbFileTypePdf,
+  TbFileTypePpt,
+  TbFileTypeTxt,
+  TbFileTypeXls,
+  TbFileTypeZip,
+  TbFileUnknown,
   TbMusic,
   TbPencil,
   TbTrash,
@@ -30,6 +38,66 @@ interface ChatPanelUser {
   id?: string;
   name?: string;
 }
+
+const resolveFileExtension = (
+  fileName: string | null,
+  fileUrl: string,
+  mimeType?: string
+) => {
+  const rawSource = fileName || fileUrl || '';
+  const sourceWithoutQuery = rawSource.split(/[?#]/)[0];
+  const directExtension = sourceWithoutQuery
+    .split('.')
+    .pop()
+    ?.trim()
+    .toLowerCase();
+
+  if (directExtension) {
+    return directExtension;
+  }
+
+  const mimeSubtype = mimeType?.split('/')[1]?.split('+')[0]?.toLowerCase();
+  if (!mimeSubtype) return '';
+
+  if (mimeSubtype === 'pdf') return 'pdf';
+  if (mimeSubtype === 'msword') return 'doc';
+  if (mimeSubtype.includes('wordprocessingml')) return 'docx';
+  if (mimeSubtype === 'csv') return 'csv';
+  if (mimeSubtype === 'plain') return 'txt';
+  if (
+    mimeSubtype.includes('powerpoint') ||
+    mimeSubtype.includes('presentation')
+  )
+    return 'pptx';
+  if (mimeSubtype.includes('excel') || mimeSubtype.includes('spreadsheet'))
+    return 'xlsx';
+  if (mimeSubtype.includes('zip') || mimeSubtype.includes('compressed'))
+    return 'zip';
+
+  return '';
+};
+
+const formatFileSize = (sizeBytes?: number) => {
+  if (
+    typeof sizeBytes !== 'number' ||
+    !Number.isFinite(sizeBytes) ||
+    sizeBytes < 0
+  ) {
+    return 'Unknown size';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+  let value = sizeBytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  const digits = unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
+  return `${value.toFixed(digits)} ${units[unitIndex]}`;
+};
 
 interface MessagesPaneProps {
   loading: boolean;
@@ -164,32 +232,39 @@ const MessagesPane = ({
               const fileName = isFileMessage
                 ? getAttachmentFileName(msg)
                 : null;
-              const fileTypeLabel = isFileMessage
-                ? (() => {
-                    const rawSource = fileName || msg.message || '';
-                    const sourceWithoutQuery = rawSource.split(/[?#]/)[0];
-                    const extension = sourceWithoutQuery
-                      .split('.')
-                      .pop()
-                      ?.trim()
-                      .toUpperCase();
-
-                    if (extension && extension.length <= 10) {
-                      return extension;
-                    }
-
-                    const mimeSubtype = msg.file_mime_type
-                      ?.split('/')[1]
-                      ?.split('+')[0]
-                      ?.trim()
-                      .toUpperCase();
-                    if (mimeSubtype) {
-                      return mimeSubtype;
-                    }
-
-                    return fileKind === 'audio' ? 'AUDIO' : 'FILE';
-                  })()
+              const fileExtension = isFileMessage
+                ? resolveFileExtension(
+                    fileName,
+                    msg.message,
+                    msg.file_mime_type
+                  )
+                : '';
+              const fileSizeLabel = isFileMessage
+                ? formatFileSize(msg.file_size)
                 : null;
+              const fileIcon = isAudioFileMessage ? (
+                <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'pdf' ? (
+                <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'docx' ? (
+                <TbFileTypeDocx className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'doc' ? (
+                <TbFileTypeDoc className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'csv' ? (
+                <TbFileTypeCsv className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'ppt' || fileExtension === 'pptx' ? (
+                <TbFileTypePpt className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'txt' ? (
+                <TbFileTypeTxt className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'zip' ? (
+                <TbFileTypeZip className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'xls' ||
+                fileExtension === 'xlsx' ||
+                fileExtension === 'x' ? (
+                <TbFileTypeXls className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : (
+                <TbFileUnknown className="h-8 w-8 shrink-0 text-slate-600" />
+              );
               const bubbleToneClass = isFlashingTarget
                 ? 'bg-primary text-white'
                 : isCurrentUser
@@ -425,17 +500,13 @@ const MessagesPane = ({
                           />
                         ) : isFileMessage ? (
                           <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
-                            {isAudioFileMessage ? (
-                              <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                            ) : (
-                              <TbFileDescription className="h-5 w-5 shrink-0 text-slate-600" />
-                            )}
+                            {fileIcon}
                             <div className="min-w-0 flex-1 overflow-hidden">
                               <p className="block w-full truncate text-sm font-medium text-slate-800">
                                 {fileName}
                               </p>
                               <p className="text-xs text-slate-500">
-                                {fileTypeLabel}
+                                {fileSizeLabel}
                               </p>
                             </div>
                           </div>

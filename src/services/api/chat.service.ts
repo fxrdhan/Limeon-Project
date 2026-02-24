@@ -12,6 +12,7 @@ export interface ChatMessage {
   file_name?: string;
   file_kind?: 'audio' | 'document';
   file_mime_type?: string;
+  file_size?: number;
   created_at: string;
   updated_at: string;
   is_read: boolean;
