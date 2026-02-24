@@ -79,8 +79,6 @@ const ChatSidebarPanel = memo(
     const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
       null
     );
-    const [lastPreselectedMenuActionIndex, setLastPreselectedMenuActionIndex] =
-      useState<number | null>(null);
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
     const [menuSideAnchor, setMenuSideAnchor] =
       useState<MenuSideAnchor>('middle');
@@ -2420,7 +2418,6 @@ const ChatSidebarPanel = memo(
             shouldAnimateMenuOpen={shouldAnimateMenuOpen}
             menuTransitionSourceId={menuTransitionSourceId}
             menuOffsetX={menuOffsetX}
-            lastPreselectedMenuActionIndex={lastPreselectedMenuActionIndex}
             expandedMessageIds={expandedMessageIds}
             flashingMessageId={flashingMessageId}
             isFlashHighlightVisible={isFlashHighlightVisible}
@@ -2431,9 +2428,6 @@ const ChatSidebarPanel = memo(
             messageBubbleRefs={messageBubbleRefs}
             initialMessageAnimationKeysRef={initialMessageAnimationKeysRef}
             initialOpenJumpAnimationKeysRef={initialOpenJumpAnimationKeysRef}
-            setLastPreselectedMenuActionIndex={
-              setLastPreselectedMenuActionIndex
-            }
             closeMessageMenu={closeMessageMenu}
             toggleMessageMenu={toggleMessageMenu}
             handleToggleExpand={handleToggleExpand}

@@ -1,10 +1,5 @@
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import type {
-  Dispatch,
-  MutableRefObject,
-  RefObject,
-  SetStateAction,
-} from 'react';
+import type { MutableRefObject, RefObject } from 'react';
 import {
   TbCircleArrowDownFilled,
   TbCopy,
@@ -122,7 +117,6 @@ interface MessagesPaneProps {
   shouldAnimateMenuOpen: boolean;
   menuTransitionSourceId: string | null;
   menuOffsetX: number;
-  lastPreselectedMenuActionIndex: number | null;
   expandedMessageIds: Set<string>;
   flashingMessageId: string | null;
   isFlashHighlightVisible: boolean;
@@ -133,7 +127,6 @@ interface MessagesPaneProps {
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
-  setLastPreselectedMenuActionIndex: Dispatch<SetStateAction<number | null>>;
   closeMessageMenu: () => void;
   toggleMessageMenu: (
     anchor: HTMLElement,
@@ -169,7 +162,6 @@ const MessagesPane = ({
   shouldAnimateMenuOpen,
   menuTransitionSourceId,
   menuOffsetX,
-  lastPreselectedMenuActionIndex,
   expandedMessageIds,
   flashingMessageId,
   isFlashHighlightVisible,
@@ -180,7 +172,6 @@ const MessagesPane = ({
   messageBubbleRefs,
   initialMessageAnimationKeysRef,
   initialOpenJumpAnimationKeysRef,
-  setLastPreselectedMenuActionIndex,
   closeMessageMenu,
   toggleMessageMenu,
   handleToggleExpand,
@@ -369,16 +360,6 @@ const MessagesPane = ({
                   }
                 );
               }
-              const hasValidLastPreselectedMenuActionIndex =
-                Number.isInteger(lastPreselectedMenuActionIndex) &&
-                lastPreselectedMenuActionIndex !== null &&
-                lastPreselectedMenuActionIndex >= 0 &&
-                lastPreselectedMenuActionIndex < menuActions.length &&
-                !menuActions[lastPreselectedMenuActionIndex]?.disabled;
-              const initialPreselectedMenuActionIndex =
-                hasValidLastPreselectedMenuActionIndex
-                  ? lastPreselectedMenuActionIndex
-                  : undefined;
               const sideMenuPositionClass =
                 menuSideAnchor === 'bottom'
                   ? 'bottom-0'
@@ -661,14 +642,6 @@ const MessagesPane = ({
                           minWidthClassName="min-w-[120px]"
                           enableArrowNavigation
                           autoFocusFirstItem
-                          initialPreselectedIndex={
-                            initialPreselectedMenuActionIndex
-                          }
-                          onPreselectedIndexChange={index => {
-                            setLastPreselectedMenuActionIndex(prev =>
-                              prev === index ? prev : index
-                            );
-                          }}
                         />
                       </PopupMenuPopover>
                     </div>
