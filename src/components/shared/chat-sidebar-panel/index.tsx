@@ -1282,7 +1282,8 @@ const ChatSidebarPanel = memo(
           const filePath = buildChatFilePath(
             currentChannelId,
             user.id,
-            pendingFile.file
+            pendingFile.file,
+            pendingFile.fileKind
           );
           const { publicUrl } = await StorageService.uploadRawFile(
             CHAT_IMAGE_BUCKET,

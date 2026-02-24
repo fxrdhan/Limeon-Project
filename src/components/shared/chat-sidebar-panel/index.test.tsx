@@ -462,11 +462,9 @@ describe('ChatSidebarPanel', () => {
       expect(screen.queryByText('Pesan sudah diedit')).not.toBeInTheDocument();
     });
 
-    const closeButton = screen
-      .getAllByRole('button')
-      .find(button => button.textContent === '✕');
-    expect(closeButton).toBeTruthy();
-    fireEvent.click(closeButton!);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Collapse chat sidebar' })
+    );
 
     await waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -1826,11 +1824,9 @@ describe('ChatSidebarPanel', () => {
     );
     await screen.findByText('Halo dari target');
 
-    const closeButton = screen
-      .getAllByRole('button')
-      .find(button => button.textContent === '✕');
-    expect(closeButton).toBeTruthy();
-    fireEvent.click(closeButton!);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Collapse chat sidebar' })
+    );
 
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalledWith(
@@ -1862,11 +1858,9 @@ describe('ChatSidebarPanel', () => {
     );
     await screen.findByText('Halo dari target');
 
-    const closeButton = screen
-      .getAllByRole('button')
-      .find(button => button.textContent === '✕');
-    expect(closeButton).toBeTruthy();
-    fireEvent.click(closeButton!);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Collapse chat sidebar' })
+    );
     await waitFor(() => {
       expect(errorSpy).toHaveBeenCalledWith(
         '❌ Caught error updating user chat close:',
@@ -1884,11 +1878,9 @@ describe('ChatSidebarPanel', () => {
       <ChatSidebarPanel isOpen onClose={onClose} targetUser={targetUser} />
     );
 
-    const closeButton = screen
-      .getAllByRole('button')
-      .find(button => button.textContent === '✕');
-    expect(closeButton).toBeTruthy();
-    fireEvent.click(closeButton!);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Collapse chat sidebar' })
+    );
     await waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });

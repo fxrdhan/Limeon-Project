@@ -1,6 +1,10 @@
 import type { ChatMessage } from '@/services/api/chat.service';
 import type { ComposerPendingFileKind } from '../types';
-import { CHAT_FILE_FOLDER, CHAT_IMAGE_FOLDER } from '../constants';
+import {
+  CHAT_AUDIO_FOLDER,
+  CHAT_DOCUMENT_FOLDER,
+  CHAT_IMAGE_FOLDER,
+} from '../constants';
 
 export const getAttachmentFileName = (targetMessage: ChatMessage) => {
   if (targetMessage.file_name) return targetMessage.file_name;
@@ -53,13 +57,16 @@ export const buildChatImagePath = (
 export const buildChatFilePath = (
   channelId: string,
   senderId: string,
-  file: File
+  file: File,
+  fileKind: ComposerPendingFileKind
 ) => {
   const extensionFromName = file.name.split('.').pop()?.toLowerCase();
   const extensionFromType = file.type.split('/')[1]?.toLowerCase();
   const rawExtension = extensionFromName || extensionFromType || 'bin';
   const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'bin';
   const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const baseFolder =
+    fileKind === 'audio' ? CHAT_AUDIO_FOLDER : CHAT_DOCUMENT_FOLDER;
 
-  return `${CHAT_FILE_FOLDER}/${safeChannelId}/${senderId}_${Date.now()}.${safeExtension}`;
+  return `${baseFolder}/${safeChannelId}/${senderId}_${Date.now()}.${safeExtension}`;
 };

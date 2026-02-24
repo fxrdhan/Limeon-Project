@@ -16,7 +16,8 @@ export const EDIT_TARGET_FOCUS_PADDING = 12;
 export const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
 export const CHAT_IMAGE_BUCKET = 'chat';
 export const CHAT_IMAGE_FOLDER = 'images';
-export const CHAT_FILE_FOLDER = 'files';
+export const CHAT_AUDIO_FOLDER = 'audio';
+export const CHAT_DOCUMENT_FOLDER = 'documents';
 export const COMPOSER_SYNC_LAYOUT_TRANSITION = {
   type: 'tween' as const,
   ease: [0.22, 1, 0.36, 1] as const,
