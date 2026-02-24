@@ -2743,7 +2743,7 @@ const ChatSidebarPanel = memo(
                     </motion.div>
                   ) : null}
                 </AnimatePresence>
-                <AnimatePresence initial={false}>
+                <AnimatePresence initial={false} mode="popLayout">
                   {pendingComposerImage ? (
                     <motion.div
                       layout
