@@ -43,6 +43,7 @@ interface MessagesPaneProps {
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
   shouldAnimateMenuOpen: boolean;
+  menuTransitionSourceId: string | null;
   menuOffsetX: number;
   lastPreselectedMenuActionIndex: number | null;
   expandedMessageIds: Set<string>;
@@ -88,6 +89,7 @@ const MessagesPane = ({
   menuPlacement,
   menuSideAnchor,
   shouldAnimateMenuOpen,
+  menuTransitionSourceId,
   menuOffsetX,
   lastPreselectedMenuActionIndex,
   expandedMessageIds,
@@ -146,6 +148,7 @@ const MessagesPane = ({
                 Number.isFinite(updatedTimestamp) &&
                 updatedTimestamp > createdTimestamp;
               const isMenuOpen = openMenuMessageId === msg.id;
+              const isMenuTransitionSource = menuTransitionSourceId === msg.id;
               const isFlashSequenceTarget = flashingMessageId === msg.id;
               const isFlashingTarget =
                 isFlashSequenceTarget && isFlashHighlightVisible;
@@ -311,10 +314,12 @@ const MessagesPane = ({
                       );
                     }
                   }}
-                  className={`flex w-full transition-all duration-200 ease-out ${
+                  className={`relative flex w-full transition-all duration-200 ease-out ${
                     isCurrentUser ? 'justify-end' : 'justify-start'
-                  } ${
-                    openMenuMessageId && openMenuMessageId !== msg.id
+                  } ${isMenuOpen || isMenuTransitionSource ? 'z-40' : 'z-0'} ${
+                    openMenuMessageId &&
+                    openMenuMessageId !== msg.id &&
+                    !isMenuTransitionSource
                       ? 'blur-[2px] brightness-95'
                       : ''
                   }`}
@@ -508,7 +513,7 @@ const MessagesPane = ({
                             damping: 34,
                           },
                         }}
-                        className={`absolute z-20 text-slate-900 ${sidePlacementClass}`}
+                        className={`absolute z-[70] text-slate-900 ${sidePlacementClass}`}
                         onClick={event => event.stopPropagation()}
                       >
                         {menuPlacement === 'left' ? (

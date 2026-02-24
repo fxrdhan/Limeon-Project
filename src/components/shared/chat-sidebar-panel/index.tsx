@@ -85,6 +85,9 @@ const ChatSidebarPanel = memo(
     const [menuSideAnchor, setMenuSideAnchor] =
       useState<MenuSideAnchor>('middle');
     const [shouldAnimateMenuOpen, setShouldAnimateMenuOpen] = useState(true);
+    const [menuTransitionSourceId, setMenuTransitionSourceId] = useState<
+      string | null
+    >(null);
     const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
       () => new Set()
@@ -151,6 +154,7 @@ const ChatSidebarPanel = memo(
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const composerImagePreviewCloseTimerRef = useRef<number | null>(null);
+    const menuTransitionSourceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -313,7 +317,12 @@ const ChatSidebarPanel = memo(
     );
 
     const closeMessageMenu = useCallback(() => {
+      if (menuTransitionSourceTimeoutRef.current) {
+        clearTimeout(menuTransitionSourceTimeoutRef.current);
+        menuTransitionSourceTimeoutRef.current = null;
+      }
       setOpenMenuMessageId(null);
+      setMenuTransitionSourceId(null);
       setMenuOffsetX(0);
       setShouldAnimateMenuOpen(true);
     }, []);
@@ -334,10 +343,26 @@ const ChatSidebarPanel = memo(
         const isSwitchingMenuMessage =
           openMenuMessageId !== null && openMenuMessageId !== messageId;
 
+        if (menuTransitionSourceTimeoutRef.current) {
+          clearTimeout(menuTransitionSourceTimeoutRef.current);
+          menuTransitionSourceTimeoutRef.current = null;
+        }
+
         setIsAttachModalOpen(false);
         setMenuOffsetX(0);
         setMenuPlacement(nextMenuLayout.placement);
         setMenuSideAnchor(nextMenuLayout.sideAnchor);
+
+        if (isSwitchingMenuMessage) {
+          setMenuTransitionSourceId(openMenuMessageId);
+          menuTransitionSourceTimeoutRef.current = setTimeout(() => {
+            setMenuTransitionSourceId(null);
+            menuTransitionSourceTimeoutRef.current = null;
+          }, 220);
+        } else {
+          setMenuTransitionSourceId(null);
+        }
+
         setShouldAnimateMenuOpen(!isSwitchingMenuMessage);
         setOpenMenuMessageId(messageId);
       },
@@ -958,6 +983,11 @@ const ChatSidebarPanel = memo(
       const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
 
       return () => {
+        if (menuTransitionSourceTimeoutRef.current) {
+          clearTimeout(menuTransitionSourceTimeoutRef.current);
+          menuTransitionSourceTimeoutRef.current = null;
+        }
+
         if (composerImagePreviewCloseTimerRef.current) {
           window.clearTimeout(composerImagePreviewCloseTimerRef.current);
           composerImagePreviewCloseTimerRef.current = null;
@@ -2328,6 +2358,7 @@ const ChatSidebarPanel = memo(
             menuPlacement={menuPlacement}
             menuSideAnchor={menuSideAnchor}
             shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+            menuTransitionSourceId={menuTransitionSourceId}
             menuOffsetX={menuOffsetX}
             lastPreselectedMenuActionIndex={lastPreselectedMenuActionIndex}
             expandedMessageIds={expandedMessageIds}
