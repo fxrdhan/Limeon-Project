@@ -1491,15 +1491,57 @@ const ChatSidebarPanel = memo(
     const handleCopyMessage = useCallback(
       async (targetMessage: ChatMessage) => {
         try {
+          if (targetMessage.message_type === 'image') {
+            const clipboardWithWrite = navigator.clipboard as Clipboard & {
+              write?: (items: ClipboardItem[]) => Promise<void>;
+            };
+            const canCopyBinaryImage =
+              typeof ClipboardItem !== 'undefined' &&
+              typeof clipboardWithWrite.write === 'function';
+
+            if (canCopyBinaryImage) {
+              try {
+                const response = await fetch(targetMessage.message);
+                if (!response.ok) {
+                  throw new Error('Failed to fetch image for clipboard');
+                }
+
+                const imageBlob = await response.blob();
+                const imageMimeType = imageBlob.type || 'image/png';
+                await clipboardWithWrite.write?.([
+                  new ClipboardItem({ [imageMimeType]: imageBlob }),
+                ]);
+
+                toast.success('Gambar berhasil disalin', {
+                  toasterId: CHAT_SIDEBAR_TOASTER_ID,
+                });
+                return;
+              } catch (copyImageError) {
+                console.error('Error copying image blob:', copyImageError);
+              }
+            }
+
+            await navigator.clipboard.writeText(targetMessage.message);
+            toast.success('Link gambar berhasil disalin', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+            return;
+          }
+
           await navigator.clipboard.writeText(targetMessage.message);
           toast.success('Pesan berhasil disalin', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
         } catch (error) {
           console.error('Error copying message:', error);
-          toast.error('Gagal menyalin pesan', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
+          toast.error(
+            targetMessage.message_type === 'image'
+              ? 'Gagal menyalin gambar'
+              : 'Gagal menyalin pesan',
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
+          );
         } finally {
           closeMessageMenu();
         }
@@ -1925,7 +1967,7 @@ const ChatSidebarPanel = memo(
                   : msg.message;
                 const menuActions: PopupMenuAction[] = [
                   {
-                    label: isImageMessage ? 'Salin link gambar' : 'Salin',
+                    label: isImageMessage ? 'Salin gambar' : 'Salin',
                     icon: <TbCopy className="h-4 w-4" />,
                     onClick: () => {
                       void handleCopyMessage(msg);
@@ -1933,7 +1975,16 @@ const ChatSidebarPanel = memo(
                   },
                 ];
 
-                if (isCurrentUser && !isImageMessage) {
+                if (isCurrentUser && isImageMessage) {
+                  menuActions.push({
+                    label: 'Hapus',
+                    icon: <TbTrash className="h-4 w-4" />,
+                    onClick: () => {
+                      void handleDeleteMessage(msg);
+                    },
+                    tone: 'danger',
+                  });
+                } else if (isCurrentUser) {
                   menuActions.push(
                     {
                       label: 'Edit',
