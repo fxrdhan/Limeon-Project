@@ -8,6 +8,7 @@ import type {
 import {
   TbCircleArrowDownFilled,
   TbCopy,
+  TbDownload,
   TbFileDescription,
   TbMusic,
   TbPencil,
@@ -66,6 +67,7 @@ interface MessagesPaneProps {
   handleToggleExpand: (messageId: string) => void;
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<void>;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (
@@ -108,6 +110,7 @@ const MessagesPane = ({
   handleToggleExpand,
   handleEditMessage,
   handleCopyMessage,
+  handleDownloadMessage,
   handleDeleteMessage,
   getAttachmentFileName,
   getAttachmentFileKind,
@@ -160,6 +163,32 @@ const MessagesPane = ({
               const isAudioFileMessage = isFileMessage && fileKind === 'audio';
               const fileName = isFileMessage
                 ? getAttachmentFileName(msg)
+                : null;
+              const fileTypeLabel = isFileMessage
+                ? (() => {
+                    const rawSource = fileName || msg.message || '';
+                    const sourceWithoutQuery = rawSource.split(/[?#]/)[0];
+                    const extension = sourceWithoutQuery
+                      .split('.')
+                      .pop()
+                      ?.trim()
+                      .toUpperCase();
+
+                    if (extension && extension.length <= 10) {
+                      return extension;
+                    }
+
+                    const mimeSubtype = msg.file_mime_type
+                      ?.split('/')[1]
+                      ?.split('+')[0]
+                      ?.trim()
+                      .toUpperCase();
+                    if (mimeSubtype) {
+                      return mimeSubtype;
+                    }
+
+                    return fileKind === 'audio' ? 'AUDIO' : 'FILE';
+                  })()
                 : null;
               const bubbleToneClass = isFlashingTarget
                 ? 'bg-primary text-white'
@@ -217,6 +246,16 @@ const MessagesPane = ({
                   },
                 },
               ];
+
+              if (isFileMessage) {
+                menuActions.unshift({
+                  label: 'Download',
+                  icon: <TbDownload className="h-4 w-4" />,
+                  onClick: () => {
+                    void handleDownloadMessage(msg);
+                  },
+                });
+              }
 
               if (isCurrentUser && (isImageMessage || isFileMessage)) {
                 menuActions.push({
@@ -327,11 +366,13 @@ const MessagesPane = ({
                   <div
                     className={`${
                       isCurrentUser
-                        ? 'flex flex-col items-end max-w-xs'
-                        : 'flex flex-col items-start max-w-xs'
+                        ? 'flex w-full max-w-xs flex-col items-end'
+                        : 'flex w-full max-w-xs flex-col items-start'
                     }`}
                   >
-                    <div className="relative">
+                    <div
+                      className={isFileMessage ? 'relative w-full' : 'relative'}
+                    >
                       <div
                         ref={bubbleElement => {
                           if (bubbleElement) {
@@ -343,7 +384,7 @@ const MessagesPane = ({
                             messageBubbleRefs.current.delete(msg.id);
                           }
                         }}
-                        className={`px-3 py-2 text-sm inline-block whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
+                        className={`${isFileMessage ? 'block w-full' : 'inline-block'} max-w-full px-3 py-2 text-sm whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
                           isCurrentUser
                             ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
                             : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
@@ -383,27 +424,19 @@ const MessagesPane = ({
                             draggable={false}
                           />
                         ) : isFileMessage ? (
-                          <div className="flex min-w-[220px] max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
+                          <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
                             {isAudioFileMessage ? (
                               <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
                             ) : (
                               <TbFileDescription className="h-5 w-5 shrink-0 text-slate-600" />
                             )}
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-slate-800">
+                            <div className="min-w-0 flex-1 overflow-hidden">
+                              <p className="block w-full truncate text-sm font-medium text-slate-800">
                                 {fileName}
                               </p>
-                              <a
-                                href={msg.message}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={event => event.stopPropagation()}
-                                className="text-xs text-primary underline"
-                              >
-                                {isAudioFileMessage
-                                  ? 'Buka audio'
-                                  : 'Buka dokumen'}
-                              </a>
+                              <p className="text-xs text-slate-500">
+                                {fileTypeLabel}
+                              </p>
                             </div>
                           </div>
                         ) : (
