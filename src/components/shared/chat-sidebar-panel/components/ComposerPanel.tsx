@@ -1,10 +1,23 @@
 import { AnimatePresence, motion } from 'motion/react';
-import type { RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import PopupMenuContent, {
+  type PopupMenuAction,
+} from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
   TbArrowUp,
+  TbDotsVertical,
   TbFileDescription,
   TbMusic,
   TbPencil,
+  TbPhotoEdit,
+  TbPhotoMinus,
   TbPhoto,
   TbPlus,
   TbX,
@@ -117,6 +130,67 @@ const ComposerPanel = ({
   onClearPendingComposerFile,
   onQueueComposerImage,
 }: ComposerPanelProps) => {
+  const [isImageActionsMenuOpen, setIsImageActionsMenuOpen] = useState(false);
+  const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const closeImageActionsMenu = useCallback(() => {
+    setIsImageActionsMenuOpen(false);
+  }, []);
+  const toggleImageActionsMenu = useCallback(() => {
+    setIsImageActionsMenuOpen(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    if (pendingComposerImage) return;
+    setIsImageActionsMenuOpen(false);
+  }, [pendingComposerImage]);
+
+  useEffect(() => {
+    if (!isImageActionsMenuOpen) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (imageActionsMenuRef.current?.contains(target)) return;
+      if (imageActionsButtonRef.current?.contains(target)) return;
+      closeImageActionsMenu();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeImageActionsMenu();
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeImageActionsMenu, isImageActionsMenuOpen]);
+
+  const imageActions: PopupMenuAction[] = [
+    {
+      label: 'Ganti',
+      icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
+      onClick: () => {
+        closeImageActionsMenu();
+        onAttachImageClick();
+      },
+    },
+    {
+      label: 'Hapus',
+      icon: <TbPhotoMinus className="h-4 w-4" />,
+      tone: 'danger',
+      onClick: () => {
+        closeImageActionsMenu();
+        onClearPendingComposerImage();
+      },
+    },
+  ];
+
   const contextualPanelTransition = {
     duration: composerSyncLayoutTransition.duration,
     ease: composerSyncLayoutTransition.ease,
@@ -268,17 +342,37 @@ const ComposerPanel = ({
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    aria-label="Hapus gambar"
-                    onClick={event => {
-                      event.stopPropagation();
-                      onClearPendingComposerImage();
-                    }}
-                    className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                  >
-                    <TbX className="h-4 w-4" />
-                  </button>
+                  <div className="relative shrink-0">
+                    <button
+                      ref={imageActionsButtonRef}
+                      type="button"
+                      aria-label="Aksi gambar"
+                      title="Aksi gambar"
+                      aria-haspopup="menu"
+                      aria-expanded={isImageActionsMenuOpen}
+                      onClick={event => {
+                        event.stopPropagation();
+                        toggleImageActionsMenu();
+                      }}
+                      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                    >
+                      <TbDotsVertical className="h-4 w-4" />
+                    </button>
+                    <PopupMenuPopover
+                      isOpen={isImageActionsMenuOpen}
+                      className="absolute right-0 top-full z-30 mt-1 origin-top-right"
+                    >
+                      <div
+                        ref={imageActionsMenuRef}
+                        onClick={event => event.stopPropagation()}
+                      >
+                        <PopupMenuContent
+                          actions={imageActions}
+                          minWidthClassName="min-w-[132px]"
+                        />
+                      </div>
+                    </PopupMenuPopover>
+                  </div>
                 </motion.div>
               ) : null}
             </AnimatePresence>

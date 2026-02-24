@@ -178,7 +178,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
       options.push({
         label: 'Edit',
-        icon: <TbPhotoEdit className="w-4 h-4" />,
+        icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
         action: handleUploadClick,
         disabled: isUploading || isDeleting,
       });

@@ -381,7 +381,7 @@ const Profile = () => {
                               }}
                               disabled={isUploading}
                               defaultIcon={
-                                <TbPhotoEdit className="text-white text-sm" />
+                                <TbPhotoEdit className="text-white h-4.5 w-4.5" />
                               }
                             >
                               <ProfileImage
