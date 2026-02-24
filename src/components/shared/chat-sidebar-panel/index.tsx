@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   memo,
   useCallback,
@@ -9,24 +9,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  TbCircleArrowDownFilled,
-  TbArrowUp,
-  TbCopy,
-  TbFileDescription,
-  TbMusic,
-  TbPencil,
-  TbPhoto,
-  TbPlus,
-  TbTrash,
-  TbX,
-} from 'react-icons/tb';
 import toast, { Toaster } from 'react-hot-toast';
-import PopupMenuContent, {
-  type PopupMenuAction,
-} from '@/components/image-manager/PopupMenuContent';
-import ImageUploader from '@/components/image-manager';
-import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import ChatHeader from './components/ChatHeader';
+import ComposerPanel from './components/ComposerPanel';
+import MessagesPane from './components/MessagesPane';
 import { StorageService } from '@/services/api/storage.service';
 import {
   cacheImageBlob,
@@ -39,69 +25,48 @@ import {
   type UserPresence,
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
-
-interface ChatSidebarPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  targetUser?: {
-    id: string;
-    name: string;
-    email: string;
-    profilephoto?: string | null;
-  };
-}
-
-type MenuPlacement = 'left' | 'right' | 'up' | 'down';
-type ComposerPendingFileKind = 'audio' | 'document';
-type PendingComposerFile = {
-  file: File;
-  fileName: string;
-  fileTypeLabel: string;
-  fileKind: ComposerPendingFileKind;
-  mimeType: string;
-};
-
-const MENU_GAP = 8;
-const MENU_WIDTH = 140;
-const MENU_HEIGHT = 128;
-const MAX_MESSAGE_CHARS = 220;
-const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
-const MESSAGE_INPUT_MIN_HEIGHT = 22;
-const MESSAGE_INPUT_MAX_HEIGHT = 170;
-const COMPOSER_LAYOUT_SWITCH_DELAY = 55;
-const SEND_SUCCESS_GLOW_DURATION = 700;
-const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
-const MESSAGE_BOTTOM_GAP = 12;
-const EDITING_COMPOSER_OFFSET = 44;
-const COMPOSER_IMAGE_PREVIEW_OFFSET = 68;
-const COMPOSER_IMAGE_PREVIEW_EXIT_DURATION = 150;
-const EDIT_TARGET_FOCUS_PADDING = 12;
-const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
-const CHAT_IMAGE_BUCKET = 'chat';
-const CHAT_IMAGE_FOLDER = 'images';
-const CHAT_FILE_FOLDER = 'files';
-const COMPOSER_SYNC_LAYOUT_TRANSITION = {
-  type: 'tween' as const,
-  ease: [0.22, 1, 0.36, 1] as const,
-  duration: 0.22,
-};
-const COMPOSER_BASE_BORDER_COLOR = 'rgba(226, 232, 240, 0.65)';
-const COMPOSER_BASE_SHADOW = '0 2px 8px rgba(15, 23, 42, 0.08)';
-const COMPOSER_GLOW_SHADOW_PEAK =
-  '0 0 18px oklch(50.8% 0.118 165.612 / 0.32),0 0 30px oklch(50.8% 0.118 165.612 / 0.18),0 2px 8px rgba(15, 23, 42, 0.08)';
-const COMPOSER_GLOW_SHADOW_HIGH =
-  '0 0 16px oklch(50.8% 0.118 165.612 / 0.28),0 0 27px oklch(50.8% 0.118 165.612 / 0.16),0 2px 8px rgba(15, 23, 42, 0.08)';
-const COMPOSER_GLOW_SHADOW_MID =
-  '0 0 14px oklch(50.8% 0.118 165.612 / 0.24),0 0 24px oklch(50.8% 0.118 165.612 / 0.14),0 2px 8px rgba(15, 23, 42, 0.08)';
-const COMPOSER_GLOW_SHADOW_FADE =
-  '0 0 11px oklch(50.8% 0.118 165.612 / 0.18),0 0 19px oklch(50.8% 0.118 165.612 / 0.11),0 2px 8px rgba(15, 23, 42, 0.08)';
-const COMPOSER_GLOW_SHADOW_LOW =
-  '0 0 8px oklch(50.8% 0.118 165.612 / 0.12),0 0 14px oklch(50.8% 0.118 165.612 / 0.08),0 2px 8px rgba(15, 23, 42, 0.08)';
-// Generate channel ID for direct messages
-const generateChannelId = (userId1: string, userId2: string): string => {
-  const sortedIds = [userId1, userId2].sort();
-  return `dm_${sortedIds[0]}_${sortedIds[1]}`;
-};
+import {
+  CHAT_SIDEBAR_TOASTER_ID,
+  COMPOSER_BASE_BORDER_COLOR,
+  COMPOSER_BASE_SHADOW,
+  COMPOSER_GLOW_SHADOW_FADE,
+  COMPOSER_GLOW_SHADOW_HIGH,
+  COMPOSER_GLOW_SHADOW_LOW,
+  COMPOSER_GLOW_SHADOW_MID,
+  COMPOSER_GLOW_SHADOW_PEAK,
+  COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
+  COMPOSER_IMAGE_PREVIEW_OFFSET,
+  COMPOSER_LAYOUT_SWITCH_DELAY,
+  COMPOSER_SYNC_LAYOUT_TRANSITION,
+  EDIT_TARGET_FLASH_PHASE_DURATION,
+  EDIT_TARGET_FOCUS_PADDING,
+  EDITING_COMPOSER_OFFSET,
+  MAX_MESSAGE_CHARS,
+  MENU_GAP,
+  MENU_HEIGHT,
+  MENU_WIDTH,
+  MESSAGE_BOTTOM_GAP,
+  MESSAGE_INPUT_MAX_HEIGHT,
+  MESSAGE_INPUT_MIN_HEIGHT,
+  SEND_SUCCESS_GLOW_DURATION,
+  SEND_SUCCESS_GLOW_RESET_BUFFER,
+  CHAT_IMAGE_BUCKET,
+} from './constants';
+import type {
+  ChatSidebarPanelProps,
+  ComposerPendingFileKind,
+  MenuPlacement,
+  PendingComposerFile,
+} from './types';
+import {
+  buildChatFilePath,
+  buildChatImagePath,
+  getAttachmentFileKind,
+  getAttachmentFileName,
+} from './utils/attachment';
+import { getInitials, getInitialsColor } from './utils/avatar';
+import { getClipboardImagePayload } from './utils/clipboard';
+import { generateChannelId } from './utils/channel';
 
 const ChatSidebarPanel = memo(
   ({ isOpen, onClose, targetUser }: ChatSidebarPanelProps) => {
@@ -394,26 +359,6 @@ const ChatSidebarPanel = memo(
 
       ensureMenuFullyVisible(openMenuMessageId);
     }, [openMenuMessageId, menuPlacement, ensureMenuFullyVisible]);
-
-    // Helper function to format last seen time
-    const formatLastSeen = (lastSeen: string): string => {
-      const now = new Date();
-      const lastSeenDate = new Date(lastSeen);
-      const diffInMinutes = Math.floor(
-        (now.getTime() - lastSeenDate.getTime()) / (1000 * 60)
-      );
-
-      if (diffInMinutes < 1) return 'Just now';
-      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-
-      const diffInHours = Math.floor(diffInMinutes / 60);
-      if (diffInHours < 24) return `${diffInHours}h ago`;
-
-      const diffInDays = Math.floor(diffInHours / 24);
-      if (diffInDays < 7) return `${diffInDays}d ago`;
-
-      return lastSeenDate.toLocaleDateString();
-    };
 
     // Update user last seen when chat closes
     const updateUserChatClose = useCallback(async () => {
@@ -1174,32 +1119,6 @@ const ChatSidebarPanel = memo(
       setIsAttachModalOpen(true);
     }, [isAttachModalOpen, closeAttachModal, closeMessageMenu]);
 
-    const buildChatImagePath = useCallback(
-      (channelId: string, senderId: string, file: File) => {
-        const extensionFromName = file.name.split('.').pop()?.toLowerCase();
-        const extensionFromType = file.type.split('/')[1]?.toLowerCase();
-        const rawExtension = extensionFromName || extensionFromType || 'jpg';
-        const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'jpg';
-        const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
-
-        return `${CHAT_IMAGE_FOLDER}/${safeChannelId}/${senderId}_${Date.now()}.${safeExtension}`;
-      },
-      []
-    );
-
-    const buildChatFilePath = useCallback(
-      (channelId: string, senderId: string, file: File) => {
-        const extensionFromName = file.name.split('.').pop()?.toLowerCase();
-        const extensionFromType = file.type.split('/')[1]?.toLowerCase();
-        const rawExtension = extensionFromName || extensionFromType || 'bin';
-        const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'bin';
-        const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
-
-        return `${CHAT_FILE_FOLDER}/${safeChannelId}/${senderId}_${Date.now()}.${safeExtension}`;
-      },
-      []
-    );
-
     const handleSendImageMessage = useCallback(
       async (file: File) => {
         if (!user || !targetUser || !currentChannelId) return false;
@@ -1309,7 +1228,6 @@ const ChatSidebarPanel = memo(
         currentChannelId,
         editingMessageId,
         triggerSendSuccessGlow,
-        buildChatImagePath,
       ]
     );
 
@@ -1443,7 +1361,6 @@ const ChatSidebarPanel = memo(
         currentChannelId,
         editingMessageId,
         triggerSendSuccessGlow,
-        buildChatFilePath,
       ]
     );
 
@@ -1835,68 +1752,6 @@ const ChatSidebarPanel = memo(
       };
     }, [isOpen, focusMessageComposer]);
 
-    // Helper functions for avatar display
-    const getInitials = (name: string) => {
-      return name
-        .split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    };
-
-    const getInitialsColor = (userId: string) => {
-      const colors = [
-        'bg-blue-500',
-        'bg-green-500',
-        'bg-purple-500',
-        'bg-pink-500',
-        'bg-indigo-500',
-        'bg-yellow-500',
-        'bg-red-500',
-        'bg-slate-500',
-      ];
-
-      const index = userId
-        .split('')
-        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      return colors[index % colors.length];
-    };
-
-    const getAttachmentFileName = (targetMessage: ChatMessage) => {
-      if (targetMessage.file_name) return targetMessage.file_name;
-
-      try {
-        const normalizedUrl = targetMessage.message.split(/[?#]/)[0];
-        const rawName = normalizedUrl.split('/').pop();
-        if (!rawName) return 'Lampiran';
-        const decodedName = decodeURIComponent(rawName);
-        return decodedName || 'Lampiran';
-      } catch {
-        return 'Lampiran';
-      }
-    };
-
-    const getAttachmentFileKind = (
-      targetMessage: ChatMessage
-    ): ComposerPendingFileKind => {
-      if (targetMessage.file_kind) return targetMessage.file_kind;
-
-      const detectionSource = [
-        targetMessage.file_mime_type || '',
-        targetMessage.file_name || '',
-        targetMessage.message || '',
-      ]
-        .join(' ')
-        .toLowerCase();
-      const isAudio =
-        /(audio\/|\.mp3\b|\.wav\b|\.ogg\b|\.m4a\b|\.aac\b|\.flac\b)/.test(
-          detectionSource
-        );
-
-      return isAudio ? 'audio' : 'document';
-    };
-
     // Scroll to bottom function
     /* c8 ignore next 5 */
     const scrollToBottom = () => {
@@ -2022,81 +1877,6 @@ const ChatSidebarPanel = memo(
       requestAnimationFrame(focusMessageComposer);
     }, [closeMessageMenu, focusMessageComposer]);
 
-    const convertImageBlobToPng = useCallback(async (imageBlob: Blob) => {
-      const objectUrl = URL.createObjectURL(imageBlob);
-
-      try {
-        const imageElement = await new Promise<HTMLImageElement>(
-          (resolve, reject) => {
-            const nextImageElement = new Image();
-            nextImageElement.onload = () => resolve(nextImageElement);
-            nextImageElement.onerror = () =>
-              reject(new Error('Failed to decode image'));
-            nextImageElement.src = objectUrl;
-          }
-        );
-
-        const canvas = document.createElement('canvas');
-        canvas.width = imageElement.naturalWidth || imageElement.width;
-        canvas.height = imageElement.naturalHeight || imageElement.height;
-
-        const context = canvas.getContext('2d');
-        if (!context) {
-          throw new Error('Canvas 2D context unavailable');
-        }
-
-        context.drawImage(imageElement, 0, 0);
-
-        const pngBlob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob(result => {
-            if (result) {
-              resolve(result);
-            } else {
-              reject(new Error('Failed to convert image to PNG'));
-            }
-          }, 'image/png');
-        });
-
-        return pngBlob;
-      } finally {
-        URL.revokeObjectURL(objectUrl);
-      }
-    }, []);
-
-    const getClipboardImagePayload = useCallback(
-      async (imageBlob: Blob) => {
-        const clipboardItemWithSupports =
-          ClipboardItem as typeof ClipboardItem & {
-            supports?: (type: string) => boolean;
-          };
-        const supportsMimeType = (mimeType: string) =>
-          typeof clipboardItemWithSupports.supports === 'function'
-            ? clipboardItemWithSupports.supports(mimeType)
-            : mimeType === 'image/png';
-
-        const sourceMimeType = imageBlob.type || 'image/png';
-        if (supportsMimeType(sourceMimeType)) {
-          return {
-            blob: imageBlob,
-            mimeType: sourceMimeType,
-          };
-        }
-
-        const pngBlob = await convertImageBlobToPng(imageBlob);
-        if (!supportsMimeType('image/png')) {
-          throw new Error(
-            `Unsupported clipboard image type: ${sourceMimeType}`
-          );
-        }
-
-        return {
-          blob: pngBlob,
-          mimeType: 'image/png',
-        };
-      },
-      [convertImageBlobToPng]
-    );
-
     const handleCopyMessage = useCallback(
       async (targetMessage: ChatMessage) => {
         try {
@@ -2152,7 +1932,7 @@ const ChatSidebarPanel = memo(
           closeMessageMenu();
         }
       },
-      [closeMessageMenu, getClipboardImagePayload]
+      [closeMessageMenu]
     );
 
     const resizeMessageInput = useCallback(
@@ -2463,993 +2243,104 @@ const ChatSidebarPanel = memo(
 
         {/* Chat Content */}
         <div className="relative h-full flex flex-col">
-          {/* Chat Header */}
-          <div className="px-4 py-3.5 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
-                  {displayTargetPhotoUrl ? (
-                    <img
-                      src={displayTargetPhotoUrl}
-                      alt={targetUser?.name || 'User'}
-                      className="w-full h-full object-cover"
-                      draggable={false}
-                    />
-                  ) : (
-                    <div
-                      className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
-                    >
-                      {getInitials(targetUser?.name || 'User')}
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-medium text-slate-900 truncate">
-                    {targetUser ? targetUser.name : 'Chat'}
-                  </h3>
-                  {(() => {
-                    const shouldShowOnline =
-                      targetUserPresence &&
-                      targetUserPresence.is_online &&
-                      targetUserPresence.current_chat_channel ===
-                        currentChannelId;
-
-                    if (shouldShowOnline) {
-                      return (
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="text-xs text-green-600 font-medium">
-                            Online
-                          </span>
-                        </div>
-                      );
-                    } else if (
-                      targetUserPresence &&
-                      targetUserPresence.last_seen
-                    ) {
-                      return (
-                        <span className="text-xs text-slate-400">
-                          Last seen{' '}
-                          {formatLastSeen(targetUserPresence.last_seen)}
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              </div>
-              <button
-                onClick={handleClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* Messages Area */}
-          <div
-            ref={messagesContainerRef}
-            className="flex-1 overflow-x-hidden px-3 pt-3 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[110ms] ease-out"
-            style={{
-              overflowAnchor: 'none',
-              paddingBottom: messageInputHeight + 84 + composerContextualOffset,
-            }}
-            onClick={closeMessageMenu}
-          >
-            {loading && messages.length === 0 ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="text-slate-400 text-sm">
-                  Loading messages...
-                </div>
-              </div>
-            ) : (
-              messages.map(msg => {
-                const isCurrentUser = msg.sender_id === user?.id;
-                const displayTime = new Date(msg.created_at).toLocaleTimeString(
-                  [],
-                  {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }
-                );
-                const createdTimestamp = new Date(msg.created_at).getTime();
-                const updatedTimestamp = new Date(msg.updated_at).getTime();
-                const isEdited =
-                  Number.isFinite(createdTimestamp) &&
-                  Number.isFinite(updatedTimestamp) &&
-                  updatedTimestamp > createdTimestamp;
-                const isMenuOpen = openMenuMessageId === msg.id;
-                const isFlashSequenceTarget = flashingMessageId === msg.id;
-                const isFlashingTarget =
-                  isFlashSequenceTarget && isFlashHighlightVisible;
-                const isImageMessage = msg.message_type === 'image';
-                const isFileMessage = msg.message_type === 'file';
-                const fileKind = isFileMessage
-                  ? getAttachmentFileKind(msg)
-                  : 'document';
-                const isAudioFileMessage =
-                  isFileMessage && fileKind === 'audio';
-                const fileName = isFileMessage
-                  ? getAttachmentFileName(msg)
-                  : null;
-                const bubbleToneClass = isFlashingTarget
-                  ? 'bg-primary text-white'
-                  : isCurrentUser
-                    ? 'bg-emerald-200 text-slate-900'
-                    : 'bg-slate-100 text-slate-800';
-                const bubbleOpacityClass = isFlashSequenceTarget
-                  ? isFlashHighlightVisible
-                    ? 'opacity-100'
-                    : 'opacity-60'
-                  : 'opacity-100';
-
-                // Use stableKey from message if available, otherwise fall back to ID
-                const animationKey = msg.stableKey || msg.id;
-                const shouldAnimateEnter =
-                  !initialMessageAnimationKeysRef.current.has(animationKey);
-                const shouldAnimateOpenJump =
-                  !shouldAnimateEnter &&
-                  initialOpenJumpAnimationKeysRef.current.has(animationKey);
-                const targetAnimation = shouldAnimateOpenJump
-                  ? {
-                      opacity: 1,
-                      scale: [1, 1.04, 1],
-                      x: 0,
-                      y: [0, -8, 0],
-                    }
-                  : { opacity: 1, scale: 1, x: 0, y: 0 };
-                const animationTransition = shouldAnimateOpenJump
-                  ? {
-                      duration: 0.36,
-                      ease: [0.22, 1, 0.36, 1] as const,
-                    }
-                  : {
-                      duration: 0.3,
-                      ease: [0.23, 1, 0.32, 1] as const,
-                      type: 'spring' as const,
-                      stiffness: 300,
-                      damping: 24,
-                    };
-
-                const isExpanded = expandedMessageIds.has(msg.id);
-                const isMessageLong =
-                  !isImageMessage &&
-                  !isFileMessage &&
-                  !isExpanded &&
-                  msg.message.length > MAX_MESSAGE_CHARS;
-                const displayMessage = isMessageLong
-                  ? msg.message.slice(0, MAX_MESSAGE_CHARS).trimEnd()
-                  : msg.message;
-                const menuActions: PopupMenuAction[] = [
-                  {
-                    label: 'Salin',
-                    icon: <TbCopy className="h-4 w-4" />,
-                    onClick: () => {
-                      void handleCopyMessage(msg);
-                    },
-                  },
-                ];
-
-                if (isCurrentUser && (isImageMessage || isFileMessage)) {
-                  menuActions.push({
-                    label: 'Hapus',
-                    icon: <TbTrash className="h-4 w-4" />,
-                    onClick: () => {
-                      void handleDeleteMessage(msg);
-                    },
-                    tone: 'danger',
-                  });
-                } else if (isCurrentUser) {
-                  menuActions.push(
-                    {
-                      label: 'Edit',
-                      icon: <TbPencil className="h-4 w-4" />,
-                      onClick: () => handleEditMessage(msg),
-                    },
-                    {
-                      label: 'Hapus',
-                      icon: <TbTrash className="h-4 w-4" />,
-                      onClick: () => {
-                        void handleDeleteMessage(msg);
-                      },
-                      tone: 'danger',
-                    }
-                  );
-                }
-                const hasValidLastPreselectedMenuActionIndex =
-                  Number.isInteger(lastPreselectedMenuActionIndex) &&
-                  lastPreselectedMenuActionIndex !== null &&
-                  lastPreselectedMenuActionIndex >= 0 &&
-                  lastPreselectedMenuActionIndex < menuActions.length &&
-                  !menuActions[lastPreselectedMenuActionIndex]?.disabled;
-                const initialPreselectedMenuActionIndex =
-                  hasValidLastPreselectedMenuActionIndex
-                    ? lastPreselectedMenuActionIndex
-                    : undefined;
-                const isBottomAnchoredSideMenu =
-                  isCurrentUser &&
-                  (menuPlacement === 'left' || menuPlacement === 'right');
-                const sidePlacementClass =
-                  menuPlacement === 'left'
-                    ? isBottomAnchoredSideMenu
-                      ? 'right-full mr-2 bottom-0 origin-bottom-right'
-                      : 'right-full mr-2 top-1/2 -translate-y-1/2 origin-right'
-                    : menuPlacement === 'right'
-                      ? isBottomAnchoredSideMenu
-                        ? 'left-full ml-2 bottom-0 origin-bottom-left'
-                        : 'left-full ml-2 top-1/2 -translate-y-1/2 origin-left'
-                      : menuPlacement === 'down'
-                        ? 'bottom-full mb-2 left-0 origin-bottom-left'
-                        : 'top-full mt-2 left-0 origin-top-left';
-                const sideArrowAnchorClass = isBottomAnchoredSideMenu
-                  ? 'top-[78%] -translate-y-1/2'
-                  : 'top-1/2 -translate-y-1/2';
-
-                return (
-                  <motion.div
-                    key={animationKey}
-                    initial={
-                      shouldAnimateEnter
-                        ? {
-                            opacity: 0,
-                            scale: 0.7,
-                            x: isCurrentUser ? 18 : -18,
-                            y: 10,
-                          }
-                        : false
-                    }
-                    animate={targetAnimation}
-                    style={{
-                      transformOrigin: isCurrentUser
-                        ? 'right bottom'
-                        : 'left bottom',
-                    }}
-                    transition={animationTransition}
-                    onAnimationComplete={() => {
-                      if (shouldAnimateOpenJump) {
-                        initialOpenJumpAnimationKeysRef.current.delete(
-                          animationKey
-                        );
-                      }
-                    }}
-                    className={`flex w-full transition-all duration-200 ease-out ${
-                      isCurrentUser ? 'justify-end' : 'justify-start'
-                    } ${
-                      openMenuMessageId && openMenuMessageId !== msg.id
-                        ? 'blur-[2px] brightness-95'
-                        : ''
-                    }`}
-                  >
-                    <div
-                      className={`${isCurrentUser ? 'flex flex-col items-end max-w-xs' : 'flex flex-col items-start max-w-xs'}`}
-                    >
-                      {/* Message Bubble */}
-                      <div className="relative">
-                        <div
-                          ref={bubbleElement => {
-                            if (bubbleElement) {
-                              messageBubbleRefs.current.set(
-                                msg.id,
-                                bubbleElement
-                              );
-                            } else {
-                              messageBubbleRefs.current.delete(msg.id);
-                            }
-                          }}
-                          className={`px-3 py-2 text-sm inline-block whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
-                            isCurrentUser
-                              ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
-                              : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
-                          } cursor-pointer select-none transition-[background-color,color,opacity] duration-300 ease-in-out`}
-                          style={{
-                            [isCurrentUser
-                              ? 'borderBottomRightRadius'
-                              : 'borderBottomLeftRadius']: '2px',
-                          }}
-                          onClick={event => {
-                            event.stopPropagation();
-                            toggleMessageMenu(
-                              event.currentTarget,
-                              msg.id,
-                              isCurrentUser ? 'left' : 'right'
-                            );
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={event => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              toggleMessageMenu(
-                                event.currentTarget,
-                                msg.id,
-                                isCurrentUser ? 'left' : 'right'
-                              );
-                            }
-                          }}
-                        >
-                          {isImageMessage ? (
-                            <img
-                              src={msg.message}
-                              alt="Chat attachment"
-                              className="max-h-72 w-auto max-w-full rounded-lg object-cover"
-                              loading="lazy"
-                              draggable={false}
-                            />
-                          ) : isFileMessage ? (
-                            <div className="flex min-w-[220px] max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
-                              {isAudioFileMessage ? (
-                                <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                              ) : (
-                                <TbFileDescription className="h-5 w-5 shrink-0 text-slate-600" />
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">
-                                  {fileName}
-                                </p>
-                                <a
-                                  href={msg.message}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={event => event.stopPropagation()}
-                                  className="text-xs text-primary underline"
-                                >
-                                  {isAudioFileMessage
-                                    ? 'Buka audio'
-                                    : 'Buka dokumen'}
-                                </a>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {displayMessage}
-                              {isMessageLong ? (
-                                <>
-                                  <span>... </span>
-                                  <span
-                                    className={`font-medium ${
-                                      isFlashingTarget
-                                        ? 'text-white/95'
-                                        : 'text-primary'
-                                    }`}
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={event => {
-                                      event.stopPropagation();
-                                      handleToggleExpand(msg.id);
-                                    }}
-                                    onKeyDown={event => {
-                                      if (
-                                        event.key === 'Enter' ||
-                                        event.key === ' '
-                                      ) {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handleToggleExpand(msg.id);
-                                      }
-                                    }}
-                                  >
-                                    Read more
-                                  </span>
-                                </>
-                              ) : isExpanded ? (
-                                <span
-                                  className={`block font-medium ${
-                                    isFlashingTarget
-                                      ? 'text-white/95'
-                                      : 'text-primary'
-                                  }`}
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={event => {
-                                    event.stopPropagation();
-                                    handleToggleExpand(msg.id);
-                                  }}
-                                  onKeyDown={event => {
-                                    if (
-                                      event.key === 'Enter' ||
-                                      event.key === ' '
-                                    ) {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      handleToggleExpand(msg.id);
-                                    }
-                                  }}
-                                >
-                                  Read less
-                                </span>
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-
-                        <AnimatePresence>
-                          {isMenuOpen ? (
-                            <motion.div
-                              data-chat-menu-id={msg.id}
-                              initial={{
-                                opacity: 0,
-                                scale: 0.96,
-                                x:
-                                  menuOffsetX +
-                                  (menuPlacement === 'left'
-                                    ? -6
-                                    : menuPlacement === 'right'
-                                      ? 6
-                                      : 0),
-                                y:
-                                  menuPlacement === 'down'
-                                    ? 6
-                                    : menuPlacement === 'up'
-                                      ? -6
-                                      : 0,
-                              }}
-                              animate={{
-                                opacity: 1,
-                                scale: 1,
-                                x: menuOffsetX,
-                                y: 0,
-                              }}
-                              exit={{
-                                opacity: 0,
-                                scale: 0.98,
-                                x: menuOffsetX,
-                                y: 0,
-                              }}
-                              transition={{ duration: 0.12, ease: 'easeOut' }}
-                              className={`absolute z-20 text-slate-900 ${sidePlacementClass}`}
-                              onClick={event => event.stopPropagation()}
-                            >
-                              {menuPlacement === 'left' ? (
-                                <div
-                                  className={`absolute right-0 translate-x-full ${sideArrowAnchorClass}`}
-                                >
-                                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200" />
-                                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2" />
-                                </div>
-                              ) : menuPlacement === 'right' ? (
-                                <div
-                                  className={`absolute left-0 -translate-x-full ${sideArrowAnchorClass}`}
-                                >
-                                  <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200" />
-                                  <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2" />
-                                </div>
-                              ) : menuPlacement === 'down' ? (
-                                <div className="absolute bottom-0 left-3 translate-y-full">
-                                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-200" />
-                                  <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white left-1/2 top-[-1px] -translate-x-1/2" />
-                                </div>
-                              ) : (
-                                <div className="absolute top-0 left-3 -translate-y-full">
-                                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-slate-200" />
-                                  <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-white left-1/2 bottom-[-1px] -translate-x-1/2" />
-                                </div>
-                              )}
-                              <PopupMenuContent
-                                actions={menuActions}
-                                minWidthClassName="min-w-[120px]"
-                                enableArrowNavigation
-                                autoFocusFirstItem
-                                initialPreselectedIndex={
-                                  initialPreselectedMenuActionIndex
-                                }
-                                onPreselectedIndexChange={index => {
-                                  setLastPreselectedMenuActionIndex(prev =>
-                                    prev === index ? prev : index
-                                  );
-                                }}
-                              />
-                            </motion.div>
-                          ) : null}
-                        </AnimatePresence>
-                      </div>
-
-                      {/* Message Info */}
-                      <div
-                        className={`flex items-center gap-2 mt-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                      >
-                        {isCurrentUser ? (
-                          <>
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                              {isEdited ? (
-                                <>
-                                  <span className="text-slate-400">Diedit</span>
-                                  <span className="text-slate-500">•</span>
-                                </>
-                              ) : null}
-                              {displayTime}
-                            </span>
-                            <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                              {displayUserPhotoUrl ? (
-                                <img
-                                  src={displayUserPhotoUrl}
-                                  alt={user.name || 'You'}
-                                  className="w-full h-full object-cover"
-                                  draggable={false}
-                                />
-                              ) : (
-                                <div
-                                  className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(user?.id || 'current_user')}`}
-                                >
-                                  {getInitials(user?.name || 'You')}
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                              {displayTargetPhotoUrl ? (
-                                <img
-                                  src={displayTargetPhotoUrl}
-                                  alt={targetUser?.name || 'User'}
-                                  className="w-full h-full object-cover"
-                                  draggable={false}
-                                />
-                              ) : (
-                                <div
-                                  className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
-                                >
-                                  {getInitials(targetUser?.name || 'User')}
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                              {displayTime}
-                              {isEdited ? (
-                                <>
-                                  <span className="text-slate-500">•</span>
-                                  <span className="text-slate-400">Diedit</span>
-                                </>
-                              ) : null}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })
-            )}
-            {/* Invisible element for auto-scrolling */}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Floating bouncing scroll-to-bottom icon */}
-          <AnimatePresence>
-            {(hasNewMessages || !isAtBottom) && messages.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  y: [0, -8, 0],
-                  transition: {
-                    opacity: { duration: 0.2 },
-                    scale: { duration: 0.2 },
-                    y: {
-                      repeat: Infinity,
-                      duration: 1.2,
-                      ease: 'easeInOut',
-                    },
-                  },
-                }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={scrollToBottom}
-                className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-[color,bottom] duration-[110ms] ease-out"
-                style={{
-                  bottom: messageInputHeight + 78 + composerContextualOffset,
-                  filter: 'drop-shadow(0 0 0 white)',
-                  background:
-                    'radial-gradient(circle at center, white 30%, transparent 30%)',
-                }}
-              >
-                <TbCircleArrowDownFilled size={32} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-0 right-0 z-[5] h-12"
-            style={{
-              background:
-                'linear-gradient(to top, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.72) 46%, rgba(255,255,255,0) 100%)',
-            }}
+          <ChatHeader
+            targetUser={targetUser}
+            displayTargetPhotoUrl={displayTargetPhotoUrl}
+            targetUserPresence={targetUserPresence}
+            currentChannelId={currentChannelId}
+            onClose={handleClose}
+            getInitials={getInitials}
+            getInitialsColor={getInitialsColor}
           />
 
-          {/* Message Input */}
-          <div
-            ref={composerContainerRef}
-            className="absolute bottom-2 left-0 right-0 px-3 pb-4"
-          >
-            <motion.div
-              layout
-              initial={false}
-              animate={
-                isSendSuccessGlowVisible
-                  ? {
-                      borderColor: [
-                        COMPOSER_BASE_BORDER_COLOR,
-                        'oklch(50.8% 0.118 165.612 / 0.55)',
-                        'oklch(50.8% 0.118 165.612 / 0.48)',
-                        'oklch(50.8% 0.118 165.612 / 0.42)',
-                        'oklch(50.8% 0.118 165.612 / 0.32)',
-                        'oklch(50.8% 0.118 165.612 / 0.22)',
-                        COMPOSER_BASE_BORDER_COLOR,
-                      ],
-                      boxShadow: [
-                        COMPOSER_BASE_SHADOW,
-                        COMPOSER_GLOW_SHADOW_PEAK,
-                        COMPOSER_GLOW_SHADOW_HIGH,
-                        COMPOSER_GLOW_SHADOW_MID,
-                        COMPOSER_GLOW_SHADOW_FADE,
-                        COMPOSER_GLOW_SHADOW_LOW,
-                        COMPOSER_BASE_SHADOW,
-                      ],
-                    }
-                  : {
-                      borderColor: COMPOSER_BASE_BORDER_COLOR,
-                      boxShadow: COMPOSER_BASE_SHADOW,
-                    }
-              }
-              transition={
-                isSendSuccessGlowVisible
-                  ? {
-                      layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                      duration: SEND_SUCCESS_GLOW_DURATION / 1000,
-                      times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
-                      ease: 'easeOut',
-                    }
-                  : {
-                      layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                      duration: 0.12,
-                      ease: 'easeOut',
-                    }
-              }
-              className="relative z-10 rounded-2xl border bg-white"
-            >
-              <motion.div
-                layout
-                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              >
-                <AnimatePresence initial={false}>
-                  {editingMessagePreview ? (
-                    <motion.div
-                      layout
-                      key="editing-preview-inline"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{
-                        duration: 0.18,
-                        ease: [0.22, 1, 0.36, 1],
-                        layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                      }}
-                      className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700 transition-colors hover:border-primary/30 hover:bg-slate-100"
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Lihat pesan yang sedang diedit"
-                      title="Klik untuk lihat pesan asal"
-                      onClick={focusEditingTargetMessage}
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          focusEditingTargetMessage();
-                        }
-                      }}
-                    >
-                      <button
-                        type="button"
-                        aria-label="Cancel editing message"
-                        onClick={event => {
-                          event.stopPropagation();
-                          handleCancelEditMessage();
-                        }}
-                        className="group inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                      >
-                        <TbPencil className="h-4 w-4 group-hover:hidden" />
-                        <TbX className="hidden h-4 w-4 group-hover:block" />
-                      </button>
-                      <p className="min-w-0 flex-1 truncate text-left text-sm leading-5 text-slate-700">
-                        {editingMessagePreview}
-                      </p>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-                <AnimatePresence initial={false} mode="popLayout">
-                  {pendingComposerImage ? (
-                    <motion.div
-                      layout
-                      key="composer-image-preview"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{
-                        duration: 0.18,
-                        ease: [0.22, 1, 0.36, 1],
-                        layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                      }}
-                      onClick={openComposerImagePreview}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Perbesar preview gambar"
-                      title="Klik untuk perbesar gambar"
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          openComposerImagePreview();
-                        }
-                      }}
-                      className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
-                    >
-                      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90">
-                        <img
-                          src={pendingComposerImage.previewUrl}
-                          alt={pendingComposerImage.fileName}
-                          className="h-11 w-11 rounded-lg object-cover"
-                          draggable={false}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-800">
-                            {pendingComposerImage.fileName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {pendingComposerImage.fileTypeLabel}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="Hapus gambar"
-                        onClick={event => {
-                          event.stopPropagation();
-                          clearPendingComposerImage();
-                        }}
-                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                      >
-                        <TbX className="h-4 w-4" />
-                      </button>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-                <AnimatePresence initial={false} mode="popLayout">
-                  {pendingComposerFile ? (
-                    <motion.div
-                      layout
-                      key="composer-file-preview"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{
-                        duration: 0.18,
-                        ease: [0.22, 1, 0.36, 1],
-                        layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                      }}
-                      className="mb-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
-                    >
-                      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
-                        {pendingComposerFile.fileKind === 'audio' ? (
-                          <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                        ) : pendingComposerPdfCoverUrl ? (
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
-                            <img
-                              src={pendingComposerPdfCoverUrl}
-                              alt="PDF cover preview"
-                              className="h-full w-full object-cover"
-                              draggable={false}
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
-                            {(
-                              pendingComposerFile.fileName
-                                .split('.')
-                                .pop()
-                                ?.toUpperCase() ||
-                              pendingComposerFile.fileTypeLabel
-                            ).slice(0, 4)}
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-800">
-                            {pendingComposerFile.fileName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {pendingComposerFile.fileTypeLabel}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label={
-                          pendingComposerFile.fileKind === 'audio'
-                            ? 'Hapus audio'
-                            : 'Hapus dokumen'
-                        }
-                        onClick={clearPendingComposerFile}
-                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                      >
-                        <TbX className="h-4 w-4" />
-                      </button>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-                <motion.div
-                  layout
-                  transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                  className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
-                    isMessageInputMultiline
-                      ? 'grid-rows-[auto_auto] gap-y-1 items-end'
-                      : 'grid-rows-[auto] gap-y-0 items-center'
-                  }`}
-                >
-                  <motion.textarea
-                    layout="position"
-                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                    ref={messageInputRef}
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    onPaste={handleComposerPaste}
-                    placeholder="Type a message..."
-                    rows={1}
-                    style={{ height: `${messageInputHeight}px` }}
-                    className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                      isMessageInputMultiline
-                        ? 'col-span-3 row-start-1 self-start'
-                        : 'col-start-2 row-start-1 self-center'
-                    }`}
-                  />
-                  <motion.button
-                    layout="position"
-                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                    type="button"
-                    ref={attachButtonRef}
-                    onClick={handleAttachButtonClick}
-                    aria-label="Attach file"
-                    aria-expanded={isAttachModalOpen}
-                    aria-haspopup="dialog"
-                    className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 cursor-pointer ${
-                      isMessageInputMultiline
-                        ? 'col-start-1 row-start-2'
-                        : 'col-start-1 row-start-1'
-                    }`}
-                  >
-                    <motion.span
-                      animate={{ rotate: isAttachModalOpen ? 45 : 0 }}
-                      transition={{ duration: 0.16, ease: 'easeOut' }}
-                      className="flex items-center justify-center"
-                    >
-                      <TbPlus size={20} />
-                    </motion.span>
-                  </motion.button>
-                  <motion.button
-                    layout="position"
-                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                    onClick={handleSendMessage}
-                    className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
-                      isMessageInputMultiline
-                        ? 'col-start-3 row-start-2'
-                        : 'col-start-3 row-start-1'
-                    }`}
-                  >
-                    <TbArrowUp size={20} className="text-white" />
-                  </motion.button>
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageFileChange}
-                  />
-                  <input
-                    ref={documentInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv"
-                    className="hidden"
-                    onChange={handleDocumentFileChange}
-                  />
-                  <input
-                    ref={audioInputRef}
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    onChange={handleAudioFileChange}
-                  />
-                </motion.div>
-
-                <AnimatePresence>
-                  {isAttachModalOpen ? (
-                    <motion.div
-                      ref={attachModalRef}
-                      role="dialog"
-                      aria-label="Attach file"
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="absolute bottom-[calc(100%+10px)] left-0 z-20 inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
-                    >
-                      <button
-                        type="button"
-                        onClick={handleAttachImageClick}
-                        className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
-                      >
-                        <TbPhoto className="h-4 w-4 text-slate-500" />
-                        <span>Gambar</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAttachDocumentClick}
-                        className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
-                      >
-                        <TbFileDescription className="h-4 w-4 text-slate-500" />
-                        <span>Dokumen</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAttachAudioClick}
-                        className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
-                      >
-                        <TbMusic className="h-4 w-4 text-slate-500" />
-                        <span>Audio</span>
-                      </button>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-              </motion.div>
-            </motion.div>
-          </div>
-        </div>
-        <ImageExpandPreview
-          isOpen={Boolean(pendingComposerImage && isComposerImageExpanded)}
-          isVisible={isComposerImageExpandedVisible}
-          onClose={closeComposerImagePreview}
-          backdropClassName="z-[70] px-4 py-6"
-          contentClassName="max-h-[92vh] max-w-[92vw] p-0"
-          backdropRole="button"
-          backdropTabIndex={0}
-          backdropAriaLabel="Tutup preview gambar"
-          onBackdropKeyDown={event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              closeComposerImagePreview();
+          <MessagesPane
+            loading={loading}
+            messages={messages}
+            user={user}
+            targetUser={targetUser}
+            displayUserPhotoUrl={displayUserPhotoUrl}
+            displayTargetPhotoUrl={displayTargetPhotoUrl}
+            messageInputHeight={messageInputHeight}
+            composerContextualOffset={composerContextualOffset}
+            openMenuMessageId={openMenuMessageId}
+            menuPlacement={menuPlacement}
+            menuOffsetX={menuOffsetX}
+            lastPreselectedMenuActionIndex={lastPreselectedMenuActionIndex}
+            expandedMessageIds={expandedMessageIds}
+            flashingMessageId={flashingMessageId}
+            isFlashHighlightVisible={isFlashHighlightVisible}
+            showScrollToBottom={hasNewMessages || !isAtBottom}
+            maxMessageChars={MAX_MESSAGE_CHARS}
+            messagesContainerRef={messagesContainerRef}
+            messagesEndRef={messagesEndRef}
+            messageBubbleRefs={messageBubbleRefs}
+            initialMessageAnimationKeysRef={initialMessageAnimationKeysRef}
+            initialOpenJumpAnimationKeysRef={initialOpenJumpAnimationKeysRef}
+            setLastPreselectedMenuActionIndex={
+              setLastPreselectedMenuActionIndex
             }
-          }}
-        >
-          {pendingComposerImage ? (
-            <ImageUploader
-              id="chat-composer-image-preview"
-              shape="rounded"
-              hasImage={true}
-              onPopupClose={closeComposerImagePreview}
-              className="max-h-[92vh] max-w-[92vw]"
-              popupTrigger="click"
-              onImageUpload={async file => {
-                closeComposerImagePreview();
-                queueComposerImage(file);
-              }}
-              onImageDelete={async () => {
-                clearPendingComposerImage();
-              }}
-              validTypes={[
-                'image/png',
-                'image/jpeg',
-                'image/jpg',
-                'image/webp',
-              ]}
-            >
-              <img
-                src={pendingComposerImage.previewUrl}
-                alt={pendingComposerImage.fileName}
-                className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
-                draggable={false}
-              />
-            </ImageUploader>
-          ) : null}
-        </ImageExpandPreview>
+            closeMessageMenu={closeMessageMenu}
+            toggleMessageMenu={toggleMessageMenu}
+            handleToggleExpand={handleToggleExpand}
+            handleEditMessage={handleEditMessage}
+            handleCopyMessage={handleCopyMessage}
+            handleDeleteMessage={handleDeleteMessage}
+            getAttachmentFileName={getAttachmentFileName}
+            getAttachmentFileKind={getAttachmentFileKind}
+            getInitials={getInitials}
+            getInitialsColor={getInitialsColor}
+            onScrollToBottom={scrollToBottom}
+          />
+
+          <ComposerPanel
+            message={message}
+            editingMessagePreview={editingMessagePreview}
+            messageInputHeight={messageInputHeight}
+            isMessageInputMultiline={isMessageInputMultiline}
+            isSendSuccessGlowVisible={isSendSuccessGlowVisible}
+            isAttachModalOpen={isAttachModalOpen}
+            pendingComposerImage={pendingComposerImage}
+            pendingComposerFile={pendingComposerFile}
+            pendingComposerPdfCoverUrl={pendingComposerPdfCoverUrl}
+            isComposerImageExpanded={isComposerImageExpanded}
+            isComposerImageExpandedVisible={isComposerImageExpandedVisible}
+            messageInputRef={messageInputRef}
+            composerContainerRef={composerContainerRef}
+            attachButtonRef={attachButtonRef}
+            attachModalRef={attachModalRef}
+            imageInputRef={imageInputRef}
+            documentInputRef={documentInputRef}
+            audioInputRef={audioInputRef}
+            composerContextualOffset={composerContextualOffset}
+            composerSyncLayoutTransition={COMPOSER_SYNC_LAYOUT_TRANSITION}
+            composerBaseBorderColor={COMPOSER_BASE_BORDER_COLOR}
+            composerBaseShadow={COMPOSER_BASE_SHADOW}
+            composerGlowShadowPeak={COMPOSER_GLOW_SHADOW_PEAK}
+            composerGlowShadowHigh={COMPOSER_GLOW_SHADOW_HIGH}
+            composerGlowShadowMid={COMPOSER_GLOW_SHADOW_MID}
+            composerGlowShadowFade={COMPOSER_GLOW_SHADOW_FADE}
+            composerGlowShadowLow={COMPOSER_GLOW_SHADOW_LOW}
+            sendSuccessGlowDuration={SEND_SUCCESS_GLOW_DURATION}
+            onMessageChange={setMessage}
+            onKeyDown={handleKeyPress}
+            onPaste={handleComposerPaste}
+            onSendMessage={handleSendMessage}
+            onAttachButtonClick={handleAttachButtonClick}
+            onAttachImageClick={handleAttachImageClick}
+            onAttachDocumentClick={handleAttachDocumentClick}
+            onAttachAudioClick={handleAttachAudioClick}
+            onImageFileChange={handleImageFileChange}
+            onDocumentFileChange={handleDocumentFileChange}
+            onAudioFileChange={handleAudioFileChange}
+            onCancelEditMessage={handleCancelEditMessage}
+            onFocusEditingTargetMessage={focusEditingTargetMessage}
+            onOpenComposerImagePreview={openComposerImagePreview}
+            onCloseComposerImagePreview={closeComposerImagePreview}
+            onClearPendingComposerImage={clearPendingComposerImage}
+            onClearPendingComposerFile={clearPendingComposerFile}
+            onQueueComposerImage={queueComposerImage}
+          />
+        </div>
       </motion.div>
     );
   }
