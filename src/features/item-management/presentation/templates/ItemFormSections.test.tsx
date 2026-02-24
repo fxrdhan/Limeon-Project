@@ -1599,7 +1599,7 @@ describe('ItemFormSections', () => {
     const image = await screen.findByAltText('Item 1');
     fireEvent.click(image);
     expect(screen.getByAltText('Preview')).toBeInTheDocument();
-    fireEvent.click(document.body.querySelector('.fixed.inset-0.z-50')!);
+    fireEvent.click(screen.getByLabelText('Tutup preview gambar'));
     expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
 
     fireEvent.error(image);

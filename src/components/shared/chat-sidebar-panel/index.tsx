@@ -25,6 +25,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
+import ImageUploader from '@/components/image-manager';
+import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { StorageService } from '@/services/api/storage.service';
 import {
   cacheImageBlob,
@@ -64,6 +66,7 @@ const SEND_SUCCESS_GLOW_RESET_BUFFER = 20;
 const MESSAGE_BOTTOM_GAP = 12;
 const EDITING_COMPOSER_OFFSET = 44;
 const COMPOSER_IMAGE_PREVIEW_OFFSET = 68;
+const COMPOSER_IMAGE_PREVIEW_EXIT_DURATION = 150;
 const EDIT_TARGET_FOCUS_PADDING = 12;
 const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
 const CHAT_IMAGE_BUCKET = 'chat';
@@ -154,6 +157,8 @@ const ChatSidebarPanel = memo(
     } | null>(null);
     const [isComposerImageExpanded, setIsComposerImageExpanded] =
       useState(false);
+    const [isComposerImageExpandedVisible, setIsComposerImageExpandedVisible] =
+      useState(false);
     const [flashingMessageId, setFlashingMessageId] = useState<string | null>(
       null
     );
@@ -163,6 +168,7 @@ const ChatSidebarPanel = memo(
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const composerImagePreviewCloseTimerRef = useRef<number | null>(null);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -935,6 +941,11 @@ const ChatSidebarPanel = memo(
       const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
 
       return () => {
+        if (composerImagePreviewCloseTimerRef.current) {
+          window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+          composerImagePreviewCloseTimerRef.current = null;
+        }
+
         if (sendSuccessGlowTimeoutRef.current) {
           clearTimeout(sendSuccessGlowTimeoutRef.current);
           sendSuccessGlowTimeoutRef.current = null;
@@ -962,6 +973,11 @@ const ChatSidebarPanel = memo(
 
     useEffect(() => {
       if (pendingComposerImage || !isComposerImageExpanded) return;
+      if (composerImagePreviewCloseTimerRef.current) {
+        window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+        composerImagePreviewCloseTimerRef.current = null;
+      }
+      setIsComposerImageExpandedVisible(false);
       setIsComposerImageExpanded(false);
     }, [isComposerImageExpanded, pendingComposerImage]);
 
@@ -970,7 +986,15 @@ const ChatSidebarPanel = memo(
 
       const handleEscapeKey = (event: KeyboardEvent) => {
         if (event.key !== 'Escape') return;
-        setIsComposerImageExpanded(false);
+        setIsComposerImageExpandedVisible(false);
+        if (composerImagePreviewCloseTimerRef.current) {
+          window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+          composerImagePreviewCloseTimerRef.current = null;
+        }
+        composerImagePreviewCloseTimerRef.current = window.setTimeout(() => {
+          setIsComposerImageExpanded(false);
+          composerImagePreviewCloseTimerRef.current = null;
+        }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
       };
 
       document.addEventListener('keydown', handleEscapeKey);
@@ -1191,19 +1215,37 @@ const ChatSidebarPanel = memo(
     );
 
     const clearPendingComposerImage = useCallback(() => {
+      if (composerImagePreviewCloseTimerRef.current) {
+        window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+        composerImagePreviewCloseTimerRef.current = null;
+      }
+      setIsComposerImageExpandedVisible(false);
       setIsComposerImageExpanded(false);
       setPendingComposerImage(null);
     }, []);
 
     const closeComposerImagePreview = useCallback(() => {
-      setIsComposerImageExpanded(false);
+      setIsComposerImageExpandedVisible(false);
+      if (composerImagePreviewCloseTimerRef.current) {
+        window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+        composerImagePreviewCloseTimerRef.current = null;
+      }
+      composerImagePreviewCloseTimerRef.current = window.setTimeout(() => {
+        setIsComposerImageExpanded(false);
+        composerImagePreviewCloseTimerRef.current = null;
+      }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
     }, []);
 
     const openComposerImagePreview = useCallback(() => {
       if (!pendingComposerImage) return;
       closeAttachModal();
       closeMessageMenu();
+      if (composerImagePreviewCloseTimerRef.current) {
+        window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+        composerImagePreviewCloseTimerRef.current = null;
+      }
       setIsComposerImageExpanded(true);
+      setIsComposerImageExpandedVisible(true);
     }, [closeAttachModal, closeMessageMenu, pendingComposerImage]);
 
     const queueComposerImage = useCallback(
@@ -2671,6 +2713,7 @@ const ChatSidebarPanel = memo(
                       className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700 transition-colors hover:border-primary/30 hover:bg-slate-100"
                       role="button"
                       tabIndex={0}
+                      aria-label="Lihat pesan yang sedang diedit"
                       title="Klik untuk lihat pesan asal"
                       onClick={focusEditingTargetMessage}
                       onKeyDown={event => {
@@ -2862,51 +2905,53 @@ const ChatSidebarPanel = memo(
             </motion.div>
           </div>
         </div>
-        <AnimatePresence>
-          {pendingComposerImage && isComposerImageExpanded ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
-              className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm"
-              role="button"
-              tabIndex={0}
-              aria-label="Tutup preview gambar"
-              onClick={closeComposerImagePreview}
-              onKeyDown={event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  closeComposerImagePreview();
-                }
+        <ImageExpandPreview
+          isOpen={Boolean(pendingComposerImage && isComposerImageExpanded)}
+          isVisible={isComposerImageExpandedVisible}
+          onClose={closeComposerImagePreview}
+          backdropClassName="z-[70] px-4 py-6"
+          contentClassName="max-h-[92vh] max-w-[92vw] p-0"
+          backdropRole="button"
+          backdropTabIndex={0}
+          backdropAriaLabel="Tutup preview gambar"
+          onBackdropKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              closeComposerImagePreview();
+            }
+          }}
+        >
+          {pendingComposerImage ? (
+            <ImageUploader
+              id="chat-composer-image-preview"
+              shape="rounded"
+              hasImage={true}
+              onPopupClose={closeComposerImagePreview}
+              className="max-h-[92vh] max-w-[92vw]"
+              popupTrigger="click"
+              onImageUpload={async file => {
+                closeComposerImagePreview();
+                queueComposerImage(file);
               }}
+              onImageDelete={async () => {
+                clearPendingComposerImage();
+              }}
+              validTypes={[
+                'image/png',
+                'image/jpeg',
+                'image/jpg',
+                'image/webp',
+              ]}
             >
-              <button
-                type="button"
-                aria-label="Tutup preview gambar"
-                onClick={closeComposerImagePreview}
-                className="fixed right-4 top-4 z-[71] inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-black/70"
-              >
-                <TbX className="h-5 w-5" />
-              </button>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                className="relative max-h-[92vh] max-w-[92vw]"
-                onClick={event => event.stopPropagation()}
-              >
-                <img
-                  src={pendingComposerImage.previewUrl}
-                  alt={pendingComposerImage.fileName}
-                  className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-2xl"
-                  draggable={false}
-                />
-              </motion.div>
-            </motion.div>
+              <img
+                src={pendingComposerImage.previewUrl}
+                alt={pendingComposerImage.fileName}
+                className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
+                draggable={false}
+              />
+            </ImageUploader>
           ) : null}
-        </AnimatePresence>
+        </ImageExpandPreview>
       </motion.div>
     );
   }

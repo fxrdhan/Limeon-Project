@@ -53,6 +53,7 @@ import ItemPricingForm from '../organisms/ItemPricingForm';
 import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm';
 import ImageUploader from '@/components/image-manager';
 import Button from '@/components/button';
+import ImageExpandPreview from '@/components/shared/image-expand-preview';
 
 interface CollapsibleSectionProps {
   isExpanded: boolean;
@@ -1580,9 +1581,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       previewCloseTimerRef.current = null;
     }
     setPreviewSlotIndex(slotIndex);
-    window.requestAnimationFrame(() => {
-      setIsPreviewVisible(true);
-    });
+    setIsPreviewVisible(true);
   }, []);
 
   useEffect(() => {
@@ -1651,60 +1650,45 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           </ImageUploader>
         ))}
       </div>
-      {previewSlotIndex !== null &&
-        previewImageUrl &&
-        createPortal(
-          <div
-            className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-150 ${
-              isPreviewVisible
-                ? 'bg-black/70 opacity-100 pointer-events-auto'
-                : 'bg-black/70 opacity-0 pointer-events-none'
-            }`}
-            onClick={closePreview}
+      {previewSlotIndex !== null && previewImageUrl ? (
+        <ImageExpandPreview
+          isOpen={true}
+          isVisible={isPreviewVisible}
+          onClose={closePreview}
+          backdropClassName="z-[70] px-4 py-6"
+          contentClassName="max-h-[92vh] max-w-[92vw] p-0"
+          backdropRole="button"
+          backdropTabIndex={0}
+          backdropAriaLabel="Tutup preview gambar"
+        >
+          <ImageUploader
+            key={`preview-${previewSlotIndex}`}
+            id={`item-image-preview-${previewSlotIndex}`}
+            shape="rounded"
+            hasImage={true}
+            onPopupClose={closePreview}
+            className="max-h-[92vh] max-w-[92vw]"
+            popupTrigger="click"
+            onImageUpload={async file => {
+              const slotIndex = previewSlotIndex;
+              closePreview();
+              await handleImageUpload(slotIndex, file);
+            }}
+            onImageDelete={async () => {
+              const slotIndex = previewSlotIndex;
+              closePreview();
+              await handleImageDelete(slotIndex);
+            }}
+            validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
           >
-            <div
-              className={`max-h-[90vh] max-w-[90vw] p-3 transition-all duration-150 ease-out ${
-                isPreviewVisible
-                  ? 'opacity-100 scale-100'
-                  : 'opacity-0 scale-95'
-              }`}
-              onClick={event => event.stopPropagation()}
-            >
-              <ImageUploader
-                key={`preview-${previewSlotIndex}`}
-                id={`item-image-preview-${previewSlotIndex}`}
-                shape="rounded"
-                hasImage={true}
-                onPopupClose={closePreview}
-                className="max-h-[90vh] max-w-[90vw]"
-                popupTrigger="click"
-                onImageUpload={async file => {
-                  const slotIndex = previewSlotIndex;
-                  closePreview();
-                  await handleImageUpload(slotIndex, file);
-                }}
-                onImageDelete={async () => {
-                  const slotIndex = previewSlotIndex;
-                  closePreview();
-                  await handleImageDelete(slotIndex);
-                }}
-                validTypes={[
-                  'image/png',
-                  'image/jpeg',
-                  'image/jpg',
-                  'image/webp',
-                ]}
-              >
-                <img
-                  src={previewImageUrl}
-                  alt="Preview"
-                  className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-xl"
-                />
-              </ImageUploader>
-            </div>
-          </div>,
-          document.body
-        )}
+            <img
+              src={previewImageUrl}
+              alt="Preview"
+              className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
+            />
+          </ImageUploader>
+        </ImageExpandPreview>
+      ) : null}
       {cropState &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
