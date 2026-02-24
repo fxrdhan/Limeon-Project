@@ -84,6 +84,7 @@ const ChatSidebarPanel = memo(
     const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
     const [menuSideAnchor, setMenuSideAnchor] =
       useState<MenuSideAnchor>('middle');
+    const [shouldAnimateMenuOpen, setShouldAnimateMenuOpen] = useState(true);
     const [menuOffsetX, setMenuOffsetX] = useState(0);
     const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
       () => new Set()
@@ -314,6 +315,7 @@ const ChatSidebarPanel = memo(
     const closeMessageMenu = useCallback(() => {
       setOpenMenuMessageId(null);
       setMenuOffsetX(0);
+      setShouldAnimateMenuOpen(true);
     }, []);
 
     const toggleMessageMenu = useCallback(
@@ -329,11 +331,14 @@ const ChatSidebarPanel = memo(
 
         const anchorRect = anchor.getBoundingClientRect();
         const nextMenuLayout = getMenuLayout(anchorRect, preferredSide);
+        const isSwitchingMenuMessage =
+          openMenuMessageId !== null && openMenuMessageId !== messageId;
 
         setIsAttachModalOpen(false);
         setMenuOffsetX(0);
         setMenuPlacement(nextMenuLayout.placement);
         setMenuSideAnchor(nextMenuLayout.sideAnchor);
+        setShouldAnimateMenuOpen(!isSwitchingMenuMessage);
         setOpenMenuMessageId(messageId);
       },
       [closeMessageMenu, getMenuLayout, openMenuMessageId]
@@ -2322,6 +2327,7 @@ const ChatSidebarPanel = memo(
             openMenuMessageId={openMenuMessageId}
             menuPlacement={menuPlacement}
             menuSideAnchor={menuSideAnchor}
+            shouldAnimateMenuOpen={shouldAnimateMenuOpen}
             menuOffsetX={menuOffsetX}
             lastPreselectedMenuActionIndex={lastPreselectedMenuActionIndex}
             expandedMessageIds={expandedMessageIds}

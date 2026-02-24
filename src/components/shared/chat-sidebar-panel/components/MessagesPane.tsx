@@ -42,6 +42,7 @@ interface MessagesPaneProps {
   openMenuMessageId: string | null;
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
+  shouldAnimateMenuOpen: boolean;
   menuOffsetX: number;
   lastPreselectedMenuActionIndex: number | null;
   expandedMessageIds: Set<string>;
@@ -86,6 +87,7 @@ const MessagesPane = ({
   openMenuMessageId,
   menuPlacement,
   menuSideAnchor,
+  shouldAnimateMenuOpen,
   menuOffsetX,
   lastPreselectedMenuActionIndex,
   expandedMessageIds,
@@ -459,6 +461,7 @@ const MessagesPane = ({
                     <PopupMenuPopover
                       isOpen={isMenuOpen}
                       menuId={msg.id}
+                      disableEnterAnimation={!shouldAnimateMenuOpen}
                       initial={{
                         opacity: 0,
                         scale: 0.96,
