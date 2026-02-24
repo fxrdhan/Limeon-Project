@@ -1163,6 +1163,24 @@ const ChatSidebarPanel = memo(
       [handleSendImageMessage]
     );
 
+    const handleComposerPaste = useCallback(
+      (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const imageItem = Array.from(event.clipboardData.items).find(item =>
+          item.type.startsWith('image/')
+        );
+        if (!imageItem) return;
+
+        const imageFile = imageItem.getAsFile();
+        if (!imageFile) return;
+
+        event.preventDefault();
+        closeAttachModal();
+        closeMessageMenu();
+        void handleSendImageMessage(imageFile);
+      },
+      [closeAttachModal, closeMessageMenu, handleSendImageMessage]
+    );
+
     useEffect(() => {
       if (!isAttachModalOpen) return;
 
@@ -2568,6 +2586,7 @@ const ChatSidebarPanel = memo(
                     value={message}
                     onChange={e => setMessage(e.target.value)}
                     onKeyDown={handleKeyPress}
+                    onPaste={handleComposerPaste}
                     placeholder="Type a message..."
                     rows={1}
                     style={{ height: `${messageInputHeight}px` }}
