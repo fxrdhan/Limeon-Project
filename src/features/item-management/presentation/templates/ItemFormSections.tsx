@@ -885,6 +885,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   const maxFileSizeBytes = 1 * 1024 * 1024;
   const maxFileSizeLabel = '1MB';
+  const previewExitDurationMs = 150;
   const buildHistoryImagePath = useCallback(
     (slotIndex: number, file: File) => {
       if (!itemId) return '';
@@ -1567,8 +1568,11 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       window.clearTimeout(previewCloseTimerRef.current);
       previewCloseTimerRef.current = null;
     }
-    setPreviewSlotIndex(null);
-  }, []);
+    previewCloseTimerRef.current = window.setTimeout(() => {
+      setPreviewSlotIndex(null);
+      previewCloseTimerRef.current = null;
+    }, previewExitDurationMs);
+  }, [previewExitDurationMs]);
 
   const openPreview = useCallback((slotIndex: number) => {
     if (previewCloseTimerRef.current) {
