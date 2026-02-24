@@ -37,7 +37,6 @@ const MainLayout = () => {
     },
     []
   );
-  const [isAnimating] = useState(false); // Initialize to false - no blocking needed
   usePresence();
   const isLockedRef = useRef(isLocked);
 
@@ -111,9 +110,6 @@ const MainLayout = () => {
 
   return (
     <div className="flex h-screen bg-slate-100 text-slate-800 relative">
-      {isAnimating && (
-        <div className="fixed inset-0 z-50 pointer-events-auto cursor-wait" />
-      )}
       <Sidebar
         collapsed={sidebarCollapsed}
         isLocked={isLocked}
@@ -125,7 +121,6 @@ const MainLayout = () => {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar
           sidebarCollapsed={sidebarCollapsed}
-          showChatSidebar={chatState.isOpen}
           onChatUserSelect={handleChatUserSelect}
         />
 

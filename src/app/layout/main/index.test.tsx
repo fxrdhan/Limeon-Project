@@ -38,11 +38,9 @@ vi.mock('@/app/layout/sidebar', () => ({
 vi.mock('@/app/layout/navbar', () => ({
   default: ({
     sidebarCollapsed,
-    showChatSidebar,
     onChatUserSelect,
   }: {
     sidebarCollapsed: boolean;
-    showChatSidebar: boolean;
     onChatUserSelect: (user: {
       id: string;
       name: string;
@@ -50,7 +48,7 @@ vi.mock('@/app/layout/navbar', () => ({
     }) => void;
   }) => (
     <div>
-      <div data-testid="navbar-state">{`${sidebarCollapsed}:${showChatSidebar}`}</div>
+      <div data-testid="navbar-state">{String(sidebarCollapsed)}</div>
       <button
         onClick={() =>
           onChatUserSelect({

@@ -2311,7 +2311,6 @@ const ChatSidebarPanel = memo(
             imageInputRef={imageInputRef}
             documentInputRef={documentInputRef}
             audioInputRef={audioInputRef}
-            composerContextualOffset={composerContextualOffset}
             composerSyncLayoutTransition={COMPOSER_SYNC_LAYOUT_TRANSITION}
             composerBaseBorderColor={COMPOSER_BASE_BORDER_COLOR}
             composerBaseShadow={COMPOSER_BASE_SHADOW}

@@ -37,7 +37,6 @@ interface ComposerPanelProps {
   imageInputRef: RefObject<HTMLInputElement | null>;
   documentInputRef: RefObject<HTMLInputElement | null>;
   audioInputRef: RefObject<HTMLInputElement | null>;
-  composerContextualOffset: number;
   composerSyncLayoutTransition: {
     type: 'tween';
     ease: readonly [number, number, number, number];
@@ -90,7 +89,6 @@ const ComposerPanel = ({
   imageInputRef,
   documentInputRef,
   audioInputRef,
-  composerContextualOffset,
   composerSyncLayoutTransition,
   composerBaseBorderColor,
   composerBaseShadow,
@@ -179,7 +177,6 @@ const ComposerPanel = ({
                 }
           }
           className="relative z-10 rounded-2xl border bg-white"
-          style={{ marginBottom: composerContextualOffset ? 0 : 0 }}
         >
           <motion.div
             layout

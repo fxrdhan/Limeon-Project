@@ -100,11 +100,7 @@ describe('Navbar', () => {
     const onChatUserSelect = vi.fn();
 
     render(
-      <Navbar
-        onChatUserSelect={onChatUserSelect}
-        showChatSidebar={false}
-        sidebarCollapsed={true}
-      />
+      <Navbar onChatUserSelect={onChatUserSelect} sidebarCollapsed={true} />
     );
 
     expect(screen.getByText('Pharma')).toBeInTheDocument();
@@ -139,14 +135,8 @@ describe('Navbar', () => {
     ).toBeInTheDocument();
   }, 10000);
 
-  it('keeps portal open while chat sidebar is open', async () => {
-    render(
-      <Navbar
-        onChatUserSelect={vi.fn()}
-        showChatSidebar={true}
-        sidebarCollapsed={false}
-      />
-    );
+  it('keeps portal open while hover interaction is active', async () => {
+    render(<Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={false} />);
 
     expect(screen.getByText('cy')).toBeInTheDocument();
     expect(screen.getByText('Management System')).toBeInTheDocument();
@@ -171,11 +161,7 @@ describe('Navbar', () => {
 
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
     const { unmount } = render(
-      <Navbar
-        onChatUserSelect={vi.fn()}
-        showChatSidebar={false}
-        sidebarCollapsed={false}
-      />
+      <Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={false} />
     );
 
     expect(screen.getByText('1 Online')).toBeInTheDocument();
@@ -224,11 +210,7 @@ describe('Navbar', () => {
     const onChatUserSelect = vi.fn();
 
     render(
-      <Navbar
-        onChatUserSelect={onChatUserSelect}
-        showChatSidebar={false}
-        sidebarCollapsed={true}
-      />
+      <Navbar onChatUserSelect={onChatUserSelect} sidebarCollapsed={true} />
     );
 
     const hoverRegion = screen.getByText('2 Online').closest('div');
@@ -262,13 +244,7 @@ describe('Navbar', () => {
       onlineUsersList: [onlineUsersList[1]],
     });
 
-    render(
-      <Navbar
-        onChatUserSelect={vi.fn()}
-        showChatSidebar={false}
-        sidebarCollapsed={true}
-      />
-    );
+    render(<Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={true} />);
 
     expect(screen.getByText('0 Online')).toBeInTheDocument();
     expect(screen.getByTestId('avatar-stack')).toHaveTextContent('1:false');
@@ -281,11 +257,7 @@ describe('Navbar', () => {
     });
 
     const { unmount } = render(
-      <Navbar
-        onChatUserSelect={vi.fn()}
-        showChatSidebar={false}
-        sidebarCollapsed={true}
-      />
+      <Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={true} />
     );
 
     expect(screen.getByText('1 Online')).toBeInTheDocument();
@@ -304,13 +276,7 @@ describe('Navbar', () => {
     });
 
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
-    render(
-      <Navbar
-        onChatUserSelect={vi.fn()}
-        showChatSidebar={false}
-        sidebarCollapsed={false}
-      />
-    );
+    render(<Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={false} />);
 
     const hoverRegion = screen.getByText('2 Online').closest('div');
     fireEvent.mouseEnter(hoverRegion!);
