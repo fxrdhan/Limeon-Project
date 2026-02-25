@@ -590,11 +590,25 @@ const ComposerPanel = ({
                                 </p>
                               </div>
                             </div>
-                          ) : (
-                            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
-                              {isAudioAttachment ? (
-                                <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                              ) : attachment.pdfCoverUrl ? (
+                          ) : isDocumentAttachment ? (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
+                              onClick={() => {
+                                openDocumentAttachmentInPortal(attachment);
+                              }}
+                              onKeyDown={event => {
+                                if (
+                                  event.key === 'Enter' ||
+                                  event.key === ' '
+                                ) {
+                                  event.preventDefault();
+                                  openDocumentAttachmentInPortal(attachment);
+                                }
+                              }}
+                            >
+                              {attachment.pdfCoverUrl ? (
                                 <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
                                   <img
                                     src={attachment.pdfCoverUrl}
@@ -622,6 +636,18 @@ const ComposerPanel = ({
                                   ).slice(0, 4)}
                                 </div>
                               )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                  {attachment.fileName}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {attachment.fileTypeLabel}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
+                              <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium text-slate-800">
                                   {attachment.fileName}
