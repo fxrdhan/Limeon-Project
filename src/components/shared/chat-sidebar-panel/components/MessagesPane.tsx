@@ -1,9 +1,17 @@
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import type { MutableRefObject, RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+  type RefObject,
+} from 'react';
 import {
   TbCircleArrowDownFilled,
   TbCopy,
   TbDownload,
+  TbEye,
   TbFileTypeCsv,
   TbFileTypeDoc,
   TbFileTypeDocx,
@@ -22,6 +30,7 @@ import {
 import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
+import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { ChatMessage } from '@/services/api/chat.service';
 import type {
@@ -104,6 +113,10 @@ const formatFileFallbackLabel = (
 ) => {
   if (fileExtension) return fileExtension.toUpperCase();
   return fileKind === 'audio' ? 'AUDIO' : 'FILE';
+};
+
+const openInNewTab = (url: string) => {
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 interface MessagesPaneProps {
@@ -189,6 +202,78 @@ const MessagesPane = ({
   getInitialsColor,
   onScrollToBottom,
 }: MessagesPaneProps) => {
+  const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(
+    null
+  );
+  const [isDocumentPreviewVisible, setIsDocumentPreviewVisible] =
+    useState(false);
+  const documentPreviewCloseTimerRef = useRef<number | null>(null);
+  const documentPreviewObjectUrlRef = useRef<string | null>(null);
+
+  const releaseDocumentPreviewObjectUrl = useCallback(() => {
+    if (!documentPreviewObjectUrlRef.current) return;
+    URL.revokeObjectURL(documentPreviewObjectUrlRef.current);
+    documentPreviewObjectUrlRef.current = null;
+  }, []);
+
+  const closeDocumentPreview = useCallback(() => {
+    setIsDocumentPreviewVisible(false);
+    if (documentPreviewCloseTimerRef.current) {
+      window.clearTimeout(documentPreviewCloseTimerRef.current);
+      documentPreviewCloseTimerRef.current = null;
+    }
+    documentPreviewCloseTimerRef.current = window.setTimeout(() => {
+      setDocumentPreviewUrl(null);
+      releaseDocumentPreviewObjectUrl();
+      documentPreviewCloseTimerRef.current = null;
+    }, 150);
+  }, [releaseDocumentPreviewObjectUrl]);
+
+  const openDocumentInPortal = useCallback(
+    async (url: string, forcePdfMime = false) => {
+      if (documentPreviewCloseTimerRef.current) {
+        window.clearTimeout(documentPreviewCloseTimerRef.current);
+        documentPreviewCloseTimerRef.current = null;
+      }
+      releaseDocumentPreviewObjectUrl();
+
+      let nextPreviewUrl = url;
+      if (forcePdfMime) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const responseBlob = await response.blob();
+            const pdfBlob =
+              responseBlob.type === 'application/pdf'
+                ? responseBlob
+                : new Blob([responseBlob], { type: 'application/pdf' });
+            const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+            documentPreviewObjectUrlRef.current = pdfBlobUrl;
+            nextPreviewUrl = pdfBlobUrl;
+          }
+        } catch {
+          nextPreviewUrl = url;
+        }
+      }
+
+      setDocumentPreviewUrl(nextPreviewUrl);
+      requestAnimationFrame(() => {
+        setIsDocumentPreviewVisible(true);
+      });
+    },
+    [releaseDocumentPreviewObjectUrl]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (documentPreviewCloseTimerRef.current) {
+        window.clearTimeout(documentPreviewCloseTimerRef.current);
+        documentPreviewCloseTimerRef.current = null;
+      }
+      releaseDocumentPreviewObjectUrl();
+    };
+  }, [releaseDocumentPreviewObjectUrl]);
+
   return (
     <>
       <div
@@ -248,6 +333,11 @@ const MessagesPane = ({
               const fileFallbackLabel = isFileMessage
                 ? formatFileFallbackLabel(fileExtension, fileKind)
                 : null;
+              const isPdfFileMessage =
+                isFileMessage &&
+                !isAudioFileMessage &&
+                (fileExtension === 'pdf' ||
+                  msg.file_mime_type?.toLowerCase().includes('pdf') === true);
               const fileIcon = isAudioFileMessage ? (
                 <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />
               ) : fileExtension === 'jpg' || fileExtension === 'jpeg' ? (
@@ -332,8 +422,26 @@ const MessagesPane = ({
                 },
               ];
 
-              if (isFileMessage) {
+              if (isImageMessage || isFileMessage) {
                 menuActions.unshift({
+                  label: 'Buka',
+                  icon: <TbEye className="h-4 w-4" />,
+                  onClick: () => {
+                    if (
+                      isFileMessage &&
+                      fileKind === 'document' &&
+                      isPdfFileMessage
+                    ) {
+                      void openDocumentInPortal(msg.message, isPdfFileMessage);
+                      return;
+                    }
+                    openInNewTab(msg.message);
+                  },
+                });
+              }
+
+              if (isFileMessage) {
+                menuActions.splice(1, 0, {
                   label: 'Download',
                   icon: <TbDownload className="h-4 w-4" />,
                   onClick: () => {
@@ -459,7 +567,11 @@ const MessagesPane = ({
                             messageBubbleRefs.current.delete(msg.id);
                           }
                         }}
-                        className={`${isFileMessage ? 'block w-full' : 'inline-block'} max-w-full px-3 py-2 text-sm whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
+                        className={`${isFileMessage ? 'block w-full' : 'inline-block'} max-w-full ${
+                          isImageMessage || isFileMessage
+                            ? 'px-2 py-2'
+                            : 'px-3 py-2'
+                        } text-sm whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
                           isCurrentUser
                             ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
                             : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
@@ -758,6 +870,33 @@ const MessagesPane = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ImageExpandPreview
+        isOpen={Boolean(documentPreviewUrl)}
+        isVisible={isDocumentPreviewVisible}
+        onClose={closeDocumentPreview}
+        backdropClassName="z-[80] px-4 py-6"
+        contentClassName="h-[92vh] w-[min(1100px,92vw)] max-w-[92vw] p-0"
+        backdropRole="button"
+        backdropTabIndex={0}
+        backdropAriaLabel="Tutup preview dokumen"
+        onBackdropKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            closeDocumentPreview();
+          }
+        }}
+      >
+        {documentPreviewUrl ? (
+          <div className="h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <iframe
+              src={documentPreviewUrl}
+              title="Preview dokumen"
+              className="h-full w-full bg-white"
+            />
+          </div>
+        ) : null}
+      </ImageExpandPreview>
     </>
   );
 };

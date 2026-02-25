@@ -155,6 +155,7 @@ const ChatSidebarPanel = memo(
     const documentInputRef = useRef<HTMLInputElement>(null);
     const audioInputRef = useRef<HTMLInputElement>(null);
     const replaceComposerImageAttachmentIdRef = useRef<string | null>(null);
+    const replaceComposerDocumentAttachmentIdRef = useRef<string | null>(null);
     const pendingComposerAttachmentsRef = useRef<PendingComposerAttachment[]>(
       []
     );
@@ -1487,6 +1488,10 @@ const ChatSidebarPanel = memo(
           replaceComposerImageAttachmentIdRef.current === attachmentId
             ? null
             : replaceComposerImageAttachmentIdRef.current;
+        replaceComposerDocumentAttachmentIdRef.current =
+          replaceComposerDocumentAttachmentIdRef.current === attachmentId
+            ? null
+            : replaceComposerDocumentAttachmentIdRef.current;
       },
       []
     );
@@ -1500,6 +1505,7 @@ const ChatSidebarPanel = memo(
       setIsComposerImageExpanded(false);
       setComposerImagePreviewAttachmentId(null);
       replaceComposerImageAttachmentIdRef.current = null;
+      replaceComposerDocumentAttachmentIdRef.current = null;
       setPendingComposerAttachments(prevAttachments => {
         prevAttachments.forEach(attachment => {
           if (attachment.previewUrl) {
@@ -1635,7 +1641,11 @@ const ChatSidebarPanel = memo(
     );
 
     const queueComposerFile = useCallback(
-      (file: File, fileKind: ComposerPendingFileKind) => {
+      (
+        file: File,
+        fileKind: ComposerPendingFileKind,
+        replaceAttachmentId?: string
+      ) => {
         const isAudioFile = file.type.startsWith('audio/');
         if (fileKind === 'audio' && !isAudioFile) {
           toast.error('File harus berupa audio', {
@@ -1671,6 +1681,23 @@ const ChatSidebarPanel = memo(
         let exceededAttachmentLimit = false;
 
         setPendingComposerAttachments(prevAttachments => {
+          if (replaceAttachmentId) {
+            const replaceIndex = prevAttachments.findIndex(
+              attachment =>
+                attachment.id === replaceAttachmentId &&
+                attachment.fileKind === fileKind
+            );
+            if (replaceIndex !== -1) {
+              const targetAttachment = prevAttachments[replaceIndex];
+              if (targetAttachment.previewUrl) {
+                URL.revokeObjectURL(targetAttachment.previewUrl);
+              }
+              const nextAttachments = [...prevAttachments];
+              nextAttachments[replaceIndex] = nextAttachment;
+              return nextAttachments;
+            }
+          }
+
           if (prevAttachments.length >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
             exceededAttachmentLimit = true;
             return prevAttachments;
@@ -1706,21 +1733,28 @@ const ChatSidebarPanel = memo(
       (replaceAttachmentId?: string) => {
         replaceComposerImageAttachmentIdRef.current =
           replaceAttachmentId ?? null;
+        replaceComposerDocumentAttachmentIdRef.current = null;
         closeAttachModal();
         imageInputRef.current?.click();
       },
       [closeAttachModal]
     );
 
-    const handleAttachDocumentClick = useCallback(() => {
-      replaceComposerImageAttachmentIdRef.current = null;
-      closeAttachModal();
-      documentInputRef.current?.click();
-    }, [closeAttachModal]);
+    const handleAttachDocumentClick = useCallback(
+      (replaceAttachmentId?: string) => {
+        replaceComposerImageAttachmentIdRef.current = null;
+        replaceComposerDocumentAttachmentIdRef.current =
+          replaceAttachmentId ?? null;
+        closeAttachModal();
+        documentInputRef.current?.click();
+      },
+      [closeAttachModal]
+    );
 
     const handleAttachAudioClick = useCallback(() => {
-      replaceComposerImageAttachmentIdRef.current = null;
       closeAttachModal();
+      replaceComposerImageAttachmentIdRef.current = null;
+      replaceComposerDocumentAttachmentIdRef.current = null;
       audioInputRef.current?.click();
     }, [closeAttachModal]);
 
@@ -1732,6 +1766,7 @@ const ChatSidebarPanel = memo(
 
         const replaceAttachmentId = replaceComposerImageAttachmentIdRef.current;
         replaceComposerImageAttachmentIdRef.current = null;
+        replaceComposerDocumentAttachmentIdRef.current = null;
 
         for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
           const didQueue = queueComposerImage(
@@ -1749,8 +1784,17 @@ const ChatSidebarPanel = memo(
         const selectedFiles = Array.from(event.target.files ?? []);
         event.target.value = '';
         if (selectedFiles.length === 0) return;
-        for (const selectedFile of selectedFiles) {
-          const didQueue = queueComposerFile(selectedFile, 'document');
+
+        const replaceAttachmentId =
+          replaceComposerDocumentAttachmentIdRef.current;
+        replaceComposerDocumentAttachmentIdRef.current = null;
+
+        for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
+          const didQueue = queueComposerFile(
+            selectedFile,
+            'document',
+            fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined
+          );
           if (!didQueue) break;
         }
       },
@@ -1762,6 +1806,7 @@ const ChatSidebarPanel = memo(
         const selectedFiles = Array.from(event.target.files ?? []);
         event.target.value = '';
         if (selectedFiles.length === 0) return;
+        replaceComposerDocumentAttachmentIdRef.current = null;
         for (const selectedFile of selectedFiles) {
           const didQueue = queueComposerFile(selectedFile, 'audio');
           if (!didQueue) break;

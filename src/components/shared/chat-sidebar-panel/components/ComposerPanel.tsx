@@ -14,7 +14,10 @@ import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
   TbArrowUp,
   TbDotsVertical,
+  TbEye,
   TbFileDescription,
+  TbFileIsr,
+  TbFileShredder,
   TbFileTypeJpg,
   TbFileTypePng,
   TbMusic,
@@ -85,7 +88,7 @@ interface ComposerPanelProps {
   onSendMessage: () => void;
   onAttachButtonClick: () => void;
   onAttachImageClick: (replaceAttachmentId?: string) => void;
-  onAttachDocumentClick: () => void;
+  onAttachDocumentClick: (replaceAttachmentId?: string) => void;
   onAttachAudioClick: () => void;
   onImageFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onDocumentFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -149,8 +152,17 @@ const ComposerPanel = ({
     top: number;
     left: number;
   } | null>(null);
+  const [composerDocumentPreviewUrl, setComposerDocumentPreviewUrl] = useState<
+    string | null
+  >(null);
+  const [
+    isComposerDocumentPreviewVisible,
+    setIsComposerDocumentPreviewVisible,
+  ] = useState(false);
   const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const composerDocumentPreviewCloseTimerRef = useRef<number | null>(null);
+  const composerDocumentPreviewObjectUrlRef = useRef<string | null>(null);
   const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
   const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
   const IMAGE_ACTIONS_MENU_FALLBACK_WIDTH = 148;
@@ -197,31 +209,124 @@ const ComposerPanel = ({
     setOpenImageActionsAttachmentId(null);
     setImageActionsMenuPosition(null);
   }, []);
+  const releaseComposerDocumentPreviewObjectUrl = useCallback(() => {
+    if (!composerDocumentPreviewObjectUrlRef.current) return;
+    URL.revokeObjectURL(composerDocumentPreviewObjectUrlRef.current);
+    composerDocumentPreviewObjectUrlRef.current = null;
+  }, []);
+  const closeComposerDocumentPreview = useCallback(() => {
+    setIsComposerDocumentPreviewVisible(false);
+    if (composerDocumentPreviewCloseTimerRef.current) {
+      window.clearTimeout(composerDocumentPreviewCloseTimerRef.current);
+      composerDocumentPreviewCloseTimerRef.current = null;
+    }
+    composerDocumentPreviewCloseTimerRef.current = window.setTimeout(() => {
+      setComposerDocumentPreviewUrl(null);
+      releaseComposerDocumentPreviewObjectUrl();
+      composerDocumentPreviewCloseTimerRef.current = null;
+    }, 150);
+  }, [releaseComposerDocumentPreviewObjectUrl]);
+  const openDocumentAttachmentInPortal = useCallback(
+    (attachment: PendingComposerAttachment) => {
+      if (composerDocumentPreviewCloseTimerRef.current) {
+        window.clearTimeout(composerDocumentPreviewCloseTimerRef.current);
+        composerDocumentPreviewCloseTimerRef.current = null;
+      }
+      releaseComposerDocumentPreviewObjectUrl();
+
+      const isPdfAttachment =
+        resolveAttachmentExtension(attachment) === 'pdf' ||
+        attachment.mimeType.toLowerCase().includes('pdf');
+      if (!isPdfAttachment) {
+        const nonPdfUrl = URL.createObjectURL(attachment.file);
+        const openedTab = window.open(
+          nonPdfUrl,
+          '_blank',
+          'noopener,noreferrer'
+        );
+        if (!openedTab) {
+          URL.revokeObjectURL(nonPdfUrl);
+          return;
+        }
+        window.setTimeout(() => {
+          URL.revokeObjectURL(nonPdfUrl);
+        }, 60_000);
+        return;
+      }
+      const openTarget =
+        isPdfAttachment && attachment.file.type !== 'application/pdf'
+          ? new Blob([attachment.file], { type: 'application/pdf' })
+          : attachment.file;
+      const attachmentUrl = URL.createObjectURL(openTarget);
+      composerDocumentPreviewObjectUrlRef.current = attachmentUrl;
+      setComposerDocumentPreviewUrl(attachmentUrl);
+      requestAnimationFrame(() => {
+        setIsComposerDocumentPreviewVisible(true);
+      });
+    },
+    [releaseComposerDocumentPreviewObjectUrl]
+  );
   const openImageActionsAttachment = pendingComposerAttachments.find(
     attachment =>
       attachment.id === openImageActionsAttachmentId &&
-      attachment.fileKind === 'image'
+      (attachment.fileKind === 'image' || attachment.fileKind === 'document')
   );
   const imageActions: PopupMenuAction[] = openImageActionsAttachment
-    ? [
-        {
-          label: 'Ganti',
-          icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
-          onClick: () => {
-            closeImageActionsMenu();
-            onAttachImageClick(openImageActionsAttachment.id);
+    ? openImageActionsAttachment.fileKind === 'image'
+      ? [
+          {
+            label: 'Buka',
+            icon: <TbEye className="h-4.5 w-4.5" />,
+            onClick: () => {
+              closeImageActionsMenu();
+              onOpenComposerImagePreview(openImageActionsAttachment.id);
+            },
           },
-        },
-        {
-          label: 'Hapus',
-          icon: <TbPhotoMinus className="h-4 w-4" />,
-          tone: 'danger',
-          onClick: () => {
-            closeImageActionsMenu();
-            onRemovePendingComposerAttachment(openImageActionsAttachment.id);
+          {
+            label: 'Ganti',
+            icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
+            onClick: () => {
+              closeImageActionsMenu();
+              onAttachImageClick(openImageActionsAttachment.id);
+            },
           },
-        },
-      ]
+          {
+            label: 'Hapus',
+            icon: <TbPhotoMinus className="h-4 w-4" />,
+            tone: 'danger',
+            onClick: () => {
+              closeImageActionsMenu();
+              onRemovePendingComposerAttachment(openImageActionsAttachment.id);
+            },
+          },
+        ]
+      : [
+          {
+            label: 'Buka',
+            icon: <TbEye className="h-4.5 w-4.5" />,
+            onClick: () => {
+              closeImageActionsMenu();
+              openDocumentAttachmentInPortal(openImageActionsAttachment);
+            },
+          },
+          {
+            label: 'Ganti',
+            icon: <TbFileIsr className="h-4.5 w-4.5" />,
+            onClick: () => {
+              closeImageActionsMenu();
+              onAttachDocumentClick(openImageActionsAttachment.id);
+            },
+          },
+          {
+            label: 'Hapus',
+            icon: <TbFileShredder className="h-4 w-4" />,
+            tone: 'danger',
+            onClick: () => {
+              closeImageActionsMenu();
+              onRemovePendingComposerAttachment(openImageActionsAttachment.id);
+            },
+          },
+        ]
     : [];
 
   useEffect(() => {
@@ -229,7 +334,7 @@ const ComposerPanel = ({
     const isOpenTargetStillPresent = pendingComposerAttachments.some(
       attachment =>
         attachment.id === openImageActionsAttachmentId &&
-        attachment.fileKind === 'image'
+        (attachment.fileKind === 'image' || attachment.fileKind === 'document')
     );
     if (!isOpenTargetStillPresent) {
       setOpenImageActionsAttachmentId(null);
@@ -288,6 +393,16 @@ const ComposerPanel = ({
     getImageActionsMenuPosition,
     openImageActionsAttachmentId,
   ]);
+
+  useEffect(() => {
+    return () => {
+      if (composerDocumentPreviewCloseTimerRef.current) {
+        window.clearTimeout(composerDocumentPreviewCloseTimerRef.current);
+        composerDocumentPreviewCloseTimerRef.current = null;
+      }
+      releaseComposerDocumentPreviewObjectUrl();
+    };
+  }, [releaseComposerDocumentPreviewObjectUrl]);
 
   const contextualPanelTransition = {
     duration: composerSyncLayoutTransition.duration,
@@ -420,6 +535,8 @@ const ComposerPanel = ({
                     {pendingComposerAttachments.map(attachment => {
                       const isImageAttachment = attachment.fileKind === 'image';
                       const isAudioAttachment = attachment.fileKind === 'audio';
+                      const isDocumentAttachment =
+                        attachment.fileKind === 'document';
                       const attachmentExtension =
                         resolveAttachmentExtension(attachment);
                       const isJpgDocumentAttachment =
@@ -511,15 +628,23 @@ const ComposerPanel = ({
                             </div>
                           )}
 
-                          {isImageAttachment ? (
+                          {isImageAttachment || isDocumentAttachment ? (
                             <div className="relative shrink-0">
                               <button
                                 ref={
                                   isMenuOpen ? imageActionsButtonRef : undefined
                                 }
                                 type="button"
-                                aria-label="Aksi gambar"
-                                title="Aksi gambar"
+                                aria-label={
+                                  isImageAttachment
+                                    ? 'Aksi gambar'
+                                    : 'Aksi dokumen'
+                                }
+                                title={
+                                  isImageAttachment
+                                    ? 'Aksi gambar'
+                                    : 'Aksi dokumen'
+                                }
                                 aria-haspopup="menu"
                                 aria-expanded={isMenuOpen}
                                 onClick={event => {
@@ -707,7 +832,7 @@ const ComposerPanel = ({
                   </button>
                   <button
                     type="button"
-                    onClick={onAttachDocumentClick}
+                    onClick={() => onAttachDocumentClick()}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbFileDescription className="h-4 w-4 text-slate-500" />
@@ -772,6 +897,33 @@ const ComposerPanel = ({
               draggable={false}
             />
           </ImageUploader>
+        ) : null}
+      </ImageExpandPreview>
+
+      <ImageExpandPreview
+        isOpen={Boolean(composerDocumentPreviewUrl)}
+        isVisible={isComposerDocumentPreviewVisible}
+        onClose={closeComposerDocumentPreview}
+        backdropClassName="z-[72] px-4 py-6"
+        contentClassName="h-[92vh] w-[min(1100px,92vw)] max-w-[92vw] p-0"
+        backdropRole="button"
+        backdropTabIndex={0}
+        backdropAriaLabel="Tutup preview dokumen"
+        onBackdropKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            closeComposerDocumentPreview();
+          }
+        }}
+      >
+        {composerDocumentPreviewUrl ? (
+          <div className="h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <iframe
+              src={composerDocumentPreviewUrl}
+              title="Preview dokumen composer"
+              className="h-full w-full bg-white"
+            />
+          </div>
         ) : null}
       </ImageExpandPreview>
     </>
