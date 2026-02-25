@@ -34,6 +34,8 @@ import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import type { ChatMessage } from '@/services/api/chat.service';
+import { supabase } from '@/lib/supabase';
+import { CHAT_IMAGE_BUCKET } from '../constants';
 import type {
   ChatSidebarPanelTargetUser,
   ComposerPendingFileKind,
@@ -120,6 +122,60 @@ const openInNewTab = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
+const extractChatStoragePath = (url: string): string | null => {
+  const patterns = [
+    '/storage/v1/object/public/chat/',
+    '/storage/v1/object/sign/chat/',
+    '/storage/v1/object/authenticated/chat/',
+  ];
+
+  for (const pattern of patterns) {
+    const rawPath = url.split(pattern)[1];
+    if (!rawPath) continue;
+
+    const pathWithoutQuery = rawPath.split(/[?#]/)[0];
+    if (!pathWithoutQuery) continue;
+
+    try {
+      return decodeURIComponent(pathWithoutQuery);
+    } catch {
+      return pathWithoutQuery;
+    }
+  }
+
+  return null;
+};
+
+const fetchPdfBlobWithFallback = async (url: string): Promise<Blob | null> => {
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      const responseBlob = await response.blob();
+      return responseBlob.type === 'application/pdf'
+        ? responseBlob
+        : new Blob([responseBlob], { type: 'application/pdf' });
+    }
+  } catch {
+    // Continue to storage fallback
+  }
+
+  const storagePath = extractChatStoragePath(url);
+  if (!storagePath) return null;
+
+  try {
+    const { data, error } = await supabase.storage
+      .from(CHAT_IMAGE_BUCKET)
+      .download(storagePath);
+    if (error || !data) return null;
+
+    return data.type === 'application/pdf'
+      ? data
+      : new Blob([data], { type: 'application/pdf' });
+  } catch {
+    return null;
+  }
+};
+
 const IMAGE_FILE_EXTENSIONS = new Set([
   'jpg',
   'jpeg',
@@ -145,11 +201,20 @@ type PdfMessagePreview = {
 const pdfMessagePreviewCache = new Map<string, PdfMessagePreview>();
 
 const buildPdfMessagePreviewCacheKey = (
-  messageId: string,
-  messageUrl: string,
-  updatedAt: string,
+  message: ChatMessage,
   fileName: string
-) => `${messageId}::${updatedAt}::${messageUrl}::${fileName}`;
+) => {
+  const stableIdentity =
+    message.stableKey ||
+    `${message.id}::${message.updated_at}::${message.message}`;
+
+  return [
+    stableIdentity,
+    fileName,
+    message.file_size ?? '',
+    message.file_mime_type ?? '',
+  ].join('::');
+};
 
 interface MessagesPaneProps {
   loading: boolean;
@@ -307,13 +372,8 @@ const MessagesPane = ({
       let nextPreviewUrl = url;
       if (forcePdfMime) {
         try {
-          const response = await fetch(url);
-          if (response.ok) {
-            const responseBlob = await response.blob();
-            const pdfBlob =
-              responseBlob.type === 'application/pdf'
-                ? responseBlob
-                : new Blob([responseBlob], { type: 'application/pdf' });
+          const pdfBlob = await fetchPdfBlobWithFallback(url);
+          if (pdfBlob) {
             const pdfBlobUrl = URL.createObjectURL(pdfBlob);
             documentPreviewObjectUrlRef.current = pdfBlobUrl;
             nextPreviewUrl = pdfBlobUrl;
@@ -366,12 +426,7 @@ const MessagesPane = ({
           message.file_mime_type?.toLowerCase().includes('pdf') === true;
         if (!isPdf) continue;
 
-        const cacheKey = buildPdfMessagePreviewCacheKey(
-          message.id,
-          message.message,
-          message.updated_at,
-          fileName
-        );
+        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
         const existingPreview = prevPreviews[message.id];
 
         if (existingPreview?.cacheKey === cacheKey) {
@@ -418,12 +473,7 @@ const MessagesPane = ({
         extension === 'pdf' ||
         message.file_mime_type?.toLowerCase().includes('pdf') === true;
       if (!isPdf) return false;
-      const cacheKey = buildPdfMessagePreviewCacheKey(
-        message.id,
-        message.message,
-        message.updated_at,
-        fileName
-      );
+      const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
       if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
       if (pdfMessagePreviewCache.has(cacheKey)) return false;
       if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
@@ -445,9 +495,7 @@ const MessagesPane = ({
 
           const pendingFileName = getAttachmentFileName(pendingMessage);
           const cacheKey = buildPdfMessagePreviewCacheKey(
-            pendingMessage.id,
-            pendingMessage.message,
-            pendingMessage.updated_at,
+            pendingMessage,
             pendingFileName
           );
           let pdfDocument: {
@@ -458,10 +506,11 @@ const MessagesPane = ({
           } | null = null;
 
           try {
-            const response = await fetch(pendingMessage.message);
-            if (!response.ok) continue;
-
-            const fileBuffer = await response.arrayBuffer();
+            const pdfBlob = await fetchPdfBlobWithFallback(
+              pendingMessage.message
+            );
+            if (!pdfBlob) continue;
+            const fileBuffer = await pdfBlob.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument(
               new Uint8Array(fileBuffer)
             );
@@ -595,12 +644,7 @@ const MessagesPane = ({
                 isImageFileExtensionOrMime(fileExtension, msg.file_mime_type);
               const pdfPreviewCacheKey =
                 isPdfFileMessage && fileName
-                  ? buildPdfMessagePreviewCacheKey(
-                      msg.id,
-                      msg.message,
-                      msg.updated_at,
-                      fileName
-                    )
+                  ? buildPdfMessagePreviewCacheKey(msg, fileName)
                   : null;
               const pdfMessagePreview = isPdfFileMessage
                 ? pdfMessagePreviews[msg.id] &&
