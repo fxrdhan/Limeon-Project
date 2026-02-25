@@ -1220,21 +1220,21 @@ const ChatSidebarPanel = memo(
     }, [isAttachModalOpen, closeAttachModal, closeMessageMenu]);
 
     const handleSendImageMessage = useCallback(
-      async (file: File) => {
-        if (!user || !targetUser || !currentChannelId) return false;
+      async (file: File): Promise<string | null> => {
+        if (!user || !targetUser || !currentChannelId) return null;
 
         if (!file.type.startsWith('image/')) {
           toast.error('File harus berupa gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return false;
+          return null;
         }
 
         if (editingMessageId) {
           toast.error('Selesaikan edit pesan terlebih dahulu', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return false;
+          return null;
         }
 
         const tempId = `temp_image_${Date.now()}`;
@@ -1285,7 +1285,7 @@ const ChatSidebarPanel = memo(
             toast.error('Gagal mengirim gambar', {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
-            return false;
+            return null;
           }
 
           const realMessage: ChatMessage = {
@@ -1307,14 +1307,14 @@ const ChatSidebarPanel = memo(
             });
           }
 
-          return true;
+          return realMessage.id;
         } catch (error) {
           console.error('Error sending image message:', error);
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
           toast.error('Gagal mengirim gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return false;
+          return null;
         } finally {
           const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
           if (previewUrl) {
@@ -1334,14 +1334,14 @@ const ChatSidebarPanel = memo(
     );
 
     const handleSendFileMessage = useCallback(
-      async (pendingFile: PendingComposerFile) => {
-        if (!user || !targetUser || !currentChannelId) return false;
+      async (pendingFile: PendingComposerFile): Promise<string | null> => {
+        if (!user || !targetUser || !currentChannelId) return null;
 
         if (editingMessageId) {
           toast.error('Selesaikan edit pesan terlebih dahulu', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
-          return false;
+          return null;
         }
 
         const tempId = `temp_file_${Date.now()}`;
@@ -1411,7 +1411,7 @@ const ChatSidebarPanel = memo(
                 toasterId: CHAT_SIDEBAR_TOASTER_ID,
               }
             );
-            return false;
+            return null;
           }
 
           const realMessage: ChatMessage = {
@@ -1437,7 +1437,7 @@ const ChatSidebarPanel = memo(
             });
           }
 
-          return true;
+          return realMessage.id;
         } catch (error) {
           console.error('Error sending file message:', error);
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
@@ -1449,7 +1449,7 @@ const ChatSidebarPanel = memo(
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             }
           );
-          return false;
+          return null;
         } finally {
           const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
           if (previewUrl) {
@@ -2081,28 +2081,48 @@ const ChatSidebarPanel = memo(
       if (!user || !targetUser || !currentChannelId) return;
 
       closeMessageMenu();
-      setMessages(prev => prev.filter(msg => msg.id !== targetMessage.id));
+      const linkedCaptionMessageIds = messages
+        .filter(
+          message =>
+            message.message_type === 'text' &&
+            message.reply_to_id === targetMessage.id &&
+            message.sender_id === targetMessage.sender_id &&
+            message.receiver_id === targetMessage.receiver_id &&
+            message.channel_id === targetMessage.channel_id
+        )
+        .map(message => message.id);
+      const messageIdsToDelete = [targetMessage.id, ...linkedCaptionMessageIds];
 
-      if (editingMessageId === targetMessage.id) {
+      setMessages(prev =>
+        prev.filter(message => !messageIdsToDelete.includes(message.id))
+      );
+
+      if (editingMessageId && messageIdsToDelete.includes(editingMessageId)) {
         setEditingMessageId(null);
         setMessage('');
       }
 
-      if (targetMessage.id.startsWith('temp_')) return;
+      const persistedMessageIds = messageIdsToDelete.filter(
+        messageId => !messageId.startsWith('temp_')
+      );
+      if (persistedMessageIds.length === 0) return;
 
       try {
-        const { error } = await chatService.deleteMessage(targetMessage.id);
-
-        if (error) {
-          console.error('Error deleting message:', error);
-          return;
+        for (const messageId of persistedMessageIds) {
+          const { error } = await chatService.deleteMessage(messageId);
+          if (error) {
+            console.error('Error deleting message:', error);
+            return;
+          }
         }
 
         if (channelRef.current) {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'delete_message',
-            payload: { id: targetMessage.id },
+          persistedMessageIds.forEach(messageId => {
+            channelRef.current?.send({
+              type: 'broadcast',
+              event: 'delete_message',
+              payload: { id: messageId },
+            });
           });
         }
       } catch (error) {
@@ -2332,7 +2352,7 @@ const ChatSidebarPanel = memo(
     }, [isTargetMultiline]);
 
     const sendTextMessage = useCallback(
-      async (messageText: string) => {
+      async (messageText: string, replyToId?: string | null) => {
         if (!user || !targetUser || !currentChannelId) return false;
 
         if (!messageText.trim()) return false;
@@ -2354,7 +2374,7 @@ const ChatSidebarPanel = memo(
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_read: false,
-          reply_to_id: null,
+          reply_to_id: replyToId ?? null,
           sender_name: user.name || 'You',
           receiver_name: targetUser.name || 'Unknown',
           // Add stable key for consistent animation
@@ -2375,6 +2395,7 @@ const ChatSidebarPanel = memo(
             channel_id: currentChannelId,
             message: normalizedMessageText,
             message_type: 'text',
+            ...(replyToId ? { reply_to_id: replyToId } : {}),
           });
 
           if (error) {
@@ -2442,8 +2463,9 @@ const ChatSidebarPanel = memo(
 
       if (!hasPendingAttachments && !messageText) return;
 
+      let lastAttachmentMessageId: string | null = null;
       for (const pendingAttachment of pendingComposerAttachments) {
-        const didSendAttachment =
+        const sentAttachmentMessageId =
           pendingAttachment.fileKind === 'image'
             ? await handleSendImageMessage(pendingAttachment.file)
             : await handleSendFileMessage({
@@ -2454,15 +2476,19 @@ const ChatSidebarPanel = memo(
                 mimeType: pendingAttachment.mimeType,
               });
 
-        if (!didSendAttachment) {
+        if (!sentAttachmentMessageId) {
           return;
         }
 
+        lastAttachmentMessageId = sentAttachmentMessageId;
         removePendingComposerAttachment(pendingAttachment.id);
       }
 
       if (messageText) {
-        await sendTextMessage(messageText);
+        await sendTextMessage(
+          messageText,
+          hasPendingAttachments ? lastAttachmentMessageId : null
+        );
       }
     };
 

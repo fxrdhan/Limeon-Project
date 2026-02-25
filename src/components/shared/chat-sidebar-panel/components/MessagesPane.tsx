@@ -2,6 +2,7 @@ import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type MutableRefObject,
@@ -574,6 +575,37 @@ const MessagesPane = ({
     pdfMessagePreviews,
   ]);
 
+  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(() => {
+    const attachmentMessagesById = new Map<string, ChatMessage>();
+    const captionMap = new Map<string, ChatMessage>();
+    const captionIds = new Set<string>();
+
+    for (const message of messages) {
+      if (message.message_type === 'image' || message.message_type === 'file') {
+        attachmentMessagesById.set(message.id, message);
+      }
+    }
+
+    for (const message of messages) {
+      if (message.message_type !== 'text' || !message.reply_to_id) continue;
+
+      const parentMessage = attachmentMessagesById.get(message.reply_to_id);
+      if (!parentMessage) continue;
+      if (parentMessage.sender_id !== message.sender_id) continue;
+      if (parentMessage.receiver_id !== message.receiver_id) continue;
+      if (parentMessage.channel_id !== message.channel_id) continue;
+      if (captionMap.has(parentMessage.id)) continue;
+
+      captionMap.set(parentMessage.id, message);
+      captionIds.add(message.id);
+    }
+
+    return {
+      captionMessagesByAttachmentId: captionMap,
+      captionMessageIds: captionIds,
+    };
+  }, [messages]);
+
   return (
     <>
       <div
@@ -592,7 +624,17 @@ const MessagesPane = ({
         ) : (
           <LayoutGroup id="chat-message-menus">
             {messages.map(msg => {
+              if (captionMessageIds.has(msg.id)) {
+                return null;
+              }
+
               const isCurrentUser = msg.sender_id === user?.id;
+              const captionMessage = captionMessagesByAttachmentId.get(msg.id);
+              const attachmentCaptionText =
+                captionMessage?.message?.trim() ?? '';
+              const hasAttachmentCaption =
+                (msg.message_type === 'image' || msg.message_type === 'file') &&
+                attachmentCaptionText.length > 0;
               const displayTime = new Date(msg.created_at).toLocaleTimeString(
                 [],
                 {
@@ -1046,6 +1088,15 @@ const MessagesPane = ({
                             ) : null}
                           </>
                         )}
+                        {hasAttachmentCaption ? (
+                          <p
+                            className={`mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed ${
+                              isFlashingTarget ? 'text-white' : 'text-slate-800'
+                            }`}
+                          >
+                            {attachmentCaptionText}
+                          </p>
+                        ) : null}
                       </div>
 
                       <PopupMenuPopover

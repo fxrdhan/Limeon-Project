@@ -115,6 +115,8 @@ vi.mock('motion/react', async () => {
   return {
     AnimatePresence: ({ children }: { children: React.ReactNode }) =>
       React.createElement(React.Fragment, null, children),
+    LayoutGroup: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
     motion: new Proxy(
       {},
       {
@@ -144,8 +146,14 @@ const createMessage = (
     sender_id: string;
     receiver_id: string;
     message: string;
+    message_type: 'text' | 'image' | 'file';
+    file_name: string;
+    file_kind: 'audio' | 'document';
+    file_mime_type: string;
+    file_size: number;
     created_at: string;
     updated_at: string;
+    reply_to_id: string | null;
   }> = {}
 ) => ({
   id: overrides.id ?? 'msg-1',
@@ -153,11 +161,15 @@ const createMessage = (
   receiver_id: overrides.receiver_id ?? currentUser.id,
   channel_id: 'dm_user-1_user-2',
   message: overrides.message ?? 'Halo dari target',
-  message_type: 'text' as const,
+  message_type: overrides.message_type ?? ('text' as const),
+  file_name: overrides.file_name,
+  file_kind: overrides.file_kind,
+  file_mime_type: overrides.file_mime_type,
+  file_size: overrides.file_size,
   created_at: overrides.created_at ?? '2026-02-08T00:00:00.000Z',
   updated_at: overrides.updated_at ?? '2026-02-08T00:00:00.000Z',
   is_read: false,
-  reply_to_id: null,
+  reply_to_id: overrides.reply_to_id ?? null,
 });
 
 const getHandler = (
@@ -391,6 +403,44 @@ describe('ChatSidebarPanel', () => {
       });
     });
     expect(await screen.findByText('Online')).toBeInTheDocument();
+  });
+
+  it('renders attachment caption in the same bubble when text replies to file message', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-file-1',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message_type: 'file',
+          message: 'https://cdn.example.com/chat/documents/invoice.pdf',
+          file_name: 'invoice.pdf',
+          file_kind: 'document',
+          file_mime_type: 'application/pdf',
+          file_size: 86016,
+        }),
+        createMessage({
+          id: 'msg-caption-1',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message_type: 'text',
+          message: 'deskripsi file ini',
+          reply_to_id: 'msg-file-1',
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    const fileNameNode = await screen.findByText('invoice.pdf');
+    const captionNode = screen.getByText('deskripsi file ini');
+
+    expect(fileNameNode.closest('[role="button"]')).toBe(
+      captionNode.closest('[role="button"]')
+    );
   });
 
   it('supports copy, edit, delete, and close flow', async () => {
