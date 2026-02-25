@@ -405,13 +405,26 @@ describe('ChatSidebarPanel', () => {
     expect(await screen.findByText('Online')).toBeInTheDocument();
   });
 
-  it('reuses cached conversation when reopening same channel quickly', async () => {
+  it('uses cached conversation immediately and revalidates in background on reopen', async () => {
     const { rerender } = render(
       <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
     );
 
     expect(await screen.findByText('Halo dari target')).toBeInTheDocument();
     expect(chatServiceMock.fetchMessagesBetweenUsers).toHaveBeenCalledTimes(1);
+
+    let resolveSecondFetch:
+      | ((value: {
+          data: ReturnType<typeof createMessage>[];
+          error: null;
+        }) => void)
+      | null = null;
+    chatServiceMock.fetchMessagesBetweenUsers.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSecondFetch = resolve;
+        })
+    );
 
     rerender(
       <ChatSidebarPanel
@@ -426,12 +439,21 @@ describe('ChatSidebarPanel', () => {
     );
 
     expect(await screen.findByText('Halo dari target')).toBeInTheDocument();
+    expect(chatServiceMock.fetchMessagesBetweenUsers).toHaveBeenCalledTimes(2);
 
-    await waitFor(() => {
-      expect(chatServiceMock.fetchMessagesBetweenUsers).toHaveBeenCalledTimes(
-        1
-      );
+    act(() => {
+      resolveSecondFetch?.({
+        data: [
+          createMessage({
+            id: 'msg-refresh',
+            message: 'Data server terbaru',
+          }),
+        ],
+        error: null,
+      });
     });
+
+    expect(await screen.findByText('Data server terbaru')).toBeInTheDocument();
   });
 
   it('renders attachment caption in the same bubble when text replies to file message', async () => {

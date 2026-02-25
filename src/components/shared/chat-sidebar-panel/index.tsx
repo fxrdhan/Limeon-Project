@@ -26,7 +26,6 @@ import {
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import {
-  CHAT_MESSAGES_CACHE_TTL,
   CHAT_SIDEBAR_TOASTER_ID,
   COMPOSER_BASE_BORDER_COLOR,
   COMPOSER_BASE_SHADOW,
@@ -777,21 +776,12 @@ const ChatSidebarPanel = memo(
         const cachedConversation =
           conversationCacheRef.current.get(currentChannelId);
         const hasCachedConversation = Boolean(cachedConversation);
-        const isCachedConversationFresh = Boolean(
-          cachedConversation &&
-          Date.now() - cachedConversation.cachedAt <= CHAT_MESSAGES_CACHE_TTL
-        );
 
         if (hasCachedConversation && cachedConversation) {
           applyConversationSnapshot(cachedConversation.messages);
           hasCompletedInitialOpenLoadRef.current = true;
         } else {
           setMessages([]);
-        }
-
-        if (isCachedConversationFresh) {
-          setLoading(false);
-          return;
         }
 
         setLoading(!hasCachedConversation);
