@@ -6,6 +6,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
+import { createPortal } from 'react-dom';
 import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
@@ -123,12 +124,43 @@ const ComposerPanel = ({
 }: ComposerPanelProps) => {
   const [openImageActionsAttachmentId, setOpenImageActionsAttachmentId] =
     useState<string | null>(null);
+  const [imageActionsMenuPosition, setImageActionsMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
 
   const closeImageActionsMenu = useCallback(() => {
     setOpenImageActionsAttachmentId(null);
+    setImageActionsMenuPosition(null);
   }, []);
+  const openImageActionsAttachment = pendingComposerAttachments.find(
+    attachment =>
+      attachment.id === openImageActionsAttachmentId &&
+      attachment.fileKind === 'image'
+  );
+  const imageActions: PopupMenuAction[] = openImageActionsAttachment
+    ? [
+        {
+          label: 'Ganti',
+          icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
+          onClick: () => {
+            closeImageActionsMenu();
+            onAttachImageClick(openImageActionsAttachment.id);
+          },
+        },
+        {
+          label: 'Hapus',
+          icon: <TbPhotoMinus className="h-4 w-4" />,
+          tone: 'danger',
+          onClick: () => {
+            closeImageActionsMenu();
+            onRemovePendingComposerAttachment(openImageActionsAttachment.id);
+          },
+        },
+      ]
+    : [];
 
   useEffect(() => {
     if (!openImageActionsAttachmentId) return;
@@ -165,6 +197,33 @@ const ComposerPanel = ({
     return () => {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeImageActionsMenu, openImageActionsAttachmentId]);
+
+  useEffect(() => {
+    if (!openImageActionsAttachmentId) return;
+
+    const syncMenuPosition = () => {
+      const targetButton = imageActionsButtonRef.current;
+      if (!targetButton) {
+        closeImageActionsMenu();
+        return;
+      }
+
+      const rect = targetButton.getBoundingClientRect();
+      setImageActionsMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.right,
+      });
+    };
+
+    syncMenuPosition();
+    window.addEventListener('resize', syncMenuPosition);
+    window.addEventListener('scroll', syncMenuPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', syncMenuPosition);
+      window.removeEventListener('scroll', syncMenuPosition, true);
     };
   }, [closeImageActionsMenu, openImageActionsAttachmentId]);
 
@@ -301,25 +360,6 @@ const ComposerPanel = ({
                       const isAudioAttachment = attachment.fileKind === 'audio';
                       const isMenuOpen =
                         openImageActionsAttachmentId === attachment.id;
-                      const attachmentActions: PopupMenuAction[] = [
-                        {
-                          label: 'Ganti',
-                          icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
-                          onClick: () => {
-                            closeImageActionsMenu();
-                            onAttachImageClick(attachment.id);
-                          },
-                        },
-                        {
-                          label: 'Hapus',
-                          icon: <TbPhotoMinus className="h-4 w-4" />,
-                          tone: 'danger',
-                          onClick: () => {
-                            closeImageActionsMenu();
-                            onRemovePendingComposerAttachment(attachment.id);
-                          },
-                        },
-                      ];
 
                       return (
                         <div
@@ -407,32 +447,28 @@ const ComposerPanel = ({
                                 aria-expanded={isMenuOpen}
                                 onClick={event => {
                                   event.stopPropagation();
-                                  setOpenImageActionsAttachmentId(currentId =>
-                                    currentId === attachment.id
-                                      ? null
-                                      : attachment.id
+                                  if (
+                                    openImageActionsAttachmentId ===
+                                    attachment.id
+                                  ) {
+                                    closeImageActionsMenu();
+                                    return;
+                                  }
+
+                                  const triggerRect =
+                                    event.currentTarget.getBoundingClientRect();
+                                  setOpenImageActionsAttachmentId(
+                                    attachment.id
                                   );
+                                  setImageActionsMenuPosition({
+                                    top: triggerRect.bottom + 4,
+                                    left: triggerRect.right,
+                                  });
                                 }}
                                 className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
                               >
                                 <TbDotsVertical className="h-4 w-4" />
                               </button>
-                              <PopupMenuPopover
-                                isOpen={isMenuOpen}
-                                className="absolute right-0 top-full z-30 mt-1 origin-top-right"
-                              >
-                                <div
-                                  ref={
-                                    isMenuOpen ? imageActionsMenuRef : undefined
-                                  }
-                                  onClick={event => event.stopPropagation()}
-                                >
-                                  <PopupMenuContent
-                                    actions={attachmentActions}
-                                    minWidthClassName="min-w-[132px]"
-                                  />
-                                </div>
-                              </PopupMenuPopover>
                             </div>
                           ) : (
                             <button
@@ -459,6 +495,33 @@ const ComposerPanel = ({
                 </motion.div>
               ) : null}
             </AnimatePresence>
+
+            {typeof document !== 'undefined' &&
+            openImageActionsAttachmentId &&
+            imageActionsMenuPosition
+              ? createPortal(
+                  <PopupMenuPopover
+                    isOpen
+                    className="fixed z-[120] origin-top-right"
+                    style={{
+                      top: imageActionsMenuPosition.top,
+                      left: imageActionsMenuPosition.left,
+                      transform: 'translateX(-100%)',
+                    }}
+                  >
+                    <div
+                      ref={imageActionsMenuRef}
+                      onClick={event => event.stopPropagation()}
+                    >
+                      <PopupMenuContent
+                        actions={imageActions}
+                        minWidthClassName="min-w-[132px]"
+                      />
+                    </div>
+                  </PopupMenuPopover>,
+                  document.body
+                )
+              : null}
 
             <motion.div
               layout
