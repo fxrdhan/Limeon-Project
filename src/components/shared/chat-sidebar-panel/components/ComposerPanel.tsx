@@ -130,6 +130,47 @@ const ComposerPanel = ({
   } | null>(null);
   const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
+  const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
+  const IMAGE_ACTIONS_MENU_FALLBACK_WIDTH = 148;
+  const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 92;
+
+  const getImageActionsMenuPosition = useCallback(
+    (targetButton: HTMLButtonElement) => {
+      const triggerRect = targetButton.getBoundingClientRect();
+      const renderedMenuRect =
+        imageActionsMenuRef.current?.getBoundingClientRect();
+      const menuWidth = Math.ceil(
+        renderedMenuRect?.width ?? IMAGE_ACTIONS_MENU_FALLBACK_WIDTH
+      );
+      const menuHeight = Math.ceil(
+        renderedMenuRect?.height ?? IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT
+      );
+      const maxLeft = Math.max(
+        IMAGE_ACTIONS_MENU_VIEWPORT_PADDING,
+        window.innerWidth - menuWidth - IMAGE_ACTIONS_MENU_VIEWPORT_PADDING
+      );
+      const preferredLeft =
+        triggerRect.left - menuWidth - IMAGE_ACTIONS_MENU_SIDE_GAP;
+      const left = Math.min(
+        Math.max(preferredLeft, IMAGE_ACTIONS_MENU_VIEWPORT_PADDING),
+        maxLeft
+      );
+      const preferredTop =
+        triggerRect.top + triggerRect.height / 2 - menuHeight / 2;
+      const maxTop = Math.max(
+        IMAGE_ACTIONS_MENU_VIEWPORT_PADDING,
+        window.innerHeight - menuHeight - IMAGE_ACTIONS_MENU_VIEWPORT_PADDING
+      );
+      const top = Math.min(
+        Math.max(preferredTop, IMAGE_ACTIONS_MENU_VIEWPORT_PADDING),
+        maxTop
+      );
+
+      return { top, left };
+    },
+    []
+  );
 
   const closeImageActionsMenu = useCallback(() => {
     setOpenImageActionsAttachmentId(null);
@@ -210,11 +251,7 @@ const ComposerPanel = ({
         return;
       }
 
-      const rect = targetButton.getBoundingClientRect();
-      setImageActionsMenuPosition({
-        top: rect.bottom + 4,
-        left: rect.right,
-      });
+      setImageActionsMenuPosition(getImageActionsMenuPosition(targetButton));
     };
 
     syncMenuPosition();
@@ -225,7 +262,11 @@ const ComposerPanel = ({
       window.removeEventListener('resize', syncMenuPosition);
       window.removeEventListener('scroll', syncMenuPosition, true);
     };
-  }, [closeImageActionsMenu, openImageActionsAttachmentId]);
+  }, [
+    closeImageActionsMenu,
+    getImageActionsMenuPosition,
+    openImageActionsAttachmentId,
+  ]);
 
   const contextualPanelTransition = {
     duration: composerSyncLayoutTransition.duration,
@@ -354,7 +395,7 @@ const ComposerPanel = ({
                   <div className="mb-1 px-0.5 text-[11px] text-slate-500">
                     Lampiran {pendingComposerAttachments.length}/5
                   </div>
-                  <div className="flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
+                  <div className="flex flex-col gap-2 pr-1">
                     {pendingComposerAttachments.map(attachment => {
                       const isImageAttachment = attachment.fileKind === 'image';
                       const isAudioAttachment = attachment.fileKind === 'audio';
@@ -455,15 +496,14 @@ const ComposerPanel = ({
                                     return;
                                   }
 
-                                  const triggerRect =
-                                    event.currentTarget.getBoundingClientRect();
                                   setOpenImageActionsAttachmentId(
                                     attachment.id
                                   );
-                                  setImageActionsMenuPosition({
-                                    top: triggerRect.bottom + 4,
-                                    left: triggerRect.right,
-                                  });
+                                  setImageActionsMenuPosition(
+                                    getImageActionsMenuPosition(
+                                      event.currentTarget
+                                    )
+                                  );
                                 }}
                                 className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
                               >
@@ -506,7 +546,6 @@ const ComposerPanel = ({
                     style={{
                       top: imageActionsMenuPosition.top,
                       left: imageActionsMenuPosition.left,
-                      transform: 'translateX(-100%)',
                     }}
                   >
                     <div
