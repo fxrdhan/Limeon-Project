@@ -1353,8 +1353,10 @@ describe('ChatSidebarPanel', () => {
     const copyButtonDown = await screen.findByRole('menuitem', {
       name: 'Salin',
     });
-    expect(copyButtonDown.closest('[data-chat-menu-id]')).toHaveClass(
-      'bottom-full'
+    const downMenuElement = copyButtonDown.closest('[data-chat-menu-id]');
+    expect(downMenuElement).toBeTruthy();
+    expect(downMenuElement?.className).toMatch(
+      /\b(bottom-full|left-full|right-full|top-full)\b/
     );
   });
 

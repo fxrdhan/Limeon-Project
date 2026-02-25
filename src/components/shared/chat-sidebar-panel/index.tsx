@@ -1220,7 +1220,7 @@ const ChatSidebarPanel = memo(
     }, [isAttachModalOpen, closeAttachModal, closeMessageMenu]);
 
     const handleSendImageMessage = useCallback(
-      async (file: File): Promise<string | null> => {
+      async (file: File, captionText?: string): Promise<string | null> => {
         if (!user || !targetUser || !currentChannelId) return null;
 
         if (!file.type.startsWith('image/')) {
@@ -1239,6 +1239,14 @@ const ChatSidebarPanel = memo(
 
         const tempId = `temp_image_${Date.now()}`;
         const stableKey = `${user.id}-${Date.now()}-image`;
+        const normalizedCaptionText = captionText?.trim() ?? '';
+        const hasAttachmentCaption = normalizedCaptionText.length > 0;
+        const captionTempId = hasAttachmentCaption
+          ? `temp_caption_${Date.now()}`
+          : null;
+        const captionStableKey = hasAttachmentCaption
+          ? `${stableKey}-caption`
+          : null;
         const localPreviewUrl = URL.createObjectURL(file);
         pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
 
@@ -1258,7 +1266,30 @@ const ChatSidebarPanel = memo(
           stableKey,
         };
 
-        setMessages(prev => [...prev, optimisticMessage]);
+        const optimisticCaptionMessage: ChatMessage | null =
+          hasAttachmentCaption
+            ? {
+                id: captionTempId!,
+                sender_id: user.id,
+                receiver_id: targetUser.id,
+                channel_id: currentChannelId,
+                message: normalizedCaptionText,
+                message_type: 'text',
+                created_at: optimisticMessage.created_at,
+                updated_at: optimisticMessage.updated_at,
+                is_read: false,
+                reply_to_id: tempId,
+                sender_name: user.name || 'You',
+                receiver_name: targetUser.name || 'Unknown',
+                stableKey: captionStableKey!,
+              }
+            : null;
+
+        setMessages(prev =>
+          optimisticCaptionMessage
+            ? [...prev, optimisticMessage, optimisticCaptionMessage]
+            : [...prev, optimisticMessage]
+        );
         setIsAtBottom(true);
         setHasNewMessages(false);
         triggerSendSuccessGlow();
@@ -1281,7 +1312,13 @@ const ChatSidebarPanel = memo(
           });
 
           if (error || !newMessage) {
-            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            setMessages(prev =>
+              prev.filter(
+                msg =>
+                  msg.id !== tempId &&
+                  (!captionTempId || msg.id !== captionTempId)
+              )
+            );
             toast.error('Gagal mengirim gambar', {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
@@ -1307,10 +1344,56 @@ const ChatSidebarPanel = memo(
             });
           }
 
+          if (hasAttachmentCaption && captionTempId) {
+            const { data: captionMessage, error: captionError } =
+              await chatService.insertMessage({
+                sender_id: user.id,
+                receiver_id: targetUser.id,
+                channel_id: currentChannelId,
+                message: normalizedCaptionText,
+                message_type: 'text',
+                reply_to_id: realMessage.id,
+              });
+
+            if (!captionError && captionMessage) {
+              const mappedCaptionMessage: ChatMessage = {
+                ...captionMessage,
+                sender_name: user.name || 'You',
+                receiver_name: targetUser.name || 'Unknown',
+                stableKey: captionStableKey!,
+              };
+
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === captionTempId ? mappedCaptionMessage : msg
+                )
+              );
+
+              if (channelRef.current) {
+                channelRef.current.send({
+                  type: 'broadcast',
+                  event: 'new_message',
+                  payload: mappedCaptionMessage,
+                });
+              }
+            } else {
+              setMessages(prev => prev.filter(msg => msg.id !== captionTempId));
+              toast.error('Gagal mengirim deskripsi lampiran', {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }
+          }
+
           return realMessage.id;
         } catch (error) {
           console.error('Error sending image message:', error);
-          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          setMessages(prev =>
+            prev.filter(
+              msg =>
+                msg.id !== tempId &&
+                (!captionTempId || msg.id !== captionTempId)
+            )
+          );
           toast.error('Gagal mengirim gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -1334,7 +1417,10 @@ const ChatSidebarPanel = memo(
     );
 
     const handleSendFileMessage = useCallback(
-      async (pendingFile: PendingComposerFile): Promise<string | null> => {
+      async (
+        pendingFile: PendingComposerFile,
+        captionText?: string
+      ): Promise<string | null> => {
         if (!user || !targetUser || !currentChannelId) return null;
 
         if (editingMessageId) {
@@ -1346,6 +1432,14 @@ const ChatSidebarPanel = memo(
 
         const tempId = `temp_file_${Date.now()}`;
         const stableKey = `${user.id}-${Date.now()}-file`;
+        const normalizedCaptionText = captionText?.trim() ?? '';
+        const hasAttachmentCaption = normalizedCaptionText.length > 0;
+        const captionTempId = hasAttachmentCaption
+          ? `temp_caption_${Date.now()}`
+          : null;
+        const captionStableKey = hasAttachmentCaption
+          ? `${stableKey}-caption`
+          : null;
         const localPreviewUrl = URL.createObjectURL(pendingFile.file);
         pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
 
@@ -1369,7 +1463,30 @@ const ChatSidebarPanel = memo(
           stableKey,
         };
 
-        setMessages(prev => [...prev, optimisticMessage]);
+        const optimisticCaptionMessage: ChatMessage | null =
+          hasAttachmentCaption
+            ? {
+                id: captionTempId!,
+                sender_id: user.id,
+                receiver_id: targetUser.id,
+                channel_id: currentChannelId,
+                message: normalizedCaptionText,
+                message_type: 'text',
+                created_at: optimisticMessage.created_at,
+                updated_at: optimisticMessage.updated_at,
+                is_read: false,
+                reply_to_id: tempId,
+                sender_name: user.name || 'You',
+                receiver_name: targetUser.name || 'Unknown',
+                stableKey: captionStableKey!,
+              }
+            : null;
+
+        setMessages(prev =>
+          optimisticCaptionMessage
+            ? [...prev, optimisticMessage, optimisticCaptionMessage]
+            : [...prev, optimisticMessage]
+        );
         setIsAtBottom(true);
         setHasNewMessages(false);
         triggerSendSuccessGlow();
@@ -1402,7 +1519,13 @@ const ChatSidebarPanel = memo(
           });
 
           if (error || !newMessage) {
-            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            setMessages(prev =>
+              prev.filter(
+                msg =>
+                  msg.id !== tempId &&
+                  (!captionTempId || msg.id !== captionTempId)
+              )
+            );
             toast.error(
               pendingFile.fileKind === 'audio'
                 ? 'Gagal mengirim audio'
@@ -1437,10 +1560,56 @@ const ChatSidebarPanel = memo(
             });
           }
 
+          if (hasAttachmentCaption && captionTempId) {
+            const { data: captionMessage, error: captionError } =
+              await chatService.insertMessage({
+                sender_id: user.id,
+                receiver_id: targetUser.id,
+                channel_id: currentChannelId,
+                message: normalizedCaptionText,
+                message_type: 'text',
+                reply_to_id: realMessage.id,
+              });
+
+            if (!captionError && captionMessage) {
+              const mappedCaptionMessage: ChatMessage = {
+                ...captionMessage,
+                sender_name: user.name || 'You',
+                receiver_name: targetUser.name || 'Unknown',
+                stableKey: captionStableKey!,
+              };
+
+              setMessages(prev =>
+                prev.map(msg =>
+                  msg.id === captionTempId ? mappedCaptionMessage : msg
+                )
+              );
+
+              if (channelRef.current) {
+                channelRef.current.send({
+                  type: 'broadcast',
+                  event: 'new_message',
+                  payload: mappedCaptionMessage,
+                });
+              }
+            } else {
+              setMessages(prev => prev.filter(msg => msg.id !== captionTempId));
+              toast.error('Gagal mengirim deskripsi lampiran', {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }
+          }
+
           return realMessage.id;
         } catch (error) {
           console.error('Error sending file message:', error);
-          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          setMessages(prev =>
+            prev.filter(
+              msg =>
+                msg.id !== tempId &&
+                (!captionTempId || msg.id !== captionTempId)
+            )
+          );
           toast.error(
             pendingFile.fileKind === 'audio'
               ? 'Gagal mengirim audio'
@@ -2462,21 +2631,43 @@ const ChatSidebarPanel = memo(
       const messageText = message.trim();
 
       if (!hasPendingAttachments && !messageText) return;
+      const shouldAttachCaption =
+        hasPendingAttachments && messageText.length > 0;
+      if (shouldAttachCaption) {
+        setMessage('');
+      }
 
       let lastAttachmentMessageId: string | null = null;
-      for (const pendingAttachment of pendingComposerAttachments) {
+      const lastAttachmentIndex = pendingComposerAttachments.length - 1;
+      for (const [
+        attachmentIndex,
+        pendingAttachment,
+      ] of pendingComposerAttachments.entries()) {
+        const captionForAttachment =
+          shouldAttachCaption && attachmentIndex === lastAttachmentIndex
+            ? messageText
+            : undefined;
         const sentAttachmentMessageId =
           pendingAttachment.fileKind === 'image'
-            ? await handleSendImageMessage(pendingAttachment.file)
-            : await handleSendFileMessage({
-                file: pendingAttachment.file,
-                fileName: pendingAttachment.fileName,
-                fileTypeLabel: pendingAttachment.fileTypeLabel,
-                fileKind: pendingAttachment.fileKind,
-                mimeType: pendingAttachment.mimeType,
-              });
+            ? await handleSendImageMessage(
+                pendingAttachment.file,
+                captionForAttachment
+              )
+            : await handleSendFileMessage(
+                {
+                  file: pendingAttachment.file,
+                  fileName: pendingAttachment.fileName,
+                  fileTypeLabel: pendingAttachment.fileTypeLabel,
+                  fileKind: pendingAttachment.fileKind,
+                  mimeType: pendingAttachment.mimeType,
+                },
+                captionForAttachment
+              );
 
         if (!sentAttachmentMessageId) {
+          if (shouldAttachCaption) {
+            setMessage(messageText);
+          }
           return;
         }
 
@@ -2484,7 +2675,7 @@ const ChatSidebarPanel = memo(
         removePendingComposerAttachment(pendingAttachment.id);
       }
 
-      if (messageText) {
+      if (messageText && !shouldAttachCaption) {
         await sendTextMessage(
           messageText,
           hasPendingAttachments ? lastAttachmentMessageId : null
