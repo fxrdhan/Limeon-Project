@@ -75,6 +75,24 @@ type ConversationCacheEntry = {
   cachedAt: number;
 };
 
+type GeneratedPdfPreview = {
+  coverBlob: Blob;
+  pageCount: number;
+};
+
+const isPdfDocumentFile = (fileName: string, mimeType: string) =>
+  mimeType.toLowerCase().includes('pdf') ||
+  fileName.toLowerCase().endsWith('.pdf');
+
+const buildPdfPreviewStoragePath = (filePath: string) => {
+  const normalizedPath = filePath.replace(/^documents\//, 'previews/');
+  if (/\.[^./]+$/.test(normalizedPath)) {
+    return normalizedPath.replace(/\.[^./]+$/, '.png');
+  }
+
+  return `${normalizedPath}.png`;
+};
+
 const ChatSidebarPanel = memo(
   ({ isOpen, onClose, targetUser }: ChatSidebarPanelProps) => {
     const [message, setMessage] = useState('');
@@ -1465,6 +1483,67 @@ const ChatSidebarPanel = memo(
       ]
     );
 
+    const generatePdfPreviewFromFile = useCallback(
+      async (file: File): Promise<GeneratedPdfPreview | null> => {
+        let pdfDocument: {
+          numPages: number;
+          getPage: (pageNumber: number) => Promise<any>;
+          cleanup: () => void;
+          destroy: () => void;
+        } | null = null;
+
+        try {
+          const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+          const pdfWorkerModule =
+            await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
+
+          const fileBuffer = await file.arrayBuffer();
+          const loadingTask = pdfjsLib.getDocument(new Uint8Array(fileBuffer));
+          const loadedPdfDocument = await loadingTask.promise;
+          pdfDocument = loadedPdfDocument;
+
+          const firstPage = await loadedPdfDocument.getPage(1);
+          const baseViewport = firstPage.getViewport({ scale: 1 });
+          const targetWidth = 260;
+          const scale = targetWidth / Math.max(baseViewport.width, 1);
+          const viewport = firstPage.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) return null;
+
+          canvas.width = Math.max(1, Math.round(viewport.width));
+          canvas.height = Math.max(1, Math.round(viewport.height));
+
+          await firstPage.render({
+            canvas,
+            canvasContext: context,
+            viewport,
+            background: 'rgb(255, 255, 255)',
+          }).promise;
+
+          const coverBlob = await new Promise<Blob | null>(resolve => {
+            canvas.toBlob(blob => {
+              resolve(blob);
+            }, 'image/png');
+          });
+          if (!coverBlob) return null;
+
+          return {
+            coverBlob,
+            pageCount: Math.max(loadedPdfDocument.numPages ?? 1, 1),
+          };
+        } catch (error) {
+          console.error('Error generating PDF preview from file:', error);
+          return null;
+        } finally {
+          pdfDocument?.cleanup();
+          pdfDocument?.destroy();
+        }
+      },
+      []
+    );
+
     const handleSendFileMessage = useCallback(
       async (
         pendingFile: PendingComposerFile,
@@ -1489,6 +1568,15 @@ const ChatSidebarPanel = memo(
         const captionStableKey = hasAttachmentCaption
           ? `${stableKey}-caption`
           : null;
+        const filePath = buildChatFilePath(
+          currentChannelId,
+          user.id,
+          pendingFile.file,
+          pendingFile.fileKind
+        );
+        const isPdfDocument =
+          pendingFile.fileKind === 'document' &&
+          isPdfDocumentFile(pendingFile.fileName, pendingFile.mimeType);
         const localPreviewUrl = URL.createObjectURL(pendingFile.file);
         pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
 
@@ -1503,6 +1591,8 @@ const ChatSidebarPanel = memo(
           file_kind: pendingFile.fileKind,
           file_mime_type: pendingFile.mimeType,
           file_size: pendingFile.file.size,
+          file_storage_path: filePath,
+          file_preview_status: isPdfDocument ? 'pending' : null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_read: false,
@@ -1542,12 +1632,6 @@ const ChatSidebarPanel = memo(
         scheduleScrollMessagesToBottom();
 
         try {
-          const filePath = buildChatFilePath(
-            currentChannelId,
-            user.id,
-            pendingFile.file,
-            pendingFile.fileKind
-          );
           const { publicUrl } = await StorageService.uploadRawFile(
             CHAT_IMAGE_BUCKET,
             pendingFile.file,
@@ -1565,6 +1649,8 @@ const ChatSidebarPanel = memo(
             file_kind: pendingFile.fileKind,
             file_mime_type: pendingFile.mimeType,
             file_size: pendingFile.file.size,
+            file_storage_path: filePath,
+            file_preview_status: isPdfDocument ? 'pending' : null,
           });
 
           if (error || !newMessage) {
@@ -1592,6 +1678,8 @@ const ChatSidebarPanel = memo(
             file_kind: pendingFile.fileKind,
             file_mime_type: pendingFile.mimeType,
             file_size: pendingFile.file.size,
+            file_storage_path: filePath,
+            file_preview_status: isPdfDocument ? 'pending' : null,
             sender_name: user.name || 'You',
             receiver_name: targetUser.name || 'Unknown',
             stableKey,
@@ -1607,6 +1695,93 @@ const ChatSidebarPanel = memo(
               event: 'new_message',
               payload: realMessage,
             });
+          }
+
+          if (isPdfDocument) {
+            void (async () => {
+              const mergeAndBroadcastPreviewUpdate = (payload: ChatMessage) => {
+                setMessages(prev =>
+                  prev.map(msg =>
+                    msg.id === payload.id ? { ...msg, ...payload } : msg
+                  )
+                );
+                if (channelRef.current) {
+                  channelRef.current.send({
+                    type: 'broadcast',
+                    event: 'update_message',
+                    payload,
+                  });
+                }
+              };
+
+              const applyPreviewFailedState = async (
+                errorMessage: string
+              ): Promise<void> => {
+                const {
+                  data: failedPreviewMessage,
+                  error: failedPreviewError,
+                } = await chatService.updateMessage(realMessage.id, {
+                  file_preview_status: 'failed',
+                  file_preview_error: errorMessage,
+                });
+                if (failedPreviewError || !failedPreviewMessage) return;
+
+                const mappedFailedPreviewMessage: ChatMessage = {
+                  ...failedPreviewMessage,
+                  sender_name: user.name || 'You',
+                  receiver_name: targetUser.name || 'Unknown',
+                  stableKey,
+                };
+                mergeAndBroadcastPreviewUpdate(mappedFailedPreviewMessage);
+              };
+
+              try {
+                const generatedPreview = await generatePdfPreviewFromFile(
+                  pendingFile.file
+                );
+                if (!generatedPreview) {
+                  await applyPreviewFailedState('Gagal membuat preview PDF');
+                  return;
+                }
+
+                const previewPath = buildPdfPreviewStoragePath(filePath);
+                const previewFileNameBase =
+                  pendingFile.fileName.replace(/\.[^./]+$/, '') || 'preview';
+                const previewFile = new File(
+                  [generatedPreview.coverBlob],
+                  `${previewFileNameBase}.png`,
+                  { type: 'image/png' }
+                );
+
+                const { publicUrl: previewUrl } =
+                  await StorageService.uploadRawFile(
+                    CHAT_IMAGE_BUCKET,
+                    previewFile,
+                    previewPath,
+                    'image/png'
+                  );
+
+                const { data: previewReadyMessage, error: previewReadyError } =
+                  await chatService.updateMessage(realMessage.id, {
+                    file_preview_url: previewUrl,
+                    file_preview_page_count: generatedPreview.pageCount,
+                    file_preview_status: 'ready',
+                    file_preview_error: null,
+                  });
+                if (previewReadyError || !previewReadyMessage) return;
+
+                const mappedPreviewReadyMessage: ChatMessage = {
+                  ...previewReadyMessage,
+                  sender_name: user.name || 'You',
+                  receiver_name: targetUser.name || 'Unknown',
+                  stableKey,
+                };
+                mergeAndBroadcastPreviewUpdate(mappedPreviewReadyMessage);
+              } catch (error) {
+                console.error('Error processing PDF preview metadata:', error);
+                await applyPreviewFailedState('Gagal memproses preview PDF');
+              }
+            })();
           }
 
           if (hasAttachmentCaption && captionTempId) {
@@ -1671,7 +1846,13 @@ const ChatSidebarPanel = memo(
         } finally {
           const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
           if (previewUrl) {
-            URL.revokeObjectURL(previewUrl);
+            if (isPdfDocument) {
+              window.setTimeout(() => {
+                URL.revokeObjectURL(previewUrl);
+              }, 30_000);
+            } else {
+              URL.revokeObjectURL(previewUrl);
+            }
             pendingImagePreviewUrlsRef.current.delete(tempId);
           }
         }
@@ -1681,6 +1862,7 @@ const ChatSidebarPanel = memo(
         targetUser,
         currentChannelId,
         editingMessageId,
+        generatePdfPreviewFromFile,
         triggerSendSuccessGlow,
         scheduleScrollMessagesToBottom,
       ]

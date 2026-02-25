@@ -13,6 +13,11 @@ export interface ChatMessage {
   file_kind?: 'audio' | 'document';
   file_mime_type?: string;
   file_size?: number;
+  file_storage_path?: string;
+  file_preview_url?: string | null;
+  file_preview_page_count?: number | null;
+  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
+  file_preview_error?: string | null;
   created_at: string;
   updated_at: string;
   is_read: boolean;
@@ -41,6 +46,11 @@ export interface ChatMessageInsertInput {
   file_kind?: 'audio' | 'document';
   file_mime_type?: string;
   file_size?: number;
+  file_storage_path?: string;
+  file_preview_url?: string | null;
+  file_preview_page_count?: number | null;
+  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
+  file_preview_error?: string | null;
   reply_to_id?: string | null;
 }
 
@@ -49,6 +59,10 @@ export interface ChatMessageUpdateInput {
   updated_at?: string;
   is_read?: boolean;
   reply_to_id?: string | null;
+  file_preview_url?: string | null;
+  file_preview_page_count?: number | null;
+  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
+  file_preview_error?: string | null;
 }
 
 export interface UserPresenceUpdateInput {

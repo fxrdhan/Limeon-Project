@@ -147,7 +147,10 @@ const extractChatStoragePath = (url: string): string | null => {
   return null;
 };
 
-const fetchPdfBlobWithFallback = async (url: string): Promise<Blob | null> => {
+const fetchPdfBlobWithFallback = async (
+  url: string,
+  storagePathHint?: string | null
+): Promise<Blob | null> => {
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -160,7 +163,7 @@ const fetchPdfBlobWithFallback = async (url: string): Promise<Blob | null> => {
     // Continue to storage fallback
   }
 
-  const storagePath = extractChatStoragePath(url);
+  const storagePath = storagePathHint?.trim() || extractChatStoragePath(url);
   if (!storagePath) return null;
 
   try {
@@ -200,6 +203,8 @@ type PdfMessagePreview = {
 };
 
 const pdfMessagePreviewCache = new Map<string, PdfMessagePreview>();
+const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
+const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
 
 const buildPdfMessagePreviewCacheKey = (
   message: ChatMessage,
@@ -303,6 +308,7 @@ const MessagesPane = ({
   const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
     Record<string, PdfMessagePreview>
   >({});
+  const [, setPdfPreviewRetryNonce] = useState(0);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imagePreviewName, setImagePreviewName] = useState('');
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
@@ -316,6 +322,32 @@ const MessagesPane = ({
   const documentPreviewCloseTimerRef = useRef<number | null>(null);
   const documentPreviewObjectUrlRef = useRef<string | null>(null);
   const pdfPreviewRenderingIdsRef = useRef<Set<string>>(new Set());
+  const pdfPreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
+  const pdfPreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
+
+  const clearPdfPreviewRetryTimer = useCallback((messageId: string) => {
+    const existingTimerId = pdfPreviewRetryTimersRef.current.get(messageId);
+    if (!existingTimerId) return;
+    window.clearTimeout(existingTimerId);
+    pdfPreviewRetryTimersRef.current.delete(messageId);
+  }, []);
+
+  const schedulePdfPreviewRetry = useCallback((messageId: string) => {
+    if (pdfPreviewRetryTimersRef.current.has(messageId)) return;
+
+    const nextAttemptCount =
+      (pdfPreviewRetryAttemptsRef.current.get(messageId) ?? 0) + 1;
+    pdfPreviewRetryAttemptsRef.current.set(messageId, nextAttemptCount);
+
+    if (nextAttemptCount >= PDF_PREVIEW_MAX_RETRY_ATTEMPTS) return;
+
+    const retryDelay = PDF_PREVIEW_RETRY_BASE_DELAY_MS * nextAttemptCount;
+    const retryTimerId = window.setTimeout(() => {
+      pdfPreviewRetryTimersRef.current.delete(messageId);
+      setPdfPreviewRetryNonce(prevNonce => prevNonce + 1);
+    }, retryDelay);
+    pdfPreviewRetryTimersRef.current.set(messageId, retryTimerId);
+  }, []);
 
   const closeImagePreview = useCallback(() => {
     setIsImagePreviewVisible(false);
@@ -394,6 +426,8 @@ const MessagesPane = ({
   );
 
   useEffect(() => {
+    const pdfPreviewRetryTimers = pdfPreviewRetryTimersRef.current;
+
     return () => {
       if (imagePreviewCloseTimerRef.current) {
         window.clearTimeout(imagePreviewCloseTimerRef.current);
@@ -403,6 +437,10 @@ const MessagesPane = ({
         window.clearTimeout(documentPreviewCloseTimerRef.current);
         documentPreviewCloseTimerRef.current = null;
       }
+      pdfPreviewRetryTimers.forEach(timerId => {
+        window.clearTimeout(timerId);
+      });
+      pdfPreviewRetryTimers.clear();
       releaseDocumentPreviewObjectUrl();
     };
   }, [releaseDocumentPreviewObjectUrl]);
@@ -458,6 +496,40 @@ const MessagesPane = ({
   }, [getAttachmentFileKind, getAttachmentFileName, messages]);
 
   useEffect(() => {
+    const activePdfMessageIds = new Set<string>();
+
+    for (const message of messages) {
+      if (message.message_type !== 'file') continue;
+      if (getAttachmentFileKind(message) !== 'document') continue;
+
+      const fileName = getAttachmentFileName(message);
+      const extension = resolveFileExtension(
+        fileName,
+        message.message,
+        message.file_mime_type
+      );
+      const isPdf =
+        extension === 'pdf' ||
+        message.file_mime_type?.toLowerCase().includes('pdf') === true;
+      if (!isPdf) continue;
+
+      activePdfMessageIds.add(message.id);
+    }
+
+    for (const [messageId] of pdfPreviewRetryAttemptsRef.current) {
+      if (activePdfMessageIds.has(messageId)) continue;
+      pdfPreviewRetryAttemptsRef.current.delete(messageId);
+      clearPdfPreviewRetryTimer(messageId);
+      pdfPreviewRenderingIdsRef.current.delete(messageId);
+    }
+  }, [
+    clearPdfPreviewRetryTimer,
+    getAttachmentFileKind,
+    getAttachmentFileName,
+    messages,
+  ]);
+
+  useEffect(() => {
     let isCancelled = false;
 
     const pendingPdfMessages = messages.filter(message => {
@@ -474,10 +546,21 @@ const MessagesPane = ({
         extension === 'pdf' ||
         message.file_mime_type?.toLowerCase().includes('pdf') === true;
       if (!isPdf) return false;
+      const hasPersistedPreviewUrl =
+        typeof message.file_preview_url === 'string' &&
+        message.file_preview_url.trim().length > 0;
+      if (hasPersistedPreviewUrl) return false;
       const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
       if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
       if (pdfMessagePreviewCache.has(cacheKey)) return false;
       if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
+      if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
+      if (
+        (pdfPreviewRetryAttemptsRef.current.get(message.id) ?? 0) >=
+        PDF_PREVIEW_MAX_RETRY_ATTEMPTS
+      ) {
+        return false;
+      }
       return true;
     });
 
@@ -508,9 +591,13 @@ const MessagesPane = ({
 
           try {
             const pdfBlob = await fetchPdfBlobWithFallback(
-              pendingMessage.message
+              pendingMessage.message,
+              pendingMessage.file_storage_path
             );
-            if (!pdfBlob) continue;
+            if (!pdfBlob) {
+              schedulePdfPreviewRetry(pendingMessage.id);
+              continue;
+            }
             const fileBuffer = await pdfBlob.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument(
               new Uint8Array(fileBuffer)
@@ -525,7 +612,10 @@ const MessagesPane = ({
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
 
-            if (!context) continue;
+            if (!context) {
+              schedulePdfPreviewRetry(pendingMessage.id);
+              continue;
+            }
 
             canvas.width = Math.max(1, Math.round(viewport.width));
             canvas.height = Math.max(1, Math.round(viewport.height));
@@ -546,12 +636,15 @@ const MessagesPane = ({
               cacheKey,
             };
             pdfMessagePreviewCache.set(cacheKey, nextPreview);
+            pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
+            clearPdfPreviewRetryTimer(pendingMessage.id);
             setPdfMessagePreviews(prev => ({
               ...prev,
               [pendingMessage.id]: nextPreview,
             }));
           } catch (error) {
             console.error('Error rendering PDF message preview:', error);
+            schedulePdfPreviewRetry(pendingMessage.id);
           } finally {
             pdfDocument?.cleanup();
             pdfDocument?.destroy();
@@ -560,6 +653,9 @@ const MessagesPane = ({
         }
       } catch (error) {
         console.error('Error preparing PDF preview renderer:', error);
+        for (const pendingMessage of pendingPdfMessages) {
+          schedulePdfPreviewRetry(pendingMessage.id);
+        }
       }
     };
 
@@ -573,6 +669,8 @@ const MessagesPane = ({
     getAttachmentFileName,
     messages,
     pdfMessagePreviews,
+    clearPdfPreviewRetryTimer,
+    schedulePdfPreviewRetry,
   ]);
 
   const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(() => {
@@ -696,10 +794,20 @@ const MessagesPane = ({
                     ? pdfMessagePreviewCache.get(pdfPreviewCacheKey)
                     : undefined
                 : undefined;
+              const persistedPdfPreviewUrl = isPdfFileMessage
+                ? msg.file_preview_url?.trim() || null
+                : null;
+              const resolvedPdfPreviewUrl =
+                persistedPdfPreviewUrl ||
+                pdfMessagePreview?.coverDataUrl ||
+                null;
+              const resolvedPdfPageCount = isPdfFileMessage
+                ? (msg.file_preview_page_count ?? pdfMessagePreview?.pageCount)
+                : null;
               const pdfMetaLabel = isPdfFileMessage
                 ? [
-                    pdfMessagePreview?.pageCount
-                      ? `${pdfMessagePreview.pageCount} halaman`
+                    resolvedPdfPageCount
+                      ? `${resolvedPdfPageCount} halaman`
                       : null,
                     'PDF',
                     fileSizeLabel,
@@ -990,9 +1098,9 @@ const MessagesPane = ({
                         ) : isPdfFileMessage ? (
                           <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
                             <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">
-                              {pdfMessagePreview?.coverDataUrl ? (
+                              {resolvedPdfPreviewUrl ? (
                                 <img
-                                  src={pdfMessagePreview.coverDataUrl}
+                                  src={resolvedPdfPreviewUrl}
                                   alt={`Preview ${fileName || 'dokumen PDF'}`}
                                   className="h-full w-full object-cover object-top"
                                   draggable={false}
