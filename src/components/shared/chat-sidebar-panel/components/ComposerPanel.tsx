@@ -15,6 +15,8 @@ import {
   TbArrowUp,
   TbDotsVertical,
   TbFileDescription,
+  TbFileTypeJpg,
+  TbFileTypePng,
   TbMusic,
   TbPencil,
   TbPhotoEdit,
@@ -26,6 +28,25 @@ import {
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import type { PendingComposerAttachment } from '../types';
+
+const resolveAttachmentExtension = (attachment: PendingComposerAttachment) => {
+  const extensionFromName = attachment.fileName
+    .split(/[?#]/)[0]
+    .split('.')
+    .pop()
+    ?.trim()
+    .toLowerCase();
+  if (extensionFromName) return extensionFromName;
+
+  const mimeSubtype = attachment.mimeType
+    .split('/')[1]
+    ?.split('+')[0]
+    ?.trim()
+    .toLowerCase();
+  if (!mimeSubtype) return '';
+  if (mimeSubtype === 'jpeg') return 'jpg';
+  return mimeSubtype;
+};
 
 interface ComposerPanelProps {
   message: string;
@@ -399,6 +420,13 @@ const ComposerPanel = ({
                     {pendingComposerAttachments.map(attachment => {
                       const isImageAttachment = attachment.fileKind === 'image';
                       const isAudioAttachment = attachment.fileKind === 'audio';
+                      const attachmentExtension =
+                        resolveAttachmentExtension(attachment);
+                      const isJpgDocumentAttachment =
+                        attachmentExtension === 'jpg' ||
+                        attachmentExtension === 'jpeg';
+                      const isPngDocumentAttachment =
+                        attachmentExtension === 'png';
                       const isMenuOpen =
                         openImageActionsAttachmentId === attachment.id;
 
@@ -452,6 +480,14 @@ const ComposerPanel = ({
                                     className="h-full w-full object-cover"
                                     draggable={false}
                                   />
+                                </div>
+                              ) : isJpgDocumentAttachment ? (
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
+                                  <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
+                                </div>
+                              ) : isPngDocumentAttachment ? (
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
+                                  <TbFileTypePng className="h-5 w-5 text-slate-600" />
                                 </div>
                               ) : (
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
@@ -634,7 +670,7 @@ const ComposerPanel = ({
               <input
                 ref={documentInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv"
+                accept="*/*"
                 multiple
                 className="hidden"
                 onChange={onDocumentFileChange}

@@ -1336,13 +1336,6 @@ const ChatSidebarPanel = memo(
       async (pendingFile: PendingComposerFile) => {
         if (!user || !targetUser || !currentChannelId) return false;
 
-        if (pendingFile.file.type.startsWith('image/')) {
-          toast.error('Untuk gambar gunakan opsi Gambar', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-          return false;
-        }
-
         if (editingMessageId) {
           toast.error('Selesaikan edit pesan terlebih dahulu', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -1643,23 +1636,9 @@ const ChatSidebarPanel = memo(
 
     const queueComposerFile = useCallback(
       (file: File, fileKind: ComposerPendingFileKind) => {
-        if (file.type.startsWith('image/')) {
-          toast.error('Untuk gambar gunakan opsi Gambar', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-          return false;
-        }
-
         const isAudioFile = file.type.startsWith('audio/');
         if (fileKind === 'audio' && !isAudioFile) {
           toast.error('File harus berupa audio', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-          return false;
-        }
-
-        if (fileKind === 'document' && isAudioFile) {
-          toast.error('Untuk audio gunakan opsi Audio', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
           return false;

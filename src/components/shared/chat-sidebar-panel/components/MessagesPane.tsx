@@ -7,7 +7,9 @@ import {
   TbFileTypeCsv,
   TbFileTypeDoc,
   TbFileTypeDocx,
+  TbFileTypeJpg,
   TbFileTypePdf,
+  TbFileTypePng,
   TbFileTypePpt,
   TbFileTypeTxt,
   TbFileTypeXls,
@@ -54,6 +56,8 @@ const resolveFileExtension = (
   const mimeSubtype = mimeType?.split('/')[1]?.split('+')[0]?.toLowerCase();
   if (!mimeSubtype) return '';
 
+  if (mimeSubtype === 'jpeg') return 'jpg';
+  if (mimeSubtype === 'png') return 'png';
   if (mimeSubtype === 'pdf') return 'pdf';
   if (mimeSubtype === 'msword') return 'doc';
   if (mimeSubtype.includes('wordprocessingml')) return 'docx';
@@ -246,6 +250,10 @@ const MessagesPane = ({
                 : null;
               const fileIcon = isAudioFileMessage ? (
                 <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'jpg' || fileExtension === 'jpeg' ? (
+                <TbFileTypeJpg className="h-8 w-8 shrink-0 text-slate-600" />
+              ) : fileExtension === 'png' ? (
+                <TbFileTypePng className="h-8 w-8 shrink-0 text-slate-600" />
               ) : fileExtension === 'pdf' ? (
                 <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
               ) : fileExtension === 'docx' ? (
