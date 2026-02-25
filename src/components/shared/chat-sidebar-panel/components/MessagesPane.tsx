@@ -31,6 +31,7 @@ import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import type { ChatMessage } from '@/services/api/chat.service';
 import type {
@@ -119,6 +120,37 @@ const openInNewTab = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
+const IMAGE_FILE_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'gif',
+  'bmp',
+  'svg',
+  'heic',
+  'heif',
+]);
+
+const isImageFileExtensionOrMime = (extension: string, mimeType?: string) =>
+  IMAGE_FILE_EXTENSIONS.has(extension) ||
+  mimeType?.toLowerCase().startsWith('image/') === true;
+
+type PdfMessagePreview = {
+  coverDataUrl: string;
+  pageCount: number;
+  cacheKey: string;
+};
+
+const pdfMessagePreviewCache = new Map<string, PdfMessagePreview>();
+
+const buildPdfMessagePreviewCacheKey = (
+  messageId: string,
+  messageUrl: string,
+  updatedAt: string,
+  fileName: string
+) => `${messageId}::${updatedAt}::${messageUrl}::${fileName}`;
+
 interface MessagesPaneProps {
   loading: boolean;
   messages: ChatMessage[];
@@ -202,6 +234,13 @@ const MessagesPane = ({
   getInitialsColor,
   onScrollToBottom,
 }: MessagesPaneProps) => {
+  const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
+    Record<string, PdfMessagePreview>
+  >({});
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [imagePreviewName, setImagePreviewName] = useState('');
+  const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
+  const imagePreviewCloseTimerRef = useRef<number | null>(null);
   const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(
     null
   );
@@ -210,6 +249,32 @@ const MessagesPane = ({
     useState(false);
   const documentPreviewCloseTimerRef = useRef<number | null>(null);
   const documentPreviewObjectUrlRef = useRef<string | null>(null);
+  const pdfPreviewRenderingIdsRef = useRef<Set<string>>(new Set());
+
+  const closeImagePreview = useCallback(() => {
+    setIsImagePreviewVisible(false);
+    if (imagePreviewCloseTimerRef.current) {
+      window.clearTimeout(imagePreviewCloseTimerRef.current);
+      imagePreviewCloseTimerRef.current = null;
+    }
+    imagePreviewCloseTimerRef.current = window.setTimeout(() => {
+      setImagePreviewUrl(null);
+      setImagePreviewName('');
+      imagePreviewCloseTimerRef.current = null;
+    }, 150);
+  }, []);
+
+  const openImageInPortal = useCallback((url: string, previewName: string) => {
+    if (imagePreviewCloseTimerRef.current) {
+      window.clearTimeout(imagePreviewCloseTimerRef.current);
+      imagePreviewCloseTimerRef.current = null;
+    }
+    setImagePreviewUrl(url);
+    setImagePreviewName(previewName);
+    requestAnimationFrame(() => {
+      setIsImagePreviewVisible(true);
+    });
+  }, []);
 
   const releaseDocumentPreviewObjectUrl = useCallback(() => {
     if (!documentPreviewObjectUrlRef.current) return;
@@ -269,6 +334,10 @@ const MessagesPane = ({
 
   useEffect(() => {
     return () => {
+      if (imagePreviewCloseTimerRef.current) {
+        window.clearTimeout(imagePreviewCloseTimerRef.current);
+        imagePreviewCloseTimerRef.current = null;
+      }
       if (documentPreviewCloseTimerRef.current) {
         window.clearTimeout(documentPreviewCloseTimerRef.current);
         documentPreviewCloseTimerRef.current = null;
@@ -276,6 +345,185 @@ const MessagesPane = ({
       releaseDocumentPreviewObjectUrl();
     };
   }, [releaseDocumentPreviewObjectUrl]);
+
+  useEffect(() => {
+    setPdfMessagePreviews(prevPreviews => {
+      let hasChanges = false;
+      const nextPreviews: Record<string, PdfMessagePreview> = {};
+
+      for (const message of messages) {
+        if (message.message_type !== 'file') continue;
+        if (getAttachmentFileKind(message) !== 'document') continue;
+
+        const fileName = getAttachmentFileName(message);
+        const extension = resolveFileExtension(
+          fileName,
+          message.message,
+          message.file_mime_type
+        );
+        const isPdf =
+          extension === 'pdf' ||
+          message.file_mime_type?.toLowerCase().includes('pdf') === true;
+        if (!isPdf) continue;
+
+        const cacheKey = buildPdfMessagePreviewCacheKey(
+          message.id,
+          message.message,
+          message.updated_at,
+          fileName
+        );
+        const existingPreview = prevPreviews[message.id];
+
+        if (existingPreview?.cacheKey === cacheKey) {
+          nextPreviews[message.id] = existingPreview;
+          continue;
+        }
+
+        const cachedPreview = pdfMessagePreviewCache.get(cacheKey);
+        if (cachedPreview) {
+          nextPreviews[message.id] = cachedPreview;
+          hasChanges = true;
+          continue;
+        }
+
+        if (existingPreview) {
+          hasChanges = true;
+        }
+      }
+
+      if (
+        Object.keys(nextPreviews).length !== Object.keys(prevPreviews).length
+      ) {
+        hasChanges = true;
+      }
+
+      return hasChanges ? nextPreviews : prevPreviews;
+    });
+  }, [getAttachmentFileKind, getAttachmentFileName, messages]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const pendingPdfMessages = messages.filter(message => {
+      if (message.message_type !== 'file') return false;
+      if (getAttachmentFileKind(message) !== 'document') return false;
+
+      const fileName = getAttachmentFileName(message);
+      const extension = resolveFileExtension(
+        fileName,
+        message.message,
+        message.file_mime_type
+      );
+      const isPdf =
+        extension === 'pdf' ||
+        message.file_mime_type?.toLowerCase().includes('pdf') === true;
+      if (!isPdf) return false;
+      const cacheKey = buildPdfMessagePreviewCacheKey(
+        message.id,
+        message.message,
+        message.updated_at,
+        fileName
+      );
+      if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
+      if (pdfMessagePreviewCache.has(cacheKey)) return false;
+      if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
+      return true;
+    });
+
+    if (pendingPdfMessages.length === 0) return;
+
+    const renderPdfPreviews = async () => {
+      try {
+        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        const pdfWorkerModule =
+          await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
+
+        for (const pendingMessage of pendingPdfMessages) {
+          if (isCancelled) return;
+          pdfPreviewRenderingIdsRef.current.add(pendingMessage.id);
+
+          const pendingFileName = getAttachmentFileName(pendingMessage);
+          const cacheKey = buildPdfMessagePreviewCacheKey(
+            pendingMessage.id,
+            pendingMessage.message,
+            pendingMessage.updated_at,
+            pendingFileName
+          );
+          let pdfDocument: {
+            numPages: number;
+            getPage: (pageNumber: number) => Promise<any>;
+            cleanup: () => void;
+            destroy: () => void;
+          } | null = null;
+
+          try {
+            const response = await fetch(pendingMessage.message);
+            if (!response.ok) continue;
+
+            const fileBuffer = await response.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument(
+              new Uint8Array(fileBuffer)
+            );
+            const loadedPdfDocument = await loadingTask.promise;
+            pdfDocument = loadedPdfDocument;
+            const firstPage = await loadedPdfDocument.getPage(1);
+            const baseViewport = firstPage.getViewport({ scale: 1 });
+            const targetWidth = 260;
+            const scale = targetWidth / Math.max(baseViewport.width, 1);
+            const viewport = firstPage.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            if (!context) continue;
+
+            canvas.width = Math.max(1, Math.round(viewport.width));
+            canvas.height = Math.max(1, Math.round(viewport.height));
+
+            await firstPage.render({
+              canvas,
+              canvasContext: context,
+              viewport,
+              background: 'rgb(255, 255, 255)',
+            }).promise;
+
+            if (isCancelled) return;
+
+            const coverDataUrl = canvas.toDataURL('image/png');
+            const nextPreview: PdfMessagePreview = {
+              coverDataUrl,
+              pageCount: Math.max(loadedPdfDocument.numPages ?? 1, 1),
+              cacheKey,
+            };
+            pdfMessagePreviewCache.set(cacheKey, nextPreview);
+            setPdfMessagePreviews(prev => ({
+              ...prev,
+              [pendingMessage.id]: nextPreview,
+            }));
+          } catch (error) {
+            console.error('Error rendering PDF message preview:', error);
+          } finally {
+            pdfDocument?.cleanup();
+            pdfDocument?.destroy();
+            pdfPreviewRenderingIdsRef.current.delete(pendingMessage.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error preparing PDF preview renderer:', error);
+      }
+    };
+
+    void renderPdfPreviews();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    getAttachmentFileKind,
+    getAttachmentFileName,
+    messages,
+    pdfMessagePreviews,
+  ]);
 
   return (
     <>
@@ -341,6 +589,38 @@ const MessagesPane = ({
                 !isAudioFileMessage &&
                 (fileExtension === 'pdf' ||
                   msg.file_mime_type?.toLowerCase().includes('pdf') === true);
+              const isImageFileMessage =
+                isFileMessage &&
+                !isAudioFileMessage &&
+                isImageFileExtensionOrMime(fileExtension, msg.file_mime_type);
+              const pdfPreviewCacheKey =
+                isPdfFileMessage && fileName
+                  ? buildPdfMessagePreviewCacheKey(
+                      msg.id,
+                      msg.message,
+                      msg.updated_at,
+                      fileName
+                    )
+                  : null;
+              const pdfMessagePreview = isPdfFileMessage
+                ? pdfMessagePreviews[msg.id] &&
+                  pdfMessagePreviews[msg.id].cacheKey === pdfPreviewCacheKey
+                  ? pdfMessagePreviews[msg.id]
+                  : pdfPreviewCacheKey
+                    ? pdfMessagePreviewCache.get(pdfPreviewCacheKey)
+                    : undefined
+                : undefined;
+              const pdfMetaLabel = isPdfFileMessage
+                ? [
+                    pdfMessagePreview?.pageCount
+                      ? `${pdfMessagePreview.pageCount} halaman`
+                      : null,
+                    'PDF',
+                    fileSizeLabel,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'PDF'
+                : null;
               const fileIcon = isAudioFileMessage ? (
                 <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />
               ) : fileExtension === 'jpg' || fileExtension === 'jpeg' ? (
@@ -430,6 +710,10 @@ const MessagesPane = ({
                   label: 'Buka',
                   icon: <TbEye className="h-4 w-4" />,
                   onClick: () => {
+                    if (isImageMessage || isImageFileMessage) {
+                      openImageInPortal(msg.message, fileName || 'Gambar');
+                      return;
+                    }
                     if (
                       isFileMessage &&
                       fileKind === 'document' &&
@@ -617,6 +901,34 @@ const MessagesPane = ({
                             loading="lazy"
                             draggable={false}
                           />
+                        ) : isPdfFileMessage ? (
+                          <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
+                            <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">
+                              {pdfMessagePreview?.coverDataUrl ? (
+                                <img
+                                  src={pdfMessagePreview.coverDataUrl}
+                                  alt={`Preview ${fileName || 'dokumen PDF'}`}
+                                  className="h-full w-full object-cover object-top"
+                                  draggable={false}
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <TbFileTypePdf className="h-10 w-10 text-slate-500" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 px-2 py-2">
+                              <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
+                              <div className="min-w-0 flex-1 overflow-hidden">
+                                <p className="block w-full truncate text-sm font-medium text-slate-800">
+                                  {fileName}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {pdfMetaLabel}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         ) : isFileMessage ? (
                           <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
                             {fileIcon}
@@ -877,6 +1189,32 @@ const MessagesPane = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ImageExpandPreview
+        isOpen={Boolean(imagePreviewUrl)}
+        isVisible={isImagePreviewVisible}
+        onClose={closeImagePreview}
+        backdropClassName="z-[79] px-4 py-6"
+        contentClassName="max-h-[92vh] max-w-[92vw] p-0"
+        backdropRole="button"
+        backdropTabIndex={0}
+        backdropAriaLabel="Tutup preview gambar"
+        onBackdropKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            closeImagePreview();
+          }
+        }}
+      >
+        {imagePreviewUrl ? (
+          <img
+            src={imagePreviewUrl}
+            alt={imagePreviewName || 'Preview gambar'}
+            className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
+            draggable={false}
+          />
+        ) : null}
+      </ImageExpandPreview>
 
       <DocumentPreviewPortal
         isOpen={Boolean(documentPreviewUrl)}
