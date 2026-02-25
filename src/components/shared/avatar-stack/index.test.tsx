@@ -142,4 +142,17 @@ describe('AvatarStack', () => {
     );
     expect(document.querySelector('.blur-xs')).toBeTruthy();
   });
+
+  it('renders offline avatars with 50% opacity when online ids are provided', () => {
+    render(
+      <AvatarStack
+        users={users.slice(0, 2)}
+        maxVisible={2}
+        onlineUserIds={new Set(['u-1'])}
+      />
+    );
+
+    expect(screen.getByTitle('Alice Smith - Online')).toBeInTheDocument();
+    expect(screen.getByTitle('Bob Stone - Offline')).toHaveClass('opacity-50');
+  });
 });

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { ChatTargetUser, NavbarProps } from '@/types';
+import type { ChatTargetUser, NavbarProps, OnlineUser } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
+import { usersService } from '@/services/api/users.service';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -15,10 +16,12 @@ import AvatarStack from '@/components/shared/avatar-stack';
 
 const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
   const { user } = useAuthStore();
+  const userId = user?.id ?? null;
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const [showPortal, setShowPortal] = useState(false);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [allUsersList, setAllUsersList] = useState<OnlineUser[]>([]);
   const [portalImageUrls, setPortalImageUrls] = useState<
     Record<string, string>
   >({});
@@ -26,29 +29,65 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
 
+  const onlineUserIds = useMemo(
+    () => new Set(onlineUsersList.map(onlineUser => onlineUser.id)),
+    [onlineUsersList]
+  );
+
+  const allPresenceUsers = useMemo(() => {
+    if (allUsersList.length === 0) return onlineUsersList;
+
+    const offlineUsers = allUsersList.filter(
+      presenceUser => !onlineUserIds.has(presenceUser.id)
+    );
+
+    return [...onlineUsersList, ...offlineUsers];
+  }, [allUsersList, onlineUserIds, onlineUsersList]);
+
   // Reorder users so current user appears last (rightmost) if present
   const reorderedOnlineUsers = useMemo(() => {
-    if (onlineUsersList.length === 0 || !user) return onlineUsersList;
-    const currentUserIndex = onlineUsersList.findIndex(u => u.id === user.id);
+    if (allPresenceUsers.length === 0 || !user) return allPresenceUsers;
+    const currentUserIndex = allPresenceUsers.findIndex(u => u.id === user.id);
     if (currentUserIndex !== -1) {
-      const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
-      const currentUserObj = onlineUsersList[currentUserIndex];
+      const otherUsers = allPresenceUsers.filter(u => u.id !== user.id);
+      const currentUserObj = allPresenceUsers[currentUserIndex];
       return [...otherUsers, currentUserObj];
     }
-    return onlineUsersList;
-  }, [onlineUsersList, user]);
+    return allPresenceUsers;
+  }, [allPresenceUsers, user]);
 
   // Reorder users for portal so current user appears first (top) if present
   const portalOrderedUsers = useMemo(() => {
-    if (onlineUsersList.length === 0 || !user) return onlineUsersList;
-    const currentUserIndex = onlineUsersList.findIndex(u => u.id === user.id);
+    if (allPresenceUsers.length === 0 || !user) return allPresenceUsers;
+    const currentUserIndex = allPresenceUsers.findIndex(u => u.id === user.id);
     if (currentUserIndex !== -1) {
-      const otherUsers = onlineUsersList.filter(u => u.id !== user.id);
-      const currentUserObj = onlineUsersList[currentUserIndex];
+      const otherUsers = allPresenceUsers.filter(u => u.id !== user.id);
+      const currentUserObj = allPresenceUsers[currentUserIndex];
       return [currentUserObj, ...otherUsers];
     }
-    return onlineUsersList;
-  }, [onlineUsersList, user]);
+    return allPresenceUsers;
+  }, [allPresenceUsers, user]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveAllUsers = async () => {
+      if (!userId) {
+        if (isActive) setAllUsersList([]);
+        return;
+      }
+
+      const { data, error } = await usersService.getAllUsers();
+      if (!isActive || error) return;
+      setAllUsersList(data || []);
+    };
+
+    void resolveAllUsers();
+
+    return () => {
+      isActive = false;
+    };
+  }, [userId]);
 
   useEffect(() => {
     let isActive = true;
@@ -262,6 +301,7 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
                 maxVisible={4}
                 size="md"
                 showPortal={showPortal}
+                onlineUserIds={onlineUserIds}
               />
 
               <div className="flex items-center text-sm text-slate-600">
@@ -289,99 +329,106 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
                     onMouseLeave={handleOnlineTextLeave}
                   >
                     <div className="space-y-1">
-                      {portalOrderedUsers.map(portalUser => (
-                        <div
-                          key={portalUser.id}
-                          className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
-                            portalUser.id !== user?.id
-                              ? 'cursor-pointer hover:bg-emerald-50'
-                              : 'cursor-default hover:bg-slate-50'
-                          }`}
-                          onMouseEnter={() => setHoveredUser(portalUser.id)}
-                          onMouseLeave={() => setHoveredUser(null)}
-                          onClick={() =>
-                            portalUser.id !== user?.id &&
-                            handleChatOpen(portalUser)
-                          }
-                        >
-                          {/* User Info Group */}
-                          <div className="relative flex items-center">
-                            {/* Avatar in portal */}
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1.25 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{
-                                duration: 0.2,
-                                ease: 'easeOut',
-                              }}
-                              className="relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden"
-                              title={`${portalUser.name} - Online`}
-                            >
-                              {portalImageUrls[portalUser.id] ? (
-                                <img
-                                  src={portalImageUrls[portalUser.id]}
-                                  alt={portalUser.name}
-                                  className="w-full h-full object-cover"
-                                  draggable={false}
-                                />
-                              ) : (
-                                <div
-                                  className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
-                                >
-                                  {getInitials(portalUser.name)}
-                                </div>
-                              )}
-                            </motion.div>
+                      {portalOrderedUsers.map(portalUser => {
+                        const isOnline = onlineUserIds.has(portalUser.id);
 
-                            {/* User Info */}
-                            <motion.div
-                              className="w-36 min-w-0 ml-3 overflow-hidden"
-                              initial={{ opacity: 1 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 0.25, ease: 'easeOut' }}
-                            >
-                              <div className="flex items-center gap-1">
-                                <p className="text-sm font-medium text-slate-900 truncate">
-                                  {portalUser.name}
-                                </p>
-                                {portalUser.id === user?.id && (
-                                  <span className="flex items-center gap-1 text-xs">
-                                    <span className="w-3 h-px bg-slate-400 translate-y-0.5"></span>
-                                    <span className="text-primary font-medium">
-                                      You
-                                    </span>
-                                  </span>
+                        return (
+                          <div
+                            key={portalUser.id}
+                            className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
+                              portalUser.id !== user?.id
+                                ? 'cursor-pointer hover:bg-emerald-50'
+                                : 'cursor-default hover:bg-slate-50'
+                            }`}
+                            onMouseEnter={() => setHoveredUser(portalUser.id)}
+                            onMouseLeave={() => setHoveredUser(null)}
+                            onClick={() =>
+                              portalUser.id !== user?.id &&
+                              handleChatOpen(portalUser)
+                            }
+                          >
+                            {/* User Info Group */}
+                            <div className="relative flex items-center">
+                              {/* Avatar in portal */}
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{
+                                  opacity: isOnline ? 1 : 0.5,
+                                  scale: 1.25,
+                                }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{
+                                  duration: 0.2,
+                                  ease: 'easeOut',
+                                }}
+                                className={`relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden ${isOnline ? '' : 'opacity-50'}`}
+                                title={`${portalUser.name} - ${isOnline ? 'Online' : 'Offline'}`}
+                              >
+                                {portalImageUrls[portalUser.id] ? (
+                                  <img
+                                    src={portalImageUrls[portalUser.id]}
+                                    alt={portalUser.name}
+                                    className="w-full h-full object-cover"
+                                    draggable={false}
+                                  />
+                                ) : (
+                                  <div
+                                    className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
+                                  >
+                                    {getInitials(portalUser.name)}
+                                  </div>
                                 )}
-                              </div>
-                              <p className="text-xs text-slate-500 truncate">
-                                {portalUser.email}
-                              </p>
-                            </motion.div>
-                          </div>
+                              </motion.div>
 
-                          {/* Chat Icon Indicator - only visible on hover */}
-                          <AnimatePresence>
-                            {portalUser.id !== user?.id &&
-                              hoveredUser === portalUser.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.8 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0.8 }}
-                                  transition={{
-                                    duration: 0.15,
-                                    ease: 'easeOut',
-                                  }}
-                                  className="absolute top-3 right-3 text-emerald-600"
-                                  title="Click to chat with this user"
-                                >
-                                  <TbMessageDots size={18} />
-                                </motion.div>
-                              )}
-                          </AnimatePresence>
-                        </div>
-                      ))}
+                              {/* User Info */}
+                              <motion.div
+                                className="w-36 min-w-0 ml-3 overflow-hidden"
+                                initial={{ opacity: 1 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  <p className="text-sm font-medium text-slate-900 truncate">
+                                    {portalUser.name}
+                                  </p>
+                                  {portalUser.id === user?.id && (
+                                    <span className="flex items-center gap-1 text-xs">
+                                      <span className="w-3 h-px bg-slate-400 translate-y-0.5"></span>
+                                      <span className="text-primary font-medium">
+                                        You
+                                      </span>
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-500 truncate">
+                                  {portalUser.email}
+                                </p>
+                              </motion.div>
+                            </div>
+
+                            {/* Chat Icon Indicator - only visible on hover */}
+                            <AnimatePresence>
+                              {portalUser.id !== user?.id &&
+                                hoveredUser === portalUser.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    transition={{
+                                      duration: 0.15,
+                                      ease: 'easeOut',
+                                    }}
+                                    className="absolute top-3 right-3 text-emerald-600"
+                                    title="Click to chat with this user"
+                                  >
+                                    <TbMessageDots size={18} />
+                                  </motion.div>
+                                )}
+                            </AnimatePresence>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

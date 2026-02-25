@@ -14,11 +14,13 @@ interface AvatarStackProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showPortal?: boolean;
+  onlineUserIds?: ReadonlySet<string>;
 }
 
 interface AvatarProps {
   user: OnlineUser;
   size: 'sm' | 'md' | 'lg' | 'portal';
+  isOnline: boolean;
   isInPortal?: boolean;
   index?: number;
   overlap?: boolean;
@@ -31,6 +33,7 @@ const Avatar = memo(
   ({
     user,
     size,
+    isOnline,
     isInPortal = false,
     index = 0,
     overlap = false,
@@ -90,7 +93,7 @@ const Avatar = memo(
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{
-          opacity: 1,
+          opacity: isOnline ? 1 : 0.5,
           scale: isInPortal ? 1.25 : 1,
         }}
         exit={{ opacity: 0, scale: 0.8 }}
@@ -103,10 +106,11 @@ const Avatar = memo(
         }}
         className={`
         relative rounded-full shadow-sm w-8 h-8 overflow-hidden
+        ${isOnline ? '' : 'opacity-50'}
         ${overlap && !isInPortal ? overlapClass[size as keyof typeof overlapClass] || '' : ''}
         ${isInPortal ? 'shrink-0' : ''}
       `}
-        title={`${user.name} - Online`}
+        title={`${user.name} - ${isOnline ? 'Online' : 'Offline'}`}
       >
         {displayImageUrl ? (
           <img
@@ -139,6 +143,7 @@ const AvatarStack = memo(
     size = 'md',
     className = '',
     showPortal = false,
+    onlineUserIds,
   }: AvatarStackProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { user: currentUser } = useAuthStore();
@@ -210,6 +215,7 @@ const AvatarStack = memo(
               key={user.id}
               user={user}
               size={size}
+              isOnline={onlineUserIds ? onlineUserIds.has(user.id) : true}
               isInPortal={false}
               index={index}
               overlap={index > 0}
@@ -227,7 +233,7 @@ const AvatarStack = memo(
                 flex items-center justify-center text-slate-600 font-medium
                 shadow-sm
               `}
-              title={`+${hiddenCount} more online users`}
+              title={`+${hiddenCount} more users`}
             >
               +{hiddenCount}
             </div>

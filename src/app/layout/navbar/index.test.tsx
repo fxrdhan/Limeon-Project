@@ -10,6 +10,7 @@ import Navbar from './index';
 
 const useAuthStoreMock = vi.hoisted(() => vi.fn());
 const usePresenceStoreMock = vi.hoisted(() => vi.fn());
+const getAllUsersMock = vi.hoisted(() => vi.fn());
 const setCachedImageMock = vi.hoisted(() => vi.fn());
 const getCachedImageBlobUrlMock = vi.hoisted(() => vi.fn());
 const cacheImageBlobMock = vi.hoisted(() => vi.fn());
@@ -20,6 +21,12 @@ vi.mock('@/store/authStore', () => ({
 
 vi.mock('@/store/presenceStore', () => ({
   usePresenceStore: usePresenceStoreMock,
+}));
+
+vi.mock('@/services/api/users.service', () => ({
+  usersService: {
+    getAllUsers: getAllUsersMock,
+  },
 }));
 
 vi.mock('@/utils/imageCache', () => ({
@@ -77,6 +84,7 @@ describe('Navbar', () => {
   beforeEach(() => {
     useAuthStoreMock.mockReset();
     usePresenceStoreMock.mockReset();
+    getAllUsersMock.mockReset();
     setCachedImageMock.mockReset();
     getCachedImageBlobUrlMock.mockReset();
     cacheImageBlobMock.mockReset();
@@ -86,6 +94,7 @@ describe('Navbar', () => {
       onlineUsers: 3,
       onlineUsersList,
     });
+    getAllUsersMock.mockResolvedValue({ data: onlineUsersList, error: null });
 
     getCachedImageBlobUrlMock.mockResolvedValue(null);
     cacheImageBlobMock.mockResolvedValue('blob:https://cached-photo');
@@ -248,6 +257,30 @@ describe('Navbar', () => {
 
     expect(screen.getByText('0 Online')).toBeInTheDocument();
     expect(screen.getByTestId('avatar-stack')).toHaveTextContent('1:false');
+  });
+
+  it('shows offline users in portal list with reduced avatar opacity', async () => {
+    const offlineUser = {
+      id: 'u-9',
+      name: 'Offline User',
+      email: 'offline@example.com',
+      profilephoto: '',
+    };
+    getAllUsersMock.mockResolvedValue({
+      data: [...onlineUsersList, { ...offlineUser, online_at: '2026-01-01' }],
+      error: null,
+    });
+
+    render(<Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={true} />);
+
+    const hoverRegion = screen.getByText('3 Online').closest('div');
+    expect(hoverRegion).toBeTruthy();
+    fireEvent.mouseEnter(hoverRegion!);
+
+    expect(await screen.findByText('Offline User')).toBeInTheDocument();
+    expect(screen.getByTitle('Offline User - Offline')).toHaveClass(
+      'opacity-50'
+    );
   });
 
   it('handles empty online user list and user-not-in-list ordering paths', async () => {

@@ -15,6 +15,25 @@ describe('UsersService', () => {
     fromMock.mockReset();
   });
 
+  it('fetches all users and adds online_at', async () => {
+    const query = createThenableQuery({
+      data: [{ id: '1', name: 'A' }],
+      error: null,
+    });
+    fromMock.mockReturnValue(query);
+
+    const result = await usersService.getAllUsers();
+    expect(result.data?.[0].online_at).toBeDefined();
+  });
+
+  it('returns error when getAllUsers fails', async () => {
+    const query = createThenableQuery({ data: null, error: new Error('fail') });
+    fromMock.mockReturnValue(query);
+
+    const result = await usersService.getAllUsers();
+    expect(result.data).toBeNull();
+  });
+
   it('returns empty array when no ids', async () => {
     const result = await usersService.getUsersByIds([]);
     expect(result.data).toEqual([]);
