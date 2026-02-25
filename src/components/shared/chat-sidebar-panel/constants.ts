@@ -3,6 +3,7 @@ export const MENU_WIDTH = 140;
 export const MENU_HEIGHT = 128;
 export const MAX_MESSAGE_CHARS = 220;
 export const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
+export const CHAT_MESSAGES_CACHE_TTL = 45_000;
 export const MESSAGE_INPUT_MIN_HEIGHT = 22;
 export const MESSAGE_INPUT_MAX_HEIGHT = 170;
 export const COMPOSER_LAYOUT_SWITCH_DELAY = 55;

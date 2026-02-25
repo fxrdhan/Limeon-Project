@@ -405,6 +405,35 @@ describe('ChatSidebarPanel', () => {
     expect(await screen.findByText('Online')).toBeInTheDocument();
   });
 
+  it('reuses cached conversation when reopening same channel quickly', async () => {
+    const { rerender } = render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    expect(await screen.findByText('Halo dari target')).toBeInTheDocument();
+    expect(chatServiceMock.fetchMessagesBetweenUsers).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <ChatSidebarPanel
+        isOpen={false}
+        onClose={vi.fn()}
+        targetUser={targetUser}
+      />
+    );
+
+    rerender(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    expect(await screen.findByText('Halo dari target')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(chatServiceMock.fetchMessagesBetweenUsers).toHaveBeenCalledTimes(
+        1
+      );
+    });
+  });
+
   it('renders attachment caption in the same bubble when text replies to file message', async () => {
     chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
       data: [

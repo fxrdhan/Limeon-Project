@@ -26,6 +26,7 @@ import {
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import {
+  CHAT_MESSAGES_CACHE_TTL,
   CHAT_SIDEBAR_TOASTER_ID,
   COMPOSER_BASE_BORDER_COLOR,
   COMPOSER_BASE_SHADOW,
@@ -69,6 +70,11 @@ import {
 import { getInitials, getInitialsColor } from './utils/avatar';
 import { getClipboardImagePayload } from './utils/clipboard';
 import { generateChannelId } from './utils/channel';
+
+type ConversationCacheEntry = {
+  messages: ChatMessage[];
+  cachedAt: number;
+};
 
 const ChatSidebarPanel = memo(
   ({ isOpen, onClose, targetUser }: ChatSidebarPanelProps) => {
@@ -165,6 +171,9 @@ const ChatSidebarPanel = memo(
     const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
     const hasCompletedInitialOpenLoadRef = useRef(false);
+    const conversationCacheRef = useRef<Map<string, ConversationCacheEntry>>(
+      new Map()
+    );
     const inlineOverflowThresholdRef = useRef<number | null>(null);
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
@@ -192,6 +201,24 @@ const ChatSidebarPanel = memo(
     useEffect(() => {
       pendingComposerAttachmentsRef.current = pendingComposerAttachments;
     }, [pendingComposerAttachments]);
+
+    useEffect(() => {
+      if (
+        !isOpen ||
+        !currentChannelId ||
+        !hasCompletedInitialOpenLoadRef.current
+      )
+        return;
+
+      const persistedMessages = messages
+        .filter(messageItem => !messageItem.id.startsWith('temp_'))
+        .map(messageItem => ({ ...messageItem }));
+
+      conversationCacheRef.current.set(currentChannelId, {
+        messages: persistedMessages,
+        cachedAt: Date.now(),
+      });
+    }, [isOpen, currentChannelId, messages]);
 
     const getVisibleMessagesBounds = useCallback(() => {
       const containerRect =
@@ -702,33 +729,21 @@ const ChatSidebarPanel = memo(
       }
 
       const loadMessages = async () => {
-        setLoading(true);
-        try {
-          // Fetch existing messages (simplified query without JOIN)
-          const { data: existingMessages, error } =
-            await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
+        const applyConversationSnapshot = (snapshotMessages: ChatMessage[]) => {
+          const transformedMessages: ChatMessage[] = snapshotMessages.map(
+            messageItem => ({
+              ...messageItem,
+              sender_name:
+                messageItem.sender_id === user.id
+                  ? user.name || 'You'
+                  : targetUser.name || 'Unknown',
+              receiver_name:
+                messageItem.receiver_id === user.id
+                  ? user.name || 'You'
+                  : targetUser.name || 'Unknown',
+            })
+          );
 
-          if (error) {
-            console.error('Error loading messages:', error);
-            return;
-          }
-
-          // Transform messages for display (use existing user data)
-          const transformedMessages: ChatMessage[] = (
-            existingMessages || []
-          ).map(msg => ({
-            ...msg,
-            sender_name:
-              msg.sender_id === user.id
-                ? user.name || 'You'
-                : targetUser.name || 'Unknown',
-            receiver_name:
-              msg.receiver_id === user.id
-                ? user.name || 'You'
-                : targetUser.name || 'Unknown',
-          }));
-
-          // Skip enter animation for messages that exist on initial load/open.
           const initialMessageAnimationKeys = new Set(
             transformedMessages.map(
               messageItem => messageItem.stableKey || messageItem.id
@@ -738,6 +753,7 @@ const ChatSidebarPanel = memo(
           initialOpenJumpAnimationKeysRef.current = new Set(
             initialMessageAnimationKeys
           );
+
           setMessages(previousMessages => {
             if (previousMessages.length === 0) {
               return transformedMessages;
@@ -747,10 +763,53 @@ const ChatSidebarPanel = memo(
               transformedMessages.map(messageItem => messageItem.id)
             );
             const pendingMessages = previousMessages.filter(
-              messageItem => !transformedIds.has(messageItem.id)
+              messageItem =>
+                !transformedIds.has(messageItem.id) &&
+                messageItem.id.startsWith('temp_')
             );
 
             return [...transformedMessages, ...pendingMessages];
+          });
+
+          return transformedMessages;
+        };
+
+        const cachedConversation =
+          conversationCacheRef.current.get(currentChannelId);
+        const hasCachedConversation = Boolean(cachedConversation);
+        const isCachedConversationFresh = Boolean(
+          cachedConversation &&
+          Date.now() - cachedConversation.cachedAt <= CHAT_MESSAGES_CACHE_TTL
+        );
+
+        if (hasCachedConversation && cachedConversation) {
+          applyConversationSnapshot(cachedConversation.messages);
+          hasCompletedInitialOpenLoadRef.current = true;
+        } else {
+          setMessages([]);
+        }
+
+        if (isCachedConversationFresh) {
+          setLoading(false);
+          return;
+        }
+
+        setLoading(!hasCachedConversation);
+        try {
+          // Fetch existing messages (simplified query without JOIN)
+          const { data: existingMessages, error } =
+            await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
+
+          if (error) {
+            console.error('Error loading messages:', error);
+            return;
+          }
+          const transformedMessages = applyConversationSnapshot(
+            existingMessages || []
+          );
+          conversationCacheRef.current.set(currentChannelId, {
+            messages: transformedMessages,
+            cachedAt: Date.now(),
           });
         } catch (error) {
           console.error('Error loading messages:', error);
