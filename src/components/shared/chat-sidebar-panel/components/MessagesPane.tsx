@@ -30,8 +30,8 @@ import {
 import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
-import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import DocumentPreviewPortal from './DocumentPreviewPortal';
 import type { ChatMessage } from '@/services/api/chat.service';
 import type {
   ChatSidebarPanelTargetUser,
@@ -205,6 +205,7 @@ const MessagesPane = ({
   const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(
     null
   );
+  const [documentPreviewName, setDocumentPreviewName] = useState('');
   const [isDocumentPreviewVisible, setIsDocumentPreviewVisible] =
     useState(false);
   const documentPreviewCloseTimerRef = useRef<number | null>(null);
@@ -224,13 +225,14 @@ const MessagesPane = ({
     }
     documentPreviewCloseTimerRef.current = window.setTimeout(() => {
       setDocumentPreviewUrl(null);
+      setDocumentPreviewName('');
       releaseDocumentPreviewObjectUrl();
       documentPreviewCloseTimerRef.current = null;
     }, 150);
   }, [releaseDocumentPreviewObjectUrl]);
 
   const openDocumentInPortal = useCallback(
-    async (url: string, forcePdfMime = false) => {
+    async (url: string, previewName: string, forcePdfMime = false) => {
       if (documentPreviewCloseTimerRef.current) {
         window.clearTimeout(documentPreviewCloseTimerRef.current);
         documentPreviewCloseTimerRef.current = null;
@@ -257,6 +259,7 @@ const MessagesPane = ({
       }
 
       setDocumentPreviewUrl(nextPreviewUrl);
+      setDocumentPreviewName(previewName);
       requestAnimationFrame(() => {
         setIsDocumentPreviewVisible(true);
       });
@@ -432,7 +435,11 @@ const MessagesPane = ({
                       fileKind === 'document' &&
                       isPdfFileMessage
                     ) {
-                      void openDocumentInPortal(msg.message, isPdfFileMessage);
+                      void openDocumentInPortal(
+                        msg.message,
+                        fileName || 'Dokumen',
+                        isPdfFileMessage
+                      );
                       return;
                     }
                     openInNewTab(msg.message);
@@ -871,32 +878,15 @@ const MessagesPane = ({
         )}
       </AnimatePresence>
 
-      <ImageExpandPreview
+      <DocumentPreviewPortal
         isOpen={Boolean(documentPreviewUrl)}
         isVisible={isDocumentPreviewVisible}
+        previewUrl={documentPreviewUrl}
+        previewName={documentPreviewName}
         onClose={closeDocumentPreview}
         backdropClassName="z-[80] px-4 py-6"
-        contentClassName="h-[92vh] w-[min(1100px,92vw)] max-w-[92vw] p-0"
-        backdropRole="button"
-        backdropTabIndex={0}
-        backdropAriaLabel="Tutup preview dokumen"
-        onBackdropKeyDown={event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            closeDocumentPreview();
-          }
-        }}
-      >
-        {documentPreviewUrl ? (
-          <div className="h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-            <iframe
-              src={documentPreviewUrl}
-              title="Preview dokumen"
-              className="h-full w-full bg-white"
-            />
-          </div>
-        ) : null}
-      </ImageExpandPreview>
+        iframeTitle="Preview dokumen"
+      />
     </>
   );
 };

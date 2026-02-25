@@ -30,6 +30,7 @@ import {
 } from 'react-icons/tb';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import DocumentPreviewPortal from './DocumentPreviewPortal';
 import type { PendingComposerAttachment } from '../types';
 
 const resolveAttachmentExtension = (attachment: PendingComposerAttachment) => {
@@ -155,6 +156,8 @@ const ComposerPanel = ({
   const [composerDocumentPreviewUrl, setComposerDocumentPreviewUrl] = useState<
     string | null
   >(null);
+  const [composerDocumentPreviewName, setComposerDocumentPreviewName] =
+    useState('');
   const [
     isComposerDocumentPreviewVisible,
     setIsComposerDocumentPreviewVisible,
@@ -222,6 +225,7 @@ const ComposerPanel = ({
     }
     composerDocumentPreviewCloseTimerRef.current = window.setTimeout(() => {
       setComposerDocumentPreviewUrl(null);
+      setComposerDocumentPreviewName('');
       releaseComposerDocumentPreviewObjectUrl();
       composerDocumentPreviewCloseTimerRef.current = null;
     }, 150);
@@ -260,6 +264,7 @@ const ComposerPanel = ({
       const attachmentUrl = URL.createObjectURL(openTarget);
       composerDocumentPreviewObjectUrlRef.current = attachmentUrl;
       setComposerDocumentPreviewUrl(attachmentUrl);
+      setComposerDocumentPreviewName(attachment.fileName || 'Dokumen');
       requestAnimationFrame(() => {
         setIsComposerDocumentPreviewVisible(true);
       });
@@ -900,32 +905,15 @@ const ComposerPanel = ({
         ) : null}
       </ImageExpandPreview>
 
-      <ImageExpandPreview
+      <DocumentPreviewPortal
         isOpen={Boolean(composerDocumentPreviewUrl)}
         isVisible={isComposerDocumentPreviewVisible}
+        previewUrl={composerDocumentPreviewUrl}
+        previewName={composerDocumentPreviewName}
         onClose={closeComposerDocumentPreview}
         backdropClassName="z-[72] px-4 py-6"
-        contentClassName="h-[92vh] w-[min(1100px,92vw)] max-w-[92vw] p-0"
-        backdropRole="button"
-        backdropTabIndex={0}
-        backdropAriaLabel="Tutup preview dokumen"
-        onBackdropKeyDown={event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            closeComposerDocumentPreview();
-          }
-        }}
-      >
-        {composerDocumentPreviewUrl ? (
-          <div className="h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-            <iframe
-              src={composerDocumentPreviewUrl}
-              title="Preview dokumen composer"
-              className="h-full w-full bg-white"
-            />
-          </div>
-        ) : null}
-      </ImageExpandPreview>
+        iframeTitle="Preview dokumen composer"
+      />
     </>
   );
 };
