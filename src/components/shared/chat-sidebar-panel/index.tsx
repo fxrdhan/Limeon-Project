@@ -725,6 +725,61 @@ const ChatSidebarPanel = memo(
       }
     }, [targetUser]);
 
+    const markIncomingMessagesAsRead = useCallback(async () => {
+      if (!user || !targetUser || !currentChannelId) return;
+
+      try {
+        const { data: readMessages, error } =
+          await chatService.markMessagesAsRead(
+            targetUser.id,
+            user.id,
+            currentChannelId
+          );
+        if (error || !readMessages || readMessages.length === 0) return;
+
+        const mappedReadMessages = readMessages.map(readMessage => ({
+          ...readMessage,
+          sender_name:
+            readMessage.sender_id === user.id
+              ? user.name || 'You'
+              : targetUser.name || 'Unknown',
+          receiver_name:
+            readMessage.receiver_id === user.id
+              ? user.name || 'You'
+              : targetUser.name || 'Unknown',
+        }));
+        const mappedReadMessagesById = new Map(
+          mappedReadMessages.map(readMessage => [readMessage.id, readMessage])
+        );
+
+        setMessages(previousMessages =>
+          previousMessages.map(previousMessage => {
+            const nextReadMessage = mappedReadMessagesById.get(
+              previousMessage.id
+            );
+            if (!nextReadMessage) return previousMessage;
+            return {
+              ...previousMessage,
+              ...nextReadMessage,
+              stableKey: previousMessage.stableKey,
+            };
+          })
+        );
+
+        if (channelRef.current) {
+          mappedReadMessages.forEach(readMessage => {
+            channelRef.current?.send({
+              type: 'broadcast',
+              event: 'update_message',
+              payload: readMessage,
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+      }
+    }, [currentChannelId, targetUser, user]);
+
     // PRIORITY 1: Simulate close button click when isOpen changes to false
     useEffect(() => {
       const previousIsOpen = previousIsOpenRef.current;
@@ -819,6 +874,7 @@ const ChatSidebarPanel = memo(
             messages: transformedMessages,
             cachedAt: Date.now(),
           });
+          await markIncomingMessagesAsRead();
         } catch (error) {
           console.error('Error loading messages:', error);
         } finally {
@@ -854,6 +910,13 @@ const ChatSidebarPanel = memo(
             if (exists) return prev;
             return [...prev, newMessage];
           });
+          if (
+            newMessage.sender_id === targetUser.id &&
+            newMessage.receiver_id === user.id &&
+            !newMessage.is_read
+          ) {
+            void markIncomingMessagesAsRead();
+          }
         });
 
         channel.on('broadcast', { event: 'update_message' }, payload => {
@@ -982,8 +1045,8 @@ const ChatSidebarPanel = memo(
         globalPresenceChannelRef.current = globalPresenceChannel;
       };
 
-      loadMessages();
       setupRealtimeSubscription();
+      loadMessages();
       setupPresenceSubscription();
       setupGlobalPresenceSubscription();
 
@@ -1025,6 +1088,7 @@ const ChatSidebarPanel = memo(
       currentChannelId,
       updateUserChatOpen,
       loadTargetUserPresence,
+      markIncomingMessagesAsRead,
       scrollMessagesToBottom,
     ]);
 
@@ -2859,6 +2923,7 @@ const ChatSidebarPanel = memo(
       }
 
       const hasPendingAttachments = pendingComposerAttachments.length > 0;
+      const attachmentsToSend = [...pendingComposerAttachments];
       const messageText = message.trim();
 
       if (!hasPendingAttachments && !messageText) return;
@@ -2867,13 +2932,16 @@ const ChatSidebarPanel = memo(
       if (shouldAttachCaption) {
         setMessage('');
       }
+      if (hasPendingAttachments) {
+        clearPendingComposerAttachments();
+      }
 
       let lastAttachmentMessageId: string | null = null;
-      const lastAttachmentIndex = pendingComposerAttachments.length - 1;
+      const lastAttachmentIndex = attachmentsToSend.length - 1;
       for (const [
         attachmentIndex,
         pendingAttachment,
-      ] of pendingComposerAttachments.entries()) {
+      ] of attachmentsToSend.entries()) {
         const captionForAttachment =
           shouldAttachCaption && attachmentIndex === lastAttachmentIndex
             ? messageText
@@ -2903,7 +2971,6 @@ const ChatSidebarPanel = memo(
         }
 
         lastAttachmentMessageId = sentAttachmentMessageId;
-        removePendingComposerAttachment(pendingAttachment.id);
       }
 
       if (messageText && !shouldAttachCaption) {

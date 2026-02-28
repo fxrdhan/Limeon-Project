@@ -142,6 +142,28 @@ export const chatService = {
     }
   },
 
+  async markMessagesAsRead(
+    senderId: string,
+    receiverId: string,
+    channelId?: string | null
+  ): Promise<ServiceResponse<ChatMessage[]>> {
+    try {
+      const { data, error } = await supabase.rpc('mark_chat_messages_as_read', {
+        p_sender_id: senderId,
+        p_receiver_id: receiverId,
+        p_channel_id: channelId ?? null,
+      });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as ChatMessage[], error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async deleteMessage(id: string): Promise<ServiceResponse<null>> {
     try {
       const { error } = await supabase

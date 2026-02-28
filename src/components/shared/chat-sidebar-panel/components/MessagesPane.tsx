@@ -9,7 +9,10 @@ import {
   type RefObject,
 } from 'react';
 import {
+  TbCheck,
+  TbChecks,
   TbCircleArrowDownFilled,
+  TbClock,
   TbCopy,
   TbDownload,
   TbEye,
@@ -748,6 +751,13 @@ const MessagesPane = ({
                 Number.isFinite(createdTimestamp) &&
                 Number.isFinite(updatedTimestamp) &&
                 updatedTimestamp > createdTimestamp;
+              const messageDeliveryStatus = isCurrentUser
+                ? msg.id.startsWith('temp_')
+                  ? 'sending'
+                  : msg.is_read
+                    ? 'read'
+                    : 'sent'
+                : null;
               const isMenuOpen = openMenuMessageId === msg.id;
               const isMenuTransitionSource = menuTransitionSourceId === msg.id;
               const isFlashSequenceTarget = flashingMessageId === msg.id;
@@ -1305,6 +1315,37 @@ const MessagesPane = ({
                               </>
                             ) : null}
                             {displayTime}
+                            {messageDeliveryStatus ? (
+                              <span
+                                className={`inline-flex items-center ${
+                                  messageDeliveryStatus === 'read'
+                                    ? 'text-primary'
+                                    : 'text-slate-400'
+                                }`}
+                                aria-label={
+                                  messageDeliveryStatus === 'sending'
+                                    ? 'Status pesan: mengirim'
+                                    : messageDeliveryStatus === 'read'
+                                      ? 'Status pesan: dibaca'
+                                      : 'Status pesan: terkirim'
+                                }
+                                title={
+                                  messageDeliveryStatus === 'sending'
+                                    ? 'Mengirim'
+                                    : messageDeliveryStatus === 'read'
+                                      ? 'Dibaca'
+                                      : 'Terkirim'
+                                }
+                              >
+                                {messageDeliveryStatus === 'sending' ? (
+                                  <TbClock className="h-3.5 w-3.5" />
+                                ) : messageDeliveryStatus === 'read' ? (
+                                  <TbChecks className="h-3.5 w-3.5" />
+                                ) : (
+                                  <TbCheck className="h-3.5 w-3.5" />
+                                )}
+                              </span>
+                            ) : null}
                           </span>
                           <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
                             {displayUserPhotoUrl ? (

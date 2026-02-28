@@ -36,6 +36,7 @@ const chatServiceMock = vi.hoisted(() => ({
   fetchMessagesBetweenUsers: vi.fn(),
   insertMessage: vi.fn(),
   updateMessage: vi.fn(),
+  markMessagesAsRead: vi.fn(),
   deleteMessage: vi.fn(),
   getUserPresence: vi.fn(),
   updateUserPresence: vi.fn(),
@@ -45,6 +46,8 @@ const chatServiceMock = vi.hoisted(() => ({
 const cacheImageBlobMock = vi.hoisted(() => vi.fn());
 const getCachedImageBlobUrlMock = vi.hoisted(() => vi.fn());
 const setCachedImageMock = vi.hoisted(() => vi.fn());
+const uploadFileMock = vi.hoisted(() => vi.fn());
+const uploadRawFileMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: useAuthStoreMock,
@@ -65,6 +68,13 @@ vi.mock('@/utils/imageCache', () => ({
   cacheImageBlob: cacheImageBlobMock,
   getCachedImageBlobUrl: getCachedImageBlobUrlMock,
   setCachedImage: setCachedImageMock,
+}));
+
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: {
+    uploadFile: uploadFileMock,
+    uploadRawFile: uploadRawFileMock,
+  },
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -157,6 +167,7 @@ const createMessage = (
     file_preview_error: string | null;
     created_at: string;
     updated_at: string;
+    is_read: boolean;
     reply_to_id: string | null;
   }> = {}
 ) => ({
@@ -176,7 +187,7 @@ const createMessage = (
   file_preview_error: overrides.file_preview_error,
   created_at: overrides.created_at ?? '2026-02-08T00:00:00.000Z',
   updated_at: overrides.updated_at ?? '2026-02-08T00:00:00.000Z',
-  is_read: false,
+  is_read: overrides.is_read ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
 });
 
@@ -209,6 +220,7 @@ describe('ChatSidebarPanel', () => {
     chatServiceMock.fetchMessagesBetweenUsers.mockReset();
     chatServiceMock.insertMessage.mockReset();
     chatServiceMock.updateMessage.mockReset();
+    chatServiceMock.markMessagesAsRead.mockReset();
     chatServiceMock.deleteMessage.mockReset();
     chatServiceMock.getUserPresence.mockReset();
     chatServiceMock.updateUserPresence.mockReset();
@@ -217,6 +229,8 @@ describe('ChatSidebarPanel', () => {
     cacheImageBlobMock.mockReset();
     getCachedImageBlobUrlMock.mockReset();
     setCachedImageMock.mockReset();
+    uploadFileMock.mockReset();
+    uploadRawFileMock.mockReset();
 
     useAuthStoreMock.mockReturnValue({
       user: currentUser,
@@ -242,6 +256,10 @@ describe('ChatSidebarPanel', () => {
         receiver_id: targetUser.id,
         message: 'Pesan sudah diedit',
       }),
+      error: null,
+    });
+    chatServiceMock.markMessagesAsRead.mockResolvedValue({
+      data: [],
       error: null,
     });
     chatServiceMock.deleteMessage.mockResolvedValue({
@@ -275,6 +293,12 @@ describe('ChatSidebarPanel', () => {
 
     cacheImageBlobMock.mockResolvedValue(null);
     getCachedImageBlobUrlMock.mockResolvedValue(null);
+    uploadFileMock.mockResolvedValue({
+      publicUrl: 'https://cdn.example.com/chat/uploaded/image.jpg',
+    });
+    uploadRawFileMock.mockResolvedValue({
+      publicUrl: 'https://cdn.example.com/chat/uploaded/document.bin',
+    });
 
     createChannelMock.mockImplementation((name: string) => {
       const channel: ChannelMock = {
@@ -464,6 +488,58 @@ describe('ChatSidebarPanel', () => {
     expect(await screen.findByText('Data server terbaru')).toBeInTheDocument();
   });
 
+  it('marks incoming unread messages as read when chat opens', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-unread-open',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          message: 'Belum terbaca',
+          is_read: false,
+        }),
+      ],
+      error: null,
+    });
+    chatServiceMock.markMessagesAsRead.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-unread-open',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          message: 'Belum terbaca',
+          is_read: true,
+          updated_at: '2026-02-08T00:00:02.000Z',
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    expect(await screen.findByText('Belum terbaca')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(chatServiceMock.markMessagesAsRead).toHaveBeenCalledWith(
+        targetUser.id,
+        currentUser.id,
+        'dm_user-1_user-2'
+      );
+    });
+
+    const chatChannel = channelRegistry.get('chat_dm_user-1_user-2');
+    expect(chatChannel?.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'update_message',
+        payload: expect.objectContaining({
+          id: 'msg-unread-open',
+          is_read: true,
+        }),
+      })
+    );
+  });
+
   it('renders attachment caption in the same bubble when text replies to file message', async () => {
     chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
       data: [
@@ -531,6 +607,132 @@ describe('ChatSidebarPanel', () => {
 
     await screen.findByText('report.pdf');
     expect(screen.queryByText('Diedit')).not.toBeInTheDocument();
+  });
+
+  it('shows message delivery status icons for own messages', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'temp_local_status',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Sedang mengirim',
+        }),
+        createMessage({
+          id: 'msg_sent_status',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Sudah terkirim',
+          is_read: false,
+        }),
+        createMessage({
+          id: 'msg_read_status',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Sudah dibaca',
+          is_read: true,
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('Sedang mengirim');
+    expect(screen.getByLabelText('Status pesan: mengirim')).toBeInTheDocument();
+    expect(screen.getByLabelText('Status pesan: terkirim')).toBeInTheDocument();
+    expect(screen.getByLabelText('Status pesan: dibaca')).toBeInTheDocument();
+  });
+
+  it('clears pending attachments immediately after clicking send', async () => {
+    const originalCreateObjectUrl = URL.createObjectURL;
+    const originalRevokeObjectUrl = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:pending-file'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    let resolveUploadRawFile: ((value: { publicUrl: string }) => void) | null =
+      null;
+    uploadRawFileMock.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveUploadRawFile = resolve as (value: {
+            publicUrl: string;
+          }) => void;
+        })
+    );
+    chatServiceMock.insertMessage.mockResolvedValueOnce({
+      data: createMessage({
+        id: 'msg-real-file-1',
+        sender_id: currentUser.id,
+        receiver_id: targetUser.id,
+        message_type: 'file',
+        message: 'https://cdn.example.com/chat/documents/report.txt',
+        file_name: 'report.txt',
+        file_kind: 'document',
+        file_mime_type: 'text/plain',
+        file_size: 12,
+      }),
+      error: null,
+    });
+
+    try {
+      render(
+        <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+      );
+
+      await screen.findByText('Halo dari target');
+      const documentInput = document.querySelector(
+        'input[type="file"][accept="*/*"]'
+      ) as HTMLInputElement | null;
+      expect(documentInput).toBeTruthy();
+
+      const file = new File(['hello world'], 'report.txt', {
+        type: 'text/plain',
+      });
+      fireEvent.change(documentInput!, { target: { files: [file] } });
+      expect(await screen.findByText('Lampiran 1/5')).toBeInTheDocument();
+
+      const sendButton = document.querySelector(
+        'button.bg-primary'
+      ) as HTMLButtonElement | null;
+      expect(sendButton).toBeTruthy();
+      fireEvent.click(sendButton!);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Lampiran 1/5')).not.toBeInTheDocument();
+      });
+
+      resolveUploadRawFile?.({
+        publicUrl: 'https://cdn.example.com/chat/documents/report.txt',
+      });
+
+      await waitFor(() => {
+        expect(chatServiceMock.insertMessage).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message_type: 'file',
+            file_name: 'report.txt',
+            file_kind: 'document',
+          })
+        );
+      });
+    } finally {
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        value: originalCreateObjectUrl,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        value: originalRevokeObjectUrl,
+      });
+    }
   });
 
   it('supports copy, edit, delete, and close flow', async () => {

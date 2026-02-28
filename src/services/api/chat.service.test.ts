@@ -3,16 +3,19 @@ import { chatService } from './chat.service';
 import { createThenableQuery } from '@/test/utils/supabaseMock';
 
 const fromMock = vi.hoisted(() => vi.fn());
+const rpcMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: fromMock,
+    rpc: rpcMock,
   },
 }));
 
 describe('chatService', () => {
   beforeEach(() => {
     fromMock.mockReset();
+    rpcMock.mockReset();
   });
 
   it('fetches messages between users', async () => {
@@ -73,6 +76,38 @@ describe('chatService', () => {
 
     expect(insertResult.data?.id).toBe('m1');
     expect(updateResult.data?.id).toBe('m1');
+  });
+
+  it('marks messages as read through rpc', async () => {
+    rpcMock.mockResolvedValue({
+      data: [{ id: 'm1', is_read: true }],
+      error: null,
+    });
+
+    const result = await chatService.markMessagesAsRead('u1', 'u2', 'dm_u1_u2');
+    expect(result.data?.[0].id).toBe('m1');
+    expect(rpcMock).toHaveBeenCalledWith('mark_chat_messages_as_read', {
+      p_sender_id: 'u1',
+      p_receiver_id: 'u2',
+      p_channel_id: 'dm_u1_u2',
+    });
+  });
+
+  it('handles mark-as-read rpc failures', async () => {
+    rpcMock.mockResolvedValue({
+      data: null,
+      error: new Error('rpc-failed'),
+    });
+
+    const result = await chatService.markMessagesAsRead('u1', 'u2');
+    expect(result.data).toBeNull();
+  });
+
+  it('handles mark-as-read rpc exceptions', async () => {
+    rpcMock.mockRejectedValue(new Error('rpc-boom'));
+
+    const result = await chatService.markMessagesAsRead('u1', 'u2');
+    expect(result.data).toBeNull();
   });
 
   it('handles insert/update errors', async () => {
