@@ -127,6 +127,7 @@ const ChatSidebarPanel = memo(
     const channelRef = useRef<RealtimeChannel | null>(null);
     const presenceChannelRef = useRef<RealtimeChannel | null>(null);
     const globalPresenceChannelRef = useRef<RealtimeChannel | null>(null);
+    const incomingMessagesChannelRef = useRef<RealtimeChannel | null>(null);
     const presenceRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const hasClosedRef = useRef(false);
     const previousIsOpenRef = useRef(isOpen);
@@ -729,21 +730,10 @@ const ChatSidebarPanel = memo(
 
     const mergeAndBroadcastMessageUpdates = useCallback(
       (updatedMessages: ChatMessage[]) => {
-        if (!user || !targetUser || updatedMessages.length === 0) return;
+        if (updatedMessages.length === 0) return;
 
-        const mappedUpdatedMessages = updatedMessages.map(updatedMessage => ({
-          ...updatedMessage,
-          sender_name:
-            updatedMessage.sender_id === user.id
-              ? user.name || 'You'
-              : targetUser.name || 'Unknown',
-          receiver_name:
-            updatedMessage.receiver_id === user.id
-              ? user.name || 'You'
-              : targetUser.name || 'Unknown',
-        }));
-        const mappedUpdatedMessagesById = new Map(
-          mappedUpdatedMessages.map(updatedMessage => [
+        const updatedMessagesById = new Map(
+          updatedMessages.map(updatedMessage => [
             updatedMessage.id,
             updatedMessage,
           ])
@@ -751,7 +741,7 @@ const ChatSidebarPanel = memo(
 
         setMessages(previousMessages =>
           previousMessages.map(previousMessage => {
-            const nextUpdatedMessage = mappedUpdatedMessagesById.get(
+            const nextUpdatedMessage = updatedMessagesById.get(
               previousMessage.id
             );
             if (!nextUpdatedMessage) return previousMessage;
@@ -764,7 +754,7 @@ const ChatSidebarPanel = memo(
         );
 
         if (channelRef.current) {
-          mappedUpdatedMessages.forEach(updatedMessage => {
+          updatedMessages.forEach(updatedMessage => {
             channelRef.current?.send({
               type: 'broadcast',
               event: 'update_message',
@@ -772,8 +762,18 @@ const ChatSidebarPanel = memo(
             });
           });
         }
+
+        if (globalPresenceChannelRef.current) {
+          updatedMessages.forEach(updatedMessage => {
+            globalPresenceChannelRef.current?.send({
+              type: 'broadcast',
+              event: 'message_receipt_updated',
+              payload: updatedMessage,
+            });
+          });
+        }
       },
-      [targetUser, user]
+      []
     );
 
     const markMessageIdsAsDelivered = useCallback(
@@ -1030,6 +1030,32 @@ const ChatSidebarPanel = memo(
           );
         });
 
+        channel.on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `channel_id=eq.${currentChannelId}`,
+          },
+          payload => {
+            const updatedMessage = payload.new as ChatMessage;
+            if (!updatedMessage?.id) return;
+
+            setMessages(prev =>
+              prev.map(messageItem =>
+                messageItem.id === updatedMessage.id
+                  ? {
+                      ...messageItem,
+                      ...updatedMessage,
+                      stableKey: messageItem.stableKey,
+                    }
+                  : messageItem
+              )
+            );
+          }
+        );
+
         channel.on('broadcast', { event: 'delete_message' }, payload => {
           const deletedMessage = payload.payload as { id: string };
           setMessages(prev =>
@@ -1141,16 +1167,68 @@ const ChatSidebarPanel = memo(
           }
         );
 
+        globalPresenceChannel.on(
+          'broadcast',
+          { event: 'message_receipt_updated' },
+          payload => {
+            const updatedMessage = payload.payload as Partial<ChatMessage>;
+            if (!updatedMessage?.id) return;
+
+            setMessages(prev =>
+              prev.map(messageItem =>
+                messageItem.id === updatedMessage.id
+                  ? {
+                      ...messageItem,
+                      ...updatedMessage,
+                      stableKey: messageItem.stableKey,
+                    }
+                  : messageItem
+              )
+            );
+          }
+        );
+
         // Subscribe and store reference
         globalPresenceChannel.subscribe();
 
         globalPresenceChannelRef.current = globalPresenceChannel;
       };
 
+      const setupIncomingMessagesDeliveredSubscription = () => {
+        /* c8 ignore next 4 */
+        if (incomingMessagesChannelRef.current) {
+          realtimeService.removeChannel(incomingMessagesChannelRef.current);
+        }
+
+        const incomingMessagesChannel = realtimeService.createChannel(
+          `incoming_messages_${user.id}`
+        );
+
+        incomingMessagesChannel.on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `receiver_id=eq.${user.id}`,
+          },
+          payload => {
+            const incomingMessage = payload.new as ChatMessage | undefined;
+            if (!incomingMessage?.id) return;
+            if (incomingMessage.is_delivered) return;
+            void markMessageIdsAsDelivered([incomingMessage.id]);
+          }
+        );
+
+        incomingMessagesChannel.subscribe();
+        incomingMessagesChannelRef.current = incomingMessagesChannel;
+      };
+
       setupRealtimeSubscription();
       loadMessages();
       setupPresenceSubscription();
       setupGlobalPresenceSubscription();
+      setupIncomingMessagesDeliveredSubscription();
 
       // Reset close flag when opening chat
       hasClosedRef.current = false;
@@ -1177,6 +1255,10 @@ const ChatSidebarPanel = memo(
         if (globalPresenceChannelRef.current) {
           realtimeService.removeChannel(globalPresenceChannelRef.current);
           globalPresenceChannelRef.current = null;
+        }
+        if (incomingMessagesChannelRef.current) {
+          realtimeService.removeChannel(incomingMessagesChannelRef.current);
+          incomingMessagesChannelRef.current = null;
         }
         if (presenceRefreshIntervalRef.current) {
           clearInterval(presenceRefreshIntervalRef.current);
