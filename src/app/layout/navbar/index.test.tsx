@@ -283,6 +283,22 @@ describe('Navbar', () => {
     );
   });
 
+  it('keeps current user online in avatar status even when presence list temporarily misses self', async () => {
+    usePresenceStoreMock.mockReturnValue({
+      onlineUsers: 2,
+      onlineUsersList: [onlineUsersList[1], onlineUsersList[2]],
+    });
+
+    render(<Navbar onChatUserSelect={vi.fn()} sidebarCollapsed={true} />);
+
+    const hoverRegion = screen.getByText('2 Online').closest('div');
+    expect(hoverRegion).toBeTruthy();
+    fireEvent.mouseEnter(hoverRegion!);
+
+    const selfAvatar = await screen.findByTitle('Current User - Online');
+    expect(selfAvatar).not.toHaveClass('opacity-50');
+  });
+
   it('handles empty online user list and user-not-in-list ordering paths', async () => {
     usePresenceStoreMock.mockReturnValue({
       onlineUsers: 0,

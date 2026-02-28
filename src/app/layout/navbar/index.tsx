@@ -29,20 +29,28 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
 
-  const onlineUserIds = useMemo(
+  const rawOnlineUserIds = useMemo(
     () => new Set(onlineUsersList.map(onlineUser => onlineUser.id)),
     [onlineUsersList]
   );
+
+  const onlineUserIds = useMemo(() => {
+    const ids = new Set(rawOnlineUserIds);
+    if (userId) {
+      ids.add(userId);
+    }
+    return ids;
+  }, [rawOnlineUserIds, userId]);
 
   const allPresenceUsers = useMemo(() => {
     if (allUsersList.length === 0) return onlineUsersList;
 
     const offlineUsers = allUsersList.filter(
-      presenceUser => !onlineUserIds.has(presenceUser.id)
+      presenceUser => !rawOnlineUserIds.has(presenceUser.id)
     );
 
     return [...onlineUsersList, ...offlineUsers];
-  }, [allUsersList, onlineUserIds, onlineUsersList]);
+  }, [allUsersList, rawOnlineUserIds, onlineUsersList]);
 
   // Reorder users so current user appears last (rightmost) if present
   const reorderedOnlineUsers = useMemo(() => {
