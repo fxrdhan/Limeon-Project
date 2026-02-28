@@ -151,6 +151,10 @@ const createMessage = (
     file_kind: 'audio' | 'document';
     file_mime_type: string;
     file_size: number;
+    file_preview_url: string | null;
+    file_preview_page_count: number | null;
+    file_preview_status: 'pending' | 'ready' | 'failed' | null;
+    file_preview_error: string | null;
     created_at: string;
     updated_at: string;
     reply_to_id: string | null;
@@ -166,6 +170,10 @@ const createMessage = (
   file_kind: overrides.file_kind,
   file_mime_type: overrides.file_mime_type,
   file_size: overrides.file_size,
+  file_preview_url: overrides.file_preview_url,
+  file_preview_page_count: overrides.file_preview_page_count,
+  file_preview_status: overrides.file_preview_status,
+  file_preview_error: overrides.file_preview_error,
   created_at: overrides.created_at ?? '2026-02-08T00:00:00.000Z',
   updated_at: overrides.updated_at ?? '2026-02-08T00:00:00.000Z',
   is_read: false,
@@ -492,6 +500,37 @@ describe('ChatSidebarPanel', () => {
     expect(fileNameNode.closest('[role="button"]')).toBe(
       captionNode.closest('[role="button"]')
     );
+  });
+
+  it('does not show edited label for file metadata updates', async () => {
+    chatServiceMock.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-file-preview-updated',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message_type: 'file',
+          message: 'https://cdn.example.com/chat/documents/report.pdf',
+          file_name: 'report.pdf',
+          file_kind: 'document',
+          file_mime_type: 'application/pdf',
+          file_size: 1024,
+          file_preview_url: 'https://cdn.example.com/chat/previews/report.png',
+          file_preview_page_count: 1,
+          file_preview_status: 'ready',
+          created_at: '2026-02-08T00:00:00.000Z',
+          updated_at: '2026-02-08T00:00:05.000Z',
+        }),
+      ],
+      error: null,
+    });
+
+    render(
+      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+    );
+
+    await screen.findByText('report.pdf');
+    expect(screen.queryByText('Diedit')).not.toBeInTheDocument();
   });
 
   it('supports copy, edit, delete, and close flow', async () => {

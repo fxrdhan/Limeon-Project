@@ -742,7 +742,9 @@ const MessagesPane = ({
               );
               const createdTimestamp = new Date(msg.created_at).getTime();
               const updatedTimestamp = new Date(msg.updated_at).getTime();
+              const isTextMessage = msg.message_type === 'text';
               const isEdited =
+                isTextMessage &&
                 Number.isFinite(createdTimestamp) &&
                 Number.isFinite(updatedTimestamp) &&
                 updatedTimestamp > createdTimestamp;
