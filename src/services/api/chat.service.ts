@@ -21,6 +21,7 @@ export interface ChatMessage {
   created_at: string;
   updated_at: string;
   is_read: boolean;
+  is_delivered?: boolean;
   reply_to_id: string | null;
   // Virtual fields for display
   sender_name?: string;
@@ -58,6 +59,7 @@ export interface ChatMessageUpdateInput {
   message?: string;
   updated_at?: string;
   is_read?: boolean;
+  is_delivered?: boolean;
   reply_to_id?: string | null;
   file_preview_url?: string | null;
   file_preview_page_count?: number | null;
@@ -153,6 +155,31 @@ export const chatService = {
         p_receiver_id: receiverId,
         p_channel_id: channelId ?? null,
       });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as ChatMessage[], error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async markMessagesAsDelivered(
+    senderId: string,
+    receiverId: string,
+    channelId?: string | null
+  ): Promise<ServiceResponse<ChatMessage[]>> {
+    try {
+      const { data, error } = await supabase.rpc(
+        'mark_chat_messages_as_delivered',
+        {
+          p_sender_id: senderId,
+          p_receiver_id: receiverId,
+          p_channel_id: channelId ?? null,
+        }
+      );
 
       if (error) {
         return { data: null, error };

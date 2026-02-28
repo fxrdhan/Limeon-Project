@@ -36,6 +36,7 @@ const chatServiceMock = vi.hoisted(() => ({
   fetchMessagesBetweenUsers: vi.fn(),
   insertMessage: vi.fn(),
   updateMessage: vi.fn(),
+  markMessagesAsDelivered: vi.fn(),
   markMessagesAsRead: vi.fn(),
   deleteMessage: vi.fn(),
   getUserPresence: vi.fn(),
@@ -168,6 +169,7 @@ const createMessage = (
     created_at: string;
     updated_at: string;
     is_read: boolean;
+    is_delivered: boolean;
     reply_to_id: string | null;
   }> = {}
 ) => ({
@@ -188,6 +190,7 @@ const createMessage = (
   created_at: overrides.created_at ?? '2026-02-08T00:00:00.000Z',
   updated_at: overrides.updated_at ?? '2026-02-08T00:00:00.000Z',
   is_read: overrides.is_read ?? false,
+  is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
 });
 
@@ -220,6 +223,7 @@ describe('ChatSidebarPanel', () => {
     chatServiceMock.fetchMessagesBetweenUsers.mockReset();
     chatServiceMock.insertMessage.mockReset();
     chatServiceMock.updateMessage.mockReset();
+    chatServiceMock.markMessagesAsDelivered.mockReset();
     chatServiceMock.markMessagesAsRead.mockReset();
     chatServiceMock.deleteMessage.mockReset();
     chatServiceMock.getUserPresence.mockReset();
@@ -256,6 +260,10 @@ describe('ChatSidebarPanel', () => {
         receiver_id: targetUser.id,
         message: 'Pesan sudah diedit',
       }),
+      error: null,
+    });
+    chatServiceMock.markMessagesAsDelivered.mockResolvedValue({
+      data: [],
       error: null,
     });
     chatServiceMock.markMessagesAsRead.mockResolvedValue({
@@ -514,6 +522,19 @@ describe('ChatSidebarPanel', () => {
       ],
       error: null,
     });
+    chatServiceMock.markMessagesAsDelivered.mockResolvedValueOnce({
+      data: [
+        createMessage({
+          id: 'msg-unread-open',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          message: 'Belum terbaca',
+          is_delivered: true,
+          updated_at: '2026-02-08T00:00:01.000Z',
+        }),
+      ],
+      error: null,
+    });
 
     render(
       <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
@@ -521,6 +542,11 @@ describe('ChatSidebarPanel', () => {
 
     expect(await screen.findByText('Belum terbaca')).toBeInTheDocument();
     await waitFor(() => {
+      expect(chatServiceMock.markMessagesAsDelivered).toHaveBeenCalledWith(
+        targetUser.id,
+        currentUser.id,
+        'dm_user-1_user-2'
+      );
       expect(chatServiceMock.markMessagesAsRead).toHaveBeenCalledWith(
         targetUser.id,
         currentUser.id,
@@ -623,6 +649,15 @@ describe('ChatSidebarPanel', () => {
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
           message: 'Sudah terkirim',
+          is_delivered: false,
+          is_read: false,
+        }),
+        createMessage({
+          id: 'msg_delivered_status',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          message: 'Sudah diterima',
+          is_delivered: true,
           is_read: false,
         }),
         createMessage({
@@ -630,6 +665,7 @@ describe('ChatSidebarPanel', () => {
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
           message: 'Sudah dibaca',
+          is_delivered: true,
           is_read: true,
         }),
       ],
@@ -643,6 +679,7 @@ describe('ChatSidebarPanel', () => {
     await screen.findByText('Sedang mengirim');
     expect(screen.getByLabelText('Status pesan: mengirim')).toBeInTheDocument();
     expect(screen.getByLabelText('Status pesan: terkirim')).toBeInTheDocument();
+    expect(screen.getByLabelText('Status pesan: diterima')).toBeInTheDocument();
     expect(screen.getByLabelText('Status pesan: dibaca')).toBeInTheDocument();
   });
 

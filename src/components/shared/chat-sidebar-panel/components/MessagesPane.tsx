@@ -756,7 +756,9 @@ const MessagesPane = ({
                   ? 'sending'
                   : msg.is_read
                     ? 'read'
-                    : 'sent'
+                    : msg.is_delivered
+                      ? 'delivered'
+                      : 'sent'
                 : null;
               const isMenuOpen = openMenuMessageId === msg.id;
               const isMenuTransitionSource = menuTransitionSourceId === msg.id;
@@ -1325,20 +1327,26 @@ const MessagesPane = ({
                                 aria-label={
                                   messageDeliveryStatus === 'sending'
                                     ? 'Status pesan: mengirim'
-                                    : messageDeliveryStatus === 'read'
-                                      ? 'Status pesan: dibaca'
-                                      : 'Status pesan: terkirim'
+                                    : messageDeliveryStatus === 'delivered'
+                                      ? 'Status pesan: diterima'
+                                      : messageDeliveryStatus === 'read'
+                                        ? 'Status pesan: dibaca'
+                                        : 'Status pesan: terkirim'
                                 }
                                 title={
                                   messageDeliveryStatus === 'sending'
                                     ? 'Mengirim'
-                                    : messageDeliveryStatus === 'read'
-                                      ? 'Dibaca'
-                                      : 'Terkirim'
+                                    : messageDeliveryStatus === 'delivered'
+                                      ? 'Diterima'
+                                      : messageDeliveryStatus === 'read'
+                                        ? 'Dibaca'
+                                        : 'Terkirim'
                                 }
                               >
                                 {messageDeliveryStatus === 'sending' ? (
                                   <TbClock className="h-3.5 w-3.5" />
+                                ) : messageDeliveryStatus === 'delivered' ? (
+                                  <TbChecks className="h-3.5 w-3.5" />
                                 ) : messageDeliveryStatus === 'read' ? (
                                   <TbChecks className="h-3.5 w-3.5" />
                                 ) : (

@@ -93,6 +93,25 @@ describe('chatService', () => {
     });
   });
 
+  it('marks messages as delivered through rpc', async () => {
+    rpcMock.mockResolvedValue({
+      data: [{ id: 'm1', is_delivered: true }],
+      error: null,
+    });
+
+    const result = await chatService.markMessagesAsDelivered(
+      'u1',
+      'u2',
+      'dm_u1_u2'
+    );
+    expect(result.data?.[0].id).toBe('m1');
+    expect(rpcMock).toHaveBeenCalledWith('mark_chat_messages_as_delivered', {
+      p_sender_id: 'u1',
+      p_receiver_id: 'u2',
+      p_channel_id: 'dm_u1_u2',
+    });
+  });
+
   it('handles mark-as-read rpc failures', async () => {
     rpcMock.mockResolvedValue({
       data: null,
@@ -107,6 +126,23 @@ describe('chatService', () => {
     rpcMock.mockRejectedValue(new Error('rpc-boom'));
 
     const result = await chatService.markMessagesAsRead('u1', 'u2');
+    expect(result.data).toBeNull();
+  });
+
+  it('handles mark-as-delivered rpc failures', async () => {
+    rpcMock.mockResolvedValue({
+      data: null,
+      error: new Error('rpc-failed'),
+    });
+
+    const result = await chatService.markMessagesAsDelivered('u1', 'u2');
+    expect(result.data).toBeNull();
+  });
+
+  it('handles mark-as-delivered rpc exceptions', async () => {
+    rpcMock.mockRejectedValue(new Error('rpc-boom'));
+
+    const result = await chatService.markMessagesAsDelivered('u1', 'u2');
     expect(result.data).toBeNull();
   });
 

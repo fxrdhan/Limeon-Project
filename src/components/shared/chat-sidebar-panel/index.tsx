@@ -725,6 +725,74 @@ const ChatSidebarPanel = memo(
       }
     }, [targetUser]);
 
+    const mergeAndBroadcastMessageUpdates = useCallback(
+      (updatedMessages: ChatMessage[]) => {
+        if (!user || !targetUser || updatedMessages.length === 0) return;
+
+        const mappedUpdatedMessages = updatedMessages.map(updatedMessage => ({
+          ...updatedMessage,
+          sender_name:
+            updatedMessage.sender_id === user.id
+              ? user.name || 'You'
+              : targetUser.name || 'Unknown',
+          receiver_name:
+            updatedMessage.receiver_id === user.id
+              ? user.name || 'You'
+              : targetUser.name || 'Unknown',
+        }));
+        const mappedUpdatedMessagesById = new Map(
+          mappedUpdatedMessages.map(updatedMessage => [
+            updatedMessage.id,
+            updatedMessage,
+          ])
+        );
+
+        setMessages(previousMessages =>
+          previousMessages.map(previousMessage => {
+            const nextUpdatedMessage = mappedUpdatedMessagesById.get(
+              previousMessage.id
+            );
+            if (!nextUpdatedMessage) return previousMessage;
+            return {
+              ...previousMessage,
+              ...nextUpdatedMessage,
+              stableKey: previousMessage.stableKey,
+            };
+          })
+        );
+
+        if (channelRef.current) {
+          mappedUpdatedMessages.forEach(updatedMessage => {
+            channelRef.current?.send({
+              type: 'broadcast',
+              event: 'update_message',
+              payload: updatedMessage,
+            });
+          });
+        }
+      },
+      [targetUser, user]
+    );
+
+    const markIncomingMessagesAsDelivered = useCallback(async () => {
+      if (!user || !targetUser || !currentChannelId) return;
+
+      try {
+        const { data: deliveredMessages, error } =
+          await chatService.markMessagesAsDelivered(
+            targetUser.id,
+            user.id,
+            currentChannelId
+          );
+        if (error || !deliveredMessages || deliveredMessages.length === 0)
+          return;
+
+        mergeAndBroadcastMessageUpdates(deliveredMessages);
+      } catch (error) {
+        console.error('Error marking messages as delivered:', error);
+      }
+    }, [currentChannelId, mergeAndBroadcastMessageUpdates, targetUser, user]);
+
     const markIncomingMessagesAsRead = useCallback(async () => {
       if (!user || !targetUser || !currentChannelId) return;
 
@@ -736,49 +804,11 @@ const ChatSidebarPanel = memo(
             currentChannelId
           );
         if (error || !readMessages || readMessages.length === 0) return;
-
-        const mappedReadMessages = readMessages.map(readMessage => ({
-          ...readMessage,
-          sender_name:
-            readMessage.sender_id === user.id
-              ? user.name || 'You'
-              : targetUser.name || 'Unknown',
-          receiver_name:
-            readMessage.receiver_id === user.id
-              ? user.name || 'You'
-              : targetUser.name || 'Unknown',
-        }));
-        const mappedReadMessagesById = new Map(
-          mappedReadMessages.map(readMessage => [readMessage.id, readMessage])
-        );
-
-        setMessages(previousMessages =>
-          previousMessages.map(previousMessage => {
-            const nextReadMessage = mappedReadMessagesById.get(
-              previousMessage.id
-            );
-            if (!nextReadMessage) return previousMessage;
-            return {
-              ...previousMessage,
-              ...nextReadMessage,
-              stableKey: previousMessage.stableKey,
-            };
-          })
-        );
-
-        if (channelRef.current) {
-          mappedReadMessages.forEach(readMessage => {
-            channelRef.current?.send({
-              type: 'broadcast',
-              event: 'update_message',
-              payload: readMessage,
-            });
-          });
-        }
+        mergeAndBroadcastMessageUpdates(readMessages);
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }
-    }, [currentChannelId, targetUser, user]);
+    }, [currentChannelId, mergeAndBroadcastMessageUpdates, targetUser, user]);
 
     // PRIORITY 1: Simulate close button click when isOpen changes to false
     useEffect(() => {
@@ -874,6 +904,7 @@ const ChatSidebarPanel = memo(
             messages: transformedMessages,
             cachedAt: Date.now(),
           });
+          await markIncomingMessagesAsDelivered();
           await markIncomingMessagesAsRead();
         } catch (error) {
           console.error('Error loading messages:', error);
@@ -915,6 +946,7 @@ const ChatSidebarPanel = memo(
             newMessage.receiver_id === user.id &&
             !newMessage.is_read
           ) {
+            void markIncomingMessagesAsDelivered();
             void markIncomingMessagesAsRead();
           }
         });
@@ -1088,6 +1120,7 @@ const ChatSidebarPanel = memo(
       currentChannelId,
       updateUserChatOpen,
       loadTargetUserPresence,
+      markIncomingMessagesAsDelivered,
       markIncomingMessagesAsRead,
       scrollMessagesToBottom,
     ]);
