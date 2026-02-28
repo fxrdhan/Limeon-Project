@@ -1,3 +1,7 @@
 !.claude/
 !AGENTS.md
 supabase/
+*.test.ts
+*.test.tsx
+test.ts
+test.tsx
