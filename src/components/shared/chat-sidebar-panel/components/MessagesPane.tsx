@@ -243,6 +243,8 @@ interface MessagesPaneProps {
   expandedMessageIds: Set<string>;
   flashingMessageId: string | null;
   isFlashHighlightVisible: boolean;
+  searchMatchedMessageIds: Set<string>;
+  activeSearchMessageId: string | null;
   showScrollToBottom: boolean;
   maxMessageChars: number;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
@@ -288,6 +290,8 @@ const MessagesPane = ({
   expandedMessageIds,
   flashingMessageId,
   isFlashHighlightVisible,
+  searchMatchedMessageIds,
+  activeSearchMessageId,
   showScrollToBottom,
   maxMessageChars,
   messagesContainerRef,
@@ -765,6 +769,8 @@ const MessagesPane = ({
               const isFlashSequenceTarget = flashingMessageId === msg.id;
               const isFlashingTarget =
                 isFlashSequenceTarget && isFlashHighlightVisible;
+              const isSearchMatch = searchMatchedMessageIds.has(msg.id);
+              const isActiveSearchMatch = activeSearchMessageId === msg.id;
               const isImageMessage = msg.message_type === 'image';
               const isFileMessage = msg.message_type === 'file';
               const fileKind = isFileMessage
@@ -1074,7 +1080,13 @@ const MessagesPane = ({
                           isCurrentUser
                             ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
                             : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
-                        } cursor-pointer select-none transition-[background-color,color,opacity] duration-300 ease-in-out`}
+                        } ${
+                          isActiveSearchMatch
+                            ? 'ring-2 ring-primary/70 shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
+                            : isSearchMatch
+                              ? 'ring-1 ring-primary/40'
+                              : ''
+                        } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
                         style={{
                           [isCurrentUser
                             ? 'borderBottomRightRadius'

@@ -6,10 +6,15 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
+import {
+  SEARCH_STATES,
+  type SearchState,
+} from '@/components/search-bar/constants';
 import ChatHeader from './components/ChatHeader';
 import ComposerPanel from './components/ComposerPanel';
 import MessagesPane from './components/MessagesPane';
@@ -168,6 +173,11 @@ const ChatSidebarPanel = memo(
     );
     const [isFlashHighlightVisible, setIsFlashHighlightVisible] =
       useState(false);
+    const [isMessageSearchMode, setIsMessageSearchMode] = useState(false);
+    const [messageSearchQuery, setMessageSearchQuery] = useState('');
+    const [activeSearchMessageId, setActiveSearchMessageId] = useState<
+      string | null
+    >(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -178,6 +188,7 @@ const ChatSidebarPanel = memo(
     const imageInputRef = useRef<HTMLInputElement>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
     const audioInputRef = useRef<HTMLInputElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const replaceComposerImageAttachmentIdRef = useRef<string | null>(null);
     const replaceComposerDocumentAttachmentIdRef = useRef<string | null>(null);
     const pendingComposerAttachmentsRef = useRef<PendingComposerAttachment[]>(
@@ -217,10 +228,114 @@ const ChatSidebarPanel = memo(
       (pendingComposerAttachments.length > 0
         ? COMPOSER_IMAGE_PREVIEW_OFFSET
         : 0);
+    const normalizedMessageSearchQuery = messageSearchQuery
+      .trim()
+      .toLowerCase();
+    const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(() => {
+      const attachmentMessagesById = new Map<string, ChatMessage>();
+      const captionMap = new Map<string, ChatMessage>();
+      const captionIds = new Set<string>();
+
+      for (const messageItem of messages) {
+        if (
+          messageItem.message_type === 'image' ||
+          messageItem.message_type === 'file'
+        ) {
+          attachmentMessagesById.set(messageItem.id, messageItem);
+        }
+      }
+
+      for (const messageItem of messages) {
+        if (messageItem.message_type !== 'text' || !messageItem.reply_to_id) {
+          continue;
+        }
+
+        const parentMessage = attachmentMessagesById.get(
+          messageItem.reply_to_id
+        );
+        if (!parentMessage) continue;
+        if (parentMessage.sender_id !== messageItem.sender_id) continue;
+        if (parentMessage.receiver_id !== messageItem.receiver_id) continue;
+        if (parentMessage.channel_id !== messageItem.channel_id) continue;
+        if (captionMap.has(parentMessage.id)) continue;
+
+        captionMap.set(parentMessage.id, messageItem);
+        captionIds.add(messageItem.id);
+      }
+
+      return {
+        captionMessagesByAttachmentId: captionMap,
+        captionMessageIds: captionIds,
+      };
+    }, [messages]);
+    const searchMatchedMessageIds = useMemo(() => {
+      if (!normalizedMessageSearchQuery) return [];
+
+      const matchedIds: string[] = [];
+
+      for (const messageItem of messages) {
+        if (captionMessageIds.has(messageItem.id)) continue;
+
+        const messageFragments: string[] = [];
+        if (messageItem.message_type === 'text') {
+          messageFragments.push(messageItem.message);
+        }
+
+        const attachmentCaption = captionMessagesByAttachmentId.get(
+          messageItem.id
+        );
+        if (attachmentCaption?.message) {
+          messageFragments.push(attachmentCaption.message);
+        }
+
+        if (messageFragments.length === 0) continue;
+
+        const searchBase = messageFragments.join('\n').toLowerCase();
+        if (searchBase.includes(normalizedMessageSearchQuery)) {
+          matchedIds.push(messageItem.id);
+        }
+      }
+
+      return matchedIds;
+    }, [
+      captionMessageIds,
+      captionMessagesByAttachmentId,
+      messages,
+      normalizedMessageSearchQuery,
+    ]);
+    const searchMatchedMessageIdSet = useMemo(
+      () => new Set(searchMatchedMessageIds),
+      [searchMatchedMessageIds]
+    );
+    const activeSearchResultIndex = searchMatchedMessageIds.findIndex(
+      messageId => messageId === activeSearchMessageId
+    );
+    const canNavigateSearchUp = activeSearchResultIndex > 0;
+    const canNavigateSearchDown =
+      activeSearchResultIndex >= 0 &&
+      activeSearchResultIndex < searchMatchedMessageIds.length - 1;
+    const messageSearchState: SearchState = !normalizedMessageSearchQuery
+      ? SEARCH_STATES.IDLE
+      : searchMatchedMessageIds.length > 0
+        ? SEARCH_STATES.FOUND
+        : SEARCH_STATES.NOT_FOUND;
 
     useEffect(() => {
       pendingComposerAttachmentsRef.current = pendingComposerAttachments;
     }, [pendingComposerAttachments]);
+
+    useEffect(() => {
+      if (isOpen) return;
+      setIsMessageSearchMode(false);
+      setMessageSearchQuery('');
+      setActiveSearchMessageId(null);
+    }, [isOpen]);
+
+    useEffect(() => {
+      setIsMessageSearchMode(false);
+      setMessageSearchQuery('');
+      setActiveSearchMessageId(null);
+    }, [currentChannelId]);
 
     useEffect(() => {
       if (
@@ -435,6 +550,102 @@ const ChatSidebarPanel = memo(
         return next;
       });
     }, []);
+
+    const handleEnterMessageSearchMode = useCallback(() => {
+      setIsMessageSearchMode(true);
+    }, []);
+
+    const handleExitMessageSearchMode = useCallback(() => {
+      setIsMessageSearchMode(false);
+      setMessageSearchQuery('');
+      setActiveSearchMessageId(null);
+    }, []);
+
+    useEffect(() => {
+      if (!isMessageSearchMode) return;
+      const rafId = requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
+      return () => {
+        cancelAnimationFrame(rafId);
+      };
+    }, [isMessageSearchMode]);
+
+    const handleFocusSearchInput = useCallback(() => {
+      if (!isMessageSearchMode) return;
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
+    }, [isMessageSearchMode]);
+
+    const handleMessageSearchQueryChange = useCallback((nextQuery: string) => {
+      setMessageSearchQuery(nextQuery);
+    }, []);
+
+    const navigateToSearchResult = useCallback(
+      (direction: 'up' | 'down') => {
+        if (searchMatchedMessageIds.length === 0) return;
+
+        setActiveSearchMessageId(currentMessageId => {
+          const currentIndex =
+            currentMessageId === null
+              ? -1
+              : searchMatchedMessageIds.findIndex(
+                  messageId => messageId === currentMessageId
+                );
+          const fallbackIndex =
+            direction === 'up' ? searchMatchedMessageIds.length - 1 : 0;
+          const safeCurrentIndex =
+            currentIndex >= 0 ? currentIndex : fallbackIndex;
+          const nextIndex =
+            direction === 'up'
+              ? Math.max(0, safeCurrentIndex - 1)
+              : Math.min(
+                  searchMatchedMessageIds.length - 1,
+                  safeCurrentIndex + 1
+                );
+
+          return searchMatchedMessageIds[nextIndex] ?? currentMessageId;
+        });
+      },
+      [searchMatchedMessageIds]
+    );
+
+    const handleNavigateSearchUp = useCallback(() => {
+      navigateToSearchResult('up');
+    }, [navigateToSearchResult]);
+
+    const handleNavigateSearchDown = useCallback(() => {
+      navigateToSearchResult('down');
+    }, [navigateToSearchResult]);
+
+    useEffect(() => {
+      if (
+        !isMessageSearchMode ||
+        !normalizedMessageSearchQuery ||
+        searchMatchedMessageIds.length === 0
+      ) {
+        setActiveSearchMessageId(null);
+        return;
+      }
+
+      setActiveSearchMessageId(currentMessageId => {
+        if (
+          currentMessageId &&
+          searchMatchedMessageIds.includes(currentMessageId)
+        ) {
+          return currentMessageId;
+        }
+
+        return (
+          searchMatchedMessageIds[searchMatchedMessageIds.length - 1] ?? null
+        );
+      });
+    }, [
+      isMessageSearchMode,
+      normalizedMessageSearchQuery,
+      searchMatchedMessageIds,
+    ]);
 
     const ensureMenuFullyVisible = useCallback(
       (messageId: string) => {
@@ -1482,6 +1693,69 @@ const ChatSidebarPanel = memo(
         }
       }, EDIT_TARGET_FLASH_PHASE_DURATION);
     }, []);
+
+    const focusSearchTargetMessage = useCallback(
+      (messageId: string) => {
+        const bubble = messageBubbleRefs.current.get(messageId);
+        const container = messagesContainerRef.current;
+        const bounds = getVisibleMessagesBounds();
+        if (!bubble || !container || !bounds) return;
+
+        closeMessageMenu();
+        const minVisibleTop =
+          bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
+        const maxVisibleBottom =
+          bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING;
+        const bubbleRect = bubble.getBoundingClientRect();
+        const isFullyVisible =
+          bubbleRect.top >= minVisibleTop &&
+          bubbleRect.bottom <= maxVisibleBottom;
+
+        if (!isFullyVisible) {
+          let scrollOffset = 0;
+          if (bubbleRect.top < minVisibleTop) {
+            scrollOffset = bubbleRect.top - minVisibleTop;
+          } else if (bubbleRect.bottom > maxVisibleBottom) {
+            scrollOffset = bubbleRect.bottom - maxVisibleBottom;
+          }
+
+          if (scrollOffset !== 0) {
+            container.scrollTo({
+              top: container.scrollTop + scrollOffset,
+              behavior: 'smooth',
+            });
+          }
+        }
+
+        triggerMessageFlash(messageId);
+      },
+      [closeMessageMenu, getVisibleMessagesBounds, triggerMessageFlash]
+    );
+
+    useEffect(() => {
+      if (
+        !isOpen ||
+        !isMessageSearchMode ||
+        !normalizedMessageSearchQuery ||
+        !activeSearchMessageId
+      ) {
+        return;
+      }
+
+      const rafId = requestAnimationFrame(() => {
+        focusSearchTargetMessage(activeSearchMessageId);
+      });
+
+      return () => {
+        cancelAnimationFrame(rafId);
+      };
+    }, [
+      activeSearchMessageId,
+      focusSearchTargetMessage,
+      isMessageSearchMode,
+      isOpen,
+      normalizedMessageSearchQuery,
+    ]);
 
     const focusEditingTargetMessage = useCallback(() => {
       if (!editingMessageId) return;
@@ -3259,6 +3533,20 @@ const ChatSidebarPanel = memo(
             displayTargetPhotoUrl={displayTargetPhotoUrl}
             targetUserPresence={targetUserPresence}
             currentChannelId={currentChannelId}
+            isSearchMode={isMessageSearchMode}
+            searchQuery={messageSearchQuery}
+            searchState={messageSearchState}
+            searchResultCount={searchMatchedMessageIds.length}
+            activeSearchResultIndex={Math.max(activeSearchResultIndex, 0)}
+            canNavigateSearchUp={canNavigateSearchUp}
+            canNavigateSearchDown={canNavigateSearchDown}
+            searchInputRef={searchInputRef}
+            onEnterSearchMode={handleEnterMessageSearchMode}
+            onExitSearchMode={handleExitMessageSearchMode}
+            onSearchQueryChange={handleMessageSearchQueryChange}
+            onNavigateSearchUp={handleNavigateSearchUp}
+            onNavigateSearchDown={handleNavigateSearchDown}
+            onFocusSearchInput={handleFocusSearchInput}
             onClose={handleClose}
             getInitials={getInitials}
             getInitialsColor={getInitialsColor}
@@ -3282,6 +3570,12 @@ const ChatSidebarPanel = memo(
             expandedMessageIds={expandedMessageIds}
             flashingMessageId={flashingMessageId}
             isFlashHighlightVisible={isFlashHighlightVisible}
+            searchMatchedMessageIds={
+              isMessageSearchMode ? searchMatchedMessageIdSet : new Set()
+            }
+            activeSearchMessageId={
+              isMessageSearchMode ? activeSearchMessageId : null
+            }
             showScrollToBottom={hasNewMessages || !isAtBottom}
             maxMessageChars={MAX_MESSAGE_CHARS}
             messagesContainerRef={messagesContainerRef}
