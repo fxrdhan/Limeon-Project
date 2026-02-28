@@ -193,31 +193,34 @@ const ChatHeader = ({
               className="!mb-0"
               inputRef={searchInputRef}
               searchState={searchState}
+              showNotFoundArrow={false}
             />
           </div>
           <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
-              <button
-                type="button"
-                aria-label="Hasil sebelumnya"
-                title="Hasil sebelumnya"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
-                onClick={onNavigateSearchUp}
-                disabled={!canNavigateSearchUp}
-              >
-                <TbChevronUp size={17} />
-              </button>
-              <button
-                type="button"
-                aria-label="Hasil berikutnya"
-                title="Hasil berikutnya"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
-                onClick={onNavigateSearchDown}
-                disabled={!canNavigateSearchDown}
-              >
-                <TbChevronDown size={17} />
-              </button>
-            </div>
+            {searchResultCount > 0 ? (
+              <div className="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
+                <button
+                  type="button"
+                  aria-label="Hasil sebelumnya"
+                  title="Hasil sebelumnya"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  onClick={onNavigateSearchUp}
+                  disabled={!canNavigateSearchUp}
+                >
+                  <TbChevronUp size={17} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Hasil berikutnya"
+                  title="Hasil berikutnya"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  onClick={onNavigateSearchDown}
+                  disabled={!canNavigateSearchDown}
+                >
+                  <TbChevronDown size={17} />
+                </button>
+              </div>
+            ) : null}
             <span
               className="min-w-10 text-center text-[11px] font-medium text-slate-500"
               aria-live="polite"

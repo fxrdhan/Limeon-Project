@@ -19,6 +19,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
   className = '',
   inputRef,
   searchState = 'idle',
+  showNotFoundArrow = true,
 }) => {
   const hasValue = value && value.length > 0;
   const textMeasureRef = useRef<HTMLSpanElement>(null);
@@ -95,14 +96,16 @@ const SearchBar: React.FC<TableSearchProps> = ({
           >
             {value}
           </span>
-          <TbArrowBack
-            className={`absolute top-1/2 transform -translate-y-1/2 text-slate-600 pointer-events-none ml-1 transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
-              searchState === 'not-found' && value
-                ? 'opacity-100 scale-150 translate-x-0'
-                : 'opacity-0 scale-95 translate-x-2'
-            }`}
-            style={{ left: `${textWidth + (hasValue ? 0 : 10)}px` }}
-          />
+          {showNotFoundArrow ? (
+            <TbArrowBack
+              className={`absolute top-1/2 transform -translate-y-1/2 text-slate-600 pointer-events-none ml-1 transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
+                searchState === 'not-found' && value
+                  ? 'opacity-100 scale-150 translate-x-0'
+                  : 'opacity-0 scale-95 translate-x-2'
+              }`}
+              style={{ left: `${textWidth + (hasValue ? 0 : 10)}px` }}
+            />
+          ) : null}
         </div>
       </div>
     </div>
