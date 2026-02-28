@@ -191,6 +191,8 @@ const ChatSidebarPanel = memo(
     const conversationCacheRef = useRef<Map<string, ConversationCacheEntry>>(
       new Map()
     );
+    const pendingDeliveredReceiptMessageIdsRef = useRef<Set<string>>(new Set());
+    const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
     const inlineOverflowThresholdRef = useRef<number | null>(null);
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
@@ -774,41 +776,103 @@ const ChatSidebarPanel = memo(
       [targetUser, user]
     );
 
-    const markIncomingMessagesAsDelivered = useCallback(async () => {
-      if (!user || !targetUser || !currentChannelId) return;
+    const markMessageIdsAsDelivered = useCallback(
+      async (messageIds: string[]) => {
+        if (messageIds.length === 0) return;
 
-      try {
-        const { data: deliveredMessages, error } =
-          await chatService.markMessagesAsDelivered(
-            targetUser.id,
-            user.id,
-            currentChannelId
-          );
-        if (error || !deliveredMessages || deliveredMessages.length === 0)
-          return;
+        const targetIds = messageIds.filter(messageId => {
+          if (!messageId) return false;
+          if (pendingDeliveredReceiptMessageIdsRef.current.has(messageId)) {
+            return false;
+          }
+          pendingDeliveredReceiptMessageIdsRef.current.add(messageId);
+          return true;
+        });
+        if (targetIds.length === 0) return;
 
-        mergeAndBroadcastMessageUpdates(deliveredMessages);
-      } catch (error) {
-        console.error('Error marking messages as delivered:', error);
-      }
-    }, [currentChannelId, mergeAndBroadcastMessageUpdates, targetUser, user]);
+        try {
+          const { data: deliveredMessages, error } =
+            await chatService.markMessageIdsAsDelivered(targetIds);
+          if (error || !deliveredMessages || deliveredMessages.length === 0) {
+            return;
+          }
 
-    const markIncomingMessagesAsRead = useCallback(async () => {
-      if (!user || !targetUser || !currentChannelId) return;
+          mergeAndBroadcastMessageUpdates(deliveredMessages);
+        } catch (error) {
+          console.error('Error marking messages as delivered:', error);
+        } finally {
+          targetIds.forEach(messageId => {
+            pendingDeliveredReceiptMessageIdsRef.current.delete(messageId);
+          });
+        }
+      },
+      [mergeAndBroadcastMessageUpdates]
+    );
 
-      try {
-        const { data: readMessages, error } =
-          await chatService.markMessagesAsRead(
-            targetUser.id,
-            user.id,
-            currentChannelId
-          );
-        if (error || !readMessages || readMessages.length === 0) return;
-        mergeAndBroadcastMessageUpdates(readMessages);
-      } catch (error) {
-        console.error('Error marking messages as read:', error);
-      }
-    }, [currentChannelId, mergeAndBroadcastMessageUpdates, targetUser, user]);
+    const markMessageIdsAsRead = useCallback(
+      async (messageIds: string[]) => {
+        if (messageIds.length === 0) return;
+
+        const targetIds = messageIds.filter(messageId => {
+          if (!messageId) return false;
+          if (pendingReadReceiptMessageIdsRef.current.has(messageId)) {
+            return false;
+          }
+          pendingReadReceiptMessageIdsRef.current.add(messageId);
+          return true;
+        });
+        if (targetIds.length === 0) return;
+
+        try {
+          const { data: readMessages, error } =
+            await chatService.markMessageIdsAsRead(targetIds);
+          if (error || !readMessages || readMessages.length === 0) return;
+          mergeAndBroadcastMessageUpdates(readMessages);
+        } catch (error) {
+          console.error('Error marking messages as read:', error);
+        } finally {
+          targetIds.forEach(messageId => {
+            pendingReadReceiptMessageIdsRef.current.delete(messageId);
+          });
+        }
+      },
+      [mergeAndBroadcastMessageUpdates]
+    );
+
+    const markVisibleIncomingMessagesAsRead = useCallback(async () => {
+      if (!user || !targetUser) return;
+
+      const bounds = getVisibleMessagesBounds();
+      if (!bounds) return;
+
+      const visibleUnreadIncomingMessageIds = messages
+        .filter(
+          messageItem =>
+            messageItem.sender_id === targetUser.id &&
+            messageItem.receiver_id === user.id &&
+            !messageItem.is_read
+        )
+        .map(messageItem => {
+          const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
+          if (!bubbleElement) return null;
+
+          const bubbleRect = bubbleElement.getBoundingClientRect();
+          const isVisible =
+            bubbleRect.bottom > bounds.containerRect.top &&
+            bubbleRect.top < bounds.visibleBottom;
+          return isVisible ? messageItem.id : null;
+        })
+        .filter((messageId): messageId is string => Boolean(messageId));
+
+      if (visibleUnreadIncomingMessageIds.length === 0) return;
+      await markMessageIdsAsRead(visibleUnreadIncomingMessageIds);
+    }, [
+      getVisibleMessagesBounds,
+      markMessageIdsAsRead,
+      messages,
+      targetUser,
+      user,
+    ]);
 
     // PRIORITY 1: Simulate close button click when isOpen changes to false
     useEffect(() => {
@@ -904,8 +968,15 @@ const ChatSidebarPanel = memo(
             messages: transformedMessages,
             cachedAt: Date.now(),
           });
-          await markIncomingMessagesAsDelivered();
-          await markIncomingMessagesAsRead();
+          const undeliveredIncomingMessageIds = transformedMessages
+            .filter(
+              messageItem =>
+                messageItem.sender_id === targetUser.id &&
+                messageItem.receiver_id === user.id &&
+                !messageItem.is_delivered
+            )
+            .map(messageItem => messageItem.id);
+          await markMessageIdsAsDelivered(undeliveredIncomingMessageIds);
         } catch (error) {
           console.error('Error loading messages:', error);
         } finally {
@@ -944,10 +1015,9 @@ const ChatSidebarPanel = memo(
           if (
             newMessage.sender_id === targetUser.id &&
             newMessage.receiver_id === user.id &&
-            !newMessage.is_read
+            !newMessage.is_delivered
           ) {
-            void markIncomingMessagesAsDelivered();
-            void markIncomingMessagesAsRead();
+            void markMessageIdsAsDelivered([newMessage.id]);
           }
         });
 
@@ -1120,8 +1190,7 @@ const ChatSidebarPanel = memo(
       currentChannelId,
       updateUserChatOpen,
       loadTargetUserPresence,
-      markIncomingMessagesAsDelivered,
-      markIncomingMessagesAsRead,
+      markMessageIdsAsDelivered,
       scrollMessagesToBottom,
     ]);
 
@@ -1153,6 +1222,11 @@ const ChatSidebarPanel = memo(
 
     useEffect(() => {
       const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
+      const pendingDeliveredReceiptMessageIds =
+        pendingDeliveredReceiptMessageIdsRef.current;
+      const pendingReadReceiptMessageIds =
+        pendingReadReceiptMessageIdsRef.current;
+      const pendingComposerAttachments = pendingComposerAttachmentsRef.current;
 
       return () => {
         if (menuTransitionSourceTimeoutRef.current) {
@@ -1179,8 +1253,10 @@ const ChatSidebarPanel = memo(
           URL.revokeObjectURL(previewUrl);
         });
         pendingImagePreviewUrls.clear();
+        pendingDeliveredReceiptMessageIds.clear();
+        pendingReadReceiptMessageIds.clear();
 
-        pendingComposerAttachmentsRef.current.forEach(attachment => {
+        pendingComposerAttachments.forEach(attachment => {
           if (attachment.previewUrl) {
             URL.revokeObjectURL(attachment.previewUrl);
           }
@@ -2402,11 +2478,30 @@ const ChatSidebarPanel = memo(
       requestAnimationFrame(() => {
         const atBottom = checkIfAtBottom();
         setIsAtBottom(atBottom);
+        void markVisibleIncomingMessagesAsRead();
         if (atBottom) {
           setHasNewMessages(false);
         }
       });
-    }, [checkIfAtBottom]);
+    }, [checkIfAtBottom, markVisibleIncomingMessagesAsRead]);
+
+    useEffect(() => {
+      if (!isOpen) return;
+
+      const rafId = requestAnimationFrame(() => {
+        void markVisibleIncomingMessagesAsRead();
+      });
+
+      return () => {
+        cancelAnimationFrame(rafId);
+      };
+    }, [
+      isOpen,
+      messageInputHeight,
+      composerContextualOffset,
+      markVisibleIncomingMessagesAsRead,
+      messages,
+    ]);
 
     // Auto-scroll to bottom only if user is at bottom
     useEffect(() => {

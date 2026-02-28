@@ -36,8 +36,8 @@ const chatServiceMock = vi.hoisted(() => ({
   fetchMessagesBetweenUsers: vi.fn(),
   insertMessage: vi.fn(),
   updateMessage: vi.fn(),
-  markMessagesAsDelivered: vi.fn(),
-  markMessagesAsRead: vi.fn(),
+  markMessageIdsAsDelivered: vi.fn(),
+  markMessageIdsAsRead: vi.fn(),
   deleteMessage: vi.fn(),
   getUserPresence: vi.fn(),
   updateUserPresence: vi.fn(),
@@ -223,8 +223,8 @@ describe('ChatSidebarPanel', () => {
     chatServiceMock.fetchMessagesBetweenUsers.mockReset();
     chatServiceMock.insertMessage.mockReset();
     chatServiceMock.updateMessage.mockReset();
-    chatServiceMock.markMessagesAsDelivered.mockReset();
-    chatServiceMock.markMessagesAsRead.mockReset();
+    chatServiceMock.markMessageIdsAsDelivered.mockReset();
+    chatServiceMock.markMessageIdsAsRead.mockReset();
     chatServiceMock.deleteMessage.mockReset();
     chatServiceMock.getUserPresence.mockReset();
     chatServiceMock.updateUserPresence.mockReset();
@@ -262,11 +262,11 @@ describe('ChatSidebarPanel', () => {
       }),
       error: null,
     });
-    chatServiceMock.markMessagesAsDelivered.mockResolvedValue({
+    chatServiceMock.markMessageIdsAsDelivered.mockResolvedValue({
       data: [],
       error: null,
     });
-    chatServiceMock.markMessagesAsRead.mockResolvedValue({
+    chatServiceMock.markMessageIdsAsRead.mockResolvedValue({
       data: [],
       error: null,
     });
@@ -509,7 +509,7 @@ describe('ChatSidebarPanel', () => {
       ],
       error: null,
     });
-    chatServiceMock.markMessagesAsRead.mockResolvedValueOnce({
+    chatServiceMock.markMessageIdsAsRead.mockResolvedValueOnce({
       data: [
         createMessage({
           id: 'msg-unread-open',
@@ -517,12 +517,13 @@ describe('ChatSidebarPanel', () => {
           receiver_id: currentUser.id,
           message: 'Belum terbaca',
           is_read: true,
-          updated_at: '2026-02-08T00:00:02.000Z',
+          is_delivered: true,
+          updated_at: '2026-02-08T00:00:00.000Z',
         }),
       ],
       error: null,
     });
-    chatServiceMock.markMessagesAsDelivered.mockResolvedValueOnce({
+    chatServiceMock.markMessageIdsAsDelivered.mockResolvedValueOnce({
       data: [
         createMessage({
           id: 'msg-unread-open',
@@ -530,40 +531,105 @@ describe('ChatSidebarPanel', () => {
           receiver_id: currentUser.id,
           message: 'Belum terbaca',
           is_delivered: true,
-          updated_at: '2026-02-08T00:00:01.000Z',
+          updated_at: '2026-02-08T00:00:00.000Z',
         }),
       ],
       error: null,
     });
 
-    render(
-      <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
-    );
+    const fallbackRect = {
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+    const containerRect = {
+      top: 120,
+      left: 0,
+      right: 420,
+      bottom: 460,
+      width: 420,
+      height: 340,
+      x: 0,
+      y: 120,
+      toJSON: () => ({}),
+    };
+    const composerRect = {
+      top: 410,
+      left: 0,
+      right: 420,
+      bottom: 460,
+      width: 420,
+      height: 50,
+      x: 0,
+      y: 410,
+      toJSON: () => ({}),
+    };
+    const messageBubbleRect = {
+      top: 180,
+      left: 24,
+      right: 320,
+      bottom: 220,
+      width: 296,
+      height: 40,
+      x: 24,
+      y: 180,
+      toJSON: () => ({}),
+    };
 
-    expect(await screen.findByText('Belum terbaca')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(chatServiceMock.markMessagesAsDelivered).toHaveBeenCalledWith(
-        targetUser.id,
-        currentUser.id,
-        'dm_user-1_user-2'
-      );
-      expect(chatServiceMock.markMessagesAsRead).toHaveBeenCalledWith(
-        targetUser.id,
-        currentUser.id,
-        'dm_user-1_user-2'
-      );
-    });
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        const className =
+          typeof this.className === 'string' ? this.className : '';
 
-    const chatChannel = channelRegistry.get('chat_dm_user-1_user-2');
-    expect(chatChannel?.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: 'update_message',
-        payload: expect.objectContaining({
-          id: 'msg-unread-open',
-          is_read: true,
-        }),
-      })
-    );
+        if (className.includes('overflow-y-auto')) {
+          return containerRect as DOMRect;
+        }
+        if (className.includes('absolute bottom-2 left-0 right-0')) {
+          return composerRect as DOMRect;
+        }
+        if (
+          this.getAttribute('role') === 'button' &&
+          this.textContent?.includes('Belum terbaca')
+        ) {
+          return messageBubbleRect as DOMRect;
+        }
+        return fallbackRect as DOMRect;
+      });
+
+    try {
+      render(
+        <ChatSidebarPanel isOpen onClose={vi.fn()} targetUser={targetUser} />
+      );
+
+      await waitFor(() => {
+        expect(chatServiceMock.markMessageIdsAsDelivered).toHaveBeenCalledWith([
+          'msg-unread-open',
+        ]);
+        expect(chatServiceMock.markMessageIdsAsRead).toHaveBeenCalledWith([
+          'msg-unread-open',
+        ]);
+      });
+
+      const chatChannel = channelRegistry.get('chat_dm_user-1_user-2');
+      expect(chatChannel?.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'update_message',
+          payload: expect.objectContaining({
+            id: 'msg-unread-open',
+            is_read: true,
+          }),
+        })
+      );
+    } finally {
+      rectSpy.mockRestore();
+    }
   });
 
   it('renders attachment caption in the same bubble when text replies to file message', async () => {

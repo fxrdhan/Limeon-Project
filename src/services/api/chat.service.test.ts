@@ -146,6 +146,40 @@ describe('chatService', () => {
     expect(result.data).toBeNull();
   });
 
+  it('marks message ids as delivered through rpc', async () => {
+    rpcMock.mockResolvedValue({
+      data: [{ id: 'm1', is_delivered: true }],
+      error: null,
+    });
+
+    const result = await chatService.markMessageIdsAsDelivered(['m1']);
+    expect(result.data?.[0].id).toBe('m1');
+    expect(rpcMock).toHaveBeenCalledWith('mark_chat_message_ids_as_delivered', {
+      p_message_ids: ['m1'],
+    });
+  });
+
+  it('marks message ids as read through rpc', async () => {
+    rpcMock.mockResolvedValue({
+      data: [{ id: 'm1', is_read: true }],
+      error: null,
+    });
+
+    const result = await chatService.markMessageIdsAsRead(['m1']);
+    expect(result.data?.[0].id).toBe('m1');
+    expect(rpcMock).toHaveBeenCalledWith('mark_chat_message_ids_as_read', {
+      p_message_ids: ['m1'],
+    });
+  });
+
+  it('returns empty result for empty id list mark methods', async () => {
+    const deliveredResult = await chatService.markMessageIdsAsDelivered([]);
+    const readResult = await chatService.markMessageIdsAsRead([]);
+    expect(deliveredResult.data).toEqual([]);
+    expect(readResult.data).toEqual([]);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it('handles insert/update errors', async () => {
     const insertQuery = createThenableQuery({
       data: null,

@@ -191,6 +191,52 @@ export const chatService = {
     }
   },
 
+  async markMessageIdsAsDelivered(
+    messageIds: string[]
+  ): Promise<ServiceResponse<ChatMessage[]>> {
+    if (messageIds.length === 0) return { data: [], error: null };
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'mark_chat_message_ids_as_delivered',
+        {
+          p_message_ids: messageIds,
+        }
+      );
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as ChatMessage[], error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async markMessageIdsAsRead(
+    messageIds: string[]
+  ): Promise<ServiceResponse<ChatMessage[]>> {
+    if (messageIds.length === 0) return { data: [], error: null };
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'mark_chat_message_ids_as_read',
+        {
+          p_message_ids: messageIds,
+        }
+      );
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as ChatMessage[], error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async deleteMessage(id: string): Promise<ServiceResponse<null>> {
     try {
       const { error } = await supabase
