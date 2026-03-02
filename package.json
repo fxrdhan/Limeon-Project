@@ -62,7 +62,7 @@
     "cropperjs": "1.6.2",
     "framer-motion": "^12.34.3",
     "fuzzysort": "^3.1.0",
-    "google-auth-library": "^10.5.0",
+    "google-auth-library": "^10.6.1",
     "googleapis": "^170.1.0",
     "motion": "^12.34.0",
     "pdfjs-dist": "^5.4.624",
