@@ -71,10 +71,14 @@ vi.mock('cropperjs', () => ({
     constructor(...args: unknown[]) {
       cropperConstructorMock(...args);
     }
-    getCroppedCanvas() {
+    getCropperSelection() {
       return {
-        toBlob(callback: (blob: Blob | null) => void) {
-          callback(cropperBlobState.value);
+        async $toCanvas() {
+          return {
+            toBlob(callback: (blob: Blob | null) => void) {
+              callback(cropperBlobState.value);
+            },
+          } as HTMLCanvasElement;
         },
       };
     }

@@ -939,14 +939,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
     const initCropper = () => {
       if (isCancelled || !imageElement) return;
-      const cropperInstance = new Cropper(imageElement, {
-        aspectRatio: 1,
-        viewMode: 1,
-        autoCropArea: 1,
-        background: false,
-        responsive: true,
-        guides: true,
-      });
+      const cropperInstance = new Cropper(imageElement);
+      const selection = cropperInstance.getCropperSelection();
+      if (selection) {
+        selection.initialAspectRatio = 1;
+        selection.aspectRatio = 1;
+      }
 
       cropperRef.current = cropperInstance;
     };
@@ -1446,16 +1444,19 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     setIsCropping(true);
 
     try {
-      const canvas = cropperRef.current.getCroppedCanvas({
+      const selection = cropperRef.current.getCropperSelection();
+      if (!selection) {
+        throw new Error('Gagal memproses gambar.');
+      }
+      const canvas = await selection.$toCanvas({
         width: 1024,
         height: 1024,
-        imageSmoothingQuality: 'high',
       });
 
       const mimeType = cropState.file.type || 'image/jpeg';
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
-          result => {
+          (result: Blob | null) => {
             if (result) resolve(result);
             else reject(new Error('Gagal memproses gambar.'));
           },
