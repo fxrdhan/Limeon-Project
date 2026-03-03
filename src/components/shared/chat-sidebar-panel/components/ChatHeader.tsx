@@ -191,7 +191,11 @@ const ChatHeader = ({
   );
 
   return (
-    <div className="px-4 py-3.5 border-b border-slate-100">
+    <div
+      className={`py-3.5 border-b border-slate-100 ${
+        isSearchMode ? 'pl-3 pr-4' : 'px-4'
+      }`}
+    >
       {isSearchMode ? (
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
@@ -207,33 +211,33 @@ const ChatHeader = ({
               showNotFoundArrow={false}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {searchResultCount > 0 ? (
-              <div className="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
+              <div className="inline-flex flex-col items-center gap-0 rounded-lg border border-slate-200 bg-white p-px">
                 <button
                   type="button"
                   aria-label="Hasil sebelumnya"
                   title="Hasil sebelumnya"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  className="inline-flex h-5 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
                   onClick={onNavigateSearchUp}
                   disabled={!canNavigateSearchUp}
                 >
-                  <TbChevronUp size={17} />
+                  <TbChevronUp size={14} />
                 </button>
                 <button
                   type="button"
                   aria-label="Hasil berikutnya"
                   title="Hasil berikutnya"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  className="inline-flex h-5 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
                   onClick={onNavigateSearchDown}
                   disabled={!canNavigateSearchDown}
                 >
-                  <TbChevronDown size={17} />
+                  <TbChevronDown size={14} />
                 </button>
               </div>
             ) : null}
             <span
-              className="min-w-10 text-center text-[11px] font-medium text-slate-500"
+              className="min-w-10 text-center text-xs font-medium text-slate-500"
               aria-live="polite"
             >
               {searchResultPositionLabel}

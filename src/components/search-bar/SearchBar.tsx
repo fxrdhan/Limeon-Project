@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { TbArrowBack, TbSearch } from 'react-icons/tb';
+import { TbArrowBack, TbZoom, TbZoomCancel } from 'react-icons/tb';
 import { TableSearchProps } from './types';
 import { SEARCH_CONSTANTS } from './constants';
 import {
@@ -46,19 +46,24 @@ const SearchBar: React.FC<TableSearchProps> = ({
     }
   };
 
+  const SearchIcon = searchState === 'not-found' ? TbZoomCancel : TbZoom;
+
   return (
     <div className={`mb-4 relative ${className}`}>
       <div className="flex items-center">
-        <TbSearch
+        <SearchIcon
           className={`${getSearchIconColor()} transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
             hasValue
-              ? 'opacity-100 transform translate-x-0 scale-150'
+              ? `opacity-100 transform translate-x-0 ${
+                  showNotFoundArrow ? 'scale-150' : 'scale-125'
+                }`
               : 'opacity-0 transform -translate-x-2 scale-100'
           }`}
           style={{
             visibility: hasValue ? 'visible' : 'hidden',
             width: hasValue ? 'auto' : '0',
-            minWidth: hasValue ? '40px' : '0',
+            minWidth: hasValue ? (showNotFoundArrow ? '40px' : '44px') : '0',
+            marginLeft: hasValue && !showNotFoundArrow ? '-8px' : '0',
           }}
         />
         <div className="relative flex-1">
@@ -67,7 +72,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             type="text"
             placeholder={placeholder}
             className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
-              hasValue ? 'pl-3' : 'pl-10'
+              hasValue ? (showNotFoundArrow ? 'pl-3' : 'pl-2.5') : 'pl-10'
             } ${
               searchState === 'not-found'
                 ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_SOFT_CLASS}`
@@ -79,7 +84,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             onFocus={onFocus}
             onBlur={onBlur}
           />
-          <TbSearch
+          <SearchIcon
             className={`absolute top-3.5 ${getSearchIconColor()} transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               hasValue
                 ? 'opacity-0 transform translate-x-2 left-3'
