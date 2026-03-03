@@ -265,8 +265,8 @@ const ChatHeader = ({
                 </div>
               )}
             </div>
-            <div className="min-w-0">
-              <h3 className="font-medium text-slate-900 truncate">
+            <div className="min-w-0 flex flex-col gap-1">
+              <h3 className="font-medium text-slate-900 truncate leading-tight">
                 {targetUser ? targetUser.name : 'Chat'}
               </h3>
               {(() => {

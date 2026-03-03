@@ -2928,15 +2928,15 @@ const ChatSidebarPanel = memo(
       [focusMessageComposer]
     );
 
-    // Initialize scroll position when chat opens
+    // Initialize scroll pinning when chat opens or active conversation changes
     useEffect(() => {
-      if (!isOpen) return;
+      if (!isOpen || !currentChannelId) return;
 
       shouldPinToBottomOnOpenRef.current = true;
       hasCompletedInitialOpenLoadRef.current = false;
       setIsAtBottom(true);
       setHasNewMessages(false);
-    }, [isOpen]);
+    }, [isOpen, currentChannelId]);
 
     useEffect(() => {
       if (!isOpen) return;
