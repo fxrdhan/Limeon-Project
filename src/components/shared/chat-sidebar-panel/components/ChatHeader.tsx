@@ -212,30 +212,37 @@ const ChatHeader = ({
             />
           </div>
           <div className="flex items-center gap-1">
-            {searchResultCount > 0 ? (
-              <div className="inline-flex flex-col items-center gap-0 rounded-lg border border-slate-200 bg-white p-px">
+            <div
+              className={`overflow-hidden transition-[width,opacity,margin] duration-200 ease-out ${
+                searchResultCount > 0
+                  ? 'w-8 opacity-100 mr-0'
+                  : 'w-0 opacity-0 -mr-1 pointer-events-none'
+              }`}
+              aria-hidden={searchResultCount === 0}
+            >
+              <div className="inline-flex h-9 w-8 flex-col items-center justify-center gap-0 rounded-lg border border-slate-200 bg-white p-px">
                 <button
                   type="button"
                   aria-label="Hasil sebelumnya"
                   title="Hasil sebelumnya"
-                  className="inline-flex h-5 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  className="inline-flex h-4 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
                   onClick={onNavigateSearchUp}
-                  disabled={!canNavigateSearchUp}
+                  disabled={searchResultCount === 0 || !canNavigateSearchUp}
                 >
-                  <TbChevronUp size={14} />
+                  <TbChevronUp size={13} />
                 </button>
                 <button
                   type="button"
                   aria-label="Hasil berikutnya"
                   title="Hasil berikutnya"
-                  className="inline-flex h-5 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  className="inline-flex h-4 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
                   onClick={onNavigateSearchDown}
-                  disabled={!canNavigateSearchDown}
+                  disabled={searchResultCount === 0 || !canNavigateSearchDown}
                 >
-                  <TbChevronDown size={14} />
+                  <TbChevronDown size={13} />
                 </button>
               </div>
-            ) : null}
+            </div>
             <span
               className="min-w-10 text-center text-xs font-medium text-slate-500"
               aria-live="polite"
