@@ -1450,7 +1450,8 @@ const ChatSidebarPanel = memo(
 
       // Setup periodic presence refresh as backup (every 30 seconds)
       presenceRefreshIntervalRef.current = setInterval(() => {
-        loadTargetUserPresence();
+        void updateUserChatOpen();
+        void loadTargetUserPresence();
       }, 30000);
 
       // Cleanup function

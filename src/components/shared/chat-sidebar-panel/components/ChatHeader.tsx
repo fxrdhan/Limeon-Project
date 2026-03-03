@@ -49,6 +49,17 @@ interface ChatHeaderProps {
   getInitialsColor: (userId: string) => string;
 }
 
+const ONLINE_PRESENCE_MAX_AGE_MS = 90_000;
+
+const isPresenceFresh = (lastSeen?: string | null): boolean => {
+  if (!lastSeen) return false;
+
+  const parsedTime = new Date(lastSeen).getTime();
+  if (!Number.isFinite(parsedTime)) return false;
+
+  return Date.now() - parsedTime <= ONLINE_PRESENCE_MAX_AGE_MS;
+};
+
 const formatLastSeen = (lastSeen: string): string => {
   const now = new Date();
   const lastSeenDate = new Date(lastSeen);
@@ -273,7 +284,9 @@ const ChatHeader = ({
                 const shouldShowOnline =
                   targetUserPresence &&
                   targetUserPresence.is_online &&
-                  targetUserPresence.current_chat_channel === currentChannelId;
+                  targetUserPresence.current_chat_channel ===
+                    currentChannelId &&
+                  isPresenceFresh(targetUserPresence.last_seen);
 
                 if (shouldShowOnline) {
                   return (
