@@ -192,12 +192,12 @@ const ChatHeader = ({
 
   return (
     <div
-      className={`py-3.5 border-b border-slate-100 ${
+      className={`h-16 border-b border-slate-100 ${
         isSearchMode ? 'pl-3 pr-4' : 'px-4'
       }`}
     >
       {isSearchMode ? (
-        <div className="flex items-center gap-2">
+        <div className="h-full flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <SearchBar
               value={searchQuery}
@@ -269,7 +269,7 @@ const ChatHeader = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between">
+        <div className="h-full flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
               {displayTargetPhotoUrl ? (
