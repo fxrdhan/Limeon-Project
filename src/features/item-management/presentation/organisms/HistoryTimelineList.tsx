@@ -148,6 +148,14 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
         onMouseEnter={() => onMouseEnter(item.id)}
         onMouseLeave={onMouseLeave}
         onClick={() => onClick(item)}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick(item);
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-3">

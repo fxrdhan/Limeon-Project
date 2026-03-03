@@ -36,8 +36,10 @@ const ImageExpandPreview = ({
           : 'bg-black/70 opacity-0 pointer-events-none'
       } ${backdropClassName}`}
       onClick={onClose}
-      role={backdropRole}
-      tabIndex={backdropTabIndex}
+      role="button"
+      tabIndex={0}
+      data-backdrop-role={backdropRole}
+      data-backdrop-tab-index={backdropTabIndex}
       aria-label={backdropAriaLabel}
       onKeyDown={onBackdropKeyDown}
     >
@@ -46,6 +48,7 @@ const ImageExpandPreview = ({
           isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
         } ${contentClassName}`}
         onClick={event => event.stopPropagation()}
+        role="presentation"
       >
         {children}
       </div>

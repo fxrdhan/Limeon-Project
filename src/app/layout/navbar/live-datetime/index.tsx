@@ -102,6 +102,14 @@ const DateTimeDisplay = () => {
         <div
           className="text-sm text-slate-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-lg transition-colors group"
           onClick={handleTimeFormatToggle}
+          onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              handleTimeFormatToggle();
+            }
+          }}
+          role="button"
+          tabIndex={0}
           title={`Click to switch to ${is24HourFormat ? '12' : '24'}-hour format`}
         >
           <span>{hours || '--'}</span>

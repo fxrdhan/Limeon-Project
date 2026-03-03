@@ -98,6 +98,7 @@ vi.mock('motion/react', () => ({
           className={props.className}
           style={props.style}
           onClick={props.onClick}
+          role="button"
         >
           {props.children}
         </div>

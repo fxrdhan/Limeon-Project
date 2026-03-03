@@ -149,6 +149,7 @@ const CalendarContent: React.FC<{
           }
           onKeyDown={handleInputKeyDown}
           tabIndex={0}
+          role="button"
           className="calendar__custom-trigger"
         >
           {children}

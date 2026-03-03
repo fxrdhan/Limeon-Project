@@ -41,6 +41,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
         onMouseLeave={trigger === 'hover' ? handleTriggerMouseLeave : undefined}
         onKeyDown={handleInputKeyDown}
         tabIndex={0}
+        role="button"
       >
         <Input
           type="text"

@@ -721,6 +721,7 @@ const MessagesPane = ({
           paddingBottom: messageInputHeight + 84 + composerContextualOffset,
         }}
         onClick={closeMessageMenu}
+        role="presentation"
       >
         {loading && messages.length === 0 ? (
           <div className="flex justify-center items-center py-8">

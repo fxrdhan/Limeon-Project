@@ -211,6 +211,7 @@ export function GenericEditInPlace<T = unknown>({
             tabIndex={disabled ? undefined : tabIndex}
             className={`group w-full py-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-semibold flex items-center focus:outline-hidden ${displayStyle.textColor || 'text-slate-900'} ${displayStyle.className || ''} ${config.classes?.display || ''}`}
             onClick={disabled ? undefined : onStartEdit}
+            role="button"
             title={disabled ? undefined : displayTitle}
             onKeyDown={e => {
               if (!disabled && (e.key === 'Enter' || e.key === ' ')) {

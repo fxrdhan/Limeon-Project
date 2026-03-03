@@ -351,6 +351,16 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               onClick={
                 config.canEdit && config.onEdit ? config.onEdit : undefined
               }
+              onKeyDown={
+                config.canEdit && config.onEdit
+                  ? event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        config.onEdit?.();
+                      }
+                    }
+                  : undefined
+              }
               onMouseDown={
                 config.canEdit && config.onEdit
                   ? e => e.stopPropagation()
@@ -359,6 +369,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               className={
                 config.canEdit && config.onEdit ? 'cursor-pointer' : ''
               }
+              role="button"
+              tabIndex={0}
             >
               {displayLabel}
             </span>

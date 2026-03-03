@@ -350,10 +350,22 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
                             }`}
                             onMouseEnter={() => setHoveredUser(portalUser.id)}
                             onMouseLeave={() => setHoveredUser(null)}
-                            onClick={() =>
-                              portalUser.id !== user?.id &&
-                              handleChatOpen(portalUser)
+                            onClick={
+                              portalUser.id !== user?.id
+                                ? () => handleChatOpen(portalUser)
+                                : undefined
                             }
+                            onKeyDown={event => {
+                              if (
+                                portalUser.id !== user?.id &&
+                                (event.key === 'Enter' || event.key === ' ')
+                              ) {
+                                event.preventDefault();
+                                handleChatOpen(portalUser);
+                              }
+                            }}
+                            role="button"
+                            tabIndex={0}
                           >
                             {/* User Info Group */}
                             <div className="relative flex items-center">

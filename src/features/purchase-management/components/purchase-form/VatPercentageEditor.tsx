@@ -62,6 +62,14 @@ const VatPercentageEditor: React.FC<VatPercentageEditorProps> = ({
           <span
             className="w-10 p-1 rounded-lg cursor-pointer flex items-center justify-end hover:bg-slate-100 transition-colors text-orange-500"
             onClick={startEditing}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                startEditing();
+              }
+            }}
+            role="button"
+            tabIndex={0}
             title="Klik untuk mengubah persentase PPN"
           >
             {vatPercentage}%

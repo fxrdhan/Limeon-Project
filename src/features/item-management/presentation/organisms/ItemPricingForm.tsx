@@ -564,6 +564,7 @@ export default function ItemPricingForm({
             <div
               onClick={event => event.stopPropagation()}
               onMouseDown={event => event.stopPropagation()}
+              role="presentation"
             >
               <Switch
                 size="small"

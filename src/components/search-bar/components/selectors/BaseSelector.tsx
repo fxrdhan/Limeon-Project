@@ -603,6 +603,7 @@ function BaseSelector<T>({
                               isSelected ? '' : hoverClass
                             }`}
                             onClick={() => onSelect(item)}
+                            role="button"
                           >
                             <div
                               className={`shrink-0 transition-colors duration-150 ${

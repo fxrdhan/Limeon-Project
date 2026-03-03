@@ -50,6 +50,7 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
       onKeyDown={handleCalendarKeyDown}
       onMouseEnter={trigger === 'hover' ? handleCalendarMouseEnter : undefined}
       onMouseLeave={trigger === 'hover' ? handleCalendarMouseLeave : undefined}
+      role="dialog"
     >
       {children}
     </div>,

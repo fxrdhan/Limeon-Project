@@ -320,6 +320,7 @@ const ChatHeader = ({
                 <div
                   ref={optionsMenuRef}
                   onClick={event => event.stopPropagation()}
+                  role="presentation"
                 >
                   <PopupMenuContent
                     actions={optionsActions}

@@ -743,6 +743,7 @@ const ComposerPanel = ({
                     <div
                       ref={imageActionsMenuRef}
                       onClick={event => event.stopPropagation()}
+                      role="presentation"
                     >
                       <PopupMenuContent
                         actions={imageActions}

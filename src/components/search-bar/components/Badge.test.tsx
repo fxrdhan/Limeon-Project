@@ -303,7 +303,7 @@ describe('Badge', () => {
     const onInsert = vi.fn();
 
     const { rerender } = render(
-      <div onMouseDown={onRootMouseDown}>
+      <div onMouseDown={onRootMouseDown} role="presentation">
         <Badge
           config={buildConfig({
             label: 'text',
@@ -329,7 +329,7 @@ describe('Badge', () => {
 
     const onEditComplete = vi.fn();
     rerender(
-      <div onMouseDown={onRootMouseDown}>
+      <div onMouseDown={onRootMouseDown} role="presentation">
         <Badge
           config={buildConfig({
             isEditing: true,

@@ -50,7 +50,7 @@ describe('SearchInput', () => {
     } as React.RefObject<NodeJS.Timeout | null>;
 
     render(
-      <div onClick={parentClick}>
+      <div onClick={parentClick} role="presentation">
         <SearchInput
           ref={React.createRef<HTMLInputElement>()}
           searchTerm=""

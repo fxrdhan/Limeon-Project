@@ -397,7 +397,15 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                           }
                         )}
                         onClick={() => handleItemSelect(item)}
+                        onKeyDown={event => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleItemSelect(item);
+                          }
+                        }}
                         onMouseEnter={() => setHighlightedIndex(index)}
+                        role="button"
+                        tabIndex={0}
                       >
                         <div>
                           <span className="font-semibold">{item.code}</span> -{' '}

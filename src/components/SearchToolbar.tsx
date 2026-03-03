@@ -112,13 +112,15 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           placeholder={placeholder || searchBarProps.placeholder || 'Cari...'}
           className="grow"
         />
-        <span
+        <button
+          type="button"
           className="inline-block ml-4 mb-2"
           onClick={onAdd}
           title="Tambah Item Baru"
+          aria-label="Tambah Item Baru"
         >
           <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
-        </span>
+        </button>
 
         <div className="inline-block ml-2 mb-1 mt-0.5">
           <ExportDropdown gridApi={gridApi || null} filename={exportFilename} />
