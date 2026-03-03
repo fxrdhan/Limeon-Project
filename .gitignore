@@ -16,7 +16,6 @@ output.css
 node_modules
 supabase/data/
 .env
-test.js
 .yarn/cache
 .claude/
 dist
