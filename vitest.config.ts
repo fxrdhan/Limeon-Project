@@ -20,6 +20,7 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, 'playwright/**', 'test-results/**'],
     coverage: {
       provider: 'v8',
+      // @ts-expect-error -- supported by vitest runtime; mismatched in bundled types.
       all: true,
       reporter: ['text', 'json', 'html', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],

@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@lib/*": ["src/lib/*"],
-      "@services/*": ["src/services/*"],
-      "@store/*": ["src/store/*"],
-      "@types/*": ["src/types/*"],
-      "@assets/*": ["src/assets/*"]
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@services/*": ["./src/services/*"],
+      "@store/*": ["./src/store/*"],
+      "@types/*": ["./src/types/*"],
+      "@assets/*": ["./src/assets/*"]
     },
     "types": ["node", "vitest/globals", "@testing-library/jest-dom/vitest"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",

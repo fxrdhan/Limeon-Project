@@ -170,4 +170,4 @@ Options:
   process.exit(0);
 }
 
-addAdminUser();
+void addAdminUser();

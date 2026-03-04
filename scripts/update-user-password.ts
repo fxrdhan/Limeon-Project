@@ -137,4 +137,4 @@ Options:
   process.exit(0);
 }
 
-updateUserPassword();
+void updateUserPassword();
