@@ -1,4 +1,4 @@
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
@@ -157,7 +157,6 @@ export default defineConfig({
 
     // Optimize for better performance
     target: ['chrome107', 'firefox104', 'safari16', 'edge107'],
-    minify: 'esbuild',
     sourcemap: false, // Disable sourcemaps in production
     cssCodeSplit: true, // Split CSS by route
   },

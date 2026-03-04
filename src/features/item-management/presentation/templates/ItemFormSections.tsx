@@ -9,7 +9,6 @@ import React, {
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Cropper from 'cropperjs';
-import 'cropperjs/dist/cropper.css';
 import { TbPhotoUp } from 'react-icons/tb';
 import { compressImageIfNeeded } from '@/utils/image';
 import { extractNumericValue } from '@/lib/formatters';
