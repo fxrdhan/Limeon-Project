@@ -150,7 +150,7 @@ export const useAddItemForm = ({
       if (initialItemData && initialItemData.id === itemId) {
         itemData.hydrateItemData(initialItemData);
       }
-      itemData.fetchItemData(itemId);
+      void itemData.fetchItemData(itemId);
       cache.clearCache();
     } else {
       const cachedData = cache.loadFromCache();

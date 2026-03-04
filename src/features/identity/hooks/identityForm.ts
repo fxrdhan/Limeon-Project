@@ -42,9 +42,8 @@ export const useIdentityForm = ({
   const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [loadingField, setLoadingField] = useState<Record<string, boolean>>({});
-  const [localData, setLocalData] = useState<
-    Record<string, string | number | boolean | null>
-  >(initialData);
+  const [localData, setLocalData] =
+    useState<Record<string, string | number | boolean | null>>(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const autosaveTimersRef = useRef<Record<string, number>>({});
   const inputRefs = useRef<
@@ -339,7 +338,25 @@ export const useIdentityForm = ({
 
       const normalizeValue = (value: unknown) => {
         if (value === null || value === undefined) return '';
-        return String(value);
+        if (
+          typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean' ||
+          typeof value === 'bigint'
+        ) {
+          return String(value);
+        }
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        if (typeof value === 'object') {
+          try {
+            return JSON.stringify(value);
+          } catch {
+            return '';
+          }
+        }
+        return '';
       };
 
       return normalizeValue(currentValue) !== normalizeValue(savedValue);

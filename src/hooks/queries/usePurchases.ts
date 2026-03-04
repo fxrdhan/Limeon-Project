@@ -120,7 +120,7 @@ export const usePurchaseMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.purchases.related(),
       });
     },
@@ -147,13 +147,13 @@ export const usePurchaseMutations = () => {
       return result.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.purchases.related(),
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.purchases.detail(variables.id),
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.purchases.items(variables.id),
       });
     },
@@ -166,7 +166,7 @@ export const usePurchaseMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.purchases.related(),
       });
     },

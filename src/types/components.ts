@@ -21,7 +21,7 @@ export interface HoverDetailData {
 }
 
 export type DropdownMode = 'input' | 'text';
-export type DropdownPortalWidth = 'auto' | 'content' | string | number;
+export type DropdownPortalWidth = string | number;
 export type DropdownPosition = 'auto' | 'top' | 'bottom' | 'left';
 export type DropdownAlign = 'left' | 'right';
 

@@ -126,14 +126,14 @@ export function useRandomItemCreation(
       // Trigger cache invalidation to refresh UI
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {
-        queryClient.invalidateQueries({ queryKey: keySet });
-        queryClient.refetchQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.refetchQueries({ queryKey: keySet });
       });
 
       return result;
     };
 
-    toast.promise(
+    void toast.promise(
       createItemPromise(),
       {
         loading: 'Membuat item acak...',

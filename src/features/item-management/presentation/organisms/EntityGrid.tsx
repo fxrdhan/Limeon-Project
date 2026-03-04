@@ -76,7 +76,7 @@ interface EntityGridProps {
   // States
   isLoading: boolean;
   isError: boolean;
-  error: Error | unknown;
+  error: unknown;
   search: string;
 
   // Grid config

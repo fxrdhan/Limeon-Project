@@ -25,7 +25,7 @@ function App() {
   const { session, loading, initialize } = useAuthStore();
 
   useEffect(() => {
-    initialize();
+    void initialize();
   }, [initialize]);
 
   // Initialize console API (development only)

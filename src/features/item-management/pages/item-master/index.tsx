@@ -183,7 +183,9 @@ const OTHER_MASTER_DATA_CONFIG: Record<
   },
 };
 
-const readGridStateForTab = (tab: MasterDataType): unknown | null => {
+const readGridStateForTab = (
+  tab: MasterDataType
+): ReturnType<typeof getSavedStateInfo> => {
   return getSavedStateInfo(tab as TableType);
 };
 
@@ -248,7 +250,7 @@ const ItemMasterNew = memo(() => {
     if (normalizedPath !== '/master-data/item-master') return;
 
     const lastTab = getLastTabFromSession();
-    navigate(`/master-data/item-master/${lastTab}`, { replace: true });
+    void navigate(`/master-data/item-master/${lastTab}`, { replace: true });
   }, [location.pathname, navigate]);
 
   // Persist last tab as a side-effect (no derived React state needed).
@@ -1908,7 +1910,7 @@ const ItemMasterNew = memo(() => {
   // Navigation logic extracted for reuse
   const performNavigation = useCallback(
     (targetTab: MasterDataType) => {
-      navigate(
+      void navigate(
         targetTab === 'suppliers'
           ? '/master-data/suppliers'
           : targetTab === 'customers'

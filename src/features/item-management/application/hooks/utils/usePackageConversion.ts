@@ -30,7 +30,7 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
       }
     };
 
-    fetchUnits();
+    void fetchUnits();
   }, []);
 
   const addPackageConversion = useCallback(

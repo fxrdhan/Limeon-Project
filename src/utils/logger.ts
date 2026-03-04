@@ -102,7 +102,7 @@ class Logger {
   /**
    * Error level logging
    */
-  error(message: string, error?: Error | unknown, context?: LogContext): void {
+  error(message: string, error?: unknown, context?: LogContext): void {
     if (this.level <= LogLevel.ERROR) {
       const errorContext = {
         ...context,

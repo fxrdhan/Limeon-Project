@@ -63,7 +63,9 @@ const Profile = () => {
       if (error) throw new Error(error.message);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.companyProfile.all });
+      void queryClient.invalidateQueries({
+        queryKey: QueryKeys.companyProfile.all,
+      });
       setEditMode(prev => ({ ...prev, [variables.field]: false }));
     },
     onError: error => {
@@ -230,7 +232,7 @@ const Profile = () => {
       }
 
       if (data) {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.companyProfile.all,
         });
         const initialValues: Record<string, string | null> = {};

@@ -196,6 +196,26 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         return current;
       }
 
+      const toExportString = (value: unknown): string => {
+        if (value === null || value === undefined) return '';
+        if (
+          typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean' ||
+          typeof value === 'bigint'
+        ) {
+          return String(value);
+        }
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return '';
+        }
+      };
+
       // Extract data using direct row data access
       const processedData: string[][] = [];
 
@@ -275,7 +295,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
             );
           }
 
-          return value !== null && value !== undefined ? String(value) : '';
+          return toExportString(value);
         });
         processedData.push(rowValues);
       });
@@ -302,7 +322,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
           }
 
           showLoadingInTab(placeholderTab);
-          performExportToTab(placeholderTab);
+          void performExportToTab(placeholderTab);
           return;
         }
 
@@ -321,7 +341,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         }
 
         showLoadingInTab(placeholderTab);
-        performExportToTab(placeholderTab);
+        void performExportToTab(placeholderTab);
       } catch (error) {
         console.error('❌ Auth process failed:', error);
         setIsAuthenticating(false);
@@ -392,7 +412,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
               )
             ) {
               // Retry the whole export process which will trigger new auth
-              handleGoogleSheetsExport();
+              void handleGoogleSheetsExport();
               return;
             }
           } else {

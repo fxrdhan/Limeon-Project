@@ -111,7 +111,7 @@ export const usePresence = () => {
       try {
         // Only unsubscribe if channel was connected
         if (wasConnected) {
-          currentChannel.unsubscribe();
+          void currentChannel.unsubscribe();
         }
         // Add a small delay to allow WebSocket to close properly
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -268,10 +268,10 @@ export const usePresence = () => {
         clearTimeout(setupTimeoutRef.current);
       }
       setupTimeoutRef.current = setTimeout(() => {
-        setupPresence();
+        void setupPresence();
       }, 100);
     } else {
-      cleanup();
+      void cleanup();
     }
 
     // Handle page visibility changes
@@ -280,11 +280,11 @@ export const usePresence = () => {
         // Always try to re-establish presence when page becomes visible
         if (!isConnectedRef.current) {
           isSetupRef.current = false;
-          setupPresence();
+          void setupPresence();
         } else if (channelRef.current) {
           // Re-track presence immediately when page becomes visible
           try {
-            channelRef.current.track({
+            void channelRef.current.track({
               online_at: new Date().toISOString(),
               user_id: user.id,
             });
@@ -303,7 +303,7 @@ export const usePresence = () => {
       const currentChannel = channelRef.current;
       if (currentChannel && isConnectedRef.current) {
         try {
-          currentChannel.unsubscribe();
+          void currentChannel.unsubscribe();
           isConnectedRef.current = false;
           isSubscribedRef.current = false;
         } catch {
@@ -327,7 +327,7 @@ export const usePresence = () => {
 
       // Use a timeout to prevent cleanup conflicts in React Strict Mode
       setTimeout(() => {
-        cleanup();
+        void cleanup();
       }, 0);
     };
   }, [user, setupPresence, cleanup]);
@@ -339,7 +339,7 @@ export const usePresence = () => {
     const heartbeat = setInterval(() => {
       if (channelRef.current && isConnectedRef.current) {
         try {
-          channelRef.current.track({
+          void channelRef.current.track({
             online_at: new Date().toISOString(),
             user_id: user.id,
           });

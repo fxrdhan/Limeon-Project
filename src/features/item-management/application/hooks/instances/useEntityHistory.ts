@@ -156,7 +156,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
   };
 
   useEffect(() => {
-    fetchHistory();
+    void fetchHistory();
   }, [fetchHistory]);
 
   // 🔥 Realtime subscription for entity_history
@@ -168,8 +168,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
     // Cleanup previous subscription if exists
     if (channelRef.current) {
-      channelRef.current.unsubscribe();
-      realtimeService.removeChannel(channelRef.current);
+      void channelRef.current.unsubscribe();
+      void realtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
@@ -200,7 +200,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           // Only process events for THIS specific entity
           if (recordEntityId === entityId) {
             // Re-fetch history silently (no loading spinner for smooth UX)
-            fetchHistory(true); // silent = true
+            void fetchHistory(true); // silent = true
           }
         }
       )
@@ -217,8 +217,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup on unmount or when entityTable/entityId changes
     return () => {
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        realtimeService.removeChannel(channelRef.current);
+        void channelRef.current.unsubscribe();
+        void realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
@@ -234,8 +234,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
     // Cleanup previous subscription if exists
     if (entityChannelRef.current) {
-      entityChannelRef.current.unsubscribe();
-      realtimeService.removeChannel(entityChannelRef.current);
+      void entityChannelRef.current.unsubscribe();
+      void realtimeService.removeChannel(entityChannelRef.current);
       entityChannelRef.current = null;
     }
 
@@ -259,7 +259,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         () => {
           // Re-fetch history silently when entity is updated
           // This handles hard rollback case where RPC updates entity directly
-          fetchHistory(true);
+          void fetchHistory(true);
         }
       )
       .subscribe(status => {
@@ -275,8 +275,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup on unmount or when entityTable/entityId changes
     return () => {
       if (entityChannelRef.current) {
-        entityChannelRef.current.unsubscribe();
-        realtimeService.removeChannel(entityChannelRef.current);
+        void entityChannelRef.current.unsubscribe();
+        void realtimeService.removeChannel(entityChannelRef.current);
         entityChannelRef.current = null;
       }
     };

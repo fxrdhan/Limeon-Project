@@ -273,7 +273,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       const processingTime = (Date.now() - startTime) / 1000;
       clearCachedInvoiceFile();
       onClose();
-      navigate('/purchases/confirm-invoice', {
+      void navigate('/purchases/confirm-invoice', {
         state: {
           extractedData: data,
           filePreview: previewUrl,

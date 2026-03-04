@@ -55,7 +55,7 @@ export const useDosageMutations = () => {
       toast.success('Dosis berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: error => {
@@ -81,7 +81,7 @@ export const useDosageMutations = () => {
       }
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: (error, variables) => {
@@ -102,7 +102,7 @@ export const useDosageMutations = () => {
       toast.success('Dosis berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: error => {

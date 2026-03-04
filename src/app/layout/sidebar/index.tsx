@@ -657,7 +657,7 @@ const Sidebar = ({
                 <button
                   onClick={() => {
                     if (pathname !== item.path) {
-                      navigate(item.path);
+                      void navigate(item.path);
                     }
                   }}
                   className={menuButtonClassName}

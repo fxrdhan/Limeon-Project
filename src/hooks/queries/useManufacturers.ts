@@ -62,7 +62,7 @@ export const useManufacturerMutations = () => {
       toast.success('Manufaktur berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: error => {
@@ -94,7 +94,7 @@ export const useManufacturerMutations = () => {
       }
       const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: (error, variables) => {
@@ -115,7 +115,7 @@ export const useManufacturerMutations = () => {
       toast.success('Manufaktur berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: error => {

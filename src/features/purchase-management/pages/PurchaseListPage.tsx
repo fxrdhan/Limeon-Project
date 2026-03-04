@@ -119,7 +119,7 @@ const PurchaseList = () => {
   };
 
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
+    void queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
   }, [queryClient]);
 
   const purchases = useMemo(() => data?.purchases || [], [data?.purchases]);
@@ -141,7 +141,7 @@ const PurchaseList = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
     },
     onError: error => {
       console.error('Error deleting purchase:', error);
@@ -435,7 +435,7 @@ const PurchaseList = () => {
           setTimeout(() => {
             setShowAddPurchasePortal(false);
             setIsAddPurchaseClosing(false);
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
               queryKey: QueryKeys.purchases.all,
             });
             setTimeout(() => {

@@ -78,7 +78,9 @@ export const useCustomerLevels = () => {
     },
     onSuccess: () => {
       toast.success('Level pelanggan berhasil ditambahkan');
-      queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: CUSTOMER_LEVELS_QUERY_KEY,
+      });
     },
     onError: error => {
       console.error('Error creating customer level:', error);
@@ -118,7 +120,9 @@ export const useCustomerLevels = () => {
     },
     onSuccess: () => {
       toast.success('Baseline level berhasil diperbarui');
-      queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: CUSTOMER_LEVELS_QUERY_KEY,
+      });
     },
     onError: error => {
       console.error('Error updating customer levels:', error);
@@ -169,7 +173,9 @@ export const useCustomerLevels = () => {
     },
     onSuccess: () => {
       toast.success('Level pelanggan berhasil dihapus');
-      queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: CUSTOMER_LEVELS_QUERY_KEY,
+      });
     },
     onError: error => {
       console.error('Error deleting customer level:', error);
@@ -189,7 +195,9 @@ export const useCustomerLevels = () => {
       return null;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CUSTOMER_LEVELS_QUERY_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: CUSTOMER_LEVELS_QUERY_KEY,
+      });
     },
     onError: error => {
       console.error('Error seeding default customer levels:', error);
@@ -220,7 +228,7 @@ export const useCustomerLevels = () => {
         'postgres_changes',
         { schema: 'public', table: 'customer_levels', event: '*' },
         () => {
-          queryClient.invalidateQueries({
+          void queryClient.invalidateQueries({
             queryKey: CUSTOMER_LEVELS_QUERY_KEY,
           });
         }
@@ -231,8 +239,8 @@ export const useCustomerLevels = () => {
 
     return () => {
       if (!channelRef.current) return;
-      channelRef.current.unsubscribe();
-      realtimeService.removeChannel(channelRef.current);
+      void channelRef.current.unsubscribe();
+      void realtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     };
   }, [queryClient]);

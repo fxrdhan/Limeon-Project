@@ -61,4 +61,4 @@ const initializeApp = async () => {
   );
 };
 
-initializeApp();
+void initializeApp();

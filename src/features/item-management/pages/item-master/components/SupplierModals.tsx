@@ -41,9 +41,25 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
     latestImageUrlRef.current = editingSupplier?.image_url ?? null;
   }, [editingSupplier?.id, editingSupplier?.image_url]);
 
+  const toNormalizedText = (input: unknown): string => {
+    if (input === null || input === undefined) return '';
+    if (
+      typeof input === 'string' ||
+      typeof input === 'number' ||
+      typeof input === 'boolean' ||
+      typeof input === 'bigint'
+    ) {
+      return String(input).trim();
+    }
+    if (input instanceof Date) {
+      return input.toISOString().trim();
+    }
+    return '';
+  };
+
   const normalizeSupplierFieldValue = (key: string, value: unknown) => {
     if (key === 'name') {
-      const normalizedName = String(value ?? '').trim();
+      const normalizedName = toNormalizedText(value);
       return normalizedName === '' ? null : normalizedName;
     }
 
@@ -53,7 +69,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
       key === 'email' ||
       key === 'contact_person'
     ) {
-      const normalizedValue = String(value ?? '').trim();
+      const normalizedValue = toNormalizedText(value);
       return normalizedValue === '' ? null : normalizedValue;
     }
 

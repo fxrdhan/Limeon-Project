@@ -69,7 +69,7 @@ if (hot) {
         clearInterval(connectionHealthCheck);
         connectionHealthCheck = null;
       }
-      supabase.removeAllChannels();
+      void supabase.removeAllChannels();
     } catch (error) {
       console.warn('Error cleaning up Supabase channels:', error);
     }

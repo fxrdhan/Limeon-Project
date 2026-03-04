@@ -2538,9 +2538,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Remove ## marker and replace condition[1] value with new input
         const newValue = `#${columnName} #${firstCondition.operator} ${firstCondition.value} #${joinOp.toLowerCase()} #${secondCond.operator} ${inputValue}`;
 
+        const patchedTarget = {
+          name: e.target.name,
+          value: newValue,
+        } as EventTarget & HTMLInputElement;
         onChange({
           ...e,
-          target: { ...e.target, value: newValue },
+          target: patchedTarget,
+          currentTarget: patchedTarget,
         } as React.ChangeEvent<HTMLInputElement>);
         return;
       }
@@ -2566,9 +2571,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Create pattern without condition[1] operator but with trailing # for operator selector
         const newValue = `#${columnName} #${operator} ${firstValue} #${joinOp} #`;
 
+        const patchedTarget = {
+          name: e.target.name,
+          value: newValue,
+        } as EventTarget & HTMLInputElement;
         onChange({
           ...e,
-          target: { ...e.target, value: newValue },
+          target: patchedTarget,
+          currentTarget: patchedTarget,
         } as React.ChangeEvent<HTMLInputElement>);
 
         // Clear preserved filter after cleanup
@@ -2627,9 +2637,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           }
 
           // Call parent onChange with reconstructed pattern
+          const patchedTarget = {
+            name: e.target.name,
+            value: fullPattern,
+          } as EventTarget & HTMLInputElement;
           onChange({
             ...e,
-            target: { ...e.target, value: fullPattern },
+            target: patchedTarget,
+            currentTarget: patchedTarget,
           } as React.ChangeEvent<HTMLInputElement>);
         }
       } else {

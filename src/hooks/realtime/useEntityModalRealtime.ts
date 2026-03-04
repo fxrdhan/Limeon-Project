@@ -103,7 +103,7 @@ export const useEntityModalRealtime = ({
           }
 
           // Invalidate queries for fresh data in lists
-          queryClient.invalidateQueries({
+          void queryClient.invalidateQueries({
             queryKey: QueryKeys.tables.byName(entityTable),
           });
 
@@ -141,8 +141,8 @@ export const useEntityModalRealtime = ({
 
     return () => {
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        realtimeService.removeChannel(channelRef.current);
+        void channelRef.current.unsubscribe();
+        void realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

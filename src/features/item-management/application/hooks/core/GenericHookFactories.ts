@@ -191,7 +191,7 @@ export function createEntityMutations<
       },
       onSuccess: data => {
         if (invalidateQueries) {
-          queryClient.invalidateQueries({ queryKey: config.queryKey });
+          void queryClient.invalidateQueries({ queryKey: config.queryKey });
         }
         onSuccess?.(data);
       },
@@ -231,7 +231,7 @@ export function createEntityMutations<
       },
       onSuccess: data => {
         if (invalidateQueries) {
-          queryClient.invalidateQueries({ queryKey: config.queryKey });
+          void queryClient.invalidateQueries({ queryKey: config.queryKey });
         }
         onSuccess?.(data);
       },
@@ -260,7 +260,7 @@ export function createEntityMutations<
       },
       onSuccess: () => {
         if (invalidateQueries) {
-          queryClient.invalidateQueries({ queryKey: config.queryKey });
+          void queryClient.invalidateQueries({ queryKey: config.queryKey });
         }
         onSuccess?.();
       },

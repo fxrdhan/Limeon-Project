@@ -145,10 +145,10 @@ export const useItemModalRealtime = ({
           // Invalidate item queries for fresh data (list + detail)
           const keysToInvalidate = getInvalidationKeys.items.all();
           keysToInvalidate.forEach(keySet => {
-            queryClient.invalidateQueries({ queryKey: keySet });
-            queryClient.refetchQueries({ queryKey: keySet });
+            void queryClient.invalidateQueries({ queryKey: keySet });
+            void queryClient.refetchQueries({ queryKey: keySet });
           });
-          queryClient.invalidateQueries({
+          void queryClient.invalidateQueries({
             queryKey: QueryKeys.items.detail(itemId),
           });
 
@@ -252,8 +252,8 @@ export const useItemModalRealtime = ({
           itemId,
           channel: channelName,
         });
-        channelRef.current.unsubscribe();
-        realtimeService.removeChannel(channelRef.current);
+        void channelRef.current.unsubscribe();
+        void realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
         setIsConnected(false);
       }

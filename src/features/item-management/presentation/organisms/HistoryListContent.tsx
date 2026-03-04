@@ -173,8 +173,14 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       uiActions.closeHistory();
     } catch (error) {
       console.error('Restore error:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : 'Unknown error';
       toast.error(
-        `Gagal ${restoreMode === 'hard' ? 'rollback' : 'restore'}: ${error}`
+        `Gagal ${restoreMode === 'hard' ? 'rollback' : 'restore'}: ${errorMessage}`
       );
     } finally {
       setIsRestoring(false);

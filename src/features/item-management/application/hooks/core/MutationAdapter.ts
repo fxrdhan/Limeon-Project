@@ -238,7 +238,7 @@ export function anyPending(
  */
 export function firstError(
   ...handles: Array<NormalizedMutationHandle<unknown, unknown> | undefined>
-): unknown | null {
+): unknown {
   for (const h of handles) {
     if (h?.error) return h.error;
   }

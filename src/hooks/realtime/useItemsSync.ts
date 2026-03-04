@@ -53,23 +53,23 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
         }
       ) => {
         // Invalidate all item master queries
-        queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.masterData.categories.all,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.masterData.types.all,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.masterData.itemUnits.all,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.masterData.packages.all,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.masterData.dosages.all,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.masterData.manufacturers.all,
         });
       };
@@ -170,8 +170,8 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
       // Proper cleanup
       if (globalChannelRef) {
         try {
-          globalChannelRef.unsubscribe();
-          realtimeService.removeChannel(globalChannelRef);
+          void globalChannelRef.unsubscribe();
+          void realtimeService.removeChannel(globalChannelRef);
         } catch {
           // Ignore cleanup errors
         }

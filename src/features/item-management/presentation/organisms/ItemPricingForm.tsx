@@ -792,7 +792,7 @@ export default function ItemPricingForm({
                             onKeyDown={event => {
                               if (event.key === 'Enter') {
                                 event.preventDefault();
-                                handleSaveBaseline();
+                                void handleSaveBaseline();
                               }
                             }}
                             disabled={disabled}
@@ -849,7 +849,7 @@ export default function ItemPricingForm({
                           onKeyDown={event => {
                             if (event.key === 'Enter') {
                               event.preventDefault();
-                              handleAddBaselineLevel();
+                              void handleAddBaselineLevel();
                             }
                           }}
                           placeholder="Diskon (%)"
@@ -865,7 +865,7 @@ export default function ItemPricingForm({
                           }`}
                           onClick={() => {
                             if (isBaselineAddActive) {
-                              handleAddBaselineLevel();
+                              void handleAddBaselineLevel();
                             }
                           }}
                           title="Tekan Enter atau klik untuk menambah"

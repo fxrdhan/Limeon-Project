@@ -38,10 +38,17 @@ const isLeafModel = (model: unknown): model is LeafAdvancedFilterModel => {
 const toStringValue = (value: unknown): string => {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') {
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
     return String(value);
   }
-  return String(value);
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return '';
 };
 
 const normalizeJoinType = (value: unknown): 'AND' | 'OR' => {

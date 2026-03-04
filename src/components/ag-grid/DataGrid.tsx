@@ -30,7 +30,6 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       disableFiltering,
       getMainMenuItems,
       getContextMenuItems: customGetContextMenuItems,
-      onFirstDataRendered,
       ...props
     },
     ref
@@ -98,9 +97,9 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
             api.sizeColumnsToFit();
           }
         }
-        onFirstDataRendered?.(event);
+        props.onFirstDataRendered?.(event);
       },
-      [autoSizeColumns, sizeColumnsToFit, onFirstDataRendered, ref]
+      [autoSizeColumns, sizeColumnsToFit, ref, props]
     );
 
     return (

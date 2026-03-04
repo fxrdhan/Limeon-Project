@@ -43,7 +43,7 @@ export const useCustomerMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.customers.all(),
       });
     },
@@ -65,11 +65,11 @@ export const useCustomerMutations = () => {
     },
     onSuccess: data => {
       if (data?.id) {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.customers.detail(data.id),
         });
       }
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.customers.all(),
       });
     },
@@ -83,7 +83,7 @@ export const useCustomerMutations = () => {
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: QueryKeys.customers.detail(id) });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.customers.all(),
       });
     },

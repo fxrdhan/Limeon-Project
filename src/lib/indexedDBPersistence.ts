@@ -122,7 +122,7 @@ class PharmacyIndexedDB {
         timestamp: Date.now(),
       };
 
-      await store.put(queryData);
+      store.put(queryData);
     } catch (error) {
       console.warn('Failed to save query to IndexedDB:', error);
     }
@@ -187,7 +187,7 @@ class PharmacyIndexedDB {
       const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
 
-      await store.delete(JSON.stringify(queryKey));
+      store.delete(JSON.stringify(queryKey));
     } catch (error) {
       console.warn('Failed to remove query from IndexedDB:', error);
     }
@@ -208,7 +208,7 @@ class PharmacyIndexedDB {
       const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
 
-      await store.clear();
+      store.clear();
     } catch (error) {
       console.warn('Failed to clear IndexedDB:', error);
     }
@@ -321,7 +321,7 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
         const firstKey = queryKey[0] as string;
 
         if (shouldPersistQuery(firstKey)) {
-          pharmacyDB.saveQuery(
+          void pharmacyDB.saveQuery(
             [...queryKey], // Convert readonly array to mutable
             query.state.data,
             query.state.dataUpdatedAt,

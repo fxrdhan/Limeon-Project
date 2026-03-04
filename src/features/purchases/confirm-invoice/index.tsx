@@ -50,7 +50,7 @@ const ConfirmInvoicePage = () => {
       console.warn(
         'Tidak ada data faktur yang diterima. Kembali ke halaman purchase list.'
       );
-      navigate('/purchases');
+      void navigate('/purchases');
     }
   }, [location.state, navigate]);
 
@@ -101,7 +101,7 @@ const ConfirmInvoicePage = () => {
       setError(null);
       await saveInvoiceToDatabase(invoiceData, imageIdentifier);
       alert('Faktur berhasil disimpan!');
-      navigate('/purchases');
+      void navigate('/purchases');
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'Gagal menyimpan data faktur'

@@ -71,11 +71,9 @@ export const useEntityCrudOperations = (
   // Minimal typing for the data hook return that we need here (only `refetch`)
   type UseDataReturn = { refetch?: () => Promise<unknown> } | undefined;
   const dataHookReturn = (typeof hooks.useData === 'function'
-    ? (
-        hooks.useData as (
-          opts?: { enabled?: boolean } | undefined
-        ) => UseDataReturn
-      )({ enabled: true })
+    ? (hooks.useData as (opts?: { enabled?: boolean }) => UseDataReturn)({
+        enabled: true,
+      })
     : undefined) ?? { refetch: () => Promise.resolve() };
 
   // Extract the refetch function (if present) and memoize it so it can be safely
@@ -154,9 +152,13 @@ export const useEntityCrudOperations = (
 
         const errorMessage = isPostgrestError(err)
           ? err.message
-          : typeof err === 'string'
-            ? err
-            : String(err ?? 'Unknown error');
+          : err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+              ? err
+              : err == null
+                ? 'Unknown error'
+                : 'Unknown error';
 
         const errorDetails = isPostgrestError(err) ? (err.details ?? '') : '';
         const errorCode = isPostgrestError(err) ? (err.code ?? '') : '';

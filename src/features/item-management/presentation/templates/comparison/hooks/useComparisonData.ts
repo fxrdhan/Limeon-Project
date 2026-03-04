@@ -13,6 +13,29 @@ interface UseComparisonDataProps {
   entityName: string;
 }
 
+const toSafeString = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
+    return String(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '';
+    }
+  }
+  return '';
+};
+
 export const useComparisonData = ({
   isDualMode,
   selectedVersion,
@@ -25,7 +48,7 @@ export const useComparisonData = ({
   const getCodeField = (
     entityData: Record<string, unknown> | undefined | null
   ) => {
-    return String(entityData?.code || '');
+    return toSafeString(entityData?.code);
   };
 
   // Get original data for diff computation (never changes, prevents recomputation)
@@ -36,18 +59,14 @@ export const useComparisonData = ({
       const isManufacturer = entityName === 'Produsen';
       return {
         originalLeftKode: getCodeField(versionAData),
-        originalLeftName: String(versionAData?.name || ''),
-        originalLeftDescription: String(
-          isManufacturer
-            ? versionAData?.address || ''
-            : versionAData?.description || ''
+        originalLeftName: toSafeString(versionAData?.name),
+        originalLeftDescription: toSafeString(
+          isManufacturer ? versionAData?.address : versionAData?.description
         ),
         originalRightKode: getCodeField(versionBData),
-        originalRightName: String(versionBData?.name || ''),
-        originalRightDescription: String(
-          isManufacturer
-            ? versionBData?.address || ''
-            : versionBData?.description || ''
+        originalRightName: toSafeString(versionBData?.name),
+        originalRightDescription: toSafeString(
+          isManufacturer ? versionBData?.address : versionBData?.description
         ),
       };
     }
@@ -63,18 +82,14 @@ export const useComparisonData = ({
       const versionBData = versionB.entity_data;
       return {
         leftKode: getCodeField(versionAData),
-        leftName: String(versionAData?.name || ''),
-        leftDescription: String(
-          isManufacturer
-            ? versionAData?.address || ''
-            : versionAData?.description || ''
+        leftName: toSafeString(versionAData?.name),
+        leftDescription: toSafeString(
+          isManufacturer ? versionAData?.address : versionAData?.description
         ),
         rightKode: getCodeField(versionBData),
-        rightName: String(versionBData?.name || ''),
-        rightDescription: String(
-          isManufacturer
-            ? versionBData?.address || ''
-            : versionBData?.description || ''
+        rightName: toSafeString(versionBData?.name),
+        rightDescription: toSafeString(
+          isManufacturer ? versionBData?.address : versionBData?.description
         ),
         leftVersion: versionA,
         rightVersion: versionB,
@@ -91,11 +106,9 @@ export const useComparisonData = ({
     } else if (selectedVersion) {
       const versionData = selectedVersion.entity_data;
       const versionKode = getCodeField(versionData);
-      const versionName = String(versionData?.name || '');
-      const versionDescription = String(
-        isManufacturer
-          ? versionData?.address || ''
-          : versionData?.description || ''
+      const versionName = toSafeString(versionData?.name);
+      const versionDescription = toSafeString(
+        isManufacturer ? versionData?.address : versionData?.description
       );
       return {
         leftKode: versionKode,

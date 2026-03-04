@@ -151,8 +151,8 @@ export const useItemMutations = () => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {
-        queryClient.invalidateQueries({ queryKey: keySet });
-        queryClient.refetchQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.refetchQueries({ queryKey: keySet });
       });
     },
   });
@@ -179,10 +179,10 @@ export const useItemMutations = () => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {
-        queryClient.invalidateQueries({ queryKey: keySet });
-        queryClient.refetchQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.refetchQueries({ queryKey: keySet });
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.items.detail(variables.id),
       });
     },
@@ -198,8 +198,8 @@ export const useItemMutations = () => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {
-        queryClient.invalidateQueries({ queryKey: keySet });
-        queryClient.refetchQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.refetchQueries({ queryKey: keySet });
       });
     },
   });
@@ -211,10 +211,10 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.items.all(),
       });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.items.detail(variables.id),
       });
     },
@@ -227,7 +227,7 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.items.all(),
       });
     },

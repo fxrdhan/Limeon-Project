@@ -55,8 +55,8 @@ export function useSupabaseMutation<
       const keyToInvalidate = Array.isArray(key) ? key : [key];
 
       // Immediate cache invalidation and refetch for better responsiveness
-      queryClient.invalidateQueries({ queryKey: keyToInvalidate });
-      queryClient.refetchQueries({
+      void queryClient.invalidateQueries({ queryKey: keyToInvalidate });
+      void queryClient.refetchQueries({
         queryKey: keyToInvalidate,
         type: 'active',
       });

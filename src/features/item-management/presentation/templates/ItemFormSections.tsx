@@ -1062,7 +1062,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       didCommit = true;
     };
 
-    resolveDisplayUrls();
+    void resolveDisplayUrls();
 
     return () => {
       if (!didCommit) {
@@ -1140,7 +1140,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         );
         updateImageCache(nextSlots);
         if (itemId && !isViewingOldVersion && url.startsWith('http')) {
-          updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
+          void updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
         }
         return nextSlots;
       });
@@ -1216,7 +1216,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       setIsLoadingImages(false);
     };
 
-    loadItemImages();
+    void loadItemImages();
 
     return () => {
       isMounted = false;
@@ -1419,7 +1419,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             : slot
         );
         updateImageCache(nextSlots);
-        updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
+        void updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
         return nextSlots;
       });
     },
@@ -1498,7 +1498,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             : slot
         );
         updateImageCache(nextSlots);
-        updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
+        void updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
         return nextSlots;
       });
     } catch {
@@ -1533,7 +1533,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             index === slotIndex ? { path: '', url: '' } : slot
           );
           updateImageCache(nextSlots);
-          updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
+          void updateItemImagesInDatabase(buildImageUrlsPayload(nextSlots));
           return nextSlots;
         });
       } catch (deleteError) {

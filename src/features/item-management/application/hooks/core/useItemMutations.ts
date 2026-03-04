@@ -128,7 +128,7 @@ export const useAddItemMutations = ({
     },
     onSuccess: () => {
       toast.success('Item berhasil dihapus');
-      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
       onClose();
     },
     onError: error => {
@@ -153,14 +153,14 @@ export const useAddItemMutations = ({
       }
 
       // Invalidate and refetch items
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.items.all,
         refetchType: 'all',
       });
 
       // Force refetch items with delays to ensure data consistency
       setTimeout(() => {
-        queryClient.refetchQueries({
+        void queryClient.refetchQueries({
           queryKey: QueryKeys.items.all,
           type: 'all',
         });
@@ -189,11 +189,19 @@ export const useAddItemMutations = ({
    * Entity save helper functions - Now using extracted utilities
    * These maintain the exact same API as before but use the centralized business logic
    */
-  const saveCategory = saveEntityHelpers.saveCategory;
-  const saveType = saveEntityHelpers.saveType;
-  const saveUnit = saveEntityHelpers.saveUnit;
-  const saveDosage = saveEntityHelpers.saveDosage;
-  const saveManufacturer = saveEntityHelpers.saveManufacturer;
+  const saveCategory = (
+    ...args: Parameters<typeof saveEntityHelpers.saveCategory>
+  ) => saveEntityHelpers.saveCategory(...args);
+  const saveType = (...args: Parameters<typeof saveEntityHelpers.saveType>) =>
+    saveEntityHelpers.saveType(...args);
+  const saveUnit = (...args: Parameters<typeof saveEntityHelpers.saveUnit>) =>
+    saveEntityHelpers.saveUnit(...args);
+  const saveDosage = (
+    ...args: Parameters<typeof saveEntityHelpers.saveDosage>
+  ) => saveEntityHelpers.saveDosage(...args);
+  const saveManufacturer = (
+    ...args: Parameters<typeof saveEntityHelpers.saveManufacturer>
+  ) => saveEntityHelpers.saveManufacturer(...args);
 
   // ============================================================================
   // RETURN HOOK API - Maintaining exact backward compatibility

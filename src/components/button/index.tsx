@@ -46,12 +46,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Runtime validation for development
     if (process.env.NODE_ENV === 'development') {
       if (variant && !isButtonVariant(variant)) {
-        console.warn(
-          `[Button] Invalid variant "${variant}". Using fallback "primary".`
-        );
+        console.warn('[Button] Invalid variant. Using fallback "primary".');
       }
       if (size && !isButtonSize(size)) {
-        console.warn(`[Button] Invalid size "${size}". Using fallback "md".`);
+        console.warn('[Button] Invalid size. Using fallback "md".');
       }
     }
 

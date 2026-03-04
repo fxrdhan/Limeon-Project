@@ -19,7 +19,7 @@ const ViewPurchase = () => {
 
   useEffect(() => {
     if (id) {
-      fetchPurchaseData(id);
+      void fetchPurchaseData(id);
     }
   }, [id]);
 

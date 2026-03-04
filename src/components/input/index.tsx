@@ -156,14 +156,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         const inputValue = e.target.value;
         const cleanValue = inputValue.replace(/[^0-9]/g, ''); // Only keep numbers
 
-        // Create a completely new event object with the currency format
+        // Create a normalized event object with the currency format.
+        const patchedTarget = {
+          name: e.target.name,
+          value: cleanValue ? `Rp ${cleanValue}` : '',
+        } as EventTarget & HTMLInputElement;
         const newEvent = {
           ...e,
-          target: {
-            ...e.target,
-            name: e.target.name,
-            value: cleanValue ? `Rp ${cleanValue}` : '',
-          },
+          target: patchedTarget,
+          currentTarget: patchedTarget,
         };
 
         onChange?.(newEvent as React.ChangeEvent<HTMLInputElement>);

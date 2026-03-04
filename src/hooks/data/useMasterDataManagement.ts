@@ -420,15 +420,28 @@ export const useMasterDataManagement = (
           ? 'qualification'
           : fieldKey;
 
-      if (mappedKey === 'experience_years') {
+      const toNormalizedText = (input: unknown): string => {
+        if (input === null || input === undefined) return '';
         if (
-          value === null ||
-          value === undefined ||
-          String(value).trim() === ''
+          typeof input === 'string' ||
+          typeof input === 'number' ||
+          typeof input === 'boolean' ||
+          typeof input === 'bigint'
         ) {
+          return String(input).trim();
+        }
+        if (input instanceof Date) {
+          return input.toISOString().trim();
+        }
+        return '';
+      };
+
+      if (mappedKey === 'experience_years') {
+        const normalizedValue = toNormalizedText(value);
+        if (normalizedValue === '') {
           return { key: mappedKey, value: null };
         }
-        const parsed = Number(value);
+        const parsed = Number(normalizedValue);
         return Number.isFinite(parsed)
           ? { key: mappedKey, value: parsed }
           : null;
@@ -437,27 +450,21 @@ export const useMasterDataManagement = (
       const requiredFields =
         requiredFieldsByTable[tableName] ?? new Set(['name']);
       if (requiredFields.has(mappedKey)) {
-        if (
-          value === null ||
-          value === undefined ||
-          String(value).trim() === ''
-        ) {
+        const normalizedValue = toNormalizedText(value);
+        if (normalizedValue === '') {
           return null;
         }
-        return { key: mappedKey, value: String(value) };
+        return { key: mappedKey, value: normalizedValue };
       }
 
       const nullableFields =
         nullableFieldsByTable[tableName] ?? new Set<string>();
       if (nullableFields.has(mappedKey)) {
-        if (
-          value === null ||
-          value === undefined ||
-          String(value).trim() === ''
-        ) {
+        const normalizedValue = toNormalizedText(value);
+        if (normalizedValue === '') {
           return { key: mappedKey, value: null };
         }
-        return { key: mappedKey, value: String(value) };
+        return { key: mappedKey, value: normalizedValue };
       }
 
       return { key: mappedKey, value };

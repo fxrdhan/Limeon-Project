@@ -56,13 +56,13 @@ export const useCategoryMutations = () => {
     onSuccess: () => {
       toast.success('Kategori berhasil ditambahkan');
       // Local cache update
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
-      queryClient.refetchQueries({
+      void queryClient.refetchQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
     onError: error => {
       console.error('Error creating category:', error);
@@ -92,13 +92,13 @@ export const useCategoryMutations = () => {
         toast.success('Kategori berhasil diperbarui');
       }
       // Local cache update
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
-      queryClient.refetchQueries({
+      void queryClient.refetchQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
     onError: (error, variables) => {
       console.error('Error updating category:', error);
@@ -117,13 +117,13 @@ export const useCategoryMutations = () => {
     onSuccess: () => {
       toast.success('Kategori berhasil dihapus');
       // Local cache update
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
-      queryClient.refetchQueries({
+      void queryClient.refetchQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
     onError: error => {
       console.error('Error deleting category:', error);
@@ -173,7 +173,7 @@ export const useMedicineTypeMutations = () => {
     },
     onSuccess: () => {
       toast.success('Jenis obat berhasil ditambahkan');
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
@@ -201,7 +201,7 @@ export const useMedicineTypeMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Jenis obat berhasil diperbarui');
       }
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
@@ -221,7 +221,7 @@ export const useMedicineTypeMutations = () => {
     },
     onSuccess: () => {
       toast.success('Jenis obat berhasil dihapus');
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
@@ -270,7 +270,7 @@ export const usePackageMutations = () => {
     },
     onSuccess: () => {
       toast.success('Kemasan berhasil ditambahkan');
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
@@ -298,7 +298,7 @@ export const usePackageMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Kemasan berhasil diperbarui');
       }
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
@@ -318,7 +318,7 @@ export const usePackageMutations = () => {
     },
     onSuccess: () => {
       toast.success('Kemasan berhasil dihapus');
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
@@ -369,7 +369,7 @@ export const useItemUnitMutations = () => {
       toast.success('Satuan berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: error => {
@@ -398,7 +398,7 @@ export const useItemUnitMutations = () => {
       }
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: (error, variables) => {
@@ -419,7 +419,7 @@ export const useItemUnitMutations = () => {
       toast.success('Satuan berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({ queryKey: keySet });
+        void queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
     onError: error => {
@@ -499,7 +499,7 @@ export const useSupplierMutations = () => {
       toast.success('Supplier berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: keySet,
         });
       });
@@ -530,7 +530,7 @@ export const useSupplierMutations = () => {
       }
       const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: keySet,
         });
       });
@@ -553,7 +553,7 @@ export const useSupplierMutations = () => {
       toast.success('Supplier berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: keySet,
         });
       });

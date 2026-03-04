@@ -166,11 +166,11 @@ const DashboardNew = () => {
   // Handle manual refresh
 
   const handleRefreshSales = () => {
-    salesQuery.refetch();
+    void salesQuery.refetch();
   };
 
   const handleRefreshMedicines = () => {
-    topMedicinesQuery.refetch();
+    void topMedicinesQuery.refetch();
   };
 
   return (
@@ -181,12 +181,12 @@ const DashboardNew = () => {
         <Button
           variant="secondary"
           onClick={() => {
-            statsQuery.refetch();
-            salesQuery.refetch();
-            topMedicinesQuery.refetch();
-            lowStockQuery.refetch();
-            recentTransactionsQuery.refetch();
-            monthlyRevenueQuery.refetch();
+            void statsQuery.refetch();
+            void salesQuery.refetch();
+            void topMedicinesQuery.refetch();
+            void lowStockQuery.refetch();
+            void recentTransactionsQuery.refetch();
+            void monthlyRevenueQuery.refetch();
           }}
           className="flex items-center gap-2"
         >

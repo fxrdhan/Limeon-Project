@@ -839,7 +839,7 @@ const ChatSidebarPanel = memo(
 
         hasClosedRef.current = true; // Mark as closed
 
-        globalPresenceChannelRef.current.send({
+        void globalPresenceChannelRef.current.send({
           type: 'broadcast',
           event: 'presence_changed',
           payload: broadcastPayload,
@@ -904,7 +904,7 @@ const ChatSidebarPanel = memo(
               last_seen: updatedPresence.last_seen,
             };
 
-            globalPresenceChannelRef.current.send({
+            void globalPresenceChannelRef.current.send({
               type: 'broadcast',
               event: 'presence_changed',
               payload: broadcastPayload,
@@ -966,7 +966,7 @@ const ChatSidebarPanel = memo(
 
         if (channelRef.current) {
           updatedMessages.forEach(updatedMessage => {
-            channelRef.current?.send({
+            void channelRef.current?.send({
               type: 'broadcast',
               event: 'update_message',
               payload: updatedMessage,
@@ -976,7 +976,7 @@ const ChatSidebarPanel = memo(
 
         if (globalPresenceChannelRef.current) {
           updatedMessages.forEach(updatedMessage => {
-            globalPresenceChannelRef.current?.send({
+            void globalPresenceChannelRef.current?.send({
               type: 'broadcast',
               event: 'message_receipt_updated',
               payload: updatedMessage,
@@ -1095,7 +1095,7 @@ const ChatSidebarPanel = memo(
       // SMART: When close detected from ANY source → use same close logic as close button
       if (previousIsOpen && !isOpen && user && !hasClosedRef.current) {
         // Call the centralized close function
-        performClose();
+        void performClose();
       }
     }, [isOpen, user, targetUser, performClose]);
 
@@ -1201,7 +1201,7 @@ const ChatSidebarPanel = memo(
         // Clean up existing channel if any
         /* c8 ignore next 4 */
         if (channelRef.current) {
-          realtimeService.removeChannel(channelRef.current);
+          void realtimeService.removeChannel(channelRef.current);
         }
 
         // Create new channel for this conversation
@@ -1296,7 +1296,7 @@ const ChatSidebarPanel = memo(
         // Clean up existing presence channel if any
         /* c8 ignore next 4 */
         if (presenceChannelRef.current) {
-          realtimeService.removeChannel(presenceChannelRef.current);
+          void realtimeService.removeChannel(presenceChannelRef.current);
         }
 
         // Create presence channel
@@ -1339,7 +1339,7 @@ const ChatSidebarPanel = memo(
         // Clean up existing global presence channel if any
         /* c8 ignore next 4 */
         if (globalPresenceChannelRef.current) {
-          realtimeService.removeChannel(globalPresenceChannelRef.current);
+          void realtimeService.removeChannel(globalPresenceChannelRef.current);
         }
 
         // Create GLOBAL presence channel that ALL users subscribe to
@@ -1408,7 +1408,9 @@ const ChatSidebarPanel = memo(
       const setupIncomingMessagesDeliveredSubscription = () => {
         /* c8 ignore next 4 */
         if (incomingMessagesChannelRef.current) {
-          realtimeService.removeChannel(incomingMessagesChannelRef.current);
+          void realtimeService.removeChannel(
+            incomingMessagesChannelRef.current
+          );
         }
 
         const incomingMessagesChannel = realtimeService.createChannel(
@@ -1436,7 +1438,7 @@ const ChatSidebarPanel = memo(
       };
 
       setupRealtimeSubscription();
-      loadMessages();
+      void loadMessages();
       setupPresenceSubscription();
       setupGlobalPresenceSubscription();
       setupIncomingMessagesDeliveredSubscription();
@@ -1445,8 +1447,8 @@ const ChatSidebarPanel = memo(
       hasClosedRef.current = false;
 
       // Update user presence and load target user presence
-      updateUserChatOpen();
-      loadTargetUserPresence();
+      void updateUserChatOpen();
+      void loadTargetUserPresence();
 
       // Setup periodic presence refresh as backup (every 30 seconds)
       presenceRefreshIntervalRef.current = setInterval(() => {
@@ -1457,19 +1459,21 @@ const ChatSidebarPanel = memo(
       // Cleanup function
       return () => {
         if (channelRef.current) {
-          realtimeService.removeChannel(channelRef.current);
+          void realtimeService.removeChannel(channelRef.current);
           channelRef.current = null;
         }
         if (presenceChannelRef.current) {
-          realtimeService.removeChannel(presenceChannelRef.current);
+          void realtimeService.removeChannel(presenceChannelRef.current);
           presenceChannelRef.current = null;
         }
         if (globalPresenceChannelRef.current) {
-          realtimeService.removeChannel(globalPresenceChannelRef.current);
+          void realtimeService.removeChannel(globalPresenceChannelRef.current);
           globalPresenceChannelRef.current = null;
         }
         if (incomingMessagesChannelRef.current) {
-          realtimeService.removeChannel(incomingMessagesChannelRef.current);
+          void realtimeService.removeChannel(
+            incomingMessagesChannelRef.current
+          );
           incomingMessagesChannelRef.current = null;
         }
         if (presenceRefreshIntervalRef.current) {
@@ -1493,7 +1497,7 @@ const ChatSidebarPanel = memo(
       return () => {
         // Perform close if not already closed
         if (!hasClosedRef.current && user) {
-          performClose();
+          void performClose();
         }
 
         // Clean up interval on unmount
@@ -1507,7 +1511,9 @@ const ChatSidebarPanel = memo(
         setTimeout(() => {
           /* c8 ignore next 4 */
           if (globalPresenceChannelRef.current) {
-            realtimeService.removeChannel(globalPresenceChannelRef.current);
+            void realtimeService.removeChannel(
+              globalPresenceChannelRef.current
+            );
             globalPresenceChannelRef.current = null;
           }
         }, 200);
@@ -1594,8 +1600,8 @@ const ChatSidebarPanel = memo(
             const context = canvas.getContext('2d');
 
             if (!context) {
-              pdfDocument.cleanup();
-              pdfDocument.destroy();
+              void pdfDocument.cleanup();
+              void pdfDocument.destroy();
               continue;
             }
 
@@ -1609,8 +1615,8 @@ const ChatSidebarPanel = memo(
               background: 'rgb(255, 255, 255)',
             }).promise;
 
-            pdfDocument.cleanup();
-            pdfDocument.destroy();
+            void pdfDocument.cleanup();
+            void pdfDocument.destroy();
             if (isCancelled) return;
 
             const coverDataUrl = canvas.toDataURL('image/png');
@@ -1934,7 +1940,7 @@ const ChatSidebarPanel = memo(
           );
 
           if (channelRef.current) {
-            channelRef.current.send({
+            void channelRef.current.send({
               type: 'broadcast',
               event: 'new_message',
               payload: realMessage,
@@ -1967,7 +1973,7 @@ const ChatSidebarPanel = memo(
               );
 
               if (channelRef.current) {
-                channelRef.current.send({
+                void channelRef.current.send({
                   type: 'broadcast',
                   event: 'new_message',
                   payload: mappedCaptionMessage,
@@ -2220,7 +2226,7 @@ const ChatSidebarPanel = memo(
           );
 
           if (channelRef.current) {
-            channelRef.current.send({
+            void channelRef.current.send({
               type: 'broadcast',
               event: 'new_message',
               payload: realMessage,
@@ -2236,7 +2242,7 @@ const ChatSidebarPanel = memo(
                   )
                 );
                 if (channelRef.current) {
-                  channelRef.current.send({
+                  void channelRef.current.send({
                     type: 'broadcast',
                     event: 'update_message',
                     payload,
@@ -2340,7 +2346,7 @@ const ChatSidebarPanel = memo(
               );
 
               if (channelRef.current) {
-                channelRef.current.send({
+                void channelRef.current.send({
                   type: 'broadcast',
                   event: 'new_message',
                   payload: mappedCaptionMessage,
@@ -2803,7 +2809,7 @@ const ChatSidebarPanel = memo(
         if (!hasClosedRef.current && user) {
           // Perform synchronous close operations for page unload
           hasClosedRef.current = true;
-          updateUserChatClose();
+          void updateUserChatClose();
         }
       };
 
@@ -3015,7 +3021,7 @@ const ChatSidebarPanel = memo(
         );
 
         if (channelRef.current) {
-          channelRef.current.send({
+          void channelRef.current.send({
             type: 'broadcast',
             event: 'update_message',
             payload: mappedMessage,
@@ -3067,7 +3073,7 @@ const ChatSidebarPanel = memo(
 
         if (channelRef.current) {
           persistedMessageIds.forEach(messageId => {
-            channelRef.current?.send({
+            void channelRef.current?.send({
               type: 'broadcast',
               event: 'delete_message',
               payload: { id: messageId },
@@ -3376,7 +3382,7 @@ const ChatSidebarPanel = memo(
 
           // Broadcast to all subscribers in this channel
           if (channelRef.current) {
-            channelRef.current.send({
+            void channelRef.current.send({
               type: 'broadcast',
               event: 'new_message',
               payload: realMessage,
@@ -3469,7 +3475,7 @@ const ChatSidebarPanel = memo(
     const handleKeyPress = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSendMessage();
+        void handleSendMessage();
       }
     };
 

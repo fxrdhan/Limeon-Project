@@ -105,7 +105,7 @@ export const usePatientMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.patients.all(),
       });
     },
@@ -127,11 +127,11 @@ export const usePatientMutations = () => {
     },
     onSuccess: data => {
       if (data?.id) {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.patients.detail(data.id),
         });
       }
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.patients.all(),
       });
     },
@@ -145,7 +145,7 @@ export const usePatientMutations = () => {
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: QueryKeys.patients.detail(id) });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.patients.all(),
       });
     },
@@ -267,7 +267,7 @@ export const useDoctorMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.doctors.all(),
       });
     },
@@ -289,11 +289,11 @@ export const useDoctorMutations = () => {
     },
     onSuccess: data => {
       if (data?.id) {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: QueryKeys.doctors.detail(data.id),
         });
       }
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.doctors.all(),
       });
     },
@@ -307,7 +307,7 @@ export const useDoctorMutations = () => {
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: QueryKeys.doctors.detail(id) });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.doctors.all(),
       });
     },

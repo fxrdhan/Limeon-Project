@@ -74,8 +74,8 @@ export const usePurchaseForm = ({
   }, []);
 
   useEffect(() => {
-    fetchSuppliers();
-    fetchCompanyProfile();
+    void fetchSuppliers();
+    void fetchCompanyProfile();
   }, [fetchSuppliers]);
 
   // Recalculate items when VAT inclusion flag changes to keep subtotals consistent
@@ -301,7 +301,7 @@ export const usePurchaseForm = ({
 
       if (purchaseError) throw purchaseError;
 
-      navigate('/purchases');
+      void navigate('/purchases');
     } catch (error) {
       console.error('Error creating purchase:', error);
       alert('Gagal menyimpan pembelian. Silakan coba lagi.');

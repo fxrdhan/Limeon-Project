@@ -65,7 +65,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
 
   const onHandleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSubmit(e);
+    void handleSubmit(e);
     setIsClosing(true);
     onClose();
   };
@@ -95,7 +95,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     setTimeout(() => {
       setIsAddItemPortalOpen(false);
       setIsAddItemClosing(false);
-      refetchItems();
+      void refetchItems();
       setTimeout(() => {
         itemSearchBarRef.current?.focus();
       }, 100);
