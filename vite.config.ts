@@ -4,6 +4,8 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import viteCompression from 'vite-plugin-compression';
 
+const isAnalyze = process.env.ANALYZE === 'true';
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -14,13 +16,17 @@ export default defineConfig({
       ext: '.br',
       threshold: 1024, // Only compress files > 1KB
     }),
-    // Bundle analyzer - generates stats.html after build
-    visualizer({
-      filename: 'dist/stats.html',
-      open: false,
-      gzipSize: true,
-      brotliSize: true,
-    }),
+    ...(isAnalyze
+      ? [
+          // Bundle analyzer - generates stats.html after build
+          visualizer({
+            filename: 'dist/stats.html',
+            open: false,
+            gzipSize: true,
+            brotliSize: true,
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
@@ -153,7 +159,7 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 600, // Increased slightly - some chunks need to be larger
+    chunkSizeWarningLimit: 1000, // Keep warning for unusually large chunks only
 
     // Optimize for better performance
     target: ['chrome107', 'firefox104', 'safari16', 'edge107'],
