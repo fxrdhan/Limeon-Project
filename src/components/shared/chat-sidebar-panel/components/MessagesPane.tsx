@@ -739,6 +739,7 @@ const MessagesPane = ({
               const displayTime = new Date(msg.created_at).toLocaleTimeString(
                 [],
                 {
+                  hour12: false,
                   hour: '2-digit',
                   minute: '2-digit',
                 }
@@ -1062,8 +1063,8 @@ const MessagesPane = ({
                   <div
                     className={`${
                       isCurrentUser
-                        ? 'flex w-full max-w-xs flex-col items-end'
-                        : 'flex w-full max-w-xs flex-col items-start'
+                        ? 'flex max-w-xs flex-col items-end'
+                        : 'flex max-w-xs flex-col items-start'
                     }`}
                   >
                     <div
@@ -1141,6 +1142,66 @@ const MessagesPane = ({
                           }
                         }}
                       >
+                        {isCurrentUser ? (
+                          <div className="absolute right-full bottom-0 mr-2 flex flex-col items-end text-xs text-slate-500">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              {isEdited ? (
+                                <>
+                                  <span className="text-slate-400">Diedit</span>
+                                  <span className="text-slate-500">•</span>
+                                </>
+                              ) : null}
+                              {displayTime}
+                            </div>
+                            {messageDeliveryStatus ? (
+                              <span
+                                className={`inline-flex items-center ${
+                                  messageDeliveryStatus === 'read'
+                                    ? 'text-primary'
+                                    : 'text-slate-400'
+                                }`}
+                                aria-label={
+                                  messageDeliveryStatus === 'sending'
+                                    ? 'Status pesan: mengirim'
+                                    : messageDeliveryStatus === 'delivered'
+                                      ? 'Status pesan: diterima'
+                                      : messageDeliveryStatus === 'read'
+                                        ? 'Status pesan: dibaca'
+                                        : 'Status pesan: terkirim'
+                                }
+                                title={
+                                  messageDeliveryStatus === 'sending'
+                                    ? 'Mengirim'
+                                    : messageDeliveryStatus === 'delivered'
+                                      ? 'Diterima'
+                                      : messageDeliveryStatus === 'read'
+                                        ? 'Dibaca'
+                                        : 'Terkirim'
+                                }
+                              >
+                                {messageDeliveryStatus === 'sending' ? (
+                                  <TbClock className="h-3.5 w-3.5" />
+                                ) : messageDeliveryStatus === 'delivered' ? (
+                                  <TbChecks className="h-3.5 w-3.5" />
+                                ) : messageDeliveryStatus === 'read' ? (
+                                  <TbChecks className="h-3.5 w-3.5" />
+                                ) : (
+                                  <TbCheck className="h-3.5 w-3.5" />
+                                )}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="absolute left-full bottom-0 ml-2 flex items-center gap-1 whitespace-nowrap text-xs text-slate-500">
+                            {displayTime}
+                            {isEdited ? (
+                              <>
+                                <span className="text-slate-500">•</span>
+                                <span className="text-slate-400">Diedit</span>
+                              </>
+                            ) : null}
+                          </div>
+                        )}
                         {isImageMessage ? (
                           <img
                             src={msg.message}
@@ -1340,71 +1401,6 @@ const MessagesPane = ({
                           autoFocusFirstItem
                         />
                       </PopupMenuPopover>
-                    </div>
-
-                    <div
-                      className={`flex items-center gap-2 mt-1 ${
-                        isCurrentUser ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      {isCurrentUser ? (
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          {isEdited ? (
-                            <>
-                              <span className="text-slate-400">Diedit</span>
-                              <span className="text-slate-500">•</span>
-                            </>
-                          ) : null}
-                          {displayTime}
-                          {messageDeliveryStatus ? (
-                            <span
-                              className={`inline-flex items-center ${
-                                messageDeliveryStatus === 'read'
-                                  ? 'text-primary'
-                                  : 'text-slate-400'
-                              }`}
-                              aria-label={
-                                messageDeliveryStatus === 'sending'
-                                  ? 'Status pesan: mengirim'
-                                  : messageDeliveryStatus === 'delivered'
-                                    ? 'Status pesan: diterima'
-                                    : messageDeliveryStatus === 'read'
-                                      ? 'Status pesan: dibaca'
-                                      : 'Status pesan: terkirim'
-                              }
-                              title={
-                                messageDeliveryStatus === 'sending'
-                                  ? 'Mengirim'
-                                  : messageDeliveryStatus === 'delivered'
-                                    ? 'Diterima'
-                                    : messageDeliveryStatus === 'read'
-                                      ? 'Dibaca'
-                                      : 'Terkirim'
-                              }
-                            >
-                              {messageDeliveryStatus === 'sending' ? (
-                                <TbClock className="h-3.5 w-3.5" />
-                              ) : messageDeliveryStatus === 'delivered' ? (
-                                <TbChecks className="h-3.5 w-3.5" />
-                              ) : messageDeliveryStatus === 'read' ? (
-                                <TbChecks className="h-3.5 w-3.5" />
-                              ) : (
-                                <TbCheck className="h-3.5 w-3.5" />
-                              )}
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          {displayTime}
-                          {isEdited ? (
-                            <>
-                              <span className="text-slate-500">•</span>
-                              <span className="text-slate-400">Diedit</span>
-                            </>
-                          ) : null}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </motion.div>
