@@ -3536,7 +3536,11 @@ const ChatSidebarPanel = memo(
         {/* Chat Content */}
         <div className="relative h-full flex flex-col">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
-            <div className="pointer-events-auto">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 z-0 h-16 bg-gradient-to-b from-white/95 via-white/70 to-transparent"
+            />
+            <div className="pointer-events-auto relative z-10">
               <ChatHeader
                 targetUser={targetUser}
                 displayTargetPhotoUrl={displayTargetPhotoUrl}
