@@ -1083,9 +1083,9 @@ const MessagesPane = ({
                             : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
                         } ${
                           isActiveSearchMatch
-                            ? 'ring-2 ring-primary/70 shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
+                            ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
                             : isSearchMatch
-                              ? 'ring-1 ring-primary/40'
+                              ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
                               : ''
                         } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
                         style={{

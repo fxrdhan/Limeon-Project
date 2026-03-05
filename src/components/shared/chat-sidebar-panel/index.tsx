@@ -180,9 +180,11 @@ const ChatSidebarPanel = memo(
     >(null);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const flashMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const flashMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const pendingSearchFlashRafRef = useRef<number | null>(null);
     const composerImagePreviewCloseTimerRef = useRef<number | null>(null);
     const menuTransitionSourceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const chatHeaderContainerRef = useRef<HTMLDivElement>(null);
     const attachButtonRef = useRef<HTMLButtonElement>(null);
     const attachModalRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -1544,9 +1546,14 @@ const ChatSidebarPanel = memo(
           sendSuccessGlowTimeoutRef.current = null;
         }
 
-        if (flashMessageIntervalRef.current) {
-          clearInterval(flashMessageIntervalRef.current);
-          flashMessageIntervalRef.current = null;
+        if (flashMessageTimeoutRef.current) {
+          clearTimeout(flashMessageTimeoutRef.current);
+          flashMessageTimeoutRef.current = null;
+        }
+
+        if (pendingSearchFlashRafRef.current !== null) {
+          cancelAnimationFrame(pendingSearchFlashRafRef.current);
+          pendingSearchFlashRafRef.current = null;
         }
 
         pendingImagePreviewUrls.forEach(previewUrl => {
@@ -1675,31 +1682,104 @@ const ChatSidebarPanel = memo(
     }, [isComposerImageExpanded]);
 
     const triggerMessageFlash = useCallback((messageId: string) => {
-      if (flashMessageIntervalRef.current) {
-        clearInterval(flashMessageIntervalRef.current);
-        flashMessageIntervalRef.current = null;
+      if (flashMessageTimeoutRef.current) {
+        clearTimeout(flashMessageTimeoutRef.current);
+        flashMessageTimeoutRef.current = null;
       }
 
       setFlashingMessageId(messageId);
       setIsFlashHighlightVisible(true);
 
-      let flashSteps = 0;
-      flashMessageIntervalRef.current = setInterval(() => {
-        flashSteps += 1;
-        setIsFlashHighlightVisible(prev => !prev);
-
-        if (flashSteps >= 3) {
-          if (flashMessageIntervalRef.current) {
-            clearInterval(flashMessageIntervalRef.current);
-            flashMessageIntervalRef.current = null;
-          }
-          setIsFlashHighlightVisible(false);
-          setFlashingMessageId(currentId =>
-            currentId === messageId ? null : currentId
-          );
-        }
-      }, EDIT_TARGET_FLASH_PHASE_DURATION);
+      flashMessageTimeoutRef.current = setTimeout(() => {
+        setIsFlashHighlightVisible(false);
+        setFlashingMessageId(currentId =>
+          currentId === messageId ? null : currentId
+        );
+        flashMessageTimeoutRef.current = null;
+      }, EDIT_TARGET_FLASH_PHASE_DURATION * 2);
     }, []);
+
+    const clearPendingSearchFlash = useCallback(() => {
+      if (pendingSearchFlashRafRef.current === null) return;
+      cancelAnimationFrame(pendingSearchFlashRafRef.current);
+      pendingSearchFlashRafRef.current = null;
+    }, []);
+
+    const triggerMessageFlashWhenScrollSettled = useCallback(
+      (messageId: string) => {
+        clearPendingSearchFlash();
+        const waitStart = Date.now();
+        const maxWaitMs = 2200;
+        const scrollSettleDelayMs = 60;
+        let previousScrollTop: number | null = null;
+        let lastScrollMovementAt = Date.now();
+
+        const verifyVisibilityAndFlash = () => {
+          const bubble = messageBubbleRefs.current.get(messageId);
+          const container = messagesContainerRef.current;
+          const bounds = getVisibleMessagesBounds();
+          if (!bubble || !container || !bounds) {
+            if (Date.now() - waitStart < maxWaitMs) {
+              pendingSearchFlashRafRef.current = requestAnimationFrame(
+                verifyVisibilityAndFlash
+              );
+            } else {
+              pendingSearchFlashRafRef.current = null;
+            }
+            return;
+          }
+
+          const headerBottom =
+            chatHeaderContainerRef.current?.getBoundingClientRect().bottom;
+          const hasValidHeaderBottom =
+            typeof headerBottom === 'number' &&
+            Number.isFinite(headerBottom) &&
+            headerBottom > bounds.containerRect.top &&
+            headerBottom < bounds.containerRect.bottom;
+          const minVisibleTop = hasValidHeaderBottom
+            ? headerBottom + EDIT_TARGET_FOCUS_PADDING
+            : bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
+          const maxVisibleBottom =
+            bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING;
+          const bubbleRect = bubble.getBoundingClientRect();
+          const isVisibleToUser =
+            bubbleRect.top >= minVisibleTop &&
+            bubbleRect.bottom <= maxVisibleBottom;
+
+          const currentScrollTop = container.scrollTop;
+          const scrollDelta =
+            previousScrollTop === null
+              ? 0
+              : Math.abs(currentScrollTop - previousScrollTop);
+          if (previousScrollTop === null || scrollDelta > 0.1) {
+            lastScrollMovementAt = Date.now();
+          }
+          previousScrollTop = currentScrollTop;
+          const isScrollSettled =
+            Date.now() - lastScrollMovementAt >= scrollSettleDelayMs;
+
+          if (isVisibleToUser && isScrollSettled) {
+            pendingSearchFlashRafRef.current = null;
+            triggerMessageFlash(messageId);
+            return;
+          }
+
+          if (Date.now() - waitStart >= maxWaitMs) {
+            pendingSearchFlashRafRef.current = null;
+            return;
+          }
+
+          pendingSearchFlashRafRef.current = requestAnimationFrame(
+            verifyVisibilityAndFlash
+          );
+        };
+
+        pendingSearchFlashRafRef.current = requestAnimationFrame(
+          verifyVisibilityAndFlash
+        );
+      },
+      [clearPendingSearchFlash, getVisibleMessagesBounds, triggerMessageFlash]
+    );
 
     const focusSearchTargetMessage = useCallback(
       (messageId: string) => {
@@ -1709,8 +1789,16 @@ const ChatSidebarPanel = memo(
         if (!bubble || !container || !bounds) return;
 
         closeMessageMenu();
-        const minVisibleTop =
-          bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
+        const headerBottom =
+          chatHeaderContainerRef.current?.getBoundingClientRect().bottom;
+        const hasValidHeaderBottom =
+          typeof headerBottom === 'number' &&
+          Number.isFinite(headerBottom) &&
+          headerBottom > bounds.containerRect.top &&
+          headerBottom < bounds.containerRect.bottom;
+        const minVisibleTop = hasValidHeaderBottom
+          ? headerBottom + EDIT_TARGET_FOCUS_PADDING
+          : bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
         const maxVisibleBottom =
           bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING;
         const bubbleRect = bubble.getBoundingClientRect();
@@ -1733,10 +1821,13 @@ const ChatSidebarPanel = memo(
             });
           }
         }
-
-        triggerMessageFlash(messageId);
+        triggerMessageFlashWhenScrollSettled(messageId);
       },
-      [closeMessageMenu, getVisibleMessagesBounds, triggerMessageFlash]
+      [
+        closeMessageMenu,
+        getVisibleMessagesBounds,
+        triggerMessageFlashWhenScrollSettled,
+      ]
     );
 
     useEffect(() => {
@@ -1772,12 +1863,20 @@ const ChatSidebarPanel = memo(
       const container = messagesContainerRef.current;
       const bounds = getVisibleMessagesBounds();
       if (!bubble || !container || !bounds) {
-        triggerMessageFlash(editingMessageId);
+        triggerMessageFlashWhenScrollSettled(editingMessageId);
         return;
       }
 
-      const minVisibleTop =
-        bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
+      const headerBottom =
+        chatHeaderContainerRef.current?.getBoundingClientRect().bottom;
+      const hasValidHeaderBottom =
+        typeof headerBottom === 'number' &&
+        Number.isFinite(headerBottom) &&
+        headerBottom > bounds.containerRect.top &&
+        headerBottom < bounds.containerRect.bottom;
+      const minVisibleTop = hasValidHeaderBottom
+        ? headerBottom + EDIT_TARGET_FOCUS_PADDING
+        : bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING;
       const maxVisibleBottom = bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING;
       const bubbleRect = bubble.getBoundingClientRect();
       const isFullyVisible =
@@ -1800,12 +1899,12 @@ const ChatSidebarPanel = memo(
         }
       }
 
-      triggerMessageFlash(editingMessageId);
+      triggerMessageFlashWhenScrollSettled(editingMessageId);
     }, [
       closeMessageMenu,
       editingMessageId,
       getVisibleMessagesBounds,
-      triggerMessageFlash,
+      triggerMessageFlashWhenScrollSettled,
     ]);
 
     const closeAttachModal = useCallback(() => {
@@ -3540,7 +3639,10 @@ const ChatSidebarPanel = memo(
               aria-hidden="true"
               className="pointer-events-none absolute inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-white via-white/92 via-white/72 to-transparent"
             />
-            <div className="pointer-events-auto relative z-10">
+            <div
+              ref={chatHeaderContainerRef}
+              className="pointer-events-auto relative z-10"
+            >
               <ChatHeader
                 targetUser={targetUser}
                 displayTargetPhotoUrl={displayTargetPhotoUrl}
