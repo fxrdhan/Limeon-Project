@@ -103,6 +103,7 @@ const ChatSidebarPanel = memo(
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isAtBottom, setIsAtBottom] = useState(true);
+    const [isAtTop, setIsAtTop] = useState(true);
     const [hasNewMessages, setHasNewMessages] = useState(false);
     const [loading, setLoading] = useState(false);
     const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
@@ -202,6 +203,7 @@ const ChatSidebarPanel = memo(
     const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
     const hasCompletedInitialOpenLoadRef = useRef(false);
+    const atTopVisibilityRef = useRef(true);
     const conversationCacheRef = useRef<Map<string, ConversationCacheEntry>>(
       new Map()
     );
@@ -2933,19 +2935,35 @@ const ChatSidebarPanel = memo(
       return true;
     }, []);
 
+    const checkIfAtTop = useCallback(() => {
+      if (messagesContainerRef.current) {
+        const { scrollTop } = messagesContainerRef.current;
+        // Hysteresis avoids flicker near the top boundary.
+        if (atTopVisibilityRef.current) {
+          return scrollTop <= 14;
+        }
+        return scrollTop <= 2;
+      }
+      /* c8 ignore next */
+      return true;
+    }, []);
+
     // Handle scroll events
     const handleScroll = useCallback(() => {
       // Use requestAnimationFrame to ensure the check happens after the scroll event
       /* c8 ignore next 7 */
       requestAnimationFrame(() => {
         const atBottom = checkIfAtBottom();
+        const atTop = checkIfAtTop();
+        atTopVisibilityRef.current = atTop;
         setIsAtBottom(atBottom);
+        setIsAtTop(atTop);
         void markVisibleIncomingMessagesAsRead();
         if (atBottom) {
           setHasNewMessages(false);
         }
       });
-    }, [checkIfAtBottom, markVisibleIncomingMessagesAsRead]);
+    }, [checkIfAtBottom, checkIfAtTop, markVisibleIncomingMessagesAsRead]);
 
     useEffect(() => {
       if (!isOpen) return;
@@ -2991,12 +3009,22 @@ const ChatSidebarPanel = memo(
 
       scrollMessagesToBottom('auto');
       setIsAtBottom(true);
+      const atTop = checkIfAtTop();
+      atTopVisibilityRef.current = atTop;
+      setIsAtTop(atTop);
       setHasNewMessages(false);
 
       if (hasCompletedInitialOpenLoadRef.current && !loading) {
         shouldPinToBottomOnOpenRef.current = false;
       }
-    }, [isOpen, loading, messages, messageInputHeight, scrollMessagesToBottom]);
+    }, [
+      checkIfAtTop,
+      isOpen,
+      loading,
+      messages,
+      messageInputHeight,
+      scrollMessagesToBottom,
+    ]);
 
     // Add scroll event listener
     useEffect(() => {
@@ -3637,7 +3665,9 @@ const ChatSidebarPanel = memo(
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-white via-white/92 via-white/72 to-transparent"
+              className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-white via-white/92 via-white/72 to-transparent transition-opacity duration-300 ease-in-out ${
+                isAtTop ? 'opacity-0' : 'opacity-100'
+              }`}
             />
             <div
               ref={chatHeaderContainerRef}
