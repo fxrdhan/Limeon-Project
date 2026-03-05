@@ -190,7 +190,7 @@ const ChatHeader = ({
     [onNavigateSearchDown, onNavigateSearchUp]
   );
   const floatingBlockClass =
-    'rounded-xl border border-slate-200/95 bg-white/95 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.48)]';
+    'rounded-xl border border-slate-200/95 bg-white/95';
   const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 
   return (
