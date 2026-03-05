@@ -867,7 +867,7 @@ const MessagesPane = ({
                 ? 'bg-primary text-white'
                 : isCurrentUser
                   ? 'bg-emerald-200 text-slate-900'
-                  : 'bg-slate-100 text-slate-800';
+                  : 'bg-white text-slate-800';
               const bubbleOpacityClass = isFlashSequenceTarget
                 ? isFlashHighlightVisible
                   ? 'opacity-100'
