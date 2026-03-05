@@ -41,7 +41,6 @@ import type { ChatMessage } from '@/services/api/chat.service';
 import { supabase } from '@/lib/supabase';
 import { CHAT_IMAGE_BUCKET } from '../constants';
 import type {
-  ChatSidebarPanelTargetUser,
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
@@ -229,9 +228,6 @@ interface MessagesPaneProps {
   loading: boolean;
   messages: ChatMessage[];
   user?: ChatPanelUser | null;
-  targetUser?: ChatSidebarPanelTargetUser;
-  displayUserPhotoUrl: string | null;
-  displayTargetPhotoUrl: string | null;
   messageInputHeight: number;
   composerContextualOffset: number;
   openMenuMessageId: string | null;
@@ -270,8 +266,6 @@ interface MessagesPaneProps {
   getAttachmentFileKind: (
     targetMessage: ChatMessage
   ) => ComposerPendingFileKind;
-  getInitials: (name: string) => string;
-  getInitialsColor: (userId: string) => string;
   onScrollToBottom: () => void;
 }
 
@@ -279,9 +273,6 @@ const MessagesPane = ({
   loading,
   messages,
   user,
-  targetUser,
-  displayUserPhotoUrl,
-  displayTargetPhotoUrl,
   messageInputHeight,
   composerContextualOffset,
   openMenuMessageId,
@@ -314,8 +305,6 @@ const MessagesPane = ({
   onToggleMessageSelection,
   getAttachmentFileName,
   getAttachmentFileKind,
-  getInitials,
-  getInitialsColor,
   onScrollToBottom,
 }: MessagesPaneProps) => {
   const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
@@ -1359,98 +1348,62 @@ const MessagesPane = ({
                       }`}
                     >
                       {isCurrentUser ? (
-                        <>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
-                            {isEdited ? (
-                              <>
-                                <span className="text-slate-400">Diedit</span>
-                                <span className="text-slate-500">•</span>
-                              </>
-                            ) : null}
-                            {displayTime}
-                            {messageDeliveryStatus ? (
-                              <span
-                                className={`inline-flex items-center ${
-                                  messageDeliveryStatus === 'read'
-                                    ? 'text-primary'
-                                    : 'text-slate-400'
-                                }`}
-                                aria-label={
-                                  messageDeliveryStatus === 'sending'
-                                    ? 'Status pesan: mengirim'
-                                    : messageDeliveryStatus === 'delivered'
-                                      ? 'Status pesan: diterima'
-                                      : messageDeliveryStatus === 'read'
-                                        ? 'Status pesan: dibaca'
-                                        : 'Status pesan: terkirim'
-                                }
-                                title={
-                                  messageDeliveryStatus === 'sending'
-                                    ? 'Mengirim'
-                                    : messageDeliveryStatus === 'delivered'
-                                      ? 'Diterima'
-                                      : messageDeliveryStatus === 'read'
-                                        ? 'Dibaca'
-                                        : 'Terkirim'
-                                }
-                              >
-                                {messageDeliveryStatus === 'sending' ? (
-                                  <TbClock className="h-3.5 w-3.5" />
-                                ) : messageDeliveryStatus === 'delivered' ? (
-                                  <TbChecks className="h-3.5 w-3.5" />
-                                ) : messageDeliveryStatus === 'read' ? (
-                                  <TbChecks className="h-3.5 w-3.5" />
-                                ) : (
-                                  <TbCheck className="h-3.5 w-3.5" />
-                                )}
-                              </span>
-                            ) : null}
-                          </span>
-                          <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                            {displayUserPhotoUrl ? (
-                              <img
-                                src={displayUserPhotoUrl}
-                                alt={user.name || 'You'}
-                                className="w-full h-full object-cover"
-                                draggable={false}
-                              />
-                            ) : (
-                              <div
-                                className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(user?.id || 'current_user')}`}
-                              >
-                                {getInitials(user?.name || 'You')}
-                              </div>
-                            )}
-                          </div>
-                        </>
+                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                          {isEdited ? (
+                            <>
+                              <span className="text-slate-400">Diedit</span>
+                              <span className="text-slate-500">•</span>
+                            </>
+                          ) : null}
+                          {displayTime}
+                          {messageDeliveryStatus ? (
+                            <span
+                              className={`inline-flex items-center ${
+                                messageDeliveryStatus === 'read'
+                                  ? 'text-primary'
+                                  : 'text-slate-400'
+                              }`}
+                              aria-label={
+                                messageDeliveryStatus === 'sending'
+                                  ? 'Status pesan: mengirim'
+                                  : messageDeliveryStatus === 'delivered'
+                                    ? 'Status pesan: diterima'
+                                    : messageDeliveryStatus === 'read'
+                                      ? 'Status pesan: dibaca'
+                                      : 'Status pesan: terkirim'
+                              }
+                              title={
+                                messageDeliveryStatus === 'sending'
+                                  ? 'Mengirim'
+                                  : messageDeliveryStatus === 'delivered'
+                                    ? 'Diterima'
+                                    : messageDeliveryStatus === 'read'
+                                      ? 'Dibaca'
+                                      : 'Terkirim'
+                              }
+                            >
+                              {messageDeliveryStatus === 'sending' ? (
+                                <TbClock className="h-3.5 w-3.5" />
+                              ) : messageDeliveryStatus === 'delivered' ? (
+                                <TbChecks className="h-3.5 w-3.5" />
+                              ) : messageDeliveryStatus === 'read' ? (
+                                <TbChecks className="h-3.5 w-3.5" />
+                              ) : (
+                                <TbCheck className="h-3.5 w-3.5" />
+                              )}
+                            </span>
+                          ) : null}
+                        </span>
                       ) : (
-                        <>
-                          <div className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                            {displayTargetPhotoUrl ? (
-                              <img
-                                src={displayTargetPhotoUrl}
-                                alt={targetUser?.name || 'User'}
-                                className="w-full h-full object-cover"
-                                draggable={false}
-                              />
-                            ) : (
-                              <div
-                                className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
-                              >
-                                {getInitials(targetUser?.name || 'User')}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
-                            {displayTime}
-                            {isEdited ? (
-                              <>
-                                <span className="text-slate-500">•</span>
-                                <span className="text-slate-400">Diedit</span>
-                              </>
-                            ) : null}
-                          </span>
-                        </>
+                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                          {displayTime}
+                          {isEdited ? (
+                            <>
+                              <span className="text-slate-500">•</span>
+                              <span className="text-slate-400">Diedit</span>
+                            </>
+                          ) : null}
+                        </span>
                       )}
                     </div>
                   </div>

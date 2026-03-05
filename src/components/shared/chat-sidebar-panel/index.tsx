@@ -140,13 +140,8 @@ const ChatSidebarPanel = memo(
     /* c8 ignore next */
     const currentChannelId =
       user && targetUser ? generateChannelId(user.id, targetUser.id) : null;
-    const userProfilePhotoUrl = user?.profilephoto ?? null;
     const targetProfilePhotoUrl = targetUser?.profilephoto ?? null;
-    const userCacheKey = user?.id ? `profile:${user.id}` : null;
     const targetCacheKey = targetUser?.id ? `profile:${targetUser.id}` : null;
-    const [displayUserPhotoUrl, setDisplayUserPhotoUrl] = useState<
-      string | null
-    >(null);
     const [displayTargetPhotoUrl, setDisplayTargetPhotoUrl] = useState<
       string | null
     >(null);
@@ -816,51 +811,11 @@ const ChatSidebarPanel = memo(
     }, [user]);
 
     useEffect(() => {
-      if (!userCacheKey || !userProfilePhotoUrl) return;
-      if (userProfilePhotoUrl.startsWith('http')) {
-        setCachedImage(userCacheKey, userProfilePhotoUrl);
-      }
-    }, [userCacheKey, userProfilePhotoUrl]);
-
-    useEffect(() => {
       if (!targetCacheKey || !targetProfilePhotoUrl) return;
       if (targetProfilePhotoUrl.startsWith('http')) {
         setCachedImage(targetCacheKey, targetProfilePhotoUrl);
       }
     }, [targetCacheKey, targetProfilePhotoUrl]);
-
-    useEffect(() => {
-      let isActive = true;
-
-      const resolveImage = async () => {
-        if (!userProfilePhotoUrl) {
-          if (isActive) setDisplayUserPhotoUrl(null);
-          return;
-        }
-
-        if (!userProfilePhotoUrl.startsWith('http')) {
-          if (isActive) setDisplayUserPhotoUrl(userProfilePhotoUrl);
-          return;
-        }
-
-        const cachedBlobUrl = await getCachedImageBlobUrl(userProfilePhotoUrl);
-        if (cachedBlobUrl) {
-          if (isActive) setDisplayUserPhotoUrl(cachedBlobUrl);
-          return;
-        }
-
-        const blobUrl = await cacheImageBlob(userProfilePhotoUrl);
-        if (isActive) {
-          setDisplayUserPhotoUrl(blobUrl || userProfilePhotoUrl);
-        }
-      };
-
-      void resolveImage();
-
-      return () => {
-        isActive = false;
-      };
-    }, [userProfilePhotoUrl]);
 
     useEffect(() => {
       let isActive = true;
@@ -3907,9 +3862,6 @@ const ChatSidebarPanel = memo(
               loading={loading}
               messages={messages}
               user={user}
-              targetUser={targetUser}
-              displayUserPhotoUrl={displayUserPhotoUrl}
-              displayTargetPhotoUrl={displayTargetPhotoUrl}
               messageInputHeight={messageInputHeight}
               composerContextualOffset={composerContextualOffset}
               openMenuMessageId={openMenuMessageId}
@@ -3946,8 +3898,6 @@ const ChatSidebarPanel = memo(
               onToggleMessageSelection={handleToggleMessageSelection}
               getAttachmentFileName={getAttachmentFileName}
               getAttachmentFileKind={getAttachmentFileKind}
-              getInitials={getInitials}
-              getInitialsColor={getInitialsColor}
               onScrollToBottom={scrollToBottom}
             />
           </div>
