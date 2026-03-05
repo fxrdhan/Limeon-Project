@@ -3538,7 +3538,7 @@ const ChatSidebarPanel = memo(
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 z-0 h-24 bg-gradient-to-b from-white via-white/90 via-45% to-transparent backdrop-blur-[2px]"
+              className="pointer-events-none absolute inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-white via-white/92 via-white/72 to-transparent"
             />
             <div className="pointer-events-auto relative z-10">
               <ChatHeader

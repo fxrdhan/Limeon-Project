@@ -192,6 +192,8 @@ const ChatHeader = ({
   const floatingBlockClass =
     'rounded-xl border border-slate-200/95 bg-white/95';
   const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
+  const floatingSplitIconButtonClass =
+    'inline-flex h-1/2 w-full cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white';
 
   return (
     <div className="px-3 pt-4 pb-2.5">
@@ -212,17 +214,19 @@ const ChatHeader = ({
             <div
               className={`overflow-hidden transition-[width,opacity,margin] duration-200 ease-out ${
                 searchResultCount > 0
-                  ? 'w-[5.1rem] opacity-100 mr-0'
+                  ? 'w-9 opacity-100 mr-0'
                   : 'w-0 opacity-0 -mr-1 pointer-events-none'
               }`}
               aria-hidden={searchResultCount === 0}
             >
-              <div className="inline-flex items-center gap-2">
+              <div
+                className={`${floatingBlockClass} inline-flex h-9 w-9 shrink-0 flex-col overflow-hidden divide-y divide-slate-200/95`}
+              >
                 <button
                   type="button"
                   aria-label="Hasil sebelumnya"
                   title="Hasil sebelumnya"
-                  className={floatingIconButtonClass}
+                  className={floatingSplitIconButtonClass}
                   onClick={onNavigateSearchUp}
                   disabled={searchResultCount === 0 || !canNavigateSearchUp}
                 >
@@ -232,7 +236,7 @@ const ChatHeader = ({
                   type="button"
                   aria-label="Hasil berikutnya"
                   title="Hasil berikutnya"
-                  className={floatingIconButtonClass}
+                  className={floatingSplitIconButtonClass}
                   onClick={onNavigateSearchDown}
                   disabled={searchResultCount === 0 || !canNavigateSearchDown}
                 >
