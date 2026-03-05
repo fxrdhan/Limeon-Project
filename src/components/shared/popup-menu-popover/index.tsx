@@ -9,6 +9,7 @@ interface PopupMenuPopoverProps extends Pick<
   children: ReactNode;
   menuId?: string;
   disableEnterAnimation?: boolean;
+  disableExitAnimation?: boolean;
   className?: string;
   style?: HTMLAttributes<HTMLDivElement>['style'];
   onClick?: HTMLAttributes<HTMLDivElement>['onClick'];
@@ -32,6 +33,7 @@ const PopupMenuPopover = ({
   children,
   menuId,
   disableEnterAnimation = false,
+  disableExitAnimation = false,
   className,
   style,
   onClick,
@@ -50,13 +52,13 @@ const PopupMenuPopover = ({
           data-chat-menu-id={menuId}
           initial={disableEnterAnimation ? false : initial}
           animate={animate}
-          exit={exit}
           transition={transition}
           layout={layout}
           layoutId={layoutId}
           className={className}
           style={style}
           onClick={onClick}
+          {...(disableExitAnimation ? {} : { exit })}
         >
           {children}
         </motion.div>

@@ -1039,13 +1039,18 @@ const MessagesPane = ({
                       );
                     }
                   }}
-                  className={`relative flex w-full transition-all duration-200 ease-out ${
+                  className={`relative flex w-full ${
                     isCurrentUser ? 'justify-end' : 'justify-start'
-                  } ${isMenuOpen || isMenuTransitionSource ? 'z-40' : 'z-0'} ${
+                  } ${
+                    isMenuOpen
+                      ? 'z-50'
+                      : isMenuTransitionSource
+                        ? 'z-40'
+                        : 'z-0'
+                  } ${
                     !isSelectionMode &&
                     openMenuMessageId &&
-                    openMenuMessageId !== msg.id &&
-                    !isMenuTransitionSource
+                    openMenuMessageId !== msg.id
                       ? 'blur-[2px] brightness-95'
                       : ''
                   } ${
@@ -1326,6 +1331,7 @@ const MessagesPane = ({
                         isOpen={isSelectionMode ? false : isMenuOpen}
                         menuId={msg.id}
                         disableEnterAnimation={!shouldAnimateMenuOpen}
+                        disableExitAnimation={!shouldAnimateMenuOpen}
                         layout
                         layoutId="chat-message-menu-popover"
                         initial={{
