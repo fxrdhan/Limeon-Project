@@ -190,26 +190,24 @@ const ChatHeader = ({
     [onNavigateSearchDown, onNavigateSearchUp]
   );
   const floatingBlockClass =
-    'rounded-2xl border border-slate-200/95 bg-white/95 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.48)]';
+    'rounded-xl border border-slate-200/95 bg-white/95 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.48)]';
   const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 
   return (
     <div className="px-3 pt-4 pb-2.5">
       {isSearchMode ? (
         <div className="flex w-full items-center gap-2.5">
-          <div className={`min-w-0 flex-1 px-2.5 py-1 ${floatingBlockClass}`}>
-            <SearchBar
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onKeyDown={handleSearchKeyDown}
-              onFocus={onFocusSearchInput}
-              placeholder="Cari pesan..."
-              className="!mb-0"
-              inputRef={searchInputRef}
-              searchState={searchState}
-              showNotFoundArrow={false}
-            />
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={onFocusSearchInput}
+            placeholder="Cari pesan..."
+            className="!mb-0 min-w-0 flex-1"
+            inputRef={searchInputRef}
+            searchState={searchState}
+            showNotFoundArrow={false}
+          />
           <div className="flex items-center gap-2">
             <div
               className={`overflow-hidden transition-[width,opacity,margin] duration-200 ease-out ${
