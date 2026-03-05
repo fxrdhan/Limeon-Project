@@ -904,6 +904,22 @@ const MessagesPane = ({
                 !isFileMessage &&
                 !isExpanded &&
                 msg.message.length > maxMessageChars;
+              const bubbleWrapperClass = isFileMessage
+                ? 'block w-full'
+                : isImageMessage
+                  ? 'inline-flex flex-col align-top'
+                  : 'inline-block';
+              const bubbleSpacingClass = isImageMessage
+                ? hasAttachmentCaption
+                  ? 'px-2 py-2'
+                  : 'p-0 overflow-hidden'
+                : isFileMessage
+                  ? 'px-2 py-2'
+                  : 'px-3 py-2';
+              const bubbleTypographyClass =
+                isImageMessage || isFileMessage
+                  ? ''
+                  : 'text-sm whitespace-pre-wrap break-words';
               const displayMessage = isMessageLong
                 ? msg.message.slice(0, maxMessageChars).trimEnd()
                 : msg.message;
@@ -1099,11 +1115,7 @@ const MessagesPane = ({
                             messageBubbleRefs.current.delete(msg.id);
                           }
                         }}
-                        className={`${isFileMessage ? 'block w-full' : 'inline-block'} max-w-full ${
-                          isImageMessage || isFileMessage
-                            ? 'px-2 py-2'
-                            : 'px-3 py-2'
-                        } text-sm whitespace-pre-wrap break-words ${bubbleToneClass} ${bubbleOpacityClass} ${
+                        className={`${bubbleWrapperClass} max-w-full ${bubbleSpacingClass} ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
                           isCurrentUser
                             ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
                             : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
@@ -1211,7 +1223,11 @@ const MessagesPane = ({
                           <img
                             src={msg.message}
                             alt="Chat attachment"
-                            className="max-h-72 w-auto max-w-full rounded-lg object-cover"
+                            className={`block max-h-72 w-auto max-w-full object-cover ${
+                              hasAttachmentCaption
+                                ? 'rounded-lg'
+                                : 'rounded-[inherit]'
+                            }`}
                             loading="lazy"
                             draggable={false}
                           />
