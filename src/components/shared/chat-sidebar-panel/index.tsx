@@ -3385,14 +3385,12 @@ const ChatSidebarPanel = memo(
         const parsedTimestamp = new Date(timestamp);
         if (!Number.isFinite(parsedTimestamp.getTime())) return timestamp;
 
-        return parsedTimestamp.toLocaleString('id-ID', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        });
+        const day = parsedTimestamp.getDate();
+        const month = parsedTimestamp.getMonth() + 1;
+        const hour = String(parsedTimestamp.getHours()).padStart(2, '0');
+        const minute = String(parsedTimestamp.getMinutes()).padStart(2, '0');
+
+        return `${day}/${month}, ${hour}.${minute}`;
       };
 
       const serializedMessages = selectedVisibleMessages
@@ -3403,28 +3401,20 @@ const ChatSidebarPanel = memo(
               ? user?.name || 'You'
               : targetUser?.name || 'Unknown');
           const timestamp = formatTimestamp(messageItem.created_at);
-          const fragments: string[] = [];
-
-          if (messageItem.message_type === 'text') {
-            fragments.push(messageItem.message);
-          } else if (messageItem.message_type === 'image') {
-            fragments.push(`[Gambar] ${messageItem.message}`);
-          } else if (messageItem.message_type === 'file') {
-            fragments.push(
-              `[File: ${getAttachmentFileName(messageItem)}] ${messageItem.message}`
-            );
-          }
-
           const attachmentCaption = captionMessagesByAttachmentId
             .get(messageItem.id)
             ?.message?.trim();
-          if (attachmentCaption) {
-            fragments.push(`Caption: ${attachmentCaption}`);
-          }
+          const messageBody =
+            messageItem.message_type === 'text'
+              ? messageItem.message
+              : attachmentCaption ||
+                (messageItem.message_type === 'image'
+                  ? `[Gambar] ${messageItem.message}`
+                  : `[File: ${getAttachmentFileName(messageItem)}] ${messageItem.message}`);
 
-          return `${senderLabel} | ${timestamp}\n${fragments.join('\n')}`;
+          return `[${timestamp}] ${senderLabel}: ${messageBody}`;
         })
-        .join('\n\n')
+        .join('\n')
         .trim();
 
       if (!serializedMessages) {

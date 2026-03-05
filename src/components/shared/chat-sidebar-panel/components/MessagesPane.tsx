@@ -1058,7 +1058,17 @@ const MessagesPane = ({
                     !isMenuTransitionSource
                       ? 'blur-[2px] brightness-95'
                       : ''
+                  } ${
+                    isSelectionMode
+                      ? isSelected
+                        ? 'cursor-pointer rounded-lg bg-slate-100/75 px-2 py-1'
+                        : 'cursor-pointer rounded-lg px-2 py-1 hover:bg-slate-100/60'
+                      : ''
                   }`}
+                  onClick={() => {
+                    if (!isSelectionMode) return;
+                    onToggleMessageSelection(msg.id);
+                  }}
                 >
                   <div
                     className={`${
@@ -1109,11 +1119,7 @@ const MessagesPane = ({
                               ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
                               : ''
                         } ${
-                          isSelectionMode
-                            ? isSelected
-                              ? 'shadow-[0_0_0_2px_rgba(16,185,129,0.55)]'
-                              : 'shadow-[0_0_0_1px_rgba(148,163,184,0.3)]'
-                            : ''
+                          isSelectionMode ? '' : ''
                         } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
                         style={{
                           [isCurrentUser
@@ -1121,11 +1127,8 @@ const MessagesPane = ({
                             : 'borderBottomLeftRadius']: '2px',
                         }}
                         onClick={event => {
+                          if (isSelectionMode) return;
                           event.stopPropagation();
-                          if (isSelectionMode) {
-                            onToggleMessageSelection(msg.id);
-                            return;
-                          }
                           toggleMessageMenu(
                             event.currentTarget,
                             msg.id,

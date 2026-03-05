@@ -219,14 +219,14 @@ const ChatHeader = ({
       {isSelectionMode ? (
         <div className="flex w-full items-center gap-2">
           <span
-            className={`${floatingBlockClass} inline-flex h-9 min-w-20 items-center justify-center px-3 text-xs font-semibold text-slate-700`}
+            className={`${floatingBlockClass} inline-flex h-9 min-w-20 items-center justify-center px-3 text-sm font-semibold text-slate-700`}
             aria-live="polite"
           >
             {selectedMessageCount} dipilih
           </span>
           <button
             type="button"
-            className={`${floatingBlockClass} inline-flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`}
+            className={`${floatingBlockClass} inline-flex h-9 cursor-pointer items-center gap-1.5 px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`}
             onClick={onCopySelectedMessages}
             disabled={selectedMessageCount === 0}
             title="Salin pesan terpilih"
@@ -237,7 +237,7 @@ const ChatHeader = ({
           </button>
           <button
             type="button"
-            className={`${floatingBlockClass} inline-flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300 disabled:hover:bg-white`}
+            className={`${floatingBlockClass} inline-flex h-9 cursor-pointer items-center gap-1.5 px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300 disabled:hover:bg-white`}
             onClick={onDeleteSelectedMessages}
             disabled={!canDeleteSelectedMessages}
             title="Hapus pesan terpilih"
