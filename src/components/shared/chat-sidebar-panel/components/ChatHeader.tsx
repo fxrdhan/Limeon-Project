@@ -15,12 +15,14 @@ import PopupMenuContent, {
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { UserPresence } from '@/services/api/chat.service';
 import {
+  TbCopy,
   TbChevronDown,
   TbChevronUp,
   TbCheckbox,
   TbDotsVertical,
   TbLayoutSidebarRightCollapse,
   TbSearch,
+  TbTrash,
   TbX,
 } from 'react-icons/tb';
 import type { ChatSidebarPanelTargetUser } from '../types';
@@ -37,13 +39,20 @@ interface ChatHeaderProps {
   activeSearchResultIndex: number;
   canNavigateSearchUp: boolean;
   canNavigateSearchDown: boolean;
+  isSelectionMode: boolean;
+  selectedMessageCount: number;
+  canDeleteSelectedMessages: boolean;
   searchInputRef: RefObject<HTMLInputElement | null>;
   onEnterSearchMode: () => void;
   onExitSearchMode: () => void;
+  onEnterSelectionMode: () => void;
+  onExitSelectionMode: () => void;
   onSearchQueryChange: (value: string) => void;
   onNavigateSearchUp: () => void;
   onNavigateSearchDown: () => void;
   onFocusSearchInput: () => void;
+  onCopySelectedMessages: () => void;
+  onDeleteSelectedMessages: () => void;
   onClose: () => void;
   getInitials: (name: string) => string;
   getInitialsColor: (userId: string) => string;
@@ -91,13 +100,20 @@ const ChatHeader = ({
   activeSearchResultIndex,
   canNavigateSearchUp,
   canNavigateSearchDown,
+  isSelectionMode,
+  selectedMessageCount,
+  canDeleteSelectedMessages,
   searchInputRef,
   onEnterSearchMode,
   onExitSearchMode,
+  onEnterSelectionMode,
+  onExitSelectionMode,
   onSearchQueryChange,
   onNavigateSearchUp,
   onNavigateSearchDown,
   onFocusSearchInput,
+  onCopySelectedMessages,
+  onDeleteSelectedMessages,
   onClose,
   getInitials,
   getInitialsColor,
@@ -143,7 +159,10 @@ const ChatHeader = ({
     {
       label: 'Pilih pesan',
       icon: <TbCheckbox className="h-4 w-4" />,
-      onClick: closeOptionsMenu,
+      onClick: () => {
+        closeOptionsMenu();
+        onEnterSelectionMode();
+      },
     },
     {
       label: 'Cari',
@@ -197,7 +216,55 @@ const ChatHeader = ({
 
   return (
     <div className="px-3 pt-4 pb-2.5">
-      {isSearchMode ? (
+      {isSelectionMode ? (
+        <div className="flex w-full items-center gap-2">
+          <span
+            className={`${floatingBlockClass} inline-flex h-9 min-w-20 items-center justify-center px-3 text-xs font-semibold text-slate-700`}
+            aria-live="polite"
+          >
+            {selectedMessageCount} dipilih
+          </span>
+          <button
+            type="button"
+            className={`${floatingBlockClass} inline-flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`}
+            onClick={onCopySelectedMessages}
+            disabled={selectedMessageCount === 0}
+            title="Salin pesan terpilih"
+            aria-label="Salin pesan terpilih"
+          >
+            <TbCopy size={16} />
+            Salin
+          </button>
+          <button
+            type="button"
+            className={`${floatingBlockClass} inline-flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300 disabled:hover:bg-white`}
+            onClick={onDeleteSelectedMessages}
+            disabled={!canDeleteSelectedMessages}
+            title="Hapus pesan terpilih"
+            aria-label="Hapus pesan terpilih"
+          >
+            <TbTrash size={16} />
+            Hapus
+          </button>
+          <button
+            type="button"
+            aria-label="Keluar mode pilih pesan"
+            title="Keluar mode pilih pesan"
+            className={floatingIconButtonClass}
+            onClick={onExitSelectionMode}
+          >
+            <TbX size={20} />
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="Collapse chat sidebar"
+            title="Collapse chat sidebar"
+            className={floatingIconButtonClass}
+          >
+            <TbLayoutSidebarRightCollapse size={20} />
+          </button>
+        </div>
+      ) : isSearchMode ? (
         <div className="flex w-full items-center gap-2.5">
           <SearchBar
             value={searchQuery}

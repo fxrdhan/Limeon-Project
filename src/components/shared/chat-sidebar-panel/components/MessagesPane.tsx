@@ -243,6 +243,8 @@ interface MessagesPaneProps {
   expandedMessageIds: Set<string>;
   flashingMessageId: string | null;
   isFlashHighlightVisible: boolean;
+  isSelectionMode: boolean;
+  selectedMessageIds: Set<string>;
   searchMatchedMessageIds: Set<string>;
   activeSearchMessageId: string | null;
   showScrollToBottom: boolean;
@@ -263,6 +265,7 @@ interface MessagesPaneProps {
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<void>;
+  onToggleMessageSelection: (messageId: string) => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (
     targetMessage: ChatMessage
@@ -290,6 +293,8 @@ const MessagesPane = ({
   expandedMessageIds,
   flashingMessageId,
   isFlashHighlightVisible,
+  isSelectionMode,
+  selectedMessageIds,
   searchMatchedMessageIds,
   activeSearchMessageId,
   showScrollToBottom,
@@ -306,6 +311,7 @@ const MessagesPane = ({
   handleCopyMessage,
   handleDownloadMessage,
   handleDeleteMessage,
+  onToggleMessageSelection,
   getAttachmentFileName,
   getAttachmentFileKind,
   getInitials,
@@ -772,6 +778,7 @@ const MessagesPane = ({
                 isFlashSequenceTarget && isFlashHighlightVisible;
               const isSearchMatch = searchMatchedMessageIds.has(msg.id);
               const isActiveSearchMatch = activeSearchMessageId === msg.id;
+              const isSelected = selectedMessageIds.has(msg.id);
               const isImageMessage = msg.message_type === 'image';
               const isFileMessage = msg.message_type === 'file';
               const fileKind = isFileMessage
@@ -1045,6 +1052,7 @@ const MessagesPane = ({
                   className={`relative flex w-full transition-all duration-200 ease-out ${
                     isCurrentUser ? 'justify-end' : 'justify-start'
                   } ${isMenuOpen || isMenuTransitionSource ? 'z-40' : 'z-0'} ${
+                    !isSelectionMode &&
                     openMenuMessageId &&
                     openMenuMessageId !== msg.id &&
                     !isMenuTransitionSource
@@ -1062,6 +1070,19 @@ const MessagesPane = ({
                     <div
                       className={isFileMessage ? 'relative w-full' : 'relative'}
                     >
+                      {isSelectionMode ? (
+                        <span
+                          className={`pointer-events-none absolute -top-1.5 ${isCurrentUser ? '-left-1.5' : '-right-1.5'} z-10 inline-flex h-5 w-5 items-center justify-center rounded-full border text-xs ${
+                            isSelected
+                              ? 'border-primary bg-primary text-white'
+                              : 'border-slate-300 bg-white text-slate-400'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <TbCheck className="h-3.5 w-3.5" />
+                          ) : null}
+                        </span>
+                      ) : null}
                       <div
                         ref={bubbleElement => {
                           if (bubbleElement) {
@@ -1087,6 +1108,12 @@ const MessagesPane = ({
                             : isSearchMatch
                               ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
                               : ''
+                        } ${
+                          isSelectionMode
+                            ? isSelected
+                              ? 'shadow-[0_0_0_2px_rgba(16,185,129,0.55)]'
+                              : 'shadow-[0_0_0_1px_rgba(148,163,184,0.3)]'
+                            : ''
                         } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
                         style={{
                           [isCurrentUser
@@ -1095,6 +1122,10 @@ const MessagesPane = ({
                         }}
                         onClick={event => {
                           event.stopPropagation();
+                          if (isSelectionMode) {
+                            onToggleMessageSelection(msg.id);
+                            return;
+                          }
                           toggleMessageMenu(
                             event.currentTarget,
                             msg.id,
@@ -1106,6 +1137,10 @@ const MessagesPane = ({
                         onKeyDown={event => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
+                            if (isSelectionMode) {
+                              onToggleMessageSelection(msg.id);
+                              return;
+                            }
                             toggleMessageMenu(
                               event.currentTarget,
                               msg.id,
@@ -1235,7 +1270,7 @@ const MessagesPane = ({
                       </div>
 
                       <PopupMenuPopover
-                        isOpen={isMenuOpen}
+                        isOpen={isSelectionMode ? false : isMenuOpen}
                         menuId={msg.id}
                         disableEnterAnimation={!shouldAnimateMenuOpen}
                         layout

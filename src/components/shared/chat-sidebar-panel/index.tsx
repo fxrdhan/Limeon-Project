@@ -179,6 +179,10 @@ const ChatSidebarPanel = memo(
     const [activeSearchMessageId, setActiveSearchMessageId] = useState<
       string | null
     >(null);
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
+      () => new Set()
+    );
     const [searchNavigationTick, setSearchNavigationTick] = useState(0);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -324,6 +328,31 @@ const ChatSidebarPanel = memo(
       : searchMatchedMessageIds.length > 0
         ? SEARCH_STATES.FOUND
         : SEARCH_STATES.NOT_FOUND;
+    const selectableMessageIdSet = useMemo(() => {
+      const selectableIds = new Set<string>();
+      for (const messageItem of messages) {
+        if (captionMessageIds.has(messageItem.id)) continue;
+        selectableIds.add(messageItem.id);
+      }
+
+      return selectableIds;
+    }, [captionMessageIds, messages]);
+    const selectedVisibleMessages = useMemo(() => {
+      const selectedMessages: ChatMessage[] = [];
+      for (const messageItem of messages) {
+        if (captionMessageIds.has(messageItem.id)) continue;
+        if (!selectedMessageIds.has(messageItem.id)) continue;
+        selectedMessages.push(messageItem);
+      }
+
+      return selectedMessages;
+    }, [captionMessageIds, messages, selectedMessageIds]);
+    const canDeleteSelectedMessages = useMemo(() => {
+      if (!user) return false;
+      return selectedVisibleMessages.some(
+        messageItem => messageItem.sender_id === user.id
+      );
+    }, [selectedVisibleMessages, user]);
 
     useEffect(() => {
       pendingComposerAttachmentsRef.current = pendingComposerAttachments;
@@ -334,13 +363,33 @@ const ChatSidebarPanel = memo(
       setIsMessageSearchMode(false);
       setMessageSearchQuery('');
       setActiveSearchMessageId(null);
+      setIsSelectionMode(false);
+      setSelectedMessageIds(new Set());
     }, [isOpen]);
 
     useEffect(() => {
       setIsMessageSearchMode(false);
       setMessageSearchQuery('');
       setActiveSearchMessageId(null);
+      setIsSelectionMode(false);
+      setSelectedMessageIds(new Set());
     }, [currentChannelId]);
+
+    useEffect(() => {
+      setSelectedMessageIds(previousSelectedIds => {
+        let changed = false;
+        const nextSelectedIds = new Set<string>();
+        previousSelectedIds.forEach(messageId => {
+          if (selectableMessageIdSet.has(messageId)) {
+            nextSelectedIds.add(messageId);
+            return;
+          }
+          changed = true;
+        });
+
+        return changed ? nextSelectedIds : previousSelectedIds;
+      });
+    }, [selectableMessageIdSet]);
 
     useEffect(() => {
       if (
@@ -557,6 +606,8 @@ const ChatSidebarPanel = memo(
     }, []);
 
     const handleEnterMessageSearchMode = useCallback(() => {
+      setIsSelectionMode(false);
+      setSelectedMessageIds(new Set());
       setIsMessageSearchMode(true);
     }, []);
 
@@ -566,6 +617,37 @@ const ChatSidebarPanel = memo(
       setActiveSearchMessageId(null);
       setSearchNavigationTick(0);
     }, []);
+
+    const handleEnterMessageSelectionMode = useCallback(() => {
+      closeMessageMenu();
+      setIsMessageSearchMode(false);
+      setMessageSearchQuery('');
+      setActiveSearchMessageId(null);
+      setSearchNavigationTick(0);
+      setSelectedMessageIds(new Set());
+      setIsSelectionMode(true);
+    }, [closeMessageMenu]);
+
+    const handleExitMessageSelectionMode = useCallback(() => {
+      setIsSelectionMode(false);
+      setSelectedMessageIds(new Set());
+    }, []);
+
+    const handleToggleMessageSelection = useCallback(
+      (messageId: string) => {
+        if (!isSelectionMode || !selectableMessageIdSet.has(messageId)) return;
+        setSelectedMessageIds(previousSelectedIds => {
+          const nextSelectedIds = new Set(previousSelectedIds);
+          if (nextSelectedIds.has(messageId)) {
+            nextSelectedIds.delete(messageId);
+          } else {
+            nextSelectedIds.add(messageId);
+          }
+          return nextSelectedIds;
+        });
+      },
+      [isSelectionMode, selectableMessageIdSet]
+    );
 
     useEffect(() => {
       if (!isMessageSearchMode) return;
@@ -3291,6 +3373,125 @@ const ChatSidebarPanel = memo(
       [closeMessageMenu]
     );
 
+    const handleCopySelectedMessages = useCallback(async () => {
+      if (selectedVisibleMessages.length === 0) {
+        toast.error('Pilih minimal 1 pesan untuk disalin', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
+      }
+
+      const formatTimestamp = (timestamp: string) => {
+        const parsedTimestamp = new Date(timestamp);
+        if (!Number.isFinite(parsedTimestamp.getTime())) return timestamp;
+
+        return parsedTimestamp.toLocaleString('id-ID', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+      };
+
+      const serializedMessages = selectedVisibleMessages
+        .map(messageItem => {
+          const senderLabel =
+            messageItem.sender_name ||
+            (messageItem.sender_id === user?.id
+              ? user?.name || 'You'
+              : targetUser?.name || 'Unknown');
+          const timestamp = formatTimestamp(messageItem.created_at);
+          const fragments: string[] = [];
+
+          if (messageItem.message_type === 'text') {
+            fragments.push(messageItem.message);
+          } else if (messageItem.message_type === 'image') {
+            fragments.push(`[Gambar] ${messageItem.message}`);
+          } else if (messageItem.message_type === 'file') {
+            fragments.push(
+              `[File: ${getAttachmentFileName(messageItem)}] ${messageItem.message}`
+            );
+          }
+
+          const attachmentCaption = captionMessagesByAttachmentId
+            .get(messageItem.id)
+            ?.message?.trim();
+          if (attachmentCaption) {
+            fragments.push(`Caption: ${attachmentCaption}`);
+          }
+
+          return `${senderLabel} | ${timestamp}\n${fragments.join('\n')}`;
+        })
+        .join('\n\n')
+        .trim();
+
+      if (!serializedMessages) {
+        toast.error('Tidak ada isi pesan untuk disalin', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(serializedMessages);
+        toast.success(
+          `${selectedVisibleMessages.length} pesan berhasil disalin`,
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+      } catch (error) {
+        console.error('Error copying selected messages:', error);
+        toast.error('Gagal menyalin pesan terpilih', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+      }
+    }, [
+      captionMessagesByAttachmentId,
+      selectedVisibleMessages,
+      targetUser?.name,
+      user?.id,
+      user?.name,
+    ]);
+
+    const handleDeleteSelectedMessages = async () => {
+      if (!user) return;
+
+      const deletableMessages = selectedVisibleMessages.filter(
+        messageItem => messageItem.sender_id === user.id
+      );
+
+      if (deletableMessages.length === 0) {
+        toast.error('Pilih minimal 1 pesan Anda untuk dihapus', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
+      }
+
+      for (const messageItem of deletableMessages) {
+        await handleDeleteMessage(messageItem);
+      }
+
+      const deletedMessageIds = new Set(
+        deletableMessages.map(messageItem => messageItem.id)
+      );
+      setSelectedMessageIds(previousSelectedIds => {
+        const nextSelectedIds = new Set<string>();
+        previousSelectedIds.forEach(messageId => {
+          if (!deletedMessageIds.has(messageId)) {
+            nextSelectedIds.add(messageId);
+          }
+        });
+        return nextSelectedIds;
+      });
+
+      toast.success(`${deletableMessages.length} pesan berhasil dihapus`, {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+    };
+
     const handleDownloadMessage = useCallback(
       async (targetMessage: ChatMessage) => {
         const fileUrl = targetMessage.message;
@@ -3690,13 +3891,20 @@ const ChatSidebarPanel = memo(
                 activeSearchResultIndex={Math.max(activeSearchResultIndex, 0)}
                 canNavigateSearchUp={canNavigateSearchUp}
                 canNavigateSearchDown={canNavigateSearchDown}
+                isSelectionMode={isSelectionMode}
+                selectedMessageCount={selectedVisibleMessages.length}
+                canDeleteSelectedMessages={canDeleteSelectedMessages}
                 searchInputRef={searchInputRef}
                 onEnterSearchMode={handleEnterMessageSearchMode}
                 onExitSearchMode={handleExitMessageSearchMode}
+                onEnterSelectionMode={handleEnterMessageSelectionMode}
+                onExitSelectionMode={handleExitMessageSelectionMode}
                 onSearchQueryChange={handleMessageSearchQueryChange}
                 onNavigateSearchUp={handleNavigateSearchUp}
                 onNavigateSearchDown={handleNavigateSearchDown}
                 onFocusSearchInput={handleFocusSearchInput}
+                onCopySelectedMessages={handleCopySelectedMessages}
+                onDeleteSelectedMessages={handleDeleteSelectedMessages}
                 onClose={handleClose}
                 getInitials={getInitials}
                 getInitialsColor={getInitialsColor}
@@ -3723,6 +3931,8 @@ const ChatSidebarPanel = memo(
               expandedMessageIds={expandedMessageIds}
               flashingMessageId={flashingMessageId}
               isFlashHighlightVisible={isFlashHighlightVisible}
+              isSelectionMode={isSelectionMode}
+              selectedMessageIds={selectedMessageIds}
               searchMatchedMessageIds={
                 isMessageSearchMode ? searchMatchedMessageIdSet : new Set()
               }
@@ -3743,6 +3953,7 @@ const ChatSidebarPanel = memo(
               handleCopyMessage={handleCopyMessage}
               handleDownloadMessage={handleDownloadMessage}
               handleDeleteMessage={handleDeleteMessage}
+              onToggleMessageSelection={handleToggleMessageSelection}
               getAttachmentFileName={getAttachmentFileName}
               getAttachmentFileKind={getAttachmentFileKind}
               getInitials={getInitials}
