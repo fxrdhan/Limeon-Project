@@ -217,7 +217,7 @@ const ChatHeader = ({
   return (
     <div className="px-3 pt-4 pb-2.5">
       {isSelectionMode ? (
-        <div className="flex w-full items-center gap-2">
+        <div className="flex w-full items-center justify-end gap-2">
           <span
             className={`${floatingBlockClass} inline-flex h-9 min-w-20 items-center justify-center px-3 text-sm font-semibold text-slate-700`}
             aria-live="polite"
