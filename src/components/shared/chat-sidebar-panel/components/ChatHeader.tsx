@@ -189,16 +189,15 @@ const ChatHeader = ({
     },
     [onNavigateSearchDown, onNavigateSearchUp]
   );
+  const floatingBlockClass =
+    'rounded-2xl border border-slate-200/95 bg-white/95 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.48)]';
+  const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 
   return (
-    <div
-      className={`h-16 border-b border-slate-100 ${
-        isSearchMode ? 'pl-3 pr-4' : 'px-4'
-      }`}
-    >
+    <div className="px-3 pt-4 pb-2.5">
       {isSearchMode ? (
-        <div className="h-full flex items-center gap-2">
-          <div className="min-w-0 flex-1">
+        <div className="flex w-full items-center gap-2.5">
+          <div className={`min-w-0 flex-1 px-2.5 py-1 ${floatingBlockClass}`}>
             <SearchBar
               value={searchQuery}
               onChange={handleSearchChange}
@@ -211,40 +210,40 @@ const ChatHeader = ({
               showNotFoundArrow={false}
             />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <div
               className={`overflow-hidden transition-[width,opacity,margin] duration-200 ease-out ${
                 searchResultCount > 0
-                  ? 'w-8 opacity-100 mr-0'
+                  ? 'w-[5.1rem] opacity-100 mr-0'
                   : 'w-0 opacity-0 -mr-1 pointer-events-none'
               }`}
               aria-hidden={searchResultCount === 0}
             >
-              <div className="inline-flex h-9 w-8 flex-col items-center justify-center gap-0 rounded-lg border border-slate-200 bg-white p-px">
+              <div className="inline-flex items-center gap-2">
                 <button
                   type="button"
                   aria-label="Hasil sebelumnya"
                   title="Hasil sebelumnya"
-                  className="inline-flex h-4 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  className={floatingIconButtonClass}
                   onClick={onNavigateSearchUp}
                   disabled={searchResultCount === 0 || !canNavigateSearchUp}
                 >
-                  <TbChevronUp size={13} />
+                  <TbChevronUp size={16} />
                 </button>
                 <button
                   type="button"
                   aria-label="Hasil berikutnya"
                   title="Hasil berikutnya"
-                  className="inline-flex h-4 w-6 cursor-pointer items-center justify-center rounded-md text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                  className={floatingIconButtonClass}
                   onClick={onNavigateSearchDown}
                   disabled={searchResultCount === 0 || !canNavigateSearchDown}
                 >
-                  <TbChevronDown size={13} />
+                  <TbChevronDown size={16} />
                 </button>
               </div>
             </div>
             <span
-              className="min-w-10 text-center text-xs font-medium text-slate-500"
+              className={`${floatingBlockClass} inline-flex h-9 min-w-11 items-center justify-center px-2.5 text-center text-xs font-medium text-slate-500`}
               aria-live="polite"
             >
               {searchResultPositionLabel}
@@ -253,7 +252,7 @@ const ChatHeader = ({
               type="button"
               aria-label="Tutup pencarian"
               title="Tutup pencarian"
-              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+              className={floatingIconButtonClass}
               onClick={onExitSearchMode}
             >
               <TbX size={20} />
@@ -262,15 +261,17 @@ const ChatHeader = ({
               onClick={onClose}
               aria-label="Collapse chat sidebar"
               title="Collapse chat sidebar"
-              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+              className={floatingIconButtonClass}
             >
               <TbLayoutSidebarRightCollapse size={20} />
             </button>
           </div>
         </div>
       ) : (
-        <div className="h-full flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex w-full items-center gap-2.5">
+          <div
+            className={`${floatingBlockClass} flex min-w-0 max-w-[calc(100%-5.75rem)] flex-1 items-center gap-3 px-3 py-1.5`}
+          >
             <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
               {displayTargetPhotoUrl ? (
                 <img
@@ -322,7 +323,7 @@ const ChatHeader = ({
               })()}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-2">
             <div className="relative">
               <button
                 ref={optionsButtonRef}
@@ -331,7 +332,7 @@ const ChatHeader = ({
                 title="Chat options"
                 aria-haspopup="menu"
                 aria-expanded={isOptionsMenuOpen}
-                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+                className={floatingIconButtonClass}
                 onClick={toggleOptionsMenu}
               >
                 <TbDotsVertical size={20} />
@@ -357,7 +358,7 @@ const ChatHeader = ({
               onClick={onClose}
               aria-label="Collapse chat sidebar"
               title="Collapse chat sidebar"
-              className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-transparent text-slate-600 hover:bg-slate-50"
+              className={floatingIconButtonClass}
             >
               <TbLayoutSidebarRightCollapse size={20} />
             </button>

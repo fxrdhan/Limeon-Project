@@ -3535,74 +3535,80 @@ const ChatSidebarPanel = memo(
 
         {/* Chat Content */}
         <div className="relative h-full flex flex-col">
-          <ChatHeader
-            targetUser={targetUser}
-            displayTargetPhotoUrl={displayTargetPhotoUrl}
-            targetUserPresence={targetUserPresence}
-            currentChannelId={currentChannelId}
-            isSearchMode={isMessageSearchMode}
-            searchQuery={messageSearchQuery}
-            searchState={messageSearchState}
-            searchResultCount={searchMatchedMessageIds.length}
-            activeSearchResultIndex={Math.max(activeSearchResultIndex, 0)}
-            canNavigateSearchUp={canNavigateSearchUp}
-            canNavigateSearchDown={canNavigateSearchDown}
-            searchInputRef={searchInputRef}
-            onEnterSearchMode={handleEnterMessageSearchMode}
-            onExitSearchMode={handleExitMessageSearchMode}
-            onSearchQueryChange={handleMessageSearchQueryChange}
-            onNavigateSearchUp={handleNavigateSearchUp}
-            onNavigateSearchDown={handleNavigateSearchDown}
-            onFocusSearchInput={handleFocusSearchInput}
-            onClose={handleClose}
-            getInitials={getInitials}
-            getInitialsColor={getInitialsColor}
-          />
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
+            <div className="pointer-events-auto">
+              <ChatHeader
+                targetUser={targetUser}
+                displayTargetPhotoUrl={displayTargetPhotoUrl}
+                targetUserPresence={targetUserPresence}
+                currentChannelId={currentChannelId}
+                isSearchMode={isMessageSearchMode}
+                searchQuery={messageSearchQuery}
+                searchState={messageSearchState}
+                searchResultCount={searchMatchedMessageIds.length}
+                activeSearchResultIndex={Math.max(activeSearchResultIndex, 0)}
+                canNavigateSearchUp={canNavigateSearchUp}
+                canNavigateSearchDown={canNavigateSearchDown}
+                searchInputRef={searchInputRef}
+                onEnterSearchMode={handleEnterMessageSearchMode}
+                onExitSearchMode={handleExitMessageSearchMode}
+                onSearchQueryChange={handleMessageSearchQueryChange}
+                onNavigateSearchUp={handleNavigateSearchUp}
+                onNavigateSearchDown={handleNavigateSearchDown}
+                onFocusSearchInput={handleFocusSearchInput}
+                onClose={handleClose}
+                getInitials={getInitials}
+                getInitialsColor={getInitialsColor}
+              />
+            </div>
+          </div>
 
-          <MessagesPane
-            loading={loading}
-            messages={messages}
-            user={user}
-            targetUser={targetUser}
-            displayUserPhotoUrl={displayUserPhotoUrl}
-            displayTargetPhotoUrl={displayTargetPhotoUrl}
-            messageInputHeight={messageInputHeight}
-            composerContextualOffset={composerContextualOffset}
-            openMenuMessageId={openMenuMessageId}
-            menuPlacement={menuPlacement}
-            menuSideAnchor={menuSideAnchor}
-            shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-            menuTransitionSourceId={menuTransitionSourceId}
-            menuOffsetX={menuOffsetX}
-            expandedMessageIds={expandedMessageIds}
-            flashingMessageId={flashingMessageId}
-            isFlashHighlightVisible={isFlashHighlightVisible}
-            searchMatchedMessageIds={
-              isMessageSearchMode ? searchMatchedMessageIdSet : new Set()
-            }
-            activeSearchMessageId={
-              isMessageSearchMode ? activeSearchMessageId : null
-            }
-            showScrollToBottom={hasNewMessages || !isAtBottom}
-            maxMessageChars={MAX_MESSAGE_CHARS}
-            messagesContainerRef={messagesContainerRef}
-            messagesEndRef={messagesEndRef}
-            messageBubbleRefs={messageBubbleRefs}
-            initialMessageAnimationKeysRef={initialMessageAnimationKeysRef}
-            initialOpenJumpAnimationKeysRef={initialOpenJumpAnimationKeysRef}
-            closeMessageMenu={closeMessageMenu}
-            toggleMessageMenu={toggleMessageMenu}
-            handleToggleExpand={handleToggleExpand}
-            handleEditMessage={handleEditMessage}
-            handleCopyMessage={handleCopyMessage}
-            handleDownloadMessage={handleDownloadMessage}
-            handleDeleteMessage={handleDeleteMessage}
-            getAttachmentFileName={getAttachmentFileName}
-            getAttachmentFileKind={getAttachmentFileKind}
-            getInitials={getInitials}
-            getInitialsColor={getInitialsColor}
-            onScrollToBottom={scrollToBottom}
-          />
+          <div className="min-h-0 flex flex-1 flex-col">
+            <MessagesPane
+              loading={loading}
+              messages={messages}
+              user={user}
+              targetUser={targetUser}
+              displayUserPhotoUrl={displayUserPhotoUrl}
+              displayTargetPhotoUrl={displayTargetPhotoUrl}
+              messageInputHeight={messageInputHeight}
+              composerContextualOffset={composerContextualOffset}
+              openMenuMessageId={openMenuMessageId}
+              menuPlacement={menuPlacement}
+              menuSideAnchor={menuSideAnchor}
+              shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+              menuTransitionSourceId={menuTransitionSourceId}
+              menuOffsetX={menuOffsetX}
+              expandedMessageIds={expandedMessageIds}
+              flashingMessageId={flashingMessageId}
+              isFlashHighlightVisible={isFlashHighlightVisible}
+              searchMatchedMessageIds={
+                isMessageSearchMode ? searchMatchedMessageIdSet : new Set()
+              }
+              activeSearchMessageId={
+                isMessageSearchMode ? activeSearchMessageId : null
+              }
+              showScrollToBottom={hasNewMessages || !isAtBottom}
+              maxMessageChars={MAX_MESSAGE_CHARS}
+              messagesContainerRef={messagesContainerRef}
+              messagesEndRef={messagesEndRef}
+              messageBubbleRefs={messageBubbleRefs}
+              initialMessageAnimationKeysRef={initialMessageAnimationKeysRef}
+              initialOpenJumpAnimationKeysRef={initialOpenJumpAnimationKeysRef}
+              closeMessageMenu={closeMessageMenu}
+              toggleMessageMenu={toggleMessageMenu}
+              handleToggleExpand={handleToggleExpand}
+              handleEditMessage={handleEditMessage}
+              handleCopyMessage={handleCopyMessage}
+              handleDownloadMessage={handleDownloadMessage}
+              handleDeleteMessage={handleDeleteMessage}
+              getAttachmentFileName={getAttachmentFileName}
+              getAttachmentFileKind={getAttachmentFileKind}
+              getInitials={getInitials}
+              getInitialsColor={getInitialsColor}
+              onScrollToBottom={scrollToBottom}
+            />
+          </div>
 
           <ComposerPanel
             message={message}
