@@ -179,6 +179,7 @@ const ChatSidebarPanel = memo(
     const [activeSearchMessageId, setActiveSearchMessageId] = useState<
       string | null
     >(null);
+    const [searchNavigationTick, setSearchNavigationTick] = useState(0);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const flashMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -563,6 +564,7 @@ const ChatSidebarPanel = memo(
       setIsMessageSearchMode(false);
       setMessageSearchQuery('');
       setActiveSearchMessageId(null);
+      setSearchNavigationTick(0);
     }, []);
 
     useEffect(() => {
@@ -611,6 +613,7 @@ const ChatSidebarPanel = memo(
 
           return searchMatchedMessageIds[nextIndex] ?? currentMessageId;
         });
+        setSearchNavigationTick(currentTick => currentTick + 1);
       },
       [searchMatchedMessageIds]
     );
@@ -1711,8 +1714,8 @@ const ChatSidebarPanel = memo(
       (messageId: string) => {
         clearPendingSearchFlash();
         const waitStart = Date.now();
-        const maxWaitMs = 2200;
-        const scrollSettleDelayMs = 60;
+        const maxWaitMs = 900;
+        const scrollSettleDelayMs = 24;
         let previousScrollTop: number | null = null;
         let lastScrollMovementAt = Date.now();
 
@@ -1745,8 +1748,8 @@ const ChatSidebarPanel = memo(
             bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING;
           const bubbleRect = bubble.getBoundingClientRect();
           const isVisibleToUser =
-            bubbleRect.top >= minVisibleTop &&
-            bubbleRect.bottom <= maxVisibleBottom;
+            bubbleRect.bottom > minVisibleTop &&
+            bubbleRect.top < maxVisibleBottom;
 
           const currentScrollTop = container.scrollTop;
           const scrollDelta =
@@ -1768,6 +1771,7 @@ const ChatSidebarPanel = memo(
 
           if (Date.now() - waitStart >= maxWaitMs) {
             pendingSearchFlashRafRef.current = null;
+            triggerMessageFlash(messageId);
             return;
           }
 
@@ -1819,7 +1823,7 @@ const ChatSidebarPanel = memo(
           if (scrollOffset !== 0) {
             container.scrollTo({
               top: container.scrollTop + scrollOffset,
-              behavior: 'smooth',
+              behavior: 'auto',
             });
           }
         }
@@ -1855,6 +1859,7 @@ const ChatSidebarPanel = memo(
       isMessageSearchMode,
       isOpen,
       normalizedMessageSearchQuery,
+      searchNavigationTick,
     ]);
 
     const focusEditingTargetMessage = useCallback(() => {
