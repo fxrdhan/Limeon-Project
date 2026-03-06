@@ -20,18 +20,11 @@ type ConversationCacheEntry = {
   cachedAt: number;
 };
 
-interface VisibleBounds {
-  containerRect: DOMRect;
-  visibleBottom: number;
-}
-
 interface UseChatSessionProps {
   isOpen: boolean;
   user: UserDetails | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
-  getVisibleMessagesBounds: () => VisibleBounds | null;
-  messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
 }
@@ -41,8 +34,6 @@ export const useChatSession = ({
   user,
   targetUser,
   currentChannelId,
-  getVisibleMessagesBounds,
-  messageBubbleRefs,
   initialMessageAnimationKeysRef,
   initialOpenJumpAnimationKeysRef,
 }: UseChatSessionProps) => {
@@ -323,42 +314,6 @@ export const useChatSession = ({
     },
     [mergeAndBroadcastMessageUpdates]
   );
-
-  const markVisibleIncomingMessagesAsRead = useCallback(async () => {
-    if (!user || !targetUser) return;
-
-    const bounds = getVisibleMessagesBounds();
-    if (!bounds) return;
-
-    const visibleUnreadIncomingMessageIds = messages
-      .filter(
-        messageItem =>
-          messageItem.sender_id === targetUser.id &&
-          messageItem.receiver_id === user.id &&
-          !messageItem.is_read
-      )
-      .map(messageItem => {
-        const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
-        if (!bubbleElement) return null;
-
-        const bubbleRect = bubbleElement.getBoundingClientRect();
-        const isVisible =
-          bubbleRect.bottom > bounds.containerRect.top &&
-          bubbleRect.top < bounds.visibleBottom;
-        return isVisible ? messageItem.id : null;
-      })
-      .filter((messageId): messageId is string => Boolean(messageId));
-
-    if (visibleUnreadIncomingMessageIds.length === 0) return;
-    await markMessageIdsAsRead(visibleUnreadIncomingMessageIds);
-  }, [
-    getVisibleMessagesBounds,
-    markMessageIdsAsRead,
-    messageBubbleRefs,
-    messages,
-    targetUser,
-    user,
-  ]);
 
   useEffect(() => {
     const previousIsOpen = previousIsOpenRef.current;
@@ -788,7 +743,7 @@ export const useChatSession = ({
     broadcastUpdatedMessage,
     broadcastDeletedMessage,
     mergeAndBroadcastMessageUpdates,
-    markVisibleIncomingMessagesAsRead,
+    markMessageIdsAsRead,
     hasCompletedInitialOpenLoadRef,
   };
 };
