@@ -1,4 +1,4 @@
-import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
+import { LayoutGroup, motion } from 'motion/react';
 import {
   useCallback,
   useEffect,
@@ -10,9 +10,9 @@ import {
   type RefObject,
 } from 'react';
 import {
+  TbArrowDown,
   TbCheck,
   TbChecks,
-  TbCircleArrowDownFilled,
   TbClock,
   TbCopy,
   TbDownload,
@@ -1257,60 +1257,63 @@ const MessagesPane = ({
                         {isCurrentUser ? (
                           <div className="absolute right-full bottom-0 mr-2 flex flex-col items-end text-xs text-slate-500">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              {isEdited ? (
-                                <>
-                                  <span className="text-slate-400">Diedit</span>
-                                  <span className="text-slate-500">•</span>
-                                </>
-                              ) : null}
                               {displayTime}
                             </div>
-                            {messageDeliveryStatus ? (
-                              <span
-                                className={`inline-flex items-center ${
-                                  messageDeliveryStatus === 'read'
-                                    ? 'text-primary'
-                                    : 'text-slate-400'
-                                }`}
-                                aria-label={
-                                  messageDeliveryStatus === 'sending'
-                                    ? 'Status pesan: mengirim'
-                                    : messageDeliveryStatus === 'delivered'
-                                      ? 'Status pesan: diterima'
-                                      : messageDeliveryStatus === 'read'
-                                        ? 'Status pesan: dibaca'
-                                        : 'Status pesan: terkirim'
-                                }
-                                title={
-                                  messageDeliveryStatus === 'sending'
-                                    ? 'Mengirim'
-                                    : messageDeliveryStatus === 'delivered'
-                                      ? 'Diterima'
-                                      : messageDeliveryStatus === 'read'
-                                        ? 'Dibaca'
-                                        : 'Terkirim'
-                                }
-                              >
-                                {messageDeliveryStatus === 'sending' ? (
-                                  <TbClock className="h-3.5 w-3.5" />
-                                ) : messageDeliveryStatus === 'delivered' ? (
-                                  <TbChecks className="h-3.5 w-3.5" />
-                                ) : messageDeliveryStatus === 'read' ? (
-                                  <TbChecks className="h-3.5 w-3.5" />
-                                ) : (
-                                  <TbCheck className="h-3.5 w-3.5" />
-                                )}
-                              </span>
+                            {messageDeliveryStatus || isEdited ? (
+                              <div className="inline-flex items-center gap-1 whitespace-nowrap">
+                                {isEdited ? (
+                                  <span className="text-slate-500">Diedit</span>
+                                ) : null}
+                                {messageDeliveryStatus ? (
+                                  <span
+                                    className={`inline-flex items-center ${
+                                      messageDeliveryStatus === 'read'
+                                        ? 'text-primary'
+                                        : 'text-slate-400'
+                                    }`}
+                                    aria-label={
+                                      messageDeliveryStatus === 'sending'
+                                        ? 'Status pesan: mengirim'
+                                        : messageDeliveryStatus === 'delivered'
+                                          ? 'Status pesan: diterima'
+                                          : messageDeliveryStatus === 'read'
+                                            ? 'Status pesan: dibaca'
+                                            : 'Status pesan: terkirim'
+                                    }
+                                    title={
+                                      messageDeliveryStatus === 'sending'
+                                        ? 'Mengirim'
+                                        : messageDeliveryStatus === 'delivered'
+                                          ? 'Diterima'
+                                          : messageDeliveryStatus === 'read'
+                                            ? 'Dibaca'
+                                            : 'Terkirim'
+                                    }
+                                  >
+                                    {messageDeliveryStatus === 'sending' ? (
+                                      <TbClock className="h-3.5 w-3.5" />
+                                    ) : messageDeliveryStatus ===
+                                      'delivered' ? (
+                                      <TbChecks className="h-3.5 w-3.5" />
+                                    ) : messageDeliveryStatus === 'read' ? (
+                                      <TbChecks className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <TbCheck className="h-3.5 w-3.5" />
+                                    )}
+                                  </span>
+                                ) : null}
+                              </div>
                             ) : null}
                           </div>
                         ) : (
-                          <div className="absolute left-full bottom-0 ml-2 flex items-center gap-1 whitespace-nowrap text-xs text-slate-500">
-                            {displayTime}
+                          <div className="absolute left-full bottom-0 ml-2 flex flex-col items-start text-xs text-slate-500">
+                            <div className="whitespace-nowrap">
+                              {displayTime}
+                            </div>
                             {isEdited ? (
-                              <>
-                                <span className="text-slate-500">•</span>
-                                <span className="text-slate-400">Diedit</span>
-                              </>
+                              <div className="whitespace-nowrap text-slate-500">
+                                Diedit
+                              </div>
                             ) : null}
                           </div>
                         )}
@@ -1533,38 +1536,19 @@ const MessagesPane = ({
         <div ref={messagesEndRef} />
       </div>
 
-      <AnimatePresence>
-        {showScrollToBottom && messages.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: [0, -8, 0],
-              transition: {
-                opacity: { duration: 0.2 },
-                scale: { duration: 0.2 },
-                y: {
-                  repeat: Infinity,
-                  duration: 1.2,
-                  ease: 'easeInOut',
-                },
-              },
-            }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={onScrollToBottom}
-            className="absolute left-2 z-20 cursor-pointer text-primary hover:text-primary/80 transition-[color,bottom] duration-[110ms] ease-out"
-            style={{
-              bottom: messageInputHeight + 78 + composerContextualOffset,
-              filter: 'drop-shadow(0 0 0 white)',
-              background:
-                'radial-gradient(circle at center, white 30%, transparent 30%)',
-            }}
-          >
-            <TbCircleArrowDownFilled size={32} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showScrollToBottom && messages.length > 0 && (
+        <button
+          type="button"
+          onClick={onScrollToBottom}
+          aria-label="Scroll ke pesan terbaru"
+          className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl bg-white text-black shadow-sm transition-colors hover:text-black/80"
+          style={{
+            bottom: messageInputHeight + 78 + composerContextualOffset,
+          }}
+        >
+          <TbArrowDown size={18} />
+        </button>
+      )}
 
       <ImageExpandPreview
         isOpen={Boolean(imagePreviewUrl)}

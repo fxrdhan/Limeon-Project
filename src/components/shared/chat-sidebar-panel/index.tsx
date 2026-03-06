@@ -209,6 +209,7 @@ const ChatSidebarPanel = memo(
     );
     const pendingDeliveredReceiptMessageIdsRef = useRef<Set<string>>(new Set());
     const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
+    const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
     const inlineOverflowThresholdRef = useRef<number | null>(null);
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
@@ -464,6 +465,76 @@ const ChatSidebarPanel = memo(
         scrollMessagesToBottom('auto');
       });
     }, [scrollMessagesToBottom]);
+
+    const cancelScrollToBottomAnimation = useCallback(() => {
+      if (scrollToBottomAnimationFrameRef.current === null) return;
+      cancelAnimationFrame(scrollToBottomAnimationFrameRef.current);
+      scrollToBottomAnimationFrameRef.current = null;
+    }, []);
+
+    const animateScrollToBottom = useCallback(() => {
+      const container = messagesContainerRef.current;
+      const endMarker = messagesEndRef.current;
+      const bounds = getVisibleMessagesBounds();
+      if (!container || !endMarker || !bounds) return;
+
+      const hiddenBottom = Math.max(
+        0,
+        bounds.containerRect.bottom - bounds.visibleBottom
+      );
+      const visibleHeight = container.clientHeight - hiddenBottom;
+      if (visibleHeight <= 0) return;
+
+      const endTopInContent =
+        endMarker.getBoundingClientRect().top -
+        bounds.containerRect.top +
+        container.scrollTop;
+      const rawTargetScrollTop =
+        endTopInContent - Math.max(visibleHeight - MESSAGE_BOTTOM_GAP, 0);
+      const maxScrollTop = Math.max(
+        0,
+        container.scrollHeight - container.clientHeight
+      );
+      const targetScrollTop = Math.min(
+        Math.max(rawTargetScrollTop, 0),
+        maxScrollTop
+      );
+      const startScrollTop = container.scrollTop;
+      const distance = targetScrollTop - startScrollTop;
+
+      if (Math.abs(distance) < 2) {
+        container.scrollTop = targetScrollTop;
+        return;
+      }
+
+      cancelScrollToBottomAnimation();
+
+      const duration = Math.min(700, Math.max(260, Math.abs(distance) * 0.22));
+      const startTime = performance.now();
+
+      const step = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const linearProgress = Math.min(elapsed / duration, 1);
+        const easedProgress = 1 - (1 - linearProgress) ** 4;
+
+        container.scrollTop = startScrollTop + distance * easedProgress;
+
+        if (linearProgress < 1) {
+          scrollToBottomAnimationFrameRef.current = requestAnimationFrame(step);
+          return;
+        }
+
+        container.scrollTop = targetScrollTop;
+        scrollToBottomAnimationFrameRef.current = null;
+      };
+
+      scrollToBottomAnimationFrameRef.current = requestAnimationFrame(step);
+    }, [
+      cancelScrollToBottomAnimation,
+      getVisibleMessagesBounds,
+      messagesContainerRef,
+      messagesEndRef,
+    ]);
 
     const getMenuLayout = useCallback(
       (
@@ -3126,10 +3197,17 @@ const ChatSidebarPanel = memo(
       };
     }, [isOpen, focusMessageComposer]);
 
+    useEffect(
+      () => () => {
+        cancelScrollToBottomAnimation();
+      },
+      [cancelScrollToBottomAnimation]
+    );
+
     // Scroll to bottom function
     /* c8 ignore next 5 */
     const scrollToBottom = () => {
-      scrollMessagesToBottom('smooth');
+      animateScrollToBottom();
       setHasNewMessages(false);
       setIsAtBottom(true);
     };
