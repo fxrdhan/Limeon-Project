@@ -1,6 +1,6 @@
 import {
   useCallback,
-  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -32,6 +32,37 @@ interface PopupMenuContentProps {
   onPreselectedIndexChange?: (index: number) => void;
 }
 
+const resolveInitialActionIndex = ({
+  actions,
+  enableArrowNavigation,
+  autoFocusFirstItem,
+  initialPreselectedIndex,
+}: Pick<
+  PopupMenuContentProps,
+  | 'actions'
+  | 'enableArrowNavigation'
+  | 'autoFocusFirstItem'
+  | 'initialPreselectedIndex'
+>) => {
+  if (!enableArrowNavigation) return null;
+
+  const hasValidInitialPreselectedIndex =
+    Number.isInteger(initialPreselectedIndex) &&
+    initialPreselectedIndex !== undefined &&
+    initialPreselectedIndex >= 0 &&
+    initialPreselectedIndex < actions.length &&
+    !actions[initialPreselectedIndex]?.disabled;
+
+  if (hasValidInitialPreselectedIndex) {
+    return initialPreselectedIndex;
+  }
+
+  if (!autoFocusFirstItem) return null;
+
+  const firstEnabledIndex = actions.findIndex(action => !action.disabled);
+  return firstEnabledIndex === -1 ? null : firstEnabledIndex;
+};
+
 const PopupMenuContent = ({
   actions,
   minWidthClassName = 'min-w-[90px]',
@@ -43,7 +74,13 @@ const PopupMenuContent = ({
 }: PopupMenuContentProps) => {
   const actionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [focusedActionIndex, setFocusedActionIndex] = useState<number | null>(
-    null
+    () =>
+      resolveInitialActionIndex({
+        actions,
+        enableArrowNavigation,
+        autoFocusFirstItem,
+        initialPreselectedIndex,
+      })
   );
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(
     null
@@ -88,23 +125,18 @@ const PopupMenuContent = ({
     focusNextEnabledAction(actionIndex, event.key === 'ArrowDown' ? 1 : -1);
   };
 
-  useEffect(() => {
-    if (!enableArrowNavigation) return;
-
-    const hasValidInitialPreselectedIndex =
-      Number.isInteger(initialPreselectedIndex) &&
-      initialPreselectedIndex !== undefined &&
-      initialPreselectedIndex >= 0 &&
-      initialPreselectedIndex < actions.length &&
-      !actions[initialPreselectedIndex]?.disabled;
-
-    const firstEnabledIndex = actions.findIndex(action => !action.disabled);
-    const nextFocusedIndex = hasValidInitialPreselectedIndex
-      ? initialPreselectedIndex
-      : autoFocusFirstItem && firstEnabledIndex !== -1
-        ? firstEnabledIndex
-        : null;
+  useLayoutEffect(() => {
+    const nextFocusedIndex = resolveInitialActionIndex({
+      actions,
+      enableArrowNavigation,
+      autoFocusFirstItem,
+      initialPreselectedIndex,
+    });
     if (nextFocusedIndex === null) return;
+
+    setFocusedActionIndex(currentIndex =>
+      currentIndex === nextFocusedIndex ? currentIndex : nextFocusedIndex
+    );
 
     const rafId = window.requestAnimationFrame(() => {
       setFocusedActionIndexWithSync(nextFocusedIndex);
