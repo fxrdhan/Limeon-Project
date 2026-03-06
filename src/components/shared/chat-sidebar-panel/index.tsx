@@ -1,35 +1,19 @@
 import { useAuthStore } from '@/store/authStore';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import { motion } from 'motion/react';
 import {
   memo,
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import {
-  SEARCH_STATES,
-  type SearchState,
-} from '@/components/search-bar/constants';
 import ChatHeader from './components/ChatHeader';
 import ComposerPanel from './components/ComposerPanel';
 import MessagesPane from './components/MessagesPane';
 import { StorageService } from '@/services/api/storage.service';
-import {
-  cacheImageBlob,
-  getCachedImageBlobUrl,
-  setCachedImage,
-} from '@/utils/imageCache';
-import {
-  chatService,
-  type ChatMessage,
-  type UserPresence,
-} from '@/services/api/chat.service';
-import { realtimeService } from '@/services/realtime/realtime.service';
+import { chatService, type ChatMessage } from '@/services/api/chat.service';
 import {
   CHAT_SIDEBAR_TOASTER_ID,
   COMPOSER_BASE_BORDER_COLOR,
@@ -74,11 +58,9 @@ import {
 import { getInitials, getInitialsColor } from './utils/avatar';
 import { getClipboardImagePayload } from './utils/clipboard';
 import { generateChannelId } from './utils/channel';
-
-type ConversationCacheEntry = {
-  messages: ChatMessage[];
-  cachedAt: number;
-};
+import { useChatInteractionModes } from './hooks/useChatInteractionModes';
+import { useChatSession } from './hooks/useChatSession';
+import { useTargetProfilePhoto } from './hooks/useTargetProfilePhoto';
 
 type GeneratedPdfPreview = {
   coverBlob: Blob;
@@ -101,11 +83,9 @@ const buildPdfPreviewStoragePath = (filePath: string) => {
 const ChatSidebarPanel = memo(
   ({ isOpen, onClose, targetUser }: ChatSidebarPanelProps) => {
     const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isAtBottom, setIsAtBottom] = useState(true);
     const [isAtTop, setIsAtTop] = useState(true);
     const [hasNewMessages, setHasNewMessages] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
       null
     );
@@ -123,28 +103,14 @@ const ChatSidebarPanel = memo(
     const [editingMessageId, setEditingMessageId] = useState<string | null>(
       null
     );
-    const [targetUserPresence, setTargetUserPresence] =
-      useState<UserPresence | null>(null);
     const { user } = useAuthStore();
     const messageInputRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const composerContainerRef = useRef<HTMLDivElement>(null);
-    const channelRef = useRef<RealtimeChannel | null>(null);
-    const presenceChannelRef = useRef<RealtimeChannel | null>(null);
-    const globalPresenceChannelRef = useRef<RealtimeChannel | null>(null);
-    const incomingMessagesChannelRef = useRef<RealtimeChannel | null>(null);
-    const presenceRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const hasClosedRef = useRef(false);
-    const previousIsOpenRef = useRef(isOpen);
     /* c8 ignore next */
     const currentChannelId =
       user && targetUser ? generateChannelId(user.id, targetUser.id) : null;
-    const targetProfilePhotoUrl = targetUser?.profilephoto ?? null;
-    const targetCacheKey = targetUser?.id ? `profile:${targetUser.id}` : null;
-    const [displayTargetPhotoUrl, setDisplayTargetPhotoUrl] = useState<
-      string | null
-    >(null);
     const [messageInputHeight, setMessageInputHeight] = useState(
       MESSAGE_INPUT_MIN_HEIGHT
     );
@@ -170,16 +136,6 @@ const ChatSidebarPanel = memo(
     );
     const [isFlashHighlightVisible, setIsFlashHighlightVisible] =
       useState(false);
-    const [isMessageSearchMode, setIsMessageSearchMode] = useState(false);
-    const [messageSearchQuery, setMessageSearchQuery] = useState('');
-    const [activeSearchMessageId, setActiveSearchMessageId] = useState<
-      string | null
-    >(null);
-    const [isSelectionMode, setIsSelectionMode] = useState(false);
-    const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
-      () => new Set()
-    );
-    const [searchNavigationTick, setSearchNavigationTick] = useState(0);
     const messageInputHeightRafRef = useRef<number | null>(null);
     const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const flashMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -192,7 +148,6 @@ const ChatSidebarPanel = memo(
     const imageInputRef = useRef<HTMLInputElement>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
     const audioInputRef = useRef<HTMLInputElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
     const replaceComposerImageAttachmentIdRef = useRef<string | null>(null);
     const replaceComposerDocumentAttachmentIdRef = useRef<string | null>(null);
     const pendingComposerAttachmentsRef = useRef<PendingComposerAttachment[]>(
@@ -203,15 +158,52 @@ const ChatSidebarPanel = memo(
     const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
     const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
     const shouldPinToBottomOnOpenRef = useRef(false);
-    const hasCompletedInitialOpenLoadRef = useRef(false);
     const atTopVisibilityRef = useRef(true);
-    const conversationCacheRef = useRef<Map<string, ConversationCacheEntry>>(
-      new Map()
-    );
-    const pendingDeliveredReceiptMessageIdsRef = useRef<Set<string>>(new Set());
-    const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
     const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
     const inlineOverflowThresholdRef = useRef<number | null>(null);
+    const { displayTargetPhotoUrl } = useTargetProfilePhoto(targetUser);
+    const getVisibleMessagesBounds = useCallback(() => {
+      const containerRect =
+        messagesContainerRef.current?.getBoundingClientRect() ?? null;
+      if (!containerRect) return null;
+
+      const composerTop =
+        composerContainerRef.current?.getBoundingClientRect().top;
+      const hasValidComposerTop =
+        typeof composerTop === 'number' &&
+        Number.isFinite(composerTop) &&
+        composerTop > containerRect.top &&
+        composerTop < containerRect.bottom;
+      const visibleBottom = hasValidComposerTop
+        ? composerTop
+        : containerRect.bottom;
+
+      return {
+        containerRect,
+        visibleBottom,
+      };
+    }, []);
+    const {
+      messages,
+      setMessages,
+      loading,
+      targetUserPresence,
+      performClose,
+      broadcastNewMessage,
+      broadcastUpdatedMessage,
+      broadcastDeletedMessage,
+      markVisibleIncomingMessagesAsRead,
+      hasCompletedInitialOpenLoadRef,
+    } = useChatSession({
+      isOpen,
+      user,
+      targetUser,
+      currentChannelId,
+      getVisibleMessagesBounds,
+      messageBubbleRefs,
+      initialMessageAnimationKeysRef,
+      initialOpenJumpAnimationKeysRef,
+    });
     const isHoldingMultilineByInlineOverflow =
       inlineOverflowThresholdRef.current !== null &&
       message.length >= inlineOverflowThresholdRef.current;
@@ -234,199 +226,10 @@ const ChatSidebarPanel = memo(
       (pendingComposerAttachments.length > 0
         ? COMPOSER_IMAGE_PREVIEW_OFFSET
         : 0);
-    const normalizedMessageSearchQuery = messageSearchQuery
-      .trim()
-      .toLowerCase();
-    const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(() => {
-      const attachmentMessagesById = new Map<string, ChatMessage>();
-      const captionMap = new Map<string, ChatMessage>();
-      const captionIds = new Set<string>();
-
-      for (const messageItem of messages) {
-        if (
-          messageItem.message_type === 'image' ||
-          messageItem.message_type === 'file'
-        ) {
-          attachmentMessagesById.set(messageItem.id, messageItem);
-        }
-      }
-
-      for (const messageItem of messages) {
-        if (messageItem.message_type !== 'text' || !messageItem.reply_to_id) {
-          continue;
-        }
-
-        const parentMessage = attachmentMessagesById.get(
-          messageItem.reply_to_id
-        );
-        if (!parentMessage) continue;
-        if (parentMessage.sender_id !== messageItem.sender_id) continue;
-        if (parentMessage.receiver_id !== messageItem.receiver_id) continue;
-        if (parentMessage.channel_id !== messageItem.channel_id) continue;
-        if (captionMap.has(parentMessage.id)) continue;
-
-        captionMap.set(parentMessage.id, messageItem);
-        captionIds.add(messageItem.id);
-      }
-
-      return {
-        captionMessagesByAttachmentId: captionMap,
-        captionMessageIds: captionIds,
-      };
-    }, [messages]);
-    const searchMatchedMessageIds = useMemo(() => {
-      if (!normalizedMessageSearchQuery) return [];
-
-      const matchedIds: string[] = [];
-
-      for (const messageItem of messages) {
-        if (captionMessageIds.has(messageItem.id)) continue;
-
-        const messageFragments: string[] = [];
-        if (messageItem.message_type === 'text') {
-          messageFragments.push(messageItem.message);
-        }
-
-        const attachmentCaption = captionMessagesByAttachmentId.get(
-          messageItem.id
-        );
-        if (attachmentCaption?.message) {
-          messageFragments.push(attachmentCaption.message);
-        }
-
-        if (messageFragments.length === 0) continue;
-
-        const searchBase = messageFragments.join('\n').toLowerCase();
-        if (searchBase.includes(normalizedMessageSearchQuery)) {
-          matchedIds.push(messageItem.id);
-        }
-      }
-
-      return matchedIds;
-    }, [
-      captionMessageIds,
-      captionMessagesByAttachmentId,
-      messages,
-      normalizedMessageSearchQuery,
-    ]);
-    const searchMatchedMessageIdSet = useMemo(
-      () => new Set(searchMatchedMessageIds),
-      [searchMatchedMessageIds]
-    );
-    const activeSearchResultIndex = searchMatchedMessageIds.findIndex(
-      messageId => messageId === activeSearchMessageId
-    );
-    const canNavigateSearchUp = activeSearchResultIndex > 0;
-    const canNavigateSearchDown =
-      activeSearchResultIndex >= 0 &&
-      activeSearchResultIndex < searchMatchedMessageIds.length - 1;
-    const messageSearchState: SearchState = !normalizedMessageSearchQuery
-      ? SEARCH_STATES.IDLE
-      : searchMatchedMessageIds.length > 0
-        ? SEARCH_STATES.FOUND
-        : SEARCH_STATES.NOT_FOUND;
-    const selectableMessageIdSet = useMemo(() => {
-      const selectableIds = new Set<string>();
-      for (const messageItem of messages) {
-        if (captionMessageIds.has(messageItem.id)) continue;
-        selectableIds.add(messageItem.id);
-      }
-
-      return selectableIds;
-    }, [captionMessageIds, messages]);
-    const selectedVisibleMessages = useMemo(() => {
-      const selectedMessages: ChatMessage[] = [];
-      for (const messageItem of messages) {
-        if (captionMessageIds.has(messageItem.id)) continue;
-        if (!selectedMessageIds.has(messageItem.id)) continue;
-        selectedMessages.push(messageItem);
-      }
-
-      return selectedMessages;
-    }, [captionMessageIds, messages, selectedMessageIds]);
-    const canDeleteSelectedMessages = useMemo(() => {
-      if (!user) return false;
-      return selectedVisibleMessages.some(
-        messageItem => messageItem.sender_id === user.id
-      );
-    }, [selectedVisibleMessages, user]);
 
     useEffect(() => {
       pendingComposerAttachmentsRef.current = pendingComposerAttachments;
     }, [pendingComposerAttachments]);
-
-    useEffect(() => {
-      if (isOpen) return;
-      setIsMessageSearchMode(false);
-      setMessageSearchQuery('');
-      setActiveSearchMessageId(null);
-      setIsSelectionMode(false);
-      setSelectedMessageIds(new Set());
-    }, [isOpen]);
-
-    useEffect(() => {
-      setIsMessageSearchMode(false);
-      setMessageSearchQuery('');
-      setActiveSearchMessageId(null);
-      setIsSelectionMode(false);
-      setSelectedMessageIds(new Set());
-    }, [currentChannelId]);
-
-    useEffect(() => {
-      setSelectedMessageIds(previousSelectedIds => {
-        let changed = false;
-        const nextSelectedIds = new Set<string>();
-        previousSelectedIds.forEach(messageId => {
-          if (selectableMessageIdSet.has(messageId)) {
-            nextSelectedIds.add(messageId);
-            return;
-          }
-          changed = true;
-        });
-
-        return changed ? nextSelectedIds : previousSelectedIds;
-      });
-    }, [selectableMessageIdSet]);
-
-    useEffect(() => {
-      if (
-        !isOpen ||
-        !currentChannelId ||
-        !hasCompletedInitialOpenLoadRef.current
-      )
-        return;
-
-      const persistedMessages = messages
-        .filter(messageItem => !messageItem.id.startsWith('temp_'))
-        .map(messageItem => ({ ...messageItem }));
-
-      conversationCacheRef.current.set(currentChannelId, {
-        messages: persistedMessages,
-        cachedAt: Date.now(),
-      });
-    }, [isOpen, currentChannelId, messages]);
-
-    const getVisibleMessagesBounds = useCallback(() => {
-      const containerRect =
-        messagesContainerRef.current?.getBoundingClientRect() ?? null;
-      if (!containerRect) return null;
-
-      const composerTop =
-        composerContainerRef.current?.getBoundingClientRect().top;
-      const hasValidComposerTop =
-        typeof composerTop === 'number' &&
-        Number.isFinite(composerTop) &&
-        composerTop > containerRect.top &&
-        composerTop < containerRect.bottom;
-      const visibleBottom = hasValidComposerTop
-        ? composerTop
-        : containerRect.bottom;
-
-      return {
-        containerRect,
-        visibleBottom,
-      };
-    }, []);
 
     const scrollMessagesToBottom = useCallback(
       (behavior: ScrollBehavior) => {
@@ -671,137 +474,43 @@ const ChatSidebarPanel = memo(
         return next;
       });
     }, []);
-
-    const handleEnterMessageSearchMode = useCallback(() => {
-      setIsSelectionMode(false);
-      setSelectedMessageIds(new Set());
-      setIsMessageSearchMode(true);
-    }, []);
-
-    const handleExitMessageSearchMode = useCallback(() => {
-      setIsMessageSearchMode(false);
-      setMessageSearchQuery('');
-      setActiveSearchMessageId(null);
-      setSearchNavigationTick(0);
-    }, []);
-
-    const handleEnterMessageSelectionMode = useCallback(() => {
-      closeMessageMenu();
-      setIsMessageSearchMode(false);
-      setMessageSearchQuery('');
-      setActiveSearchMessageId(null);
-      setSearchNavigationTick(0);
-      setSelectedMessageIds(new Set());
-      setIsSelectionMode(true);
-    }, [closeMessageMenu]);
-
-    const handleExitMessageSelectionMode = useCallback(() => {
-      setIsSelectionMode(false);
-      setSelectedMessageIds(new Set());
-    }, []);
-
-    const handleToggleMessageSelection = useCallback(
-      (messageId: string) => {
-        if (!isSelectionMode || !selectableMessageIdSet.has(messageId)) return;
-        setSelectedMessageIds(previousSelectedIds => {
-          const nextSelectedIds = new Set(previousSelectedIds);
-          if (nextSelectedIds.has(messageId)) {
-            nextSelectedIds.delete(messageId);
-          } else {
-            nextSelectedIds.add(messageId);
-          }
-          return nextSelectedIds;
-        });
-      },
-      [isSelectionMode, selectableMessageIdSet]
-    );
-
-    useEffect(() => {
-      if (!isMessageSearchMode) return;
-      const rafId = requestAnimationFrame(() => {
-        searchInputRef.current?.focus();
-      });
-      return () => {
-        cancelAnimationFrame(rafId);
-      };
-    }, [isMessageSearchMode]);
-
-    const handleFocusSearchInput = useCallback(() => {
-      if (!isMessageSearchMode) return;
-      requestAnimationFrame(() => {
-        searchInputRef.current?.focus();
-      });
-    }, [isMessageSearchMode]);
-
-    const handleMessageSearchQueryChange = useCallback((nextQuery: string) => {
-      setMessageSearchQuery(nextQuery);
-    }, []);
-
-    const navigateToSearchResult = useCallback(
-      (direction: 'up' | 'down') => {
-        if (searchMatchedMessageIds.length === 0) return;
-
-        setActiveSearchMessageId(currentMessageId => {
-          const currentIndex =
-            currentMessageId === null
-              ? -1
-              : searchMatchedMessageIds.findIndex(
-                  messageId => messageId === currentMessageId
-                );
-          const fallbackIndex =
-            direction === 'up' ? searchMatchedMessageIds.length - 1 : 0;
-          const safeCurrentIndex =
-            currentIndex >= 0 ? currentIndex : fallbackIndex;
-          const nextIndex =
-            direction === 'up'
-              ? Math.max(0, safeCurrentIndex - 1)
-              : Math.min(
-                  searchMatchedMessageIds.length - 1,
-                  safeCurrentIndex + 1
-                );
-
-          return searchMatchedMessageIds[nextIndex] ?? currentMessageId;
-        });
-        setSearchNavigationTick(currentTick => currentTick + 1);
-      },
-      [searchMatchedMessageIds]
-    );
-
-    const handleNavigateSearchUp = useCallback(() => {
-      navigateToSearchResult('up');
-    }, [navigateToSearchResult]);
-
-    const handleNavigateSearchDown = useCallback(() => {
-      navigateToSearchResult('down');
-    }, [navigateToSearchResult]);
-
-    useEffect(() => {
-      if (
-        !isMessageSearchMode ||
-        !normalizedMessageSearchQuery ||
-        searchMatchedMessageIds.length === 0
-      ) {
-        setActiveSearchMessageId(null);
-        return;
-      }
-
-      setActiveSearchMessageId(currentMessageId => {
-        if (
-          currentMessageId &&
-          searchMatchedMessageIds.includes(currentMessageId)
-        ) {
-          return currentMessageId;
-        }
-
-        return (
-          searchMatchedMessageIds[searchMatchedMessageIds.length - 1] ?? null
-        );
-      });
-    }, [
+    const {
+      searchInputRef,
       isMessageSearchMode,
+      messageSearchQuery,
+      activeSearchMessageId,
+      isSelectionMode,
+      selectedMessageIds,
+      searchNavigationTick,
       normalizedMessageSearchQuery,
       searchMatchedMessageIds,
-    ]);
+      searchMatchedMessageIdSet,
+      activeSearchResultIndex,
+      canNavigateSearchUp,
+      canNavigateSearchDown,
+      messageSearchState,
+      selectedVisibleMessages,
+      canDeleteSelectedMessages,
+      setSelectedMessageIds,
+      handleEnterMessageSearchMode,
+      handleExitMessageSearchMode,
+      handleEnterMessageSelectionMode,
+      handleExitMessageSelectionMode,
+      handleToggleMessageSelection,
+      handleFocusSearchInput,
+      handleMessageSearchQueryChange,
+      handleNavigateSearchUp,
+      handleNavigateSearchDown,
+      handleCopySelectedMessages,
+    } = useChatInteractionModes({
+      isOpen,
+      currentChannelId,
+      messages,
+      user,
+      targetUser,
+      closeMessageMenu,
+      getAttachmentFileName,
+    });
 
     const ensureMenuFullyVisible = useCallback(
       (messageId: string) => {
@@ -862,68 +571,6 @@ const ChatSidebarPanel = memo(
       ensureMenuFullyVisible,
     ]);
 
-    // Update user last seen when chat closes
-    const updateUserChatClose = useCallback(async () => {
-      if (!user) return;
-
-      try {
-        const { error } = await chatService.updateUserPresence(user.id, {
-          is_online: false,
-          current_chat_channel: null,
-          last_seen: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-        if (error) {
-          console.error('❌ Error updating user chat close:', error);
-        }
-      } catch (error) {
-        console.error('❌ Caught error updating user chat close:', error);
-      }
-    }, [user]);
-
-    useEffect(() => {
-      if (!targetCacheKey || !targetProfilePhotoUrl) return;
-      if (targetProfilePhotoUrl.startsWith('http')) {
-        setCachedImage(targetCacheKey, targetProfilePhotoUrl);
-      }
-    }, [targetCacheKey, targetProfilePhotoUrl]);
-
-    useEffect(() => {
-      let isActive = true;
-
-      const resolveImage = async () => {
-        if (!targetProfilePhotoUrl) {
-          if (isActive) setDisplayTargetPhotoUrl(null);
-          return;
-        }
-
-        if (!targetProfilePhotoUrl.startsWith('http')) {
-          if (isActive) setDisplayTargetPhotoUrl(targetProfilePhotoUrl);
-          return;
-        }
-
-        const cachedBlobUrl = await getCachedImageBlobUrl(
-          targetProfilePhotoUrl
-        );
-        if (cachedBlobUrl) {
-          if (isActive) setDisplayTargetPhotoUrl(cachedBlobUrl);
-          return;
-        }
-
-        const blobUrl = await cacheImageBlob(targetProfilePhotoUrl);
-        if (isActive) {
-          setDisplayTargetPhotoUrl(blobUrl || targetProfilePhotoUrl);
-        }
-      };
-
-      void resolveImage();
-
-      return () => {
-        isActive = false;
-      };
-    }, [targetProfilePhotoUrl]);
-
     const triggerSendSuccessGlow = useCallback(() => {
       if (sendSuccessGlowTimeoutRef.current) {
         clearTimeout(sendSuccessGlowTimeoutRef.current);
@@ -938,710 +585,8 @@ const ChatSidebarPanel = memo(
       }, SEND_SUCCESS_GLOW_DURATION + SEND_SUCCESS_GLOW_RESET_BUFFER);
     }, []);
 
-    // Centralized close logic (used by close button AND external triggers)
-    const performClose = useCallback(async () => {
-      if (hasClosedRef.current || !user) {
-        return;
-      }
-
-      // Step 1: Broadcast close presence
-      if (globalPresenceChannelRef.current) {
-        const broadcastPayload = {
-          user_id: user.id,
-          is_online: false,
-          current_chat_channel: null,
-          last_seen: new Date().toISOString(),
-        };
-
-        hasClosedRef.current = true; // Mark as closed
-
-        void globalPresenceChannelRef.current.send({
-          type: 'broadcast',
-          event: 'presence_changed',
-          payload: broadcastPayload,
-        });
-      }
-
-      // Step 2: Update database
-      try {
-        await updateUserChatClose();
-      } catch (error) {
-        /* c8 ignore next */
-        console.error('❌ Database update failed:', error);
-      }
-
-      // Step 3: Small delay for broadcast delivery
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }, [user, updateUserChatClose]);
-
-    // Update user presence when chat opens
-    const updateUserChatOpen = useCallback(async () => {
-      /* c8 ignore next 3 */
-      if (!user || !currentChannelId) {
-        return;
-      }
-
-      try {
-        // First try to update existing record
-        const { data: updateData, error: updateError } =
-          await chatService.updateUserPresence(user.id, {
-            is_online: true,
-            current_chat_channel: currentChannelId,
-            last_seen: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (updateError || !updateData || updateData.length === 0) {
-          // If update failed or no rows affected, try insert
-
-          const { error: insertError } = await chatService.insertUserPresence({
-            user_id: user.id,
-            is_online: true,
-            current_chat_channel: currentChannelId,
-            last_seen: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-          if (insertError) {
-            console.error('❌ Error inserting user presence:', insertError);
-          }
-        } else {
-          // Broadcast presence change to GLOBAL presence channel
-          if (
-            globalPresenceChannelRef.current &&
-            updateData &&
-            updateData.length > 0
-          ) {
-            const updatedPresence = updateData[0];
-            const broadcastPayload = {
-              user_id: user.id,
-              is_online: true,
-              current_chat_channel: currentChannelId,
-              last_seen: updatedPresence.last_seen,
-            };
-
-            void globalPresenceChannelRef.current.send({
-              type: 'broadcast',
-              event: 'presence_changed',
-              payload: broadcastPayload,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('❌ Caught error updating user chat open:', error);
-      }
-    }, [user, currentChannelId]);
-
-    // Load target user presence
-    const loadTargetUserPresence = useCallback(async () => {
-      if (!targetUser) return;
-
-      try {
-        const { data: presence, error } = await chatService.getUserPresence(
-          targetUser.id
-        );
-
-        if (error && error.code !== 'PGRST116') {
-          // PGRST116 = no rows returned
-          console.error('❌ Error loading target user presence:', error);
-          return;
-        }
-
-        if (presence) {
-          setTargetUserPresence(presence);
-        }
-      } catch (error) {
-        console.error('❌ Caught error loading target user presence:', error);
-      }
-    }, [targetUser]);
-
-    const mergeAndBroadcastMessageUpdates = useCallback(
-      (updatedMessages: ChatMessage[]) => {
-        if (updatedMessages.length === 0) return;
-
-        const updatedMessagesById = new Map(
-          updatedMessages.map(updatedMessage => [
-            updatedMessage.id,
-            updatedMessage,
-          ])
-        );
-
-        setMessages(previousMessages =>
-          previousMessages.map(previousMessage => {
-            const nextUpdatedMessage = updatedMessagesById.get(
-              previousMessage.id
-            );
-            if (!nextUpdatedMessage) return previousMessage;
-            return {
-              ...previousMessage,
-              ...nextUpdatedMessage,
-              stableKey: previousMessage.stableKey,
-            };
-          })
-        );
-
-        if (channelRef.current) {
-          updatedMessages.forEach(updatedMessage => {
-            void channelRef.current?.send({
-              type: 'broadcast',
-              event: 'update_message',
-              payload: updatedMessage,
-            });
-          });
-        }
-
-        if (globalPresenceChannelRef.current) {
-          updatedMessages.forEach(updatedMessage => {
-            void globalPresenceChannelRef.current?.send({
-              type: 'broadcast',
-              event: 'message_receipt_updated',
-              payload: updatedMessage,
-            });
-          });
-        }
-      },
-      []
-    );
-
-    const markMessageIdsAsDelivered = useCallback(
-      async (messageIds: string[]) => {
-        if (messageIds.length === 0) return;
-
-        const targetIds = messageIds.filter(messageId => {
-          if (!messageId) return false;
-          if (pendingDeliveredReceiptMessageIdsRef.current.has(messageId)) {
-            return false;
-          }
-          pendingDeliveredReceiptMessageIdsRef.current.add(messageId);
-          return true;
-        });
-        if (targetIds.length === 0) return;
-
-        try {
-          const { data: deliveredMessages, error } =
-            await chatService.markMessageIdsAsDelivered(targetIds);
-          if (error || !deliveredMessages || deliveredMessages.length === 0) {
-            return;
-          }
-
-          mergeAndBroadcastMessageUpdates(deliveredMessages);
-        } catch (error) {
-          console.error('Error marking messages as delivered:', error);
-        } finally {
-          targetIds.forEach(messageId => {
-            pendingDeliveredReceiptMessageIdsRef.current.delete(messageId);
-          });
-        }
-      },
-      [mergeAndBroadcastMessageUpdates]
-    );
-
-    const markMessageIdsAsRead = useCallback(
-      async (messageIds: string[]) => {
-        if (messageIds.length === 0) return;
-
-        const targetIds = messageIds.filter(messageId => {
-          if (!messageId) return false;
-          if (pendingReadReceiptMessageIdsRef.current.has(messageId)) {
-            return false;
-          }
-          pendingReadReceiptMessageIdsRef.current.add(messageId);
-          return true;
-        });
-        if (targetIds.length === 0) return;
-
-        try {
-          const { data: readMessages, error } =
-            await chatService.markMessageIdsAsRead(targetIds);
-          if (error || !readMessages || readMessages.length === 0) return;
-          mergeAndBroadcastMessageUpdates(readMessages);
-        } catch (error) {
-          console.error('Error marking messages as read:', error);
-        } finally {
-          targetIds.forEach(messageId => {
-            pendingReadReceiptMessageIdsRef.current.delete(messageId);
-          });
-        }
-      },
-      [mergeAndBroadcastMessageUpdates]
-    );
-
-    const markVisibleIncomingMessagesAsRead = useCallback(async () => {
-      if (!user || !targetUser) return;
-
-      const bounds = getVisibleMessagesBounds();
-      if (!bounds) return;
-
-      const visibleUnreadIncomingMessageIds = messages
-        .filter(
-          messageItem =>
-            messageItem.sender_id === targetUser.id &&
-            messageItem.receiver_id === user.id &&
-            !messageItem.is_read
-        )
-        .map(messageItem => {
-          const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
-          if (!bubbleElement) return null;
-
-          const bubbleRect = bubbleElement.getBoundingClientRect();
-          const isVisible =
-            bubbleRect.bottom > bounds.containerRect.top &&
-            bubbleRect.top < bounds.visibleBottom;
-          return isVisible ? messageItem.id : null;
-        })
-        .filter((messageId): messageId is string => Boolean(messageId));
-
-      if (visibleUnreadIncomingMessageIds.length === 0) return;
-      await markMessageIdsAsRead(visibleUnreadIncomingMessageIds);
-    }, [
-      getVisibleMessagesBounds,
-      markMessageIdsAsRead,
-      messages,
-      targetUser,
-      user,
-    ]);
-
-    // PRIORITY 1: Simulate close button click when isOpen changes to false
-    useEffect(() => {
-      const previousIsOpen = previousIsOpenRef.current;
-
-      // Update previous ref for next comparison
-      previousIsOpenRef.current = isOpen;
-
-      // SMART: When close detected from ANY source → use same close logic as close button
-      if (previousIsOpen && !isOpen && user && !hasClosedRef.current) {
-        // Call the centralized close function
-        void performClose();
-      }
-    }, [isOpen, user, targetUser, performClose]);
-
-    // Load messages and setup realtime subscription
-    useEffect(() => {
-      if (!isOpen || !user || !targetUser || !currentChannelId) {
-        return;
-      }
-
-      const loadMessages = async () => {
-        const applyConversationSnapshot = (snapshotMessages: ChatMessage[]) => {
-          const transformedMessages: ChatMessage[] = snapshotMessages.map(
-            messageItem => ({
-              ...messageItem,
-              sender_name:
-                messageItem.sender_id === user.id
-                  ? user.name || 'You'
-                  : targetUser.name || 'Unknown',
-              receiver_name:
-                messageItem.receiver_id === user.id
-                  ? user.name || 'You'
-                  : targetUser.name || 'Unknown',
-            })
-          );
-
-          const initialMessageAnimationKeys = new Set(
-            transformedMessages.map(
-              messageItem => messageItem.stableKey || messageItem.id
-            )
-          );
-          initialMessageAnimationKeysRef.current = initialMessageAnimationKeys;
-          initialOpenJumpAnimationKeysRef.current = new Set(
-            initialMessageAnimationKeys
-          );
-
-          setMessages(previousMessages => {
-            if (previousMessages.length === 0) {
-              return transformedMessages;
-            }
-
-            const transformedIds = new Set(
-              transformedMessages.map(messageItem => messageItem.id)
-            );
-            const pendingMessages = previousMessages.filter(
-              messageItem =>
-                !transformedIds.has(messageItem.id) &&
-                messageItem.id.startsWith('temp_')
-            );
-
-            return [...transformedMessages, ...pendingMessages];
-          });
-
-          return transformedMessages;
-        };
-
-        const cachedConversation =
-          conversationCacheRef.current.get(currentChannelId);
-        const hasCachedConversation = Boolean(cachedConversation);
-
-        if (hasCachedConversation && cachedConversation) {
-          applyConversationSnapshot(cachedConversation.messages);
-          hasCompletedInitialOpenLoadRef.current = true;
-        } else {
-          setMessages([]);
-        }
-
-        setLoading(!hasCachedConversation);
-        try {
-          // Fetch existing messages (simplified query without JOIN)
-          const { data: existingMessages, error } =
-            await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
-
-          if (error) {
-            console.error('Error loading messages:', error);
-            return;
-          }
-          const transformedMessages = applyConversationSnapshot(
-            existingMessages || []
-          );
-          conversationCacheRef.current.set(currentChannelId, {
-            messages: transformedMessages,
-            cachedAt: Date.now(),
-          });
-          const undeliveredIncomingMessageIds = transformedMessages
-            .filter(
-              messageItem =>
-                messageItem.sender_id === targetUser.id &&
-                messageItem.receiver_id === user.id &&
-                !messageItem.is_delivered
-            )
-            .map(messageItem => messageItem.id);
-          await markMessageIdsAsDelivered(undeliveredIncomingMessageIds);
-        } catch (error) {
-          console.error('Error loading messages:', error);
-        } finally {
-          hasCompletedInitialOpenLoadRef.current = true;
-          setLoading(false);
-        }
-      };
-
-      // Setup realtime subscription
-      const setupRealtimeSubscription = () => {
-        // Clean up existing channel if any
-        /* c8 ignore next 4 */
-        if (channelRef.current) {
-          void realtimeService.removeChannel(channelRef.current);
-        }
-
-        // Create new channel for this conversation
-        const channel = realtimeService.createChannel(
-          `chat_${currentChannelId}`,
-          {
-            config: {
-              broadcast: { self: true },
-            },
-          }
-        );
-
-        // Subscribe to broadcast events
-        channel.on('broadcast', { event: 'new_message' }, payload => {
-          const newMessage = payload.payload as ChatMessage;
-          setMessages(prev => {
-            // Prevent duplicate messages
-            const exists = prev.some(msg => msg.id === newMessage.id);
-            if (exists) return prev;
-            return [...prev, newMessage];
-          });
-          if (
-            newMessage.sender_id === targetUser.id &&
-            newMessage.receiver_id === user.id &&
-            !newMessage.is_delivered
-          ) {
-            void markMessageIdsAsDelivered([newMessage.id]);
-          }
-        });
-
-        channel.on('broadcast', { event: 'update_message' }, payload => {
-          const updatedMessage = payload.payload as ChatMessage;
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg
-            )
-          );
-        });
-
-        channel.on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'chat_messages',
-            filter: `channel_id=eq.${currentChannelId}`,
-          },
-          payload => {
-            const updatedMessage = payload.new as ChatMessage;
-            if (!updatedMessage?.id) return;
-
-            setMessages(prev =>
-              prev.map(messageItem =>
-                messageItem.id === updatedMessage.id
-                  ? {
-                      ...messageItem,
-                      ...updatedMessage,
-                      stableKey: messageItem.stableKey,
-                    }
-                  : messageItem
-              )
-            );
-          }
-        );
-
-        channel.on('broadcast', { event: 'delete_message' }, payload => {
-          const deletedMessage = payload.payload as { id: string };
-          setMessages(prev =>
-            prev.filter(messageItem => messageItem.id !== deletedMessage.id)
-          );
-        });
-
-        // Note: Presence changes now handled by global presence channel
-
-        // Subscribe to presence (optional - for typing indicators)
-        channel.on('broadcast', { event: 'typing' }, () => {
-          // Handle typing indicators if needed
-        });
-
-        // Subscribe and store reference
-        channel.subscribe(status => {
-          if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to connect to chat channel');
-          }
-        });
-
-        channelRef.current = channel;
-      };
-
-      // Setup presence subscription for target user
-      const setupPresenceSubscription = () => {
-        // Clean up existing presence channel if any
-        /* c8 ignore next 4 */
-        if (presenceChannelRef.current) {
-          void realtimeService.removeChannel(presenceChannelRef.current);
-        }
-
-        // Create presence channel
-        const presenceChannel = realtimeService.createChannel(
-          'user_presence_changes',
-          {
-            config: {
-              broadcast: { self: false },
-            },
-          }
-        );
-
-        // Subscribe to presence changes
-        presenceChannel.on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'user_presence',
-            filter: `user_id=eq.${targetUser.id}`,
-          },
-          payload => {
-            if (
-              payload.eventType === 'UPDATE' ||
-              payload.eventType === 'INSERT'
-            ) {
-              setTargetUserPresence(payload.new as UserPresence);
-            }
-          }
-        );
-
-        // Subscribe and store reference
-        presenceChannel.subscribe();
-
-        presenceChannelRef.current = presenceChannel;
-      };
-
-      // Setup GLOBAL presence subscription for all users
-      const setupGlobalPresenceSubscription = () => {
-        // Clean up existing global presence channel if any
-        /* c8 ignore next 4 */
-        if (globalPresenceChannelRef.current) {
-          void realtimeService.removeChannel(globalPresenceChannelRef.current);
-        }
-
-        // Create GLOBAL presence channel that ALL users subscribe to
-        const globalPresenceChannel = realtimeService.createChannel(
-          'global_presence_updates',
-          {
-            config: {
-              broadcast: { self: true },
-            },
-          }
-        );
-
-        // Subscribe to GLOBAL presence changes
-        globalPresenceChannel.on(
-          'broadcast',
-          { event: 'presence_changed' },
-          payload => {
-            const presenceUpdate = payload.payload as Partial<UserPresence>;
-            // Only update if it's about the target user we're chatting with
-            if (presenceUpdate.user_id === targetUser.id) {
-              setTargetUserPresence(prev => {
-                const newPresence = prev
-                  ? { ...prev, ...presenceUpdate }
-                  : {
-                      user_id: presenceUpdate.user_id!,
-                      is_online: presenceUpdate.is_online || false,
-                      last_seen:
-                        presenceUpdate.last_seen || new Date().toISOString(),
-                      current_chat_channel:
-                        presenceUpdate.current_chat_channel || null,
-                    };
-
-                return newPresence;
-              });
-            }
-          }
-        );
-
-        globalPresenceChannel.on(
-          'broadcast',
-          { event: 'message_receipt_updated' },
-          payload => {
-            const updatedMessage = payload.payload as Partial<ChatMessage>;
-            if (!updatedMessage?.id) return;
-
-            setMessages(prev =>
-              prev.map(messageItem =>
-                messageItem.id === updatedMessage.id
-                  ? {
-                      ...messageItem,
-                      ...updatedMessage,
-                      stableKey: messageItem.stableKey,
-                    }
-                  : messageItem
-              )
-            );
-          }
-        );
-
-        // Subscribe and store reference
-        globalPresenceChannel.subscribe();
-
-        globalPresenceChannelRef.current = globalPresenceChannel;
-      };
-
-      const setupIncomingMessagesDeliveredSubscription = () => {
-        /* c8 ignore next 4 */
-        if (incomingMessagesChannelRef.current) {
-          void realtimeService.removeChannel(
-            incomingMessagesChannelRef.current
-          );
-        }
-
-        const incomingMessagesChannel = realtimeService.createChannel(
-          `incoming_messages_${user.id}`
-        );
-
-        incomingMessagesChannel.on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'chat_messages',
-            filter: `receiver_id=eq.${user.id}`,
-          },
-          payload => {
-            const incomingMessage = payload.new as ChatMessage | undefined;
-            if (!incomingMessage?.id) return;
-            if (incomingMessage.is_delivered) return;
-            void markMessageIdsAsDelivered([incomingMessage.id]);
-          }
-        );
-
-        incomingMessagesChannel.subscribe();
-        incomingMessagesChannelRef.current = incomingMessagesChannel;
-      };
-
-      setupRealtimeSubscription();
-      void loadMessages();
-      setupPresenceSubscription();
-      setupGlobalPresenceSubscription();
-      setupIncomingMessagesDeliveredSubscription();
-
-      // Reset close flag when opening chat
-      hasClosedRef.current = false;
-
-      // Update user presence and load target user presence
-      void updateUserChatOpen();
-      void loadTargetUserPresence();
-
-      // Setup periodic presence refresh as backup (every 30 seconds)
-      presenceRefreshIntervalRef.current = setInterval(() => {
-        void updateUserChatOpen();
-        void loadTargetUserPresence();
-      }, 30000);
-
-      // Cleanup function
-      return () => {
-        if (channelRef.current) {
-          void realtimeService.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
-        if (presenceChannelRef.current) {
-          void realtimeService.removeChannel(presenceChannelRef.current);
-          presenceChannelRef.current = null;
-        }
-        if (globalPresenceChannelRef.current) {
-          void realtimeService.removeChannel(globalPresenceChannelRef.current);
-          globalPresenceChannelRef.current = null;
-        }
-        if (incomingMessagesChannelRef.current) {
-          void realtimeService.removeChannel(
-            incomingMessagesChannelRef.current
-          );
-          incomingMessagesChannelRef.current = null;
-        }
-        if (presenceRefreshIntervalRef.current) {
-          clearInterval(presenceRefreshIntervalRef.current);
-          presenceRefreshIntervalRef.current = null;
-        }
-      };
-    }, [
-      isOpen,
-      user,
-      targetUser,
-      currentChannelId,
-      updateUserChatOpen,
-      loadTargetUserPresence,
-      markMessageIdsAsDelivered,
-      scrollMessagesToBottom,
-    ]);
-
-    // Cleanup presence on component unmount
-    useEffect(() => {
-      return () => {
-        // Perform close if not already closed
-        if (!hasClosedRef.current && user) {
-          void performClose();
-        }
-
-        // Clean up interval on unmount
-        /* c8 ignore next 4 */
-        if (presenceRefreshIntervalRef.current) {
-          clearInterval(presenceRefreshIntervalRef.current);
-          presenceRefreshIntervalRef.current = null;
-        }
-
-        // Clean up global presence channel LAST (after broadcast)
-        setTimeout(() => {
-          /* c8 ignore next 4 */
-          if (globalPresenceChannelRef.current) {
-            void realtimeService.removeChannel(
-              globalPresenceChannelRef.current
-            );
-            globalPresenceChannelRef.current = null;
-          }
-        }, 200);
-      };
-    }, [user, performClose]);
-
     useEffect(() => {
       const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
-      const pendingDeliveredReceiptMessageIds =
-        pendingDeliveredReceiptMessageIdsRef.current;
-      const pendingReadReceiptMessageIds =
-        pendingReadReceiptMessageIdsRef.current;
       const pendingComposerAttachments = pendingComposerAttachmentsRef.current;
 
       return () => {
@@ -1674,8 +619,6 @@ const ChatSidebarPanel = memo(
           URL.revokeObjectURL(previewUrl);
         });
         pendingImagePreviewUrls.clear();
-        pendingDeliveredReceiptMessageIds.clear();
-        pendingReadReceiptMessageIds.clear();
 
         pendingComposerAttachments.forEach(attachment => {
           if (attachment.previewUrl) {
@@ -2154,13 +1097,7 @@ const ChatSidebarPanel = memo(
             prev.map(msg => (msg.id === tempId ? realMessage : msg))
           );
 
-          if (channelRef.current) {
-            void channelRef.current.send({
-              type: 'broadcast',
-              event: 'new_message',
-              payload: realMessage,
-            });
-          }
+          broadcastNewMessage(realMessage);
 
           if (hasAttachmentCaption && captionTempId) {
             const { data: captionMessage, error: captionError } =
@@ -2187,13 +1124,7 @@ const ChatSidebarPanel = memo(
                 )
               );
 
-              if (channelRef.current) {
-                void channelRef.current.send({
-                  type: 'broadcast',
-                  event: 'new_message',
-                  payload: mappedCaptionMessage,
-                });
-              }
+              broadcastNewMessage(mappedCaptionMessage);
             } else {
               setMessages(prev => prev.filter(msg => msg.id !== captionTempId));
               toast.error('Gagal mengirim deskripsi lampiran', {
@@ -2225,10 +1156,12 @@ const ChatSidebarPanel = memo(
         }
       },
       [
+        broadcastNewMessage,
         user,
         targetUser,
         currentChannelId,
         editingMessageId,
+        setMessages,
         triggerSendSuccessGlow,
         scheduleScrollMessagesToBottom,
       ]
@@ -2440,13 +1373,7 @@ const ChatSidebarPanel = memo(
             prev.map(msg => (msg.id === tempId ? realMessage : msg))
           );
 
-          if (channelRef.current) {
-            void channelRef.current.send({
-              type: 'broadcast',
-              event: 'new_message',
-              payload: realMessage,
-            });
-          }
+          broadcastNewMessage(realMessage);
 
           if (isPdfDocument) {
             void (async () => {
@@ -2456,13 +1383,7 @@ const ChatSidebarPanel = memo(
                     msg.id === payload.id ? { ...msg, ...payload } : msg
                   )
                 );
-                if (channelRef.current) {
-                  void channelRef.current.send({
-                    type: 'broadcast',
-                    event: 'update_message',
-                    payload,
-                  });
-                }
+                broadcastUpdatedMessage(payload);
               };
 
               const applyPreviewFailedState = async (
@@ -2560,13 +1481,7 @@ const ChatSidebarPanel = memo(
                 )
               );
 
-              if (channelRef.current) {
-                void channelRef.current.send({
-                  type: 'broadcast',
-                  event: 'new_message',
-                  payload: mappedCaptionMessage,
-                });
-              }
+              broadcastNewMessage(mappedCaptionMessage);
             } else {
               setMessages(prev => prev.filter(msg => msg.id !== captionTempId));
               toast.error('Gagal mengirim deskripsi lampiran', {
@@ -2609,11 +1524,14 @@ const ChatSidebarPanel = memo(
         }
       },
       [
+        broadcastNewMessage,
+        broadcastUpdatedMessage,
         user,
         targetUser,
         currentChannelId,
         editingMessageId,
         generatePdfPreviewFromFile,
+        setMessages,
         triggerSendSuccessGlow,
         scheduleScrollMessagesToBottom,
       ]
@@ -3018,23 +1936,6 @@ const ChatSidebarPanel = memo(
       };
     }, [isAttachModalOpen, closeAttachModal]);
 
-    // Handle browser tab close/refresh
-    useEffect(() => {
-      const handleBeforeUnload = () => {
-        if (!hasClosedRef.current && user) {
-          // Perform synchronous close operations for page unload
-          hasClosedRef.current = true;
-          void updateUserChatClose();
-        }
-      };
-
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      return () =>
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [user, updateUserChatClose]);
-
-    // Note: isOpen change detection moved to priority effect above
-
     // Check if user is at bottom of chat
     const checkIfAtBottom = useCallback(() => {
       if (messagesContainerRef.current) {
@@ -3116,7 +2017,12 @@ const ChatSidebarPanel = memo(
           setHasNewMessages(true);
         }
       }
-    }, [messages, isAtBottom, scheduleScrollMessagesToBottom]);
+    }, [
+      hasCompletedInitialOpenLoadRef,
+      isAtBottom,
+      messages,
+      scheduleScrollMessagesToBottom,
+    ]);
 
     useLayoutEffect(() => {
       if (!isOpen || !shouldPinToBottomOnOpenRef.current) return;
@@ -3133,6 +2039,7 @@ const ChatSidebarPanel = memo(
       }
     }, [
       checkIfAtTop,
+      hasCompletedInitialOpenLoadRef,
       isOpen,
       loading,
       messages,
@@ -3184,7 +2091,7 @@ const ChatSidebarPanel = memo(
       hasCompletedInitialOpenLoadRef.current = false;
       setIsAtBottom(true);
       setHasNewMessages(false);
-    }, [isOpen, currentChannelId]);
+    }, [currentChannelId, hasCompletedInitialOpenLoadRef, isOpen]);
 
     useEffect(() => {
       if (!isOpen) return;
@@ -3293,13 +2200,7 @@ const ChatSidebarPanel = memo(
           prev.map(msg => (msg.id === messageId ? mappedMessage : msg))
         );
 
-        if (channelRef.current) {
-          void channelRef.current.send({
-            type: 'broadcast',
-            event: 'update_message',
-            payload: mappedMessage,
-          });
-        }
+        broadcastUpdatedMessage(mappedMessage);
       } catch (error) {
         console.error('Error updating message:', error);
       }
@@ -3344,15 +2245,9 @@ const ChatSidebarPanel = memo(
           }
         }
 
-        if (channelRef.current) {
-          persistedMessageIds.forEach(messageId => {
-            void channelRef.current?.send({
-              type: 'broadcast',
-              event: 'delete_message',
-              payload: { id: messageId },
-            });
-          });
-        }
+        persistedMessageIds.forEach(messageId => {
+          broadcastDeletedMessage(messageId);
+        });
       } catch (error) {
         console.error('Error deleting message:', error);
       }
@@ -3431,79 +2326,6 @@ const ChatSidebarPanel = memo(
       },
       [closeMessageMenu]
     );
-
-    const handleCopySelectedMessages = useCallback(async () => {
-      if (selectedVisibleMessages.length === 0) {
-        toast.error('Pilih minimal 1 pesan untuk disalin', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-        return;
-      }
-
-      const formatTimestamp = (timestamp: string) => {
-        const parsedTimestamp = new Date(timestamp);
-        if (!Number.isFinite(parsedTimestamp.getTime())) return timestamp;
-
-        const day = parsedTimestamp.getDate();
-        const month = parsedTimestamp.getMonth() + 1;
-        const hour = String(parsedTimestamp.getHours()).padStart(2, '0');
-        const minute = String(parsedTimestamp.getMinutes()).padStart(2, '0');
-
-        return `${day}/${month}, ${hour}.${minute}`;
-      };
-
-      const serializedMessages = selectedVisibleMessages
-        .map(messageItem => {
-          const senderLabel =
-            messageItem.sender_name ||
-            (messageItem.sender_id === user?.id
-              ? user?.name || 'You'
-              : targetUser?.name || 'Unknown');
-          const timestamp = formatTimestamp(messageItem.created_at);
-          const attachmentCaption = captionMessagesByAttachmentId
-            .get(messageItem.id)
-            ?.message?.trim();
-          const messageBody =
-            messageItem.message_type === 'text'
-              ? messageItem.message
-              : attachmentCaption ||
-                (messageItem.message_type === 'image'
-                  ? `[Gambar] ${messageItem.message}`
-                  : `[File: ${getAttachmentFileName(messageItem)}] ${messageItem.message}`);
-
-          return `[${timestamp}] ${senderLabel}: ${messageBody}`;
-        })
-        .join('\n')
-        .trim();
-
-      if (!serializedMessages) {
-        toast.error('Tidak ada isi pesan untuk disalin', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(serializedMessages);
-        toast.success(
-          `${selectedVisibleMessages.length} pesan berhasil disalin`,
-          {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          }
-        );
-      } catch (error) {
-        console.error('Error copying selected messages:', error);
-        toast.error('Gagal menyalin pesan terpilih', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-      }
-    }, [
-      captionMessagesByAttachmentId,
-      selectedVisibleMessages,
-      targetUser?.name,
-      user?.id,
-      user?.name,
-    ]);
 
     const handleDeleteSelectedMessages = async () => {
       if (!user) return;
@@ -3763,13 +2585,7 @@ const ChatSidebarPanel = memo(
           );
 
           // Broadcast to all subscribers in this channel
-          if (channelRef.current) {
-            void channelRef.current.send({
-              type: 'broadcast',
-              event: 'new_message',
-              payload: realMessage,
-            });
-          }
+          broadcastNewMessage(realMessage);
 
           return true;
         } catch (error) {
@@ -3781,9 +2597,11 @@ const ChatSidebarPanel = memo(
         }
       },
       [
+        broadcastNewMessage,
         user,
         targetUser,
         currentChannelId,
+        setMessages,
         triggerSendSuccessGlow,
         scheduleScrollMessagesToBottom,
       ]

@@ -4,6 +4,9 @@ import {
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -13,44 +16,23 @@ import PopupMenuContent, {
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
   TbArrowUp,
-  TbDotsVertical,
   TbEye,
   TbFileDescription,
   TbFileIsr,
   TbFileShredder,
-  TbFileTypeJpg,
-  TbFileTypePng,
   TbMusic,
-  TbPencil,
+  TbPhoto,
   TbPhotoEdit,
   TbPhotoMinus,
-  TbPhoto,
   TbPlus,
-  TbX,
 } from 'react-icons/tb';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import DocumentPreviewPortal from './DocumentPreviewPortal';
 import type { PendingComposerAttachment } from '../types';
-
-const resolveAttachmentExtension = (attachment: PendingComposerAttachment) => {
-  const extensionFromName = attachment.fileName
-    .split(/[?#]/)[0]
-    .split('.')
-    .pop()
-    ?.trim()
-    .toLowerCase();
-  if (extensionFromName) return extensionFromName;
-
-  const mimeSubtype = attachment.mimeType
-    .split('/')[1]
-    ?.split('+')[0]
-    ?.trim()
-    .toLowerCase();
-  if (!mimeSubtype) return '';
-  if (mimeSubtype === 'jpeg') return 'jpg';
-  return mimeSubtype;
-};
+import { resolveComposerAttachmentExtension } from '../utils/composer-attachment';
+import DocumentPreviewPortal from './DocumentPreviewPortal';
+import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
+import ComposerEditBanner from './composer/ComposerEditBanner';
 
 interface ComposerPanelProps {
   message: string;
@@ -84,16 +66,16 @@ interface ComposerPanelProps {
   composerGlowShadowLow: string;
   sendSuccessGlowDuration: number;
   onMessageChange: (nextMessage: string) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
-  onPaste: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+  onKeyDown: (e: ReactKeyboardEvent) => void;
+  onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
   onSendMessage: () => void;
   onAttachButtonClick: () => void;
   onAttachImageClick: (replaceAttachmentId?: string) => void;
   onAttachDocumentClick: (replaceAttachmentId?: string) => void;
   onAttachAudioClick: () => void;
-  onImageFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDocumentFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onAudioFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onDocumentFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onAudioFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onCancelEditMessage: () => void;
   onFocusEditingTargetMessage: () => void;
   onOpenComposerImagePreview: (attachmentId: string) => void;
@@ -101,6 +83,11 @@ interface ComposerPanelProps {
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
   onQueueComposerImage: (file: File, replaceAttachmentId?: string) => void;
 }
+
+const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
+const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
+const IMAGE_ACTIONS_MENU_FALLBACK_WIDTH = 148;
+const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 92;
 
 const ComposerPanel = ({
   message,
@@ -166,10 +153,6 @@ const ComposerPanel = ({
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
   const composerDocumentPreviewCloseTimerRef = useRef<number | null>(null);
   const composerDocumentPreviewObjectUrlRef = useRef<string | null>(null);
-  const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
-  const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
-  const IMAGE_ACTIONS_MENU_FALLBACK_WIDTH = 148;
-  const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 92;
 
   const getImageActionsMenuPosition = useCallback(
     (targetButton: HTMLButtonElement) => {
@@ -212,11 +195,13 @@ const ComposerPanel = ({
     setOpenImageActionsAttachmentId(null);
     setImageActionsMenuPosition(null);
   }, []);
+
   const releaseComposerDocumentPreviewObjectUrl = useCallback(() => {
     if (!composerDocumentPreviewObjectUrlRef.current) return;
     URL.revokeObjectURL(composerDocumentPreviewObjectUrlRef.current);
     composerDocumentPreviewObjectUrlRef.current = null;
   }, []);
+
   const closeComposerDocumentPreview = useCallback(() => {
     setIsComposerDocumentPreviewVisible(false);
     if (composerDocumentPreviewCloseTimerRef.current) {
@@ -230,6 +215,7 @@ const ComposerPanel = ({
       composerDocumentPreviewCloseTimerRef.current = null;
     }, 150);
   }, [releaseComposerDocumentPreviewObjectUrl]);
+
   const openDocumentAttachmentInPortal = useCallback(
     (attachment: PendingComposerAttachment) => {
       if (composerDocumentPreviewCloseTimerRef.current) {
@@ -239,7 +225,7 @@ const ComposerPanel = ({
       releaseComposerDocumentPreviewObjectUrl();
 
       const isPdfAttachment =
-        resolveAttachmentExtension(attachment) === 'pdf' ||
+        resolveComposerAttachmentExtension(attachment) === 'pdf' ||
         attachment.mimeType.toLowerCase().includes('pdf');
       if (!isPdfAttachment) {
         const nonPdfUrl = URL.createObjectURL(attachment.file);
@@ -257,6 +243,7 @@ const ComposerPanel = ({
         }, 60_000);
         return;
       }
+
       const openTarget =
         isPdfAttachment && attachment.file.type !== 'application/pdf'
           ? new Blob([attachment.file], { type: 'application/pdf' })
@@ -271,6 +258,7 @@ const ComposerPanel = ({
     },
     [releaseComposerDocumentPreviewObjectUrl]
   );
+
   const openImageActionsAttachment = pendingComposerAttachments.find(
     attachment =>
       attachment.id === openImageActionsAttachmentId &&
@@ -483,248 +471,39 @@ const ComposerPanel = ({
           >
             <AnimatePresence initial={false} mode="popLayout">
               {editingMessagePreview ? (
-                <motion.div
-                  layout
-                  key="editing-preview-inline"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 2 }}
+                <ComposerEditBanner
+                  editingMessagePreview={editingMessagePreview}
+                  onCancelEditMessage={onCancelEditMessage}
+                  onFocusEditingTargetMessage={onFocusEditingTargetMessage}
                   transition={contextualPanelTransition}
-                  className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-700 transition-colors hover:border-primary/30 hover:bg-slate-100"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Lihat pesan yang sedang diedit"
-                  title="Klik untuk lihat pesan asal"
-                  onClick={onFocusEditingTargetMessage}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onFocusEditingTargetMessage();
-                    }
-                  }}
-                >
-                  <button
-                    type="button"
-                    aria-label="Cancel editing message"
-                    onClick={event => {
-                      event.stopPropagation();
-                      onCancelEditMessage();
-                    }}
-                    className="group inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                  >
-                    <TbPencil className="h-4 w-4 group-hover:hidden" />
-                    <TbX className="hidden h-4 w-4 group-hover:block" />
-                  </button>
-                  <p className="min-w-0 flex-1 truncate text-left text-sm leading-5 text-slate-700">
-                    {editingMessagePreview}
-                  </p>
-                </motion.div>
+                />
               ) : null}
             </AnimatePresence>
 
             <AnimatePresence initial={false} mode="popLayout">
               {pendingComposerAttachments.length > 0 ? (
-                <motion.div
-                  layout
-                  key="composer-attachments-preview"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 2 }}
+                <ComposerAttachmentPreviewList
+                  attachments={pendingComposerAttachments}
+                  openImageActionsAttachmentId={openImageActionsAttachmentId}
+                  imageActionsButtonRef={imageActionsButtonRef}
                   transition={contextualPanelTransition}
-                  className="mb-2"
-                >
-                  <div className="mb-1 px-0.5 text-[11px] text-slate-500">
-                    Lampiran {pendingComposerAttachments.length}/5
-                  </div>
-                  <div className="flex flex-col gap-2 pr-1">
-                    {pendingComposerAttachments.map(attachment => {
-                      const isImageAttachment = attachment.fileKind === 'image';
-                      const isAudioAttachment = attachment.fileKind === 'audio';
-                      const isDocumentAttachment =
-                        attachment.fileKind === 'document';
-                      const attachmentExtension =
-                        resolveAttachmentExtension(attachment);
-                      const isJpgDocumentAttachment =
-                        attachmentExtension === 'jpg' ||
-                        attachmentExtension === 'jpeg';
-                      const isPngDocumentAttachment =
-                        attachmentExtension === 'png';
-                      const isMenuOpen =
-                        openImageActionsAttachmentId === attachment.id;
+                  onOpenComposerImagePreview={onOpenComposerImagePreview}
+                  onOpenDocumentAttachment={openDocumentAttachmentInPortal}
+                  onToggleImageActionsMenu={(event, attachmentId) => {
+                    if (openImageActionsAttachmentId === attachmentId) {
+                      closeImageActionsMenu();
+                      return;
+                    }
 
-                      return (
-                        <div
-                          key={attachment.id}
-                          className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
-                        >
-                          {isImageAttachment ? (
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
-                              onClick={() => {
-                                onOpenComposerImagePreview(attachment.id);
-                              }}
-                              onKeyDown={event => {
-                                if (
-                                  event.key === 'Enter' ||
-                                  event.key === ' '
-                                ) {
-                                  event.preventDefault();
-                                  onOpenComposerImagePreview(attachment.id);
-                                }
-                              }}
-                            >
-                              <img
-                                src={attachment.previewUrl ?? ''}
-                                alt={attachment.fileName}
-                                className="h-11 w-11 rounded-lg object-cover"
-                                draggable={false}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">
-                                  {attachment.fileName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {attachment.fileTypeLabel}
-                                </p>
-                              </div>
-                            </div>
-                          ) : isDocumentAttachment ? (
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
-                              onClick={() => {
-                                openDocumentAttachmentInPortal(attachment);
-                              }}
-                              onKeyDown={event => {
-                                if (
-                                  event.key === 'Enter' ||
-                                  event.key === ' '
-                                ) {
-                                  event.preventDefault();
-                                  openDocumentAttachmentInPortal(attachment);
-                                }
-                              }}
-                            >
-                              {attachment.pdfCoverUrl ? (
-                                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
-                                  <img
-                                    src={attachment.pdfCoverUrl}
-                                    alt="PDF cover preview"
-                                    className="h-full w-full object-cover"
-                                    draggable={false}
-                                  />
-                                </div>
-                              ) : isJpgDocumentAttachment ? (
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
-                                  <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
-                                </div>
-                              ) : isPngDocumentAttachment ? (
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
-                                  <TbFileTypePng className="h-5 w-5 text-slate-600" />
-                                </div>
-                              ) : (
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
-                                  {(
-                                    attachment.fileName
-                                      .split('.')
-                                      .pop()
-                                      ?.toUpperCase() ||
-                                    attachment.fileTypeLabel
-                                  ).slice(0, 4)}
-                                </div>
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">
-                                  {attachment.fileName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {attachment.fileTypeLabel}
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
-                              <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">
-                                  {attachment.fileName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {attachment.fileTypeLabel}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {isImageAttachment || isDocumentAttachment ? (
-                            <div className="relative shrink-0">
-                              <button
-                                ref={
-                                  isMenuOpen ? imageActionsButtonRef : undefined
-                                }
-                                type="button"
-                                aria-label={
-                                  isImageAttachment
-                                    ? 'Aksi gambar'
-                                    : 'Aksi dokumen'
-                                }
-                                title={
-                                  isImageAttachment
-                                    ? 'Aksi gambar'
-                                    : 'Aksi dokumen'
-                                }
-                                aria-haspopup="menu"
-                                aria-expanded={isMenuOpen}
-                                onClick={event => {
-                                  event.stopPropagation();
-                                  if (
-                                    openImageActionsAttachmentId ===
-                                    attachment.id
-                                  ) {
-                                    closeImageActionsMenu();
-                                    return;
-                                  }
-
-                                  setOpenImageActionsAttachmentId(
-                                    attachment.id
-                                  );
-                                  setImageActionsMenuPosition(
-                                    getImageActionsMenuPosition(
-                                      event.currentTarget
-                                    )
-                                  );
-                                }}
-                                className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                              >
-                                <TbDotsVertical className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              aria-label={
-                                isAudioAttachment
-                                  ? 'Hapus audio'
-                                  : 'Hapus dokumen'
-                              }
-                              onClick={() => {
-                                onRemovePendingComposerAttachment(
-                                  attachment.id
-                                );
-                              }}
-                              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
-                            >
-                              <TbX className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
+                    setOpenImageActionsAttachmentId(attachmentId);
+                    setImageActionsMenuPosition(
+                      getImageActionsMenuPosition(event.currentTarget)
+                    );
+                  }}
+                  onRemovePendingComposerAttachment={
+                    onRemovePendingComposerAttachment
+                  }
+                />
               ) : null}
             </AnimatePresence>
 
@@ -769,7 +548,7 @@ const ComposerPanel = ({
                 transition={{ layout: composerSyncLayoutTransition }}
                 ref={messageInputRef}
                 value={message}
-                onChange={e => onMessageChange(e.target.value)}
+                onChange={event => onMessageChange(event.target.value)}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
                 placeholder="Type a message..."

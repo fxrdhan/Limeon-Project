@@ -1,4 +1,4 @@
-import { LayoutGroup, motion } from 'motion/react';
+import { LayoutGroup } from 'motion/react';
 import {
   useCallback,
   useEffect,
@@ -6,302 +6,26 @@ import {
   useRef,
   useState,
   type MutableRefObject,
-  type ReactNode,
   type RefObject,
 } from 'react';
-import {
-  TbArrowDown,
-  TbCheck,
-  TbChecks,
-  TbClock,
-  TbCopy,
-  TbDownload,
-  TbEye,
-  TbFileTypeCsv,
-  TbFileTypeDoc,
-  TbFileTypeDocx,
-  TbFileTypeJpg,
-  TbFileTypePdf,
-  TbFileTypePng,
-  TbFileTypePpt,
-  TbFileTypeTxt,
-  TbFileTypeXls,
-  TbFileTypeZip,
-  TbFileUnknown,
-  TbMusic,
-  TbPencil,
-  TbTrash,
-} from 'react-icons/tb';
-import PopupMenuContent, {
-  type PopupMenuAction,
-} from '@/components/image-manager/PopupMenuContent';
-import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import DocumentPreviewPortal from './DocumentPreviewPortal';
 import type { ChatMessage } from '@/services/api/chat.service';
-import { supabase } from '@/lib/supabase';
-import { CHAT_IMAGE_BUCKET } from '../constants';
+import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
 import type {
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
 } from '../types';
+import { getAttachmentCaptionData } from '../utils/message-derivations';
+import { fetchPdfBlobWithFallback } from '../utils/message-file';
+import DocumentPreviewPortal from './DocumentPreviewPortal';
+import MessageItem from './messages/MessageItem';
 
 interface ChatPanelUser {
   id?: string;
   name?: string;
 }
-
-const resolveFileExtension = (
-  fileName: string | null,
-  fileUrl: string,
-  mimeType?: string
-) => {
-  const rawSource = fileName || fileUrl || '';
-  const sourceWithoutQuery = rawSource.split(/[?#]/)[0];
-  const directExtension = sourceWithoutQuery
-    .split('.')
-    .pop()
-    ?.trim()
-    .toLowerCase();
-
-  if (directExtension) {
-    return directExtension;
-  }
-
-  const mimeSubtype = mimeType?.split('/')[1]?.split('+')[0]?.toLowerCase();
-  if (!mimeSubtype) return '';
-
-  if (mimeSubtype === 'jpeg') return 'jpg';
-  if (mimeSubtype === 'png') return 'png';
-  if (mimeSubtype === 'pdf') return 'pdf';
-  if (mimeSubtype === 'msword') return 'doc';
-  if (mimeSubtype.includes('wordprocessingml')) return 'docx';
-  if (mimeSubtype === 'csv') return 'csv';
-  if (mimeSubtype === 'plain') return 'txt';
-  if (
-    mimeSubtype.includes('powerpoint') ||
-    mimeSubtype.includes('presentation')
-  )
-    return 'pptx';
-  if (mimeSubtype.includes('excel') || mimeSubtype.includes('spreadsheet'))
-    return 'xlsx';
-  if (mimeSubtype.includes('zip') || mimeSubtype.includes('compressed'))
-    return 'zip';
-
-  return '';
-};
-
-const formatFileSize = (sizeBytes?: number) => {
-  if (
-    typeof sizeBytes !== 'number' ||
-    !Number.isFinite(sizeBytes) ||
-    sizeBytes < 0
-  ) {
-    return null;
-  }
-
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
-  let value = sizeBytes;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  const digits = unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
-  return `${value.toFixed(digits)} ${units[unitIndex]}`;
-};
-
-const formatFileFallbackLabel = (
-  fileExtension: string,
-  fileKind: ComposerPendingFileKind
-) => {
-  if (fileExtension) return fileExtension.toUpperCase();
-  return fileKind === 'audio' ? 'AUDIO' : 'FILE';
-};
-
-const openInNewTab = (url: string) => {
-  window.open(url, '_blank', 'noopener,noreferrer');
-};
-
-const extractChatStoragePath = (url: string): string | null => {
-  const patterns = [
-    '/storage/v1/object/public/chat/',
-    '/storage/v1/object/sign/chat/',
-    '/storage/v1/object/authenticated/chat/',
-  ];
-
-  for (const pattern of patterns) {
-    const rawPath = url.split(pattern)[1];
-    if (!rawPath) continue;
-
-    const pathWithoutQuery = rawPath.split(/[?#]/)[0];
-    if (!pathWithoutQuery) continue;
-
-    try {
-      return decodeURIComponent(pathWithoutQuery);
-    } catch {
-      return pathWithoutQuery;
-    }
-  }
-
-  return null;
-};
-
-const fetchPdfBlobWithFallback = async (
-  url: string,
-  storagePathHint?: string | null
-): Promise<Blob | null> => {
-  try {
-    const response = await fetch(url);
-    if (response.ok) {
-      const responseBlob = await response.blob();
-      return responseBlob.type === 'application/pdf'
-        ? responseBlob
-        : new Blob([responseBlob], { type: 'application/pdf' });
-    }
-  } catch {
-    // Continue to storage fallback
-  }
-
-  const storagePath = storagePathHint?.trim() || extractChatStoragePath(url);
-  if (!storagePath) return null;
-
-  try {
-    const { data, error } = await supabase.storage
-      .from(CHAT_IMAGE_BUCKET)
-      .download(storagePath);
-    if (error || !data) return null;
-
-    return data.type === 'application/pdf'
-      ? data
-      : new Blob([data], { type: 'application/pdf' });
-  } catch {
-    return null;
-  }
-};
-
-const IMAGE_FILE_EXTENSIONS = new Set([
-  'jpg',
-  'jpeg',
-  'png',
-  'webp',
-  'gif',
-  'bmp',
-  'svg',
-  'heic',
-  'heif',
-]);
-
-const isImageFileExtensionOrMime = (extension: string, mimeType?: string) =>
-  IMAGE_FILE_EXTENSIONS.has(extension) ||
-  mimeType?.toLowerCase().startsWith('image/') === true;
-
-type PdfMessagePreview = {
-  coverDataUrl: string;
-  pageCount: number;
-  cacheKey: string;
-};
-
-const pdfMessagePreviewCache = new Map<string, PdfMessagePreview>();
-const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
-const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
-const SEARCH_HIGHLIGHT_CLASS =
-  'rounded-[4px] bg-amber-200 px-0.5 text-slate-900';
-
-const getSearchMatchIndex = (text: string, normalizedSearchQuery: string) => {
-  if (!normalizedSearchQuery) return -1;
-
-  return text.toLowerCase().indexOf(normalizedSearchQuery);
-};
-
-const buildCollapsedSearchSnippet = (
-  text: string,
-  normalizedSearchQuery: string,
-  maxMessageChars: number
-) => {
-  if (text.length <= maxMessageChars) {
-    return { text, hasLeadingEllipsis: false, hasTrailingEllipsis: false };
-  }
-
-  const matchIndex = getSearchMatchIndex(text, normalizedSearchQuery);
-  if (matchIndex === -1 || matchIndex < maxMessageChars) {
-    return {
-      text: text.slice(0, maxMessageChars).trimEnd(),
-      hasLeadingEllipsis: false,
-      hasTrailingEllipsis: true,
-    };
-  }
-
-  const desiredStart = Math.max(
-    0,
-    matchIndex -
-      Math.floor((maxMessageChars - normalizedSearchQuery.length) / 2)
-  );
-  const maxStart = Math.max(0, text.length - maxMessageChars);
-  const startIndex = Math.min(desiredStart, maxStart);
-  const endIndex = Math.min(text.length, startIndex + maxMessageChars);
-
-  return {
-    text: text.slice(startIndex, endIndex).trim(),
-    hasLeadingEllipsis: startIndex > 0,
-    hasTrailingEllipsis: endIndex < text.length,
-  };
-};
-
-const renderHighlightedText = (
-  text: string,
-  normalizedSearchQuery: string
-): ReactNode => {
-  if (!normalizedSearchQuery) return text;
-
-  const lowerText = text.toLowerCase();
-  const fragments: ReactNode[] = [];
-  let currentIndex = 0;
-
-  while (currentIndex < text.length) {
-    const matchIndex = lowerText.indexOf(normalizedSearchQuery, currentIndex);
-    if (matchIndex === -1) {
-      fragments.push(text.slice(currentIndex));
-      break;
-    }
-
-    if (matchIndex > currentIndex) {
-      fragments.push(text.slice(currentIndex, matchIndex));
-    }
-
-    const matchEndIndex = matchIndex + normalizedSearchQuery.length;
-    fragments.push(
-      <mark
-        key={`${matchIndex}-${matchEndIndex}`}
-        className={SEARCH_HIGHLIGHT_CLASS}
-      >
-        {text.slice(matchIndex, matchEndIndex)}
-      </mark>
-    );
-    currentIndex = matchEndIndex;
-  }
-
-  return fragments;
-};
-
-const buildPdfMessagePreviewCacheKey = (
-  message: ChatMessage,
-  fileName: string
-) => {
-  const stableIdentity =
-    message.stableKey ||
-    `${message.id}::${message.updated_at}::${message.message}`;
-
-  return [
-    stableIdentity,
-    fileName,
-    message.file_size ?? '',
-    message.file_mime_type ?? '',
-  ].join('::');
-};
 
 interface MessagesPaneProps {
   loading: boolean;
@@ -391,10 +115,11 @@ const MessagesPane = ({
   onScrollToBottom,
 }: MessagesPaneProps) => {
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
-    Record<string, PdfMessagePreview>
-  >({});
-  const [, setPdfPreviewRetryNonce] = useState(0);
+  const { getPdfMessagePreview } = useMessagePdfPreviews({
+    messages,
+    getAttachmentFileName,
+    getAttachmentFileKind,
+  });
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imagePreviewName, setImagePreviewName] = useState('');
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
@@ -407,33 +132,10 @@ const MessagesPane = ({
     useState(false);
   const documentPreviewCloseTimerRef = useRef<number | null>(null);
   const documentPreviewObjectUrlRef = useRef<string | null>(null);
-  const pdfPreviewRenderingIdsRef = useRef<Set<string>>(new Set());
-  const pdfPreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
-  const pdfPreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
-
-  const clearPdfPreviewRetryTimer = useCallback((messageId: string) => {
-    const existingTimerId = pdfPreviewRetryTimersRef.current.get(messageId);
-    if (!existingTimerId) return;
-    window.clearTimeout(existingTimerId);
-    pdfPreviewRetryTimersRef.current.delete(messageId);
-  }, []);
-
-  const schedulePdfPreviewRetry = useCallback((messageId: string) => {
-    if (pdfPreviewRetryTimersRef.current.has(messageId)) return;
-
-    const nextAttemptCount =
-      (pdfPreviewRetryAttemptsRef.current.get(messageId) ?? 0) + 1;
-    pdfPreviewRetryAttemptsRef.current.set(messageId, nextAttemptCount);
-
-    if (nextAttemptCount >= PDF_PREVIEW_MAX_RETRY_ATTEMPTS) return;
-
-    const retryDelay = PDF_PREVIEW_RETRY_BASE_DELAY_MS * nextAttemptCount;
-    const retryTimerId = window.setTimeout(() => {
-      pdfPreviewRetryTimersRef.current.delete(messageId);
-      setPdfPreviewRetryNonce(prevNonce => prevNonce + 1);
-    }, retryDelay);
-    pdfPreviewRetryTimersRef.current.set(messageId, retryTimerId);
-  }, []);
+  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
+    () => getAttachmentCaptionData(messages),
+    [messages]
+  );
 
   const closeImagePreview = useCallback(() => {
     setIsImagePreviewVisible(false);
@@ -512,8 +214,6 @@ const MessagesPane = ({
   );
 
   useEffect(() => {
-    const pdfPreviewRetryTimers = pdfPreviewRetryTimersRef.current;
-
     return () => {
       if (imagePreviewCloseTimerRef.current) {
         window.clearTimeout(imagePreviewCloseTimerRef.current);
@@ -523,272 +223,9 @@ const MessagesPane = ({
         window.clearTimeout(documentPreviewCloseTimerRef.current);
         documentPreviewCloseTimerRef.current = null;
       }
-      pdfPreviewRetryTimers.forEach(timerId => {
-        window.clearTimeout(timerId);
-      });
-      pdfPreviewRetryTimers.clear();
       releaseDocumentPreviewObjectUrl();
     };
   }, [releaseDocumentPreviewObjectUrl]);
-
-  useEffect(() => {
-    setPdfMessagePreviews(prevPreviews => {
-      let hasChanges = false;
-      const nextPreviews: Record<string, PdfMessagePreview> = {};
-
-      for (const message of messages) {
-        if (message.message_type !== 'file') continue;
-        if (getAttachmentFileKind(message) !== 'document') continue;
-
-        const fileName = getAttachmentFileName(message);
-        const extension = resolveFileExtension(
-          fileName,
-          message.message,
-          message.file_mime_type
-        );
-        const isPdf =
-          extension === 'pdf' ||
-          message.file_mime_type?.toLowerCase().includes('pdf') === true;
-        if (!isPdf) continue;
-
-        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-        const existingPreview = prevPreviews[message.id];
-
-        if (existingPreview?.cacheKey === cacheKey) {
-          nextPreviews[message.id] = existingPreview;
-          continue;
-        }
-
-        const cachedPreview = pdfMessagePreviewCache.get(cacheKey);
-        if (cachedPreview) {
-          nextPreviews[message.id] = cachedPreview;
-          hasChanges = true;
-          continue;
-        }
-
-        if (existingPreview) {
-          hasChanges = true;
-        }
-      }
-
-      if (
-        Object.keys(nextPreviews).length !== Object.keys(prevPreviews).length
-      ) {
-        hasChanges = true;
-      }
-
-      return hasChanges ? nextPreviews : prevPreviews;
-    });
-  }, [getAttachmentFileKind, getAttachmentFileName, messages]);
-
-  useEffect(() => {
-    const activePdfMessageIds = new Set<string>();
-
-    for (const message of messages) {
-      if (message.message_type !== 'file') continue;
-      if (getAttachmentFileKind(message) !== 'document') continue;
-
-      const fileName = getAttachmentFileName(message);
-      const extension = resolveFileExtension(
-        fileName,
-        message.message,
-        message.file_mime_type
-      );
-      const isPdf =
-        extension === 'pdf' ||
-        message.file_mime_type?.toLowerCase().includes('pdf') === true;
-      if (!isPdf) continue;
-
-      activePdfMessageIds.add(message.id);
-    }
-
-    for (const [messageId] of pdfPreviewRetryAttemptsRef.current) {
-      if (activePdfMessageIds.has(messageId)) continue;
-      pdfPreviewRetryAttemptsRef.current.delete(messageId);
-      clearPdfPreviewRetryTimer(messageId);
-      pdfPreviewRenderingIdsRef.current.delete(messageId);
-    }
-  }, [
-    clearPdfPreviewRetryTimer,
-    getAttachmentFileKind,
-    getAttachmentFileName,
-    messages,
-  ]);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const pendingPdfMessages = messages.filter(message => {
-      if (message.message_type !== 'file') return false;
-      if (getAttachmentFileKind(message) !== 'document') return false;
-
-      const fileName = getAttachmentFileName(message);
-      const extension = resolveFileExtension(
-        fileName,
-        message.message,
-        message.file_mime_type
-      );
-      const isPdf =
-        extension === 'pdf' ||
-        message.file_mime_type?.toLowerCase().includes('pdf') === true;
-      if (!isPdf) return false;
-      const hasPersistedPreviewUrl =
-        typeof message.file_preview_url === 'string' &&
-        message.file_preview_url.trim().length > 0;
-      if (hasPersistedPreviewUrl) return false;
-      const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-      if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-      if (pdfMessagePreviewCache.has(cacheKey)) return false;
-      if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
-      if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
-      if (
-        (pdfPreviewRetryAttemptsRef.current.get(message.id) ?? 0) >=
-        PDF_PREVIEW_MAX_RETRY_ATTEMPTS
-      ) {
-        return false;
-      }
-      return true;
-    });
-
-    if (pendingPdfMessages.length === 0) return;
-
-    const renderPdfPreviews = async () => {
-      try {
-        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-        const pdfWorkerModule =
-          await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
-
-        for (const pendingMessage of pendingPdfMessages) {
-          if (isCancelled) return;
-          pdfPreviewRenderingIdsRef.current.add(pendingMessage.id);
-
-          const pendingFileName = getAttachmentFileName(pendingMessage);
-          const cacheKey = buildPdfMessagePreviewCacheKey(
-            pendingMessage,
-            pendingFileName
-          );
-          let pdfDocument: {
-            numPages: number;
-            getPage: (pageNumber: number) => Promise<any>;
-            cleanup: () => void;
-            destroy: () => void;
-          } | null = null;
-
-          try {
-            const pdfBlob = await fetchPdfBlobWithFallback(
-              pendingMessage.message,
-              pendingMessage.file_storage_path
-            );
-            if (!pdfBlob) {
-              schedulePdfPreviewRetry(pendingMessage.id);
-              continue;
-            }
-            const fileBuffer = await pdfBlob.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument(
-              new Uint8Array(fileBuffer)
-            );
-            const loadedPdfDocument = await loadingTask.promise;
-            pdfDocument = loadedPdfDocument;
-            const firstPage = await loadedPdfDocument.getPage(1);
-            const baseViewport = firstPage.getViewport({ scale: 1 });
-            const targetWidth = 260;
-            const scale = targetWidth / Math.max(baseViewport.width, 1);
-            const viewport = firstPage.getViewport({ scale });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            if (!context) {
-              schedulePdfPreviewRetry(pendingMessage.id);
-              continue;
-            }
-
-            canvas.width = Math.max(1, Math.round(viewport.width));
-            canvas.height = Math.max(1, Math.round(viewport.height));
-
-            await firstPage.render({
-              canvas,
-              canvasContext: context,
-              viewport,
-              background: 'rgb(255, 255, 255)',
-            }).promise;
-
-            if (isCancelled) return;
-
-            const coverDataUrl = canvas.toDataURL('image/png');
-            const nextPreview: PdfMessagePreview = {
-              coverDataUrl,
-              pageCount: Math.max(loadedPdfDocument.numPages ?? 1, 1),
-              cacheKey,
-            };
-            pdfMessagePreviewCache.set(cacheKey, nextPreview);
-            pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
-            clearPdfPreviewRetryTimer(pendingMessage.id);
-            setPdfMessagePreviews(prev => ({
-              ...prev,
-              [pendingMessage.id]: nextPreview,
-            }));
-          } catch (error) {
-            console.error('Error rendering PDF message preview:', error);
-            schedulePdfPreviewRetry(pendingMessage.id);
-          } finally {
-            pdfDocument?.cleanup();
-            pdfDocument?.destroy();
-            pdfPreviewRenderingIdsRef.current.delete(pendingMessage.id);
-          }
-        }
-      } catch (error) {
-        console.error('Error preparing PDF preview renderer:', error);
-        for (const pendingMessage of pendingPdfMessages) {
-          schedulePdfPreviewRetry(pendingMessage.id);
-        }
-      }
-    };
-
-    void renderPdfPreviews();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    getAttachmentFileKind,
-    getAttachmentFileName,
-    messages,
-    pdfMessagePreviews,
-    clearPdfPreviewRetryTimer,
-    schedulePdfPreviewRetry,
-  ]);
-
-  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(() => {
-    const attachmentMessagesById = new Map<string, ChatMessage>();
-    const captionMap = new Map<string, ChatMessage>();
-    const captionIds = new Set<string>();
-
-    for (const message of messages) {
-      if (message.message_type === 'image' || message.message_type === 'file') {
-        attachmentMessagesById.set(message.id, message);
-      }
-    }
-
-    for (const message of messages) {
-      if (message.message_type !== 'text' || !message.reply_to_id) continue;
-
-      const parentMessage = attachmentMessagesById.get(message.reply_to_id);
-      if (!parentMessage) continue;
-      if (parentMessage.sender_id !== message.sender_id) continue;
-      if (parentMessage.receiver_id !== message.receiver_id) continue;
-      if (parentMessage.channel_id !== message.channel_id) continue;
-      if (captionMap.has(parentMessage.id)) continue;
-
-      captionMap.set(parentMessage.id, message);
-      captionIds.add(message.id);
-    }
-
-    return {
-      captionMessagesByAttachmentId: captionMap,
-      captionMessageIds: captionIds,
-    };
-  }, [messages]);
 
   return (
     <>
@@ -808,729 +245,57 @@ const MessagesPane = ({
           </div>
         ) : (
           <LayoutGroup id="chat-message-menus">
-            {messages.map(msg => {
-              if (captionMessageIds.has(msg.id)) {
+            {messages.map(messageItem => {
+              if (captionMessageIds.has(messageItem.id)) {
                 return null;
               }
 
-              const isCurrentUser = msg.sender_id === user?.id;
-              const captionMessage = captionMessagesByAttachmentId.get(msg.id);
-              const attachmentCaptionText =
-                captionMessage?.message?.trim() ?? '';
-              const hasAttachmentCaption =
-                (msg.message_type === 'image' || msg.message_type === 'file') &&
-                attachmentCaptionText.length > 0;
-              const displayTime = new Date(msg.created_at).toLocaleTimeString(
-                [],
-                {
-                  hour12: false,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                }
-              );
-              const createdTimestamp = new Date(msg.created_at).getTime();
-              const updatedTimestamp = new Date(msg.updated_at).getTime();
-              const isTextMessage = msg.message_type === 'text';
-              const isEdited =
-                isTextMessage &&
-                Number.isFinite(createdTimestamp) &&
-                Number.isFinite(updatedTimestamp) &&
-                updatedTimestamp > createdTimestamp;
-              const messageDeliveryStatus = isCurrentUser
-                ? msg.id.startsWith('temp_')
-                  ? 'sending'
-                  : msg.is_read
-                    ? 'read'
-                    : msg.is_delivered
-                      ? 'delivered'
-                      : 'sent'
-                : null;
-              const isMenuOpen = openMenuMessageId === msg.id;
-              const isMenuTransitionSource = menuTransitionSourceId === msg.id;
-              const isFlashSequenceTarget = flashingMessageId === msg.id;
-              const isFlashingTarget =
-                isFlashSequenceTarget && isFlashHighlightVisible;
-              const isSearchMatch = searchMatchedMessageIds.has(msg.id);
-              const isActiveSearchMatch = activeSearchMessageId === msg.id;
-              const isSelected = selectedMessageIds.has(msg.id);
-              const isImageMessage = msg.message_type === 'image';
-              const isFileMessage = msg.message_type === 'file';
-              const fileKind = isFileMessage
-                ? getAttachmentFileKind(msg)
-                : 'document';
-              const isAudioFileMessage = isFileMessage && fileKind === 'audio';
-              const fileName = isFileMessage
-                ? getAttachmentFileName(msg)
-                : null;
-              const fileExtension = isFileMessage
-                ? resolveFileExtension(
-                    fileName,
-                    msg.message,
-                    msg.file_mime_type
-                  )
-                : '';
-              const fileSizeLabel = isFileMessage
-                ? formatFileSize(msg.file_size)
-                : null;
-              const fileFallbackLabel = isFileMessage
-                ? formatFileFallbackLabel(fileExtension, fileKind)
-                : null;
-              const isPdfFileMessage =
-                isFileMessage &&
-                !isAudioFileMessage &&
-                (fileExtension === 'pdf' ||
-                  msg.file_mime_type?.toLowerCase().includes('pdf') === true);
-              const isImageFileMessage =
-                isFileMessage &&
-                !isAudioFileMessage &&
-                isImageFileExtensionOrMime(fileExtension, msg.file_mime_type);
-              const pdfPreviewCacheKey =
-                isPdfFileMessage && fileName
-                  ? buildPdfMessagePreviewCacheKey(msg, fileName)
-                  : null;
-              const pdfMessagePreview = isPdfFileMessage
-                ? pdfMessagePreviews[msg.id] &&
-                  pdfMessagePreviews[msg.id].cacheKey === pdfPreviewCacheKey
-                  ? pdfMessagePreviews[msg.id]
-                  : pdfPreviewCacheKey
-                    ? pdfMessagePreviewCache.get(pdfPreviewCacheKey)
-                    : undefined
-                : undefined;
-              const persistedPdfPreviewUrl = isPdfFileMessage
-                ? msg.file_preview_url?.trim() || null
-                : null;
-              const resolvedPdfPreviewUrl =
-                persistedPdfPreviewUrl ||
-                pdfMessagePreview?.coverDataUrl ||
-                null;
-              const resolvedPdfPageCount = isPdfFileMessage
-                ? (msg.file_preview_page_count ?? pdfMessagePreview?.pageCount)
-                : null;
-              const pdfMetaLabel = isPdfFileMessage
-                ? [
-                    resolvedPdfPageCount
-                      ? `${resolvedPdfPageCount} halaman`
-                      : null,
-                    'PDF',
-                    fileSizeLabel,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || 'PDF'
-                : null;
-              const fileIcon = isAudioFileMessage ? (
-                <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'jpg' || fileExtension === 'jpeg' ? (
-                <TbFileTypeJpg className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'png' ? (
-                <TbFileTypePng className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'pdf' ? (
-                <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'docx' ? (
-                <TbFileTypeDocx className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'doc' ? (
-                <TbFileTypeDoc className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'csv' ? (
-                <TbFileTypeCsv className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'ppt' || fileExtension === 'pptx' ? (
-                <TbFileTypePpt className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'txt' ? (
-                <TbFileTypeTxt className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'zip' ? (
-                <TbFileTypeZip className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : fileExtension === 'xls' ||
-                fileExtension === 'xlsx' ||
-                fileExtension === 'x' ? (
-                <TbFileTypeXls className="h-8 w-8 shrink-0 text-slate-600" />
-              ) : (
-                <TbFileUnknown className="h-8 w-8 shrink-0 text-slate-600" />
-              );
-              const bubbleToneClass = isFlashingTarget
-                ? 'bg-primary text-white'
-                : isCurrentUser
-                  ? 'bg-emerald-200 text-slate-900'
-                  : 'bg-white text-slate-800';
-              const bubbleOpacityClass = isFlashSequenceTarget
-                ? isFlashHighlightVisible
-                  ? 'opacity-100'
-                  : 'opacity-60'
-                : 'opacity-100';
-
-              const animationKey = msg.stableKey || msg.id;
-              const shouldAnimateEnter =
-                !initialMessageAnimationKeysRef.current.has(animationKey);
-              const shouldAnimateOpenJump =
-                !shouldAnimateEnter &&
-                initialOpenJumpAnimationKeysRef.current.has(animationKey);
-              const targetAnimation = shouldAnimateOpenJump
-                ? {
-                    opacity: 1,
-                    scale: [1, 1.04, 1],
-                    x: 0,
-                    y: [0, -8, 0],
-                  }
-                : { opacity: 1, scale: 1, x: 0, y: 0 };
-              const animationTransition = shouldAnimateOpenJump
-                ? {
-                    duration: 0.36,
-                    ease: [0.22, 1, 0.36, 1] as const,
-                  }
-                : {
-                    duration: 0.3,
-                    ease: [0.23, 1, 0.32, 1] as const,
-                    type: 'spring' as const,
-                    stiffness: 300,
-                    damping: 24,
-                  };
-
-              const isExpanded = expandedMessageIds.has(msg.id);
-              const isMessageLong =
-                !isImageMessage &&
-                !isFileMessage &&
-                !isExpanded &&
-                msg.message.length > maxMessageChars;
-              const bubbleWrapperClass = isFileMessage
-                ? 'block w-full'
-                : isImageMessage
-                  ? 'inline-flex flex-col align-top'
-                  : 'inline-block';
-              const bubbleSpacingClass = isImageMessage
-                ? hasAttachmentCaption
-                  ? 'px-2 py-2'
-                  : 'p-0 overflow-hidden'
-                : isFileMessage
-                  ? 'px-2 py-2'
-                  : 'px-3 py-2';
-              const bubbleTypographyClass =
-                isImageMessage || isFileMessage
-                  ? ''
-                  : 'text-sm whitespace-pre-wrap break-words';
-              const collapsedSearchSnippet = buildCollapsedSearchSnippet(
-                msg.message,
-                normalizedSearchQuery,
-                maxMessageChars
-              );
-              const displayMessage = isMessageLong
-                ? collapsedSearchSnippet.text
-                : msg.message;
-              const highlightedMessage = renderHighlightedText(
-                displayMessage,
-                normalizedSearchQuery
-              );
-              const highlightedCaption = renderHighlightedText(
-                attachmentCaptionText,
-                normalizedSearchQuery
-              );
-              const menuActions: PopupMenuAction[] = [
-                {
-                  label: 'Salin',
-                  icon: <TbCopy className="h-4 w-4" />,
-                  onClick: () => {
-                    void handleCopyMessage(msg);
-                  },
-                },
-              ];
-
-              if (isImageMessage || isFileMessage) {
-                menuActions.unshift({
-                  label: 'Buka',
-                  icon: <TbEye className="h-4 w-4" />,
-                  onClick: () => {
-                    if (isImageMessage || isImageFileMessage) {
-                      openImageInPortal(msg.message, fileName || 'Gambar');
-                      return;
-                    }
-                    if (
-                      isFileMessage &&
-                      fileKind === 'document' &&
-                      isPdfFileMessage
-                    ) {
-                      void openDocumentInPortal(
-                        msg.message,
-                        fileName || 'Dokumen',
-                        isPdfFileMessage
-                      );
-                      return;
-                    }
-                    openInNewTab(msg.message);
-                  },
-                });
-              }
-
-              if (isFileMessage) {
-                menuActions.splice(1, 0, {
-                  label: 'Download',
-                  icon: <TbDownload className="h-4 w-4" />,
-                  onClick: () => {
-                    void handleDownloadMessage(msg);
-                  },
-                });
-              }
-
-              if (isCurrentUser && (isImageMessage || isFileMessage)) {
-                menuActions.push({
-                  label: 'Hapus',
-                  icon: <TbTrash className="h-4 w-4" />,
-                  onClick: () => {
-                    void handleDeleteMessage(msg);
-                  },
-                  tone: 'danger',
-                });
-              } else if (isCurrentUser) {
-                menuActions.push(
-                  {
-                    label: 'Edit',
-                    icon: <TbPencil className="h-4 w-4" />,
-                    onClick: () => handleEditMessage(msg),
-                  },
-                  {
-                    label: 'Hapus',
-                    icon: <TbTrash className="h-4 w-4" />,
-                    onClick: () => {
-                      void handleDeleteMessage(msg);
-                    },
-                    tone: 'danger',
-                  }
-                );
-              }
-              const sideMenuPositionClass =
-                menuSideAnchor === 'bottom'
-                  ? 'bottom-0'
-                  : menuSideAnchor === 'top'
-                    ? 'top-0'
-                    : 'top-1/2 -translate-y-1/2';
-              const sidePlacementClass =
-                menuPlacement === 'left'
-                  ? `right-full mr-2 ${sideMenuPositionClass} ${
-                      menuSideAnchor === 'bottom'
-                        ? 'origin-bottom-right'
-                        : menuSideAnchor === 'top'
-                          ? 'origin-top-right'
-                          : 'origin-right'
-                    }`
-                  : menuPlacement === 'right'
-                    ? `left-full ml-2 ${sideMenuPositionClass} ${
-                        menuSideAnchor === 'bottom'
-                          ? 'origin-bottom-left'
-                          : menuSideAnchor === 'top'
-                            ? 'origin-top-left'
-                            : 'origin-left'
-                      }`
-                    : menuPlacement === 'down'
-                      ? 'bottom-full mb-2 left-0 origin-bottom-left'
-                      : 'top-full mt-2 left-0 origin-top-left';
-              const sideArrowAnchorClass =
-                menuSideAnchor === 'bottom'
-                  ? 'top-[78%] -translate-y-1/2'
-                  : menuSideAnchor === 'top'
-                    ? 'top-[22%] -translate-y-1/2'
-                    : 'top-1/2 -translate-y-1/2';
-
               return (
-                <motion.div
-                  key={animationKey}
-                  initial={
-                    shouldAnimateEnter
-                      ? {
-                          opacity: 0,
-                          scale: 0.7,
-                          x: isCurrentUser ? 18 : -18,
-                          y: 10,
-                        }
-                      : false
+                <MessageItem
+                  key={messageItem.stableKey || messageItem.id}
+                  message={messageItem}
+                  userId={user?.id}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedMessageIds.has(messageItem.id)}
+                  openMenuMessageId={openMenuMessageId}
+                  menuPlacement={menuPlacement}
+                  menuSideAnchor={menuSideAnchor}
+                  shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+                  menuTransitionSourceId={menuTransitionSourceId}
+                  menuOffsetX={menuOffsetX}
+                  expandedMessageIds={expandedMessageIds}
+                  flashingMessageId={flashingMessageId}
+                  isFlashHighlightVisible={isFlashHighlightVisible}
+                  searchMatchedMessageIds={searchMatchedMessageIds}
+                  activeSearchMessageId={activeSearchMessageId}
+                  maxMessageChars={maxMessageChars}
+                  messageBubbleRefs={messageBubbleRefs}
+                  initialMessageAnimationKeysRef={
+                    initialMessageAnimationKeysRef
                   }
-                  animate={targetAnimation}
-                  style={{
-                    transformOrigin: isCurrentUser
-                      ? 'right bottom'
-                      : 'left bottom',
-                  }}
-                  transition={animationTransition}
-                  onAnimationComplete={() => {
-                    if (shouldAnimateOpenJump) {
-                      initialOpenJumpAnimationKeysRef.current.delete(
-                        animationKey
-                      );
-                    }
-                  }}
-                  className={`relative flex w-full ${
-                    isCurrentUser ? 'justify-end' : 'justify-start'
-                  } ${
-                    isMenuOpen
-                      ? 'z-50'
-                      : isMenuTransitionSource
-                        ? 'z-40'
-                        : 'z-0'
-                  } ${
-                    !isSelectionMode &&
-                    openMenuMessageId &&
-                    openMenuMessageId !== msg.id
-                      ? 'blur-[2px] brightness-95'
-                      : ''
-                  } ${
-                    isSelectionMode
-                      ? isSelected
-                        ? 'cursor-pointer rounded-lg bg-slate-100/75 px-2 py-1'
-                        : 'cursor-pointer rounded-lg px-2 py-1 hover:bg-slate-100/60'
-                      : ''
-                  }`}
-                  onClick={() => {
-                    if (!isSelectionMode) return;
-                    onToggleMessageSelection(msg.id);
-                  }}
-                >
-                  <div
-                    className={`${
-                      isCurrentUser
-                        ? 'flex max-w-xs flex-col items-end'
-                        : 'flex max-w-xs flex-col items-start'
-                    }`}
-                  >
-                    <div
-                      className={isFileMessage ? 'relative w-full' : 'relative'}
-                    >
-                      {isSelectionMode ? (
-                        <span
-                          className={`pointer-events-none absolute -top-1.5 ${isCurrentUser ? '-left-1.5' : '-right-1.5'} z-10 inline-flex h-5 w-5 items-center justify-center rounded-full border text-xs ${
-                            isSelected
-                              ? 'border-primary bg-primary text-white'
-                              : 'border-slate-300 bg-white text-slate-400'
-                          }`}
-                        >
-                          {isSelected ? (
-                            <TbCheck className="h-3.5 w-3.5" />
-                          ) : null}
-                        </span>
-                      ) : null}
-                      <div
-                        ref={bubbleElement => {
-                          if (bubbleElement) {
-                            messageBubbleRefs.current.set(
-                              msg.id,
-                              bubbleElement
-                            );
-                          } else {
-                            messageBubbleRefs.current.delete(msg.id);
-                          }
-                        }}
-                        className={`${bubbleWrapperClass} max-w-full ${bubbleSpacingClass} ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
-                          isCurrentUser
-                            ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
-                            : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
-                        } ${
-                          isActiveSearchMatch
-                            ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
-                            : isSearchMatch
-                              ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
-                              : ''
-                        } ${
-                          isSelectionMode ? '' : ''
-                        } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
-                        style={{
-                          [isCurrentUser
-                            ? 'borderBottomRightRadius'
-                            : 'borderBottomLeftRadius']: '2px',
-                        }}
-                        onClick={event => {
-                          if (isSelectionMode) return;
-                          event.stopPropagation();
-                          toggleMessageMenu(
-                            event.currentTarget,
-                            msg.id,
-                            isCurrentUser ? 'left' : 'right'
-                          );
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={event => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            if (isSelectionMode) {
-                              onToggleMessageSelection(msg.id);
-                              return;
-                            }
-                            toggleMessageMenu(
-                              event.currentTarget,
-                              msg.id,
-                              isCurrentUser ? 'left' : 'right'
-                            );
-                          }
-                        }}
-                      >
-                        {isCurrentUser ? (
-                          <div className="absolute right-full bottom-0 mr-2 flex flex-col items-end text-xs text-slate-500">
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              {displayTime}
-                            </div>
-                            {messageDeliveryStatus || isEdited ? (
-                              <div className="inline-flex items-center gap-1 whitespace-nowrap">
-                                {isEdited ? (
-                                  <span className="text-slate-500">Diedit</span>
-                                ) : null}
-                                {messageDeliveryStatus ? (
-                                  <span
-                                    className={`inline-flex items-center ${
-                                      messageDeliveryStatus === 'read'
-                                        ? 'text-primary'
-                                        : 'text-slate-400'
-                                    }`}
-                                    aria-label={
-                                      messageDeliveryStatus === 'sending'
-                                        ? 'Status pesan: mengirim'
-                                        : messageDeliveryStatus === 'delivered'
-                                          ? 'Status pesan: diterima'
-                                          : messageDeliveryStatus === 'read'
-                                            ? 'Status pesan: dibaca'
-                                            : 'Status pesan: terkirim'
-                                    }
-                                    title={
-                                      messageDeliveryStatus === 'sending'
-                                        ? 'Mengirim'
-                                        : messageDeliveryStatus === 'delivered'
-                                          ? 'Diterima'
-                                          : messageDeliveryStatus === 'read'
-                                            ? 'Dibaca'
-                                            : 'Terkirim'
-                                    }
-                                  >
-                                    {messageDeliveryStatus === 'sending' ? (
-                                      <TbClock className="h-3.5 w-3.5" />
-                                    ) : messageDeliveryStatus ===
-                                      'delivered' ? (
-                                      <TbChecks className="h-3.5 w-3.5" />
-                                    ) : messageDeliveryStatus === 'read' ? (
-                                      <TbChecks className="h-3.5 w-3.5" />
-                                    ) : (
-                                      <TbCheck className="h-3.5 w-3.5" />
-                                    )}
-                                  </span>
-                                ) : null}
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="absolute left-full bottom-0 ml-2 flex flex-col items-start text-xs text-slate-500">
-                            <div className="whitespace-nowrap">
-                              {displayTime}
-                            </div>
-                            {isEdited ? (
-                              <div className="whitespace-nowrap text-slate-500">
-                                Diedit
-                              </div>
-                            ) : null}
-                          </div>
-                        )}
-                        {isImageMessage ? (
-                          <img
-                            src={msg.message}
-                            alt="Chat attachment"
-                            className={`block max-h-72 w-auto max-w-full object-cover ${
-                              hasAttachmentCaption
-                                ? 'rounded-lg'
-                                : 'rounded-[inherit]'
-                            }`}
-                            loading="lazy"
-                            draggable={false}
-                          />
-                        ) : isPdfFileMessage ? (
-                          <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
-                            <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">
-                              {resolvedPdfPreviewUrl ? (
-                                <img
-                                  src={resolvedPdfPreviewUrl}
-                                  alt={`Preview ${fileName || 'dokumen PDF'}`}
-                                  className="h-full w-full object-cover object-top"
-                                  draggable={false}
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                  <TbFileTypePdf className="h-10 w-10 text-slate-500" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 px-2 py-2">
-                              <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
-                              <div className="min-w-0 flex-1 overflow-hidden">
-                                <p className="block w-full truncate text-sm font-medium text-slate-800">
-                                  {fileName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {pdfMetaLabel}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ) : isFileMessage ? (
-                          <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
-                            {fileIcon}
-                            <div className="min-w-0 flex-1 overflow-hidden">
-                              <p className="block w-full truncate text-sm font-medium text-slate-800">
-                                {fileName}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {fileSizeLabel || fileFallbackLabel}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {collapsedSearchSnippet.hasLeadingEllipsis ? (
-                              <span>... </span>
-                            ) : null}
-                            {highlightedMessage}
-                            {isMessageLong ? (
-                              <>
-                                {collapsedSearchSnippet.hasTrailingEllipsis ? (
-                                  <span>... </span>
-                                ) : null}
-                                <span
-                                  className={`font-medium ${
-                                    isFlashingTarget
-                                      ? 'text-white/95'
-                                      : 'text-primary'
-                                  }`}
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={event => {
-                                    event.stopPropagation();
-                                    handleToggleExpand(msg.id);
-                                  }}
-                                  onKeyDown={event => {
-                                    if (
-                                      event.key === 'Enter' ||
-                                      event.key === ' '
-                                    ) {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      handleToggleExpand(msg.id);
-                                    }
-                                  }}
-                                >
-                                  Read more
-                                </span>
-                              </>
-                            ) : isExpanded ? (
-                              <span
-                                className={`block font-medium ${
-                                  isFlashingTarget
-                                    ? 'text-white/95'
-                                    : 'text-primary'
-                                }`}
-                                role="button"
-                                tabIndex={0}
-                                onClick={event => {
-                                  event.stopPropagation();
-                                  handleToggleExpand(msg.id);
-                                }}
-                                onKeyDown={event => {
-                                  if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                  ) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    handleToggleExpand(msg.id);
-                                  }
-                                }}
-                              >
-                                Read less
-                              </span>
-                            ) : null}
-                          </>
-                        )}
-                        {hasAttachmentCaption ? (
-                          <p
-                            className={`mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed ${
-                              isFlashingTarget ? 'text-white' : 'text-slate-800'
-                            }`}
-                          >
-                            {highlightedCaption}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <PopupMenuPopover
-                        isOpen={isSelectionMode ? false : isMenuOpen}
-                        menuId={msg.id}
-                        disableEnterAnimation={!shouldAnimateMenuOpen}
-                        disableExitAnimation={!shouldAnimateMenuOpen}
-                        layout
-                        layoutId="chat-message-menu-popover"
-                        initial={{
-                          opacity: 0,
-                          scale: 0.96,
-                          x:
-                            menuOffsetX +
-                            (menuPlacement === 'left'
-                              ? -6
-                              : menuPlacement === 'right'
-                                ? 6
-                                : 0),
-                          y:
-                            menuPlacement === 'down'
-                              ? 6
-                              : menuPlacement === 'up'
-                                ? -6
-                                : 0,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          scale: 1,
-                          x: menuOffsetX,
-                          y: 0,
-                        }}
-                        exit={{
-                          opacity: 0,
-                          scale: 0.98,
-                          x: menuOffsetX,
-                          y: 0,
-                        }}
-                        transition={{
-                          duration: 0.12,
-                          ease: 'easeOut',
-                          layout: {
-                            type: 'spring',
-                            stiffness: 420,
-                            damping: 34,
-                          },
-                        }}
-                        className={`absolute z-[70] text-slate-900 ${sidePlacementClass}`}
-                        onClick={event => event.stopPropagation()}
-                      >
-                        {menuPlacement === 'left' ? (
-                          <div
-                            className={`absolute right-0 translate-x-full ${sideArrowAnchorClass}`}
-                          >
-                            <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200" />
-                            <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2" />
-                          </div>
-                        ) : menuPlacement === 'right' ? (
-                          <div
-                            className={`absolute left-0 -translate-x-full ${sideArrowAnchorClass}`}
-                          >
-                            <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200" />
-                            <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2" />
-                          </div>
-                        ) : menuPlacement === 'down' ? (
-                          <div className="absolute bottom-0 left-3 translate-y-full">
-                            <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-200" />
-                            <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-white left-1/2 top-[-1px] -translate-x-1/2" />
-                          </div>
-                        ) : (
-                          <div className="absolute top-0 left-3 -translate-y-full">
-                            <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-slate-200" />
-                            <div className="absolute w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-white left-1/2 bottom-[-1px] -translate-x-1/2" />
-                          </div>
-                        )}
-                        <PopupMenuContent
-                          actions={menuActions}
-                          minWidthClassName="min-w-[120px]"
-                          enableArrowNavigation
-                          autoFocusFirstItem
-                        />
-                      </PopupMenuPopover>
-                    </div>
-                  </div>
-                </motion.div>
+                  initialOpenJumpAnimationKeysRef={
+                    initialOpenJumpAnimationKeysRef
+                  }
+                  captionMessage={captionMessagesByAttachmentId.get(
+                    messageItem.id
+                  )}
+                  pdfMessagePreview={getPdfMessagePreview(
+                    messageItem,
+                    getAttachmentFileName(messageItem)
+                  )}
+                  onToggleMessageSelection={onToggleMessageSelection}
+                  toggleMessageMenu={toggleMessageMenu}
+                  handleToggleExpand={handleToggleExpand}
+                  handleEditMessage={handleEditMessage}
+                  handleCopyMessage={handleCopyMessage}
+                  handleDownloadMessage={handleDownloadMessage}
+                  handleDeleteMessage={handleDeleteMessage}
+                  getAttachmentFileName={getAttachmentFileName}
+                  getAttachmentFileKind={getAttachmentFileKind}
+                  normalizedSearchQuery={normalizedSearchQuery}
+                  openImageInPortal={openImageInPortal}
+                  openDocumentInPortal={openDocumentInPortal}
+                />
               );
             })}
           </LayoutGroup>
@@ -1538,7 +303,7 @@ const MessagesPane = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {showScrollToBottom && messages.length > 0 && (
+      {showScrollToBottom && messages.length > 0 ? (
         <button
           type="button"
           onClick={onScrollToBottom}
@@ -1550,7 +315,7 @@ const MessagesPane = ({
         >
           <TbArrowDown size={18} />
         </button>
-      )}
+      ) : null}
 
       <ImageExpandPreview
         isOpen={Boolean(imagePreviewUrl)}
