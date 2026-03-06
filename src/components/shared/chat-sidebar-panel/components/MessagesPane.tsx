@@ -309,6 +309,7 @@ interface MessagesPaneProps {
   user?: ChatPanelUser | null;
   messageInputHeight: number;
   composerContextualOffset: number;
+  composerContainerHeight: number;
   openMenuMessageId: string | null;
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
@@ -355,6 +356,7 @@ const MessagesPane = ({
   user,
   messageInputHeight,
   composerContextualOffset,
+  composerContainerHeight,
   openMenuMessageId,
   menuPlacement,
   menuSideAnchor,
@@ -1543,7 +1545,7 @@ const MessagesPane = ({
           aria-label="Scroll ke pesan terbaru"
           className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl bg-white text-black shadow-sm transition-colors hover:text-black/80"
           style={{
-            bottom: messageInputHeight + 78 + composerContextualOffset,
+            bottom: Math.max(composerContainerHeight + 24, 46),
           }}
         >
           <TbArrowDown size={18} />

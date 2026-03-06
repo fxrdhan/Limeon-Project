@@ -148,6 +148,7 @@ const ChatSidebarPanel = memo(
     const [messageInputHeight, setMessageInputHeight] = useState(
       MESSAGE_INPUT_MIN_HEIGHT
     );
+    const [composerContainerHeight, setComposerContainerHeight] = useState(0);
     const [composerLayoutMode, setComposerLayoutMode] = useState<
       'inline' | 'multiline'
     >('inline');
@@ -3204,6 +3205,31 @@ const ChatSidebarPanel = memo(
       [cancelScrollToBottomAnimation]
     );
 
+    useLayoutEffect(() => {
+      const composerContainer = composerContainerRef.current;
+      if (!composerContainer) return;
+
+      const updateComposerContainerHeight = () => {
+        setComposerContainerHeight(composerContainer.offsetHeight);
+      };
+
+      updateComposerContainerHeight();
+
+      const resizeObserver = new ResizeObserver(() => {
+        updateComposerContainerHeight();
+      });
+      resizeObserver.observe(composerContainer);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }, [
+      composerContextualOffset,
+      isMessageInputMultiline,
+      messageInputHeight,
+      pendingComposerAttachments.length,
+    ]);
+
     // Scroll to bottom function
     /* c8 ignore next 5 */
     const scrollToBottom = () => {
@@ -3942,6 +3968,7 @@ const ChatSidebarPanel = memo(
               user={user}
               messageInputHeight={messageInputHeight}
               composerContextualOffset={composerContextualOffset}
+              composerContainerHeight={composerContainerHeight}
               openMenuMessageId={openMenuMessageId}
               menuPlacement={menuPlacement}
               menuSideAnchor={menuSideAnchor}
