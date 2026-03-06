@@ -1,9 +1,6 @@
-export interface ChatSidebarPanelTargetUser {
-  id: string;
-  name: string;
-  email: string;
-  profilephoto?: string | null;
-}
+import type { ChatTargetUser } from '@/types';
+
+export type ChatSidebarPanelTargetUser = ChatTargetUser;
 
 export interface ChatSidebarPanelProps {
   isOpen: boolean;

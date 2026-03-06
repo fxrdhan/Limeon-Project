@@ -335,6 +335,15 @@ export const useChatComposer = ({
     });
   }, []);
 
+  const resetConversationScopedComposerState = useCallback(() => {
+    closeAttachModal();
+    setMessage('');
+    setEditingMessageId(null);
+    inlineOverflowThresholdRef.current = null;
+    setIsSendSuccessGlowVisible(false);
+    clearPendingComposerAttachments();
+  }, [clearPendingComposerAttachments, closeAttachModal]);
+
   const closeComposerImagePreview = useCallback(() => {
     setIsComposerImageExpandedVisible(false);
     if (composerImagePreviewCloseTimerRef.current) {
@@ -758,6 +767,10 @@ export const useChatComposer = ({
     if (!isOpen) return;
     resizeMessageInput(message);
   }, [isOpen, message, resizeMessageInput]);
+
+  useEffect(() => {
+    resetConversationScopedComposerState();
+  }, [currentChannelId, resetConversationScopedComposerState]);
 
   useEffect(() => {
     return () => {

@@ -231,8 +231,10 @@ describe('useChatComposerActions', () => {
       };
     });
 
+    let deleteResult = false;
     await act(async () => {
-      await result.current.handleDeleteMessage(attachmentMessage);
+      deleteResult =
+        await result.current.handleDeleteMessage(attachmentMessage);
     });
 
     await waitFor(() => {
@@ -241,6 +243,7 @@ describe('useChatComposerActions', () => {
       ).toEqual(['file-1']);
     });
 
+    expect(deleteResult).toBe(false);
     expect(mockChatService.deleteMessage).toHaveBeenNthCalledWith(
       1,
       'caption-1'
@@ -249,7 +252,8 @@ describe('useChatComposerActions', () => {
     expect(broadcastDeletedMessage).toHaveBeenCalledWith('caption-1');
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
       'user-a',
-      'user-b'
+      'user-b',
+      'channel-1'
     );
     expect(mockToast.error).toHaveBeenCalledWith(
       'Gagal menghapus pesan',
@@ -257,5 +261,77 @@ describe('useChatComposerActions', () => {
         toasterId: 'chat-sidebar-toaster',
       })
     );
+  });
+
+  it('suppresses error toast when delete failure is handled by the caller', async () => {
+    const attachmentMessage = buildMessage({
+      id: 'file-2',
+      message: 'https://example.com/report-2.pdf',
+      message_type: 'file',
+      file_name: 'report-2.pdf',
+      file_kind: 'document',
+      sender_name: 'Admin',
+      receiver_name: 'Gudang',
+    });
+
+    mockChatService.deleteMessage.mockResolvedValue({
+      data: null,
+      error: new Error('delete failed'),
+    });
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [attachmentMessage],
+      error: null,
+    });
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        attachmentMessage,
+      ]);
+      const [message, setMessage] = useState('');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        null
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerActions({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        messages,
+        setMessages,
+        message,
+        setMessage,
+        editingMessageId,
+        setEditingMessageId,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        closeMessageMenu: vi.fn(),
+        focusMessageComposer: vi.fn(),
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+      });
+    });
+
+    let deleteResult = true;
+    await act(async () => {
+      deleteResult = await result.current.handleDeleteMessage(
+        attachmentMessage,
+        {
+          suppressErrorToast: true,
+        }
+      );
+    });
+
+    expect(deleteResult).toBe(false);
+    expect(mockToast.error).not.toHaveBeenCalled();
   });
 });

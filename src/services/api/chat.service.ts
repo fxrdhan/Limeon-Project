@@ -81,16 +81,24 @@ export interface UserPresenceInsertInput extends UserPresenceUpdateInput {
 export const chatService = {
   async fetchMessagesBetweenUsers(
     userId: string,
-    targetUserId: string
+    targetUserId: string,
+    channelId?: string | null
   ): Promise<ServiceResponse<ChatMessage[]>> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('chat_messages')
         .select('*')
         .or(
           `and(sender_id.eq.${userId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${userId})`
-        )
-        .order('created_at', { ascending: true });
+        );
+
+      if (channelId) {
+        query = query.eq('channel_id', channelId);
+      }
+
+      const { data, error } = await query.order('created_at', {
+        ascending: true,
+      });
 
       if (error) {
         return { data: null, error };

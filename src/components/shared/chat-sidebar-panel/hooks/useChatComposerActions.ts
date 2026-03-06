@@ -10,19 +10,11 @@ import type {
 } from '../types';
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
+import { mapConversationMessagesForDisplay } from '../utils/message-display';
 
-const mapConversationMessagesForDisplay = (
-  conversationMessages: ChatMessage[],
-  userId: string,
-  userName: string,
-  targetUserName: string
-) =>
-  conversationMessages.map(messageItem => ({
-    ...messageItem,
-    sender_name: messageItem.sender_id === userId ? userName : targetUserName,
-    receiver_name:
-      messageItem.receiver_id === userId ? userName : targetUserName,
-  }));
+interface DeleteMessageOptions {
+  suppressErrorToast?: boolean;
+}
 
 interface UseChatComposerActionsProps {
   user: {
@@ -96,7 +88,11 @@ export const useChatComposerActions = ({
 
       try {
         const { data: latestMessages, error } =
-          await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
+          await chatService.fetchMessagesBetweenUsers(
+            user.id,
+            targetUser.id,
+            currentChannelId
+          );
 
         if (error || !latestMessages) {
           setMessages(fallbackMessages);
@@ -105,9 +101,11 @@ export const useChatComposerActions = ({
 
         const mappedMessages = mapConversationMessagesForDisplay(
           latestMessages,
-          user.id,
-          user.name || 'You',
-          targetUser.name || 'Unknown'
+          {
+            currentUserId: user.id,
+            currentUserName: user.name || 'You',
+            targetUserName: targetUser.name || 'Unknown',
+          }
         );
 
         setMessages(previousMessages => {
@@ -127,7 +125,7 @@ export const useChatComposerActions = ({
         setMessages(fallbackMessages);
       }
     },
-    [setMessages, targetUser, user]
+    [currentChannelId, setMessages, targetUser, user]
   );
 
   const handleUpdateMessage = useCallback(async () => {
@@ -228,8 +226,11 @@ export const useChatComposerActions = ({
   ]);
 
   const handleDeleteMessage = useCallback(
-    async (targetMessage: ChatMessage) => {
-      if (!user || !targetUser || !currentChannelId) return;
+    async (
+      targetMessage: ChatMessage,
+      options?: DeleteMessageOptions
+    ): Promise<boolean> => {
+      if (!user || !targetUser || !currentChannelId) return false;
 
       closeMessageMenu();
       const linkedCaptionMessageIds = messages
@@ -261,7 +262,7 @@ export const useChatComposerActions = ({
       const persistedMessageIds = messageIdsToDelete.filter(
         messageId => !messageId.startsWith('temp_')
       );
-      if (persistedMessageIds.length === 0) return;
+      if (persistedMessageIds.length === 0) return true;
 
       try {
         for (const messageId of persistedMessageIds) {
@@ -273,12 +274,16 @@ export const useChatComposerActions = ({
 
           broadcastDeletedMessage(messageId);
         }
+        return true;
       } catch (error) {
         console.error('Error deleting message:', error);
         await reconcileMessagesFromServer(messagesSnapshot);
-        toast.error('Gagal menghapus pesan', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
+        if (!options?.suppressErrorToast) {
+          toast.error('Gagal menghapus pesan', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
+        return false;
       }
     },
     [

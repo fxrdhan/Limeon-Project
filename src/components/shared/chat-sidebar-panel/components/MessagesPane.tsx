@@ -65,7 +65,7 @@ interface MessagesPaneProps {
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
-  handleDeleteMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
   onToggleMessageSelection: (messageId: string) => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (

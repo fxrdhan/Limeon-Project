@@ -1,7 +1,7 @@
 import type { ChatTargetUser } from '@/types';
 import { AnimatePresence, motion } from 'motion/react';
 import ChatSidebarPanel from '@/components/shared/chat-sidebar-panel';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface ChatSidebarProps {
   isOpen: boolean;
@@ -21,6 +21,10 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
 
   const activeTargetUser = targetUser ?? persistedTargetUser;
   const shouldRenderSidebar = isOpen || Boolean(activeTargetUser);
+  const handleAnimationComplete = useCallback(() => {
+    if (isOpen) return;
+    setPersistedTargetUser(undefined);
+  }, [isOpen]);
 
   return (
     <AnimatePresence mode="wait">
@@ -34,6 +38,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
+          onAnimationComplete={handleAnimationComplete}
           aria-hidden={!isOpen}
           className={`h-full overflow-hidden ${
             isOpen

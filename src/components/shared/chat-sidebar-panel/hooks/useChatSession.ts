@@ -14,6 +14,7 @@ import {
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import { mapConversationMessagesForDisplay } from '../utils/message-display';
 
 type ConversationCacheEntry = {
   messages: ChatMessage[];
@@ -59,6 +60,16 @@ export const useChatSession = ({
   const pendingDeliveredReceiptMessageIdsRef = useRef<Set<string>>(new Set());
   const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
   const hasCompletedInitialOpenLoadRef = useRef(false);
+  const activeSessionTokenRef = useRef(0);
+  const activeTargetUserIdRef = useRef<string | null>(targetUser?.id ?? null);
+  const activeConversationChannelIdRef = useRef<string | null>(
+    currentChannelId
+  );
+
+  useEffect(() => {
+    activeTargetUserIdRef.current = targetUser?.id ?? null;
+    activeConversationChannelIdRef.current = currentChannelId;
+  }, [currentChannelId, targetUser?.id]);
 
   const updateUserChatClose = useCallback(
     async ({ keepOnline, timestamp }: UpdateUserChatCloseOptions) => {
@@ -116,8 +127,6 @@ export const useChatSession = ({
     } catch (error) {
       console.error('❌ Database update failed:', error);
     }
-
-    await new Promise(resolve => setTimeout(resolve, 100));
   }, [updateUserChatClose, user]);
 
   const updateUserChatOpen = useCallback(async () => {
@@ -170,27 +179,6 @@ export const useChatSession = ({
     }
   }, [currentChannelId, user]);
 
-  const loadTargetUserPresence = useCallback(async () => {
-    if (!targetUser) return;
-
-    try {
-      const { data: presence, error } = await chatService.getUserPresence(
-        targetUser.id
-      );
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ Error loading target user presence:', error);
-        return;
-      }
-
-      if (presence) {
-        setTargetUserPresence(presence);
-      }
-    } catch (error) {
-      console.error('❌ Caught error loading target user presence:', error);
-    }
-  }, [targetUser]);
-
   const broadcastNewMessage = useCallback((message: ChatMessage) => {
     if (!channelRef.current) return;
 
@@ -222,8 +210,14 @@ export const useChatSession = ({
   }, []);
 
   const mergeAndBroadcastMessageUpdates = useCallback(
-    (updatedMessages: ChatMessage[]) => {
+    (updatedMessages: ChatMessage[], sessionToken?: number) => {
       if (updatedMessages.length === 0) return;
+      if (
+        typeof sessionToken === 'number' &&
+        activeSessionTokenRef.current !== sessionToken
+      ) {
+        return;
+      }
 
       const updatedMessagesById = new Map(
         updatedMessages.map(updatedMessage => [
@@ -247,7 +241,11 @@ export const useChatSession = ({
       );
 
       updatedMessages.forEach(updatedMessage => {
-        if (channelRef.current) {
+        if (
+          channelRef.current &&
+          updatedMessage.channel_id &&
+          updatedMessage.channel_id === activeConversationChannelIdRef.current
+        ) {
           void channelRef.current.send({
             type: 'broadcast',
             event: 'update_message',
@@ -268,7 +266,7 @@ export const useChatSession = ({
   );
 
   const markMessageIdsAsDelivered = useCallback(
-    async (messageIds: string[]) => {
+    async (messageIds: string[], sessionToken?: number) => {
       if (messageIds.length === 0) return;
 
       const targetIds = messageIds.filter(messageId => {
@@ -288,7 +286,7 @@ export const useChatSession = ({
           return;
         }
 
-        mergeAndBroadcastMessageUpdates(deliveredMessages);
+        mergeAndBroadcastMessageUpdates(deliveredMessages, sessionToken);
       } catch (error) {
         console.error('Error marking messages as delivered:', error);
       } finally {
@@ -301,7 +299,7 @@ export const useChatSession = ({
   );
 
   const markMessageIdsAsRead = useCallback(
-    async (messageIds: string[]) => {
+    async (messageIds: string[], sessionToken?: number) => {
       if (messageIds.length === 0) return;
 
       const targetIds = messageIds.filter(messageId => {
@@ -318,7 +316,7 @@ export const useChatSession = ({
         const { data: readMessages, error } =
           await chatService.markMessageIdsAsRead(targetIds);
         if (error || !readMessages || readMessages.length === 0) return;
-        mergeAndBroadcastMessageUpdates(readMessages);
+        mergeAndBroadcastMessageUpdates(readMessages, sessionToken);
       } catch (error) {
         console.error('Error marking messages as read:', error);
       } finally {
@@ -341,23 +339,30 @@ export const useChatSession = ({
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
+      setLoading(false);
+      setTargetUserPresence(null);
       return;
     }
 
+    const sessionToken = activeSessionTokenRef.current + 1;
+    activeSessionTokenRef.current = sessionToken;
+    let isCancelled = false;
+    const isActiveSession = () =>
+      !isCancelled && activeSessionTokenRef.current === sessionToken;
+
     const loadMessages = async () => {
       const applyConversationSnapshot = (snapshotMessages: ChatMessage[]) => {
-        const transformedMessages: ChatMessage[] = snapshotMessages.map(
-          messageItem => ({
-            ...messageItem,
-            sender_name:
-              messageItem.sender_id === user.id
-                ? user.name || 'You'
-                : targetUser.name || 'Unknown',
-            receiver_name:
-              messageItem.receiver_id === user.id
-                ? user.name || 'You'
-                : targetUser.name || 'Unknown',
-          })
+        if (!isActiveSession()) {
+          return [];
+        }
+
+        const transformedMessages = mapConversationMessagesForDisplay(
+          snapshotMessages,
+          {
+            currentUserId: user.id,
+            currentUserName: user.name || 'You',
+            targetUserName: targetUser.name || 'Unknown',
+          }
         );
 
         const initialMessageAnimationKeys = new Set(
@@ -397,14 +402,23 @@ export const useChatSession = ({
       if (hasCachedConversation && cachedConversation) {
         applyConversationSnapshot(cachedConversation.messages);
         hasCompletedInitialOpenLoadRef.current = true;
-      } else {
+      } else if (isActiveSession()) {
         setMessages([]);
       }
 
-      setLoading(!hasCachedConversation);
+      if (isActiveSession()) {
+        setLoading(!hasCachedConversation);
+      }
       try {
         const { data: existingMessages, error } =
-          await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
+          await chatService.fetchMessagesBetweenUsers(
+            user.id,
+            targetUser.id,
+            currentChannelId
+          );
+        if (!isActiveSession()) {
+          return;
+        }
 
         if (error) {
           console.error('Error loading messages:', error);
@@ -413,6 +427,9 @@ export const useChatSession = ({
         const transformedMessages = applyConversationSnapshot(
           existingMessages || []
         );
+        if (!isActiveSession()) {
+          return;
+        }
         conversationCacheRef.current.set(currentChannelId, {
           messages: transformedMessages,
           cachedAt: Date.now(),
@@ -425,12 +442,41 @@ export const useChatSession = ({
               !messageItem.is_delivered
           )
           .map(messageItem => messageItem.id);
-        await markMessageIdsAsDelivered(undeliveredIncomingMessageIds);
+        await markMessageIdsAsDelivered(
+          undeliveredIncomingMessageIds,
+          sessionToken
+        );
       } catch (error) {
         console.error('Error loading messages:', error);
       } finally {
-        hasCompletedInitialOpenLoadRef.current = true;
-        setLoading(false);
+        if (isActiveSession()) {
+          hasCompletedInitialOpenLoadRef.current = true;
+          setLoading(false);
+        }
+      }
+    };
+
+    const loadTargetUserPresenceForSession = async () => {
+      try {
+        const { data: presence, error } = await chatService.getUserPresence(
+          targetUser.id
+        );
+        if (!isActiveSession()) {
+          return;
+        }
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('❌ Error loading target user presence:', error);
+          return;
+        }
+
+        setTargetUserPresence(presence ?? null);
+      } catch (error) {
+        if (!isActiveSession()) {
+          return;
+        }
+        console.error('❌ Caught error loading target user presence:', error);
+        setTargetUserPresence(null);
       }
     };
 
@@ -557,111 +603,25 @@ export const useChatSession = ({
       presenceChannelRef.current = presenceChannel;
     };
 
-    const setupGlobalPresenceSubscription = () => {
-      if (globalPresenceChannelRef.current) {
-        void realtimeService.removeChannel(globalPresenceChannelRef.current);
-      }
-
-      const globalPresenceChannel = realtimeService.createChannel(
-        'global_presence_updates',
-        {
-          config: {
-            broadcast: { self: true },
-          },
-        }
-      );
-
-      globalPresenceChannel.on(
-        'broadcast',
-        { event: 'presence_changed' },
-        payload => {
-          const presenceUpdate = payload.payload as Partial<UserPresence>;
-          if (presenceUpdate.user_id === targetUser.id) {
-            setTargetUserPresence(previousPresence =>
-              previousPresence
-                ? { ...previousPresence, ...presenceUpdate }
-                : {
-                    user_id: presenceUpdate.user_id!,
-                    is_online: presenceUpdate.is_online || false,
-                    last_seen:
-                      presenceUpdate.last_seen || new Date().toISOString(),
-                    current_chat_channel:
-                      presenceUpdate.current_chat_channel || null,
-                  }
-            );
-          }
-        }
-      );
-
-      globalPresenceChannel.on(
-        'broadcast',
-        { event: 'message_receipt_updated' },
-        payload => {
-          const updatedMessage = payload.payload as Partial<ChatMessage>;
-          if (!updatedMessage?.id) return;
-
-          setMessages(previousMessages =>
-            previousMessages.map(messageItem =>
-              messageItem.id === updatedMessage.id
-                ? {
-                    ...messageItem,
-                    ...updatedMessage,
-                    stableKey: messageItem.stableKey,
-                  }
-                : messageItem
-            )
-          );
-        }
-      );
-
-      globalPresenceChannel.subscribe();
-      globalPresenceChannelRef.current = globalPresenceChannel;
-    };
-
-    const setupIncomingMessagesDeliveredSubscription = () => {
-      if (incomingMessagesChannelRef.current) {
-        void realtimeService.removeChannel(incomingMessagesChannelRef.current);
-      }
-
-      const incomingMessagesChannel = realtimeService.createChannel(
-        `incoming_messages_${user.id}`
-      );
-
-      incomingMessagesChannel.on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        payload => {
-          const incomingMessage = payload.new as ChatMessage | undefined;
-          if (!incomingMessage?.id || incomingMessage.is_delivered) return;
-          void markMessageIdsAsDelivered([incomingMessage.id]);
-        }
-      );
-
-      incomingMessagesChannel.subscribe();
-      incomingMessagesChannelRef.current = incomingMessagesChannel;
-    };
-
     setupRealtimeSubscription();
     void loadMessages();
     setupPresenceSubscription();
-    setupGlobalPresenceSubscription();
-    setupIncomingMessagesDeliveredSubscription();
 
     hasClosedRef.current = false;
+    setTargetUserPresence(null);
     void updateUserChatOpen();
-    void loadTargetUserPresence();
+    void loadTargetUserPresenceForSession();
 
     presenceRefreshIntervalRef.current = setInterval(() => {
       void updateUserChatOpen();
-      void loadTargetUserPresence();
+      void loadTargetUserPresenceForSession();
     }, 30000);
 
     return () => {
+      isCancelled = true;
+      if (activeSessionTokenRef.current === sessionToken) {
+        activeSessionTokenRef.current += 1;
+      }
       if (channelRef.current) {
         void realtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -669,14 +629,6 @@ export const useChatSession = ({
       if (presenceChannelRef.current) {
         void realtimeService.removeChannel(presenceChannelRef.current);
         presenceChannelRef.current = null;
-      }
-      if (globalPresenceChannelRef.current) {
-        void realtimeService.removeChannel(globalPresenceChannelRef.current);
-        globalPresenceChannelRef.current = null;
-      }
-      if (incomingMessagesChannelRef.current) {
-        void realtimeService.removeChannel(incomingMessagesChannelRef.current);
-        incomingMessagesChannelRef.current = null;
       }
       if (presenceRefreshIntervalRef.current) {
         clearInterval(presenceRefreshIntervalRef.current);
@@ -688,7 +640,6 @@ export const useChatSession = ({
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
     isOpen,
-    loadTargetUserPresence,
     markMessageIdsAsDelivered,
     targetUser,
     updateUserChatOpen,
@@ -696,22 +647,112 @@ export const useChatSession = ({
   ]);
 
   useEffect(() => {
+    if (!isOpen || !user) {
+      return;
+    }
+
+    if (globalPresenceChannelRef.current) {
+      void realtimeService.removeChannel(globalPresenceChannelRef.current);
+    }
+    if (incomingMessagesChannelRef.current) {
+      void realtimeService.removeChannel(incomingMessagesChannelRef.current);
+    }
+
+    const globalPresenceChannel = realtimeService.createChannel(
+      'global_presence_updates',
+      {
+        config: {
+          broadcast: { self: true },
+        },
+      }
+    );
+
+    globalPresenceChannel.on(
+      'broadcast',
+      { event: 'presence_changed' },
+      payload => {
+        const presenceUpdate = payload.payload as Partial<UserPresence>;
+        if (presenceUpdate.user_id !== activeTargetUserIdRef.current) {
+          return;
+        }
+
+        setTargetUserPresence(previousPresence =>
+          previousPresence
+            ? { ...previousPresence, ...presenceUpdate }
+            : {
+                user_id: presenceUpdate.user_id!,
+                is_online: presenceUpdate.is_online || false,
+                last_seen: presenceUpdate.last_seen || new Date().toISOString(),
+                current_chat_channel:
+                  presenceUpdate.current_chat_channel || null,
+              }
+        );
+      }
+    );
+
+    globalPresenceChannel.on(
+      'broadcast',
+      { event: 'message_receipt_updated' },
+      payload => {
+        const updatedMessage = payload.payload as Partial<ChatMessage>;
+        if (!updatedMessage?.id) return;
+
+        setMessages(previousMessages =>
+          previousMessages.map(messageItem =>
+            messageItem.id === updatedMessage.id
+              ? {
+                  ...messageItem,
+                  ...updatedMessage,
+                  stableKey: messageItem.stableKey,
+                }
+              : messageItem
+          )
+        );
+      }
+    );
+
+    globalPresenceChannel.subscribe();
+    globalPresenceChannelRef.current = globalPresenceChannel;
+
+    const incomingMessagesChannel = realtimeService.createChannel(
+      `incoming_messages_${user.id}`
+    );
+
+    incomingMessagesChannel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `receiver_id=eq.${user.id}`,
+      },
+      payload => {
+        const incomingMessage = payload.new as ChatMessage | undefined;
+        if (!incomingMessage?.id || incomingMessage.is_delivered) return;
+        void markMessageIdsAsDelivered([incomingMessage.id]);
+      }
+    );
+
+    incomingMessagesChannel.subscribe();
+    incomingMessagesChannelRef.current = incomingMessagesChannel;
+
+    return () => {
+      if (globalPresenceChannelRef.current) {
+        void realtimeService.removeChannel(globalPresenceChannelRef.current);
+        globalPresenceChannelRef.current = null;
+      }
+      if (incomingMessagesChannelRef.current) {
+        void realtimeService.removeChannel(incomingMessagesChannelRef.current);
+        incomingMessagesChannelRef.current = null;
+      }
+    };
+  }, [isOpen, markMessageIdsAsDelivered, user]);
+
+  useEffect(() => {
     return () => {
       if (!hasClosedRef.current && user) {
         void performClose();
       }
-
-      if (presenceRefreshIntervalRef.current) {
-        clearInterval(presenceRefreshIntervalRef.current);
-        presenceRefreshIntervalRef.current = null;
-      }
-
-      setTimeout(() => {
-        if (globalPresenceChannelRef.current) {
-          void realtimeService.removeChannel(globalPresenceChannelRef.current);
-          globalPresenceChannelRef.current = null;
-        }
-      }, 200);
     };
   }, [performClose, user]);
 

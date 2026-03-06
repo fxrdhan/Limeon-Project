@@ -180,12 +180,18 @@ const ChatSidebarPanel = memo(
         return;
       }
 
-      for (const messageItem of deletableMessages) {
-        await composer.handleDeleteMessage(messageItem);
-      }
+      const deletionResults = await Promise.all(
+        deletableMessages.map(messageItem =>
+          composer.handleDeleteMessage(messageItem, {
+            suppressErrorToast: true,
+          })
+        )
+      );
 
       const deletedMessageIds = new Set(
-        deletableMessages.map(messageItem => messageItem.id)
+        deletableMessages
+          .filter((_, index) => deletionResults[index])
+          .map(messageItem => messageItem.id)
       );
       interaction.setSelectedMessageIds(previousSelectedIds => {
         const nextSelectedIds = new Set<string>();
@@ -197,13 +203,28 @@ const ChatSidebarPanel = memo(
         return nextSelectedIds;
       });
 
-      toast.success(`${deletableMessages.length} pesan berhasil dihapus`, {
+      const deletedCount = deletedMessageIds.size;
+      if (deletedCount === deletableMessages.length) {
+        toast.success(`${deletedCount} pesan berhasil dihapus`, {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
+      }
+
+      if (deletedCount === 0) {
+        toast.error('Gagal menghapus pesan terpilih', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
+      }
+
+      toast.error(`${deletedCount} pesan dihapus, sebagian gagal`, {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
     }, [composer, interaction, user]);
 
-    const handleClose = useCallback(async () => {
-      await performClose();
+    const handleClose = useCallback(() => {
+      void performClose();
       onClose();
     }, [onClose, performClose]);
 

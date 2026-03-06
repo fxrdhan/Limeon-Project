@@ -8,25 +8,12 @@ import { useChatSidebarStore } from '@/store/chatSidebarStore';
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  // Use getDerivedStateFromProps to reset isLocked when sidebar collapses
-  const [lockState, setLockState] = useState({
-    sidebarCollapsed: true,
-    isLocked: false,
-  });
-  if (sidebarCollapsed !== lockState.sidebarCollapsed) {
-    setLockState({
-      sidebarCollapsed,
-      isLocked: sidebarCollapsed ? false : lockState.isLocked,
-    });
-  }
-  const isLocked = lockState.isLocked;
+  const [isLocked, setLockState] = useState(false);
   const setIsLocked = useCallback(
     (updater: boolean | ((prev: boolean) => boolean)) => {
-      setLockState(prev => ({
-        ...prev,
-        isLocked:
-          typeof updater === 'function' ? updater(prev.isLocked) : updater,
-      }));
+      setLockState(prev =>
+        typeof updater === 'function' ? updater(prev) : updater
+      );
     },
     []
   );
@@ -57,7 +44,11 @@ const MainLayout = () => {
     });
   }, [sidebarCollapsed, setIsLocked]);
 
-  // isLocked auto-resets when sidebarCollapsed changes (getDerivedStateFromProps pattern)
+  useEffect(() => {
+    if (sidebarCollapsed) {
+      setIsLocked(false);
+    }
+  }, [setIsLocked, sidebarCollapsed]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

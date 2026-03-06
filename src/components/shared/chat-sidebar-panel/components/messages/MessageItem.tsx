@@ -77,7 +77,7 @@ interface MessageItemProps {
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
-  handleDeleteMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (
     targetMessage: ChatMessage
