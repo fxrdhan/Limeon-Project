@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type MutableRefObject,
+  type ReactNode,
   type RefObject,
 } from 'react';
 import {
@@ -207,6 +208,84 @@ type PdfMessagePreview = {
 const pdfMessagePreviewCache = new Map<string, PdfMessagePreview>();
 const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
 const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
+const SEARCH_HIGHLIGHT_CLASS =
+  'rounded-[4px] bg-amber-200 px-0.5 text-slate-900';
+
+const getSearchMatchIndex = (text: string, normalizedSearchQuery: string) => {
+  if (!normalizedSearchQuery) return -1;
+
+  return text.toLowerCase().indexOf(normalizedSearchQuery);
+};
+
+const buildCollapsedSearchSnippet = (
+  text: string,
+  normalizedSearchQuery: string,
+  maxMessageChars: number
+) => {
+  if (text.length <= maxMessageChars) {
+    return { text, hasLeadingEllipsis: false, hasTrailingEllipsis: false };
+  }
+
+  const matchIndex = getSearchMatchIndex(text, normalizedSearchQuery);
+  if (matchIndex === -1 || matchIndex < maxMessageChars) {
+    return {
+      text: text.slice(0, maxMessageChars).trimEnd(),
+      hasLeadingEllipsis: false,
+      hasTrailingEllipsis: true,
+    };
+  }
+
+  const desiredStart = Math.max(
+    0,
+    matchIndex -
+      Math.floor((maxMessageChars - normalizedSearchQuery.length) / 2)
+  );
+  const maxStart = Math.max(0, text.length - maxMessageChars);
+  const startIndex = Math.min(desiredStart, maxStart);
+  const endIndex = Math.min(text.length, startIndex + maxMessageChars);
+
+  return {
+    text: text.slice(startIndex, endIndex).trim(),
+    hasLeadingEllipsis: startIndex > 0,
+    hasTrailingEllipsis: endIndex < text.length,
+  };
+};
+
+const renderHighlightedText = (
+  text: string,
+  normalizedSearchQuery: string
+): ReactNode => {
+  if (!normalizedSearchQuery) return text;
+
+  const lowerText = text.toLowerCase();
+  const fragments: ReactNode[] = [];
+  let currentIndex = 0;
+
+  while (currentIndex < text.length) {
+    const matchIndex = lowerText.indexOf(normalizedSearchQuery, currentIndex);
+    if (matchIndex === -1) {
+      fragments.push(text.slice(currentIndex));
+      break;
+    }
+
+    if (matchIndex > currentIndex) {
+      fragments.push(text.slice(currentIndex, matchIndex));
+    }
+
+    const matchEndIndex = matchIndex + normalizedSearchQuery.length;
+    fragments.push(
+      <mark
+        key={`${matchIndex}-${matchEndIndex}`}
+        className={SEARCH_HIGHLIGHT_CLASS}
+      >
+        {text.slice(matchIndex, matchEndIndex)}
+      </mark>
+    );
+    currentIndex = matchEndIndex;
+  }
+
+  return fragments;
+};
 
 const buildPdfMessagePreviewCacheKey = (
   message: ChatMessage,
@@ -241,6 +320,7 @@ interface MessagesPaneProps {
   isFlashHighlightVisible: boolean;
   isSelectionMode: boolean;
   selectedMessageIds: Set<string>;
+  searchQuery: string;
   searchMatchedMessageIds: Set<string>;
   activeSearchMessageId: string | null;
   showScrollToBottom: boolean;
@@ -286,6 +366,7 @@ const MessagesPane = ({
   isFlashHighlightVisible,
   isSelectionMode,
   selectedMessageIds,
+  searchQuery,
   searchMatchedMessageIds,
   activeSearchMessageId,
   showScrollToBottom,
@@ -307,6 +388,7 @@ const MessagesPane = ({
   getAttachmentFileKind,
   onScrollToBottom,
 }: MessagesPaneProps) => {
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
     Record<string, PdfMessagePreview>
   >({});
@@ -920,9 +1002,22 @@ const MessagesPane = ({
                 isImageMessage || isFileMessage
                   ? ''
                   : 'text-sm whitespace-pre-wrap break-words';
+              const collapsedSearchSnippet = buildCollapsedSearchSnippet(
+                msg.message,
+                normalizedSearchQuery,
+                maxMessageChars
+              );
               const displayMessage = isMessageLong
-                ? msg.message.slice(0, maxMessageChars).trimEnd()
+                ? collapsedSearchSnippet.text
                 : msg.message;
+              const highlightedMessage = renderHighlightedText(
+                displayMessage,
+                normalizedSearchQuery
+              );
+              const highlightedCaption = renderHighlightedText(
+                attachmentCaptionText,
+                normalizedSearchQuery
+              );
               const menuActions: PopupMenuAction[] = [
                 {
                   label: 'Salin',
@@ -1273,10 +1368,15 @@ const MessagesPane = ({
                           </div>
                         ) : (
                           <>
-                            {displayMessage}
+                            {collapsedSearchSnippet.hasLeadingEllipsis ? (
+                              <span>... </span>
+                            ) : null}
+                            {highlightedMessage}
                             {isMessageLong ? (
                               <>
-                                <span>... </span>
+                                {collapsedSearchSnippet.hasTrailingEllipsis ? (
+                                  <span>... </span>
+                                ) : null}
                                 <span
                                   className={`font-medium ${
                                     isFlashingTarget
@@ -1338,7 +1438,7 @@ const MessagesPane = ({
                               isFlashingTarget ? 'text-white' : 'text-slate-800'
                             }`}
                           >
-                            {attachmentCaptionText}
+                            {highlightedCaption}
                           </p>
                         ) : null}
                       </div>

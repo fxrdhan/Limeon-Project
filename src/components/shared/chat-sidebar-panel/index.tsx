@@ -3875,6 +3875,7 @@ const ChatSidebarPanel = memo(
               isFlashHighlightVisible={isFlashHighlightVisible}
               isSelectionMode={isSelectionMode}
               selectedMessageIds={selectedMessageIds}
+              searchQuery={isMessageSearchMode ? messageSearchQuery : ''}
               searchMatchedMessageIds={
                 isMessageSearchMode ? searchMatchedMessageIdSet : new Set()
               }
