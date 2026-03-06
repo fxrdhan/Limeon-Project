@@ -66,12 +66,9 @@ import type {
   Supplier as SupplierType,
 } from '@/types';
 import { FilterSearch } from '@/types/search';
+import { isChatSidebarOpen } from '@/store/chatSidebarStore';
 
 import { fuzzyMatch } from '@/utils/search';
-
-const isChatSidebarOpen = () =>
-  typeof document !== 'undefined' &&
-  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
 
 // Transform to SlidingSelector format
 const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [

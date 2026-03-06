@@ -3,7 +3,6 @@ import { JSX } from 'react';
 // Navigation and layout types
 export interface NavbarProps {
   sidebarCollapsed: boolean;
-  onChatUserSelect: (targetUser: ChatTargetUser) => void;
 }
 
 export interface ChatTargetUser {

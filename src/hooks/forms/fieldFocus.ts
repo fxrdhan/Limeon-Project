@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
 import { UseFieldFocusOptions } from '@/types';
-
-const isChatSidebarOpen = () =>
-  typeof document !== 'undefined' &&
-  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
+import { isChatSidebarOpen } from '@/store/chatSidebarStore';
 
 export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
   const {
@@ -44,8 +41,6 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
       if (isChatSidebarOpen()) return;
 
       const target = event.target as HTMLElement;
-      if (target.closest('[data-chat-sidebar-open="true"]')) return;
-
       if (searchInputRef.current.contains(target)) {
         return;
       }
@@ -74,7 +69,6 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
         if (isChatSidebarOpen()) return;
 
         const relatedTarget = event.relatedTarget as HTMLElement;
-        if (relatedTarget?.closest('[data-chat-sidebar-open="true"]')) return;
 
         // Don't refocus if moving to table input or other interactive elements
         if (

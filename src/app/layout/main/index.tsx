@@ -1,20 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '@/app/layout/navbar';
 import Sidebar from '@/app/layout/sidebar';
 import ChatSidebar from '@/app/layout/chat-sidebar';
 import { usePresence } from '@/hooks/presence/usePresence';
-import type { ChatTargetUser } from '@/types';
+import { useChatSidebarStore } from '@/store/chatSidebarStore';
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [chatState, setChatState] = useState<{
-    isOpen: boolean;
-    targetUser?: ChatTargetUser;
-  }>({
-    isOpen: false,
-    targetUser: undefined,
-  });
   // Use getDerivedStateFromProps to reset isLocked when sidebar collapses
   const [lockState, setLockState] = useState({
     sidebarCollapsed: true,
@@ -38,11 +31,9 @@ const MainLayout = () => {
     []
   );
   usePresence();
-  const isLockedRef = useRef(isLocked);
-
-  useEffect(() => {
-    isLockedRef.current = isLocked;
-  }, [isLocked]);
+  const isChatSidebarOpen = useChatSidebarStore(state => state.isOpen);
+  const chatTargetUser = useChatSidebarStore(state => state.targetUser);
+  const closeChatSidebar = useChatSidebarStore(state => state.closeChat);
 
   const expandSidebar = useCallback(() => {
     if (!isLocked) {
@@ -84,30 +75,6 @@ const MainLayout = () => {
     };
   }, [setIsLocked, setSidebarCollapsed]);
 
-  const handleChatUserSelect = useCallback((targetUser: ChatTargetUser) => {
-    setChatState(prev => {
-      const isSameUser = prev.targetUser?.id === targetUser.id;
-      if (prev.isOpen && isSameUser) {
-        return {
-          isOpen: false,
-          targetUser: undefined,
-        };
-      }
-
-      return {
-        isOpen: true,
-        targetUser,
-      };
-    });
-  }, []);
-
-  const handleChatClose = useCallback(() => {
-    setChatState({
-      isOpen: false,
-      targetUser: undefined,
-    });
-  }, []);
-
   return (
     <div className="flex h-screen bg-slate-100 text-slate-800 relative">
       <Sidebar
@@ -119,10 +86,7 @@ const MainLayout = () => {
       />
 
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar
-          sidebarCollapsed={sidebarCollapsed}
-          onChatUserSelect={handleChatUserSelect}
-        />
+        <Navbar sidebarCollapsed={sidebarCollapsed} />
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto p-4 text-slate-800">
@@ -130,9 +94,9 @@ const MainLayout = () => {
           </main>
 
           <ChatSidebar
-            isOpen={chatState.isOpen}
-            onClose={handleChatClose}
-            targetUser={chatState.targetUser}
+            isOpen={isChatSidebarOpen}
+            onClose={closeChatSidebar}
+            targetUser={chatTargetUser}
           />
         </div>
       </div>

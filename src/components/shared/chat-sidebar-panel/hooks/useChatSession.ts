@@ -29,6 +29,11 @@ interface UseChatSessionProps {
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
 }
 
+interface UpdateUserChatCloseOptions {
+  keepOnline: boolean;
+  timestamp?: string;
+}
+
 export const useChatSession = ({
   isOpen,
   user,
@@ -55,39 +60,46 @@ export const useChatSession = ({
   const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
   const hasCompletedInitialOpenLoadRef = useRef(false);
 
-  const updateUserChatClose = useCallback(async () => {
-    if (!user) return;
+  const updateUserChatClose = useCallback(
+    async ({ keepOnline, timestamp }: UpdateUserChatCloseOptions) => {
+      if (!user) return;
 
-    try {
-      const { error } = await chatService.updateUserPresence(user.id, {
-        is_online: false,
-        current_chat_channel: null,
-        last_seen: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      const eventTimestamp = timestamp ?? new Date().toISOString();
 
-      if (error) {
-        console.error('❌ Error updating user chat close:', error);
+      try {
+        const { error } = await chatService.updateUserPresence(user.id, {
+          is_online: keepOnline,
+          current_chat_channel: null,
+          last_seen: eventTimestamp,
+          updated_at: eventTimestamp,
+        });
+
+        if (error) {
+          console.error('❌ Error updating user chat close:', error);
+        }
+      } catch (error) {
+        console.error('❌ Caught error updating user chat close:', error);
       }
-    } catch (error) {
-      console.error('❌ Caught error updating user chat close:', error);
-    }
-  }, [user]);
+    },
+    [user]
+  );
 
   const performClose = useCallback(async () => {
-    if (hasClosedRef.current || !user) {
+    if (!user) return;
+    if (hasClosedRef.current) {
       return;
     }
+
+    const eventTimestamp = new Date().toISOString();
+    hasClosedRef.current = true;
 
     if (globalPresenceChannelRef.current) {
       const broadcastPayload = {
         user_id: user.id,
-        is_online: false,
+        is_online: true,
         current_chat_channel: null,
-        last_seen: new Date().toISOString(),
+        last_seen: eventTimestamp,
       };
-
-      hasClosedRef.current = true;
 
       void globalPresenceChannelRef.current.send({
         type: 'broadcast',
@@ -97,7 +109,10 @@ export const useChatSession = ({
     }
 
     try {
-      await updateUserChatClose();
+      await updateUserChatClose({
+        keepOnline: true,
+        timestamp: eventTimestamp,
+      });
     } catch (error) {
       console.error('❌ Database update failed:', error);
     }
@@ -723,7 +738,7 @@ export const useChatSession = ({
     const handleBeforeUnload = () => {
       if (!hasClosedRef.current && user) {
         hasClosedRef.current = true;
-        void updateUserChatClose();
+        void updateUserChatClose({ keepOnline: false });
       }
     };
 

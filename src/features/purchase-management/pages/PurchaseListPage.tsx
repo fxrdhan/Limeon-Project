@@ -31,6 +31,7 @@ import { useFieldFocus } from '@/hooks/forms/fieldFocus';
 import { getSearchState } from '@/utils/search';
 import { purchasesService } from '@/services/api/purchases.service';
 import { QueryKeys } from '@/constants/queryKeys';
+import { isChatSidebarOpen } from '@/store/chatSidebarStore';
 
 interface Purchase {
   id: string;
@@ -43,10 +44,6 @@ interface Purchase {
     name: string;
   } | null;
 }
-
-const isChatSidebarOpen = () =>
-  typeof document !== 'undefined' &&
-  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
 
 const PurchaseList = () => {
   const [search, setSearch] = useState('');

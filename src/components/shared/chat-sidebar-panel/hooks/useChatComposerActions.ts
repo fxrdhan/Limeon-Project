@@ -11,6 +11,19 @@ import type {
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
 
+const mapConversationMessagesForDisplay = (
+  conversationMessages: ChatMessage[],
+  userId: string,
+  userName: string,
+  targetUserName: string
+) =>
+  conversationMessages.map(messageItem => ({
+    ...messageItem,
+    sender_name: messageItem.sender_id === userId ? userName : targetUserName,
+    receiver_name:
+      messageItem.receiver_id === userId ? userName : targetUserName,
+  }));
+
 interface UseChatComposerActionsProps {
   user: {
     id: string;
@@ -74,6 +87,49 @@ export const useChatComposerActions = ({
     pendingImagePreviewUrlsRef,
   });
 
+  const reconcileMessagesFromServer = useCallback(
+    async (fallbackMessages: ChatMessage[]) => {
+      if (!user || !targetUser) {
+        setMessages(fallbackMessages);
+        return;
+      }
+
+      try {
+        const { data: latestMessages, error } =
+          await chatService.fetchMessagesBetweenUsers(user.id, targetUser.id);
+
+        if (error || !latestMessages) {
+          setMessages(fallbackMessages);
+          return;
+        }
+
+        const mappedMessages = mapConversationMessagesForDisplay(
+          latestMessages,
+          user.id,
+          user.name || 'You',
+          targetUser.name || 'Unknown'
+        );
+
+        setMessages(previousMessages => {
+          const mappedMessageIds = new Set(
+            mappedMessages.map(messageItem => messageItem.id)
+          );
+          const pendingMessages = previousMessages.filter(
+            messageItem =>
+              messageItem.id.startsWith('temp_') &&
+              !mappedMessageIds.has(messageItem.id)
+          );
+
+          return [...mappedMessages, ...pendingMessages];
+        });
+      } catch (error) {
+        console.error('Error reconciling conversation:', error);
+        setMessages(fallbackMessages);
+      }
+    },
+    [setMessages, targetUser, user]
+  );
+
   const handleUpdateMessage = useCallback(async () => {
     if (
       !message.trim() ||
@@ -91,6 +147,22 @@ export const useChatComposerActions = ({
     const existingMessage = messages.find(
       candidate => candidate.id === messageId
     );
+    const restoreFailedEdit = () => {
+      if (existingMessage) {
+        setMessages(previousMessages =>
+          previousMessages.map(messageItem =>
+            messageItem.id === messageId ? existingMessage : messageItem
+          )
+        );
+      }
+
+      setEditingMessageId(messageId);
+      setMessage(updatedText);
+      requestAnimationFrame(focusMessageComposer);
+      toast.error('Gagal memperbarui pesan', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+    };
 
     setMessage('');
     setEditingMessageId(null);
@@ -117,6 +189,7 @@ export const useChatComposerActions = ({
 
       if (error) {
         console.error('Error updating message:', error);
+        restoreFailedEdit();
         return;
       }
 
@@ -137,12 +210,14 @@ export const useChatComposerActions = ({
       broadcastUpdatedMessage(mappedMessage);
     } catch (error) {
       console.error('Error updating message:', error);
+      restoreFailedEdit();
     }
   }, [
     broadcastUpdatedMessage,
     closeMessageMenu,
     currentChannelId,
     editingMessageId,
+    focusMessageComposer,
     message,
     messages,
     setEditingMessageId,
@@ -167,7 +242,10 @@ export const useChatComposerActions = ({
             messageItem.channel_id === targetMessage.channel_id
         )
         .map(messageItem => messageItem.id);
-      const messageIdsToDelete = [targetMessage.id, ...linkedCaptionMessageIds];
+      const messageIdsToDelete = [...linkedCaptionMessageIds, targetMessage.id];
+      const messagesSnapshot = messages.map(messageItem => ({
+        ...messageItem,
+      }));
 
       setMessages(previousMessages =>
         previousMessages.filter(
@@ -190,15 +268,17 @@ export const useChatComposerActions = ({
           const { error } = await chatService.deleteMessage(messageId);
           if (error) {
             console.error('Error deleting message:', error);
-            return;
+            throw error;
           }
-        }
 
-        persistedMessageIds.forEach(messageId => {
           broadcastDeletedMessage(messageId);
-        });
+        }
       } catch (error) {
         console.error('Error deleting message:', error);
+        await reconcileMessagesFromServer(messagesSnapshot);
+        toast.error('Gagal menghapus pesan', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
       }
     },
     [
@@ -207,6 +287,7 @@ export const useChatComposerActions = ({
       currentChannelId,
       editingMessageId,
       messages,
+      reconcileMessagesFromServer,
       setEditingMessageId,
       setMessage,
       setMessages,

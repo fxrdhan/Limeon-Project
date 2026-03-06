@@ -4,6 +4,7 @@ import { fuzzyMatch } from '@/utils/search';
 import { filterAndRank } from './searchCore';
 import { useAlert } from '@/components/alert/hooks';
 import { StorageService } from '@/services/api/storage.service';
+import { isChatSidebarOpen } from '@/store/chatSidebarStore';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type {
   Supplier,
@@ -30,9 +31,6 @@ import {
 type MasterDataIdentity = Supplier | Patient | Doctor | Customer;
 const IDENTITY_IMAGE_BUCKET = 'profiles';
 const IMAGE_ENABLED_TABLES = new Set(['suppliers', 'patients', 'doctors']);
-const isChatSidebarOpen = () =>
-  typeof document !== 'undefined' &&
-  Boolean(document.querySelector('[data-chat-sidebar-open="true"]'));
 
 // Simplified hook selector - realtime always enabled for simplicity
 const getHooksForTable = (tableName: string) => {

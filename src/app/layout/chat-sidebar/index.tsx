@@ -34,7 +34,6 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          data-chat-sidebar-open={isOpen ? 'true' : undefined}
           aria-hidden={!isOpen}
           className={`h-full overflow-hidden ${
             isOpen

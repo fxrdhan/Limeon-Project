@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { ChatTargetUser, NavbarProps, OnlineUser } from '@/types';
+import type { NavbarProps, OnlineUser } from '@/types';
 import { useAuthStore } from '@/store/authStore';
+import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import { usersService } from '@/services/api/users.service';
 import {
@@ -14,9 +15,12 @@ import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
 
-const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
+const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
   const userId = user?.id ?? null;
+  const toggleChatForUser = useChatSidebarStore(
+    state => state.toggleChatForUser
+  );
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const [showPortal, setShowPortal] = useState(false);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
@@ -194,9 +198,7 @@ const Navbar = ({ sidebarCollapsed, onChatUserSelect }: NavbarProps) => {
   };
 
   // Chat handlers
-  const handleChatOpen = (targetUser: ChatTargetUser) => {
-    onChatUserSelect(targetUser);
-  };
+  const handleChatOpen = toggleChatForUser;
 
   // Cleanup timeout on unmount
   useEffect(() => {
