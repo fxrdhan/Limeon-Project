@@ -12,11 +12,7 @@ import type {
   PendingComposerFile,
 } from '../types';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
-
-type GeneratedPdfPreview = {
-  coverBlob: Blob;
-  pageCount: number;
-};
+import { renderPdfPreviewBlob } from '../utils/pdf-preview';
 
 const isPdfDocumentFile = (fileName: string, mimeType: string) =>
   mimeType.toLowerCase().includes('pdf') ||
@@ -261,67 +257,6 @@ export const useChatComposerSend = ({
     ]
   );
 
-  const generatePdfPreviewFromFile = useCallback(
-    async (file: File): Promise<GeneratedPdfPreview | null> => {
-      let pdfDocument: {
-        numPages: number;
-        getPage: (pageNumber: number) => Promise<any>;
-        cleanup: () => void;
-        destroy: () => void;
-      } | null = null;
-
-      try {
-        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-        const pdfWorkerModule =
-          await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
-
-        const fileBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument(new Uint8Array(fileBuffer));
-        const loadedPdfDocument = await loadingTask.promise;
-        pdfDocument = loadedPdfDocument;
-
-        const firstPage = await loadedPdfDocument.getPage(1);
-        const baseViewport = firstPage.getViewport({ scale: 1 });
-        const targetWidth = 260;
-        const scale = targetWidth / Math.max(baseViewport.width, 1);
-        const viewport = firstPage.getViewport({ scale });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        if (!context) return null;
-
-        canvas.width = Math.max(1, Math.round(viewport.width));
-        canvas.height = Math.max(1, Math.round(viewport.height));
-
-        await firstPage.render({
-          canvas,
-          canvasContext: context,
-          viewport,
-          background: 'rgb(255, 255, 255)',
-        }).promise;
-
-        const coverBlob = await new Promise<Blob | null>(resolve => {
-          canvas.toBlob(blob => {
-            resolve(blob);
-          }, 'image/png');
-        });
-        if (!coverBlob) return null;
-
-        return {
-          coverBlob,
-          pageCount: Math.max(loadedPdfDocument.numPages ?? 1, 1),
-        };
-      } catch (error) {
-        console.error('Error generating PDF preview from file:', error);
-        return null;
-      } finally {
-        pdfDocument?.cleanup();
-        pdfDocument?.destroy();
-      }
-    },
-    []
-  );
-
   const handleSendFileMessage = useCallback(
     async (
       pendingFile: PendingComposerFile,
@@ -502,8 +437,9 @@ export const useChatComposerSend = ({
             };
 
             try {
-              const generatedPreview = await generatePdfPreviewFromFile(
-                pendingFile.file
+              const generatedPreview = await renderPdfPreviewBlob(
+                pendingFile.file,
+                260
               );
               if (!generatedPreview) {
                 await applyPreviewFailedState('Gagal membuat preview PDF');
@@ -628,7 +564,6 @@ export const useChatComposerSend = ({
       broadcastUpdatedMessage,
       currentChannelId,
       editingMessageId,
-      generatePdfPreviewFromFile,
       pendingImagePreviewUrlsRef,
       scheduleScrollMessagesToBottom,
       setMessages,

@@ -4,6 +4,7 @@ import {
   fetchPdfBlobWithFallback,
   resolveFileExtension,
 } from '../utils/message-file';
+import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
 
 export type PdfMessagePreview = {
   coverDataUrl: string;
@@ -224,11 +225,6 @@ export const useMessagePdfPreviews = ({
 
     const renderPdfPreviews = async () => {
       try {
-        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-        const pdfWorkerModule =
-          await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
-
         for (const pendingMessage of pendingPdfMessages) {
           if (isCancelled) return;
           pdfPreviewRenderingIdsRef.current.add(pendingMessage.id);
@@ -238,12 +234,6 @@ export const useMessagePdfPreviews = ({
             pendingMessage,
             pendingFileName
           );
-          let pdfDocument: {
-            numPages: number;
-            getPage: (pageNumber: number) => Promise<any>;
-            cleanup: () => void;
-            destroy: () => void;
-          } | null = null;
 
           try {
             const pdfBlob = await fetchPdfBlobWithFallback(
@@ -255,41 +245,17 @@ export const useMessagePdfPreviews = ({
               continue;
             }
 
-            const fileBuffer = await pdfBlob.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument(
-              new Uint8Array(fileBuffer)
-            );
-            const loadedPdfDocument = await loadingTask.promise;
-            pdfDocument = loadedPdfDocument;
-            const firstPage = await loadedPdfDocument.getPage(1);
-            const baseViewport = firstPage.getViewport({ scale: 1 });
-            const targetWidth = 260;
-            const scale = targetWidth / Math.max(baseViewport.width, 1);
-            const viewport = firstPage.getViewport({ scale });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            if (!context) {
+            const renderedPreview = await renderPdfPreviewDataUrl(pdfBlob, 260);
+            if (!renderedPreview) {
               schedulePdfPreviewRetry(pendingMessage.id);
               continue;
             }
 
-            canvas.width = Math.max(1, Math.round(viewport.width));
-            canvas.height = Math.max(1, Math.round(viewport.height));
-
-            await firstPage.render({
-              canvas,
-              canvasContext: context,
-              viewport,
-              background: 'rgb(255, 255, 255)',
-            }).promise;
-
             if (isCancelled) return;
 
-            const coverDataUrl = canvas.toDataURL('image/png');
             const nextPreview: PdfMessagePreview = {
-              coverDataUrl,
-              pageCount: Math.max(loadedPdfDocument.numPages ?? 1, 1),
+              coverDataUrl: renderedPreview.coverDataUrl,
+              pageCount: renderedPreview.pageCount,
               cacheKey,
             };
             pdfMessagePreviewCache.set(cacheKey, nextPreview);
@@ -303,8 +269,6 @@ export const useMessagePdfPreviews = ({
             console.error('Error rendering PDF message preview:', error);
             schedulePdfPreviewRetry(pendingMessage.id);
           } finally {
-            pdfDocument?.cleanup();
-            pdfDocument?.destroy();
             pdfPreviewRenderingIdsRef.current.delete(pendingMessage.id);
           }
         }

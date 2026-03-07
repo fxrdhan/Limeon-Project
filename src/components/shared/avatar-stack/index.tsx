@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthStore } from '@/store/authStore';
 import type { OnlineUser } from '@/types';
+import { getInitials, getInitialsColor } from '@/utils/avatar';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -171,33 +172,6 @@ const AvatarStack = memo(
       sm: 'w-6 h-6 text-xs',
       md: 'w-8 h-8 text-sm',
       lg: 'w-10 h-10 text-base',
-    };
-
-    const getInitials = (name: string) => {
-      return name
-        .split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    };
-
-    const getInitialsColor = (userId: string) => {
-      const colors = [
-        'bg-blue-500',
-        'bg-green-500',
-        'bg-purple-500',
-        'bg-pink-500',
-        'bg-indigo-500',
-        'bg-yellow-500',
-        'bg-red-500',
-        'bg-slate-500',
-      ];
-
-      const index = userId
-        .split('')
-        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      return colors[index % colors.length];
     };
 
     return (

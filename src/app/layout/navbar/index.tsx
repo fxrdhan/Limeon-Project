@@ -5,6 +5,7 @@ import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import { usePresenceRoster } from '@/hooks/presence/usePresenceRoster';
 import { motion, AnimatePresence } from 'motion/react';
 import { TbMessageDots } from 'react-icons/tb';
+import { getInitials, getInitialsColor } from '@/utils/avatar';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
@@ -24,34 +25,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const [showPortal, setShowPortal] = useState(false);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Helper functions for avatar display
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getInitialsColor = (userId: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-pink-500',
-      'bg-indigo-500',
-      'bg-yellow-500',
-      'bg-red-500',
-      'bg-slate-500',
-    ];
-
-    const index = userId
-      .split('')
-      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return colors[index % colors.length];
-  };
 
   // Handle hover with delay for online text
   const handleOnlineTextEnter = () => {

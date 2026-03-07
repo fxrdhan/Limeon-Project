@@ -13,6 +13,7 @@ import {
   COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
   MAX_PENDING_COMPOSER_ATTACHMENTS,
 } from '../constants';
+import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
 import type {
   ComposerPendingFileKind,
   PendingComposerAttachment,
@@ -75,50 +76,23 @@ export const useChatComposerAttachments = ({
 
     const renderPdfCovers = async () => {
       try {
-        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-        const pdfWorkerModule =
-          await import('pdfjs-dist/legacy/build/pdf.worker.mjs?url');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
-
         for (const pendingAttachment of pendingPdfAttachments) {
           if (isCancelled) return;
 
-          const fileBuffer = await pendingAttachment.file.arrayBuffer();
-          const loadingTask = pdfjsLib.getDocument(new Uint8Array(fileBuffer));
-          const pdfDocument = await loadingTask.promise;
-          const firstPage = await pdfDocument.getPage(1);
-          const baseViewport = firstPage.getViewport({ scale: 1 });
-          const targetWidth = 44;
-          const scale = targetWidth / Math.max(baseViewport.width, 1);
-          const viewport = firstPage.getViewport({ scale });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-
-          if (!context) {
-            void pdfDocument.cleanup();
-            void pdfDocument.destroy();
-            continue;
-          }
-
-          canvas.width = Math.max(1, Math.round(viewport.width));
-          canvas.height = Math.max(1, Math.round(viewport.height));
-
-          await firstPage.render({
-            canvas,
-            canvasContext: context,
-            viewport,
-            background: 'rgb(255, 255, 255)',
-          }).promise;
-
-          void pdfDocument.cleanup();
-          void pdfDocument.destroy();
+          const renderedPreview = await renderPdfPreviewDataUrl(
+            pendingAttachment.file,
+            44
+          );
           if (isCancelled) return;
+          if (!renderedPreview) continue;
 
-          const coverDataUrl = canvas.toDataURL('image/png');
           setPendingComposerAttachments(previousAttachments =>
             previousAttachments.map(attachment =>
               attachment.id === pendingAttachment.id
-                ? { ...attachment, pdfCoverUrl: coverDataUrl }
+                ? {
+                    ...attachment,
+                    pdfCoverUrl: renderedPreview.coverDataUrl,
+                  }
                 : attachment
             )
           );

@@ -31,7 +31,6 @@ interface ChatHeaderProps {
   targetUser?: ChatSidebarPanelTargetUser;
   displayTargetPhotoUrl: string | null;
   targetUserPresence: UserPresence | null;
-  currentChannelId: string | null;
   isSearchMode: boolean;
   searchQuery: string;
   searchState: SearchState;
@@ -92,7 +91,6 @@ const ChatHeader = ({
   targetUser,
   displayTargetPhotoUrl,
   targetUserPresence,
-  currentChannelId,
   isSearchMode,
   searchQuery,
   searchState,
@@ -365,8 +363,6 @@ const ChatHeader = ({
                 const shouldShowOnline =
                   targetUserPresence &&
                   targetUserPresence.is_online &&
-                  targetUserPresence.current_chat_channel ===
-                    currentChannelId &&
                   isPresenceFresh(targetUserPresence.last_seen);
 
                 if (shouldShowOnline) {

@@ -210,7 +210,6 @@ describe('ChatSidebarPanel', () => {
 
     expect(renderedChildProps.header).toEqual(
       expect.objectContaining({
-        currentChannelId: 'dm_user-a_user-b',
         isSearchMode: false,
         isSelectionMode: false,
         selectedMessageCount: 0,

@@ -7,7 +7,7 @@ import {
   getAttachmentFileKind,
   getAttachmentFileName,
 } from '../utils/attachment';
-import { getInitials, getInitialsColor } from '../utils/avatar';
+import { getInitials, getInitialsColor } from '@/utils/avatar';
 import { generateChannelId } from '../utils/channel';
 import { useChatComposer } from './useChatComposer';
 import { useChatInteractionModes } from './useChatInteractionModes';
@@ -218,7 +218,6 @@ export const useChatSidebarController = ({
     targetUser,
     displayTargetPhotoUrl,
     targetUserPresence,
-    currentChannelId,
     isSearchMode: interaction.isMessageSearchMode,
     searchQuery: interaction.messageSearchQuery,
     searchState: interaction.messageSearchState,
