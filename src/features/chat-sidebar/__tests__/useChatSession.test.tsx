@@ -442,6 +442,117 @@ describe('useChatSession', () => {
     });
   });
 
+  it('does not reuse the previous conversation as cache for a new pending channel', async () => {
+    let resolveSecondFetch:
+      | ((value: { data: ChatMessage[]; error: null }) => void)
+      | undefined;
+    let resolveThirdFetch:
+      | ((value: { data: ChatMessage[]; error: null }) => void)
+      | undefined;
+
+    mockChatService.fetchMessagesBetweenUsers
+      .mockResolvedValueOnce({
+        data: [
+          buildMessage({
+            id: 'message-1',
+            sender_id: targetUser.id,
+            channel_id: 'channel-1',
+            message: 'pesan channel pertama',
+          }),
+        ],
+        error: null,
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveSecondFetch = resolve;
+          })
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveThirdFetch = resolve;
+          })
+      );
+
+    const secondTargetUser = {
+      id: 'user-c',
+      name: 'Kasir',
+      email: 'kasir@example.com',
+      profilephoto: null,
+    };
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    const { result, rerender } = renderHook(
+      ({
+        isOpen,
+        activeTargetUser,
+        channelId,
+      }: {
+        isOpen: boolean;
+        activeTargetUser: typeof targetUser;
+        channelId: string;
+      }) =>
+        useChatSession({
+          isOpen,
+          user: currentUser,
+          targetUser: activeTargetUser,
+          currentChannelId: channelId,
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        }),
+      {
+        initialProps: {
+          isOpen: true,
+          activeTargetUser: targetUser,
+          channelId: 'channel-1',
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['message-1']);
+    });
+
+    rerender({
+      isOpen: true,
+      activeTargetUser: secondTargetUser,
+      channelId: 'channel-2',
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages).toEqual([]);
+    });
+
+    rerender({
+      isOpen: false,
+      activeTargetUser: secondTargetUser,
+      channelId: 'channel-2',
+    });
+
+    rerender({
+      isOpen: true,
+      activeTargetUser: secondTargetUser,
+      channelId: 'channel-2',
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages).toEqual([]);
+    });
+
+    resolveSecondFetch?.({
+      data: [],
+      error: null,
+    });
+    resolveThirdFetch?.({
+      data: [],
+      error: null,
+    });
+  });
+
   it('hydrates incoming messages from postgres inserts when app broadcast is unavailable', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };

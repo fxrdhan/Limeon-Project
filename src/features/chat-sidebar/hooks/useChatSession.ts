@@ -120,12 +120,14 @@ export const useChatSession = ({
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
+      hasCompletedInitialOpenLoadRef.current = false;
       setLoading(false);
       return;
     }
 
     const sessionToken = activeSessionTokenRef.current + 1;
     activeSessionTokenRef.current = sessionToken;
+    hasCompletedInitialOpenLoadRef.current = false;
     let isCancelled = false;
     const isActiveSession = () =>
       !isCancelled && activeSessionTokenRef.current === sessionToken;

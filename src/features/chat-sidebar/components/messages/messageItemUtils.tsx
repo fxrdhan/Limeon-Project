@@ -163,21 +163,22 @@ export const buildMessageMenuActions = ({
   }
 
   if (isCurrentUser) {
-    menuActions.push(
-      {
+    if (!message.id.startsWith('temp_')) {
+      menuActions.push({
         label: 'Edit',
         icon: <TbPencil className="h-4 w-4" />,
         onClick: () => handleEditMessage(message),
+      });
+    }
+
+    menuActions.push({
+      label: 'Hapus',
+      icon: <TbTrash className="h-4 w-4" />,
+      onClick: () => {
+        void handleDeleteMessage(message);
       },
-      {
-        label: 'Hapus',
-        icon: <TbTrash className="h-4 w-4" />,
-        onClick: () => {
-          void handleDeleteMessage(message);
-        },
-        tone: 'danger',
-      }
-    );
+      tone: 'danger',
+    });
   }
 
   return menuActions;

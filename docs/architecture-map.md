@@ -26,9 +26,15 @@ Tujuan dokumen ini:
 
 - `src/services/`
   - Integrasi eksternal (API, repositori, auth). Target: menjadi satu-satunya pintu akses data.
+  - Current state: chat sidebar memakai `src/services/api/chat.service.ts`,
+    `src/services/api/storage.service.ts`, dan `src/services/realtime/realtime.service.ts`
+    lewat gateway feature, dengan satu pengecualian fallback download PDF di
+    `src/features/chat-sidebar/utils/message-file.ts`.
 
 - `src/store/`
   - Zustand stores untuk state global (auth, presence). Gunakan untuk state UI/global, bukan data server.
+  - Chat sidebar memakai Zustand hanya untuk shell state (`isOpen`, `targetUser`)
+    dan page focus blocking; state runtime percakapan tetap berada di hooks feature.
 
 - `src/hooks/`
   - Shared hooks lintas fitur.
@@ -75,6 +81,10 @@ Tujuan: `src/components/` hanya berisi komponen lintas fitur.
 - `src/app/App.tsx` mengatur routing tingkat aplikasi.
 - `src/app/routes/` mengikat route ke feature.
 - Feature merender komponen internalnya sendiri.
+- Chat sidebar di-compose dari `src/app/layout/main/index.tsx` ->
+  `src/app/layout/chat-sidebar/index.tsx` -> `src/features/chat-sidebar/index.tsx`.
+- Dokumentasi implementasi chat sidebar saat ini ada di
+  `docs/chat-sidebar-architecture.md`.
 
 ## 6) Test & Quality
 

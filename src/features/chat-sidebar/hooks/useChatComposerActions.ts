@@ -79,6 +79,7 @@ export const useChatComposerActions = ({
     triggerSendSuccessGlow,
     broadcastNewMessage,
     broadcastUpdatedMessage,
+    broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
   });
 
@@ -139,6 +140,16 @@ export const useChatComposerActions = ({
       !currentChannelId ||
       !editingMessageId
     ) {
+      return;
+    }
+
+    if (editingMessageId.startsWith('temp_')) {
+      setEditingMessageId(null);
+      setMessage('');
+      closeMessageMenu();
+      toast.error('Pesan yang masih dikirim belum bisa diedit', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
       return;
     }
 
@@ -310,6 +321,14 @@ export const useChatComposerActions = ({
 
   const handleEditMessage = useCallback(
     (targetMessage: ChatMessage) => {
+      if (targetMessage.id.startsWith('temp_')) {
+        closeMessageMenu();
+        toast.error('Pesan yang masih dikirim belum bisa diedit', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
+      }
+
       clearPendingComposerAttachments();
       setEditingMessageId(targetMessage.id);
       setMessage(targetMessage.message);

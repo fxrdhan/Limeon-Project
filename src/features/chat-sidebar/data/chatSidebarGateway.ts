@@ -70,6 +70,9 @@ export const chatSidebarGateway = {
   ) {
     return StorageService.uploadRawFile(bucket, file, path, contentType);
   },
+  deleteStorageFile(bucket: string, path: string) {
+    return StorageService.deleteFile(bucket, path);
+  },
 };
 
 export type { ChatMessage, UserPresence, RealtimeChannel };

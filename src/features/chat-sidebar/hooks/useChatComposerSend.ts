@@ -12,6 +12,7 @@ import type {
   PendingComposerFile,
 } from '../types';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
+import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import { renderPdfPreviewBlob } from '../utils/pdf-preview';
 
 const isPdfDocumentFile = (fileName: string, mimeType: string) =>
@@ -44,6 +45,7 @@ interface UseChatComposerSendProps {
   triggerSendSuccessGlow: () => void;
   broadcastNewMessage: (message: ChatMessage) => void;
   broadcastUpdatedMessage: (message: ChatMessage) => void;
+  broadcastDeletedMessage: (messageId: string) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
 }
 
@@ -61,8 +63,108 @@ export const useChatComposerSend = ({
   triggerSendSuccessGlow,
   broadcastNewMessage,
   broadcastUpdatedMessage,
+  broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
 }: UseChatComposerSendProps) => {
+  const deleteUploadedStorageFiles = useCallback(
+    async (storagePaths: Array<string | null | undefined>) => {
+      const uniquePaths = [...new Set(storagePaths)]
+        .map(storagePath => storagePath?.trim() || null)
+        .filter((storagePath): storagePath is string => Boolean(storagePath));
+
+      if (uniquePaths.length === 0) return;
+
+      const results = await Promise.allSettled(
+        uniquePaths.map(storagePath =>
+          chatSidebarGateway.deleteStorageFile(CHAT_IMAGE_BUCKET, storagePath)
+        )
+      );
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') return;
+        console.error(
+          `Error deleting chat storage file: ${uniquePaths[index]}`,
+          result.reason
+        );
+      });
+    },
+    []
+  );
+
+  const reconcileConversationFromServer = useCallback(async () => {
+    if (!user || !targetUser || !currentChannelId) return;
+
+    try {
+      const { data: latestMessages, error } =
+        await chatSidebarGateway.fetchConversationMessages(
+          user.id,
+          targetUser.id,
+          currentChannelId
+        );
+
+      if (error || !latestMessages) {
+        return;
+      }
+
+      const mappedMessages = mapConversationMessagesForDisplay(latestMessages, {
+        currentUserId: user.id,
+        currentUserName: user.name || 'You',
+        targetUserName: targetUser.name || 'Unknown',
+      });
+
+      setMessages(previousMessages => {
+        const mappedMessageIds = new Set(
+          mappedMessages.map(messageItem => messageItem.id)
+        );
+        const pendingMessages = previousMessages.filter(
+          messageItem =>
+            messageItem.id.startsWith('temp_') &&
+            !mappedMessageIds.has(messageItem.id)
+        );
+
+        return [...mappedMessages, ...pendingMessages];
+      });
+    } catch (error) {
+      console.error(
+        'Error reconciling conversation after send failure:',
+        error
+      );
+    }
+  }, [currentChannelId, setMessages, targetUser, user]);
+
+  const rollbackPersistedAttachmentThread = useCallback(
+    async (
+      persistedMessageId: string,
+      storagePaths: Array<string | null | undefined>
+    ) => {
+      const { data: deletedMessageIds, error } =
+        await chatSidebarGateway.deleteMessageThread(persistedMessageId);
+
+      if (error) {
+        throw error;
+      }
+
+      const effectiveDeletedMessageIds =
+        deletedMessageIds && deletedMessageIds.length > 0
+          ? deletedMessageIds
+          : [persistedMessageId];
+
+      setMessages(previousMessages =>
+        previousMessages.filter(
+          messageItem => !effectiveDeletedMessageIds.includes(messageItem.id)
+        )
+      );
+
+      effectiveDeletedMessageIds.forEach(messageId => {
+        if (messageId.startsWith('temp_')) return;
+        broadcastDeletedMessage(messageId);
+      });
+
+      await deleteUploadedStorageFiles(storagePaths);
+    },
+    [broadcastDeletedMessage, deleteUploadedStorageFiles, setMessages]
+  );
+
   const handleSendImageMessage = useCallback(
     async (file: File, captionText?: string): Promise<string | null> => {
       if (!user || !targetUser || !currentChannelId) return null;
@@ -136,13 +238,16 @@ export const useChatComposerSend = ({
       triggerSendSuccessGlow();
       scheduleScrollMessagesToBottom();
 
+      let uploadedImagePath: string | null = null;
+
       try {
         const imagePath = buildChatImagePath(currentChannelId, user.id, file);
-        const { publicUrl } = await chatSidebarGateway.uploadImage(
+        const { path, publicUrl } = await chatSidebarGateway.uploadImage(
           CHAT_IMAGE_BUCKET,
           file,
           imagePath
         );
+        uploadedImagePath = path;
 
         const { data: newMessage, error } =
           await chatSidebarGateway.createMessage({
@@ -161,6 +266,7 @@ export const useChatComposerSend = ({
                 (!captionTempId || messageItem.id !== captionTempId)
             )
           );
+          await deleteUploadedStorageFiles([uploadedImagePath]);
           toast.error('Gagal mengirim gambar', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -173,14 +279,6 @@ export const useChatComposerSend = ({
           receiver_name: targetUser.name || 'Unknown',
           stableKey,
         };
-
-        setMessages(previousMessages =>
-          previousMessages.map(messageItem =>
-            messageItem.id === tempId ? realMessage : messageItem
-          )
-        );
-
-        broadcastNewMessage(realMessage);
 
         if (hasAttachmentCaption && captionTempId) {
           const { data: captionMessage, error: captionError } =
@@ -202,24 +300,52 @@ export const useChatComposerSend = ({
             };
 
             setMessages(previousMessages =>
-              previousMessages.map(messageItem =>
-                messageItem.id === captionTempId
-                  ? mappedCaptionMessage
-                  : messageItem
-              )
+              previousMessages.map(messageItem => {
+                if (messageItem.id === tempId) {
+                  return realMessage;
+                }
+                if (messageItem.id === captionTempId) {
+                  return mappedCaptionMessage;
+                }
+                return messageItem;
+              })
             );
 
+            broadcastNewMessage(realMessage);
             broadcastNewMessage(mappedCaptionMessage);
           } else {
             setMessages(previousMessages =>
               previousMessages.filter(
-                messageItem => messageItem.id !== captionTempId
+                messageItem =>
+                  messageItem.id !== tempId && messageItem.id !== captionTempId
               )
             );
+
+            try {
+              await rollbackPersistedAttachmentThread(realMessage.id, [
+                uploadedImagePath,
+              ]);
+            } catch (rollbackError) {
+              console.error(
+                'Error rolling back image attachment thread:',
+                rollbackError
+              );
+              await reconcileConversationFromServer();
+            }
+
             toast.error('Gagal mengirim deskripsi lampiran', {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
+            return null;
           }
+        } else {
+          setMessages(previousMessages =>
+            previousMessages.map(messageItem =>
+              messageItem.id === tempId ? realMessage : messageItem
+            )
+          );
+
+          broadcastNewMessage(realMessage);
         }
 
         return realMessage.id;
@@ -232,6 +358,7 @@ export const useChatComposerSend = ({
               (!captionTempId || messageItem.id !== captionTempId)
           )
         );
+        await deleteUploadedStorageFiles([uploadedImagePath]);
         toast.error('Gagal mengirim gambar', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
@@ -247,8 +374,11 @@ export const useChatComposerSend = ({
     [
       broadcastNewMessage,
       currentChannelId,
+      deleteUploadedStorageFiles,
       editingMessageId,
       pendingImagePreviewUrlsRef,
+      reconcileConversationFromServer,
+      rollbackPersistedAttachmentThread,
       scheduleScrollMessagesToBottom,
       setMessages,
       targetUser,
@@ -341,13 +471,16 @@ export const useChatComposerSend = ({
       triggerSendSuccessGlow();
       scheduleScrollMessagesToBottom();
 
+      let uploadedFilePath: string | null = null;
+
       try {
-        const { publicUrl } = await chatSidebarGateway.uploadAttachment(
+        const { path, publicUrl } = await chatSidebarGateway.uploadAttachment(
           CHAT_IMAGE_BUCKET,
           pendingFile.file,
           filePath,
           pendingFile.mimeType || undefined
         );
+        uploadedFilePath = path;
 
         const { data: newMessage, error } =
           await chatSidebarGateway.createMessage({
@@ -372,6 +505,7 @@ export const useChatComposerSend = ({
                 (!captionTempId || messageItem.id !== captionTempId)
             )
           );
+          await deleteUploadedStorageFiles([uploadedFilePath]);
           toast.error(
             pendingFile.fileKind === 'audio'
               ? 'Gagal mengirim audio'
@@ -396,13 +530,73 @@ export const useChatComposerSend = ({
           stableKey,
         };
 
-        setMessages(previousMessages =>
-          previousMessages.map(messageItem =>
-            messageItem.id === tempId ? realMessage : messageItem
-          )
-        );
+        if (hasAttachmentCaption && captionTempId) {
+          const { data: captionMessage, error: captionError } =
+            await chatSidebarGateway.createMessage({
+              sender_id: user.id,
+              receiver_id: targetUser.id,
+              channel_id: currentChannelId,
+              message: normalizedCaptionText,
+              message_type: 'text',
+              reply_to_id: realMessage.id,
+            });
 
-        broadcastNewMessage(realMessage);
+          if (!captionError && captionMessage) {
+            const mappedCaptionMessage: ChatMessage = {
+              ...captionMessage,
+              sender_name: user.name || 'You',
+              receiver_name: targetUser.name || 'Unknown',
+              stableKey: captionStableKey!,
+            };
+
+            setMessages(previousMessages =>
+              previousMessages.map(messageItem => {
+                if (messageItem.id === tempId) {
+                  return realMessage;
+                }
+                if (messageItem.id === captionTempId) {
+                  return mappedCaptionMessage;
+                }
+                return messageItem;
+              })
+            );
+
+            broadcastNewMessage(realMessage);
+            broadcastNewMessage(mappedCaptionMessage);
+          } else {
+            setMessages(previousMessages =>
+              previousMessages.filter(
+                messageItem =>
+                  messageItem.id !== tempId && messageItem.id !== captionTempId
+              )
+            );
+
+            try {
+              await rollbackPersistedAttachmentThread(realMessage.id, [
+                uploadedFilePath,
+              ]);
+            } catch (rollbackError) {
+              console.error(
+                'Error rolling back file attachment thread:',
+                rollbackError
+              );
+              await reconcileConversationFromServer();
+            }
+
+            toast.error('Gagal mengirim deskripsi lampiran', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+            return null;
+          }
+        } else {
+          setMessages(previousMessages =>
+            previousMessages.map(messageItem =>
+              messageItem.id === tempId ? realMessage : messageItem
+            )
+          );
+
+          broadcastNewMessage(realMessage);
+        }
 
         if (isPdfDocument) {
           void (async () => {
@@ -436,6 +630,8 @@ export const useChatComposerSend = ({
               mergeAndBroadcastPreviewUpdate(mappedFailedPreviewMessage);
             };
 
+            let uploadedPreviewPath: string | null = null;
+
             try {
               const generatedPreview = await renderPdfPreviewBlob(
                 pendingFile.file,
@@ -455,13 +651,14 @@ export const useChatComposerSend = ({
                 { type: 'image/png' }
               );
 
-              const { publicUrl: previewUrl } =
+              const { path: storedPreviewPath, publicUrl: previewUrl } =
                 await chatSidebarGateway.uploadAttachment(
                   CHAT_IMAGE_BUCKET,
                   previewFile,
                   previewPath,
                   'image/png'
                 );
+              uploadedPreviewPath = storedPreviewPath;
 
               const { data: previewReadyMessage, error: previewReadyError } =
                 await chatSidebarGateway.updateMessage(realMessage.id, {
@@ -470,7 +667,11 @@ export const useChatComposerSend = ({
                   file_preview_status: 'ready',
                   file_preview_error: null,
                 });
-              if (previewReadyError || !previewReadyMessage) return;
+              if (previewReadyError || !previewReadyMessage) {
+                await deleteUploadedStorageFiles([uploadedPreviewPath]);
+                await applyPreviewFailedState('Gagal menyimpan preview PDF');
+                return;
+              }
 
               const mappedPreviewReadyMessage: ChatMessage = {
                 ...previewReadyMessage,
@@ -481,49 +682,10 @@ export const useChatComposerSend = ({
               mergeAndBroadcastPreviewUpdate(mappedPreviewReadyMessage);
             } catch (error) {
               console.error('Error processing PDF preview metadata:', error);
+              await deleteUploadedStorageFiles([uploadedPreviewPath]);
               await applyPreviewFailedState('Gagal memproses preview PDF');
             }
           })();
-        }
-
-        if (hasAttachmentCaption && captionTempId) {
-          const { data: captionMessage, error: captionError } =
-            await chatSidebarGateway.createMessage({
-              sender_id: user.id,
-              receiver_id: targetUser.id,
-              channel_id: currentChannelId,
-              message: normalizedCaptionText,
-              message_type: 'text',
-              reply_to_id: realMessage.id,
-            });
-
-          if (!captionError && captionMessage) {
-            const mappedCaptionMessage: ChatMessage = {
-              ...captionMessage,
-              sender_name: user.name || 'You',
-              receiver_name: targetUser.name || 'Unknown',
-              stableKey: captionStableKey!,
-            };
-
-            setMessages(previousMessages =>
-              previousMessages.map(messageItem =>
-                messageItem.id === captionTempId
-                  ? mappedCaptionMessage
-                  : messageItem
-              )
-            );
-
-            broadcastNewMessage(mappedCaptionMessage);
-          } else {
-            setMessages(previousMessages =>
-              previousMessages.filter(
-                messageItem => messageItem.id !== captionTempId
-              )
-            );
-            toast.error('Gagal mengirim deskripsi lampiran', {
-              toasterId: CHAT_SIDEBAR_TOASTER_ID,
-            });
-          }
         }
 
         return realMessage.id;
@@ -536,6 +698,7 @@ export const useChatComposerSend = ({
               (!captionTempId || messageItem.id !== captionTempId)
           )
         );
+        await deleteUploadedStorageFiles([uploadedFilePath]);
         toast.error(
           pendingFile.fileKind === 'audio'
             ? 'Gagal mengirim audio'
@@ -563,8 +726,11 @@ export const useChatComposerSend = ({
       broadcastNewMessage,
       broadcastUpdatedMessage,
       currentChannelId,
+      deleteUploadedStorageFiles,
       editingMessageId,
       pendingImagePreviewUrlsRef,
+      reconcileConversationFromServer,
+      rollbackPersistedAttachmentThread,
       scheduleScrollMessagesToBottom,
       setMessages,
       targetUser,
