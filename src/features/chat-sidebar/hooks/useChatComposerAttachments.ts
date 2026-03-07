@@ -253,6 +253,40 @@ export const useChatComposerAttachments = ({
     });
   }, [messageInputRef]);
 
+  const restorePendingComposerAttachments = useCallback(
+    (attachments: PendingComposerAttachment[]) => {
+      if (composerImagePreviewCloseTimerRef.current) {
+        window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+        composerImagePreviewCloseTimerRef.current = null;
+      }
+
+      setIsComposerImageExpandedVisible(false);
+      setIsComposerImageExpanded(false);
+      setComposerImagePreviewAttachmentId(null);
+      replaceComposerImageAttachmentIdRef.current = null;
+      replaceComposerDocumentAttachmentIdRef.current = null;
+
+      setPendingComposerAttachments(previousAttachments => {
+        previousAttachments.forEach(attachment => {
+          if (attachment.previewUrl) {
+            URL.revokeObjectURL(attachment.previewUrl);
+          }
+        });
+
+        return attachments.map(attachment => ({
+          ...attachment,
+          previewUrl:
+            attachment.fileKind === 'image'
+              ? URL.createObjectURL(attachment.file)
+              : null,
+        }));
+      });
+
+      focusTextarea();
+    },
+    [focusTextarea]
+  );
+
   const queueComposerImage = useCallback(
     (file: File, replaceAttachmentId?: string) => {
       if (!file.type.startsWith('image/')) {
@@ -600,6 +634,7 @@ export const useChatComposerAttachments = ({
     closeComposerImagePreview,
     removePendingComposerAttachment,
     clearPendingComposerAttachments,
+    restorePendingComposerAttachments,
     queueComposerImage,
   };
 };

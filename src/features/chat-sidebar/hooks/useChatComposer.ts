@@ -98,6 +98,7 @@ export const useChatComposer = ({
     closeComposerImagePreview,
     removePendingComposerAttachment,
     clearPendingComposerAttachments,
+    restorePendingComposerAttachments,
     queueComposerImage,
   } = attachments;
 
@@ -251,6 +252,7 @@ export const useChatComposer = ({
     setEditingMessageId,
     pendingComposerAttachments,
     clearPendingComposerAttachments,
+    restorePendingComposerAttachments,
     closeMessageMenu,
     focusMessageComposer,
     scheduleScrollMessagesToBottom,
@@ -292,6 +294,7 @@ export const useChatComposer = ({
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,
+    restorePendingComposerAttachments,
     queueComposerImage,
     ...actions,
   };

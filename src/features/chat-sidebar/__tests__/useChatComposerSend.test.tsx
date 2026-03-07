@@ -150,6 +150,7 @@ describe('useChatComposerSend', () => {
     const broadcastUpdatedMessage = vi.fn();
     const broadcastDeletedMessage = vi.fn();
     const clearPendingComposerAttachments = vi.fn();
+    const restorePendingComposerAttachments = vi.fn();
     const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
@@ -171,6 +172,7 @@ describe('useChatComposerSend', () => {
         editingMessageId: null,
         pendingComposerAttachments: [buildPendingAttachment()],
         clearPendingComposerAttachments,
+        restorePendingComposerAttachments,
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
@@ -209,6 +211,66 @@ describe('useChatComposerSend', () => {
     expect(broadcastUpdatedMessage).not.toHaveBeenCalled();
     expect(broadcastDeletedMessage).toHaveBeenCalledWith('server-file-1');
     expect(clearPendingComposerAttachments).toHaveBeenCalledOnce();
+    expect(restorePendingComposerAttachments).toHaveBeenCalledWith([
+      expect.objectContaining({
+        fileName: 'stok.pdf',
+      }),
+    ]);
+  });
+
+  it('restores the failed attachment slice back into the composer when send fails', async () => {
+    mockGateway.uploadAttachment.mockRejectedValue(new Error('upload failed'));
+
+    const restorePendingComposerAttachments = vi.fn();
+    const firstAttachment = buildPendingAttachment({
+      id: 'pending-1',
+      fileName: 'stok-1.pdf',
+    });
+    const secondAttachment = buildPendingAttachment({
+      id: 'pending-2',
+      fileName: 'stok-2.pdf',
+    });
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [firstAttachment, secondAttachment],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments,
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(restorePendingComposerAttachments).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'pending-1', fileName: 'stok-1.pdf' }),
+      expect.objectContaining({ id: 'pending-2', fileName: 'stok-2.pdf' }),
+    ]);
   });
 
   it('deletes orphaned preview files and marks preview metadata as failed', async () => {
@@ -267,6 +329,7 @@ describe('useChatComposerSend', () => {
         editingMessageId: null,
         pendingComposerAttachments: [buildPendingAttachment()],
         clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
@@ -350,6 +413,7 @@ describe('useChatComposerSend', () => {
         editingMessageId: null,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
@@ -432,6 +496,7 @@ describe('useChatComposerSend', () => {
         editingMessageId: null,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),

@@ -35,6 +35,9 @@ interface UseChatComposerSendProps {
   editingMessageId: string | null;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
+  restorePendingComposerAttachments: (
+    attachments: PendingComposerAttachment[]
+  ) => void;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   scheduleScrollMessagesToBottom: () => void;
   triggerSendSuccessGlow: () => void;
@@ -54,6 +57,7 @@ export const useChatComposerSend = ({
   editingMessageId,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
+  restorePendingComposerAttachments,
   setMessages,
   scheduleScrollMessagesToBottom,
   triggerSendSuccessGlow,
@@ -249,6 +253,9 @@ export const useChatComposerSend = ({
               );
 
         if (!sentAttachmentMessageId) {
+          restorePendingComposerAttachments(
+            attachmentsToSend.slice(attachmentIndex)
+          );
           if (shouldAttachCaption) {
             setMessage(messageText);
           }
@@ -272,6 +279,7 @@ export const useChatComposerSend = ({
     editingMessageId,
     message,
     pendingComposerAttachments,
+    restorePendingComposerAttachments,
     sendFileMessage,
     sendImageMessage,
     sendTextMessage,

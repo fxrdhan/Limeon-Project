@@ -49,6 +49,9 @@ interface UseChatComposerActionsProps {
   setEditingMessageId: Dispatch<SetStateAction<string | null>>;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
+  restorePendingComposerAttachments: (
+    attachments: PendingComposerAttachment[]
+  ) => void;
   closeMessageMenu: () => void;
   focusMessageComposer: () => void;
   scheduleScrollMessagesToBottom: () => void;
@@ -89,6 +92,7 @@ export const useChatComposerActions = ({
   setEditingMessageId,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
+  restorePendingComposerAttachments,
   closeMessageMenu,
   focusMessageComposer,
   scheduleScrollMessagesToBottom,
@@ -110,6 +114,7 @@ export const useChatComposerActions = ({
     editingMessageId,
     pendingComposerAttachments,
     clearPendingComposerAttachments,
+    restorePendingComposerAttachments,
     setMessages,
     scheduleScrollMessagesToBottom,
     triggerSendSuccessGlow,

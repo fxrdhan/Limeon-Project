@@ -701,7 +701,9 @@ Area yang sudah dicakup:
 ## 14) Current-State Notes
 
 - Dokumen ini mencatat current state walaupun ada bagian implementasi yang belum sepenuhnya mengikuti `docs/data-access-policy.md`.
-- Implementasi saat ini tidak memakai React Query untuk data chat sidebar.
+- Implementasi saat ini tidak memakai React Query untuk data chat sidebar;
+  realtime session, optimistic send, dan receipt/presence sync tetap
+  diorkestrasi langsung di feature hooks.
 - Conversation cache chat sidebar tidak global; cache hidup per instance `useChatSession`.
 - Delivery receipt incoming sekarang hidup di level layout aplikasi, tidak bergantung pada panel chat open.
 - Fallback PDF storage sekarang lewat data access layer, bukan import Supabase langsung dari util feature.

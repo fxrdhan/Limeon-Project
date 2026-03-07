@@ -72,6 +72,9 @@ Tujuan: `src/components/` hanya berisi komponen lintas fitur.
 ## 4) State Management
 
 - **React Query**: data server (CRUD, list, cache, sync).
+- Exception saat ini: `chat-sidebar` mempertahankan runtime session realtime,
+  optimistic send, dan receipt/presence sync di level feature hooks karena
+  kebutuhan interaksi live-nya lebih ketat daripada list/detail CRUD biasa.
 - **Zustand**: state global UI / auth / presence.
 - **IndexedDB persistence**: query cache penting saja (lihat `src/lib/indexedDBPersistence.ts`).
 

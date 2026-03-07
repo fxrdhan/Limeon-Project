@@ -16,17 +16,15 @@ const ChatSidebarPanel = memo(
       targetUser,
     });
 
-    if (!isOpen) {
-      return null;
-    }
-
     return (
       <motion.div
         initial={{ opacity: 0, x: 16 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="relative h-full w-full select-none"
+        className={`relative h-full w-full select-none ${
+          isOpen ? '' : 'pointer-events-none'
+        }`}
         onClickCapture={controller.handleChatPortalBackgroundClick}
       >
         <Toaster
