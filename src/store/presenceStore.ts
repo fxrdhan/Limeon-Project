@@ -6,6 +6,8 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
   channel: null,
   onlineUsers: 0,
   onlineUsersList: [],
+  allUsersList: [],
+  portalImageUrls: {},
   setChannel: (channel: RealtimeChannel | null) => {
     set({ channel });
   },
@@ -21,5 +23,11 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
   },
   setOnlineUsersList: (users: OnlineUser[]) => {
     set({ onlineUsersList: users });
+  },
+  setAllUsersList: (users: OnlineUser[]) => {
+    set({ allUsersList: users });
+  },
+  setPortalImageUrls: (urls: Record<string, string>) => {
+    set({ portalImageUrls: urls });
   },
 }));

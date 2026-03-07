@@ -1,14 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import type { NavbarProps, OnlineUser } from '@/types';
+import { useState, useRef, useEffect } from 'react';
+import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
-import { usePresenceStore } from '@/store/presenceStore';
-import { usersService } from '@/services/api/users.service';
-import {
-  cacheImageBlob,
-  getCachedImageBlobUrl,
-  setCachedImage,
-} from '@/utils/imageCache';
+import { usePresenceRoster } from '@/hooks/presence/usePresenceRoster';
 import { motion, AnimatePresence } from 'motion/react';
 import { TbMessageDots } from 'react-icons/tb';
 import DateTimeDisplay from './live-datetime';
@@ -17,132 +11,19 @@ import AvatarStack from '@/components/shared/avatar-stack';
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
-  const userId = user?.id ?? null;
   const toggleChatForUser = useChatSidebarStore(
     state => state.toggleChatForUser
   );
-  const { onlineUsers, onlineUsersList } = usePresenceStore();
+  const {
+    displayOnlineUsers,
+    onlineUserIds,
+    reorderedOnlineUsers,
+    portalOrderedUsers,
+    portalImageUrls,
+  } = usePresenceRoster();
   const [showPortal, setShowPortal] = useState(false);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [allUsersList, setAllUsersList] = useState<OnlineUser[]>([]);
-  const [portalImageUrls, setPortalImageUrls] = useState<
-    Record<string, string>
-  >({});
-
-  // Ensure at least 1 user is shown when logged in
-  const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
-
-  const rawOnlineUserIds = useMemo(
-    () => new Set(onlineUsersList.map(onlineUser => onlineUser.id)),
-    [onlineUsersList]
-  );
-
-  const onlineUserIds = useMemo(() => {
-    const ids = new Set(rawOnlineUserIds);
-    if (userId) {
-      ids.add(userId);
-    }
-    return ids;
-  }, [rawOnlineUserIds, userId]);
-
-  const allPresenceUsers = useMemo(() => {
-    if (allUsersList.length === 0) return onlineUsersList;
-
-    const offlineUsers = allUsersList.filter(
-      presenceUser => !rawOnlineUserIds.has(presenceUser.id)
-    );
-
-    return [...onlineUsersList, ...offlineUsers];
-  }, [allUsersList, rawOnlineUserIds, onlineUsersList]);
-
-  // Reorder users so current user appears last (rightmost) if present
-  const reorderedOnlineUsers = useMemo(() => {
-    if (allPresenceUsers.length === 0 || !user) return allPresenceUsers;
-    const currentUserIndex = allPresenceUsers.findIndex(u => u.id === user.id);
-    if (currentUserIndex !== -1) {
-      const otherUsers = allPresenceUsers.filter(u => u.id !== user.id);
-      const currentUserObj = allPresenceUsers[currentUserIndex];
-      return [...otherUsers, currentUserObj];
-    }
-    return allPresenceUsers;
-  }, [allPresenceUsers, user]);
-
-  // Reorder users for portal so current user appears first (top) if present
-  const portalOrderedUsers = useMemo(() => {
-    if (allPresenceUsers.length === 0 || !user) return allPresenceUsers;
-    const currentUserIndex = allPresenceUsers.findIndex(u => u.id === user.id);
-    if (currentUserIndex !== -1) {
-      const otherUsers = allPresenceUsers.filter(u => u.id !== user.id);
-      const currentUserObj = allPresenceUsers[currentUserIndex];
-      return [currentUserObj, ...otherUsers];
-    }
-    return allPresenceUsers;
-  }, [allPresenceUsers, user]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const resolveAllUsers = async () => {
-      if (!userId) {
-        if (isActive) setAllUsersList([]);
-        return;
-      }
-
-      const { data, error } = await usersService.getAllUsers();
-      if (!isActive || error) return;
-      setAllUsersList(data || []);
-    };
-
-    void resolveAllUsers();
-
-    return () => {
-      isActive = false;
-    };
-  }, [userId]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const resolvePortalImages = async () => {
-      if (portalOrderedUsers.length === 0) {
-        if (isActive) setPortalImageUrls({});
-        return;
-      }
-
-      const entries = await Promise.all(
-        portalOrderedUsers.map(async portalUser => {
-          const profilePhotoUrl = portalUser.profilephoto ?? '';
-          if (!profilePhotoUrl) return [portalUser.id, ''] as const;
-
-          if (!profilePhotoUrl.startsWith('http')) {
-            return [portalUser.id, profilePhotoUrl] as const;
-          }
-
-          const cacheKey = `profile:${portalUser.id}`;
-          setCachedImage(cacheKey, profilePhotoUrl);
-
-          const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
-          if (cachedBlobUrl) return [portalUser.id, cachedBlobUrl] as const;
-
-          const blobUrl = await cacheImageBlob(profilePhotoUrl);
-          return [portalUser.id, blobUrl || profilePhotoUrl] as const;
-        })
-      );
-
-      if (!isActive) return;
-      const nextUrls = Object.fromEntries(
-        entries.filter(([, url]) => Boolean(url))
-      );
-      setPortalImageUrls(nextUrls);
-    };
-
-    void resolvePortalImages();
-
-    return () => {
-      isActive = false;
-    };
-  }, [portalOrderedUsers]);
 
   // Helper functions for avatar display
   const getInitials = (name: string) => {

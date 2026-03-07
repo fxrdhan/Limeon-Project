@@ -2,9 +2,15 @@ import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import type { OnlineUser } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usersService } from '@/services/api/users.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
+import {
+  cacheImageBlob,
+  getCachedImageBlobUrl,
+  setCachedImage,
+} from '@/utils/imageCache';
+import { mergePresenceUsers } from './roster';
 
 // Helper function to count unique users from presence state
 const countUniqueUsers = (presenceState: Record<string, unknown>) => {
@@ -68,12 +74,25 @@ const fetchOnlineUsers = async (userIds: string[]): Promise<OnlineUser[]> => {
 
 export const usePresence = () => {
   const { user } = useAuthStore();
-  const { setChannel, setOnlineUsers, setOnlineUsersList } = usePresenceStore();
+  const {
+    onlineUsersList,
+    allUsersList,
+    setChannel,
+    setOnlineUsers,
+    setOnlineUsersList,
+    setAllUsersList,
+    setPortalImageUrls,
+  } = usePresenceStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isSetupRef = useRef(false);
   const isConnectedRef = useRef(false);
   const isSubscribedRef = useRef(false);
   const setupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const rosterUsers = useMemo(
+    () => mergePresenceUsers(onlineUsersList, allUsersList),
+    [allUsersList, onlineUsersList]
+  );
 
   // Helper to handle presence state changes
   const handlePresenceChange = useCallback(
@@ -257,9 +276,94 @@ export const usePresence = () => {
     setChannel(null);
     setOnlineUsers(0);
     setOnlineUsersList([]);
+    setAllUsersList([]);
+    setPortalImageUrls({});
     isSetupRef.current = false;
     isSubscribedRef.current = false;
-  }, [cleanupChannel, setChannel, setOnlineUsers, setOnlineUsersList]);
+  }, [
+    cleanupChannel,
+    setAllUsersList,
+    setChannel,
+    setOnlineUsers,
+    setOnlineUsersList,
+    setPortalImageUrls,
+  ]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveAllUsers = async () => {
+      if (!user?.id) {
+        if (isActive) {
+          setAllUsersList([]);
+        }
+        return;
+      }
+
+      const { data, error } = await usersService.getAllUsers();
+      if (!isActive) return;
+
+      if (error) {
+        setAllUsersList([]);
+        return;
+      }
+
+      setAllUsersList(data || []);
+    };
+
+    void resolveAllUsers();
+
+    return () => {
+      isActive = false;
+    };
+  }, [setAllUsersList, user?.id]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const resolveRosterImages = async () => {
+      if (rosterUsers.length === 0) {
+        if (isActive) {
+          setPortalImageUrls({});
+        }
+        return;
+      }
+
+      const entries = await Promise.all(
+        rosterUsers.map(async rosterUser => {
+          const profilePhotoUrl = rosterUser.profilephoto ?? '';
+          if (!profilePhotoUrl) return [rosterUser.id, ''] as const;
+
+          if (!profilePhotoUrl.startsWith('http')) {
+            return [rosterUser.id, profilePhotoUrl] as const;
+          }
+
+          const cacheKey = `profile:${rosterUser.id}`;
+          setCachedImage(cacheKey, profilePhotoUrl);
+
+          const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
+          if (cachedBlobUrl) {
+            return [rosterUser.id, cachedBlobUrl] as const;
+          }
+
+          const blobUrl = await cacheImageBlob(profilePhotoUrl);
+          return [rosterUser.id, blobUrl || profilePhotoUrl] as const;
+        })
+      );
+
+      if (!isActive) return;
+
+      setPortalImageUrls(
+        Object.fromEntries(entries.filter(([, url]) => Boolean(url)))
+      );
+    };
+
+    void resolveRosterImages();
+
+    return () => {
+      isActive = false;
+    };
+  }, [rosterUsers, setPortalImageUrls]);
 
   useEffect(() => {
     if (user) {
