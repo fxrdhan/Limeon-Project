@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { ChatTargetUser } from '@/types';
-import { usePageFocusBlockStore } from './pageFocusBlockStore';
 
 interface ChatSidebarState {
   isOpen: boolean;
@@ -15,7 +14,6 @@ export const useChatSidebarStore = create<ChatSidebarState>(set => ({
   targetUser: undefined,
   openChat: targetUser =>
     set(() => {
-      usePageFocusBlockStore.getState().setBlocked(true);
       return {
         isOpen: true,
         targetUser,
@@ -23,7 +21,6 @@ export const useChatSidebarStore = create<ChatSidebarState>(set => ({
     }),
   closeChat: () =>
     set(() => {
-      usePageFocusBlockStore.getState().setBlocked(false);
       return {
         isOpen: false,
         targetUser: undefined,
@@ -34,14 +31,12 @@ export const useChatSidebarStore = create<ChatSidebarState>(set => ({
       const isSameUser = previousState.targetUser?.id === targetUser.id;
 
       if (previousState.isOpen && isSameUser) {
-        usePageFocusBlockStore.getState().setBlocked(false);
         return {
           isOpen: false,
           targetUser: undefined,
         };
       }
 
-      usePageFocusBlockStore.getState().setBlocked(true);
       return {
         isOpen: true,
         targetUser,

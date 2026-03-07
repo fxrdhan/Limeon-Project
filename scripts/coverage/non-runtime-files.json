@@ -100,7 +100,7 @@
   "src/components/search-bar/utils/searchUtils.ts",
   "src/components/SearchToolbar.tsx",
   "src/components/shared/avatar-stack/index.tsx",
-  "src/components/shared/chat-sidebar-panel/index.tsx",
+  "src/features/chat-sidebar/index.tsx",
   "src/components/shared/sliding-selector/index.tsx",
   "src/components/skeleton/index.ts",
   "src/components/skeleton/Skeleton.tsx",

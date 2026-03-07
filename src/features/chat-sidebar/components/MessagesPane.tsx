@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import { MAX_MESSAGE_CHARS } from '../constants';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type {
@@ -49,7 +50,6 @@ interface MessagesPaneProps {
   searchMatchedMessageIds: Set<string>;
   activeSearchMessageId: string | null;
   showScrollToBottom: boolean;
-  maxMessageChars: number;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
@@ -96,7 +96,6 @@ const MessagesPane = ({
   searchMatchedMessageIds,
   activeSearchMessageId,
   showScrollToBottom,
-  maxMessageChars,
   messagesContainerRef,
   messagesEndRef,
   messageBubbleRefs,
@@ -268,7 +267,7 @@ const MessagesPane = ({
                   isFlashHighlightVisible={isFlashHighlightVisible}
                   searchMatchedMessageIds={searchMatchedMessageIds}
                   activeSearchMessageId={activeSearchMessageId}
-                  maxMessageChars={maxMessageChars}
+                  maxMessageChars={MAX_MESSAGE_CHARS}
                   messageBubbleRefs={messageBubbleRefs}
                   initialMessageAnimationKeysRef={
                     initialMessageAnimationKeysRef

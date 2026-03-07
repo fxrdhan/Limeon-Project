@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { TbMessageDots } from 'react-icons/tb';
-import ChatSidebarPanel from '@/components/shared/chat-sidebar-panel';
+import ChatSidebarPanel from '@/features/chat-sidebar';
 
 /**
  * Props for ChatTestingButton component

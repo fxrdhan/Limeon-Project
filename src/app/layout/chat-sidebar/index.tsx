@@ -1,6 +1,6 @@
 import type { ChatTargetUser } from '@/types';
 import { AnimatePresence, motion } from 'motion/react';
-import ChatSidebarPanel from '@/components/shared/chat-sidebar-panel';
+import ChatSidebarPanel from '@/features/chat-sidebar';
 import { useCallback, useEffect, useState } from 'react';
 
 interface ChatSidebarProps {

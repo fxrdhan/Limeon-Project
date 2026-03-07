@@ -3,8 +3,13 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatSidebarPanel from '../index';
 
-const { mockPerformClose } = vi.hoisted(() => ({
+const { mockPerformClose, renderedChildProps } = vi.hoisted(() => ({
   mockPerformClose: vi.fn(),
+  renderedChildProps: {
+    header: null as Record<string, unknown> | null,
+    messages: null as Record<string, unknown> | null,
+    composer: null as Record<string, unknown> | null,
+  },
 }));
 
 vi.mock('@/store/authStore', () => ({
@@ -134,25 +139,37 @@ vi.mock('../hooks/useChatViewport', () => ({
 }));
 
 vi.mock('../components/ChatHeader', () => ({
-  default: ({ onClose }: { onClose: () => void }) => (
-    <button onClick={onClose} type="button">
-      close chat
-    </button>
-  ),
+  default: (props: Record<string, unknown> & { onClose: () => void }) => {
+    renderedChildProps.header = props;
+    return (
+      <button onClick={props.onClose} type="button">
+        close chat
+      </button>
+    );
+  },
 }));
 
 vi.mock('../components/MessagesPane', () => ({
-  default: () => <div>messages pane</div>,
+  default: (props: Record<string, unknown>) => {
+    renderedChildProps.messages = props;
+    return <div>messages pane</div>;
+  },
 }));
 
 vi.mock('../components/ComposerPanel', () => ({
-  default: () => <div>composer panel</div>,
+  default: (props: Record<string, unknown>) => {
+    renderedChildProps.composer = props;
+    return <div>composer panel</div>;
+  },
 }));
 
 describe('ChatSidebarPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPerformClose.mockImplementation(() => new Promise(() => {}));
+    renderedChildProps.header = null;
+    renderedChildProps.messages = null;
+    renderedChildProps.composer = null;
   });
 
   it('closes the UI immediately without waiting for performClose to resolve', () => {
@@ -175,5 +192,48 @@ describe('ChatSidebarPanel', () => {
 
     expect(mockPerformClose).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('wires derived controller props into the rendered child components', () => {
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        }}
+      />
+    );
+
+    expect(renderedChildProps.header).toEqual(
+      expect.objectContaining({
+        currentChannelId: 'dm_user-a_user-b',
+        isSearchMode: false,
+        isSelectionMode: false,
+        selectedMessageCount: 0,
+        targetUser: expect.objectContaining({
+          id: 'user-b',
+          name: 'Gudang',
+        }),
+      })
+    );
+    expect(renderedChildProps.messages).toEqual(
+      expect.objectContaining({
+        loading: false,
+        messages: [],
+        showScrollToBottom: false,
+        isSelectionMode: false,
+      })
+    );
+    expect(renderedChildProps.composer).toEqual(
+      expect.objectContaining({
+        message: '',
+        isAttachModalOpen: false,
+        isMessageInputMultiline: false,
+      })
+    );
   });
 });

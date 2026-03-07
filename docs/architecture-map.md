@@ -15,7 +15,7 @@ Tujuan dokumen ini:
 - `src/features/`
   - Implementasi per fitur (domain, hooks, components, templates, screens).
   - Contoh saat ini: `auth`, `dashboard`, `master-data`,
-    `item-management`, `purchase-management`, `identity`.
+    `item-management`, `purchase-management`, `identity`, `chat-sidebar`.
 
 - `src/components/`
   - Komponen UI **shared** lintas fitur (button, dropdown, table, calendar, dll).

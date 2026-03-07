@@ -28,6 +28,17 @@ import {
 } from 'react-icons/tb';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import {
+  COMPOSER_BASE_BORDER_COLOR,
+  COMPOSER_BASE_SHADOW,
+  COMPOSER_GLOW_SHADOW_FADE,
+  COMPOSER_GLOW_SHADOW_HIGH,
+  COMPOSER_GLOW_SHADOW_LOW,
+  COMPOSER_GLOW_SHADOW_MID,
+  COMPOSER_GLOW_SHADOW_PEAK,
+  COMPOSER_SYNC_LAYOUT_TRANSITION,
+  SEND_SUCCESS_GLOW_DURATION,
+} from '../constants';
 import type { PendingComposerAttachment } from '../types';
 import { resolveComposerAttachmentExtension } from '../utils/composer-attachment';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
@@ -52,19 +63,6 @@ interface ComposerPanelProps {
   imageInputRef: RefObject<HTMLInputElement | null>;
   documentInputRef: RefObject<HTMLInputElement | null>;
   audioInputRef: RefObject<HTMLInputElement | null>;
-  composerSyncLayoutTransition: {
-    type: 'tween';
-    ease: readonly [number, number, number, number];
-    duration: number;
-  };
-  composerBaseBorderColor: string;
-  composerBaseShadow: string;
-  composerGlowShadowPeak: string;
-  composerGlowShadowHigh: string;
-  composerGlowShadowMid: string;
-  composerGlowShadowFade: string;
-  composerGlowShadowLow: string;
-  sendSuccessGlowDuration: number;
   onMessageChange: (nextMessage: string) => void;
   onKeyDown: (e: ReactKeyboardEvent) => void;
   onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
@@ -107,15 +105,6 @@ const ComposerPanel = ({
   imageInputRef,
   documentInputRef,
   audioInputRef,
-  composerSyncLayoutTransition,
-  composerBaseBorderColor,
-  composerBaseShadow,
-  composerGlowShadowPeak,
-  composerGlowShadowHigh,
-  composerGlowShadowMid,
-  composerGlowShadowFade,
-  composerGlowShadowLow,
-  sendSuccessGlowDuration,
   onMessageChange,
   onKeyDown,
   onPaste,
@@ -398,9 +387,9 @@ const ComposerPanel = ({
   }, [releaseComposerDocumentPreviewObjectUrl]);
 
   const contextualPanelTransition = {
-    duration: composerSyncLayoutTransition.duration,
-    ease: composerSyncLayoutTransition.ease,
-    layout: composerSyncLayoutTransition,
+    duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
+    ease: COMPOSER_SYNC_LAYOUT_TRANSITION.ease,
+    layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
   } as const;
 
   return (
@@ -425,39 +414,39 @@ const ComposerPanel = ({
             isSendSuccessGlowVisible
               ? {
                   borderColor: [
-                    composerBaseBorderColor,
+                    COMPOSER_BASE_BORDER_COLOR,
                     'oklch(50.8% 0.118 165.612 / 0.55)',
                     'oklch(50.8% 0.118 165.612 / 0.48)',
                     'oklch(50.8% 0.118 165.612 / 0.42)',
                     'oklch(50.8% 0.118 165.612 / 0.32)',
                     'oklch(50.8% 0.118 165.612 / 0.22)',
-                    composerBaseBorderColor,
+                    COMPOSER_BASE_BORDER_COLOR,
                   ],
                   boxShadow: [
-                    composerBaseShadow,
-                    composerGlowShadowPeak,
-                    composerGlowShadowHigh,
-                    composerGlowShadowMid,
-                    composerGlowShadowFade,
-                    composerGlowShadowLow,
-                    composerBaseShadow,
+                    COMPOSER_BASE_SHADOW,
+                    COMPOSER_GLOW_SHADOW_PEAK,
+                    COMPOSER_GLOW_SHADOW_HIGH,
+                    COMPOSER_GLOW_SHADOW_MID,
+                    COMPOSER_GLOW_SHADOW_FADE,
+                    COMPOSER_GLOW_SHADOW_LOW,
+                    COMPOSER_BASE_SHADOW,
                   ],
                 }
               : {
-                  borderColor: composerBaseBorderColor,
-                  boxShadow: composerBaseShadow,
+                  borderColor: COMPOSER_BASE_BORDER_COLOR,
+                  boxShadow: COMPOSER_BASE_SHADOW,
                 }
           }
           transition={
             isSendSuccessGlowVisible
               ? {
-                  layout: composerSyncLayoutTransition,
-                  duration: sendSuccessGlowDuration / 1000,
+                  layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+                  duration: SEND_SUCCESS_GLOW_DURATION / 1000,
                   times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
                   ease: 'easeOut',
                 }
               : {
-                  layout: composerSyncLayoutTransition,
+                  layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
                   duration: 0.12,
                   ease: 'easeOut',
                 }
@@ -466,7 +455,7 @@ const ComposerPanel = ({
         >
           <motion.div
             layout
-            transition={{ layout: composerSyncLayoutTransition }}
+            transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
             className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
           >
             <AnimatePresence initial={false} mode="popLayout">
@@ -536,7 +525,7 @@ const ComposerPanel = ({
 
             <motion.div
               layout
-              transition={{ layout: composerSyncLayoutTransition }}
+              transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
               className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                 isMessageInputMultiline
                   ? 'grid-rows-[auto_auto] gap-y-1 items-end'
@@ -545,7 +534,7 @@ const ComposerPanel = ({
             >
               <motion.textarea
                 layout="position"
-                transition={{ layout: composerSyncLayoutTransition }}
+                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 ref={messageInputRef}
                 value={message}
                 onChange={event => onMessageChange(event.target.value)}
@@ -562,7 +551,7 @@ const ComposerPanel = ({
               />
               <motion.button
                 layout="position"
-                transition={{ layout: composerSyncLayoutTransition }}
+                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 type="button"
                 ref={attachButtonRef}
                 onClick={onAttachButtonClick}
@@ -585,7 +574,7 @@ const ComposerPanel = ({
               </motion.button>
               <motion.button
                 layout="position"
-                transition={{ layout: composerSyncLayoutTransition }}
+                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 onClick={onSendMessage}
                 className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                   isMessageInputMultiline

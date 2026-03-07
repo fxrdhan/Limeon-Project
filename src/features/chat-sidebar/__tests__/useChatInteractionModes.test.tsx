@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChatMessage } from '../../../../services/api/chat.service';
+import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ChatMessage } from '../../../../services/api/chat.service';
+import type { ChatMessage } from '../../../services/api/chat.service';
 import {
   getAttachmentCaptionData,
   getSearchMatchedMessageIds,

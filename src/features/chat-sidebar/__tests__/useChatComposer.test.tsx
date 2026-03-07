@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChatMessage } from '../../../../services/api/chat.service';
+import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposer } from '../hooks/useChatComposer';
 
 const { mockToast, mockUseChatComposerActions } = vi.hoisted(() => ({
