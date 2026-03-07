@@ -10,11 +10,10 @@ import {
   EDIT_TARGET_FLASH_PHASE_DURATION,
   EDIT_TARGET_FOCUS_PADDING,
 } from '../constants';
-
-type VisibleBounds = {
-  containerRect: DOMRect;
-  visibleBottom: number;
-};
+import {
+  getVerticalVisibilityBounds as buildVerticalVisibilityBounds,
+  type VisibleBounds,
+} from '../utils/viewport-visibility';
 
 interface UseChatViewportFocusProps {
   getVisibleMessagesBounds: () => VisibleBounds | null;
@@ -65,24 +64,17 @@ export const useChatViewportFocus = ({
     pendingSearchFlashRafRef.current = null;
   }, []);
 
-  const getVerticalVisibilityBounds = useCallback(() => {
+  const getCurrentVerticalVisibilityBounds = useCallback(() => {
     const bounds = getVisibleMessagesBounds();
     if (!bounds) return null;
 
-    const headerBottom =
-      chatHeaderContainerRef.current?.getBoundingClientRect().bottom;
-    const hasValidHeaderBottom =
-      typeof headerBottom === 'number' &&
-      Number.isFinite(headerBottom) &&
-      headerBottom > bounds.containerRect.top &&
-      headerBottom < bounds.containerRect.bottom;
-
     return {
       bounds,
-      minVisibleTop: hasValidHeaderBottom
-        ? headerBottom + EDIT_TARGET_FOCUS_PADDING
-        : bounds.containerRect.top + EDIT_TARGET_FOCUS_PADDING,
-      maxVisibleBottom: bounds.visibleBottom - EDIT_TARGET_FOCUS_PADDING,
+      ...buildVerticalVisibilityBounds(
+        bounds,
+        chatHeaderContainerRef.current?.getBoundingClientRect(),
+        EDIT_TARGET_FOCUS_PADDING
+      ),
     };
   }, [chatHeaderContainerRef, getVisibleMessagesBounds]);
 
@@ -98,7 +90,7 @@ export const useChatViewportFocus = ({
       const verifyVisibilityAndFlash = () => {
         const bubble = messageBubbleRefs.current.get(messageId);
         const container = messagesContainerRef.current;
-        const visibilityBounds = getVerticalVisibilityBounds();
+        const visibilityBounds = getCurrentVerticalVisibilityBounds();
         if (!bubble || !container || !visibilityBounds) {
           if (Date.now() - waitStart < maxWaitMs) {
             pendingSearchFlashRafRef.current = requestAnimationFrame(
@@ -151,7 +143,7 @@ export const useChatViewportFocus = ({
     },
     [
       clearPendingSearchFlash,
-      getVerticalVisibilityBounds,
+      getCurrentVerticalVisibilityBounds,
       messageBubbleRefs,
       messagesContainerRef,
       triggerMessageFlash,
@@ -162,7 +154,7 @@ export const useChatViewportFocus = ({
     (messageId: string, behavior: ScrollBehavior) => {
       const bubble = messageBubbleRefs.current.get(messageId);
       const container = messagesContainerRef.current;
-      const visibilityBounds = getVerticalVisibilityBounds();
+      const visibilityBounds = getCurrentVerticalVisibilityBounds();
       if (!bubble || !container || !visibilityBounds) {
         triggerMessageFlashWhenScrollSettled(messageId);
         return;
@@ -195,7 +187,7 @@ export const useChatViewportFocus = ({
     },
     [
       closeMessageMenu,
-      getVerticalVisibilityBounds,
+      getCurrentVerticalVisibilityBounds,
       messageBubbleRefs,
       messagesContainerRef,
       triggerMessageFlashWhenScrollSettled,

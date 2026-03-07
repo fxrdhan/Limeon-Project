@@ -8,13 +8,14 @@ import {
   type RefObject,
 } from 'react';
 import { MESSAGE_BOTTOM_GAP } from '../constants';
+import {
+  getVerticalVisibilityBounds,
+  type VisibleBounds,
+} from '../utils/viewport-visibility';
 import { useChatViewportFocus } from './useChatViewportFocus';
 import { useChatViewportMenu } from './useChatViewportMenu';
 
-type VisibleBounds = {
-  containerRect: DOMRect;
-  visibleBottom: number;
-};
+const SCROLL_READ_RECEIPT_DEBOUNCE_MS = 90;
 
 interface UseChatViewportProps {
   isOpen: boolean;
@@ -80,6 +81,7 @@ export const useChatViewport = ({
   const atTopVisibilityRef = useRef(true);
   const shouldPinToBottomOnOpenRef = useRef(false);
   const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
+  const pendingReadReceiptTimeoutRef = useRef<number | null>(null);
 
   const getVisibleMessagesBounds = useCallback((): VisibleBounds | null => {
     const containerRect =
@@ -275,6 +277,66 @@ export const useChatViewport = ({
     return true;
   }, [messagesContainerRef]);
 
+  const flushVisibleUnreadReadReceipts = useCallback(() => {
+    if (!userId || !targetUserId) {
+      return;
+    }
+
+    const bounds = getVisibleMessagesBounds();
+    if (!bounds) {
+      return;
+    }
+
+    const visibleUnreadIncomingMessageIds = messages
+      .filter(
+        messageItem =>
+          messageItem.sender_id === targetUserId &&
+          messageItem.receiver_id === userId &&
+          !messageItem.is_read
+      )
+      .map(messageItem => {
+        const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
+        if (!bubbleElement) return null;
+
+        const verticalVisibilityBounds = getVerticalVisibilityBounds(
+          bounds,
+          chatHeaderContainerRef.current?.getBoundingClientRect(),
+          0
+        );
+        const bubbleRect = bubbleElement.getBoundingClientRect();
+        const isVisible =
+          bubbleRect.top >= verticalVisibilityBounds.minVisibleTop &&
+          bubbleRect.top < verticalVisibilityBounds.maxVisibleBottom;
+        return isVisible ? messageItem.id : null;
+      })
+      .filter((messageId): messageId is string => Boolean(messageId));
+
+    if (visibleUnreadIncomingMessageIds.length === 0) {
+      return;
+    }
+
+    void markMessageIdsAsRead(visibleUnreadIncomingMessageIds);
+  }, [
+    getVisibleMessagesBounds,
+    markMessageIdsAsRead,
+    chatHeaderContainerRef,
+    messageBubbleRefs,
+    messages,
+    targetUserId,
+    userId,
+  ]);
+
+  const scheduleVisibleUnreadReadReceipts = useCallback(() => {
+    if (pendingReadReceiptTimeoutRef.current !== null) {
+      window.clearTimeout(pendingReadReceiptTimeoutRef.current);
+    }
+
+    pendingReadReceiptTimeoutRef.current = window.setTimeout(() => {
+      pendingReadReceiptTimeoutRef.current = null;
+      flushVisibleUnreadReadReceipts();
+    }, SCROLL_READ_RECEIPT_DEBOUNCE_MS);
+  }, [flushVisibleUnreadReadReceipts]);
+
   const handleScroll = useCallback(() => {
     requestAnimationFrame(() => {
       const atBottom = checkIfAtBottom();
@@ -282,54 +344,19 @@ export const useChatViewport = ({
       atTopVisibilityRef.current = atTop;
       setIsAtBottom(atBottom);
       setIsAtTop(atTop);
-      void (async () => {
-        if (!userId || !targetUserId) return;
-
-        const bounds = getVisibleMessagesBounds();
-        if (!bounds) return;
-
-        const visibleUnreadIncomingMessageIds = messages
-          .filter(
-            messageItem =>
-              messageItem.sender_id === targetUserId &&
-              messageItem.receiver_id === userId &&
-              !messageItem.is_read
-          )
-          .map(messageItem => {
-            const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
-            if (!bubbleElement) return null;
-
-            const bubbleRect = bubbleElement.getBoundingClientRect();
-            const isVisible =
-              bubbleRect.bottom > bounds.containerRect.top &&
-              bubbleRect.top < bounds.visibleBottom;
-            return isVisible ? messageItem.id : null;
-          })
-          .filter((messageId): messageId is string => Boolean(messageId));
-
-        if (visibleUnreadIncomingMessageIds.length === 0) return;
-        await markMessageIdsAsRead(visibleUnreadIncomingMessageIds);
-      })();
+      scheduleVisibleUnreadReadReceipts();
       if (atBottom) {
         setHasNewMessages(false);
       }
     });
-  }, [
-    checkIfAtBottom,
-    checkIfAtTop,
-    getVisibleMessagesBounds,
-    markMessageIdsAsRead,
-    messageBubbleRefs,
-    messages,
-    targetUserId,
-    userId,
-  ]);
+  }, [checkIfAtBottom, checkIfAtTop, scheduleVisibleUnreadReadReceipts]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const rafId = requestAnimationFrame(() => {
       handleScroll();
+      scheduleVisibleUnreadReadReceipts();
     });
 
     return () => {
@@ -341,6 +368,7 @@ export const useChatViewport = ({
     isOpen,
     messageInputHeight,
     messagesCount,
+    scheduleVisibleUnreadReadReceipts,
   ]);
 
   useEffect(() => {
@@ -426,6 +454,10 @@ export const useChatViewport = ({
   useEffect(
     () => () => {
       cancelScrollToBottomAnimation();
+      if (pendingReadReceiptTimeoutRef.current !== null) {
+        window.clearTimeout(pendingReadReceiptTimeoutRef.current);
+        pendingReadReceiptTimeoutRef.current = null;
+      }
     },
     [cancelScrollToBottomAnimation]
   );
@@ -458,9 +490,18 @@ export const useChatViewport = ({
 
   const scrollToBottom = useCallback(() => {
     animateScrollToBottom();
+    scheduleVisibleUnreadReadReceipts();
     setHasNewMessages(false);
     setIsAtBottom(true);
-  }, [animateScrollToBottom]);
+  }, [animateScrollToBottom, scheduleVisibleUnreadReadReceipts]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    scheduleVisibleUnreadReadReceipts();
+  }, [isOpen, messages, scheduleVisibleUnreadReadReceipts]);
 
   return {
     isAtBottom,
