@@ -328,6 +328,7 @@ describe('useChatComposerSend', () => {
     });
 
     const broadcastNewMessage = vi.fn();
+    const broadcastDeletedMessage = vi.fn();
     const { pendingEntries, registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
@@ -354,7 +355,7 @@ describe('useChatComposerSend', () => {
         triggerSendSuccessGlow: vi.fn(),
         broadcastNewMessage,
         broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
+        broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -399,6 +400,7 @@ describe('useChatComposerSend', () => {
     expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
       'server-text-1'
     );
+    expect(broadcastDeletedMessage).toHaveBeenCalledWith('server-text-1');
     expect(broadcastNewMessage).not.toHaveBeenCalled();
     expect(result.current.draftMessage).toBe('');
   });

@@ -17,6 +17,7 @@ import type {
 } from '../types';
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
+import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
 
@@ -312,12 +313,10 @@ export const useChatComposerActions = ({
           throw error;
         }
 
-        const broadcastTargetIds =
-          deletedMessageIds && deletedMessageIds.length > 0
-            ? deletedMessageIds
-            : messageIdsToDelete.filter(
-                messageId => !messageId.startsWith('temp_')
-              );
+        const broadcastTargetIds = getPersistedDeletedThreadMessageIds(
+          deletedMessageIds,
+          messageIdsToDelete
+        );
 
         broadcastTargetIds.forEach(deletedMessageId => {
           broadcastDeletedMessage(deletedMessageId);

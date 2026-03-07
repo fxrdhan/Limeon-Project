@@ -15,6 +15,7 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
+import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 
 export interface PendingSendRegistration {
@@ -141,10 +142,15 @@ export const useChatComposerSend = ({
         };
 
         if (pendingSend.isCancelled()) {
-          const { error: deleteError } =
+          const { data: deletedMessageIds, error: deleteError } =
             await chatSidebarGateway.deleteMessageThread(realMessage.id);
 
           if (!deleteError) {
+            getPersistedDeletedThreadMessageIds(deletedMessageIds, [
+              realMessage.id,
+            ]).forEach(deletedMessageId => {
+              broadcastDeletedMessage(deletedMessageId);
+            });
             return false;
           }
 
@@ -179,6 +185,7 @@ export const useChatComposerSend = ({
     },
     [
       broadcastNewMessage,
+      broadcastDeletedMessage,
       currentChannelId,
       registerPendingSend,
       scheduleScrollMessagesToBottom,

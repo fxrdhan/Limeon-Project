@@ -60,7 +60,8 @@ export const useChatComposerAttachments = ({
   );
 
   useEffect(() => {
-    pendingComposerAttachmentsRef.current = pendingComposerAttachments;
+    pendingComposerAttachmentsRef.current.length = 0;
+    pendingComposerAttachmentsRef.current.push(...pendingComposerAttachments);
   }, [pendingComposerAttachments]);
 
   useEffect(() => {
