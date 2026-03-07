@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
+import { getAttachmentFileName } from './attachment';
 
 export type AttachmentCaptionData = {
   captionMessagesByAttachmentId: Map<string, ChatMessage>;
@@ -63,6 +64,11 @@ export const getSearchMatchedMessageIds = (
     const messageFragments: string[] = [];
     if (messageItem.message_type === 'text') {
       messageFragments.push(messageItem.message);
+    } else if (
+      messageItem.message_type === 'image' ||
+      messageItem.message_type === 'file'
+    ) {
+      messageFragments.push(getAttachmentFileName(messageItem));
     }
 
     const attachmentCaption = captionData.captionMessagesByAttachmentId.get(

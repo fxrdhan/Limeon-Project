@@ -17,8 +17,8 @@ import type {
 } from '../types';
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
-import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import { isTempMessageId } from '../utils/optimistic-message';
+import { reconcileConversationMessages } from '../utils/conversation-sync';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -140,26 +140,11 @@ export const useChatComposerActions = ({
           return;
         }
 
-        const mappedMessages = mapConversationMessagesForDisplay(
+        reconcileConversationMessages({
           latestMessages,
-          {
-            currentUserId: user.id,
-            currentUserName: user.name || 'You',
-            targetUserName: targetUser.name || 'Unknown',
-          }
-        );
-
-        setMessages(previousMessages => {
-          const mappedMessageIds = new Set(
-            mappedMessages.map(messageItem => messageItem.id)
-          );
-          const pendingMessages = previousMessages.filter(
-            messageItem =>
-              messageItem.id.startsWith('temp_') &&
-              !mappedMessageIds.has(messageItem.id)
-          );
-
-          return [...mappedMessages, ...pendingMessages];
+          user,
+          targetUser,
+          setMessages,
         });
       } catch (error) {
         console.error('Error reconciling conversation:', error);

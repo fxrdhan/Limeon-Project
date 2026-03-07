@@ -402,4 +402,59 @@ describe('useChatComposerSend', () => {
     expect(broadcastNewMessage).not.toHaveBeenCalled();
     expect(result.current.draftMessage).toBe('');
   });
+
+  it('shows an error toast and restores draft text when text send fails', async () => {
+    mockGateway.createMessage.mockResolvedValue({
+      data: null,
+      error: new Error('insert failed'),
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('pesan gagal');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+        draftMessage,
+      };
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(result.current.messages).toEqual([]);
+    expect(result.current.draftMessage).toBe('pesan gagal');
+    expect(mockToast.error).toHaveBeenCalledWith('Gagal mengirim pesan', {
+      toasterId: 'chat-sidebar-toaster',
+    });
+  });
 });

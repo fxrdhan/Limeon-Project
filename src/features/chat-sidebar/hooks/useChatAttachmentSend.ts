@@ -8,9 +8,12 @@ import {
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser, PendingComposerFile } from '../types';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
-import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { renderPdfPreviewBlob } from '../utils/pdf-preview';
+import {
+  mapPersistedMessageForDisplay,
+  reconcileConversationMessages,
+} from '../utils/conversation-sync';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -29,18 +32,6 @@ const buildPdfPreviewStoragePath = (filePath: string) => {
 
   return `${normalizedPath}.png`;
 };
-
-const mapPersistedMessageForDisplay = (
-  message: ChatMessage,
-  user: { id: string; name: string },
-  targetUser: ChatSidebarPanelTargetUser,
-  stableKey: string
-): ChatMessage => ({
-  ...message,
-  sender_name: user.name || 'You',
-  receiver_name: targetUser.name || 'Unknown',
-  stableKey,
-});
 
 interface UseChatAttachmentSendProps {
   user: {
@@ -114,23 +105,11 @@ export const useChatAttachmentSend = ({
         return;
       }
 
-      const mappedMessages = mapConversationMessagesForDisplay(latestMessages, {
-        currentUserId: user.id,
-        currentUserName: user.name || 'You',
-        targetUserName: targetUser.name || 'Unknown',
-      });
-
-      setMessages(previousMessages => {
-        const mappedMessageIds = new Set(
-          mappedMessages.map(messageItem => messageItem.id)
-        );
-        const pendingMessages = previousMessages.filter(
-          messageItem =>
-            messageItem.id.startsWith('temp_') &&
-            !mappedMessageIds.has(messageItem.id)
-        );
-
-        return [...mappedMessages, ...pendingMessages];
+      reconcileConversationMessages({
+        latestMessages,
+        user,
+        targetUser,
+        setMessages,
       });
     } catch (error) {
       console.error(

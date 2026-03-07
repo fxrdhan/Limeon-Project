@@ -71,6 +71,11 @@ describe('message-derivations', () => {
       'stok opname',
       captionData
     );
+    const matchedFileNameIds = getSearchMatchedMessageIds(
+      messages,
+      'report.pdf',
+      captionData
+    );
     const selectableIds = getSelectableMessageIdSet(
       messages,
       captionData.captionMessageIds
@@ -81,6 +86,7 @@ describe('message-derivations', () => {
     );
     expect(captionData.captionMessageIds.has('caption-1')).toBe(true);
     expect(matchedIds).toEqual(['file-1']);
+    expect(matchedFileNameIds).toEqual(['file-1']);
     expect(selectableIds.has('caption-1')).toBe(false);
     expect(selectableIds.has('text-1')).toBe(true);
   });

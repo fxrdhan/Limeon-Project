@@ -19,6 +19,13 @@ interface UpdateUserChatCloseOptions {
   timestamp?: string;
 }
 
+interface SyncPresenceStateOptions {
+  keepOnline: boolean;
+  currentChatChannel: string | null;
+  shouldBroadcast: boolean;
+  timestamp?: string;
+}
+
 interface UseChatSessionPresenceProps {
   isOpen: boolean;
   user: UserDetails | null;
@@ -48,28 +55,76 @@ export const useChatSessionPresence = ({
     activeTargetUserIdRef.current = targetUser?.id ?? null;
   }, [targetUser?.id]);
 
-  const updateUserChatClose = useCallback(
-    async ({ keepOnline, timestamp }: UpdateUserChatCloseOptions) => {
+  const syncPresenceState = useCallback(
+    async ({
+      keepOnline,
+      currentChatChannel,
+      shouldBroadcast,
+      timestamp,
+    }: SyncPresenceStateOptions) => {
       if (!user) return;
 
       const eventTimestamp = timestamp ?? new Date().toISOString();
+      const nextPresenceState = {
+        is_online: keepOnline,
+        current_chat_channel: currentChatChannel,
+        last_seen: eventTimestamp,
+        updated_at: eventTimestamp,
+      };
+
+      if (shouldBroadcast && globalPresenceChannelRef.current) {
+        void globalPresenceChannelRef.current.send({
+          type: 'broadcast',
+          event: 'presence_changed',
+          payload: {
+            user_id: user.id,
+            is_online: keepOnline,
+            current_chat_channel: currentChatChannel,
+            last_seen: eventTimestamp,
+          },
+        });
+      }
 
       try {
-        const { error } = await chatSidebarGateway.updateUserPresence(user.id, {
-          is_online: keepOnline,
-          current_chat_channel: null,
-          last_seen: eventTimestamp,
-          updated_at: eventTimestamp,
-        });
+        const { data: updateData, error: updateError } =
+          await chatSidebarGateway.updateUserPresence(
+            user.id,
+            nextPresenceState
+          );
 
-        if (error) {
-          console.error('Error updating user chat close:', error);
+        if (!updateError && updateData && updateData.length > 0) {
+          return;
+        }
+
+        const { error: insertError } =
+          await chatSidebarGateway.insertUserPresence({
+            user_id: user.id,
+            ...nextPresenceState,
+          });
+
+        if (updateError) {
+          console.error('Error updating user presence:', updateError);
+        }
+        if (insertError) {
+          console.error('Error inserting user presence:', insertError);
         }
       } catch (error) {
-        console.error('Caught error updating user chat close:', error);
+        console.error('Caught error syncing user presence:', error);
       }
     },
-    [user]
+    [globalPresenceChannelRef, user]
+  );
+
+  const updateUserChatClose = useCallback(
+    async ({ keepOnline, timestamp }: UpdateUserChatCloseOptions) => {
+      await syncPresenceState({
+        keepOnline,
+        currentChatChannel: null,
+        shouldBroadcast: false,
+        timestamp,
+      });
+    },
+    [syncPresenceState]
   );
 
   const performClose = useCallback(async () => {
@@ -80,28 +135,17 @@ export const useChatSessionPresence = ({
     const eventTimestamp = new Date().toISOString();
     hasClosedRef.current = true;
 
-    if (globalPresenceChannelRef.current) {
-      void globalPresenceChannelRef.current.send({
-        type: 'broadcast',
-        event: 'presence_changed',
-        payload: {
-          user_id: user.id,
-          is_online: true,
-          current_chat_channel: null,
-          last_seen: eventTimestamp,
-        },
-      });
-    }
-
     try {
-      await updateUserChatClose({
+      await syncPresenceState({
         keepOnline: true,
+        currentChatChannel: null,
+        shouldBroadcast: true,
         timestamp: eventTimestamp,
       });
     } catch (error) {
-      console.error('Database update failed:', error);
+      console.error('Presence close sync failed:', error);
     }
-  }, [globalPresenceChannelRef, updateUserChatClose, user]);
+  }, [syncPresenceState, user]);
 
   const updateUserChatOpen = useCallback(async () => {
     if (!user || !currentChannelId) {
@@ -109,50 +153,15 @@ export const useChatSessionPresence = ({
     }
 
     try {
-      const eventTimestamp = new Date().toISOString();
-      const { data: updateData, error: updateError } =
-        await chatSidebarGateway.updateUserPresence(user.id, {
-          is_online: true,
-          current_chat_channel: currentChannelId,
-          last_seen: eventTimestamp,
-          updated_at: eventTimestamp,
-        });
-
-      if (updateError || !updateData || updateData.length === 0) {
-        const { error: insertError } =
-          await chatSidebarGateway.insertUserPresence({
-            user_id: user.id,
-            is_online: true,
-            current_chat_channel: currentChannelId,
-            last_seen: eventTimestamp,
-            updated_at: eventTimestamp,
-          });
-
-        if (insertError) {
-          console.error('Error inserting user presence:', insertError);
-        }
-        return;
-      }
-
-      if (!globalPresenceChannelRef.current) {
-        return;
-      }
-
-      const updatedPresence = updateData[0];
-      void globalPresenceChannelRef.current.send({
-        type: 'broadcast',
-        event: 'presence_changed',
-        payload: {
-          user_id: user.id,
-          is_online: true,
-          current_chat_channel: currentChannelId,
-          last_seen: updatedPresence.last_seen,
-        },
+      await syncPresenceState({
+        keepOnline: true,
+        currentChatChannel: currentChannelId,
+        shouldBroadcast: true,
       });
     } catch (error) {
       console.error('Caught error updating user chat open:', error);
     }
-  }, [currentChannelId, globalPresenceChannelRef, user]);
+  }, [currentChannelId, syncPresenceState, user]);
 
   useEffect(() => {
     const previousIsOpen = previousIsOpenRef.current;
@@ -318,16 +327,26 @@ export const useChatSessionPresence = ({
   }, [performClose, user]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handlePageExit = () => {
       if (!hasClosedRef.current && user) {
         hasClosedRef.current = true;
         void updateUserChatClose({ keepOnline: false });
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        return;
+      }
+
+      handlePageExit();
+    };
+
+    window.addEventListener('beforeunload', handlePageExit);
+    window.addEventListener('pagehide', handlePageHide);
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handlePageExit);
+      window.removeEventListener('pagehide', handlePageHide);
     };
   }, [updateUserChatClose, user]);
 

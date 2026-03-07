@@ -221,6 +221,50 @@ describe('useChatSession', () => {
     });
   });
 
+  it('marks the user offline on pagehide while chat is still open', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockChatService.updateUserPresence).toHaveBeenCalledWith(
+        currentUser.id,
+        expect.objectContaining({
+          is_online: true,
+          current_chat_channel: 'channel-1',
+        })
+      );
+    });
+
+    const pageHideEvent = new Event('pagehide');
+    Object.defineProperty(pageHideEvent, 'persisted', {
+      configurable: true,
+      value: false,
+    });
+
+    window.dispatchEvent(pageHideEvent);
+
+    await waitFor(() => {
+      expect(mockChatService.updateUserPresence).toHaveBeenLastCalledWith(
+        currentUser.id,
+        expect.objectContaining({
+          is_online: false,
+          current_chat_channel: null,
+        })
+      );
+    });
+  });
+
   it('clears stale target presence when switching to a user without presence data', async () => {
     const secondTargetUser = {
       id: 'user-c',

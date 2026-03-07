@@ -4,10 +4,12 @@ import {
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
+import toast from 'react-hot-toast';
 import type {
   ChatSidebarPanelTargetUser,
   PendingComposerAttachment,
 } from '../types';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -124,6 +126,9 @@ export const useChatComposerSend = ({
               previousMessages.filter(messageItem => messageItem.id !== tempId)
             );
             setMessage(normalizedMessageText);
+            toast.error('Gagal mengirim pesan', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
           }
           return false;
         }
@@ -163,6 +168,9 @@ export const useChatComposerSend = ({
             previousMessages.filter(messageItem => messageItem.id !== tempId)
           );
           setMessage(normalizedMessageText);
+          toast.error('Gagal mengirim pesan', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
         }
         return false;
       } finally {
