@@ -19,6 +19,8 @@ export const CHAT_IMAGE_BUCKET = 'chat';
 export const CHAT_IMAGE_FOLDER = 'images';
 export const CHAT_AUDIO_FOLDER = 'audio';
 export const CHAT_DOCUMENT_FOLDER = 'documents';
+export const CHAT_CONVERSATION_CACHE_MAX_AGE_MS = 3 * 60 * 1000;
+export const CHAT_CONVERSATION_CACHE_MAX_ENTRIES = 12;
 export const COMPOSER_SYNC_LAYOUT_TRANSITION = {
   type: 'tween' as const,
   ease: [0.22, 1, 0.36, 1] as const,

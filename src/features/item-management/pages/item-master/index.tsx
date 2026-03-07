@@ -66,7 +66,7 @@ import type {
   Supplier as SupplierType,
 } from '@/types';
 import { FilterSearch } from '@/types/search';
-import { isChatSidebarOpen } from '@/store/chatSidebarStore';
+import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 
 import { fuzzyMatch } from '@/utils/search';
 
@@ -1616,7 +1616,7 @@ const ItemMasterNew = memo(() => {
         '[role="dialog"][aria-modal="true"]'
       );
       if (isAnyModalOpen || activeDialog) return;
-      if (isChatSidebarOpen()) return;
+      if (isPageFocusBlocked()) return;
 
       // Check if user is already typing in an input/textarea/select
       const target = e.target as HTMLElement;
@@ -1709,7 +1709,7 @@ const ItemMasterNew = memo(() => {
         '[role="dialog"][aria-modal="true"]'
       );
       if (activeDialog) return false;
-      if (isChatSidebarOpen()) return false;
+      if (isPageFocusBlocked()) return false;
 
       const input = searchInputRef.current;
       if (!input) return false;
@@ -1781,7 +1781,7 @@ const ItemMasterNew = memo(() => {
 
     const handlePointerDownCapture = (event: PointerEvent) => {
       if (event.button !== 0) return;
-      if (isChatSidebarOpen()) return;
+      if (isPageFocusBlocked()) return;
 
       const target = event.target as HTMLElement | null;
       if (!target) return;
@@ -1812,7 +1812,7 @@ const ItemMasterNew = memo(() => {
           '[role="dialog"][aria-modal="true"]'
         );
         if (dialog) return;
-        if (isChatSidebarOpen()) return;
+        if (isPageFocusBlocked()) return;
 
         input.focus();
       }, 0);
@@ -1868,7 +1868,7 @@ const ItemMasterNew = memo(() => {
     const tryFocus = () => {
       /* c8 ignore next */
       if (cancelled) return;
-      if (isChatSidebarOpen()) return;
+      if (isPageFocusBlocked()) return;
 
       // Wait until all dialogs are actually removed from DOM (exit animations).
       /* c8 ignore start */
@@ -1938,7 +1938,7 @@ const ItemMasterNew = memo(() => {
       // Clicking the tab leaves focus on the tab button; also, the SearchBar input
       // can re-mount during transitions, so we retry once after a short delay.
       const focusSearch = () => {
-        if (isChatSidebarOpen()) return;
+        if (isPageFocusBlocked()) return;
 
         const input = searchInputRef.current;
         if (!input) return;

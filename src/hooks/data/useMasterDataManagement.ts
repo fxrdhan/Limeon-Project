@@ -4,7 +4,7 @@ import { fuzzyMatch } from '@/utils/search';
 import { filterAndRank } from './searchCore';
 import { useAlert } from '@/components/alert/hooks';
 import { StorageService } from '@/services/api/storage.service';
-import { isChatSidebarOpen } from '@/store/chatSidebarStore';
+import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type {
   Supplier,
@@ -146,14 +146,14 @@ export const useMasterDataManagement = (
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable;
         const isModalOpen = actualIsModalOpen;
-        const isChatOpen = isChatSidebarOpen();
+        const isFocusBlocked = isPageFocusBlocked();
         const isTypeable =
           /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
 
         if (
           !isInputFocused &&
           !isModalOpen &&
-          !isChatOpen &&
+          !isFocusBlocked &&
           isTypeable &&
           !e.ctrlKey &&
           !e.altKey &&

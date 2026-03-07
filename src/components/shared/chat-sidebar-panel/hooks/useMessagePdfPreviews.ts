@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@/services/api/chat.service';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   fetchPdfBlobWithFallback,

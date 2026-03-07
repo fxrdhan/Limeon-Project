@@ -2,10 +2,10 @@ import {
   SEARCH_STATES,
   type SearchState,
 } from '@/components/search-bar/constants';
-import type { ChatMessage } from '@/services/api/chat.service';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   getAttachmentCaptionData,

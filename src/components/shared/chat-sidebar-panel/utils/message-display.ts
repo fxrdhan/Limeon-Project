@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@/services/api/chat.service';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 
 interface ConversationDisplayParticipants {
   currentUserId: string;

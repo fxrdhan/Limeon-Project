@@ -10,8 +10,8 @@ import {
 } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import type { ChatMessage } from '@/services/api/chat.service';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type {
   ComposerPendingFileKind,
   MenuPlacement,

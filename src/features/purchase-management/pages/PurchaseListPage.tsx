@@ -31,7 +31,7 @@ import { useFieldFocus } from '@/hooks/forms/fieldFocus';
 import { getSearchState } from '@/utils/search';
 import { purchasesService } from '@/services/api/purchases.service';
 import { QueryKeys } from '@/constants/queryKeys';
-import { isChatSidebarOpen } from '@/store/chatSidebarStore';
+import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 
 interface Purchase {
   id: string;
@@ -436,7 +436,7 @@ const PurchaseList = () => {
               queryKey: QueryKeys.purchases.all,
             });
             setTimeout(() => {
-              if (searchInputRef.current && !isChatSidebarOpen()) {
+              if (searchInputRef.current && !isPageFocusBlocked()) {
                 searchInputRef.current.focus();
               }
             }, 100);

@@ -17,8 +17,8 @@ import {
 } from '../constants';
 import { useChatComposerActions } from './useChatComposerActions';
 import { useChatComposerAttachments } from './useChatComposerAttachments';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import type { ChatMessage } from '@/services/api/chat.service';
 
 interface UseChatComposerProps {
   isOpen: boolean;

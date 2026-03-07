@@ -13,7 +13,6 @@ import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
-import type { UserPresence } from '@/services/api/chat.service';
 import {
   TbCopy,
   TbChevronDown,
@@ -25,6 +24,7 @@ import {
   TbTrash,
   TbX,
 } from 'react-icons/tb';
+import type { UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface ChatHeaderProps {

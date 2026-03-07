@@ -1,8 +1,11 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import toast from 'react-hot-toast';
-import { chatService, type ChatMessage } from '@/services/api/chat.service';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import {
+  chatSidebarGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import { useChatComposerSend } from './useChatComposerSend';
 import type {
   ChatSidebarPanelTargetUser,
@@ -88,7 +91,7 @@ export const useChatComposerActions = ({
 
       try {
         const { data: latestMessages, error } =
-          await chatService.fetchMessagesBetweenUsers(
+          await chatSidebarGateway.fetchConversationMessages(
             user.id,
             targetUser.id,
             currentChannelId
@@ -177,13 +180,11 @@ export const useChatComposerActions = ({
     if (messageId.startsWith('temp_')) return;
 
     try {
-      const { data: updatedMessage, error } = await chatService.updateMessage(
-        messageId,
-        {
+      const { data: updatedMessage, error } =
+        await chatSidebarGateway.updateMessage(messageId, {
           message: updatedText,
           updated_at: updatedAt,
-        }
-      );
+        });
 
       if (error) {
         console.error('Error updating message:', error);
@@ -266,7 +267,7 @@ export const useChatComposerActions = ({
 
       try {
         for (const messageId of persistedMessageIds) {
-          const { error } = await chatService.deleteMessage(messageId);
+          const { error } = await chatSidebarGateway.deleteMessage(messageId);
           if (error) {
             console.error('Error deleting message:', error);
             throw error;

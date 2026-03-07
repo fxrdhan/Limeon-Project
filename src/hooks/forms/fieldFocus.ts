@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { UseFieldFocusOptions } from '@/types';
-import { isChatSidebarOpen } from '@/store/chatSidebarStore';
+import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 
 export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
   const {
@@ -18,10 +18,10 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
       !isModalOpen &&
       !isLoading &&
       !isFetching &&
-      !isChatSidebarOpen()
+      !isPageFocusBlocked()
     ) {
       requestAnimationFrame(() => {
-        if (searchInputRef.current && !isModalOpen && !isChatSidebarOpen()) {
+        if (searchInputRef.current && !isModalOpen && !isPageFocusBlocked()) {
           searchInputRef.current.focus({ preventScroll: true });
         }
       });
@@ -38,7 +38,7 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
   useEffect(() => {
     const handlePageClick = (event: MouseEvent) => {
       if (isModalOpen || !searchInputRef?.current) return;
-      if (isChatSidebarOpen()) return;
+      if (isPageFocusBlocked()) return;
 
       const target = event.target as HTMLElement;
       if (searchInputRef.current.contains(target)) {
@@ -66,7 +66,7 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
 
     const handleFocusOut = (event: FocusEvent) => {
       if (!isModalOpen && searchInputRef?.current) {
-        if (isChatSidebarOpen()) return;
+        if (isPageFocusBlocked()) return;
 
         const relatedTarget = event.relatedTarget as HTMLElement;
 
@@ -87,7 +87,7 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
             if (
               searchInputRef.current &&
               !isModalOpen &&
-              !isChatSidebarOpen()
+              !isPageFocusBlocked()
             ) {
               searchInputRef.current.focus({ preventScroll: true });
             }

@@ -1,9 +1,11 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import toast from 'react-hot-toast';
-import { StorageService } from '@/services/api/storage.service';
-import { chatService, type ChatMessage } from '@/services/api/chat.service';
 import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import {
+  chatSidebarGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type {
   ChatSidebarPanelTargetUser,
   PendingComposerAttachment,
@@ -140,19 +142,20 @@ export const useChatComposerSend = ({
 
       try {
         const imagePath = buildChatImagePath(currentChannelId, user.id, file);
-        const { publicUrl } = await StorageService.uploadFile(
+        const { publicUrl } = await chatSidebarGateway.uploadImage(
           CHAT_IMAGE_BUCKET,
           file,
           imagePath
         );
 
-        const { data: newMessage, error } = await chatService.insertMessage({
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: publicUrl,
-          message_type: 'image',
-        });
+        const { data: newMessage, error } =
+          await chatSidebarGateway.createMessage({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: publicUrl,
+            message_type: 'image',
+          });
 
         if (error || !newMessage) {
           setMessages(previousMessages =>
@@ -185,7 +188,7 @@ export const useChatComposerSend = ({
 
         if (hasAttachmentCaption && captionTempId) {
           const { data: captionMessage, error: captionError } =
-            await chatService.insertMessage({
+            await chatSidebarGateway.createMessage({
               sender_id: user.id,
               receiver_id: targetUser.id,
               channel_id: currentChannelId,
@@ -404,26 +407,27 @@ export const useChatComposerSend = ({
       scheduleScrollMessagesToBottom();
 
       try {
-        const { publicUrl } = await StorageService.uploadRawFile(
+        const { publicUrl } = await chatSidebarGateway.uploadAttachment(
           CHAT_IMAGE_BUCKET,
           pendingFile.file,
           filePath,
           pendingFile.mimeType || undefined
         );
 
-        const { data: newMessage, error } = await chatService.insertMessage({
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: publicUrl,
-          message_type: 'file',
-          file_name: pendingFile.fileName,
-          file_kind: pendingFile.fileKind,
-          file_mime_type: pendingFile.mimeType,
-          file_size: pendingFile.file.size,
-          file_storage_path: filePath,
-          file_preview_status: isPdfDocument ? 'pending' : null,
-        });
+        const { data: newMessage, error } =
+          await chatSidebarGateway.createMessage({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: publicUrl,
+            message_type: 'file',
+            file_name: pendingFile.fileName,
+            file_kind: pendingFile.fileKind,
+            file_mime_type: pendingFile.mimeType,
+            file_size: pendingFile.file.size,
+            file_storage_path: filePath,
+            file_preview_status: isPdfDocument ? 'pending' : null,
+          });
 
         if (error || !newMessage) {
           setMessages(previousMessages =>
@@ -482,7 +486,7 @@ export const useChatComposerSend = ({
               errorMessage: string
             ): Promise<void> => {
               const { data: failedPreviewMessage, error: failedPreviewError } =
-                await chatService.updateMessage(realMessage.id, {
+                await chatSidebarGateway.updateMessage(realMessage.id, {
                   file_preview_status: 'failed',
                   file_preview_error: errorMessage,
                 });
@@ -516,7 +520,7 @@ export const useChatComposerSend = ({
               );
 
               const { publicUrl: previewUrl } =
-                await StorageService.uploadRawFile(
+                await chatSidebarGateway.uploadAttachment(
                   CHAT_IMAGE_BUCKET,
                   previewFile,
                   previewPath,
@@ -524,7 +528,7 @@ export const useChatComposerSend = ({
                 );
 
               const { data: previewReadyMessage, error: previewReadyError } =
-                await chatService.updateMessage(realMessage.id, {
+                await chatSidebarGateway.updateMessage(realMessage.id, {
                   file_preview_url: previewUrl,
                   file_preview_page_count: generatedPreview.pageCount,
                   file_preview_status: 'ready',
@@ -548,7 +552,7 @@ export const useChatComposerSend = ({
 
         if (hasAttachmentCaption && captionTempId) {
           const { data: captionMessage, error: captionError } =
-            await chatService.insertMessage({
+            await chatSidebarGateway.createMessage({
               sender_id: user.id,
               receiver_id: targetUser.id,
               channel_id: currentChannelId,
@@ -665,14 +669,15 @@ export const useChatComposerSend = ({
       scheduleScrollMessagesToBottom();
 
       try {
-        const { data: newMessage, error } = await chatService.insertMessage({
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: normalizedMessageText,
-          message_type: 'text',
-          ...(replyToId ? { reply_to_id: replyToId } : {}),
-        });
+        const { data: newMessage, error } =
+          await chatSidebarGateway.createMessage({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: normalizedMessageText,
+            message_type: 'text',
+            ...(replyToId ? { reply_to_id: replyToId } : {}),
+          });
 
         if (error || !newMessage) {
           setMessages(previousMessages =>
