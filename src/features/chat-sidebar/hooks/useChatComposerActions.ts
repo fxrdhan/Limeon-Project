@@ -1,5 +1,9 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  useCallback,
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
@@ -14,6 +18,16 @@ import type {
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
+import { isTempMessageId } from '../utils/optimistic-message';
+
+interface PendingSendRegistration {
+  complete: () => void;
+  isCancelled: () => boolean;
+}
+
+type PendingSendRegistryRef = MutableRefObject<
+  Map<string, { cancelled: boolean }>
+>;
 
 export interface DeleteMessageOptions {
   suppressErrorToast?: boolean;
@@ -44,6 +58,24 @@ interface UseChatComposerActionsProps {
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
 }
 
+const createPendingSendRegistration = (
+  pendingSendRegistryRef: PendingSendRegistryRef,
+  tempMessageId: string
+): PendingSendRegistration => {
+  const pendingEntry = { cancelled: false };
+  pendingSendRegistryRef.current.set(tempMessageId, pendingEntry);
+
+  return {
+    complete: () => {
+      const currentEntry = pendingSendRegistryRef.current.get(tempMessageId);
+      if (currentEntry === pendingEntry) {
+        pendingSendRegistryRef.current.delete(tempMessageId);
+      }
+    },
+    isCancelled: () => pendingEntry.cancelled,
+  };
+};
+
 export const useChatComposerActions = ({
   user,
   targetUser,
@@ -65,6 +97,9 @@ export const useChatComposerActions = ({
   broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
 }: UseChatComposerActionsProps) => {
+  const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
+    new Map()
+  );
   const send = useChatComposerSend({
     user,
     targetUser,
@@ -81,6 +116,8 @@ export const useChatComposerActions = ({
     broadcastUpdatedMessage,
     broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
+    registerPendingSend: tempMessageId =>
+      createPendingSendRegistration(pendingSendRegistryRef, tempMessageId),
   });
 
   const reconcileMessagesFromServer = useCallback(
@@ -271,8 +308,16 @@ export const useChatComposerActions = ({
         setMessage('');
       }
 
-      const isPersistedThread = !targetMessage.id.startsWith('temp_');
-      if (!isPersistedThread) return true;
+      const isPersistedThread = !isTempMessageId(targetMessage.id);
+      if (!isPersistedThread) {
+        const pendingEntry = pendingSendRegistryRef.current.get(
+          targetMessage.id
+        );
+        if (pendingEntry) {
+          pendingEntry.cancelled = true;
+        }
+        return true;
+      }
 
       try {
         const { data: deletedMessageIds, error } =
@@ -316,6 +361,7 @@ export const useChatComposerActions = ({
       setMessages,
       targetUser,
       user,
+      pendingSendRegistryRef,
     ]
   );
 

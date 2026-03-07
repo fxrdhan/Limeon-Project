@@ -9,7 +9,13 @@ import {
 import type { ChatSidebarPanelTargetUser, PendingComposerFile } from '../types';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
+import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { renderPdfPreviewBlob } from '../utils/pdf-preview';
+
+interface PendingSendRegistration {
+  complete: () => void;
+  isCancelled: () => boolean;
+}
 
 const isPdfDocumentFile = (fileName: string, mimeType: string) =>
   mimeType.toLowerCase().includes('pdf') ||
@@ -51,6 +57,7 @@ interface UseChatAttachmentSendProps {
   broadcastUpdatedMessage: (message: ChatMessage) => void;
   broadcastDeletedMessage: (messageId: string) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
+  registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
 }
 
 export const useChatAttachmentSend = ({
@@ -65,6 +72,7 @@ export const useChatAttachmentSend = ({
   broadcastUpdatedMessage,
   broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
+  registerPendingSend,
 }: UseChatAttachmentSendProps) => {
   const deleteUploadedStorageFiles = useCallback(
     async (storagePaths: Array<string | null | undefined>) => {
@@ -301,6 +309,7 @@ export const useChatAttachmentSend = ({
       const captionStableKey = hasAttachmentCaption
         ? `${stableKey}-caption`
         : null;
+      const pendingSend = registerPendingSend(tempId);
       const localPreviewUrl = URL.createObjectURL(file);
       pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
 
@@ -357,6 +366,11 @@ export const useChatAttachmentSend = ({
         );
         uploadedImagePath = path;
 
+        if (pendingSend.isCancelled()) {
+          await deleteUploadedStorageFiles([uploadedImagePath]);
+          return null;
+        }
+
         const { data: newMessage, error } =
           await chatSidebarGateway.createMessage({
             sender_id: user.id,
@@ -367,15 +381,19 @@ export const useChatAttachmentSend = ({
           });
 
         if (error || !newMessage) {
-          setMessages(previousMessages =>
-            previousMessages.filter(
-              messageItem => ![tempId, captionTempId].includes(messageItem.id)
-            )
-          );
+          if (!pendingSend.isCancelled()) {
+            setMessages(previousMessages =>
+              previousMessages.filter(
+                messageItem => ![tempId, captionTempId].includes(messageItem.id)
+              )
+            );
+          }
           await deleteUploadedStorageFiles([uploadedImagePath]);
-          toast.error('Gagal mengirim gambar', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
+          if (!pendingSend.isCancelled()) {
+            toast.error('Gagal mengirim gambar', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+          }
           return null;
         }
 
@@ -385,6 +403,20 @@ export const useChatAttachmentSend = ({
           targetUser,
           stableKey
         );
+
+        if (pendingSend.isCancelled()) {
+          try {
+            await rollbackPersistedAttachmentThread(realMessage.id, [
+              uploadedImagePath,
+            ]);
+            return null;
+          } catch (rollbackError) {
+            console.error(
+              'Error cancelling temp image message after persistence:',
+              rollbackError
+            );
+          }
+        }
 
         if (hasAttachmentCaption && captionTempId) {
           const { data: captionMessage, error: captionError } =
@@ -405,26 +437,39 @@ export const useChatAttachmentSend = ({
               captionStableKey!
             );
 
+            if (pendingSend.isCancelled()) {
+              try {
+                await rollbackPersistedAttachmentThread(realMessage.id, [
+                  uploadedImagePath,
+                ]);
+                return null;
+              } catch (rollbackError) {
+                console.error(
+                  'Error cancelling temp image thread after caption persistence:',
+                  rollbackError
+                );
+              }
+            }
+
             setMessages(previousMessages =>
-              previousMessages.map(messageItem => {
-                if (messageItem.id === tempId) {
-                  return realMessage;
-                }
-                if (messageItem.id === captionTempId) {
-                  return mappedCaptionMessage;
-                }
-                return messageItem;
-              })
+              commitOptimisticMessage(
+                commitOptimisticMessage(previousMessages, tempId, realMessage),
+                captionTempId,
+                mappedCaptionMessage
+              )
             );
 
             broadcastNewMessage(realMessage);
             broadcastNewMessage(mappedCaptionMessage);
           } else {
-            setMessages(previousMessages =>
-              previousMessages.filter(
-                messageItem => ![tempId, captionTempId].includes(messageItem.id)
-              )
-            );
+            if (!pendingSend.isCancelled()) {
+              setMessages(previousMessages =>
+                previousMessages.filter(
+                  messageItem =>
+                    ![tempId, captionTempId].includes(messageItem.id)
+                )
+              );
+            }
 
             try {
               await rollbackPersistedAttachmentThread(realMessage.id, [
@@ -438,16 +483,16 @@ export const useChatAttachmentSend = ({
               await reconcileConversationFromServer();
             }
 
-            toast.error('Gagal mengirim deskripsi lampiran', {
-              toasterId: CHAT_SIDEBAR_TOASTER_ID,
-            });
+            if (!pendingSend.isCancelled()) {
+              toast.error('Gagal mengirim deskripsi lampiran', {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }
             return null;
           }
         } else {
           setMessages(previousMessages =>
-            previousMessages.map(messageItem =>
-              messageItem.id === tempId ? realMessage : messageItem
-            )
+            commitOptimisticMessage(previousMessages, tempId, realMessage)
           );
 
           broadcastNewMessage(realMessage);
@@ -456,17 +501,22 @@ export const useChatAttachmentSend = ({
         return realMessage.id;
       } catch (error) {
         console.error('Error sending image message:', error);
-        setMessages(previousMessages =>
-          previousMessages.filter(
-            messageItem => ![tempId, captionTempId].includes(messageItem.id)
-          )
-        );
+        if (!pendingSend.isCancelled()) {
+          setMessages(previousMessages =>
+            previousMessages.filter(
+              messageItem => ![tempId, captionTempId].includes(messageItem.id)
+            )
+          );
+        }
         await deleteUploadedStorageFiles([uploadedImagePath]);
-        toast.error('Gagal mengirim gambar', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
+        if (!pendingSend.isCancelled()) {
+          toast.error('Gagal mengirim gambar', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
         return null;
       } finally {
+        pendingSend.complete();
         const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
         if (previewUrl) {
           URL.revokeObjectURL(previewUrl);
@@ -481,6 +531,7 @@ export const useChatAttachmentSend = ({
       editingMessageId,
       pendingImagePreviewUrlsRef,
       reconcileConversationFromServer,
+      registerPendingSend,
       rollbackPersistedAttachmentThread,
       scheduleScrollMessagesToBottom,
       setMessages,
@@ -514,6 +565,7 @@ export const useChatAttachmentSend = ({
       const captionStableKey = hasAttachmentCaption
         ? `${stableKey}-caption`
         : null;
+      const pendingSend = registerPendingSend(tempId);
       const filePath = buildChatFilePath(
         currentChannelId,
         user.id,
@@ -585,6 +637,11 @@ export const useChatAttachmentSend = ({
         );
         uploadedFilePath = path;
 
+        if (pendingSend.isCancelled()) {
+          await deleteUploadedStorageFiles([uploadedFilePath]);
+          return null;
+        }
+
         const { data: newMessage, error } =
           await chatSidebarGateway.createMessage({
             sender_id: user.id,
@@ -601,20 +658,24 @@ export const useChatAttachmentSend = ({
           });
 
         if (error || !newMessage) {
-          setMessages(previousMessages =>
-            previousMessages.filter(
-              messageItem => ![tempId, captionTempId].includes(messageItem.id)
-            )
-          );
+          if (!pendingSend.isCancelled()) {
+            setMessages(previousMessages =>
+              previousMessages.filter(
+                messageItem => ![tempId, captionTempId].includes(messageItem.id)
+              )
+            );
+          }
           await deleteUploadedStorageFiles([uploadedFilePath]);
-          toast.error(
-            pendingFile.fileKind === 'audio'
-              ? 'Gagal mengirim audio'
-              : 'Gagal mengirim dokumen',
-            {
-              toasterId: CHAT_SIDEBAR_TOASTER_ID,
-            }
-          );
+          if (!pendingSend.isCancelled()) {
+            toast.error(
+              pendingFile.fileKind === 'audio'
+                ? 'Gagal mengirim audio'
+                : 'Gagal mengirim dokumen',
+              {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              }
+            );
+          }
           return null;
         }
 
@@ -632,6 +693,20 @@ export const useChatAttachmentSend = ({
           targetUser,
           stableKey
         );
+
+        if (pendingSend.isCancelled()) {
+          try {
+            await rollbackPersistedAttachmentThread(realMessage.id, [
+              uploadedFilePath,
+            ]);
+            return null;
+          } catch (rollbackError) {
+            console.error(
+              'Error cancelling temp file message after persistence:',
+              rollbackError
+            );
+          }
+        }
 
         if (hasAttachmentCaption && captionTempId) {
           const { data: captionMessage, error: captionError } =
@@ -652,26 +727,39 @@ export const useChatAttachmentSend = ({
               captionStableKey!
             );
 
+            if (pendingSend.isCancelled()) {
+              try {
+                await rollbackPersistedAttachmentThread(realMessage.id, [
+                  uploadedFilePath,
+                ]);
+                return null;
+              } catch (rollbackError) {
+                console.error(
+                  'Error cancelling temp file thread after caption persistence:',
+                  rollbackError
+                );
+              }
+            }
+
             setMessages(previousMessages =>
-              previousMessages.map(messageItem => {
-                if (messageItem.id === tempId) {
-                  return realMessage;
-                }
-                if (messageItem.id === captionTempId) {
-                  return mappedCaptionMessage;
-                }
-                return messageItem;
-              })
+              commitOptimisticMessage(
+                commitOptimisticMessage(previousMessages, tempId, realMessage),
+                captionTempId,
+                mappedCaptionMessage
+              )
             );
 
             broadcastNewMessage(realMessage);
             broadcastNewMessage(mappedCaptionMessage);
           } else {
-            setMessages(previousMessages =>
-              previousMessages.filter(
-                messageItem => ![tempId, captionTempId].includes(messageItem.id)
-              )
-            );
+            if (!pendingSend.isCancelled()) {
+              setMessages(previousMessages =>
+                previousMessages.filter(
+                  messageItem =>
+                    ![tempId, captionTempId].includes(messageItem.id)
+                )
+              );
+            }
 
             try {
               await rollbackPersistedAttachmentThread(realMessage.id, [
@@ -685,16 +773,16 @@ export const useChatAttachmentSend = ({
               await reconcileConversationFromServer();
             }
 
-            toast.error('Gagal mengirim deskripsi lampiran', {
-              toasterId: CHAT_SIDEBAR_TOASTER_ID,
-            });
+            if (!pendingSend.isCancelled()) {
+              toast.error('Gagal mengirim deskripsi lampiran', {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }
             return null;
           }
         } else {
           setMessages(previousMessages =>
-            previousMessages.map(messageItem =>
-              messageItem.id === tempId ? realMessage : messageItem
-            )
+            commitOptimisticMessage(previousMessages, tempId, realMessage)
           );
 
           broadcastNewMessage(realMessage);
@@ -707,22 +795,27 @@ export const useChatAttachmentSend = ({
         return realMessage.id;
       } catch (error) {
         console.error('Error sending file message:', error);
-        setMessages(previousMessages =>
-          previousMessages.filter(
-            messageItem => ![tempId, captionTempId].includes(messageItem.id)
-          )
-        );
+        if (!pendingSend.isCancelled()) {
+          setMessages(previousMessages =>
+            previousMessages.filter(
+              messageItem => ![tempId, captionTempId].includes(messageItem.id)
+            )
+          );
+        }
         await deleteUploadedStorageFiles([uploadedFilePath]);
-        toast.error(
-          pendingFile.fileKind === 'audio'
-            ? 'Gagal mengirim audio'
-            : 'Gagal mengirim dokumen',
-          {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          }
-        );
+        if (!pendingSend.isCancelled()) {
+          toast.error(
+            pendingFile.fileKind === 'audio'
+              ? 'Gagal mengirim audio'
+              : 'Gagal mengirim dokumen',
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
+          );
+        }
         return null;
       } finally {
+        pendingSend.complete();
         const previewUrl = pendingImagePreviewUrlsRef.current.get(tempId);
         if (previewUrl) {
           if (isPdfDocument) {
@@ -744,6 +837,7 @@ export const useChatAttachmentSend = ({
       pendingImagePreviewUrlsRef,
       processPdfPreview,
       reconcileConversationFromServer,
+      registerPendingSend,
       rollbackPersistedAttachmentThread,
       scheduleScrollMessagesToBottom,
       setMessages,

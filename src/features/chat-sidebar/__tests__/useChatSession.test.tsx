@@ -605,8 +605,6 @@ describe('useChatSession', () => {
       ).toBe('Gudang');
     });
 
-    expect(mockChatService.markMessageIdsAsDelivered).toHaveBeenCalledWith([
-      'message-inserted',
-    ]);
+    expect(mockChatService.markMessageIdsAsDelivered).not.toHaveBeenCalled();
   });
 });

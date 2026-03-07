@@ -76,6 +76,28 @@ const buildPendingAttachment = (
   pdfCoverUrl: overrides.pdfCoverUrl ?? null,
 });
 
+const createPendingSendRegistry = () => {
+  const pendingEntries = new Map<string, { cancelled: boolean }>();
+
+  return {
+    pendingEntries,
+    registerPendingSend: (tempMessageId: string) => {
+      const entry = { cancelled: false };
+      pendingEntries.set(tempMessageId, entry);
+
+      return {
+        complete: () => {
+          const currentEntry = pendingEntries.get(tempMessageId);
+          if (currentEntry === entry) {
+            pendingEntries.delete(tempMessageId);
+          }
+        },
+        isCancelled: () => entry.cancelled,
+      };
+    },
+  };
+};
+
 describe('useChatComposerSend', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -128,6 +150,7 @@ describe('useChatComposerSend', () => {
     const broadcastUpdatedMessage = vi.fn();
     const broadcastDeletedMessage = vi.fn();
     const clearPendingComposerAttachments = vi.fn();
+    const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -155,12 +178,14 @@ describe('useChatComposerSend', () => {
         broadcastUpdatedMessage,
         broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
+        registerPendingSend,
       });
 
       return {
         ...send,
         messages,
         draftMessage,
+        setMessages,
       };
     });
 
@@ -221,6 +246,7 @@ describe('useChatComposerSend', () => {
 
     const broadcastNewMessage = vi.fn();
     const broadcastUpdatedMessage = vi.fn();
+    const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -248,6 +274,7 @@ describe('useChatComposerSend', () => {
         broadcastUpdatedMessage,
         broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
+        registerPendingSend,
       });
 
       return {
@@ -282,5 +309,97 @@ describe('useChatComposerSend', () => {
         file_preview_status: 'failed',
       })
     );
+  });
+
+  it('cancels a temp text send instead of letting the persisted row reappear', async () => {
+    let resolveCreateMessage:
+      | ((value: { data: ChatMessage; error: null }) => void)
+      | undefined;
+
+    mockGateway.createMessage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCreateMessage = resolve;
+        })
+    );
+    mockGateway.deleteMessageThread.mockResolvedValue({
+      data: ['server-text-1'],
+      error: null,
+    });
+
+    const broadcastNewMessage = vi.fn();
+    const { pendingEntries, registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('pesan pending');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage,
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+        draftMessage,
+        setMessages,
+      };
+    });
+
+    await act(async () => {
+      const sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+
+      const tempMessageId = pendingEntries.keys().next().value as
+        | string
+        | undefined;
+      expect(tempMessageId).toBeDefined();
+      pendingEntries.get(tempMessageId!)!.cancelled = true;
+      result.current.setMessages(previousMessages =>
+        previousMessages.filter(messageItem => messageItem.id !== tempMessageId)
+      );
+
+      resolveCreateMessage?.({
+        data: buildMessage({
+          id: 'server-text-1',
+          message: 'pesan pending',
+          message_type: 'text',
+        }),
+        error: null,
+      });
+
+      await sendPromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages).toEqual([]);
+    });
+
+    expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
+      'server-text-1'
+    );
+    expect(broadcastNewMessage).not.toHaveBeenCalled();
+    expect(result.current.draftMessage).toBe('');
   });
 });

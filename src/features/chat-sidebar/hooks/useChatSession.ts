@@ -277,14 +277,6 @@ export const useChatSession = ({
           if (exists) return previousMessages;
           return [...previousMessages, newMessage];
         });
-
-        if (
-          newMessage.sender_id === targetUser.id &&
-          newMessage.receiver_id === user.id &&
-          !newMessage.is_delivered
-        ) {
-          void markMessageIdsAsDelivered([newMessage.id]);
-        }
       });
 
       channel.on('broadcast', { event: 'update_message' }, payload => {
@@ -320,10 +312,6 @@ export const useChatSession = ({
             if (exists) return previousMessages;
             return [...previousMessages, mappedInsertedMessage];
           });
-
-          if (!insertedMessage.is_delivered) {
-            void markMessageIdsAsDelivered([insertedMessage.id]);
-          }
         }
       );
 

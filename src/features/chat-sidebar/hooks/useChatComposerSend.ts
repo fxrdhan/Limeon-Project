@@ -13,6 +13,12 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
+import { commitOptimisticMessage } from '../utils/optimistic-message';
+
+export interface PendingSendRegistration {
+  complete: () => void;
+  isCancelled: () => boolean;
+}
 
 interface UseChatComposerSendProps {
   user: {
@@ -33,6 +39,7 @@ interface UseChatComposerSendProps {
   broadcastUpdatedMessage: (message: ChatMessage) => void;
   broadcastDeletedMessage: (messageId: string) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
+  registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
 }
 
 export const useChatComposerSend = ({
@@ -51,6 +58,7 @@ export const useChatComposerSend = ({
   broadcastUpdatedMessage,
   broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
+  registerPendingSend,
 }: UseChatComposerSendProps) => {
   const isSendingRef = useRef(false);
   const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
@@ -65,6 +73,7 @@ export const useChatComposerSend = ({
     broadcastUpdatedMessage,
     broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
+    registerPendingSend,
   });
 
   const sendTextMessage = useCallback(
@@ -77,6 +86,7 @@ export const useChatComposerSend = ({
 
       const tempId = `temp_${Date.now()}`;
       const stableKey = `${user.id}-${Date.now()}-${normalizedMessageText.slice(0, 10)}`;
+      const pendingSend = registerPendingSend(tempId);
       const optimisticMessage: ChatMessage = {
         id: tempId,
         sender_id: user.id,
@@ -109,10 +119,12 @@ export const useChatComposerSend = ({
           });
 
         if (error || !newMessage) {
-          setMessages(previousMessages =>
-            previousMessages.filter(messageItem => messageItem.id !== tempId)
-          );
-          setMessage(normalizedMessageText);
+          if (!pendingSend.isCancelled()) {
+            setMessages(previousMessages =>
+              previousMessages.filter(messageItem => messageItem.id !== tempId)
+            );
+            setMessage(normalizedMessageText);
+          }
           return false;
         }
 
@@ -123,10 +135,22 @@ export const useChatComposerSend = ({
           stableKey,
         };
 
+        if (pendingSend.isCancelled()) {
+          const { error: deleteError } =
+            await chatSidebarGateway.deleteMessageThread(realMessage.id);
+
+          if (!deleteError) {
+            return false;
+          }
+
+          console.error(
+            'Error cancelling temp message after persistence:',
+            deleteError
+          );
+        }
+
         setMessages(previousMessages =>
-          previousMessages.map(messageItem =>
-            messageItem.id === tempId ? realMessage : messageItem
-          )
+          commitOptimisticMessage(previousMessages, tempId, realMessage)
         );
 
         broadcastNewMessage(realMessage);
@@ -134,16 +158,21 @@ export const useChatComposerSend = ({
         return true;
       } catch (error) {
         console.error('Error sending message:', error);
-        setMessages(previousMessages =>
-          previousMessages.filter(messageItem => messageItem.id !== tempId)
-        );
-        setMessage(normalizedMessageText);
+        if (!pendingSend.isCancelled()) {
+          setMessages(previousMessages =>
+            previousMessages.filter(messageItem => messageItem.id !== tempId)
+          );
+          setMessage(normalizedMessageText);
+        }
         return false;
+      } finally {
+        pendingSend.complete();
       }
     },
     [
       broadcastNewMessage,
       currentChannelId,
+      registerPendingSend,
       scheduleScrollMessagesToBottom,
       setMessage,
       setMessages,
