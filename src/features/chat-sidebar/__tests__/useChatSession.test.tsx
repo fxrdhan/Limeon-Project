@@ -319,7 +319,7 @@ describe('useChatSession', () => {
     );
 
     await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(4);
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(3);
     });
 
     rerender({
@@ -328,7 +328,7 @@ describe('useChatSession', () => {
     });
 
     await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(6);
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(5);
     });
 
     expect(
@@ -337,7 +337,6 @@ describe('useChatSession', () => {
       'chat_channel-1',
       'user_presence_changes',
       'global_presence_updates',
-      'incoming_messages_user-a',
       'chat_channel-2',
       'user_presence_changes',
     ]);

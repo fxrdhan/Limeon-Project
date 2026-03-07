@@ -73,6 +73,9 @@ export const chatSidebarGateway = {
   deleteStorageFile(bucket: string, path: string) {
     return StorageService.deleteFile(bucket, path);
   },
+  downloadStorageFile(bucket: string, path: string) {
+    return StorageService.downloadFile(bucket, path);
+  },
 };
 
 export type { ChatMessage, UserPresence, RealtimeChannel };

@@ -5,7 +5,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type ClipboardEvent,
 } from 'react';
 import {
   COMPOSER_IMAGE_PREVIEW_OFFSET,
@@ -94,6 +93,7 @@ export const useChatComposer = ({
     handleImageFileChange,
     handleDocumentFileChange,
     handleAudioFileChange,
+    handleComposerPaste,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,
@@ -139,24 +139,6 @@ export const useChatComposer = ({
     setIsSendSuccessGlowVisible(false);
     clearPendingComposerAttachments();
   }, [clearPendingComposerAttachments, closeAttachModal]);
-
-  const handleComposerPaste = useCallback(
-    (event: ClipboardEvent<HTMLTextAreaElement>) => {
-      const imageItem = Array.from(event.clipboardData.items).find(item =>
-        item.type.startsWith('image/')
-      );
-      if (!imageItem) return;
-
-      const imageFile = imageItem.getAsFile();
-      if (!imageFile) return;
-
-      event.preventDefault();
-      closeAttachModal();
-      closeMessageMenu();
-      queueComposerImage(imageFile);
-    },
-    [closeAttachModal, closeMessageMenu, queueComposerImage]
-  );
 
   const resizeMessageInput = useCallback(
     (value: string) => {

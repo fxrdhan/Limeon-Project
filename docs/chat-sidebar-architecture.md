@@ -14,6 +14,7 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
   - `src/store/pageFocusBlockStore.ts`
 - Feature:
   - `src/features/chat-sidebar/*`
+  - `src/features/chat-sidebar/hooks/useChatIncomingDeliveries.ts`
 - Data access:
   - `src/features/chat-sidebar/data/chatSidebarGateway.ts`
   - `src/services/api/chat.service.ts`
@@ -159,9 +160,18 @@ Tanggung jawab:
 - set user offline pada `beforeunload`
 - subscribe perubahan target user presence via channel `user_presence_changes`
 - subscribe broadcast global presence/receipt via channel `global_presence_updates`
-- subscribe incoming inserts untuk delivery receipt via channel `incoming_messages_<userId>`
 
-### 5.4 `useChatSessionReceipts`
+### 5.4 `useChatIncomingDeliveries`
+
+File: `src/features/chat-sidebar/hooks/useChatIncomingDeliveries.ts`
+
+Tanggung jawab:
+
+- subscribe incoming inserts untuk delivery receipt via channel `incoming_messages_<userId>`
+- berjalan di level `MainLayout`, tidak bergantung pada chat sidebar sedang open
+- mark incoming message sebagai delivered via RPC per-ID
+
+### 5.5 `useChatSessionReceipts`
 
 File: `src/features/chat-sidebar/hooks/useChatSessionReceipts.ts`
 
@@ -173,7 +183,7 @@ Tanggung jawab:
   - `mark_chat_message_ids_as_delivered`
   - `mark_chat_message_ids_as_read`
 
-### 5.5 `useChatComposer`
+### 5.6 `useChatComposer`
 
 File: `src/features/chat-sidebar/hooks/useChatComposer.ts`
 
@@ -189,7 +199,7 @@ Tanggung jawab:
   - `useChatComposerAttachments`
   - `useChatComposerActions`
 
-### 5.6 `useChatComposerAttachments`
+### 5.7 `useChatComposerAttachments`
 
 File: `src/features/chat-sidebar/hooks/useChatComposerAttachments.ts`
 
@@ -206,7 +216,7 @@ Attachment limit:
 
 - maksimum `5` attachment per send (`MAX_PENDING_COMPOSER_ATTACHMENTS`)
 
-### 5.7 `useChatComposerActions`
+### 5.8 `useChatComposerActions`
 
 File: `src/features/chat-sidebar/hooks/useChatComposerActions.ts`
 
@@ -223,7 +233,7 @@ Delete path untuk persisted message:
 - memanggil RPC `delete_chat_message_thread`
 - membroadcast semua ID yang dikembalikan RPC
 
-### 5.8 `useChatComposerSend`
+### 5.9 `useChatComposerSend`
 
 File: `src/features/chat-sidebar/hooks/useChatComposerSend.ts`
 
@@ -245,7 +255,7 @@ Temp id pattern yang dipakai:
 - file: `temp_file_<timestamp>`
 - caption attachment: `temp_caption_<timestamp>`
 
-### 5.9 `useChatInteractionModes`
+### 5.10 `useChatInteractionModes`
 
 File: `src/features/chat-sidebar/hooks/useChatInteractionModes.ts`
 
@@ -257,7 +267,7 @@ Tanggung jawab:
 - serialize selected messages untuk clipboard
 - menjaga caption row agar tidak dianggap message utama untuk search/selection
 
-### 5.10 `useChatViewport`
+### 5.11 `useChatViewport`
 
 File: `src/features/chat-sidebar/hooks/useChatViewport.ts`
 
@@ -271,7 +281,7 @@ Tanggung jawab:
   - `useChatViewportMenu`
   - `useChatViewportFocus`
 
-### 5.11 `useChatViewportMenu`
+### 5.12 `useChatViewportMenu`
 
 File: `src/features/chat-sidebar/hooks/useChatViewportMenu.ts`
 
@@ -282,7 +292,7 @@ Tanggung jawab:
 - hitung `MenuSideAnchor`
 - menjaga menu tetap visible di viewport chat
 
-### 5.12 `useChatViewportFocus`
+### 5.13 `useChatViewportFocus`
 
 File: `src/features/chat-sidebar/hooks/useChatViewportFocus.ts`
 
@@ -292,7 +302,7 @@ Tanggung jawab:
 - scroll-to-message untuk target edit
 - flash highlight pada message target
 
-### 5.13 `useMessagePdfPreviews`
+### 5.14 `useMessagePdfPreviews`
 
 File: `src/features/chat-sidebar/hooks/useMessagePdfPreviews.ts`
 
@@ -457,10 +467,10 @@ PDF preview path:
 - dari `documents/...` diubah menjadi `previews/...`
 - extension diganti `.png`
 
-Current direct storage fallback:
+Current storage fallback:
 
-- `src/features/chat-sidebar/utils/message-file.ts` memakai `supabase.storage.from('chat').download(...)`
-  untuk fetch PDF blob bila `fetch(url)` gagal.
+- `src/features/chat-sidebar/utils/message-file.ts` memakai gateway feature untuk fetch PDF blob
+  dari storage bila `fetch(url)` gagal.
 
 ## 9) Database Contract (Verified)
 
@@ -597,6 +607,7 @@ Dipakai oleh `usePresence()` untuk track user browser presence global aplikasi.
   - broadcast `message_receipt_updated`
 - `incoming_messages_<userId>`
   - postgres insert `chat_messages` by `receiver_id`
+  - disubscribe app-level lewat `useChatIncomingDeliveries`
 
 ## 11) Message and Attachment Flow
 
@@ -692,5 +703,6 @@ Area yang sudah dicakup:
 - Dokumen ini mencatat current state walaupun ada bagian implementasi yang belum sepenuhnya mengikuti `docs/data-access-policy.md`.
 - Implementasi saat ini tidak memakai React Query untuk data chat sidebar.
 - Conversation cache chat sidebar tidak global; cache hidup per instance `useChatSession`.
-- Data access chat sidebar mayoritas lewat gateway feature, tetapi fallback PDF download masih direct ke Supabase storage dari util feature.
-- `ChatSidebar` wrapper memakai width animasi fixed `420px`.
+- Delivery receipt incoming sekarang hidup di level layout aplikasi, tidak bergantung pada panel chat open.
+- Fallback PDF storage sekarang lewat data access layer, bukan import Supabase langsung dari util feature.
+- `ChatSidebar` wrapper memakai width responsif berdasarkan viewport, dengan target desktop `420px`.

@@ -79,6 +79,19 @@ export class StorageService {
     }
   }
 
+  public static async downloadFile(
+    bucket: string,
+    path: string
+  ): Promise<Blob> {
+    const { data, error } = await supabase.storage.from(bucket).download(path);
+
+    if (error || !data) {
+      throw new Error(`Download failed: ${error?.message || 'Unknown error'}`);
+    }
+
+    return data;
+  }
+
   static async uploadEntityImage(
     bucket: string,
     userId: string,

@@ -26,7 +26,6 @@ interface UseChatSessionPresenceProps {
   currentChannelId: string | null;
   globalPresenceChannelRef: MutableRefObject<RealtimeChannel | null>;
   applyReceiptUpdate: (message: Partial<ChatMessage> & { id: string }) => void;
-  markMessageIdsAsDelivered: (messageIds: string[]) => Promise<void>;
 }
 
 export const useChatSessionPresence = ({
@@ -36,12 +35,10 @@ export const useChatSessionPresence = ({
   currentChannelId,
   globalPresenceChannelRef,
   applyReceiptUpdate,
-  markMessageIdsAsDelivered,
 }: UseChatSessionPresenceProps) => {
   const [targetUserPresence, setTargetUserPresence] =
     useState<UserPresence | null>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
-  const incomingMessagesChannelRef = useRef<RealtimeChannel | null>(null);
   const presenceRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasClosedRef = useRef(false);
   const previousIsOpenRef = useRef(isOpen);
@@ -254,11 +251,6 @@ export const useChatSessionPresence = ({
         globalPresenceChannelRef.current
       );
     }
-    if (incomingMessagesChannelRef.current) {
-      void chatSidebarGateway.removeRealtimeChannel(
-        incomingMessagesChannelRef.current
-      );
-    }
 
     const globalPresenceChannel = chatSidebarGateway.createRealtimeChannel(
       'global_presence_updates',
@@ -307,28 +299,6 @@ export const useChatSessionPresence = ({
     globalPresenceChannel.subscribe();
     globalPresenceChannelRef.current = globalPresenceChannel;
 
-    const incomingMessagesChannel = chatSidebarGateway.createRealtimeChannel(
-      `incoming_messages_${user.id}`
-    );
-
-    incomingMessagesChannel.on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chat_messages',
-        filter: `receiver_id=eq.${user.id}`,
-      },
-      payload => {
-        const incomingMessage = payload.new as ChatMessage | undefined;
-        if (!incomingMessage?.id || incomingMessage.is_delivered) return;
-        void markMessageIdsAsDelivered([incomingMessage.id]);
-      }
-    );
-
-    incomingMessagesChannel.subscribe();
-    incomingMessagesChannelRef.current = incomingMessagesChannel;
-
     return () => {
       if (globalPresenceChannelRef.current) {
         void chatSidebarGateway.removeRealtimeChannel(
@@ -336,20 +306,8 @@ export const useChatSessionPresence = ({
         );
         globalPresenceChannelRef.current = null;
       }
-      if (incomingMessagesChannelRef.current) {
-        void chatSidebarGateway.removeRealtimeChannel(
-          incomingMessagesChannelRef.current
-        );
-        incomingMessagesChannelRef.current = null;
-      }
     };
-  }, [
-    applyReceiptUpdate,
-    globalPresenceChannelRef,
-    isOpen,
-    markMessageIdsAsDelivered,
-    user,
-  ]);
+  }, [applyReceiptUpdate, globalPresenceChannelRef, isOpen, user]);
 
   useEffect(() => {
     return () => {

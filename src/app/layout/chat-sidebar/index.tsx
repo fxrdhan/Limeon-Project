@@ -13,11 +13,35 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
   const [persistedTargetUser, setPersistedTargetUser] = useState<
     ChatTargetUser | undefined
   >(targetUser);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window === 'undefined') {
+      return 420;
+    }
+
+    return window.innerWidth < 768 ? window.innerWidth : 420;
+  });
 
   useEffect(() => {
     if (!targetUser) return;
     setPersistedTargetUser(targetUser);
   }, [targetUser]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const updateSidebarWidth = () => {
+      setSidebarWidth(window.innerWidth < 768 ? window.innerWidth : 420);
+    };
+
+    updateSidebarWidth();
+    window.addEventListener('resize', updateSidebarWidth);
+
+    return () => {
+      window.removeEventListener('resize', updateSidebarWidth);
+    };
+  }, []);
 
   const activeTargetUser = targetUser ?? persistedTargetUser;
   const shouldRenderSidebar = isOpen || Boolean(activeTargetUser);
@@ -33,13 +57,14 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           key="chat-sidebar"
           initial={false}
           animate={{
-            width: isOpen ? 420 : 0,
+            width: isOpen ? sidebarWidth : 0,
             opacity: isOpen ? 1 : 0,
           }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           onAnimationComplete={handleAnimationComplete}
           aria-hidden={!isOpen}
+          style={{ maxWidth: '100vw' }}
           className={`h-full overflow-hidden ${
             isOpen
               ? 'border-l border-slate-200 bg-transparent'

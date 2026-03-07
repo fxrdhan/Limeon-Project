@@ -28,8 +28,7 @@ Tujuan dokumen ini:
   - Integrasi eksternal (API, repositori, auth). Target: menjadi satu-satunya pintu akses data.
   - Current state: chat sidebar memakai `src/services/api/chat.service.ts`,
     `src/services/api/storage.service.ts`, dan `src/services/realtime/realtime.service.ts`
-    lewat gateway feature, dengan satu pengecualian fallback download PDF di
-    `src/features/chat-sidebar/utils/message-file.ts`.
+    lewat gateway feature.
 
 - `src/store/`
   - Zustand stores untuk state global (auth, presence). Gunakan untuk state UI/global, bukan data server.

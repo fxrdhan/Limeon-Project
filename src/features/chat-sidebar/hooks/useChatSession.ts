@@ -395,7 +395,6 @@ export const useChatSession = ({
     currentChannelId,
     globalPresenceChannelRef,
     applyReceiptUpdate: applyMessageUpdate,
-    markMessageIdsAsDelivered,
   });
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import Navbar from '@/app/layout/navbar';
 import Sidebar from '@/app/layout/sidebar';
 import ChatSidebar from '@/app/layout/chat-sidebar';
 import { usePresence } from '@/hooks/presence/usePresence';
+import { useChatIncomingDeliveries } from '@/features/chat-sidebar/hooks/useChatIncomingDeliveries';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
 
@@ -19,6 +20,7 @@ const MainLayout = () => {
     []
   );
   usePresence();
+  useChatIncomingDeliveries();
   const isChatSidebarOpen = useChatSidebarStore(state => state.isOpen);
   const chatTargetUser = useChatSidebarStore(state => state.targetUser);
   const closeChatSidebar = useChatSidebarStore(state => state.closeChat);

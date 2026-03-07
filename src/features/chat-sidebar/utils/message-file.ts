@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
 import { CHAT_IMAGE_BUCKET } from '../constants';
+import { chatSidebarGateway } from '../data/chatSidebarGateway';
 import type { ComposerPendingFileKind } from '../types';
 
 export const resolveFileExtension = (
@@ -123,10 +123,10 @@ export const fetchPdfBlobWithFallback = async (
   if (!storagePath) return null;
 
   try {
-    const { data, error } = await supabase.storage
-      .from(CHAT_IMAGE_BUCKET)
-      .download(storagePath);
-    if (error || !data) return null;
+    const data = await chatSidebarGateway.downloadStorageFile(
+      CHAT_IMAGE_BUCKET,
+      storagePath
+    );
 
     return data.type === 'application/pdf'
       ? data
