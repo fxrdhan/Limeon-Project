@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { getAttachmentFileName } from './attachment';
+import { isAttachmentCaptionMessage } from './message-relations';
 
 export type AttachmentCaptionData = {
   captionMessagesByAttachmentId: Map<string, ChatMessage>;
@@ -34,9 +35,7 @@ export const getAttachmentCaptionData = (
 
     const parentMessage = attachmentMessagesById.get(messageItem.reply_to_id);
     if (!parentMessage) continue;
-    if (parentMessage.sender_id !== messageItem.sender_id) continue;
-    if (parentMessage.receiver_id !== messageItem.receiver_id) continue;
-    if (parentMessage.channel_id !== messageItem.channel_id) continue;
+    if (!isAttachmentCaptionMessage(messageItem, parentMessage)) continue;
     if (captionMessagesByAttachmentId.has(parentMessage.id)) continue;
 
     captionMessagesByAttachmentId.set(parentMessage.id, messageItem);

@@ -18,6 +18,7 @@ import type {
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
+import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
 
@@ -273,16 +274,10 @@ export const useChatComposerActions = ({
       if (!user || !targetUser || !currentChannelId) return false;
 
       closeMessageMenu();
-      const linkedCaptionMessageIds = messages
-        .filter(
-          messageItem =>
-            messageItem.message_type === 'text' &&
-            messageItem.reply_to_id === targetMessage.id &&
-            messageItem.sender_id === targetMessage.sender_id &&
-            messageItem.receiver_id === targetMessage.receiver_id &&
-            messageItem.channel_id === targetMessage.channel_id
-        )
-        .map(messageItem => messageItem.id);
+      const linkedCaptionMessageIds = getAttachmentCaptionMessageIds(
+        messages,
+        targetMessage
+      );
       const messageIdsToDelete = [...linkedCaptionMessageIds, targetMessage.id];
       const messagesSnapshot = messages.map(messageItem => ({
         ...messageItem,
@@ -510,6 +505,10 @@ export const useChatComposerActions = ({
 
   const handleKeyPress = useCallback(
     (event: ReactKeyboardEvent) => {
+      if (event.nativeEvent.isComposing || event.keyCode === 229) {
+        return;
+      }
+
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         void handleSendMessage();

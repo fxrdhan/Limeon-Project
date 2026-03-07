@@ -9,6 +9,7 @@ export interface ChatMessage {
   channel_id: string | null;
   message: string;
   message_type: 'text' | 'image' | 'file';
+  message_relation_kind?: 'attachment_caption' | null;
   file_name?: string;
   file_kind?: 'audio' | 'document';
   file_mime_type?: string;
@@ -43,6 +44,7 @@ export interface ChatMessageInsertInput {
   channel_id: string | null;
   message: string;
   message_type: 'text' | 'image' | 'file';
+  message_relation_kind?: 'attachment_caption' | null;
   file_name?: string;
   file_kind?: 'audio' | 'document';
   file_mime_type?: string;
@@ -61,6 +63,7 @@ export interface ChatMessageUpdateInput {
   is_read?: boolean;
   is_delivered?: boolean;
   reply_to_id?: string | null;
+  message_relation_kind?: 'attachment_caption' | null;
   file_preview_url?: string | null;
   file_preview_page_count?: number | null;
   file_preview_status?: 'pending' | 'ready' | 'failed' | null;
@@ -77,6 +80,32 @@ export interface UserPresenceUpdateInput {
 export interface UserPresenceInsertInput extends UserPresenceUpdateInput {
   user_id: string;
 }
+
+let chatMessagesSupportsRelationKind: boolean | null = null;
+
+const hasOwnMessageRelationKind = (
+  payload: ChatMessageInsertInput | ChatMessageUpdateInput
+) => Object.prototype.hasOwnProperty.call(payload, 'message_relation_kind');
+
+const stripMessageRelationKind = <
+  T extends ChatMessageInsertInput | ChatMessageUpdateInput,
+>(
+  payload: T
+) => {
+  const {
+    message_relation_kind: _messageRelationKind,
+    ...payloadWithoutRelationKind
+  } = payload;
+  return payloadWithoutRelationKind;
+};
+
+const isMissingMessageRelationKindError = (error: PostgrestError | null) => {
+  if (!error) return false;
+
+  return [error.message, error.details, error.hint].some(candidate =>
+    candidate?.includes('message_relation_kind')
+  );
+};
 
 export const chatService = {
   async fetchMessagesBetweenUsers(
@@ -114,11 +143,30 @@ export const chatService = {
     payload: ChatMessageInsertInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase
+      const insertPayload =
+        chatMessagesSupportsRelationKind === false
+          ? stripMessageRelationKind(payload)
+          : payload;
+      let { data, error } = await supabase
         .from('chat_messages')
-        .insert(payload)
+        .insert(insertPayload)
         .select()
         .single();
+
+      if (
+        error &&
+        hasOwnMessageRelationKind(payload) &&
+        isMissingMessageRelationKindError(error)
+      ) {
+        chatMessagesSupportsRelationKind = false;
+        ({ data, error } = await supabase
+          .from('chat_messages')
+          .insert(stripMessageRelationKind(payload))
+          .select()
+          .single());
+      } else if (!error && hasOwnMessageRelationKind(payload)) {
+        chatMessagesSupportsRelationKind = true;
+      }
 
       if (error) {
         return { data: null, error };
@@ -135,12 +183,32 @@ export const chatService = {
     payload: ChatMessageUpdateInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase
+      const updatePayload =
+        chatMessagesSupportsRelationKind === false
+          ? stripMessageRelationKind(payload)
+          : payload;
+      let { data, error } = await supabase
         .from('chat_messages')
-        .update(payload)
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
+
+      if (
+        error &&
+        hasOwnMessageRelationKind(payload) &&
+        isMissingMessageRelationKindError(error)
+      ) {
+        chatMessagesSupportsRelationKind = false;
+        ({ data, error } = await supabase
+          .from('chat_messages')
+          .update(stripMessageRelationKind(payload))
+          .eq('id', id)
+          .select()
+          .single());
+      } else if (!error && hasOwnMessageRelationKind(payload)) {
+        chatMessagesSupportsRelationKind = true;
+      }
 
       if (error) {
         return { data: null, error };

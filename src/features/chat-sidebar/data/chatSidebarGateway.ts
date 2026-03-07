@@ -78,4 +78,9 @@ export const chatSidebarGateway = {
   },
 };
 
-export type { ChatMessage, UserPresence, RealtimeChannel };
+export type {
+  ChatMessage,
+  ChatMessageInsertInput,
+  UserPresence,
+  RealtimeChannel,
+};

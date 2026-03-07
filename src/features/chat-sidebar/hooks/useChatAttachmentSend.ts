@@ -18,6 +18,10 @@ import {
   mapPersistedMessageForDisplay,
   reconcileConversationMessages,
 } from '../utils/conversation-sync';
+import {
+  markMessageAsAttachmentCaption,
+  toAttachmentCaptionInsertInput,
+} from '../utils/message-relations';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -375,21 +379,24 @@ export const useChatAttachmentSend = ({
         timestamp,
       });
       const optimisticCaptionMessage: ChatMessage | null = hasAttachmentCaption
-        ? {
-            id: captionTempId!,
-            sender_id: user.id,
-            receiver_id: targetUser.id,
-            channel_id: currentChannelId,
-            message: normalizedCaptionText,
-            message_type: 'text',
-            created_at: timestamp,
-            updated_at: timestamp,
-            is_read: false,
-            reply_to_id: tempId,
-            sender_name: user.name || 'You',
-            receiver_name: targetUser.name || 'Unknown',
-            stableKey: captionStableKey!,
-          }
+        ? markMessageAsAttachmentCaption(
+            {
+              id: captionTempId!,
+              sender_id: user.id,
+              receiver_id: targetUser.id,
+              channel_id: currentChannelId,
+              message: normalizedCaptionText,
+              message_type: 'text',
+              created_at: timestamp,
+              updated_at: timestamp,
+              is_read: false,
+              reply_to_id: tempId,
+              sender_name: user.name || 'You',
+              receiver_name: targetUser.name || 'Unknown',
+              stableKey: captionStableKey!,
+            },
+            tempId
+          )
         : null;
 
       setMessages(previousMessages =>
@@ -451,21 +458,26 @@ export const useChatAttachmentSend = ({
 
         if (hasAttachmentCaption && captionTempId) {
           const { data: captionMessage, error: captionError } =
-            await chatSidebarGateway.createMessage({
-              sender_id: user.id,
-              receiver_id: targetUser.id,
-              channel_id: currentChannelId,
-              message: normalizedCaptionText,
-              message_type: 'text',
-              reply_to_id: realMessage.id,
-            });
+            await chatSidebarGateway.createMessage(
+              toAttachmentCaptionInsertInput({
+                sender_id: user.id,
+                receiver_id: targetUser.id,
+                channel_id: currentChannelId,
+                message: normalizedCaptionText,
+                message_type: 'text',
+                reply_to_id: realMessage.id,
+              })
+            );
 
           if (!captionError && captionMessage) {
-            const mappedCaptionMessage = mapPersistedMessageForDisplay(
-              captionMessage,
-              user,
-              targetUser,
-              captionStableKey!
+            const mappedCaptionMessage = markMessageAsAttachmentCaption(
+              mapPersistedMessageForDisplay(
+                captionMessage,
+                user,
+                targetUser,
+                captionStableKey!
+              ),
+              realMessage.id
             );
 
             if (pendingSend.isCancelled()) {

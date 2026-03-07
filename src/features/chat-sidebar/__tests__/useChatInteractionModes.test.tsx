@@ -15,6 +15,7 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
+  message_relation_kind: overrides.message_relation_kind ?? null,
   file_name: overrides.file_name,
   file_kind: overrides.file_kind,
   file_mime_type: overrides.file_mime_type,
@@ -65,6 +66,7 @@ describe('useChatInteractionModes', () => {
         id: 'caption-1',
         message: 'stok opname',
         reply_to_id: 'file-1',
+        message_relation_kind: 'attachment_caption',
       }),
       buildMessage({ id: 'text-2', message: 'stok cadangan' }),
     ];
@@ -127,6 +129,7 @@ describe('useChatInteractionModes', () => {
               id: 'caption-1',
               message: 'Rak depan',
               reply_to_id: 'image-1',
+              message_relation_kind: 'attachment_caption',
               sender_name: 'Admin',
             }),
           ],

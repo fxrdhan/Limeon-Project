@@ -1,5 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useRef, useState } from 'react';
+import {
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposerActions } from '../hooks/useChatComposerActions';
@@ -44,6 +48,7 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
+  message_relation_kind: overrides.message_relation_kind ?? null,
   file_name: overrides.file_name,
   file_kind: overrides.file_kind,
   file_mime_type: overrides.file_mime_type,
@@ -172,6 +177,7 @@ describe('useChatComposerActions', () => {
       id: 'caption-1',
       message: 'stok opname',
       reply_to_id: 'file-1',
+      message_relation_kind: 'attachment_caption',
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
@@ -273,6 +279,7 @@ describe('useChatComposerActions', () => {
       id: 'caption-atomic',
       message: 'stok opname',
       reply_to_id: 'file-atomic',
+      message_relation_kind: 'attachment_caption',
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
@@ -405,5 +412,64 @@ describe('useChatComposerActions', () => {
 
     expect(deleteResult).toBe(false);
     expect(mockToast.error).not.toHaveBeenCalled();
+  });
+
+  it('does not send while IME composition is still active', async () => {
+    const handleSendMessage = vi.fn();
+    mockUseChatComposerSend.mockReturnValue({
+      handleSendMessage,
+    });
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [message, setMessage] = useState('draft');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        null
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerActions({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        messages,
+        setMessages,
+        message,
+        setMessage,
+        editingMessageId,
+        setEditingMessageId,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        closeMessageMenu: vi.fn(),
+        focusMessageComposer: vi.fn(),
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+      });
+    });
+
+    const preventDefault = vi.fn();
+
+    act(() => {
+      result.current.handleKeyPress({
+        key: 'Enter',
+        shiftKey: false,
+        keyCode: 229,
+        nativeEvent: { isComposing: true },
+        preventDefault,
+      } as unknown as ReactKeyboardEvent);
+    });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(handleSendMessage).not.toHaveBeenCalled();
   });
 });

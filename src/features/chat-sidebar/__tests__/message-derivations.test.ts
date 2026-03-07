@@ -20,6 +20,7 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
+  message_relation_kind: overrides.message_relation_kind ?? null,
   file_name: overrides.file_name,
   file_kind: overrides.file_kind,
   file_mime_type: overrides.file_mime_type,
@@ -47,6 +48,7 @@ describe('message-derivations', () => {
       id: 'caption-1',
       message: 'stok opname maret',
       reply_to_id: 'file-1',
+      message_relation_kind: 'attachment_caption',
     });
     const plainTextMessage = buildMessage({
       id: 'text-1',
@@ -54,9 +56,9 @@ describe('message-derivations', () => {
     });
     const unrelatedReply = buildMessage({
       id: 'caption-2',
-      sender_id: 'user-b',
-      message: 'should be ignored',
+      message: 'should stay as regular reply',
       reply_to_id: 'file-1',
+      message_relation_kind: null,
     });
     const messages = [
       attachmentMessage,
@@ -88,6 +90,7 @@ describe('message-derivations', () => {
     expect(matchedIds).toEqual(['file-1']);
     expect(matchedFileNameIds).toEqual(['file-1']);
     expect(selectableIds.has('caption-1')).toBe(false);
+    expect(selectableIds.has('caption-2')).toBe(true);
     expect(selectableIds.has('text-1')).toBe(true);
   });
 
@@ -102,6 +105,7 @@ describe('message-derivations', () => {
       id: 'caption-1',
       message: 'Rak depan',
       reply_to_id: 'image-1',
+      message_relation_kind: 'attachment_caption',
       sender_name: 'Admin',
     });
     const fileMessage = buildMessage({
@@ -135,5 +139,31 @@ describe('message-derivations', () => {
 
     expect(serialized).toContain('Admin: Rak depan');
     expect(serialized).toContain('Gudang: [File: invoice.pdf]');
+  });
+
+  it('keeps recognizing legacy attachment captions while the database migration is not applied yet', () => {
+    const attachmentMessage = buildMessage({
+      id: 'file-legacy',
+      message: 'https://example.com/legacy.pdf',
+      message_type: 'file',
+      file_name: 'legacy.pdf',
+      file_kind: 'document',
+    });
+    const legacyCaptionMessage = buildMessage({
+      id: 'caption-legacy',
+      message: 'caption lama',
+      reply_to_id: 'file-legacy',
+    });
+
+    delete legacyCaptionMessage.message_relation_kind;
+
+    const captionData = getAttachmentCaptionData([
+      attachmentMessage,
+      legacyCaptionMessage,
+    ]);
+
+    expect(
+      captionData.captionMessagesByAttachmentId.get('file-legacy')?.id
+    ).toBe('caption-legacy');
   });
 });

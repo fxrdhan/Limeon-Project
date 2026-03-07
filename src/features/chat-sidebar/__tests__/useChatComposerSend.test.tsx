@@ -46,6 +46,7 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
+  message_relation_kind: overrides.message_relation_kind ?? null,
   file_name: overrides.file_name ?? 'stok.pdf',
   file_kind: overrides.file_kind ?? 'document',
   file_mime_type: overrides.file_mime_type ?? 'application/pdf',
@@ -211,6 +212,13 @@ describe('useChatComposerSend', () => {
     expect(broadcastUpdatedMessage).not.toHaveBeenCalled();
     expect(broadcastDeletedMessage).toHaveBeenCalledWith('server-file-1');
     expect(clearPendingComposerAttachments).toHaveBeenCalledOnce();
+    expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        message_relation_kind: 'attachment_caption',
+        reply_to_id: 'server-file-1',
+      })
+    );
     expect(restorePendingComposerAttachments).toHaveBeenCalledWith([
       expect.objectContaining({
         fileName: 'stok.pdf',
