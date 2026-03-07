@@ -8,7 +8,7 @@ const { mockChatService, mockToast, mockUseChatComposerSend } = vi.hoisted(
   () => ({
     mockChatService: {
       updateMessage: vi.fn(),
-      deleteMessage: vi.fn(),
+      deleteMessageThread: vi.fn(),
       fetchMessagesBetweenUsers: vi.fn(),
     },
     mockToast: {
@@ -176,12 +176,10 @@ describe('useChatComposerActions', () => {
     });
     const broadcastDeletedMessage = vi.fn();
 
-    mockChatService.deleteMessage
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({
-        data: null,
-        error: new Error('delete failed'),
-      });
+    mockChatService.deleteMessageThread.mockResolvedValue({
+      data: null,
+      error: new Error('delete failed'),
+    });
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
       data: [attachmentMessage],
       error: null,
@@ -244,12 +242,8 @@ describe('useChatComposerActions', () => {
     });
 
     expect(deleteResult).toBe(false);
-    expect(mockChatService.deleteMessage).toHaveBeenNthCalledWith(
-      1,
-      'caption-1'
-    );
-    expect(mockChatService.deleteMessage).toHaveBeenNthCalledWith(2, 'file-1');
-    expect(broadcastDeletedMessage).toHaveBeenCalledWith('caption-1');
+    expect(mockChatService.deleteMessageThread).toHaveBeenCalledWith('file-1');
+    expect(broadcastDeletedMessage).not.toHaveBeenCalled();
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
       'user-a',
       'user-b',
@@ -263,6 +257,80 @@ describe('useChatComposerActions', () => {
     );
   });
 
+  it('broadcasts every deleted id returned by the atomic delete thread rpc', async () => {
+    const attachmentMessage = buildMessage({
+      id: 'file-atomic',
+      message: 'https://example.com/report-atomic.pdf',
+      message_type: 'file',
+      file_name: 'report-atomic.pdf',
+      file_kind: 'document',
+      sender_name: 'Admin',
+      receiver_name: 'Gudang',
+    });
+    const captionMessage = buildMessage({
+      id: 'caption-atomic',
+      message: 'stok opname',
+      reply_to_id: 'file-atomic',
+      sender_name: 'Admin',
+      receiver_name: 'Gudang',
+    });
+    const broadcastDeletedMessage = vi.fn();
+
+    mockChatService.deleteMessageThread.mockResolvedValue({
+      data: ['caption-atomic', 'file-atomic'],
+      error: null,
+    });
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        attachmentMessage,
+        captionMessage,
+      ]);
+      const [message, setMessage] = useState('');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        null
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerActions({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        messages,
+        setMessages,
+        message,
+        setMessage,
+        editingMessageId,
+        setEditingMessageId,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        closeMessageMenu: vi.fn(),
+        focusMessageComposer: vi.fn(),
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage,
+        pendingImagePreviewUrlsRef,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleDeleteMessage(attachmentMessage);
+    });
+
+    expect(mockChatService.deleteMessageThread).toHaveBeenCalledWith(
+      'file-atomic'
+    );
+    expect(broadcastDeletedMessage).toHaveBeenCalledWith('caption-atomic');
+    expect(broadcastDeletedMessage).toHaveBeenCalledWith('file-atomic');
+  });
+
   it('suppresses error toast when delete failure is handled by the caller', async () => {
     const attachmentMessage = buildMessage({
       id: 'file-2',
@@ -274,7 +342,7 @@ describe('useChatComposerActions', () => {
       receiver_name: 'Gudang',
     });
 
-    mockChatService.deleteMessage.mockResolvedValue({
+    mockChatService.deleteMessageThread.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
     });

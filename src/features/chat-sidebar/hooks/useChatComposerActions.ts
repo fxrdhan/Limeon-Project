@@ -15,7 +15,7 @@ import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
 
-interface DeleteMessageOptions {
+export interface DeleteMessageOptions {
   suppressErrorToast?: boolean;
 }
 
@@ -260,21 +260,27 @@ export const useChatComposerActions = ({
         setMessage('');
       }
 
-      const persistedMessageIds = messageIdsToDelete.filter(
-        messageId => !messageId.startsWith('temp_')
-      );
-      if (persistedMessageIds.length === 0) return true;
+      const isPersistedThread = !targetMessage.id.startsWith('temp_');
+      if (!isPersistedThread) return true;
 
       try {
-        for (const messageId of persistedMessageIds) {
-          const { error } = await chatSidebarGateway.deleteMessage(messageId);
-          if (error) {
-            console.error('Error deleting message:', error);
-            throw error;
-          }
-
-          broadcastDeletedMessage(messageId);
+        const { data: deletedMessageIds, error } =
+          await chatSidebarGateway.deleteMessageThread(targetMessage.id);
+        if (error) {
+          console.error('Error deleting message thread:', error);
+          throw error;
         }
+
+        const broadcastTargetIds =
+          deletedMessageIds && deletedMessageIds.length > 0
+            ? deletedMessageIds
+            : messageIdsToDelete.filter(
+                messageId => !messageId.startsWith('temp_')
+              );
+
+        broadcastTargetIds.forEach(deletedMessageId => {
+          broadcastDeletedMessage(deletedMessageId);
+        });
         return true;
       } catch (error) {
         console.error('Error deleting message:', error);

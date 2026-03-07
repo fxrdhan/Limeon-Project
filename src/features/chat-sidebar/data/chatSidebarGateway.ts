@@ -35,6 +35,9 @@ export const chatSidebarGateway = {
   deleteMessage(id: string) {
     return chatService.deleteMessage(id);
   },
+  deleteMessageThread(id: string) {
+    return chatService.deleteMessageThread(id);
+  },
   markMessageIdsAsDelivered(messageIds: string[]) {
     return chatService.markMessageIdsAsDelivered(messageIds);
   },

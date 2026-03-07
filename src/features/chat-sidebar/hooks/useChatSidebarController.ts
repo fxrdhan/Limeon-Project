@@ -1,7 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
 import { useCallback, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
-import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatSidebarPanelProps } from '../types';
 import {
   getAttachmentFileKind,
@@ -10,6 +8,7 @@ import {
 import { getInitials, getInitialsColor } from '@/utils/avatar';
 import { generateChannelId } from '../utils/channel';
 import { useChatComposer } from './useChatComposer';
+import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatSession } from './useChatSession';
 import { useChatViewport } from './useChatViewport';
@@ -152,62 +151,12 @@ export const useChatSidebarController = ({
     });
   }, []);
 
-  const handleDeleteSelectedMessages = useCallback(async () => {
-    if (!user) return;
-
-    const deletableMessages = interaction.selectedVisibleMessages.filter(
-      messageItem => messageItem.sender_id === user.id
-    );
-
-    if (deletableMessages.length === 0) {
-      toast.error('Pilih minimal 1 pesan Anda untuk dihapus', {
-        toasterId: CHAT_SIDEBAR_TOASTER_ID,
-      });
-      return;
-    }
-
-    const deletionResults = await Promise.all(
-      deletableMessages.map(messageItem =>
-        composer.handleDeleteMessage(messageItem, {
-          suppressErrorToast: true,
-        })
-      )
-    );
-
-    const deletedMessageIds = new Set(
-      deletableMessages
-        .filter((_, index) => deletionResults[index])
-        .map(messageItem => messageItem.id)
-    );
-    interaction.setSelectedMessageIds(previousSelectedIds => {
-      const nextSelectedIds = new Set<string>();
-      previousSelectedIds.forEach(messageId => {
-        if (!deletedMessageIds.has(messageId)) {
-          nextSelectedIds.add(messageId);
-        }
-      });
-      return nextSelectedIds;
-    });
-
-    const deletedCount = deletedMessageIds.size;
-    if (deletedCount === deletableMessages.length) {
-      toast.success(`${deletedCount} pesan berhasil dihapus`, {
-        toasterId: CHAT_SIDEBAR_TOASTER_ID,
-      });
-      return;
-    }
-
-    if (deletedCount === 0) {
-      toast.error('Gagal menghapus pesan terpilih', {
-        toasterId: CHAT_SIDEBAR_TOASTER_ID,
-      });
-      return;
-    }
-
-    toast.error(`${deletedCount} pesan dihapus, sebagian gagal`, {
-      toasterId: CHAT_SIDEBAR_TOASTER_ID,
-    });
-  }, [composer, interaction, user]);
+  const handleDeleteSelectedMessages = useChatBulkDelete({
+    user,
+    selectedVisibleMessages: interaction.selectedVisibleMessages,
+    setSelectedMessageIds: interaction.setSelectedMessageIds,
+    deleteMessage: composer.handleDeleteMessage,
+  });
 
   const handleClose = useCallback(() => {
     void performClose();

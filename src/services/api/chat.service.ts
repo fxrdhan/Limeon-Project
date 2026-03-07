@@ -258,6 +258,31 @@ export const chatService = {
     }
   },
 
+  async deleteMessageThread(id: string): Promise<ServiceResponse<string[]>> {
+    try {
+      const { data, error } = await supabase.rpc('delete_chat_message_thread', {
+        p_message_id: id,
+      });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return {
+        data: Array.isArray(data)
+          ? data.filter(
+              deletedMessageId =>
+                typeof deletedMessageId === 'string' &&
+                deletedMessageId.length > 0
+            )
+          : [],
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async getUserPresence(
     userId: string
   ): Promise<ServiceResponse<UserPresence>> {

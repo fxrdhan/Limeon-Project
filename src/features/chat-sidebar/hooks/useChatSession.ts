@@ -174,6 +174,13 @@ export const useChatSession = ({
       return transformedMessages;
     };
 
+    const mapMessageForActiveConversation = (messageItem: ChatMessage) =>
+      mapConversationMessagesForDisplay([messageItem], {
+        currentUserId: user.id,
+        currentUserName: user.name || 'You',
+        targetUserName: targetUser.name || 'Unknown',
+      })[0];
+
     const loadMessages = async () => {
       const cachedConversation = getFreshConversationCacheEntry(
         conversationCacheRef.current,
@@ -282,6 +289,41 @@ export const useChatSession = ({
         const updatedMessage = payload.payload as ChatMessage;
         applyMessageUpdate(updatedMessage);
       });
+
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `channel_id=eq.${currentChannelId}`,
+        },
+        payload => {
+          const insertedMessage = payload.new as ChatMessage;
+          if (
+            !insertedMessage?.id ||
+            insertedMessage.sender_id !== targetUser.id ||
+            insertedMessage.receiver_id !== user.id
+          ) {
+            return;
+          }
+
+          const mappedInsertedMessage =
+            mapMessageForActiveConversation(insertedMessage);
+
+          setMessages(previousMessages => {
+            const exists = previousMessages.some(
+              messageItem => messageItem.id === mappedInsertedMessage.id
+            );
+            if (exists) return previousMessages;
+            return [...previousMessages, mappedInsertedMessage];
+          });
+
+          if (!insertedMessage.is_delivered) {
+            void markMessageIdsAsDelivered([insertedMessage.id]);
+          }
+        }
+      );
 
       channel.on(
         'postgres_changes',

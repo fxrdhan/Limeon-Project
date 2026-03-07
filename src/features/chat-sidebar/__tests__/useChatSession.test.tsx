@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { UserDetails } from '../../../types/database';
@@ -440,5 +440,63 @@ describe('useChatSession', () => {
       ).toEqual(['message-2']);
       expect(result.current.messages[0]?.sender_name).toBe('Kasir');
     });
+  });
+
+  it('hydrates incoming messages from postgres inserts when app broadcast is unavailable', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(createdChannels[0]).toBeDefined();
+    });
+
+    const conversationChannel = createdChannels[0];
+    const insertListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'INSERT'
+    );
+
+    expect(insertListenerCall).toBeDefined();
+    const insertListener = insertListenerCall?.[2] as
+      | ((payload: { new: ChatMessage }) => void)
+      | undefined;
+
+    act(() => {
+      insertListener?.({
+        new: buildMessage({
+          id: 'message-inserted',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          channel_id: 'channel-1',
+          message: 'pesan fallback insert',
+        }),
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toContain('message-inserted');
+      expect(
+        result.current.messages.find(
+          messageItem => messageItem.id === 'message-inserted'
+        )?.sender_name
+      ).toBe('Gudang');
+    });
+
+    expect(mockChatService.markMessageIdsAsDelivered).toHaveBeenCalledWith([
+      'message-inserted',
+    ]);
   });
 });

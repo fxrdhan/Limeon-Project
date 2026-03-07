@@ -4,15 +4,15 @@ import {
   fetchPdfBlobWithFallback,
   resolveFileExtension,
 } from '../utils/message-file';
+import {
+  getCachedPdfMessagePreview,
+  pruneCachedPdfMessagePreviews,
+  setCachedPdfMessagePreview,
+  type PdfMessagePreviewCacheEntry,
+} from '../utils/pdf-message-preview-cache';
 import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
 
-export type PdfMessagePreview = {
-  coverDataUrl: string;
-  pageCount: number;
-  cacheKey: string;
-};
-
-const pdfMessagePreviewCache = new Map<string, PdfMessagePreview>();
+export type PdfMessagePreview = PdfMessagePreviewCacheEntry;
 const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
 const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
 
@@ -125,7 +125,7 @@ export const useMessagePdfPreviews = ({
           continue;
         }
 
-        const cachedPreview = pdfMessagePreviewCache.get(cacheKey);
+        const cachedPreview = getCachedPdfMessagePreview(cacheKey);
         if (cachedPreview) {
           nextPreviews[message.id] = cachedPreview;
           hasChanges = true;
@@ -175,6 +175,8 @@ export const useMessagePdfPreviews = ({
       clearPdfPreviewRetryTimer(messageId);
       pdfPreviewRenderingIdsRef.current.delete(messageId);
     }
+
+    pruneCachedPdfMessagePreviews(activePdfMessageIds);
   }, [
     clearPdfPreviewRetryTimer,
     getAttachmentFileKind,
@@ -208,7 +210,7 @@ export const useMessagePdfPreviews = ({
 
       const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
       if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-      if (pdfMessagePreviewCache.has(cacheKey)) return false;
+      if (getCachedPdfMessagePreview(cacheKey)) return false;
       if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
       if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
       if (
@@ -258,7 +260,7 @@ export const useMessagePdfPreviews = ({
               pageCount: renderedPreview.pageCount,
               cacheKey,
             };
-            pdfMessagePreviewCache.set(cacheKey, nextPreview);
+            setCachedPdfMessagePreview(pendingMessage.id, nextPreview);
             pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
             clearPdfPreviewRetryTimer(pendingMessage.id);
             setPdfMessagePreviews(previousPreviews => ({
@@ -303,7 +305,7 @@ export const useMessagePdfPreviews = ({
         return localPreview;
       }
 
-      return cacheKey ? pdfMessagePreviewCache.get(cacheKey) : undefined;
+      return cacheKey ? getCachedPdfMessagePreview(cacheKey) : undefined;
     },
   };
 };
