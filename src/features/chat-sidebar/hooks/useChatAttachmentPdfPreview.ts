@@ -7,15 +7,7 @@ import {
 import type { ChatSidebarPanelTargetUser, PendingComposerFile } from '../types';
 import { renderPdfPreviewBlob } from '../utils/pdf-preview';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
-
-const buildPdfPreviewStoragePath = (filePath: string) => {
-  const normalizedPath = filePath.replace(/^documents\//, 'previews/');
-  if (/\.[^./]+$/.test(normalizedPath)) {
-    return normalizedPath.replace(/\.[^./]+$/, '.png');
-  }
-
-  return `${normalizedPath}.png`;
-};
+import { buildPdfPreviewStoragePath } from '../utils/message-file';
 
 interface UseChatAttachmentPdfPreviewProps {
   user: {

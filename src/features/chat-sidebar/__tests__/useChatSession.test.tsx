@@ -730,11 +730,11 @@ describe('useChatSession', () => {
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
     ).toEqual([
-      'chat_channel-1',
       'user_presence_changes',
       'global_presence_updates',
-      'chat_channel-2',
+      'chat_channel-1',
       'user_presence_changes',
+      'chat_channel-2',
     ]);
   });
 
@@ -1083,10 +1083,10 @@ describe('useChatSession', () => {
     );
 
     await waitFor(() => {
-      expect(createdChannels[0]).toBeDefined();
+      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
     });
 
-    const conversationChannel = createdChannels[0];
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
     const insertListenerCall = conversationChannel.on.mock.calls.find(
       ([type, config]) =>
         type === 'postgres_changes' && config?.event === 'INSERT'
@@ -1139,10 +1139,10 @@ describe('useChatSession', () => {
     );
 
     await waitFor(() => {
-      expect(createdChannels[0]).toBeDefined();
+      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
     });
 
-    const conversationChannel = createdChannels[0];
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
     const insertListenerCall = conversationChannel.on.mock.calls.find(
       ([type, config]) =>
         type === 'postgres_changes' && config?.event === 'INSERT'
@@ -1217,7 +1217,7 @@ describe('useChatSession', () => {
       ).toContain('message-deleted');
     });
 
-    const conversationChannel = createdChannels[0];
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
     const deleteListenerCall = conversationChannel.on.mock.calls.find(
       ([type, config]) =>
         type === 'postgres_changes' && config?.event === 'DELETE'

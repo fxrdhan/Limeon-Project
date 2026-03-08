@@ -6,7 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import toast from 'react-hot-toast';
-import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -19,6 +19,7 @@ import type {
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
+import { resolveChatMessageStoragePaths } from '../utils/message-file';
 import { useChatMessageTransferActions } from './useChatMessageTransferActions';
 import { useChatMutationScope } from './useChatMutationScope';
 
@@ -291,6 +292,16 @@ export const useChatComposerActions = ({
         targetMessage
       );
       const messageIdsToDelete = [...linkedCaptionMessageIds, targetMessage.id];
+      const threadMessages = messages.filter(messageItem =>
+        messageIdsToDelete.includes(messageItem.id)
+      );
+      const storagePathsToDelete = [
+        ...new Set(
+          threadMessages.flatMap(messageItem =>
+            resolveChatMessageStoragePaths(messageItem)
+          )
+        ),
+      ];
       const messagesSnapshot = messages.map(messageItem => ({
         ...messageItem,
       }));
@@ -335,6 +346,26 @@ export const useChatComposerActions = ({
             broadcastDeletedMessage(deletedMessageId);
           });
         });
+
+        if (storagePathsToDelete.length > 0) {
+          const cleanupResults = await Promise.allSettled(
+            storagePathsToDelete.map(storagePath =>
+              chatSidebarGateway.deleteStorageFile(
+                CHAT_IMAGE_BUCKET,
+                storagePath
+              )
+            )
+          );
+
+          cleanupResults.forEach((cleanupResult, index) => {
+            if (cleanupResult.status === 'fulfilled') return;
+            console.error(
+              `Error deleting chat storage file after thread delete: ${storagePathsToDelete[index]}`,
+              cleanupResult.reason
+            );
+          });
+        }
+
         return true;
       } catch (error) {
         console.error('Error deleting message:', error);

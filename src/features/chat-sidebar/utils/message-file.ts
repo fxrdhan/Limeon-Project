@@ -1,5 +1,6 @@
 import { CHAT_IMAGE_BUCKET } from '../constants';
 import { chatSidebarGateway } from '../data/chatSidebarGateway';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ComposerPendingFileKind } from '../types';
 
 export const resolveFileExtension = (
@@ -101,6 +102,65 @@ export const extractChatStoragePath = (url: string): string | null => {
   }
 
   return null;
+};
+
+export const buildPdfPreviewStoragePath = (filePath: string) => {
+  const normalizedPath = filePath.replace(/^documents\//, 'previews/');
+  if (/\.[^./]+$/.test(normalizedPath)) {
+    return normalizedPath.replace(/\.[^./]+$/, '.png');
+  }
+
+  return `${normalizedPath}.png`;
+};
+
+export const resolveChatMessageStoragePaths = (
+  message: Pick<
+    ChatMessage,
+    | 'message'
+    | 'message_type'
+    | 'file_name'
+    | 'file_mime_type'
+    | 'file_preview_url'
+    | 'file_storage_path'
+  >
+) => {
+  const storagePaths = new Set<string>();
+  const primaryStoragePath =
+    message.file_storage_path?.trim() ||
+    extractChatStoragePath(message.message);
+
+  if (primaryStoragePath) {
+    storagePaths.add(primaryStoragePath);
+  }
+
+  if (message.message_type !== 'file') {
+    return [...storagePaths];
+  }
+
+  const fileExtension = resolveFileExtension(
+    message.file_name ?? null,
+    message.message,
+    message.file_mime_type
+  );
+  const isPdfFile =
+    fileExtension === 'pdf' ||
+    message.file_mime_type?.toLowerCase().includes('pdf') === true;
+
+  if (!isPdfFile) {
+    return [...storagePaths];
+  }
+
+  const previewStoragePath = message.file_preview_url
+    ? extractChatStoragePath(message.file_preview_url)
+    : primaryStoragePath?.startsWith('documents/')
+      ? buildPdfPreviewStoragePath(primaryStoragePath)
+      : null;
+
+  if (previewStoragePath) {
+    storagePaths.add(previewStoragePath);
+  }
+
+  return [...storagePaths];
 };
 
 export const fetchChatFileBlobWithFallback = async (

@@ -265,7 +265,6 @@ export const useChatComposerSend = ({
         clearPendingComposerAttachments();
       }
 
-      let lastAttachmentMessageId: string | null = null;
       const lastAttachmentIndex = attachmentsToSend.length - 1;
 
       for (const [
@@ -307,15 +306,10 @@ export const useChatComposerSend = ({
           }
           return;
         }
-
-        lastAttachmentMessageId = sentAttachmentMessageId;
       }
 
       if (messageText && !shouldAttachCaption) {
-        await sendTextMessage(
-          messageText,
-          hasPendingAttachments ? lastAttachmentMessageId : null
-        );
+        await sendTextMessage(messageText);
       }
     } finally {
       isSendingRef.current = false;

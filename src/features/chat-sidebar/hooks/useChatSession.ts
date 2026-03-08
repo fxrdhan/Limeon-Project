@@ -42,7 +42,6 @@ export const useChatSession = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const conversationChannelRef = useRef<RealtimeChannel | null>(null);
-  const globalPresenceChannelRef = useRef<RealtimeChannel | null>(null);
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
   const activeConversationChannelIdRef = useRef<string | null>(
@@ -89,28 +88,44 @@ export const useChatSession = ({
     });
   }, []);
 
-  const broadcastReceiptUpdate = useCallback((message: ChatMessage) => {
-    if (!globalPresenceChannelRef.current) return;
-
-    void globalPresenceChannelRef.current.send({
-      type: 'broadcast',
-      event: 'message_receipt_updated',
-      payload: message,
-    });
-  }, []);
-
   const isSessionTokenActive = useCallback(
     (sessionToken: number) => activeSessionTokenRef.current === sessionToken,
     []
   );
 
+  const applyMessageUpdate = useCallback(
+    (updatedMessage: Partial<ChatMessage> & { id: string }) => {
+      setMessages(previousMessages =>
+        previousMessages.map(previousMessage =>
+          previousMessage.id === updatedMessage.id
+            ? {
+                ...previousMessage,
+                ...updatedMessage,
+                stableKey: previousMessage.stableKey,
+              }
+            : previousMessage
+        )
+      );
+    },
+    []
+  );
+
+  const { targetUserPresence, performClose, broadcastReceiptUpdate } =
+    useChatSessionPresence({
+      isOpen,
+      user,
+      accessToken,
+      targetUser,
+      currentChannelId,
+      applyReceiptUpdate: applyMessageUpdate,
+    });
+
   const {
-    applyMessageUpdate,
     mergeAndBroadcastMessageUpdates,
     markMessageIdsAsDelivered,
     markMessageIdsAsRead,
   } = useChatSessionReceipts({
-    setMessages,
+    applyMessageUpdate,
     broadcastConversationUpdate: broadcastUpdatedMessage,
     broadcastReceiptUpdate,
     isSessionTokenActive,
@@ -409,16 +424,6 @@ export const useChatSession = ({
     targetUser,
     user,
   ]);
-
-  const { targetUserPresence, performClose } = useChatSessionPresence({
-    isOpen,
-    user,
-    accessToken,
-    targetUser,
-    currentChannelId,
-    globalPresenceChannelRef,
-    applyReceiptUpdate: applyMessageUpdate,
-  });
 
   useEffect(() => {
     if (

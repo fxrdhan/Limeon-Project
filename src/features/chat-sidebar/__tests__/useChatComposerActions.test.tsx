@@ -9,24 +9,34 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposerActions } from '../hooks/useChatComposerActions';
 
-const { mockChatService, mockToast, mockUseChatComposerSend } = vi.hoisted(
-  () => ({
-    mockChatService: {
-      updateMessage: vi.fn(),
-      deleteMessageThread: vi.fn(),
-      fetchMessagesBetweenUsers: vi.fn(),
-    },
-    mockToast: {
-      error: vi.fn(),
-      success: vi.fn(),
-      promise: vi.fn(),
-    },
-    mockUseChatComposerSend: vi.fn(),
-  })
-);
+const {
+  mockChatService,
+  mockStorageService,
+  mockToast,
+  mockUseChatComposerSend,
+} = vi.hoisted(() => ({
+  mockChatService: {
+    updateMessage: vi.fn(),
+    deleteMessageThread: vi.fn(),
+    fetchMessagesBetweenUsers: vi.fn(),
+  },
+  mockStorageService: {
+    deleteFile: vi.fn(),
+  },
+  mockToast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    promise: vi.fn(),
+  },
+  mockUseChatComposerSend: vi.fn(),
+}));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
+}));
+
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: mockStorageService,
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -68,6 +78,7 @@ describe('useChatComposerActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockStorageService.deleteFile.mockResolvedValue(undefined);
     mockUseChatComposerSend.mockReturnValue({
       handleSendMessage: vi.fn(),
       handleKeyPress: vi.fn(),
@@ -670,10 +681,14 @@ describe('useChatComposerActions', () => {
   it('broadcasts every deleted id returned by the atomic delete thread rpc', async () => {
     const attachmentMessage = buildMessage({
       id: 'file-atomic',
-      message: 'https://example.com/report-atomic.pdf',
+      message:
+        'https://example.com/storage/v1/object/public/chat/documents/channel/report-atomic.pdf',
       message_type: 'file',
       file_name: 'report-atomic.pdf',
       file_kind: 'document',
+      file_storage_path: 'documents/channel/report-atomic.pdf',
+      file_preview_url:
+        'https://example.com/storage/v1/object/public/chat/previews/channel/report-atomic.png',
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
@@ -741,6 +756,14 @@ describe('useChatComposerActions', () => {
     );
     expect(broadcastDeletedMessage).toHaveBeenCalledWith('caption-atomic');
     expect(broadcastDeletedMessage).toHaveBeenCalledWith('file-atomic');
+    expect(mockStorageService.deleteFile).toHaveBeenCalledWith(
+      'chat',
+      'documents/channel/report-atomic.pdf'
+    );
+    expect(mockStorageService.deleteFile).toHaveBeenCalledWith(
+      'chat',
+      'previews/channel/report-atomic.png'
+    );
   });
 
   it('suppresses error toast when delete failure is handled by the caller', async () => {

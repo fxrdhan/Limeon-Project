@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchPdfBlobWithFallback } from '../utils/message-file';
+import {
+  fetchPdfBlobWithFallback,
+  resolveChatMessageStoragePaths,
+} from '../utils/message-file';
 
 const { mockGateway } = vi.hoisted(() => ({
   mockGateway: {
@@ -35,5 +38,20 @@ describe('message-file utils', () => {
     );
     expect(pdfBlob).toBeInstanceOf(Blob);
     expect(pdfBlob?.type).toBe('application/pdf');
+  });
+
+  it('collects attachment and preview storage paths for persisted pdf messages', () => {
+    expect(
+      resolveChatMessageStoragePaths({
+        message:
+          'https://example.com/storage/v1/object/public/chat/documents/channel/stok.pdf',
+        message_type: 'file',
+        file_name: 'stok.pdf',
+        file_mime_type: 'application/pdf',
+        file_preview_url:
+          'https://example.com/storage/v1/object/public/chat/previews/channel/stok.png',
+        file_storage_path: 'documents/channel/stok.pdf',
+      })
+    ).toEqual(['documents/channel/stok.pdf', 'previews/channel/stok.png']);
   });
 });

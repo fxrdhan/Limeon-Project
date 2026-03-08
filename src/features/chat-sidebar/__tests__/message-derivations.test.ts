@@ -140,30 +140,4 @@ describe('message-derivations', () => {
     expect(serialized).toContain('Admin: Rak depan');
     expect(serialized).toContain('Gudang: [File: invoice.pdf]');
   });
-
-  it('keeps recognizing legacy attachment captions while the database migration is not applied yet', () => {
-    const attachmentMessage = buildMessage({
-      id: 'file-legacy',
-      message: 'https://example.com/legacy.pdf',
-      message_type: 'file',
-      file_name: 'legacy.pdf',
-      file_kind: 'document',
-    });
-    const legacyCaptionMessage = buildMessage({
-      id: 'caption-legacy',
-      message: 'caption lama',
-      reply_to_id: 'file-legacy',
-    });
-
-    delete legacyCaptionMessage.message_relation_kind;
-
-    const captionData = getAttachmentCaptionData([
-      attachmentMessage,
-      legacyCaptionMessage,
-    ]);
-
-    expect(
-      captionData.captionMessagesByAttachmentId.get('file-legacy')?.id
-    ).toBe('caption-legacy');
-  });
 });

@@ -728,6 +728,9 @@ describe('useChatComposerSend', () => {
             channel_id: 'channel-1',
             message: 'https://example.com/chat.png',
             message_type: 'image',
+            file_storage_path: expect.stringMatching(
+              /^images\/channel-1\/user-a_image_.+\.png$/
+            ),
           })
         );
       });

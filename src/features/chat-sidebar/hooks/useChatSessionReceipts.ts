@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useRef } from 'react';
 import {
   chatSidebarGateway,
@@ -6,37 +5,22 @@ import {
 } from '../data/chatSidebarGateway';
 
 interface UseChatSessionReceiptsProps {
-  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  applyMessageUpdate: (
+    updatedMessage: Partial<ChatMessage> & { id: string }
+  ) => void;
   broadcastConversationUpdate: (message: ChatMessage) => void;
   broadcastReceiptUpdate: (message: ChatMessage) => void;
   isSessionTokenActive: (sessionToken: number) => boolean;
 }
 
 export const useChatSessionReceipts = ({
-  setMessages,
+  applyMessageUpdate,
   broadcastConversationUpdate,
   broadcastReceiptUpdate,
   isSessionTokenActive,
 }: UseChatSessionReceiptsProps) => {
   const pendingDeliveredReceiptMessageIdsRef = useRef<Set<string>>(new Set());
   const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
-
-  const applyMessageUpdate = useCallback(
-    (updatedMessage: Partial<ChatMessage> & { id: string }) => {
-      setMessages(previousMessages =>
-        previousMessages.map(previousMessage =>
-          previousMessage.id === updatedMessage.id
-            ? {
-                ...previousMessage,
-                ...updatedMessage,
-                stableKey: previousMessage.stableKey,
-              }
-            : previousMessage
-        )
-      );
-    },
-    [setMessages]
-  );
 
   const mergeAndBroadcastMessageUpdates = useCallback(
     (updatedMessages: ChatMessage[], sessionToken?: number) => {
@@ -126,7 +110,6 @@ export const useChatSessionReceipts = ({
   );
 
   return {
-    applyMessageUpdate,
     mergeAndBroadcastMessageUpdates,
     markMessageIdsAsDelivered,
     markMessageIdsAsRead,

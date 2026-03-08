@@ -562,6 +562,8 @@ export const useChatAttachmentSend = ({
         return null;
       }
 
+      const imagePath = buildChatImagePath(currentChannelId, user.id, file);
+
       return sendAttachmentMessage({
         tempIdPrefix: 'temp_image',
         stableKeySuffix: 'image',
@@ -589,18 +591,8 @@ export const useChatAttachmentSend = ({
           receiver_name: targetUser!.name || 'Unknown',
           stableKey,
         }),
-        uploadAsset: async () => {
-          const imagePath = buildChatImagePath(
-            currentChannelId!,
-            user!.id,
-            file
-          );
-          return chatSidebarGateway.uploadImage(
-            CHAT_IMAGE_BUCKET,
-            file,
-            imagePath
-          );
-        },
+        uploadAsset: async () =>
+          chatSidebarGateway.uploadImage(CHAT_IMAGE_BUCKET, file, imagePath),
         createPersistedMessage: async publicUrl => {
           return chatSidebarGateway.createMessage({
             sender_id: user!.id,
@@ -608,11 +600,15 @@ export const useChatAttachmentSend = ({
             channel_id: currentChannelId!,
             message: publicUrl,
             message_type: 'image',
+            file_storage_path: imagePath,
           });
         },
         mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
           mapPersistedMessageForDisplay(
-            persistedMessage,
+            {
+              ...persistedMessage,
+              file_storage_path: imagePath,
+            },
             user!,
             targetUser!,
             stableKey
