@@ -38,10 +38,14 @@ export const useChatBulkDelete = ({
     }
 
     const deletedMessageIds = new Set<string>();
+    let cleanupWarningCount = 0;
 
     for (const messageItem of deletableMessages) {
       const didDelete = await deleteMessage(messageItem, {
         suppressErrorToast: true,
+        onStorageCleanupFailure: () => {
+          cleanupWarningCount += 1;
+        },
       });
       if (!didDelete) continue;
       deletedMessageIds.add(messageItem.id);
@@ -58,6 +62,16 @@ export const useChatBulkDelete = ({
     });
 
     const deletedCount = deletedMessageIds.size;
+    if (cleanupWarningCount > 0 && deletedCount > 0) {
+      toast.error(
+        `${deletedCount} pesan dihapus, tetapi ${cleanupWarningCount} cleanup lampiran gagal`,
+        {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        }
+      );
+      return;
+    }
+
     if (deletedCount === deletableMessages.length) {
       toast.success(`${deletedCount} pesan berhasil dihapus`, {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,

@@ -197,6 +197,72 @@ export const useChatSession = ({
         targetUserName: targetUser.name || 'Unknown',
       })[0];
 
+    const reconcileInsertedMessage = (
+      previousMessages: ChatMessage[],
+      insertedMessage: ChatMessage
+    ) => {
+      const existingPersistedMessage = previousMessages.some(
+        messageItem => messageItem.id === insertedMessage.id
+      );
+      if (existingPersistedMessage) {
+        return previousMessages;
+      }
+
+      let matchingTempIndex = -1;
+
+      for (
+        let messageIndex = previousMessages.length - 1;
+        messageIndex >= 0;
+        messageIndex -= 1
+      ) {
+        const previousMessage = previousMessages[messageIndex];
+        if (!previousMessage.id.startsWith('temp_')) continue;
+        if (previousMessage.channel_id !== currentChannelId) continue;
+        if (previousMessage.sender_id !== insertedMessage.sender_id) continue;
+        if (previousMessage.receiver_id !== insertedMessage.receiver_id)
+          continue;
+        if (previousMessage.message_type !== insertedMessage.message_type)
+          continue;
+
+        const matchesStoragePath =
+          previousMessage.file_storage_path &&
+          insertedMessage.file_storage_path &&
+          previousMessage.file_storage_path ===
+            insertedMessage.file_storage_path;
+        const matchesAttachmentCaption =
+          previousMessage.message_relation_kind === 'attachment_caption' &&
+          insertedMessage.message_relation_kind === 'attachment_caption' &&
+          previousMessage.message.trim() === insertedMessage.message.trim();
+        const matchesTextContent =
+          previousMessage.message_type === 'text' &&
+          previousMessage.message.trim() === insertedMessage.message.trim() &&
+          (previousMessage.reply_to_id ?? null) ===
+            (insertedMessage.reply_to_id ?? null);
+
+        if (
+          matchesStoragePath ||
+          matchesAttachmentCaption ||
+          matchesTextContent
+        ) {
+          matchingTempIndex = messageIndex;
+          break;
+        }
+      }
+
+      if (matchingTempIndex === -1) {
+        return [...previousMessages, insertedMessage];
+      }
+
+      return previousMessages.map((messageItem, messageIndex) =>
+        messageIndex === matchingTempIndex
+          ? {
+              ...insertedMessage,
+              stableKey: messageItem.stableKey || insertedMessage.stableKey,
+            }
+          : messageItem
+      );
+    };
+
     const loadMessages = async () => {
       const cachedConversation =
         getFreshConversationCacheEntry(currentChannelId);
@@ -323,13 +389,9 @@ export const useChatSession = ({
           const mappedInsertedMessage =
             mapMessageForActiveConversation(insertedMessage);
 
-          setMessages(previousMessages => {
-            const exists = previousMessages.some(
-              messageItem => messageItem.id === mappedInsertedMessage.id
-            );
-            if (exists) return previousMessages;
-            return [...previousMessages, mappedInsertedMessage];
-          });
+          setMessages(previousMessages =>
+            reconcileInsertedMessage(previousMessages, mappedInsertedMessage)
+          );
         }
       );
 

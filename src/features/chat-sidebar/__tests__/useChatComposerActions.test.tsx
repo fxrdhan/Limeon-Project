@@ -839,6 +839,92 @@ describe('useChatComposerActions', () => {
     expect(mockToast.error).not.toHaveBeenCalled();
   });
 
+  it('reports cleanup warnings when persisted attachment files cannot be deleted', async () => {
+    const attachmentMessage = buildMessage({
+      id: 'file-cleanup-warning',
+      message:
+        'https://example.com/storage/v1/object/public/chat/documents/channel/report-warning.pdf',
+      message_type: 'file',
+      file_name: 'report-warning.pdf',
+      file_kind: 'document',
+      file_storage_path: 'documents/channel/report-warning.pdf',
+      file_preview_url:
+        'https://example.com/storage/v1/object/public/chat/previews/channel/report-warning.png',
+      sender_name: 'Admin',
+      receiver_name: 'Gudang',
+    });
+    const onStorageCleanupFailure = vi.fn();
+
+    mockChatService.deleteMessageThread.mockResolvedValue({
+      data: ['file-cleanup-warning'],
+      error: null,
+    });
+    mockStorageService.deleteFile.mockRejectedValue(
+      new Error('storage cleanup failed')
+    );
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        attachmentMessage,
+      ]);
+      const [message, setMessage] = useState('');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        null
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerActions({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        messages,
+        setMessages,
+        message,
+        setMessage,
+        editingMessageId,
+        setEditingMessageId,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        closeMessageMenu: vi.fn(),
+        focusMessageComposer: vi.fn(),
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+      });
+    });
+
+    let deleteResult = false;
+    await act(async () => {
+      deleteResult = await result.current.handleDeleteMessage(
+        attachmentMessage,
+        {
+          onStorageCleanupFailure,
+        }
+      );
+    });
+
+    expect(deleteResult).toBe(true);
+    expect(onStorageCleanupFailure).toHaveBeenCalledWith([
+      'documents/channel/report-warning.pdf',
+      'previews/channel/report-warning.png',
+    ]);
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Pesan dihapus, tetapi sebagian file lampiran gagal dibersihkan',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+  });
+
   it('does not send while IME composition is still active', async () => {
     const handleSendMessage = vi.fn();
     mockUseChatComposerSend.mockReturnValue({

@@ -1182,6 +1182,68 @@ describe('useChatSession', () => {
     });
   });
 
+  it('replaces matching optimistic outgoing messages when the persisted insert arrives first', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+    });
+
+    act(() => {
+      result.current.setMessages([
+        buildMessage({
+          id: 'temp_message-1',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          channel_id: 'channel-1',
+          message: 'pesan fallback outgoing',
+          stableKey: 'temp-stable-key',
+        }),
+      ]);
+    });
+
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const insertListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'INSERT'
+    );
+
+    expect(insertListenerCall).toBeDefined();
+    const insertListener = insertListenerCall?.[2] as
+      | ((payload: { new: ChatMessage }) => void)
+      | undefined;
+
+    act(() => {
+      insertListener?.({
+        new: buildMessage({
+          id: 'message-outgoing',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          channel_id: 'channel-1',
+          message: 'pesan fallback outgoing',
+        }),
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0]?.id).toBe('message-outgoing');
+      expect(result.current.messages[0]?.stableKey).toBe('temp-stable-key');
+    });
+  });
+
   it('removes messages from postgres delete events when broadcast delete is unavailable', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };

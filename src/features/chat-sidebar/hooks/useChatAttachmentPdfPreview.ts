@@ -20,7 +20,7 @@ interface UseChatAttachmentPdfPreviewProps {
   isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
   deleteUploadedStorageFiles: (
     storagePaths: Array<string | null | undefined>
-  ) => Promise<void>;
+  ) => Promise<string[]>;
 }
 
 export const useChatAttachmentPdfPreview = ({

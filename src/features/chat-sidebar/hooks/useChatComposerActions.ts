@@ -6,7 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import toast from 'react-hot-toast';
-import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -22,6 +22,7 @@ import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { resolveChatMessageStoragePaths } from '../utils/message-file';
 import { useChatMessageTransferActions } from './useChatMessageTransferActions';
+import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { useChatMutationScope } from './useChatMutationScope';
 
 type PendingSendRegistryRef = MutableRefObject<
@@ -30,6 +31,7 @@ type PendingSendRegistryRef = MutableRefObject<
 
 export interface DeleteMessageOptions {
   suppressErrorToast?: boolean;
+  onStorageCleanupFailure?: (failedPaths: string[]) => void;
 }
 
 interface UseChatComposerActionsProps {
@@ -122,11 +124,21 @@ export const useChatComposerActions = ({
     isCurrentConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
+    isConversationScopeActive,
   } = useChatMutationScope({
     user,
     targetUser,
     currentChannelId,
     setMessages,
+  });
+  const { deleteUploadedStorageFiles } = useChatAttachmentCleanup({
+    user,
+    targetUser,
+    currentChannelId,
+    setMessages,
+    broadcastDeletedMessage,
+    pendingImagePreviewUrlsRef,
+    isConversationScopeActive,
   });
 
   const send = useChatComposerSend({
@@ -342,22 +354,22 @@ export const useChatComposerActions = ({
         });
 
         if (storagePathsToDelete.length > 0) {
-          const cleanupResults = await Promise.allSettled(
-            storagePathsToDelete.map(storagePath =>
-              chatSidebarGateway.deleteStorageFile(
-                CHAT_IMAGE_BUCKET,
-                storagePath
-              )
-            )
-          );
-
-          cleanupResults.forEach((cleanupResult, index) => {
-            if (cleanupResult.status === 'fulfilled') return;
-            console.error(
-              `Error deleting chat storage file after thread delete: ${storagePathsToDelete[index]}`,
-              cleanupResult.reason
-            );
-          });
+          const failedStoragePaths =
+            await deleteUploadedStorageFiles(storagePathsToDelete);
+          if (failedStoragePaths.length > 0) {
+            options?.onStorageCleanupFailure?.(failedStoragePaths);
+            if (
+              !options?.suppressErrorToast &&
+              isCurrentConversationScopeActive()
+            ) {
+              toast.error(
+                'Pesan dihapus, tetapi sebagian file lampiran gagal dibersihkan',
+                {
+                  toasterId: CHAT_SIDEBAR_TOASTER_ID,
+                }
+              );
+            }
+          }
         }
 
         return true;
@@ -391,6 +403,7 @@ export const useChatComposerActions = ({
       targetUser,
       user,
       pendingSendRegistryRef,
+      deleteUploadedStorageFiles,
       reconcileCurrentConversationMessages,
     ]
   );
