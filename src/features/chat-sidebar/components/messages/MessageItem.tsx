@@ -30,7 +30,7 @@ import {
   getMessageMenuClasses,
 } from './messageItemUtils';
 
-interface MessageItemProps {
+export interface MessageItemModel {
   message: ChatMessage;
   userId?: string;
   isSelectionMode: boolean;
@@ -76,41 +76,42 @@ interface MessageItemProps {
   ) => Promise<void>;
 }
 
-const MessageItem = ({
-  message,
-  userId,
-  isSelectionMode,
-  isSelected,
-  openMenuMessageId,
-  menuPlacement,
-  menuSideAnchor,
-  shouldAnimateMenuOpen,
-  menuTransitionSourceId,
-  menuOffsetX,
-  expandedMessageIds,
-  flashingMessageId,
-  isFlashHighlightVisible,
-  searchMatchedMessageIds,
-  activeSearchMessageId,
-  maxMessageChars,
-  messageBubbleRefs,
-  initialMessageAnimationKeysRef,
-  initialOpenJumpAnimationKeysRef,
-  captionMessage,
-  pdfMessagePreview,
-  onToggleMessageSelection,
-  toggleMessageMenu,
-  handleToggleExpand,
-  handleEditMessage,
-  handleCopyMessage,
-  handleDownloadMessage,
-  handleDeleteMessage,
-  getAttachmentFileName,
-  getAttachmentFileKind,
-  normalizedSearchQuery,
-  openImageInPortal,
-  openDocumentInPortal,
-}: MessageItemProps) => {
+const MessageItem = ({ model }: { model: MessageItemModel }) => {
+  const {
+    message,
+    userId,
+    isSelectionMode,
+    isSelected,
+    openMenuMessageId,
+    menuPlacement,
+    menuSideAnchor,
+    shouldAnimateMenuOpen,
+    menuTransitionSourceId,
+    menuOffsetX,
+    expandedMessageIds,
+    flashingMessageId,
+    isFlashHighlightVisible,
+    searchMatchedMessageIds,
+    activeSearchMessageId,
+    maxMessageChars,
+    messageBubbleRefs,
+    initialMessageAnimationKeysRef,
+    initialOpenJumpAnimationKeysRef,
+    captionMessage,
+    pdfMessagePreview,
+    onToggleMessageSelection,
+    toggleMessageMenu,
+    handleToggleExpand,
+    handleEditMessage,
+    handleCopyMessage,
+    handleDownloadMessage,
+    handleDeleteMessage,
+    getAttachmentFileName,
+    getAttachmentFileKind,
+    normalizedSearchQuery,
+    openImageInPortal,
+    openDocumentInPortal,
+  } = model;
   const isCurrentUser = message.sender_id === userId;
   const attachmentCaptionText = captionMessage?.message?.trim() ?? '';
   const hasAttachmentCaption =

@@ -71,15 +71,15 @@ const ChatSidebarPanel = memo(
               ref={controller.chatHeaderContainerRef}
               className="pointer-events-auto relative z-10"
             >
-              <ChatHeader {...controller.headerProps} />
+              <ChatHeader model={controller.headerModel} />
             </div>
           </div>
 
           <div className="min-h-0 flex flex-1 flex-col">
-            <MessagesPane {...controller.messagesPaneProps} />
+            <MessagesPane model={controller.messagesModel} />
           </div>
 
-          <ComposerPanel {...controller.composerPanelProps} />
+          <ComposerPanel model={controller.composerModel} />
         </div>
       </motion.div>
     );

@@ -34,7 +34,7 @@ import DocumentPreviewPortal from './DocumentPreviewPortal';
 import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
 import ComposerEditBanner from './composer/ComposerEditBanner';
 
-interface ComposerPanelProps {
+export interface ComposerPanelModel {
   message: string;
   editingMessagePreview: string | null;
   messageInputHeight: number;
@@ -68,45 +68,46 @@ interface ComposerPanelProps {
   onOpenComposerImagePreview: (attachmentId: string) => void;
   onCloseComposerImagePreview: () => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
-  onQueueComposerImage: (file: File, replaceAttachmentId?: string) => void;
+  onQueueComposerImage: (file: File, replaceAttachmentId?: string) => boolean;
 }
 
-const ComposerPanel = ({
-  message,
-  editingMessagePreview,
-  messageInputHeight,
-  isMessageInputMultiline,
-  isSendSuccessGlowVisible,
-  isAttachModalOpen,
-  pendingComposerAttachments,
-  previewComposerImageAttachment,
-  isComposerImageExpanded,
-  isComposerImageExpandedVisible,
-  messageInputRef,
-  composerContainerRef,
-  attachButtonRef,
-  attachModalRef,
-  imageInputRef,
-  documentInputRef,
-  audioInputRef,
-  onMessageChange,
-  onKeyDown,
-  onPaste,
-  onSendMessage,
-  onAttachButtonClick,
-  onAttachImageClick,
-  onAttachDocumentClick,
-  onAttachAudioClick,
-  onImageFileChange,
-  onDocumentFileChange,
-  onAudioFileChange,
-  onCancelEditMessage,
-  onFocusEditingTargetMessage,
-  onOpenComposerImagePreview,
-  onCloseComposerImagePreview,
-  onRemovePendingComposerAttachment,
-  onQueueComposerImage,
-}: ComposerPanelProps) => {
+const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
+  const {
+    message,
+    editingMessagePreview,
+    messageInputHeight,
+    isMessageInputMultiline,
+    isSendSuccessGlowVisible,
+    isAttachModalOpen,
+    pendingComposerAttachments,
+    previewComposerImageAttachment,
+    isComposerImageExpanded,
+    isComposerImageExpandedVisible,
+    messageInputRef,
+    composerContainerRef,
+    attachButtonRef,
+    attachModalRef,
+    imageInputRef,
+    documentInputRef,
+    audioInputRef,
+    onMessageChange,
+    onKeyDown,
+    onPaste,
+    onSendMessage,
+    onAttachButtonClick,
+    onAttachImageClick,
+    onAttachDocumentClick,
+    onAttachAudioClick,
+    onImageFileChange,
+    onDocumentFileChange,
+    onAudioFileChange,
+    onCancelEditMessage,
+    onFocusEditingTargetMessage,
+    onOpenComposerImagePreview,
+    onCloseComposerImagePreview,
+    onRemovePendingComposerAttachment,
+    onQueueComposerImage,
+  } = model;
   const {
     openImageActionsAttachmentId,
     imageActionsMenuPosition,

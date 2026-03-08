@@ -13,7 +13,7 @@ import ConversationHeaderContent from './header/ConversationHeaderContent';
 import SearchHeaderContent from './header/SearchHeaderContent';
 import SelectionHeaderContent from './header/SelectionHeaderContent';
 
-interface ChatHeaderProps {
+export interface ChatHeaderModel {
   targetUser?: ChatSidebarPanelTargetUser;
   displayTargetPhotoUrl: string | null;
   targetUserPresence: UserPresence | null;
@@ -43,35 +43,36 @@ interface ChatHeaderProps {
   getInitialsColor: (userId: string) => string;
 }
 
-const ChatHeader = ({
-  targetUser,
-  displayTargetPhotoUrl,
-  targetUserPresence,
-  isSearchMode,
-  searchQuery,
-  searchState,
-  searchResultCount,
-  activeSearchResultIndex,
-  canNavigateSearchUp,
-  canNavigateSearchDown,
-  isSelectionMode,
-  selectedMessageCount,
-  canDeleteSelectedMessages,
-  searchInputRef,
-  onEnterSearchMode,
-  onExitSearchMode,
-  onEnterSelectionMode,
-  onExitSelectionMode,
-  onSearchQueryChange,
-  onNavigateSearchUp,
-  onNavigateSearchDown,
-  onFocusSearchInput,
-  onCopySelectedMessages,
-  onDeleteSelectedMessages,
-  onClose,
-  getInitials,
-  getInitialsColor,
-}: ChatHeaderProps) => {
+const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
+  const {
+    targetUser,
+    displayTargetPhotoUrl,
+    targetUserPresence,
+    isSearchMode,
+    searchQuery,
+    searchState,
+    searchResultCount,
+    activeSearchResultIndex,
+    canNavigateSearchUp,
+    canNavigateSearchDown,
+    isSelectionMode,
+    selectedMessageCount,
+    canDeleteSelectedMessages,
+    searchInputRef,
+    onEnterSearchMode,
+    onExitSearchMode,
+    onEnterSelectionMode,
+    onExitSelectionMode,
+    onSearchQueryChange,
+    onNavigateSearchUp,
+    onNavigateSearchDown,
+    onFocusSearchInput,
+    onCopySelectedMessages,
+    onDeleteSelectedMessages,
+    onClose,
+    getInitials,
+    getInitialsColor,
+  } = model;
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const optionsMenuRef = useRef<HTMLDivElement | null>(null);

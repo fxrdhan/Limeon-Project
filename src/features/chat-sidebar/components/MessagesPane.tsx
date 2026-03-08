@@ -29,7 +29,7 @@ interface ChatPanelUser {
   name?: string;
 }
 
-interface MessagesPaneProps {
+export interface MessagesPaneModel {
   loading: boolean;
   messages: ChatMessage[];
   user?: ChatPanelUser | null;
@@ -75,45 +75,46 @@ interface MessagesPaneProps {
   onScrollToBottom: () => void;
 }
 
-const MessagesPane = ({
-  loading,
-  messages,
-  user,
-  messageInputHeight,
-  composerContextualOffset,
-  composerContainerHeight,
-  openMenuMessageId,
-  menuPlacement,
-  menuSideAnchor,
-  shouldAnimateMenuOpen,
-  menuTransitionSourceId,
-  menuOffsetX,
-  expandedMessageIds,
-  flashingMessageId,
-  isFlashHighlightVisible,
-  isSelectionMode,
-  selectedMessageIds,
-  searchQuery,
-  searchMatchedMessageIds,
-  activeSearchMessageId,
-  showScrollToBottom,
-  messagesContainerRef,
-  messagesEndRef,
-  messageBubbleRefs,
-  initialMessageAnimationKeysRef,
-  initialOpenJumpAnimationKeysRef,
-  closeMessageMenu,
-  toggleMessageMenu,
-  handleToggleExpand,
-  handleEditMessage,
-  handleCopyMessage,
-  handleDownloadMessage,
-  handleDeleteMessage,
-  onToggleMessageSelection,
-  getAttachmentFileName,
-  getAttachmentFileKind,
-  onScrollToBottom,
-}: MessagesPaneProps) => {
+const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
+  const {
+    loading,
+    messages,
+    user,
+    messageInputHeight,
+    composerContextualOffset,
+    composerContainerHeight,
+    openMenuMessageId,
+    menuPlacement,
+    menuSideAnchor,
+    shouldAnimateMenuOpen,
+    menuTransitionSourceId,
+    menuOffsetX,
+    expandedMessageIds,
+    flashingMessageId,
+    isFlashHighlightVisible,
+    isSelectionMode,
+    selectedMessageIds,
+    searchQuery,
+    searchMatchedMessageIds,
+    activeSearchMessageId,
+    showScrollToBottom,
+    messagesContainerRef,
+    messagesEndRef,
+    messageBubbleRefs,
+    initialMessageAnimationKeysRef,
+    initialOpenJumpAnimationKeysRef,
+    closeMessageMenu,
+    toggleMessageMenu,
+    handleToggleExpand,
+    handleEditMessage,
+    handleCopyMessage,
+    handleDownloadMessage,
+    handleDeleteMessage,
+    onToggleMessageSelection,
+    getAttachmentFileName,
+    getAttachmentFileKind,
+    onScrollToBottom,
+  } = model;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const {
     previewUrl: documentPreviewUrl,
@@ -230,48 +231,46 @@ const MessagesPane = ({
               return (
                 <MessageItem
                   key={messageItem.stableKey || messageItem.id}
-                  message={messageItem}
-                  userId={user?.id}
-                  isSelectionMode={isSelectionMode}
-                  isSelected={selectedMessageIds.has(messageItem.id)}
-                  openMenuMessageId={openMenuMessageId}
-                  menuPlacement={menuPlacement}
-                  menuSideAnchor={menuSideAnchor}
-                  shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-                  menuTransitionSourceId={menuTransitionSourceId}
-                  menuOffsetX={menuOffsetX}
-                  expandedMessageIds={expandedMessageIds}
-                  flashingMessageId={flashingMessageId}
-                  isFlashHighlightVisible={isFlashHighlightVisible}
-                  searchMatchedMessageIds={searchMatchedMessageIds}
-                  activeSearchMessageId={activeSearchMessageId}
-                  maxMessageChars={MAX_MESSAGE_CHARS}
-                  messageBubbleRefs={messageBubbleRefs}
-                  initialMessageAnimationKeysRef={
-                    initialMessageAnimationKeysRef
-                  }
-                  initialOpenJumpAnimationKeysRef={
-                    initialOpenJumpAnimationKeysRef
-                  }
-                  captionMessage={captionMessagesByAttachmentId.get(
-                    messageItem.id
-                  )}
-                  pdfMessagePreview={getPdfMessagePreview(
-                    messageItem,
-                    getAttachmentFileName(messageItem)
-                  )}
-                  onToggleMessageSelection={onToggleMessageSelection}
-                  toggleMessageMenu={toggleMessageMenu}
-                  handleToggleExpand={handleToggleExpand}
-                  handleEditMessage={handleEditMessage}
-                  handleCopyMessage={handleCopyMessage}
-                  handleDownloadMessage={handleDownloadMessage}
-                  handleDeleteMessage={handleDeleteMessage}
-                  getAttachmentFileName={getAttachmentFileName}
-                  getAttachmentFileKind={getAttachmentFileKind}
-                  normalizedSearchQuery={normalizedSearchQuery}
-                  openImageInPortal={openImageInPortal}
-                  openDocumentInPortal={openDocumentInPortal}
+                  model={{
+                    message: messageItem,
+                    userId: user?.id,
+                    isSelectionMode,
+                    isSelected: selectedMessageIds.has(messageItem.id),
+                    openMenuMessageId,
+                    menuPlacement,
+                    menuSideAnchor,
+                    shouldAnimateMenuOpen,
+                    menuTransitionSourceId,
+                    menuOffsetX,
+                    expandedMessageIds,
+                    flashingMessageId,
+                    isFlashHighlightVisible,
+                    searchMatchedMessageIds,
+                    activeSearchMessageId,
+                    maxMessageChars: MAX_MESSAGE_CHARS,
+                    messageBubbleRefs,
+                    initialMessageAnimationKeysRef,
+                    initialOpenJumpAnimationKeysRef,
+                    captionMessage: captionMessagesByAttachmentId.get(
+                      messageItem.id
+                    ),
+                    pdfMessagePreview: getPdfMessagePreview(
+                      messageItem,
+                      getAttachmentFileName(messageItem)
+                    ),
+                    onToggleMessageSelection,
+                    toggleMessageMenu,
+                    handleToggleExpand,
+                    handleEditMessage,
+                    handleCopyMessage,
+                    handleDownloadMessage,
+                    handleDeleteMessage,
+                    getAttachmentFileName,
+                    getAttachmentFileKind,
+                    normalizedSearchQuery,
+                    openImageInPortal,
+                    openDocumentInPortal,
+                  }}
                 />
               );
             })}

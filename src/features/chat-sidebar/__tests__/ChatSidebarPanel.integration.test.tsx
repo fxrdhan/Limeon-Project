@@ -1,15 +1,39 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatSidebarPanel from '../index';
 
-const { mockPerformClose, renderedChildProps } = vi.hoisted(() => ({
+const { mockPerformClose } = vi.hoisted(() => ({
   mockPerformClose: vi.fn(),
-  renderedChildProps: {
-    header: null as Record<string, unknown> | null,
-    messages: null as Record<string, unknown> | null,
-    composer: null as Record<string, unknown> | null,
-  },
+}));
+
+vi.mock('motion/react', () => ({
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  LayoutGroup: ({ children }: { children: React.ReactNode }) => children,
+  motion: new Proxy(
+    {},
+    {
+      get:
+        (_target, element) =>
+        ({
+          children,
+          animate: _animate,
+          exit: _exit,
+          initial: _initial,
+          layout: _layout,
+          transition: _transition,
+          ...props
+        }: React.HTMLAttributes<HTMLElement> & {
+          animate?: unknown;
+          children?: React.ReactNode;
+          exit?: unknown;
+          initial?: unknown;
+          layout?: unknown;
+          transition?: unknown;
+        }) =>
+          React.createElement(element as string, props, children),
+    }
+  ),
 }));
 
 vi.mock('@/store/authStore', () => ({
@@ -32,7 +56,12 @@ vi.mock('../hooks/useChatSession', () => ({
     messages: [],
     setMessages: vi.fn(),
     loading: false,
-    targetUserPresence: null,
+    targetUserPresence: {
+      user_id: 'user-b',
+      is_online: true,
+      current_chat_channel: 'channel-1',
+      last_seen: '2026-03-07T09:59:40.000Z',
+    },
     performClose: mockPerformClose,
     broadcastNewMessage: vi.fn(),
     broadcastUpdatedMessage: vi.fn(),
@@ -75,7 +104,7 @@ vi.mock('../hooks/useChatComposer', () => ({
     openComposerImagePreview: vi.fn(),
     closeComposerImagePreview: vi.fn(),
     removePendingComposerAttachment: vi.fn(),
-    queueComposerImage: vi.fn(),
+    queueComposerImage: vi.fn(() => true),
     handleEditMessage: vi.fn(),
     handleCopyMessage: vi.fn(),
     handleDownloadMessage: vi.fn(),
@@ -138,45 +167,39 @@ vi.mock('../hooks/useChatViewport', () => ({
   }),
 }));
 
-vi.mock('../components/ChatHeader', () => ({
-  default: ({
-    model,
-  }: {
-    model: Record<string, unknown> & { onClose: () => void };
-  }) => {
-    renderedChildProps.header = model;
-    return (
-      <button onClick={model.onClose} type="button">
-        close chat
-      </button>
-    );
-  },
-}));
-
-vi.mock('../components/MessagesPane', () => ({
-  default: ({ model }: { model: Record<string, unknown> }) => {
-    renderedChildProps.messages = model;
-    return <div>messages pane</div>;
-  },
-}));
-
-vi.mock('../components/ComposerPanel', () => ({
-  default: ({ model }: { model: Record<string, unknown> }) => {
-    renderedChildProps.composer = model;
-    return <div>composer panel</div>;
-  },
-}));
-
-describe('ChatSidebarPanel', () => {
+describe('ChatSidebarPanel integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPerformClose.mockImplementation(() => new Promise(() => {}));
-    renderedChildProps.header = null;
-    renderedChildProps.messages = null;
-    renderedChildProps.composer = null;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'));
+    mockPerformClose.mockResolvedValue(undefined);
   });
 
-  it('closes the UI immediately without waiting for performClose to resolve', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renders the real header, messages shell, and composer shell from controller models', () => {
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        }}
+      />
+    );
+
+    expect(screen.getByText('Gudang')).toBeTruthy();
+    expect(screen.getByText('Online')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Type a message...')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Attach file' })).toBeTruthy();
+  });
+
+  it('closes through the real header action and triggers session cleanup', () => {
     const onClose = vi.fn();
 
     render(
@@ -192,51 +215,11 @@ describe('ChatSidebarPanel', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'close chat' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Collapse chat sidebar' })
+    );
 
     expect(mockPerformClose).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
-  });
-
-  it('wires derived controller props into the rendered child components', () => {
-    render(
-      <ChatSidebarPanel
-        isOpen
-        onClose={vi.fn()}
-        targetUser={{
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
-          profilephoto: null,
-        }}
-      />
-    );
-
-    expect(renderedChildProps.header).toEqual(
-      expect.objectContaining({
-        isSearchMode: false,
-        isSelectionMode: false,
-        selectedMessageCount: 0,
-        targetUser: expect.objectContaining({
-          id: 'user-b',
-          name: 'Gudang',
-        }),
-      })
-    );
-    expect(renderedChildProps.messages).toEqual(
-      expect.objectContaining({
-        loading: false,
-        messages: [],
-        showScrollToBottom: false,
-        isSelectionMode: false,
-      })
-    );
-    expect(renderedChildProps.composer).toEqual(
-      expect.objectContaining({
-        message: '',
-        isAttachModalOpen: false,
-        isMessageInputMultiline: false,
-      })
-    );
   });
 });
