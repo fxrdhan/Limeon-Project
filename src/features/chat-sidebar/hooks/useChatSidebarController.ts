@@ -11,7 +11,6 @@ import {
 } from './chatSidebarViewModels';
 import { useChatComposer } from './useChatComposer';
 import { useChatBulkDelete } from './useChatBulkDelete';
-import { useChatSidebarControllerBridge } from './useChatSidebarControllerBridge';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatSession } from './useChatSession';
 import { useChatViewport } from './useChatViewport';
@@ -25,7 +24,7 @@ export const useChatSidebarController = ({
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
     () => new Set()
   );
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -34,10 +33,17 @@ export const useChatSidebarController = ({
   const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
   const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
-  const bridge = useChatSidebarControllerBridge();
+  const closeMessageMenuRef = useRef<() => void>(() => {});
+  const scheduleScrollMessagesToBottomRef = useRef<() => void>(() => {});
   /* c8 ignore next */
   const currentChannelId =
     user && targetUser ? generateChannelId(user.id, targetUser.id) : null;
+  const closeMessageMenu = useCallback(() => {
+    closeMessageMenuRef.current();
+  }, []);
+  const scheduleScrollMessagesToBottom = useCallback(() => {
+    scheduleScrollMessagesToBottomRef.current();
+  }, []);
 
   const { displayTargetPhotoUrl } = useTargetProfilePhoto(targetUser);
   const {
@@ -53,6 +59,7 @@ export const useChatSidebarController = ({
   } = useChatSession({
     isOpen,
     user,
+    accessToken: session?.access_token ?? null,
     targetUser,
     currentChannelId,
     initialMessageAnimationKeysRef,
@@ -75,8 +82,8 @@ export const useChatSidebarController = ({
     currentChannelId,
     messages,
     setMessages,
-    closeMessageMenu: bridge.closeMessageMenu,
-    scheduleScrollMessagesToBottom: bridge.scheduleScrollMessagesToBottom,
+    closeMessageMenu,
+    scheduleScrollMessagesToBottom,
     broadcastNewMessage,
     broadcastUpdatedMessage,
     broadcastDeletedMessage,
@@ -90,7 +97,7 @@ export const useChatSidebarController = ({
     messages,
     user,
     targetUser,
-    closeMessageMenu: bridge.closeMessageMenu,
+    closeMessageMenu,
     getAttachmentFileName,
   });
 
@@ -119,10 +126,9 @@ export const useChatSidebarController = ({
     chatHeaderContainerRef,
     messageBubbleRefs,
   });
-  bridge.syncViewportBridge({
-    closeMessageMenu: viewport.closeMessageMenu,
-    scheduleScrollMessagesToBottom: viewport.scheduleScrollMessagesToBottom,
-  });
+  closeMessageMenuRef.current = viewport.closeMessageMenu;
+  scheduleScrollMessagesToBottomRef.current =
+    viewport.scheduleScrollMessagesToBottom;
 
   const toggleMessageMenu = useCallback(
     (

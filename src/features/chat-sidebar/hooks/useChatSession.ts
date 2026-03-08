@@ -23,6 +23,7 @@ import { useChatSessionReceipts } from './useChatSessionReceipts';
 interface UseChatSessionProps {
   isOpen: boolean;
   user: UserDetails | null;
+  accessToken?: string | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
@@ -32,6 +33,7 @@ interface UseChatSessionProps {
 export const useChatSession = ({
   isOpen,
   user,
+  accessToken,
   targetUser,
   currentChannelId,
   initialMessageAnimationKeysRef,
@@ -406,6 +408,7 @@ export const useChatSession = ({
   const { targetUserPresence, performClose } = useChatSessionPresence({
     isOpen,
     user,
+    accessToken,
     targetUser,
     currentChannelId,
     globalPresenceChannelRef,

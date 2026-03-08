@@ -13,7 +13,6 @@ import {
   resolveDeletedThreadMessageIds,
 } from '../utils/message-thread';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
-import { getConversationScopeKey } from '../utils/conversation-scope';
 import {
   markMessageAsAttachmentCaption,
   toAttachmentCaptionInsertInput,
@@ -24,9 +23,8 @@ import {
   createOptimisticAttachmentThread,
   removeOptimisticAttachmentThread,
 } from '../utils/attachment-send';
-import { useActiveConversationScope } from './useActiveConversationScope';
 import { useChatAttachmentPdfPreview } from './useChatAttachmentPdfPreview';
-import { useChatConversationReconciler } from './useChatConversationReconciler';
+import { useChatMutationScope } from './useChatMutationScope';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -101,10 +99,16 @@ export const useChatAttachmentSend = ({
   pendingImagePreviewUrlsRef,
   registerPendingSend,
 }: UseChatAttachmentSendProps) => {
-  const { isConversationScopeActive } = useActiveConversationScope({
-    userId: user?.id,
-    targetUserId: targetUser?.id,
-    channelId: currentChannelId,
+  const {
+    conversationScopeKey,
+    isConversationScopeActive,
+    reconcileMessagesFromServer,
+    runIfConversationScopeActive,
+  } = useChatMutationScope({
+    user,
+    targetUser,
+    currentChannelId,
+    setMessages,
   });
 
   const deleteUploadedStorageFiles = useCallback(
@@ -138,14 +142,6 @@ export const useChatAttachmentSend = ({
     broadcastUpdatedMessage,
     isConversationScopeActive,
     deleteUploadedStorageFiles,
-  });
-
-  const reconcileConversationFromServer = useChatConversationReconciler({
-    user,
-    targetUser,
-    currentChannelId,
-    setMessages,
-    isConversationScopeActive,
   });
 
   const rollbackPersistedAttachmentThread = useCallback(
@@ -249,11 +245,6 @@ export const useChatAttachmentSend = ({
         return null;
       }
 
-      const conversationScopeKey = getConversationScopeKey(
-        user.id,
-        targetUser.id,
-        currentChannelId
-      );
       const timestamp = new Date().toISOString();
       const localPreviewUrl = URL.createObjectURL(file);
       const optimisticThread = createOptimisticAttachmentThread({
@@ -381,7 +372,7 @@ export const useChatAttachmentSend = ({
               return null;
             }
 
-            if (isConversationScopeActive(conversationScopeKey)) {
+            runIfConversationScopeActive(conversationScopeKey, () => {
               setMessages(previousMessages =>
                 commitOptimisticAttachmentThread({
                   previousMessages,
@@ -394,7 +385,7 @@ export const useChatAttachmentSend = ({
 
               broadcastNewMessage(realMessage);
               broadcastNewMessage(mappedCaptionMessage);
-            }
+            });
           } else {
             if (
               !pendingSend.isCancelled() &&
@@ -414,7 +405,7 @@ export const useChatAttachmentSend = ({
                 'Error rolling back attachment thread:',
                 rollbackError
               );
-              await reconcileConversationFromServer({ conversationScopeKey });
+              await reconcileMessagesFromServer({ conversationScopeKey });
             }
 
             if (
@@ -428,7 +419,7 @@ export const useChatAttachmentSend = ({
             return null;
           }
         } else {
-          if (isConversationScopeActive(conversationScopeKey)) {
+          runIfConversationScopeActive(conversationScopeKey, () => {
             setMessages(previousMessages =>
               commitOptimisticAttachmentThread({
                 previousMessages,
@@ -440,7 +431,7 @@ export const useChatAttachmentSend = ({
             );
 
             broadcastNewMessage(realMessage);
-          }
+          });
         }
 
         if (uploadedStoragePath) {
@@ -478,6 +469,7 @@ export const useChatAttachmentSend = ({
     },
     [
       broadcastNewMessage,
+      conversationScopeKey,
       currentChannelId,
       deleteUploadedStorageFiles,
       editingMessageId,
@@ -487,12 +479,13 @@ export const useChatAttachmentSend = ({
       releasePendingPreviewUrl,
       removeOptimisticAttachmentThreadFromState,
       rollbackPersistedAttachmentThread,
+      runIfConversationScopeActive,
       scheduleScrollMessagesToBottom,
       setMessages,
       targetUser,
       triggerSendSuccessGlow,
       user,
-      reconcileConversationFromServer,
+      reconcileMessagesFromServer,
     ]
   );
 

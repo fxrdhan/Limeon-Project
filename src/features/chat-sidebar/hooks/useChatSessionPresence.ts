@@ -29,6 +29,7 @@ interface SyncPresenceStateOptions {
 interface UseChatSessionPresenceProps {
   isOpen: boolean;
   user: UserDetails | null;
+  accessToken?: string | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   globalPresenceChannelRef: MutableRefObject<RealtimeChannel | null>;
@@ -38,6 +39,7 @@ interface UseChatSessionPresenceProps {
 export const useChatSessionPresence = ({
   isOpen,
   user,
+  accessToken,
   targetUser,
   currentChannelId,
   globalPresenceChannelRef,
@@ -68,6 +70,24 @@ export const useChatSessionPresence = ({
         : null;
   }, [currentChannelId, targetUser?.id]);
 
+  const buildPresenceStatePayload = useCallback(
+    ({
+      keepOnline,
+      currentChatChannel,
+      timestamp,
+    }: Omit<SyncPresenceStateOptions, 'shouldBroadcast'>) => {
+      const eventTimestamp = timestamp ?? new Date().toISOString();
+
+      return {
+        is_online: keepOnline,
+        current_chat_channel: currentChatChannel,
+        last_seen: eventTimestamp,
+        updated_at: eventTimestamp,
+      };
+    },
+    []
+  );
+
   const syncPresenceState = useCallback(
     async ({
       keepOnline,
@@ -77,13 +97,13 @@ export const useChatSessionPresence = ({
     }: SyncPresenceStateOptions) => {
       if (!user) return false;
 
-      const eventTimestamp = timestamp ?? new Date().toISOString();
-      const nextPresenceState = {
-        is_online: keepOnline,
-        current_chat_channel: currentChatChannel,
-        last_seen: eventTimestamp,
-        updated_at: eventTimestamp,
-      };
+      const nextPresenceState = buildPresenceStatePayload({
+        keepOnline,
+        currentChatChannel,
+        timestamp,
+      });
+      const eventTimestamp =
+        nextPresenceState.last_seen ?? new Date().toISOString();
 
       if (shouldBroadcast && globalPresenceChannelRef.current) {
         void globalPresenceChannelRef.current.send({
@@ -127,7 +147,7 @@ export const useChatSessionPresence = ({
         return false;
       }
     },
-    [globalPresenceChannelRef, user]
+    [buildPresenceStatePayload, globalPresenceChannelRef, user]
   );
 
   const updateUserChatClose = useCallback(
@@ -366,8 +386,21 @@ export const useChatSessionPresence = ({
   useEffect(() => {
     const handlePageExit = () => {
       if (!hasClosedRef.current && user) {
+        const eventTimestamp = new Date().toISOString();
         hasClosedRef.current = true;
-        void updateUserChatClose({ keepOnline: false });
+        chatSidebarGateway.sendUserPresenceUpdateKeepalive(
+          user.id,
+          buildPresenceStatePayload({
+            keepOnline: false,
+            currentChatChannel: null,
+            timestamp: eventTimestamp,
+          }),
+          accessToken
+        );
+        void updateUserChatClose({
+          keepOnline: false,
+          timestamp: eventTimestamp,
+        });
       }
     };
 
@@ -385,7 +418,7 @@ export const useChatSessionPresence = ({
       window.removeEventListener('beforeunload', handlePageExit);
       window.removeEventListener('pagehide', handlePageHide);
     };
-  }, [updateUserChatClose, user]);
+  }, [accessToken, buildPresenceStatePayload, updateUserChatClose, user]);
 
   return {
     targetUserPresence,

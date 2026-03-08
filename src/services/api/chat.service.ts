@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
 
@@ -82,6 +82,12 @@ export interface UserPresenceInsertInput extends UserPresenceUpdateInput {
 }
 
 let chatMessagesSupportsRelationKind: boolean | null = null;
+
+const buildUserPresenceRestUrl = (userId: string) => {
+  const requestUrl = new URL(`${supabaseUrl}/rest/v1/user_presence`);
+  requestUrl.searchParams.set('user_id', `eq.${userId}`);
+  return requestUrl.toString();
+};
 
 const hasOwnMessageRelationKind = (
   payload: ChatMessageInsertInput | ChatMessageUpdateInput
@@ -408,6 +414,45 @@ export const chatService = {
       return { data: (data || []) as UserPresence[], error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  sendUserPresenceUpdateKeepalive(
+    userId: string,
+    payload: UserPresenceUpdateInput,
+    accessToken?: string | null
+  ) {
+    if (
+      typeof window === 'undefined' ||
+      typeof fetch !== 'function' ||
+      !userId ||
+      !accessToken
+    ) {
+      return false;
+    }
+
+    try {
+      void fetch(buildUserPresenceRestUrl(userId), {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(error => {
+        console.error(
+          'Keepalive presence update failed while closing chat:',
+          error
+        );
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error starting keepalive presence update:', error);
+      return false;
     }
   },
 };

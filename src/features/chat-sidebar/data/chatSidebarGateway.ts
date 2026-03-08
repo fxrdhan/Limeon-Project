@@ -53,6 +53,17 @@ export const chatSidebarGateway = {
   insertUserPresence(payload: UserPresenceInsertInput) {
     return chatService.insertUserPresence(payload);
   },
+  sendUserPresenceUpdateKeepalive(
+    userId: string,
+    payload: UserPresenceUpdateInput,
+    accessToken?: string | null
+  ) {
+    return chatService.sendUserPresenceUpdateKeepalive(
+      userId,
+      payload,
+      accessToken
+    );
+  },
   createRealtimeChannel(name: string, options?: RealtimeChannelOptions) {
     return realtimeService.createChannel(name, options);
   },

@@ -19,6 +19,7 @@ const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
       getUserPresence: vi.fn(),
       markMessageIdsAsDelivered: vi.fn(),
       markMessageIdsAsRead: vi.fn(),
+      sendUserPresenceUpdateKeepalive: vi.fn(),
     },
     mockRealtimeService: {
       createChannel: vi.fn(),
@@ -135,6 +136,7 @@ describe('useChatSession', () => {
       data: [],
       error: null,
     });
+    mockChatService.sendUserPresenceUpdateKeepalive.mockReturnValue(true);
     mockRealtimeService.removeChannel.mockResolvedValue(undefined);
     mockRealtimeService.createChannel.mockImplementation(() => {
       const channel = buildMockChannel();
@@ -283,6 +285,7 @@ describe('useChatSession', () => {
       useChatSession({
         isOpen: true,
         user: currentUser,
+        accessToken: 'access-token',
         targetUser,
         currentChannelId: 'channel-1',
         initialMessageAnimationKeysRef,
@@ -301,6 +304,17 @@ describe('useChatSession', () => {
     });
 
     window.dispatchEvent(new Event('beforeunload'));
+
+    expect(
+      mockChatService.sendUserPresenceUpdateKeepalive
+    ).toHaveBeenCalledWith(
+      currentUser.id,
+      expect.objectContaining({
+        is_online: false,
+        current_chat_channel: null,
+      }),
+      'access-token'
+    );
 
     await waitFor(() => {
       expect(mockChatService.updateUserPresence).toHaveBeenLastCalledWith(
@@ -321,6 +335,7 @@ describe('useChatSession', () => {
       useChatSession({
         isOpen: true,
         user: currentUser,
+        accessToken: 'access-token',
         targetUser,
         currentChannelId: 'channel-1',
         initialMessageAnimationKeysRef,
@@ -345,6 +360,17 @@ describe('useChatSession', () => {
     });
 
     window.dispatchEvent(pageHideEvent);
+
+    expect(
+      mockChatService.sendUserPresenceUpdateKeepalive
+    ).toHaveBeenCalledWith(
+      currentUser.id,
+      expect.objectContaining({
+        is_online: false,
+        current_chat_channel: null,
+      }),
+      'access-token'
+    );
 
     await waitFor(() => {
       expect(mockChatService.updateUserPresence).toHaveBeenLastCalledWith(
