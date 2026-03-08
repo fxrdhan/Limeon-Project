@@ -166,6 +166,7 @@ export const useChatSession = ({
         );
         const pendingMessages = previousMessages.filter(
           messageItem =>
+            messageItem.channel_id === currentChannelId &&
             !transformedIds.has(messageItem.id) &&
             messageItem.id.startsWith('temp_')
         );

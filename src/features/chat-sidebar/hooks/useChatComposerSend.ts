@@ -1,6 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
-  useEffect,
   useCallback,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -19,6 +18,7 @@ import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { getConversationScopeKey } from '../utils/conversation-scope';
+import { useActiveConversationScope } from './useActiveConversationScope';
 
 export interface PendingSendRegistration {
   complete: () => void;
@@ -70,24 +70,11 @@ export const useChatComposerSend = ({
   registerPendingSend,
 }: UseChatComposerSendProps) => {
   const isSendingRef = useRef(false);
-  const activeConversationScopeKeyRef = useRef<string | null>(
-    getConversationScopeKey(user?.id, targetUser?.id, currentChannelId)
-  );
-
-  useEffect(() => {
-    activeConversationScopeKeyRef.current = getConversationScopeKey(
-      user?.id,
-      targetUser?.id,
-      currentChannelId
-    );
-  }, [currentChannelId, targetUser?.id, user?.id]);
-
-  const isConversationScopeActive = useCallback(
-    (conversationScopeKey: string | null) =>
-      Boolean(conversationScopeKey) &&
-      activeConversationScopeKeyRef.current === conversationScopeKey,
-    []
-  );
+  const { isConversationScopeActive } = useActiveConversationScope({
+    userId: user?.id,
+    targetUserId: targetUser?.id,
+    channelId: currentChannelId,
+  });
 
   const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
     user,
@@ -242,6 +229,9 @@ export const useChatComposerSend = ({
     if (editingMessageId || isSendingRef.current) {
       return;
     }
+    if (!user || !targetUser || !currentChannelId) {
+      return;
+    }
 
     const hasPendingAttachments = pendingComposerAttachments.length > 0;
     const attachmentsToSend = [...pendingComposerAttachments];
@@ -332,9 +322,9 @@ export const useChatComposerSend = ({
     sendTextMessage,
     currentChannelId,
     setMessage,
-    targetUser?.id,
-    user?.id,
     isConversationScopeActive,
+    targetUser,
+    user,
   ]);
 
   const handleKeyPress = useCallback(

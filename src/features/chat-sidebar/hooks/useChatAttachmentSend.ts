@@ -1,5 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
@@ -23,6 +23,7 @@ import {
   markMessageAsAttachmentCaption,
   toAttachmentCaptionInsertInput,
 } from '../utils/message-relations';
+import { useActiveConversationScope } from './useActiveConversationScope';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -106,24 +107,11 @@ export const useChatAttachmentSend = ({
   pendingImagePreviewUrlsRef,
   registerPendingSend,
 }: UseChatAttachmentSendProps) => {
-  const activeConversationScopeKeyRef = useRef<string | null>(
-    getConversationScopeKey(user?.id, targetUser?.id, currentChannelId)
-  );
-
-  useEffect(() => {
-    activeConversationScopeKeyRef.current = getConversationScopeKey(
-      user?.id,
-      targetUser?.id,
-      currentChannelId
-    );
-  }, [currentChannelId, targetUser?.id, user?.id]);
-
-  const isConversationScopeActive = useCallback(
-    (conversationScopeKey: string | null) =>
-      Boolean(conversationScopeKey) &&
-      activeConversationScopeKeyRef.current === conversationScopeKey,
-    []
-  );
+  const { isConversationScopeActive } = useActiveConversationScope({
+    userId: user?.id,
+    targetUserId: targetUser?.id,
+    channelId: currentChannelId,
+  });
 
   const deleteUploadedStorageFiles = useCallback(
     async (storagePaths: Array<string | null | undefined>) => {
@@ -672,6 +660,9 @@ export const useChatAttachmentSend = ({
         });
         return null;
       }
+      if (!user || !targetUser || !currentChannelId) {
+        return null;
+      }
 
       return sendAttachmentMessage({
         tempIdPrefix: 'temp_image',
@@ -738,9 +729,13 @@ export const useChatAttachmentSend = ({
       pendingFile: PendingComposerFile,
       captionText?: string
     ): Promise<string | null> => {
+      if (!user || !targetUser || !currentChannelId) {
+        return null;
+      }
+
       const filePath = buildChatFilePath(
-        currentChannelId!,
-        user!.id,
+        currentChannelId,
+        user.id,
         pendingFile.file,
         pendingFile.fileKind
       );

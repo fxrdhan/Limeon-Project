@@ -1,6 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
-  useEffect,
   useCallback,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -23,6 +22,7 @@ import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
 import { getConversationScopeKey } from '../utils/conversation-scope';
+import { useActiveConversationScope } from './useActiveConversationScope';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -108,24 +108,11 @@ export const useChatComposerActions = ({
   const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
     new Map()
   );
-  const activeConversationScopeKeyRef = useRef<string | null>(
-    getConversationScopeKey(user?.id, targetUser?.id, currentChannelId)
-  );
-
-  useEffect(() => {
-    activeConversationScopeKeyRef.current = getConversationScopeKey(
-      user?.id,
-      targetUser?.id,
-      currentChannelId
-    );
-  }, [currentChannelId, targetUser?.id, user?.id]);
-
-  const isConversationScopeActive = useCallback(
-    (conversationScopeKey: string | null) =>
-      Boolean(conversationScopeKey) &&
-      activeConversationScopeKeyRef.current === conversationScopeKey,
-    []
-  );
+  const { isConversationScopeActive } = useActiveConversationScope({
+    userId: user?.id,
+    targetUserId: targetUser?.id,
+    channelId: currentChannelId,
+  });
 
   const send = useChatComposerSend({
     user,

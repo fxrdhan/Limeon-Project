@@ -281,6 +281,54 @@ describe('useChatComposerSend', () => {
     ]);
   });
 
+  it('does nothing when attachment send is triggered without an active channel', async () => {
+    const clearPendingComposerAttachments = vi.fn();
+    const restorePendingComposerAttachments = vi.fn();
+    const { registerPendingSend, pendingEntries } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: null,
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [buildPendingAttachment()],
+        clearPendingComposerAttachments,
+        restorePendingComposerAttachments,
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(clearPendingComposerAttachments).not.toHaveBeenCalled();
+    expect(restorePendingComposerAttachments).not.toHaveBeenCalled();
+    expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
+    expect(mockGateway.createMessage).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(pendingEntries.size).toBe(0);
+  });
+
   it('deletes orphaned preview files and marks preview metadata as failed', async () => {
     mockGateway.uploadAttachment
       .mockResolvedValueOnce({

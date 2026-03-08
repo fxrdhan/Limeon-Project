@@ -596,6 +596,125 @@ describe('useChatSession', () => {
     });
   });
 
+  it('does not carry temp messages into another cached conversation', async () => {
+    const secondTargetUser = {
+      id: 'user-c',
+      name: 'Kasir',
+      email: 'kasir@example.com',
+      profilephoto: null,
+    };
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    mockChatService.fetchMessagesBetweenUsers
+      .mockResolvedValueOnce({
+        data: [
+          buildMessage({
+            id: 'message-2',
+            sender_id: secondTargetUser.id,
+            channel_id: 'channel-2',
+            message: 'pesan channel kedua',
+          }),
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          buildMessage({
+            id: 'message-1',
+            sender_id: targetUser.id,
+            channel_id: 'channel-1',
+            message: 'pesan channel pertama',
+          }),
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          buildMessage({
+            id: 'message-2',
+            sender_id: secondTargetUser.id,
+            channel_id: 'channel-2',
+            message: 'pesan channel kedua',
+          }),
+        ],
+        error: null,
+      });
+
+    const { result, rerender } = renderHook(
+      ({
+        activeTargetUser,
+        channelId,
+      }: {
+        activeTargetUser: typeof targetUser;
+        channelId: string;
+      }) =>
+        useChatSession({
+          isOpen: true,
+          user: currentUser,
+          targetUser: activeTargetUser,
+          currentChannelId: channelId,
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        }),
+      {
+        initialProps: {
+          activeTargetUser: secondTargetUser,
+          channelId: 'channel-2',
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['message-2']);
+    });
+
+    rerender({
+      activeTargetUser: targetUser,
+      channelId: 'channel-1',
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['message-1']);
+    });
+
+    act(() => {
+      result.current.setMessages(previousMessages => [
+        ...previousMessages,
+        buildMessage({
+          id: 'temp_cross_channel',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          channel_id: 'channel-1',
+          message: 'optimistic message',
+          sender_name: currentUser.name,
+          receiver_name: targetUser.name,
+          stableKey: 'temp-cross-channel',
+        }),
+      ]);
+    });
+
+    rerender({
+      activeTargetUser: secondTargetUser,
+      channelId: 'channel-2',
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['message-2']);
+      expect(
+        result.current.messages.some(
+          messageItem => messageItem.id === 'temp_cross_channel'
+        )
+      ).toBe(false);
+    });
+  });
+
   it('hydrates incoming messages from postgres inserts when app broadcast is unavailable', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
