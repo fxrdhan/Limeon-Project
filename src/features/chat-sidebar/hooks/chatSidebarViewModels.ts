@@ -9,6 +9,7 @@ import {
 export const createChatHeaderModel = ({
   targetUser,
   displayTargetPhotoUrl,
+  isTargetOnline,
   targetUserPresence,
   interaction,
   handleDeleteSelectedMessages,
@@ -18,6 +19,7 @@ export const createChatHeaderModel = ({
 }: {
   targetUser: ChatHeaderModel['targetUser'];
   displayTargetPhotoUrl: ChatHeaderModel['displayTargetPhotoUrl'];
+  isTargetOnline: ChatHeaderModel['isTargetOnline'];
   targetUserPresence: ChatHeaderModel['targetUserPresence'];
   interaction: {
     isMessageSearchMode: boolean;
@@ -48,6 +50,7 @@ export const createChatHeaderModel = ({
 }): ChatHeaderModel => ({
   targetUser,
   displayTargetPhotoUrl,
+  isTargetOnline,
   targetUserPresence,
   isSearchMode: interaction.isMessageSearchMode,
   searchQuery: interaction.messageSearchQuery,

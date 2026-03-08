@@ -1,9 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import {
-  useCallback,
-  useRef,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from 'react';
+import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import type {
   ChatSidebarPanelTargetUser,
@@ -20,6 +16,7 @@ import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { useChatMutationScope } from './useChatMutationScope';
 import { createRuntimeId, createStableKey } from '../utils/runtime-id';
+import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 
 interface UseChatComposerSendProps {
   user: {
@@ -68,13 +65,28 @@ export const useChatComposerSend = ({
   const isSendingRef = useRef(false);
   const {
     isCurrentConversationScopeActive,
+    isConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
+    conversationScopeKey,
   } = useChatMutationScope({
     user,
     targetUser,
     currentChannelId,
     setMessages,
+  });
+  const {
+    deleteUploadedStorageFiles,
+    rollbackPersistedAttachmentThread,
+    releasePendingPreviewUrl,
+  } = useChatAttachmentCleanup({
+    user,
+    targetUser,
+    currentChannelId,
+    setMessages,
+    broadcastDeletedMessage,
+    pendingImagePreviewUrlsRef,
+    isConversationScopeActive,
   });
 
   const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
@@ -87,9 +99,16 @@ export const useChatComposerSend = ({
     triggerSendSuccessGlow,
     broadcastNewMessage,
     broadcastUpdatedMessage,
-    broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
     registerPendingSend,
+    conversationScopeKey,
+    isConversationScopeActive,
+    isCurrentConversationScopeActive,
+    reconcileCurrentConversationMessages,
+    runInCurrentConversationScope,
+    deleteUploadedStorageFiles,
+    rollbackPersistedAttachmentThread,
+    releasePendingPreviewUrl,
   });
 
   const sendTextMessage = useCallback(
@@ -318,18 +337,7 @@ export const useChatComposerSend = ({
     user,
   ]);
 
-  const handleKeyPress = useCallback(
-    (event: ReactKeyboardEvent) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        void handleSendMessage();
-      }
-    },
-    [handleSendMessage]
-  );
-
   return {
     handleSendMessage,
-    handleKeyPress,
   };
 };

@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { useCallback, useRef, useState } from 'react';
+import { usePresenceRoster } from '@/hooks/presence/usePresenceRoster';
 import type { ChatSidebarPanelProps } from '../types';
 import { getAttachmentFileName } from '../utils/attachment';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
@@ -25,6 +26,7 @@ export const useChatSidebarController = ({
     () => new Set()
   );
   const { user, session } = useAuthStore();
+  const { onlineUserIds } = usePresenceRoster();
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -169,6 +171,7 @@ export const useChatSidebarController = ({
   const headerModel = createChatHeaderModel({
     targetUser,
     displayTargetPhotoUrl,
+    isTargetOnline: targetUser ? onlineUserIds.has(targetUser.id) : false,
     targetUserPresence,
     interaction,
     handleDeleteSelectedMessages,

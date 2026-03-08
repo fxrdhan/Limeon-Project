@@ -24,8 +24,6 @@ import {
   removeOptimisticAttachmentThread,
 } from '../utils/attachment-send';
 import { useChatAttachmentPdfPreview } from './useChatAttachmentPdfPreview';
-import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
-import { useChatMutationScope } from './useChatMutationScope';
 
 const isPdfDocumentFile = (fileName: string, mimeType: string) =>
   mimeType.toLowerCase().includes('pdf') ||
@@ -44,9 +42,27 @@ interface UseChatAttachmentSendProps {
   triggerSendSuccessGlow: () => void;
   broadcastNewMessage: (message: ChatMessage) => void;
   broadcastUpdatedMessage: (message: ChatMessage) => void;
-  broadcastDeletedMessage: (messageId: string) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
+  conversationScopeKey: string | null;
+  isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
+  isCurrentConversationScopeActive: () => boolean;
+  reconcileCurrentConversationMessages: (options?: {
+    fallbackMessages?: ChatMessage[];
+  }) => Promise<void>;
+  runInCurrentConversationScope: (effect: () => void) => boolean;
+  deleteUploadedStorageFiles: (
+    storagePaths: Array<string | null | undefined>
+  ) => Promise<string[]>;
+  rollbackPersistedAttachmentThread: (
+    persistedMessageId: string,
+    storagePaths: Array<string | null | undefined>,
+    conversationScopeKey: string | null
+  ) => Promise<void>;
+  releasePendingPreviewUrl: (
+    tempId: string,
+    shouldDelayCleanup?: boolean
+  ) => void;
 }
 
 interface SendAttachmentOptions {
@@ -91,35 +107,17 @@ export const useChatAttachmentSend = ({
   triggerSendSuccessGlow,
   broadcastNewMessage,
   broadcastUpdatedMessage,
-  broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
   registerPendingSend,
+  conversationScopeKey,
+  isConversationScopeActive,
+  isCurrentConversationScopeActive,
+  reconcileCurrentConversationMessages,
+  runInCurrentConversationScope,
+  deleteUploadedStorageFiles,
+  rollbackPersistedAttachmentThread,
+  releasePendingPreviewUrl,
 }: UseChatAttachmentSendProps) => {
-  const {
-    conversationScopeKey,
-    isConversationScopeActive,
-    isCurrentConversationScopeActive,
-    reconcileCurrentConversationMessages,
-    runInCurrentConversationScope,
-  } = useChatMutationScope({
-    user,
-    targetUser,
-    currentChannelId,
-    setMessages,
-  });
-  const {
-    deleteUploadedStorageFiles,
-    rollbackPersistedAttachmentThread,
-    releasePendingPreviewUrl,
-  } = useChatAttachmentCleanup({
-    user,
-    targetUser,
-    currentChannelId,
-    setMessages,
-    broadcastDeletedMessage,
-    pendingImagePreviewUrlsRef,
-    isConversationScopeActive,
-  });
   const { processPdfPreview } = useChatAttachmentPdfPreview({
     user,
     targetUser,

@@ -24,6 +24,7 @@ describe('ChatHeader', () => {
             profilephoto: null,
           },
           displayTargetPhotoUrl: null,
+          isTargetOnline: true,
           targetUserPresence: {
             user_id: 'user-b',
             is_online: true,
@@ -73,6 +74,7 @@ describe('ChatHeader', () => {
             profilephoto: null,
           },
           displayTargetPhotoUrl: null,
+          isTargetOnline: false,
           targetUserPresence: {
             user_id: 'user-b',
             is_online: true,

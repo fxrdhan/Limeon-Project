@@ -16,6 +16,7 @@ import SelectionHeaderContent from './header/SelectionHeaderContent';
 export interface ChatHeaderModel {
   targetUser?: ChatSidebarPanelTargetUser;
   displayTargetPhotoUrl: string | null;
+  isTargetOnline: boolean;
   targetUserPresence: UserPresence | null;
   isSearchMode: boolean;
   searchQuery: string;
@@ -47,6 +48,7 @@ const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
   const {
     targetUser,
     displayTargetPhotoUrl,
+    isTargetOnline,
     targetUserPresence,
     isSearchMode,
     searchQuery,
@@ -166,6 +168,7 @@ const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
         <ConversationHeaderContent
           targetUser={targetUser}
           displayTargetPhotoUrl={displayTargetPhotoUrl}
+          isTargetOnline={isTargetOnline}
           targetUserPresence={targetUserPresence}
           isOptionsMenuOpen={isOptionsMenuOpen}
           optionsButtonRef={optionsButtonRef}

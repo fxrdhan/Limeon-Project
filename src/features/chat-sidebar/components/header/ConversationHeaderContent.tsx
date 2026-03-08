@@ -6,11 +6,12 @@ import type { RefObject } from 'react';
 import { TbDotsVertical, TbLayoutSidebarRightCollapse } from 'react-icons/tb';
 import type { UserPresence } from '../../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../../types';
-import { formatLastSeen, isPresenceFresh } from './presence';
+import { formatLastSeen } from './presence';
 
 interface ConversationHeaderContentProps {
   targetUser?: ChatSidebarPanelTargetUser;
   displayTargetPhotoUrl: string | null;
+  isTargetOnline: boolean;
   targetUserPresence: UserPresence | null;
   isOptionsMenuOpen: boolean;
   optionsButtonRef: RefObject<HTMLButtonElement | null>;
@@ -28,6 +29,7 @@ const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrin
 const ConversationHeaderContent = ({
   targetUser,
   displayTargetPhotoUrl,
+  isTargetOnline,
   targetUserPresence,
   isOptionsMenuOpen,
   optionsButtonRef,
@@ -38,11 +40,6 @@ const ConversationHeaderContent = ({
   getInitials,
   getInitialsColor,
 }: ConversationHeaderContentProps) => {
-  const shouldShowOnline =
-    targetUserPresence &&
-    targetUserPresence.is_online &&
-    isPresenceFresh(targetUserPresence.last_seen);
-
   return (
     <div className="flex w-full items-center gap-2.5">
       <div
@@ -68,7 +65,7 @@ const ConversationHeaderContent = ({
           <h3 className="font-medium text-slate-900 truncate leading-tight">
             {targetUser ? targetUser.name : 'Chat'}
           </h3>
-          {shouldShowOnline ? (
+          {isTargetOnline ? (
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs text-green-600 font-medium">Online</span>

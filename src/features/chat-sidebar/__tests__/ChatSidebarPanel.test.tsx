@@ -21,6 +21,12 @@ vi.mock('@/store/authStore', () => ({
   }),
 }));
 
+vi.mock('@/hooks/presence/usePresenceRoster', () => ({
+  usePresenceRoster: () => ({
+    onlineUserIds: new Set(['user-b']),
+  }),
+}));
+
 vi.mock('../hooks/useTargetProfilePhoto', () => ({
   useTargetProfilePhoto: () => ({
     displayTargetPhotoUrl: null,
