@@ -2,6 +2,7 @@ import { StorageService } from '@/services/api/storage.service';
 import {
   chatService,
   type ChatMessage,
+  type ConversationMessagesPage,
   type ChatMessageInsertInput,
   type ChatMessageUpdateInput,
   type UserPresence,
@@ -18,12 +19,17 @@ export const chatSidebarGateway = {
   fetchConversationMessages(
     userId: string,
     targetUserId: string,
-    channelId?: string | null
+    channelId?: string | null,
+    options?: {
+      beforeCreatedAt?: string | null;
+      limit?: number;
+    }
   ) {
     return chatService.fetchMessagesBetweenUsers(
       userId,
       targetUserId,
-      channelId
+      channelId,
+      options
     );
   },
   createMessage(payload: ChatMessageInsertInput) {
@@ -87,6 +93,13 @@ export const chatSidebarGateway = {
   downloadStorageFile(bucket: string, path: string) {
     return StorageService.downloadFile(bucket, path);
   },
+  createSignedStorageUrl(
+    bucket: string,
+    path: string,
+    expiresInSeconds?: number
+  ) {
+    return StorageService.createSignedUrl(bucket, path, expiresInSeconds);
+  },
 };
 
 export type {
@@ -94,4 +107,5 @@ export type {
   ChatMessageInsertInput,
   UserPresence,
   RealtimeChannel,
+  ConversationMessagesPage,
 };

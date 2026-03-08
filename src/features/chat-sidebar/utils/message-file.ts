@@ -80,6 +80,9 @@ export const openInNewTab = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
+export const isDirectChatAssetUrl = (url: string) =>
+  /^(https?:\/\/|blob:|data:|\/)/i.test(url);
+
 export const extractChatStoragePath = (url: string): string | null => {
   const patterns = [
     '/storage/v1/object/public/chat/',
@@ -103,6 +106,12 @@ export const extractChatStoragePath = (url: string): string | null => {
 
   return null;
 };
+
+const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
+const signedChatAssetUrlCache = new Map<
+  string,
+  { signedUrl: string; expiresAt: number }
+>();
 
 export const buildPdfPreviewStoragePath = (filePath: string) => {
   const normalizedPath = filePath.replace(/^documents\//, 'previews/');
@@ -205,6 +214,71 @@ export const fetchPdfBlobWithFallback = (
   url: string,
   storagePathHint?: string | null
 ) => fetchChatFileBlobWithFallback(url, storagePathHint, 'application/pdf');
+
+export const resolveChatAssetUrl = async (
+  url: string,
+  storagePathHint?: string | null,
+  expiresInSeconds = 3600
+) => {
+  if (isDirectChatAssetUrl(url)) {
+    return url;
+  }
+
+  const storagePath = storagePathHint?.trim() || extractChatStoragePath(url);
+  if (!storagePath) {
+    return null;
+  }
+
+  const cachedSignedUrl = signedChatAssetUrlCache.get(storagePath);
+  if (cachedSignedUrl && cachedSignedUrl.expiresAt > Date.now()) {
+    return cachedSignedUrl.signedUrl;
+  }
+
+  try {
+    const signedUrl = await chatSidebarGateway.createSignedStorageUrl(
+      CHAT_IMAGE_BUCKET,
+      storagePath,
+      expiresInSeconds
+    );
+
+    signedChatAssetUrlCache.set(storagePath, {
+      signedUrl,
+      expiresAt: Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS,
+    });
+
+    return signedUrl;
+  } catch {
+    return null;
+  }
+};
+
+export const openChatFileInNewTab = async (
+  url: string,
+  storagePathHint?: string | null,
+  forcedMimeType?: string
+) => {
+  const fileBlob = await fetchChatFileBlobWithFallback(
+    url,
+    storagePathHint,
+    forcedMimeType
+  );
+
+  if (fileBlob) {
+    const objectUrl = URL.createObjectURL(fileBlob);
+    window.open(objectUrl, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+    }, 30_000);
+    return true;
+  }
+
+  if (!isDirectChatAssetUrl(url)) {
+    return false;
+  }
+
+  openInNewTab(url);
+  return true;
+};
 
 const IMAGE_FILE_EXTENSIONS = new Set([
   'jpg',

@@ -3,6 +3,8 @@ import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 import {
   fetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback,
+  isDirectChatAssetUrl,
+  resolveChatAssetUrl,
 } from '../utils/message-file';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 
@@ -64,15 +66,23 @@ export const useMessagesPanePreviews = () => {
       let revokeOnClose = false;
 
       try {
-        const imageBlob = await fetchChatFileBlobWithFallback(
+        const signedUrl = await resolveChatAssetUrl(
           message.message,
-          message.file_storage_path,
-          message.file_mime_type
+          message.file_storage_path
         );
+        if (signedUrl) {
+          nextPreviewUrl = signedUrl;
+        } else {
+          const imageBlob = await fetchChatFileBlobWithFallback(
+            message.message,
+            message.file_storage_path,
+            message.file_mime_type
+          );
 
-        if (imageBlob) {
-          nextPreviewUrl = URL.createObjectURL(imageBlob);
-          revokeOnClose = true;
+          if (imageBlob) {
+            nextPreviewUrl = URL.createObjectURL(imageBlob);
+            revokeOnClose = true;
+          }
         }
       } catch {
         nextPreviewUrl = message.message;
@@ -107,11 +117,28 @@ export const useMessagesPanePreviews = () => {
       await openDocumentPreview({
         previewName,
         resolvePreviewUrl: async () => {
-          if (!forcePdfMime) {
+          if (!forcePdfMime && isDirectChatAssetUrl(message.message)) {
             return {
               previewUrl: message.message,
               revokeOnClose: false,
             };
+          }
+
+          if (!forcePdfMime) {
+            try {
+              const fileBlob = await fetchChatFileBlobWithFallback(
+                message.message,
+                message.file_storage_path
+              );
+              if (fileBlob) {
+                return {
+                  previewUrl: URL.createObjectURL(fileBlob),
+                  revokeOnClose: true,
+                };
+              }
+            } catch {
+              // Fall back to direct URL below.
+            }
           }
 
           try {

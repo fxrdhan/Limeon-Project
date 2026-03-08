@@ -104,6 +104,7 @@ export const useChatComposerActions = ({
     user,
     targetUser,
     currentChannelId,
+    messagesCount: messages.length,
     setMessages,
   });
   const { deleteUploadedStorageFiles } = useChatAttachmentCleanup({
@@ -123,6 +124,7 @@ export const useChatComposerActions = ({
     message,
     setMessage,
     editingMessageId,
+    messagesCount: messages.length,
     pendingComposerAttachments,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,

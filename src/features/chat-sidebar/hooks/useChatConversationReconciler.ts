@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
+import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -14,6 +15,7 @@ interface UseChatConversationReconcilerProps {
   } | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
+  messagesCount: number;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
 }
@@ -27,6 +29,7 @@ export const useChatConversationReconciler = ({
   user,
   targetUser,
   currentChannelId,
+  messagesCount,
   setMessages,
   isConversationScopeActive,
 }: UseChatConversationReconcilerProps) =>
@@ -54,14 +57,24 @@ export const useChatConversationReconciler = ({
           await chatSidebarGateway.fetchConversationMessages(
             user.id,
             targetUser.id,
-            currentChannelId
+            currentChannelId,
+            {
+              limit: Math.max(messagesCount, CHAT_CONVERSATION_PAGE_SIZE),
+            }
           );
 
         if (!isConversationScopeActive(conversationScopeKey)) {
           return;
         }
 
-        if (error || !latestMessages) {
+        const latestMessagesPayload = Array.isArray(latestMessages)
+          ? {
+              messages: latestMessages,
+              hasMore: false,
+            }
+          : latestMessages;
+
+        if (error || !latestMessagesPayload?.messages) {
           if (fallbackMessages) {
             setMessages(fallbackMessages);
           }
@@ -69,7 +82,7 @@ export const useChatConversationReconciler = ({
         }
 
         reconcileConversationMessages({
-          latestMessages,
+          latestMessages: latestMessagesPayload.messages,
           user,
           targetUser,
           currentChannelId,
@@ -85,5 +98,12 @@ export const useChatConversationReconciler = ({
         }
       }
     },
-    [currentChannelId, isConversationScopeActive, setMessages, targetUser, user]
+    [
+      currentChannelId,
+      isConversationScopeActive,
+      messagesCount,
+      setMessages,
+      targetUser,
+      user,
+    ]
   );

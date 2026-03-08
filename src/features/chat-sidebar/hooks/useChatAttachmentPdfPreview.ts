@@ -101,7 +101,7 @@ export const useChatAttachmentPdfPreview = ({
           { type: 'image/png' }
         );
 
-        const { path: storedPreviewPath, publicUrl: previewUrl } =
+        const { path: storedPreviewPath } =
           await chatSidebarGateway.uploadAttachment(
             CHAT_IMAGE_BUCKET,
             previewFile,
@@ -112,7 +112,7 @@ export const useChatAttachmentPdfPreview = ({
 
         const { data: previewReadyMessage, error: previewReadyError } =
           await chatSidebarGateway.updateMessage(realMessage.id, {
-            file_preview_url: previewUrl,
+            file_preview_url: storedPreviewPath,
             file_preview_page_count: generatedPreview.pageCount,
             file_preview_status: 'ready',
             file_preview_error: null,

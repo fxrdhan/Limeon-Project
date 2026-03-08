@@ -2,6 +2,7 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   fetchPdfBlobWithFallback,
+  isDirectChatAssetUrl,
   resolveFileExtension,
 } from '../utils/message-file';
 import {
@@ -205,7 +206,8 @@ export const useMessagePdfPreviews = ({
 
       const hasPersistedPreviewUrl =
         typeof message.file_preview_url === 'string' &&
-        message.file_preview_url.trim().length > 0;
+        message.file_preview_url.trim().length > 0 &&
+        isDirectChatAssetUrl(message.file_preview_url);
       if (hasPersistedPreviewUrl) return false;
 
       const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);

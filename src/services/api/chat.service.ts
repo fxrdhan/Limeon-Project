@@ -2,6 +2,8 @@ import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
 
+const DEFAULT_CHAT_MESSAGES_PAGE_SIZE = 50;
+
 export interface ChatMessage {
   id: string;
   sender_id: string;
@@ -81,6 +83,11 @@ export interface UserPresenceInsertInput extends UserPresenceUpdateInput {
   user_id: string;
 }
 
+export interface ConversationMessagesPage {
+  messages: ChatMessage[];
+  hasMore: boolean;
+}
+
 const buildUserPresenceRestUrl = (userId: string) => {
   const requestUrl = new URL(`${supabaseUrl}/rest/v1/user_presence`);
   requestUrl.searchParams.set('user_id', `eq.${userId}`);
@@ -91,9 +98,17 @@ export const chatService = {
   async fetchMessagesBetweenUsers(
     userId: string,
     targetUserId: string,
-    channelId?: string | null
-  ): Promise<ServiceResponse<ChatMessage[]>> {
+    channelId?: string | null,
+    options?: {
+      beforeCreatedAt?: string | null;
+      limit?: number;
+    }
+  ): Promise<ServiceResponse<ConversationMessagesPage>> {
     try {
+      const pageSize = Math.max(
+        1,
+        options?.limit ?? DEFAULT_CHAT_MESSAGES_PAGE_SIZE
+      );
       let query = supabase
         .from('chat_messages')
         .select('*')
@@ -105,15 +120,33 @@ export const chatService = {
         query = query.eq('channel_id', channelId);
       }
 
-      const { data, error } = await query.order('created_at', {
-        ascending: true,
-      });
+      if (options?.beforeCreatedAt) {
+        query = query.lt('created_at', options.beforeCreatedAt);
+      }
+
+      const { data, error } = await query
+        .order('created_at', {
+          ascending: false,
+        })
+        .limit(pageSize + 1);
 
       if (error) {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ChatMessage[], error: null };
+      const orderedMessages = ((data || []) as ChatMessage[]).slice(
+        0,
+        pageSize
+      );
+      const hasMore = (data?.length ?? 0) > pageSize;
+
+      return {
+        data: {
+          messages: orderedMessages.reverse(),
+          hasMore,
+        },
+        error: null,
+      };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }

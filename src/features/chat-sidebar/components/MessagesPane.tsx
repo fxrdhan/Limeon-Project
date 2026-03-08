@@ -3,6 +3,7 @@ import { useMemo, type MutableRefObject, type RefObject } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { MAX_MESSAGE_CHARS } from '../constants';
+import { useMessageImagePreviews } from '../hooks/useMessageImagePreviews';
 import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
 import { useStableMessageActionHandlers } from '../hooks/useStableMessageActionHandlers';
@@ -43,6 +44,8 @@ export interface MessagesPaneModel {
   searchMatchedMessageIds: Set<string>;
   activeSearchMessageId: string | null;
   showScrollToBottom: boolean;
+  hasOlderMessages: boolean;
+  isLoadingOlderMessages: boolean;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
@@ -65,6 +68,7 @@ export interface MessagesPaneModel {
     targetMessage: ChatMessage
   ) => ComposerPendingFileKind;
   onScrollToBottom: () => void;
+  onLoadOlderMessages: () => void;
 }
 
 const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
@@ -90,6 +94,8 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     searchMatchedMessageIds,
     activeSearchMessageId,
     showScrollToBottom,
+    hasOlderMessages,
+    isLoadingOlderMessages,
     messagesContainerRef,
     messagesEndRef,
     messageBubbleRefs,
@@ -106,8 +112,10 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     getAttachmentFileName,
     getAttachmentFileKind,
     onScrollToBottom,
+    onLoadOlderMessages,
   } = model;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const { getImageMessageUrl } = useMessageImagePreviews({ messages });
   const {
     documentPreviewUrl,
     documentPreviewName,
@@ -169,6 +177,20 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
           </div>
         ) : (
           <LayoutGroup id="chat-message-menus">
+            {hasOlderMessages ? (
+              <div className="flex justify-center pb-1">
+                <button
+                  type="button"
+                  onClick={onLoadOlderMessages}
+                  disabled={isLoadingOlderMessages}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-default disabled:opacity-60"
+                >
+                  {isLoadingOlderMessages
+                    ? 'Loading older messages...'
+                    : 'Load older messages'}
+                </button>
+              </div>
+            ) : null}
             {messages.map(messageItem => {
               if (captionMessageIds.has(messageItem.id)) {
                 return null;
@@ -179,6 +201,10 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
                   key={messageItem.stableKey || messageItem.id}
                   model={{
                     message: messageItem,
+                    resolvedMessageUrl:
+                      messageItem.message_type === 'image'
+                        ? getImageMessageUrl(messageItem)
+                        : messageItem.message,
                     userId: user?.id,
                     isSelectionMode,
                     isSelected: selectedMessageIds.has(messageItem.id),

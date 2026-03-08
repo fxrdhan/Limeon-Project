@@ -4,6 +4,7 @@ import type { ChatMessage } from '../../data/chatSidebarGateway';
 
 interface MessageBubbleContentProps {
   message: ChatMessage;
+  resolvedMessageUrl: string | null;
   isImageMessage: boolean;
   isFileMessage: boolean;
   isPdfFileMessage: boolean;
@@ -24,7 +25,7 @@ interface MessageBubbleContentProps {
 }
 
 export const MessageBubbleContent = ({
-  message,
+  resolvedMessageUrl,
   isImageMessage,
   isFileMessage,
   isPdfFileMessage,
@@ -44,15 +45,25 @@ export const MessageBubbleContent = ({
   onToggleExpand,
 }: MessageBubbleContentProps) => {
   const mainContent = isImageMessage ? (
-    <img
-      src={message.message}
-      alt="Chat attachment"
-      className={`block max-h-72 w-auto max-w-full object-cover ${
-        hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
-      }`}
-      loading="lazy"
-      draggable={false}
-    />
+    resolvedMessageUrl ? (
+      <img
+        src={resolvedMessageUrl}
+        alt="Chat attachment"
+        className={`block max-h-72 w-auto max-w-full object-cover ${
+          hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
+        }`}
+        loading="lazy"
+        draggable={false}
+      />
+    ) : (
+      <div
+        className={`flex h-40 w-56 items-center justify-center bg-slate-100 text-sm text-slate-400 ${
+          hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
+        }`}
+      >
+        Loading image...
+      </div>
+    )
   ) : isPdfFileMessage ? (
     <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
       <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">

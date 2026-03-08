@@ -618,7 +618,10 @@ describe('useChatComposerSend', () => {
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
         'user-a',
         'user-b',
-        'channel-1'
+        'channel-1',
+        expect.objectContaining({
+          limit: 50,
+        })
       );
       expect(result.current.messages).toEqual([
         expect.objectContaining({
@@ -641,7 +644,7 @@ describe('useChatComposerSend', () => {
 
     const persistedImageMessage = buildMessage({
       id: 'server-image-rollback-fail',
-      message: 'https://example.com/chat.png',
+      message: 'images/channel/chat.png',
       message_type: 'image',
       file_name: undefined,
       file_kind: undefined,
@@ -726,7 +729,9 @@ describe('useChatComposerSend', () => {
             sender_id: 'user-a',
             receiver_id: 'user-b',
             channel_id: 'channel-1',
-            message: 'https://example.com/chat.png',
+            message: expect.stringMatching(
+              /^images\/channel-1\/user-a_image_.+\.png$/
+            ),
             message_type: 'image',
             file_storage_path: expect.stringMatching(
               /^images\/channel-1\/user-a_image_.+\.png$/
@@ -759,12 +764,15 @@ describe('useChatComposerSend', () => {
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
         'user-a',
         'user-b',
-        'channel-1'
+        'channel-1',
+        expect.objectContaining({
+          limit: 50,
+        })
       );
       expect(result.current.messages).toEqual([
         expect.objectContaining({
           id: 'server-image-rollback-fail',
-          message: 'https://example.com/chat.png',
+          message: 'images/channel/chat.png',
           message_type: 'image',
         }),
       ]);

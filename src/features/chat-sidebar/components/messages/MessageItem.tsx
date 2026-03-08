@@ -18,6 +18,7 @@ import { buildMessageItemDerivations } from './messageItemDerivations';
 
 export interface MessageItemModel {
   message: ChatMessage;
+  resolvedMessageUrl: string | null;
   userId?: string;
   isSelectionMode: boolean;
   isSelected: boolean;
@@ -71,6 +72,7 @@ export interface MessageItemModel {
 const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   const {
     message,
+    resolvedMessageUrl,
     userId,
     isSelectionMode,
     isSelected,
@@ -310,6 +312,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
             />
             <MessageBubbleContent
               message={message}
+              resolvedMessageUrl={resolvedMessageUrl}
               isImageMessage={isImageMessage}
               isFileMessage={isFileMessage}
               isPdfFileMessage={isPdfFileMessage}

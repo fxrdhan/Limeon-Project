@@ -92,6 +92,24 @@ export class StorageService {
     return data;
   }
 
+  public static async createSignedUrl(
+    bucket: string,
+    path: string,
+    expiresInSeconds = 3600
+  ): Promise<string> {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, expiresInSeconds);
+
+    if (error || !data?.signedUrl) {
+      throw new Error(
+        `Create signed URL failed: ${error?.message || 'Unknown error'}`
+      );
+    }
+
+    return data.signedUrl;
+  }
+
   static async uploadEntityImage(
     bucket: string,
     userId: string,

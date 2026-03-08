@@ -20,6 +20,7 @@ const createModel = (
   overrides: Partial<MessageItemModel> = {}
 ): MessageItemModel => ({
   message: baseMessage,
+  resolvedMessageUrl: null,
   userId: 'user-a',
   isSelectionMode: false,
   isSelected: false,
@@ -68,6 +69,17 @@ describe('areMessageItemPropsEqual', () => {
   it('detects when the current message selection state changes', () => {
     const previousModel = createModel({ isSelected: false });
     const nextModel = createModel({ isSelected: true });
+
+    expect(
+      areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
+    ).toBe(false);
+  });
+
+  it('detects when an image preview URL resolves for the current item', () => {
+    const previousModel = createModel({ resolvedMessageUrl: null });
+    const nextModel = createModel({
+      resolvedMessageUrl: 'https://example.com/image.png',
+    });
 
     expect(
       areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })

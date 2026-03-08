@@ -112,6 +112,8 @@ export const createMessagesPaneModel = ({
     isFlashHighlightVisible: boolean;
     hasNewMessages: boolean;
     isAtBottom: boolean;
+    hasOlderMessages: boolean;
+    isLoadingOlderMessages: boolean;
     closeMessageMenu: () => void;
     toggleMessageMenu: MessagesPaneModel['toggleMessageMenu'];
     scrollToBottom: () => void;
@@ -120,6 +122,7 @@ export const createMessagesPaneModel = ({
     messageBubbleRefs: MessagesPaneModel['messageBubbleRefs'];
     initialMessageAnimationKeysRef: MessagesPaneModel['initialMessageAnimationKeysRef'];
     initialOpenJumpAnimationKeysRef: MessagesPaneModel['initialOpenJumpAnimationKeysRef'];
+    loadOlderMessages: () => Promise<void>;
   };
   interaction: {
     isSelectionMode: boolean;
@@ -160,6 +163,8 @@ export const createMessagesPaneModel = ({
     ? interaction.activeSearchMessageId
     : null,
   showScrollToBottom: viewport.hasNewMessages || !viewport.isAtBottom,
+  hasOlderMessages: viewport.hasOlderMessages,
+  isLoadingOlderMessages: viewport.isLoadingOlderMessages,
   messagesContainerRef: viewport.messagesContainerRef,
   messagesEndRef: viewport.messagesEndRef,
   messageBubbleRefs: viewport.messageBubbleRefs,
@@ -176,6 +181,7 @@ export const createMessagesPaneModel = ({
   getAttachmentFileName,
   getAttachmentFileKind,
   onScrollToBottom: viewport.scrollToBottom,
+  onLoadOlderMessages: viewport.loadOlderMessages,
 });
 
 export const createComposerPanelModel = ({

@@ -28,6 +28,7 @@ interface UseChatComposerSendProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
+  messagesCount?: number;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
   restorePendingComposerAttachments: (
@@ -50,6 +51,7 @@ export const useChatComposerSend = ({
   message,
   setMessage,
   editingMessageId,
+  messagesCount = 0,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
   restorePendingComposerAttachments,
@@ -73,6 +75,7 @@ export const useChatComposerSend = ({
     user,
     targetUser,
     currentChannelId,
+    messagesCount,
     setMessages,
   });
   const {

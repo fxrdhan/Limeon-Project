@@ -5,6 +5,7 @@ import type { ComposerPendingFileKind } from '../../types';
 import {
   formatFileFallbackLabel,
   formatFileSize,
+  isDirectChatAssetUrl,
   isImageFileExtensionOrMime,
   resolveFileExtension,
 } from '../../utils/message-file';
@@ -167,7 +168,12 @@ export const buildMessageItemDerivations = ({
     !isAudioFileMessage &&
     isImageFileExtensionOrMime(fileExtension, message.file_mime_type);
   const persistedPdfPreviewUrl = isPdfFileMessage
-    ? message.file_preview_url?.trim() || null
+    ? (() => {
+        const previewUrl = message.file_preview_url?.trim() || null;
+        return previewUrl && isDirectChatAssetUrl(previewUrl)
+          ? previewUrl
+          : null;
+      })()
     : null;
   const resolvedPdfPreviewUrl =
     persistedPdfPreviewUrl || pdfMessagePreview?.coverDataUrl || null;

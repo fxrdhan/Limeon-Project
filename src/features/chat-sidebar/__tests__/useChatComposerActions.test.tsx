@@ -524,7 +524,10 @@ describe('useChatComposerActions', () => {
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
       'user-a',
       'user-b',
-      'channel-1'
+      'channel-1',
+      expect.objectContaining({
+        limit: 50,
+      })
     );
     expect(mockToast.error).toHaveBeenCalledWith(
       'Gagal menghapus pesan',

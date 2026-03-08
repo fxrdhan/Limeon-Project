@@ -6,6 +6,7 @@ import {
   useState,
   type MutableRefObject,
 } from 'react';
+import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -46,12 +47,15 @@ export const useChatSession = ({
 }: UseChatSessionProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const conversationChannelRef = useRef<RealtimeChannel | null>(null);
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
   const activeConversationChannelIdRef = useRef<string | null>(
     currentChannelId
   );
+  const oldestLoadedMessageCreatedAtRef = useRef<string | null>(null);
 
   useEffect(() => {
     activeConversationChannelIdRef.current = currentChannelId;
@@ -136,10 +140,91 @@ export const useChatSession = ({
     isSessionTokenActive,
   });
 
+  const loadOlderMessages = useCallback(async () => {
+    if (
+      !isOpen ||
+      !user ||
+      !targetUser ||
+      !currentChannelId ||
+      !hasOlderMessages ||
+      isLoadingOlderMessages ||
+      !oldestLoadedMessageCreatedAtRef.current
+    ) {
+      return;
+    }
+
+    setIsLoadingOlderMessages(true);
+
+    try {
+      const { data: olderMessagesPage, error } =
+        await chatSidebarGateway.fetchConversationMessages(
+          user.id,
+          targetUser.id,
+          currentChannelId,
+          {
+            beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
+            limit: CHAT_CONVERSATION_PAGE_SIZE,
+          }
+        );
+
+      const olderMessagesPayload = Array.isArray(olderMessagesPage)
+        ? {
+            messages: olderMessagesPage,
+            hasMore: false,
+          }
+        : olderMessagesPage;
+
+      if (error || !olderMessagesPayload?.messages) {
+        if (error) {
+          console.error('Error loading older messages:', error);
+        }
+        return;
+      }
+
+      const olderMessages = olderMessagesPayload.messages.map(messageItem =>
+        mapConversationMessageForDisplay(
+          messageItem,
+          user,
+          targetUser,
+          messageItem.stableKey || messageItem.id
+        )
+      );
+
+      setMessages(previousMessages => {
+        const seenMessageIds = new Set(previousMessages.map(({ id }) => id));
+        const uniqueOlderMessages = olderMessages.filter(
+          messageItem => !seenMessageIds.has(messageItem.id)
+        );
+
+        return uniqueOlderMessages.length > 0
+          ? [...uniqueOlderMessages, ...previousMessages]
+          : previousMessages;
+      });
+
+      oldestLoadedMessageCreatedAtRef.current =
+        olderMessages[0]?.created_at ?? oldestLoadedMessageCreatedAtRef.current;
+      setHasOlderMessages(olderMessagesPayload.hasMore);
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+    } finally {
+      setIsLoadingOlderMessages(false);
+    }
+  }, [
+    currentChannelId,
+    hasOlderMessages,
+    isLoadingOlderMessages,
+    isOpen,
+    targetUser,
+    user,
+  ]);
+
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       hasCompletedInitialOpenLoadRef.current = false;
       setLoading(false);
+      setHasOlderMessages(false);
+      setIsLoadingOlderMessages(false);
+      oldestLoadedMessageCreatedAtRef.current = null;
       return;
     }
 
@@ -195,7 +280,10 @@ export const useChatSession = ({
           await chatSidebarGateway.fetchConversationMessages(
             user.id,
             targetUser.id,
-            currentChannelId
+            currentChannelId,
+            {
+              limit: CHAT_CONVERSATION_PAGE_SIZE,
+            }
           );
 
         if (!isActiveSession()) {
@@ -207,14 +295,23 @@ export const useChatSession = ({
           return;
         }
 
+        const existingMessagesPayload = Array.isArray(existingMessages)
+          ? {
+              messages: existingMessages,
+              hasMore: false,
+            }
+          : existingMessages;
         const transformedMessages = applyConversationSnapshot(
-          existingMessages || []
+          existingMessagesPayload?.messages || []
         );
         if (!isActiveSession()) {
           return;
         }
 
         setConversationCacheEntry(currentChannelId, transformedMessages);
+        oldestLoadedMessageCreatedAtRef.current =
+          transformedMessages[0]?.created_at ?? null;
+        setHasOlderMessages(existingMessagesPayload?.hasMore ?? false);
 
         const undeliveredIncomingMessageIds = transformedMessages
           .filter(
@@ -418,6 +515,9 @@ export const useChatSession = ({
     messages,
     setMessages,
     loading,
+    hasOlderMessages,
+    isLoadingOlderMessages,
+    loadOlderMessages,
     targetUserPresence,
     performClose,
     broadcastNewMessage,

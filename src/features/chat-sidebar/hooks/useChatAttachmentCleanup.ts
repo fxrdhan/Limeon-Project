@@ -135,8 +135,15 @@ export const useChatAttachmentCleanup = ({
                 currentChannelId
               );
 
-            if (!latestMessagesError && latestMessages) {
-              const messageStillExists = latestMessages.some(
+            const latestMessagesPayload = Array.isArray(latestMessages)
+              ? {
+                  messages: latestMessages,
+                  hasMore: false,
+                }
+              : latestMessages;
+
+            if (!latestMessagesError && latestMessagesPayload?.messages) {
+              const messageStillExists = latestMessagesPayload.messages.some(
                 messageItem => messageItem.id === persistedMessageId
               );
 

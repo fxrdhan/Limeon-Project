@@ -2,13 +2,17 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
 
-const { mockFetchChatFileBlobWithFallback } = vi.hoisted(() => ({
-  mockFetchChatFileBlobWithFallback: vi.fn(),
-}));
+const { mockFetchChatFileBlobWithFallback, mockResolveChatAssetUrl } =
+  vi.hoisted(() => ({
+    mockFetchChatFileBlobWithFallback: vi.fn(),
+    mockResolveChatAssetUrl: vi.fn(),
+  }));
 
 vi.mock('../utils/message-file', () => ({
   fetchChatFileBlobWithFallback: mockFetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback: vi.fn(),
+  isDirectChatAssetUrl: vi.fn(() => false),
+  resolveChatAssetUrl: mockResolveChatAssetUrl,
 }));
 
 vi.mock('../hooks/useDocumentPreviewPortal', () => ({
@@ -28,6 +32,7 @@ describe('useMessagesPanePreviews', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    mockResolveChatAssetUrl.mockResolvedValue(null);
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       callback(0);
       return 1;

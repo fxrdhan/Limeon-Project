@@ -23,7 +23,7 @@ import type {
   MenuPlacement,
   MenuSideAnchor,
 } from '../../types';
-import { openInNewTab } from '../../utils/message-file';
+import { openChatFileInNewTab } from '../../utils/message-file';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 
 export const getFileIcon = (
@@ -141,7 +141,11 @@ export const buildMessageMenuActions = ({
           );
           return;
         }
-        openInNewTab(message.message);
+        void openChatFileInNewTab(
+          message.message,
+          message.file_storage_path,
+          message.file_mime_type
+        );
       },
     });
   }

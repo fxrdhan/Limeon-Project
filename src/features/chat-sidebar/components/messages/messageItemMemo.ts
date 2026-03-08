@@ -33,6 +33,7 @@ export const areMessageItemPropsEqual = (
 
   return (
     previousModel.message === nextModel.message &&
+    previousModel.resolvedMessageUrl === nextModel.resolvedMessageUrl &&
     previousModel.userId === nextModel.userId &&
     previousModel.isSelectionMode === nextModel.isSelectionMode &&
     previousModel.isSelected === nextModel.isSelected &&
