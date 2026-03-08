@@ -1,5 +1,5 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatIncomingDeliveries } from '../hooks/useChatIncomingDeliveries';
 
@@ -49,6 +49,7 @@ describe('useChatIncomingDeliveries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.useFakeTimers();
     createdChannels.length = 0;
 
     mockGateway.markMessageIdsAsDelivered.mockResolvedValue({
@@ -63,14 +64,16 @@ describe('useChatIncomingDeliveries', () => {
     });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('marks incoming inserts as delivered without relying on sidebar open state', async () => {
     renderHook(() => useChatIncomingDeliveries());
 
-    await waitFor(() => {
-      expect(mockGateway.createRealtimeChannel).toHaveBeenCalledWith(
-        'incoming_messages_user-a'
-      );
-    });
+    expect(mockGateway.createRealtimeChannel).toHaveBeenCalledWith(
+      'incoming_messages_user-a'
+    );
 
     const insertListenerCall = createdChannels[0]?.on.mock.calls.find(
       ([type, config]) =>
@@ -100,10 +103,13 @@ describe('useChatIncomingDeliveries', () => {
       });
     });
 
-    await waitFor(() => {
-      expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
-        'message-1',
-      ]);
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
     });
+
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
+      'message-1',
+    ]);
   });
 });

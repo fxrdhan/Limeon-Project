@@ -5,8 +5,8 @@ import type { ComposerPendingFileKind } from '../types';
 
 export const resolveFileExtension = (
   fileName: string | null,
-  fileUrl: string,
-  mimeType?: string
+  fileUrl: string | null,
+  mimeType?: string | null
 ) => {
   const rawSource = fileName || fileUrl || '';
   const sourceWithoutQuery = rawSource.split(/[?#]/)[0];
@@ -46,7 +46,7 @@ export const resolveFileExtension = (
   return '';
 };
 
-export const formatFileSize = (sizeBytes?: number) => {
+export const formatFileSize = (sizeBytes?: number | null) => {
   if (
     typeof sizeBytes !== 'number' ||
     !Number.isFinite(sizeBytes) ||
@@ -175,7 +175,7 @@ export const resolveChatMessageStoragePaths = (
 export const fetchChatFileBlobWithFallback = async (
   url: string,
   storagePathHint?: string | null,
-  forcedMimeType?: string
+  forcedMimeType?: string | null
 ): Promise<Blob | null> => {
   const normalizedForcedMimeType = forcedMimeType?.toLowerCase();
   const storagePath =
@@ -283,7 +283,7 @@ export const resolveChatAssetUrl = async (
 export const openChatFileInNewTab = async (
   url: string,
   storagePathHint?: string | null,
-  forcedMimeType?: string
+  forcedMimeType?: string | null
 ) => {
   const fileBlob = await fetchChatFileBlobWithFallback(
     url,
@@ -322,7 +322,7 @@ const IMAGE_FILE_EXTENSIONS = new Set([
 
 export const isImageFileExtensionOrMime = (
   extension: string,
-  mimeType?: string
+  mimeType?: string | null
 ) =>
   IMAGE_FILE_EXTENSIONS.has(extension) ||
   mimeType?.toLowerCase().startsWith('image/') === true;

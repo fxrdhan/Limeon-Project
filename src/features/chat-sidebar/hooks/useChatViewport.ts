@@ -20,7 +20,7 @@ interface UseChatViewportProps {
   messages: Array<{
     id: string;
     sender_id: string;
-    receiver_id: string;
+    receiver_id: string | null;
     is_read: boolean;
   }>;
   userId?: string;

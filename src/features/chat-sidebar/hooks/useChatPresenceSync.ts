@@ -8,27 +8,25 @@ import {
 
 interface BuildPresenceStatePayloadOptions {
   keepOnline: boolean;
-  currentChatChannel: string | null;
   timestamp?: string;
 }
 
-interface SyncPresenceStateOptions extends BuildPresenceStatePayloadOptions {
+interface SyncPresenceStateOptions extends Omit<
+  BuildPresenceStatePayloadOptions,
+  'timestamp'
+> {
   shouldBroadcast: boolean;
   broadcastChannel?: RealtimeChannel | null;
+  timestamp?: string;
 }
 
 export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
   const buildPresenceStatePayload = useCallback(
-    ({
-      keepOnline,
-      currentChatChannel,
-      timestamp,
-    }: BuildPresenceStatePayloadOptions) => {
+    ({ keepOnline, timestamp }: BuildPresenceStatePayloadOptions) => {
       const eventTimestamp = timestamp ?? new Date().toISOString();
 
       return {
         is_online: keepOnline,
-        current_chat_channel: currentChatChannel,
         last_seen: eventTimestamp,
         updated_at: eventTimestamp,
       };
@@ -39,10 +37,7 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
   const broadcastPresenceChange = useCallback(
     (
       broadcastChannel: RealtimeChannel | null | undefined,
-      presenceState: Pick<
-        UserPresence,
-        'user_id' | 'is_online' | 'current_chat_channel' | 'last_seen'
-      >
+      presenceState: Pick<UserPresence, 'user_id' | 'is_online' | 'last_seen'>
     ) => {
       if (!broadcastChannel) {
         return;
@@ -60,7 +55,6 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
   const syncPresenceState = useCallback(
     async ({
       keepOnline,
-      currentChatChannel,
       shouldBroadcast,
       broadcastChannel,
       timestamp,
@@ -69,7 +63,6 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
 
       const nextPresenceState = buildPresenceStatePayload({
         keepOnline,
-        currentChatChannel,
         timestamp,
       });
 
@@ -92,9 +85,6 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
               user_id: user.id,
               is_online:
                 persistedPresence?.is_online ?? nextPresenceState.is_online,
-              current_chat_channel:
-                persistedPresence?.current_chat_channel ??
-                nextPresenceState.current_chat_channel,
               last_seen:
                 persistedPresence?.last_seen ?? nextPresenceState.last_seen,
             });
@@ -128,9 +118,6 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
             user_id: user.id,
             is_online:
               persistedPresence?.is_online ?? nextPresenceState.is_online,
-            current_chat_channel:
-              persistedPresence?.current_chat_channel ??
-              nextPresenceState.current_chat_channel,
             last_seen:
               persistedPresence?.last_seen ?? nextPresenceState.last_seen,
           });

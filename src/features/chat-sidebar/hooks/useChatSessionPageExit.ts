@@ -9,12 +9,10 @@ interface UseChatSessionPageExitProps {
   performClose: () => Promise<boolean>;
   buildPresenceStatePayload: (options: {
     keepOnline: boolean;
-    currentChatChannel: string | null;
     timestamp?: string;
   }) => UserPresenceUpdateInput;
   syncPresenceState: (options: {
     keepOnline: boolean;
-    currentChatChannel: string | null;
     shouldBroadcast: boolean;
     timestamp?: string;
   }) => Promise<boolean>;
@@ -49,14 +47,12 @@ export const useChatSessionPageExit = ({
           user.id,
           buildPresenceStatePayload({
             keepOnline: false,
-            currentChatChannel: null,
             timestamp: eventTimestamp,
           }),
           accessToken
         );
         void syncPresenceState({
           keepOnline: false,
-          currentChatChannel: null,
           shouldBroadcast: false,
           timestamp: eventTimestamp,
         });

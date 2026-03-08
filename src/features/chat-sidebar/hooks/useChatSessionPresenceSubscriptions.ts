@@ -209,13 +209,21 @@ export const useChatSessionPresenceSubscriptions = ({
 
         setTargetUserPresence(previousPresence =>
           previousPresence
-            ? { ...previousPresence, ...presenceUpdate }
+            ? {
+                ...previousPresence,
+                user_id: previousPresence.user_id,
+                is_online:
+                  presenceUpdate.is_online ?? previousPresence.is_online,
+                last_seen:
+                  presenceUpdate.last_seen ?? previousPresence.last_seen,
+                updated_at:
+                  presenceUpdate.updated_at ?? previousPresence.updated_at,
+              }
             : {
                 user_id: presenceUpdate.user_id!,
-                is_online: presenceUpdate.is_online || false,
-                last_seen: presenceUpdate.last_seen || new Date().toISOString(),
-                current_chat_channel:
-                  presenceUpdate.current_chat_channel || null,
+                is_online: presenceUpdate.is_online ?? false,
+                last_seen: presenceUpdate.last_seen ?? new Date().toISOString(),
+                updated_at: presenceUpdate.updated_at ?? null,
               }
         );
       }

@@ -122,7 +122,6 @@ describe('useChatSession', () => {
         {
           user_id: currentUser.id,
           is_online: true,
-          current_chat_channel: 'channel-1',
           last_seen: '2026-03-06T09:30:00.000Z',
         },
       ],
@@ -177,7 +176,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: 'channel-1',
         })
       );
     });
@@ -189,7 +187,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: null,
         })
       );
     });
@@ -220,7 +217,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: 'channel-1',
         })
       );
     });
@@ -232,7 +228,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: null,
         })
       );
     });
@@ -245,7 +240,6 @@ describe('useChatSession', () => {
       currentUser.id,
       expect.objectContaining({
         is_online: false,
-        current_chat_channel: null,
       }),
       'access-token'
     );
@@ -255,7 +249,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: false,
-          current_chat_channel: null,
         })
       );
     });
@@ -271,7 +264,6 @@ describe('useChatSession', () => {
           {
             user_id: currentUser.id,
             is_online: true,
-            current_chat_channel: 'channel-1',
             last_seen: '2026-03-06T09:30:00.000Z',
           },
         ],
@@ -286,7 +278,6 @@ describe('useChatSession', () => {
           {
             user_id: currentUser.id,
             is_online: true,
-            current_chat_channel: null,
             last_seen: '2026-03-06T09:31:00.000Z',
           },
         ],
@@ -317,7 +308,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: 'channel-1',
         })
       );
     });
@@ -330,7 +320,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: null,
         })
       );
     });
@@ -345,7 +334,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: null,
         })
       );
     });
@@ -361,7 +349,6 @@ describe('useChatSession', () => {
           {
             user_id: currentUser.id,
             is_online: true,
-            current_chat_channel: 'channel-1',
             last_seen: '2026-03-06T09:30:00.000Z',
           },
         ],
@@ -410,7 +397,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: null,
         })
       );
     });
@@ -443,7 +429,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: 'channel-1',
         })
       );
     });
@@ -456,7 +441,6 @@ describe('useChatSession', () => {
       currentUser.id,
       expect.objectContaining({
         is_online: false,
-        current_chat_channel: null,
       }),
       'access-token'
     );
@@ -466,7 +450,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: false,
-          current_chat_channel: null,
         })
       );
     });
@@ -493,7 +476,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: true,
-          current_chat_channel: 'channel-1',
         })
       );
     });
@@ -512,7 +494,6 @@ describe('useChatSession', () => {
       currentUser.id,
       expect.objectContaining({
         is_online: false,
-        current_chat_channel: null,
       }),
       'access-token'
     );
@@ -522,7 +503,6 @@ describe('useChatSession', () => {
         currentUser.id,
         expect.objectContaining({
           is_online: false,
-          current_chat_channel: null,
         })
       );
     });
@@ -544,7 +524,6 @@ describe('useChatSession', () => {
           user_id: targetUser.id,
           is_online: true,
           last_seen: '2026-03-06T09:30:00.000Z',
-          current_chat_channel: 'channel-1',
         },
         error: null,
       })
@@ -607,7 +586,6 @@ describe('useChatSession', () => {
             user_id: string;
             is_online: boolean;
             last_seen: string;
-            current_chat_channel: string | null;
           } | null;
           error: null;
         }) => void)
@@ -664,7 +642,6 @@ describe('useChatSession', () => {
           user_id: targetUser.id,
           is_online: true,
           last_seen: '2026-03-06T09:30:00.000Z',
-          current_chat_channel: 'channel-1',
         },
         error: null,
       });

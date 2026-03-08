@@ -65,7 +65,6 @@ vi.mock('../hooks/useChatSession', () => ({
     targetUserPresence: {
       user_id: 'user-b',
       is_online: true,
-      current_chat_channel: 'channel-1',
       last_seen: '2026-03-07T09:59:40.000Z',
     },
     performClose: mockPerformClose,

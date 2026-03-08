@@ -1,6 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
-import type { OnlineUser } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usersService } from '@/services/api/users.service';
@@ -53,24 +52,31 @@ const getUniqueUserIds = (presenceState: Record<string, unknown>): string[] => {
   return Array.from(uniqueUsers);
 };
 
-// Helper function to fetch user details for online users
-const fetchOnlineUsers = async (userIds: string[]): Promise<OnlineUser[]> => {
-  if (userIds.length === 0) return [];
-
-  try {
-    const { data, error } = await usersService.getUsersByIds(userIds);
-
-    if (error) {
-      console.error('Error fetching online users:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching online users:', error);
-    return [];
-  }
-};
+const areOnlineUserListsEqual = (
+  previousUsers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    profilephoto: string | null;
+  }>,
+  nextUsers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    profilephoto: string | null;
+  }>
+) =>
+  previousUsers.length === nextUsers.length &&
+  previousUsers.every((previousUser, index) => {
+    const nextUser = nextUsers[index];
+    return (
+      previousUser.id === nextUser?.id &&
+      previousUser.name === nextUser?.name &&
+      previousUser.email === nextUser?.email &&
+      previousUser.profilephoto === nextUser?.profilephoto &&
+      Boolean(nextUser)
+    );
+  });
 
 export const usePresence = () => {
   const { user } = useAuthStore();
@@ -88,34 +94,75 @@ export const usePresence = () => {
   const isConnectedRef = useRef(false);
   const isSubscribedRef = useRef(false);
   const setupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onlinePresenceUserIdsRef = useRef<string[]>([]);
+  const handlePresenceChangeRef = useRef<
+    (presenceState: Record<string, unknown>) => {
+      userCount: number;
+      userIds: string[];
+    }
+  >(() => ({
+    userCount: 0,
+    userIds: [],
+  }));
 
   const rosterUsers = useMemo(
     () => mergePresenceUsers(onlineUsersList, allUsersList),
     [allUsersList, onlineUsersList]
   );
 
+  const buildOnlineUsers = useCallback(
+    (userIds: string[]) => {
+      if (userIds.length === 0) {
+        return [];
+      }
+
+      const onlineUserIdSet = new Set(userIds);
+      const onlineAt = new Date().toISOString();
+
+      if (allUsersList.length > 0) {
+        return allUsersList
+          .filter(knownUser => onlineUserIdSet.has(knownUser.id))
+          .map(knownUser => ({
+            ...knownUser,
+            online_at: onlineAt,
+          }));
+      }
+
+      if (user && onlineUserIdSet.has(user.id)) {
+        return [
+          {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            profilephoto: user.profilephoto,
+            online_at: onlineAt,
+          },
+        ];
+      }
+
+      return [];
+    },
+    [allUsersList, user]
+  );
+
   // Helper to handle presence state changes
   const handlePresenceChange = useCallback(
-    async (presenceState: Record<string, unknown>) => {
+    (presenceState: Record<string, unknown>) => {
       const userCount = countUniqueUsers(presenceState);
       const userIds = getUniqueUserIds(presenceState);
 
+      onlinePresenceUserIdsRef.current = userIds;
       setOnlineUsers(userCount);
-
-      // Fetch user details for the online users
-      try {
-        const onlineUsers = await fetchOnlineUsers(userIds);
-        setOnlineUsersList(onlineUsers);
-      } catch (error) {
-        console.error('Error updating online users list:', error);
-        // Keep the count but clear the list on error
-        setOnlineUsersList([]);
-      }
+      setOnlineUsersList(buildOnlineUsers(userIds));
 
       return { userCount, userIds };
     },
-    [setOnlineUsers, setOnlineUsersList]
+    [buildOnlineUsers, setOnlineUsers, setOnlineUsersList]
   );
+
+  useEffect(() => {
+    handlePresenceChangeRef.current = handlePresenceChange;
+  }, [handlePresenceChange]);
 
   const cleanupChannel = useCallback(async () => {
     const currentChannel = channelRef.current;
@@ -183,20 +230,20 @@ export const usePresence = () => {
 
       // Set up event handlers before subscribing
       newChannel
-        .on('presence', { event: 'sync' }, async () => {
+        .on('presence', { event: 'sync' }, () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          await handlePresenceChange(presenceState);
+          handlePresenceChangeRef.current(presenceState);
         })
-        .on('presence', { event: 'join' }, async () => {
+        .on('presence', { event: 'join' }, () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          await handlePresenceChange(presenceState);
+          handlePresenceChangeRef.current(presenceState);
         })
-        .on('presence', { event: 'leave' }, async () => {
+        .on('presence', { event: 'leave' }, () => {
           if (!isConnectedRef.current) return;
           const presenceState = newChannel.presenceState();
-          await handlePresenceChange(presenceState);
+          handlePresenceChangeRef.current(presenceState);
         });
 
       // Mark as subscribed before calling subscribe to prevent multiple calls
@@ -214,7 +261,7 @@ export const usePresence = () => {
             });
 
             // Set initial count to 1 (current user) if no presence state yet
-            setTimeout(async () => {
+            setTimeout(() => {
               if (!isConnectedRef.current) return;
               const presenceState = newChannel.presenceState();
               const userCount = countUniqueUsers(presenceState);
@@ -233,7 +280,7 @@ export const usePresence = () => {
                   ]);
                 }
               } else {
-                await handlePresenceChange(presenceState);
+                handlePresenceChangeRef.current(presenceState);
               }
             }, 100);
           } catch (trackError) {
@@ -262,14 +309,7 @@ export const usePresence = () => {
       // Set to 1 as fallback (current user)
       setOnlineUsers(1);
     }
-  }, [
-    user,
-    setChannel,
-    setOnlineUsers,
-    setOnlineUsersList,
-    cleanupChannel,
-    handlePresenceChange,
-  ]);
+  }, [user, setChannel, setOnlineUsers, setOnlineUsersList, cleanupChannel]);
 
   const cleanup = useCallback(async () => {
     await cleanupChannel();
@@ -317,6 +357,16 @@ export const usePresence = () => {
       isActive = false;
     };
   }, [setAllUsersList, user?.id]);
+
+  useEffect(() => {
+    const nextOnlineUsers = buildOnlineUsers(onlinePresenceUserIdsRef.current);
+
+    if (areOnlineUserListsEqual(onlineUsersList, nextOnlineUsers)) {
+      return;
+    }
+
+    setOnlineUsersList(nextOnlineUsers);
+  }, [buildOnlineUsers, onlineUsersList, setOnlineUsersList]);
 
   useEffect(() => {
     let isActive = true;

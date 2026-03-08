@@ -158,7 +158,7 @@ Tanggung jawab:
 - update row `user_presence` saat chat dibuka
 - heartbeat presence user aktif selama chat open
 - hydrate awal target user presence saat chat dibuka
-- clear `current_chat_channel` saat chat ditutup
+- refresh `last_seen` saat chat ditutup tanpa menandai user offline
 - set user offline pada `beforeunload`
 - subscribe perubahan target user presence via channel `user_presence_changes`
 - subscribe broadcast global presence/receipt via channel `global_presence_updates`
@@ -519,7 +519,6 @@ Kolom yang tersedia:
 - `last_seen timestamptz default now()`
 - `last_chat_opened timestamptz nullable`
 - `updated_at timestamptz default now()`
-- `current_chat_channel text nullable`
 
 Foreign key:
 

@@ -56,7 +56,6 @@ export const useChatSessionPresence = ({
     try {
       const didSync = await syncPresenceState({
         keepOnline: true,
-        currentChatChannel: null,
         shouldBroadcast: true,
         broadcastChannel: globalPresenceChannelRef.current,
         timestamp: eventTimestamp,
@@ -81,7 +80,6 @@ export const useChatSessionPresence = ({
     try {
       await syncPresenceState({
         keepOnline: true,
-        currentChatChannel: currentChannelId,
         shouldBroadcast: true,
         broadcastChannel: globalPresenceChannelRef.current,
       });

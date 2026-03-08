@@ -1,3 +1,8 @@
 !.claude/
 !AGENTS.md
 supabase/
+!supabase/
+supabase/*
+!supabase/migrations/
+supabase/migrations/*
+!supabase/migrations/*.sql

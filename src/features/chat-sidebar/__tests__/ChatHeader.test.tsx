@@ -28,7 +28,6 @@ describe('ChatHeader', () => {
           targetUserPresence: {
             user_id: 'user-b',
             is_online: true,
-            current_chat_channel: 'dm_user-b_user-c',
             last_seen: '2026-03-07T09:59:40.000Z',
           },
           isSearchMode: false,
@@ -78,7 +77,6 @@ describe('ChatHeader', () => {
           targetUserPresence: {
             user_id: 'user-b',
             is_online: true,
-            current_chat_channel: null,
             last_seen: '2026-03-07T09:45:00.000Z',
           },
           isSearchMode: false,

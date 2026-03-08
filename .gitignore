@@ -43,6 +43,11 @@ CLAUDE.md
 
 # supabase
 supabase/
+!supabase/
+supabase/*
+!supabase/migrations/
+supabase/migrations/*
+!supabase/migrations/*.sql
 
 # gemini-cli settings
 .gemini/

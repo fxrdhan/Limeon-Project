@@ -11,7 +11,7 @@ const MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX = 48;
 interface ReadReceiptMessage {
   id: string;
   sender_id: string;
-  receiver_id: string;
+  receiver_id: string | null;
   is_read: boolean;
 }
 

@@ -1,87 +1,87 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
+import type {
+  ChatMessageInsertRow,
+  ChatMessageRow,
+  ChatMessageUpdateRow,
+  UserPresenceInsertRow,
+  UserPresenceUpdateRow,
+} from '@/types/supabase-chat';
 
 const DEFAULT_CHAT_MESSAGES_PAGE_SIZE = 50;
 
-export interface ChatMessage {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  channel_id: string | null;
-  message: string;
-  message_type: 'text' | 'image' | 'file';
-  message_relation_kind?: 'attachment_caption' | null;
-  file_name?: string;
-  file_kind?: 'audio' | 'document';
-  file_mime_type?: string;
-  file_size?: number;
-  file_storage_path?: string;
-  file_preview_url?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
-  file_preview_error?: string | null;
-  created_at: string;
-  updated_at: string;
-  is_read: boolean;
-  is_delivered?: boolean;
-  reply_to_id: string | null;
-  // Virtual fields for display
-  sender_name?: string;
-  receiver_name?: string;
-  // Stable key for consistent animation during optimistic updates
-  stableKey?: string;
-}
+export type ChatMessage = Pick<
+  ChatMessageRow,
+  'id' | 'sender_id' | 'receiver_id' | 'channel_id' | 'message' | 'reply_to_id'
+> &
+  Partial<
+    Pick<
+      ChatMessageRow,
+      | 'file_mime_type'
+      | 'file_name'
+      | 'file_preview_error'
+      | 'file_preview_page_count'
+      | 'file_preview_status'
+      | 'file_preview_url'
+      | 'file_size'
+      | 'file_storage_path'
+    >
+  > & {
+    created_at: string;
+    updated_at: string;
+    is_read: boolean;
+    is_delivered?: boolean;
+    message_relation_kind?: 'attachment_caption' | null;
+    message_type: 'text' | 'image' | 'file';
+    file_kind?: 'audio' | 'document';
+    // Virtual fields for display
+    sender_name?: string;
+    receiver_name?: string;
+    // Stable key for consistent animation during optimistic updates
+    stableKey?: string;
+  };
 
 export interface UserPresence {
   user_id: string;
   is_online: boolean;
   last_seen: string;
-  current_chat_channel: string | null;
+  updated_at?: string | null;
 }
 
-export interface ChatMessageInsertInput {
-  sender_id: string;
-  receiver_id: string;
-  channel_id: string | null;
-  message: string;
-  message_type: 'text' | 'image' | 'file';
+export type ChatMessageInsertInput = Omit<
+  ChatMessageInsertRow,
+  'message_relation_kind' | 'message_type' | 'file_kind'
+> & {
+  message_type?: 'text' | 'image' | 'file';
   message_relation_kind?: 'attachment_caption' | null;
-  file_name?: string;
   file_kind?: 'audio' | 'document';
-  file_mime_type?: string;
-  file_size?: number;
-  file_storage_path?: string;
-  file_preview_url?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
-  file_preview_error?: string | null;
-  reply_to_id?: string | null;
-}
+};
 
-export interface ChatMessageUpdateInput {
-  message?: string;
-  updated_at?: string;
-  is_read?: boolean;
-  is_delivered?: boolean;
-  reply_to_id?: string | null;
+export type ChatMessageUpdateInput = Omit<
+  ChatMessageUpdateRow,
+  'message_relation_kind' | 'message_type' | 'file_kind'
+> & {
   message_relation_kind?: 'attachment_caption' | null;
-  file_preview_url?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
-  file_preview_error?: string | null;
-}
+  message_type?: 'text' | 'image' | 'file';
+  file_kind?: 'audio' | 'document';
+};
 
-export interface UserPresenceUpdateInput {
+export type UserPresenceUpdateInput = Omit<
+  UserPresenceUpdateRow,
+  'is_online' | 'last_seen'
+> & {
   is_online?: boolean;
-  current_chat_channel?: string | null;
   last_seen?: string;
-  updated_at?: string;
-}
+};
 
-export interface UserPresenceInsertInput extends UserPresenceUpdateInput {
-  user_id: string;
-}
+export type UserPresenceInsertInput = Omit<
+  UserPresenceInsertRow,
+  'is_online' | 'last_seen'
+> & {
+  is_online?: boolean;
+  last_seen?: string;
+};
 
 export interface ConversationMessagesPage {
   messages: ChatMessage[];
@@ -331,7 +331,7 @@ export const chatService = {
     try {
       const { data, error } = await supabase
         .from('user_presence')
-        .select('user_id, is_online, last_seen, current_chat_channel')
+        .select('user_id, is_online, last_seen, updated_at')
         .eq('user_id', userId)
         .single();
 
