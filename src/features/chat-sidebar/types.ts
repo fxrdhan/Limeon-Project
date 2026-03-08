@@ -8,6 +8,11 @@ export interface ChatSidebarPanelProps {
   targetUser?: ChatSidebarPanelTargetUser;
 }
 
+export interface PendingSendRegistration {
+  complete: () => void;
+  isCancelled: () => boolean;
+}
+
 export type MenuPlacement = 'left' | 'right' | 'up' | 'down';
 export type MenuSideAnchor = 'top' | 'middle' | 'bottom';
 export type ComposerPendingFileKind = 'audio' | 'document';

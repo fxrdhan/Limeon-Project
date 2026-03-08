@@ -7,6 +7,7 @@ import {
 import toast from 'react-hot-toast';
 import type {
   ChatSidebarPanelTargetUser,
+  PendingSendRegistration,
   PendingComposerAttachment,
 } from '../types';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
@@ -19,11 +20,6 @@ import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { useChatMutationScope } from './useChatMutationScope';
 import { createRuntimeId, createStableKey } from '../utils/runtime-id';
-
-export interface PendingSendRegistration {
-  complete: () => void;
-  isCancelled: () => boolean;
-}
 
 interface UseChatComposerSendProps {
   user: {
@@ -71,10 +67,9 @@ export const useChatComposerSend = ({
 }: UseChatComposerSendProps) => {
   const isSendingRef = useRef(false);
   const {
-    conversationScopeKey,
-    isConversationScopeActive,
-    reconcileMessagesFromServer,
-    runIfConversationScopeActive,
+    isCurrentConversationScopeActive,
+    reconcileCurrentConversationMessages,
+    runInCurrentConversationScope,
   } = useChatMutationScope({
     user,
     targetUser,
@@ -145,7 +140,7 @@ export const useChatComposerSend = ({
         if (error || !newMessage) {
           if (
             !pendingSend.isCancelled() &&
-            isConversationScopeActive(conversationScopeKey)
+            isCurrentConversationScopeActive()
           ) {
             setMessages(previousMessages =>
               previousMessages.filter(messageItem => messageItem.id !== tempId)
@@ -173,7 +168,7 @@ export const useChatComposerSend = ({
           const { data: deletedMessageIds, error: deleteError } =
             await chatSidebarGateway.deleteMessageThread(realMessage.id);
 
-          if (!deleteError && isConversationScopeActive(conversationScopeKey)) {
+          if (!deleteError && isCurrentConversationScopeActive()) {
             getPersistedDeletedThreadMessageIds(deletedMessageIds, [
               realMessage.id,
             ]).forEach(deletedMessageId => {
@@ -186,12 +181,12 @@ export const useChatComposerSend = ({
               'Error cancelling temp message after persistence:',
               deleteError
             );
-            await reconcileMessagesFromServer({ conversationScopeKey });
+            await reconcileCurrentConversationMessages();
           }
           return false;
         }
 
-        runIfConversationScopeActive(conversationScopeKey, () => {
+        runInCurrentConversationScope(() => {
           setMessages(previousMessages =>
             commitOptimisticMessage(previousMessages, tempId, realMessage)
           );
@@ -202,10 +197,7 @@ export const useChatComposerSend = ({
         return true;
       } catch (error) {
         console.error('Error sending message:', error);
-        if (
-          !pendingSend.isCancelled() &&
-          isConversationScopeActive(conversationScopeKey)
-        ) {
+        if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
           setMessages(previousMessages =>
             previousMessages.filter(messageItem => messageItem.id !== tempId)
           );
@@ -224,11 +216,10 @@ export const useChatComposerSend = ({
     [
       broadcastNewMessage,
       broadcastDeletedMessage,
-      conversationScopeKey,
       currentChannelId,
-      isConversationScopeActive,
-      reconcileMessagesFromServer,
-      runIfConversationScopeActive,
+      isCurrentConversationScopeActive,
+      reconcileCurrentConversationMessages,
+      runInCurrentConversationScope,
       registerPendingSend,
       scheduleScrollMessagesToBottom,
       setMessage,
@@ -293,15 +284,12 @@ export const useChatComposerSend = ({
               );
 
         if (!sentAttachmentMessageId) {
-          if (isConversationScopeActive(conversationScopeKey)) {
+          if (isCurrentConversationScopeActive()) {
             restorePendingComposerAttachments(
               attachmentsToSend.slice(attachmentIndex)
             );
           }
-          if (
-            shouldAttachCaption &&
-            isConversationScopeActive(conversationScopeKey)
-          ) {
+          if (shouldAttachCaption && isCurrentConversationScopeActive()) {
             setMessage(messageText);
           }
           return;
@@ -316,7 +304,6 @@ export const useChatComposerSend = ({
     }
   }, [
     clearPendingComposerAttachments,
-    conversationScopeKey,
     editingMessageId,
     message,
     pendingComposerAttachments,
@@ -326,7 +313,7 @@ export const useChatComposerSend = ({
     sendTextMessage,
     currentChannelId,
     setMessage,
-    isConversationScopeActive,
+    isCurrentConversationScopeActive,
     targetUser,
     user,
   ]);

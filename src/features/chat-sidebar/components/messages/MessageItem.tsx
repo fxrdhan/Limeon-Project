@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { memo } from 'react';
 import { TbCheck } from 'react-icons/tb';
 import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
@@ -29,6 +30,7 @@ import {
   getFileIcon,
   getMessageMenuClasses,
 } from './messageItemUtils';
+import { areMessageItemPropsEqual } from './messageItemMemo';
 
 export interface MessageItemModel {
   message: ChatMessage;
@@ -76,7 +78,7 @@ export interface MessageItemModel {
   ) => Promise<void>;
 }
 
-const MessageItem = ({ model }: { model: MessageItemModel }) => {
+const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   const {
     message,
     userId,
@@ -439,5 +441,9 @@ const MessageItem = ({ model }: { model: MessageItemModel }) => {
     </motion.div>
   );
 };
+
+const MessageItem = memo(MessageItemComponent, areMessageItemPropsEqual);
+
+MessageItem.displayName = 'MessageItem';
 
 export default MessageItem;

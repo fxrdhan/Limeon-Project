@@ -128,6 +128,17 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     getAttachmentFileName,
     getAttachmentFileKind,
   });
+  const messageActionHandlersRef = useRef({
+    onToggleMessageSelection,
+    toggleMessageMenu,
+    handleToggleExpand,
+    handleEditMessage,
+    handleCopyMessage,
+    handleDownloadMessage,
+    handleDeleteMessage,
+    getAttachmentFileName,
+    getAttachmentFileKind,
+  });
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imagePreviewName, setImagePreviewName] = useState('');
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
@@ -197,6 +208,30 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
   );
 
   useEffect(() => {
+    messageActionHandlersRef.current = {
+      onToggleMessageSelection,
+      toggleMessageMenu,
+      handleToggleExpand,
+      handleEditMessage,
+      handleCopyMessage,
+      handleDownloadMessage,
+      handleDeleteMessage,
+      getAttachmentFileName,
+      getAttachmentFileKind,
+    };
+  }, [
+    getAttachmentFileKind,
+    getAttachmentFileName,
+    handleCopyMessage,
+    handleDeleteMessage,
+    handleDownloadMessage,
+    handleEditMessage,
+    handleToggleExpand,
+    onToggleMessageSelection,
+    toggleMessageMenu,
+  ]);
+
+  useEffect(() => {
     return () => {
       if (imagePreviewCloseTimerRef.current) {
         window.clearTimeout(imagePreviewCloseTimerRef.current);
@@ -204,6 +239,70 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
       }
     };
   }, []);
+
+  const handleToggleMessageSelectionStable = useCallback(
+    (messageId: string) => {
+      messageActionHandlersRef.current.onToggleMessageSelection(messageId);
+    },
+    []
+  );
+
+  const toggleMessageMenuStable = useCallback(
+    (
+      anchor: HTMLElement,
+      messageId: string,
+      preferredSide: 'left' | 'right'
+    ) => {
+      messageActionHandlersRef.current.toggleMessageMenu(
+        anchor,
+        messageId,
+        preferredSide
+      );
+    },
+    []
+  );
+
+  const handleToggleExpandStable = useCallback((messageId: string) => {
+    messageActionHandlersRef.current.handleToggleExpand(messageId);
+  }, []);
+
+  const handleEditMessageStable = useCallback((targetMessage: ChatMessage) => {
+    messageActionHandlersRef.current.handleEditMessage(targetMessage);
+  }, []);
+
+  const handleCopyMessageStable = useCallback(
+    async (targetMessage: ChatMessage) => {
+      await messageActionHandlersRef.current.handleCopyMessage(targetMessage);
+    },
+    []
+  );
+
+  const handleDownloadMessageStable = useCallback(
+    async (targetMessage: ChatMessage) => {
+      await messageActionHandlersRef.current.handleDownloadMessage(
+        targetMessage
+      );
+    },
+    []
+  );
+
+  const handleDeleteMessageStable = useCallback(
+    async (targetMessage: ChatMessage) =>
+      messageActionHandlersRef.current.handleDeleteMessage(targetMessage),
+    []
+  );
+
+  const getAttachmentFileNameStable = useCallback(
+    (targetMessage: ChatMessage) =>
+      messageActionHandlersRef.current.getAttachmentFileName(targetMessage),
+    []
+  );
+
+  const getAttachmentFileKindStable = useCallback(
+    (targetMessage: ChatMessage) =>
+      messageActionHandlersRef.current.getAttachmentFileKind(targetMessage),
+    []
+  );
 
   return (
     <>
@@ -256,17 +355,18 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
                     ),
                     pdfMessagePreview: getPdfMessagePreview(
                       messageItem,
-                      getAttachmentFileName(messageItem)
+                      getAttachmentFileNameStable(messageItem)
                     ),
-                    onToggleMessageSelection,
-                    toggleMessageMenu,
-                    handleToggleExpand,
-                    handleEditMessage,
-                    handleCopyMessage,
-                    handleDownloadMessage,
-                    handleDeleteMessage,
-                    getAttachmentFileName,
-                    getAttachmentFileKind,
+                    onToggleMessageSelection:
+                      handleToggleMessageSelectionStable,
+                    toggleMessageMenu: toggleMessageMenuStable,
+                    handleToggleExpand: handleToggleExpandStable,
+                    handleEditMessage: handleEditMessageStable,
+                    handleCopyMessage: handleCopyMessageStable,
+                    handleDownloadMessage: handleDownloadMessageStable,
+                    handleDeleteMessage: handleDeleteMessageStable,
+                    getAttachmentFileName: getAttachmentFileNameStable,
+                    getAttachmentFileKind: getAttachmentFileKindStable,
                     normalizedSearchQuery,
                     openImageInPortal,
                     openDocumentInPortal,

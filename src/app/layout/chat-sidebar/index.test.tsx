@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ChatSidebar from './index';
 
@@ -21,7 +21,16 @@ vi.mock('motion/react', () => ({
       initial?: unknown;
       onAnimationComplete?: () => void;
       transition?: unknown;
-    }) => <aside {...props}>{children}</aside>,
+    }) => (
+      <aside data-testid="chat-sidebar-aside" {...props}>
+        <button
+          type="button"
+          data-testid="chat-sidebar-complete-animation"
+          onClick={_onAnimationComplete}
+        />
+        {children}
+      </aside>
+    ),
   },
 }));
 
@@ -65,5 +74,34 @@ describe('ChatSidebar', () => {
     expect(screen.getByTestId('chat-sidebar-panel').textContent).toBe(
       'closing:Gudang'
     );
+  });
+
+  it('clears the persisted target user after the close animation finishes', async () => {
+    const { rerender } = render(
+      <ChatSidebar
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        }}
+      />
+    );
+
+    rerender(
+      <ChatSidebar isOpen={false} onClose={vi.fn()} targetUser={undefined} />
+    );
+
+    expect(screen.getByTestId('chat-sidebar-panel').textContent).toBe(
+      'closing:Gudang'
+    );
+
+    fireEvent.click(screen.getByTestId('chat-sidebar-complete-animation'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('chat-sidebar-panel')).toBeNull();
+    });
   });
 });

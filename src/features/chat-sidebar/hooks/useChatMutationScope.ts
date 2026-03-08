@@ -53,10 +53,33 @@ export const useChatMutationScope = ({
     [isConversationScopeActive]
   );
 
+  const isCurrentConversationScopeActive = useCallback(
+    () => isConversationScopeActive(conversationScopeKey),
+    [conversationScopeKey, isConversationScopeActive]
+  );
+
+  const runInCurrentConversationScope = useCallback(
+    (effect: () => void) =>
+      runIfConversationScopeActive(conversationScopeKey, effect),
+    [conversationScopeKey, runIfConversationScopeActive]
+  );
+
+  const reconcileCurrentConversationMessages = useCallback(
+    async ({ fallbackMessages }: { fallbackMessages?: ChatMessage[] } = {}) =>
+      reconcileMessagesFromServer({
+        conversationScopeKey,
+        fallbackMessages,
+      }),
+    [conversationScopeKey, reconcileMessagesFromServer]
+  );
+
   return {
     conversationScopeKey,
     isConversationScopeActive,
+    isCurrentConversationScopeActive,
     reconcileMessagesFromServer,
+    reconcileCurrentConversationMessages,
+    runInCurrentConversationScope,
     runIfConversationScopeActive,
   };
 };

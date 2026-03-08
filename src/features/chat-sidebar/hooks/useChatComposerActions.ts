@@ -14,6 +14,7 @@ import {
 import { useChatComposerSend } from './useChatComposerSend';
 import type {
   ChatSidebarPanelTargetUser,
+  PendingSendRegistration,
   PendingComposerAttachment,
 } from '../types';
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
@@ -22,11 +23,6 @@ import { isTempMessageId } from '../utils/optimistic-message';
 import { resolveChatMessageStoragePaths } from '../utils/message-file';
 import { useChatMessageTransferActions } from './useChatMessageTransferActions';
 import { useChatMutationScope } from './useChatMutationScope';
-
-interface PendingSendRegistration {
-  complete: () => void;
-  isCancelled: () => boolean;
-}
 
 type PendingSendRegistryRef = MutableRefObject<
   Map<string, { cancelled: boolean }>
@@ -123,10 +119,9 @@ export const useChatComposerActions = ({
   }, [currentChannelId]);
 
   const {
-    conversationScopeKey,
-    isConversationScopeActive,
-    reconcileMessagesFromServer,
-    runIfConversationScopeActive,
+    isCurrentConversationScopeActive,
+    reconcileCurrentConversationMessages,
+    runInCurrentConversationScope,
   } = useChatMutationScope({
     user,
     targetUser,
@@ -187,7 +182,7 @@ export const useChatComposerActions = ({
       candidate => candidate.id === messageId
     );
     const restoreFailedEdit = () => {
-      runIfConversationScopeActive(conversationScopeKey, () => {
+      runInCurrentConversationScope(() => {
         if (existingMessage) {
           setMessages(previousMessages =>
             previousMessages.map(messageItem =>
@@ -231,7 +226,7 @@ export const useChatComposerActions = ({
           updated_at: updatedAt,
         });
 
-      if (!isConversationScopeActive(conversationScopeKey)) {
+      if (!isCurrentConversationScopeActive()) {
         return;
       }
 
@@ -264,14 +259,13 @@ export const useChatComposerActions = ({
   }, [
     broadcastUpdatedMessage,
     closeMessageMenu,
-    conversationScopeKey,
     currentChannelId,
     editingMessageId,
-    isConversationScopeActive,
+    isCurrentConversationScopeActive,
     focusMessageComposer,
     message,
     messages,
-    runIfConversationScopeActive,
+    runInCurrentConversationScope,
     setEditingMessageId,
     setMessage,
     setMessages,
@@ -341,7 +335,7 @@ export const useChatComposerActions = ({
           messageIdsToDelete
         );
 
-        runIfConversationScopeActive(conversationScopeKey, () => {
+        runInCurrentConversationScope(() => {
           broadcastTargetIds.forEach(deletedMessageId => {
             broadcastDeletedMessage(deletedMessageId);
           });
@@ -369,13 +363,12 @@ export const useChatComposerActions = ({
         return true;
       } catch (error) {
         console.error('Error deleting message:', error);
-        await reconcileMessagesFromServer({
+        await reconcileCurrentConversationMessages({
           fallbackMessages: messagesSnapshot,
-          conversationScopeKey,
         });
         if (
           !options?.suppressErrorToast &&
-          isConversationScopeActive(conversationScopeKey)
+          isCurrentConversationScopeActive()
         ) {
           toast.error('Gagal menghapus pesan', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -387,19 +380,18 @@ export const useChatComposerActions = ({
     [
       broadcastDeletedMessage,
       closeMessageMenu,
-      conversationScopeKey,
       currentChannelId,
       editingMessageId,
-      isConversationScopeActive,
+      isCurrentConversationScopeActive,
       messages,
-      runIfConversationScopeActive,
+      runInCurrentConversationScope,
       setEditingMessageId,
       setMessage,
       setMessages,
       targetUser,
       user,
       pendingSendRegistryRef,
-      reconcileMessagesFromServer,
+      reconcileCurrentConversationMessages,
     ]
   );
 

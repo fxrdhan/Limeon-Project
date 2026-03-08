@@ -6,7 +6,11 @@ import {
   chatSidebarGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
-import type { ChatSidebarPanelTargetUser, PendingComposerFile } from '../types';
+import type {
+  ChatSidebarPanelTargetUser,
+  PendingComposerFile,
+  PendingSendRegistration,
+} from '../types';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
 import {
   getPersistedDeletedThreadMessageIds,
@@ -25,11 +29,6 @@ import {
 } from '../utils/attachment-send';
 import { useChatAttachmentPdfPreview } from './useChatAttachmentPdfPreview';
 import { useChatMutationScope } from './useChatMutationScope';
-
-interface PendingSendRegistration {
-  complete: () => void;
-  isCancelled: () => boolean;
-}
 
 const normalizeStoragePaths = (
   storagePaths: Array<string | null | undefined>
@@ -109,8 +108,9 @@ export const useChatAttachmentSend = ({
   const {
     conversationScopeKey,
     isConversationScopeActive,
-    reconcileMessagesFromServer,
-    runIfConversationScopeActive,
+    isCurrentConversationScopeActive,
+    reconcileCurrentConversationMessages,
+    runInCurrentConversationScope,
   } = useChatMutationScope({
     user,
     targetUser,
@@ -353,14 +353,14 @@ export const useChatAttachmentSend = ({
         if (error || !persistedMessage) {
           if (
             !pendingSend.isCancelled() &&
-            isConversationScopeActive(conversationScopeKey)
+            isCurrentConversationScopeActive()
           ) {
             removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
           }
           await deleteUploadedStorageFiles([uploadedStoragePath]);
           if (
             !pendingSend.isCancelled() &&
-            isConversationScopeActive(conversationScopeKey)
+            isCurrentConversationScopeActive()
           ) {
             toast.error(sendFailureToast, {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -387,7 +387,7 @@ export const useChatAttachmentSend = ({
               'Error cancelling temp attachment thread after persistence:',
               rollbackError
             );
-            await reconcileMessagesFromServer({ conversationScopeKey });
+            await reconcileCurrentConversationMessages();
           }
           return null;
         }
@@ -428,12 +428,12 @@ export const useChatAttachmentSend = ({
                   'Error cancelling temp attachment thread after caption persistence:',
                   rollbackError
                 );
-                await reconcileMessagesFromServer({ conversationScopeKey });
+                await reconcileCurrentConversationMessages();
               }
               return null;
             }
 
-            runIfConversationScopeActive(conversationScopeKey, () => {
+            runInCurrentConversationScope(() => {
               setMessages(previousMessages =>
                 commitOptimisticAttachmentThread({
                   previousMessages,
@@ -450,7 +450,7 @@ export const useChatAttachmentSend = ({
           } else {
             if (
               !pendingSend.isCancelled() &&
-              isConversationScopeActive(conversationScopeKey)
+              isCurrentConversationScopeActive()
             ) {
               removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
             }
@@ -466,12 +466,12 @@ export const useChatAttachmentSend = ({
                 'Error rolling back attachment thread:',
                 rollbackError
               );
-              await reconcileMessagesFromServer({ conversationScopeKey });
+              await reconcileCurrentConversationMessages();
             }
 
             if (
               !pendingSend.isCancelled() &&
-              isConversationScopeActive(conversationScopeKey)
+              isCurrentConversationScopeActive()
             ) {
               toast.error(captionFailureToast, {
                 toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -480,7 +480,7 @@ export const useChatAttachmentSend = ({
             return null;
           }
         } else {
-          runIfConversationScopeActive(conversationScopeKey, () => {
+          runInCurrentConversationScope(() => {
             setMessages(previousMessages =>
               commitOptimisticAttachmentThread({
                 previousMessages,
@@ -507,17 +507,11 @@ export const useChatAttachmentSend = ({
         return realMessage.id;
       } catch (error) {
         console.error('Error sending attachment message:', error);
-        if (
-          !pendingSend.isCancelled() &&
-          isConversationScopeActive(conversationScopeKey)
-        ) {
+        if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
           removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
         }
         await deleteUploadedStorageFiles([uploadedStoragePath]);
-        if (
-          !pendingSend.isCancelled() &&
-          isConversationScopeActive(conversationScopeKey)
-        ) {
+        if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
           toast.error(sendFailureToast, {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -534,19 +528,19 @@ export const useChatAttachmentSend = ({
       currentChannelId,
       deleteUploadedStorageFiles,
       editingMessageId,
-      isConversationScopeActive,
+      isCurrentConversationScopeActive,
       pendingImagePreviewUrlsRef,
       registerPendingSend,
       releasePendingPreviewUrl,
       removeOptimisticAttachmentThreadFromState,
       rollbackPersistedAttachmentThread,
-      runIfConversationScopeActive,
+      runInCurrentConversationScope,
       scheduleScrollMessagesToBottom,
       setMessages,
       targetUser,
       triggerSendSuccessGlow,
       user,
-      reconcileMessagesFromServer,
+      reconcileCurrentConversationMessages,
     ]
   );
 

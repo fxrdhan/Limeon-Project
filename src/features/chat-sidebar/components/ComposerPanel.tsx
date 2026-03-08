@@ -307,7 +307,9 @@ const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
               <motion.button
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                type="button"
                 onClick={onSendMessage}
+                aria-label="Send message"
                 className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                   isMessageInputMultiline
                     ? 'col-start-3 row-start-2'
