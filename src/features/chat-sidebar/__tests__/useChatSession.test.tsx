@@ -185,6 +185,96 @@ describe('useChatSession', () => {
     });
   });
 
+  it('retries the close presence sync on cleanup when the first close update fails', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    mockChatService.updateUserPresence
+      .mockResolvedValueOnce({
+        data: [
+          {
+            user_id: currentUser.id,
+            is_online: true,
+            current_chat_channel: 'channel-1',
+            last_seen: '2026-03-06T09:30:00.000Z',
+          },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: new Error('close failed'),
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            user_id: currentUser.id,
+            is_online: true,
+            current_chat_channel: null,
+            last_seen: '2026-03-06T09:31:00.000Z',
+          },
+        ],
+        error: null,
+      });
+    mockChatService.insertUserPresence.mockResolvedValueOnce({
+      data: null,
+      error: new Error('insert failed'),
+    });
+
+    const { result, rerender } = renderHook(
+      ({ isOpen }: { isOpen: boolean }) =>
+        useChatSession({
+          isOpen,
+          user: currentUser,
+          targetUser,
+          currentChannelId: 'channel-1',
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        }),
+      {
+        initialProps: { isOpen: true },
+      }
+    );
+
+    await waitFor(() => {
+      expect(mockChatService.updateUserPresence).toHaveBeenCalledWith(
+        currentUser.id,
+        expect.objectContaining({
+          is_online: true,
+          current_chat_channel: 'channel-1',
+        })
+      );
+    });
+
+    rerender({ isOpen: false });
+
+    await waitFor(() => {
+      expect(mockChatService.updateUserPresence).toHaveBeenNthCalledWith(
+        2,
+        currentUser.id,
+        expect.objectContaining({
+          is_online: true,
+          current_chat_channel: null,
+        })
+      );
+    });
+
+    await act(async () => {
+      await result.current.performClose();
+    });
+
+    await waitFor(() => {
+      expect(mockChatService.updateUserPresence).toHaveBeenNthCalledWith(
+        3,
+        currentUser.id,
+        expect.objectContaining({
+          is_online: true,
+          current_chat_channel: null,
+        })
+      );
+    });
+  });
+
   it('marks the user offline on beforeunload while chat is still open', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };

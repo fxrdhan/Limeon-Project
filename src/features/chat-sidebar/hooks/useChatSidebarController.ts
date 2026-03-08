@@ -8,7 +8,6 @@ import {
   createChatHeaderModel,
   createComposerPanelModel,
   createMessagesPaneModel,
-  withMessagesPaneToggleExpand,
 } from './chatSidebarViewModels';
 import { useChatComposer } from './useChatComposer';
 import { useChatBulkDelete } from './useChatBulkDelete';
@@ -172,46 +171,44 @@ export const useChatSidebarController = ({
     getInitialsColor,
   });
 
-  const messagesModel = withMessagesPaneToggleExpand(
-    createMessagesPaneModel({
-      loading,
-      messages,
-      user,
-      composer: {
-        messageInputHeight: composer.messageInputHeight,
-        composerContextualOffset: composer.composerContextualOffset,
-        editingMessageId: composer.editingMessageId,
-        handleEditMessage: composer.handleEditMessage,
-        handleCopyMessage: composer.handleCopyMessage,
-        handleDownloadMessage: composer.handleDownloadMessage,
-        handleDeleteMessage: composer.handleDeleteMessage,
-      },
-      viewport: {
-        composerContainerHeight: viewport.composerContainerHeight,
-        openMenuMessageId: viewport.openMenuMessageId,
-        menuPlacement: viewport.menuPlacement,
-        menuSideAnchor: viewport.menuSideAnchor,
-        shouldAnimateMenuOpen: viewport.shouldAnimateMenuOpen,
-        menuTransitionSourceId: viewport.menuTransitionSourceId,
-        menuOffsetX: viewport.menuOffsetX,
-        flashingMessageId: viewport.flashingMessageId,
-        isFlashHighlightVisible: viewport.isFlashHighlightVisible,
-        hasNewMessages: viewport.hasNewMessages,
-        isAtBottom: viewport.isAtBottom,
-        closeMessageMenu: viewport.closeMessageMenu,
-        toggleMessageMenu,
-        scrollToBottom: viewport.scrollToBottom,
-        messagesContainerRef,
-        messagesEndRef,
-        messageBubbleRefs,
-        initialMessageAnimationKeysRef,
-        initialOpenJumpAnimationKeysRef,
-      },
-      interaction,
-      expandedMessageIds,
-    }),
-    handleToggleExpand
-  );
+  const messagesModel = createMessagesPaneModel({
+    loading,
+    messages,
+    user,
+    composer: {
+      messageInputHeight: composer.messageInputHeight,
+      composerContextualOffset: composer.composerContextualOffset,
+      editingMessageId: composer.editingMessageId,
+      handleEditMessage: composer.handleEditMessage,
+      handleCopyMessage: composer.handleCopyMessage,
+      handleDownloadMessage: composer.handleDownloadMessage,
+      handleDeleteMessage: composer.handleDeleteMessage,
+    },
+    viewport: {
+      composerContainerHeight: viewport.composerContainerHeight,
+      openMenuMessageId: viewport.openMenuMessageId,
+      menuPlacement: viewport.menuPlacement,
+      menuSideAnchor: viewport.menuSideAnchor,
+      shouldAnimateMenuOpen: viewport.shouldAnimateMenuOpen,
+      menuTransitionSourceId: viewport.menuTransitionSourceId,
+      menuOffsetX: viewport.menuOffsetX,
+      flashingMessageId: viewport.flashingMessageId,
+      isFlashHighlightVisible: viewport.isFlashHighlightVisible,
+      hasNewMessages: viewport.hasNewMessages,
+      isAtBottom: viewport.isAtBottom,
+      closeMessageMenu: viewport.closeMessageMenu,
+      toggleMessageMenu,
+      scrollToBottom: viewport.scrollToBottom,
+      messagesContainerRef,
+      messagesEndRef,
+      messageBubbleRefs,
+      initialMessageAnimationKeysRef,
+      initialOpenJumpAnimationKeysRef,
+    },
+    interaction,
+    expandedMessageIds,
+    handleToggleExpand,
+  });
 
   const composerModel = createComposerPanelModel({
     composer: {

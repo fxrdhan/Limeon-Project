@@ -10,6 +10,14 @@ export const useChatMessageTransferActions = ({
 }: {
   closeMessageMenu: () => void;
 }) => {
+  const buildCopyableMessageText = useCallback((targetMessage: ChatMessage) => {
+    if (targetMessage.message_type === 'file') {
+      return `[File: ${getAttachmentFileName(targetMessage)}] ${targetMessage.message}`;
+    }
+
+    return targetMessage.message;
+  }, []);
+
   const handleCopyMessage = useCallback(
     async (targetMessage: ChatMessage) => {
       try {
@@ -47,16 +55,25 @@ export const useChatMessageTransferActions = ({
           return;
         }
 
-        await navigator.clipboard.writeText(targetMessage.message);
-        toast.success('Pesan berhasil disalin', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
+        await navigator.clipboard.writeText(
+          buildCopyableMessageText(targetMessage)
+        );
+        toast.success(
+          targetMessage.message_type === 'file'
+            ? 'Lampiran berhasil disalin'
+            : 'Pesan berhasil disalin',
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
       } catch (error) {
         console.error('Error copying message:', error);
         toast.error(
           targetMessage.message_type === 'image'
             ? 'Gagal menyalin gambar ke clipboard'
-            : 'Gagal menyalin pesan',
+            : targetMessage.message_type === 'file'
+              ? 'Gagal menyalin lampiran'
+              : 'Gagal menyalin pesan',
           {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           }
@@ -65,7 +82,7 @@ export const useChatMessageTransferActions = ({
         closeMessageMenu();
       }
     },
-    [closeMessageMenu]
+    [buildCopyableMessageText, closeMessageMenu]
   );
 
   const handleDownloadMessage = useCallback(

@@ -83,6 +83,7 @@ export const createMessagesPaneModel = ({
   viewport,
   interaction,
   expandedMessageIds,
+  handleToggleExpand,
 }: {
   loading: boolean;
   messages: MessagesPaneModel['messages'];
@@ -127,6 +128,7 @@ export const createMessagesPaneModel = ({
     handleToggleMessageSelection: (messageId: string) => void;
   };
   expandedMessageIds: Set<string>;
+  handleToggleExpand: MessagesPaneModel['handleToggleExpand'];
 }): MessagesPaneModel => ({
   loading,
   messages,
@@ -162,7 +164,7 @@ export const createMessagesPaneModel = ({
   initialOpenJumpAnimationKeysRef: viewport.initialOpenJumpAnimationKeysRef,
   closeMessageMenu: viewport.closeMessageMenu,
   toggleMessageMenu: viewport.toggleMessageMenu,
-  handleToggleExpand: () => {},
+  handleToggleExpand,
   handleEditMessage: composer.handleEditMessage,
   handleCopyMessage: composer.handleCopyMessage,
   handleDownloadMessage: composer.handleDownloadMessage,
@@ -171,14 +173,6 @@ export const createMessagesPaneModel = ({
   getAttachmentFileName,
   getAttachmentFileKind,
   onScrollToBottom: viewport.scrollToBottom,
-});
-
-export const withMessagesPaneToggleExpand = (
-  model: MessagesPaneModel,
-  handleToggleExpand: MessagesPaneModel['handleToggleExpand']
-): MessagesPaneModel => ({
-  ...model,
-  handleToggleExpand,
 });
 
 export const createComposerPanelModel = ({

@@ -48,6 +48,7 @@ export const useChatSessionPresence = ({
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const presenceHeartbeatIntervalRef = useRef<number | null>(null);
   const hasClosedRef = useRef(false);
+  const isClosingRef = useRef(false);
   const previousIsOpenRef = useRef(isOpen);
   const activeTargetUserIdRef = useRef<string | null>(targetUser?.id ?? null);
 
@@ -62,7 +63,7 @@ export const useChatSessionPresence = ({
       shouldBroadcast,
       timestamp,
     }: SyncPresenceStateOptions) => {
-      if (!user) return;
+      if (!user) return false;
 
       const eventTimestamp = timestamp ?? new Date().toISOString();
       const nextPresenceState = {
@@ -93,7 +94,7 @@ export const useChatSessionPresence = ({
           );
 
         if (!updateError && updateData && updateData.length > 0) {
-          return;
+          return true;
         }
 
         const { error: insertError } =
@@ -108,8 +109,10 @@ export const useChatSessionPresence = ({
         if (insertError) {
           console.error('Error inserting user presence:', insertError);
         }
+        return !insertError;
       } catch (error) {
         console.error('Caught error syncing user presence:', error);
+        return false;
       }
     },
     [globalPresenceChannelRef, user]
@@ -128,22 +131,29 @@ export const useChatSessionPresence = ({
   );
 
   const performClose = useCallback(async () => {
-    if (!user || hasClosedRef.current) {
-      return;
+    if (!user || hasClosedRef.current || isClosingRef.current) {
+      return false;
     }
 
     const eventTimestamp = new Date().toISOString();
-    hasClosedRef.current = true;
+    isClosingRef.current = true;
 
     try {
-      await syncPresenceState({
+      const didSync = await syncPresenceState({
         keepOnline: true,
         currentChatChannel: null,
         shouldBroadcast: true,
         timestamp: eventTimestamp,
       });
+      if (didSync) {
+        hasClosedRef.current = true;
+      }
+      return didSync;
     } catch (error) {
       console.error('Presence close sync failed:', error);
+      return false;
+    } finally {
+      isClosingRef.current = false;
     }
   }, [syncPresenceState, user]);
 
@@ -227,6 +237,7 @@ export const useChatSessionPresence = ({
     presenceChannelRef.current = presenceChannel;
 
     hasClosedRef.current = false;
+    isClosingRef.current = false;
     setTargetUserPresence(null);
     void updateUserChatOpen();
     void loadTargetUserPresence();
