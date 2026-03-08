@@ -62,6 +62,29 @@ export const useChatIncomingDeliveries = () => {
     }, DELIVERY_BATCH_WINDOW_MS);
   }, [flushQueuedDeliveryMessageIds]);
 
+  const queueDeliveryMessageIds = useCallback(
+    (messageIds: string[]) => {
+      const nextMessageIds = messageIds.filter(messageId => {
+        if (!messageId) {
+          return false;
+        }
+
+        if (pendingDeliveryMessageIdsRef.current.has(messageId)) {
+          return false;
+        }
+
+        pendingDeliveryMessageIdsRef.current.add(messageId);
+        queuedDeliveryMessageIdsRef.current.add(messageId);
+        return true;
+      });
+
+      if (nextMessageIds.length > 0) {
+        scheduleQueuedDeliveryFlush();
+      }
+    },
+    [scheduleQueuedDeliveryFlush]
+  );
+
   useEffect(() => {
     if (!user?.id) {
       return;
@@ -92,16 +115,36 @@ export const useChatIncomingDeliveries = () => {
       payload => {
         const incomingMessage = payload.new as ChatMessage | undefined;
         if (!incomingMessage?.id || incomingMessage.is_delivered) return;
-        if (pendingDeliveryMessageIdsRef.current.has(incomingMessage.id))
-          return;
-
-        pendingDeliveryMessageIdsRef.current.add(incomingMessage.id);
-        queuedDeliveryMessageIdsRef.current.add(incomingMessage.id);
-        scheduleQueuedDeliveryFlush();
+        queueDeliveryMessageIds([incomingMessage.id]);
       }
     );
 
     incomingMessagesChannel.subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        void (async () => {
+          try {
+            const { data: undeliveredMessageIds, error } =
+              await chatSidebarGateway.listUndeliveredIncomingMessageIds(
+                user.id
+              );
+            if (error) {
+              console.error(
+                'Error backfilling undelivered incoming messages:',
+                error
+              );
+              return;
+            }
+
+            queueDeliveryMessageIds(undeliveredMessageIds || []);
+          } catch (error) {
+            console.error(
+              'Caught error backfilling undelivered incoming messages:',
+              error
+            );
+          }
+        })();
+      }
+
       if (status === 'CHANNEL_ERROR') {
         console.error('Failed to connect to incoming chat delivery channel');
       }
@@ -121,5 +164,5 @@ export const useChatIncomingDeliveries = () => {
         incomingMessagesChannelRef.current = null;
       }
     };
-  }, [scheduleQueuedDeliveryFlush, user?.id]);
+  }, [queueDeliveryMessageIds, user?.id]);
 };

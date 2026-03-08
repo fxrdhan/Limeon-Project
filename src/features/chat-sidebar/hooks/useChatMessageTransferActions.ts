@@ -13,7 +13,7 @@ export const useChatMessageTransferActions = ({
 }) => {
   const buildCopyableMessageText = useCallback((targetMessage: ChatMessage) => {
     if (targetMessage.message_type === 'file') {
-      return `[File: ${getAttachmentFileName(targetMessage)}] ${targetMessage.message}`;
+      return `[File: ${getAttachmentFileName(targetMessage)}]`;
     }
 
     return targetMessage.message;

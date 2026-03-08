@@ -83,9 +83,7 @@ describe('useChatMessageTransferActions', () => {
       );
     });
 
-    expect(writeText).toHaveBeenCalledWith(
-      '[File: stok.pdf] https://example.com/storage/stok.pdf'
-    );
+    expect(writeText).toHaveBeenCalledWith('[File: stok.pdf]');
     expect(mockToast.success).toHaveBeenCalledWith(
       'Lampiran berhasil disalin',
       expect.objectContaining({

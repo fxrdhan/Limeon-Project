@@ -11,6 +11,7 @@ const { createdChannels, mockGateway } = vi.hoisted(() => ({
   mockGateway: {
     createRealtimeChannel: vi.fn(),
     removeRealtimeChannel: vi.fn(),
+    listUndeliveredIncomingMessageIds: vi.fn(),
     markMessageIdsAsDelivered: vi.fn(),
   },
 }));
@@ -53,6 +54,10 @@ describe('useChatIncomingDeliveries', () => {
     createdChannels.length = 0;
 
     mockGateway.markMessageIdsAsDelivered.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mockGateway.listUndeliveredIncomingMessageIds.mockResolvedValue({
       data: [],
       error: null,
     });
@@ -110,6 +115,29 @@ describe('useChatIncomingDeliveries', () => {
 
     expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
       'message-1',
+    ]);
+  });
+
+  it('backfills undelivered incoming messages when the subscription becomes ready', async () => {
+    mockGateway.listUndeliveredIncomingMessageIds.mockResolvedValue({
+      data: ['message-legacy-1', 'message-legacy-2'],
+      error: null,
+    });
+
+    renderHook(() => useChatIncomingDeliveries());
+
+    await act(async () => {
+      await Promise.resolve();
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.listUndeliveredIncomingMessageIds).toHaveBeenCalledWith(
+      'user-a'
+    );
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
+      'message-legacy-1',
+      'message-legacy-2',
     ]);
   });
 });

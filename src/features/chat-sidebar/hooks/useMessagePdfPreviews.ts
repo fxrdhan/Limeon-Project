@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  fetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback,
   isDirectChatAssetUrl,
   resolveFileExtension,
@@ -16,6 +17,23 @@ import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
 export type PdfMessagePreview = PdfMessagePreviewCacheEntry;
 const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
 const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
+
+const readBlobAsDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => {
+      if (typeof fileReader.result === 'string') {
+        resolve(fileReader.result);
+        return;
+      }
+
+      reject(new Error('Failed to read preview blob'));
+    };
+    fileReader.onerror = () => {
+      reject(fileReader.error ?? new Error('Failed to read preview blob'));
+    };
+    fileReader.readAsDataURL(blob);
+  });
 
 const buildPdfMessagePreviewCacheKey = (
   message: ChatMessage,
@@ -240,6 +258,35 @@ export const useMessagePdfPreviews = ({
           );
 
           try {
+            const persistedPreviewPath =
+              pendingMessage.file_preview_url?.trim();
+            if (persistedPreviewPath) {
+              const previewBlob = await fetchChatFileBlobWithFallback(
+                persistedPreviewPath,
+                persistedPreviewPath,
+                'image/png'
+              );
+              if (previewBlob) {
+                const coverDataUrl = await readBlobAsDataUrl(previewBlob);
+                const nextPreview: PdfMessagePreview = {
+                  coverDataUrl,
+                  pageCount: Math.max(
+                    pendingMessage.file_preview_page_count ?? 1,
+                    1
+                  ),
+                  cacheKey,
+                };
+                setCachedPdfMessagePreview(pendingMessage.id, nextPreview);
+                pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
+                clearPdfPreviewRetryTimer(pendingMessage.id);
+                setPdfMessagePreviews(previousPreviews => ({
+                  ...previousPreviews,
+                  [pendingMessage.id]: nextPreview,
+                }));
+                continue;
+              }
+            }
+
             const pdfBlob = await fetchPdfBlobWithFallback(
               pendingMessage.message,
               pendingMessage.file_storage_path

@@ -149,13 +149,14 @@ export const serializeSelectedMessages = (
       const attachmentCaption = options.captionMessagesByAttachmentId
         .get(messageItem.id)
         ?.message?.trim();
+      const attachmentLabel =
+        messageItem.message_type === 'image'
+          ? '[Gambar]'
+          : `[File: ${options.getAttachmentFileName(messageItem)}]`;
       const messageBody =
         messageItem.message_type === 'text'
           ? messageItem.message
-          : attachmentCaption ||
-            (messageItem.message_type === 'image'
-              ? `[Gambar] ${messageItem.message}`
-              : `[File: ${options.getAttachmentFileName(messageItem)}] ${messageItem.message}`);
+          : attachmentCaption || attachmentLabel;
 
       return `[${formatSerializedMessageTimestamp(messageItem.created_at)}] ${senderLabel}: ${messageBody}`;
     })

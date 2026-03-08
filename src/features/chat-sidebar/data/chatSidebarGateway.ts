@@ -50,6 +50,9 @@ export const chatSidebarGateway = {
   markMessageIdsAsRead(messageIds: string[]) {
     return chatService.markMessageIdsAsRead(messageIds);
   },
+  listUndeliveredIncomingMessageIds(receiverId: string) {
+    return chatService.listUndeliveredIncomingMessageIds(receiverId);
+  },
   getUserPresence(userId: string) {
     return chatService.getUserPresence(userId);
   },

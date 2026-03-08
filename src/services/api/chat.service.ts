@@ -287,6 +287,34 @@ export const chatService = {
     }
   },
 
+  async listUndeliveredIncomingMessageIds(
+    receiverId: string
+  ): Promise<ServiceResponse<string[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('id')
+        .eq('receiver_id', receiverId)
+        .eq('is_delivered', false)
+        .order('created_at', {
+          ascending: true,
+        });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return {
+        data: (data || [])
+          .map(record => record.id)
+          .filter((messageId): messageId is string => Boolean(messageId)),
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async deleteMessage(id: string): Promise<ServiceResponse<null>> {
     try {
       const { error } = await supabase

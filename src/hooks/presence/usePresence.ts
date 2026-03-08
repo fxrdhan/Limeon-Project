@@ -3,6 +3,7 @@ import { usePresenceStore } from '@/store/presenceStore';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usersService } from '@/services/api/users.service';
+import { chatService } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import {
   cacheImageBlob,
@@ -79,7 +80,7 @@ const areOnlineUserListsEqual = (
   });
 
 export const usePresence = () => {
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
   const {
     onlineUsersList,
     allUsersList,
@@ -104,6 +105,7 @@ export const usePresence = () => {
     userCount: 0,
     userIds: [],
   }));
+  const hasHandledPageExitRef = useRef(false);
 
   const rosterUsers = useMemo(
     () => mergePresenceUsers(onlineUsersList, allUsersList),
@@ -205,6 +207,50 @@ export const usePresence = () => {
     }
   }, []);
 
+  const syncUserPresenceState = useCallback(
+    async (keepOnline: boolean, timestamp = new Date().toISOString()) => {
+      if (!user?.id) {
+        return false;
+      }
+
+      const payload = {
+        is_online: keepOnline,
+        last_seen: timestamp,
+        updated_at: timestamp,
+      };
+
+      try {
+        const { data: updateData, error: updateError } =
+          await chatService.updateUserPresence(user.id, payload);
+
+        if (!updateError && (updateData?.length ?? 0) > 0) {
+          return true;
+        }
+
+        if (updateError) {
+          console.error('Failed to update presence row:', updateError);
+          return false;
+        }
+
+        const { error: insertError } = await chatService.insertUserPresence({
+          user_id: user.id,
+          ...payload,
+        });
+
+        if (insertError) {
+          console.error('Failed to insert presence row:', insertError);
+          return false;
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Caught error syncing presence row:', error);
+        return false;
+      }
+    },
+    [user?.id]
+  );
+
   const setupPresence = useCallback(async () => {
     if (!user || isSetupRef.current || isSubscribedRef.current) return;
 
@@ -254,11 +300,13 @@ export const usePresence = () => {
       newChannel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
           isConnectedRef.current = true;
+          hasHandledPageExitRef.current = false;
           try {
             await newChannel.track({
               online_at: new Date().toISOString(),
               user_id: user.id,
             });
+            void syncUserPresenceState(true);
 
             // Set initial count to 1 (current user) if no presence state yet
             setTimeout(() => {
@@ -309,7 +357,14 @@ export const usePresence = () => {
       // Set to 1 as fallback (current user)
       setOnlineUsers(1);
     }
-  }, [user, setChannel, setOnlineUsers, setOnlineUsersList, cleanupChannel]);
+  }, [
+    cleanupChannel,
+    setChannel,
+    setOnlineUsers,
+    setOnlineUsersList,
+    syncUserPresenceState,
+    user,
+  ]);
 
   const cleanup = useCallback(async () => {
     await cleanupChannel();
@@ -431,6 +486,7 @@ export const usePresence = () => {
     // Handle page visibility changes
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && user) {
+        hasHandledPageExitRef.current = false;
         // Always try to re-establish presence when page becomes visible
         if (!isConnectedRef.current) {
           isSetupRef.current = false;
@@ -442,6 +498,7 @@ export const usePresence = () => {
               online_at: new Date().toISOString(),
               user_id: user.id,
             });
+            void syncUserPresenceState(true);
           } catch (error) {
             console.warn(
               'Failed to re-track presence on visibility change:',
@@ -453,8 +510,25 @@ export const usePresence = () => {
     };
 
     // Handle beforeunload to ensure cleanup
-    const handleBeforeUnload = () => {
+    const handlePageExit = () => {
+      if (!user || hasHandledPageExitRef.current) {
+        return;
+      }
+
+      hasHandledPageExitRef.current = true;
       const currentChannel = channelRef.current;
+      const eventTimestamp = new Date().toISOString();
+      chatService.sendUserPresenceUpdateKeepalive(
+        user.id,
+        {
+          is_online: false,
+          last_seen: eventTimestamp,
+          updated_at: eventTimestamp,
+        },
+        session?.access_token ?? null
+      );
+      void syncUserPresenceState(false, eventTimestamp);
+
       if (currentChannel && isConnectedRef.current) {
         try {
           void currentChannel.unsubscribe();
@@ -466,12 +540,22 @@ export const usePresence = () => {
       }
     };
 
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        return;
+      }
+
+      handlePageExit();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', handlePageExit);
+    window.addEventListener('pagehide', handlePageHide);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handlePageExit);
+      window.removeEventListener('pagehide', handlePageHide);
 
       // Clear any pending setup timeout
       if (setupTimeoutRef.current) {
@@ -484,7 +568,13 @@ export const usePresence = () => {
         void cleanup();
       }, 0);
     };
-  }, [user, setupPresence, cleanup]);
+  }, [
+    cleanup,
+    session?.access_token,
+    setupPresence,
+    syncUserPresenceState,
+    user,
+  ]);
 
   // Heartbeat to maintain presence
   useEffect(() => {
@@ -497,6 +587,7 @@ export const usePresence = () => {
             online_at: new Date().toISOString(),
             user_id: user.id,
           });
+          void syncUserPresenceState(true);
         } catch (heartbeatError) {
           console.warn('Failed to update presence heartbeat:', heartbeatError);
         }
@@ -504,5 +595,5 @@ export const usePresence = () => {
     }, 30000); // Update every 30 seconds
 
     return () => clearInterval(heartbeat);
-  }, [user]);
+  }, [syncUserPresenceState, user]);
 };

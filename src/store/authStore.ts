@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import authService from '@/services/authService';
+import { chatService } from '@/services/api/chat.service';
 import { StorageService } from '@/services/api/storage.service';
 import type { AuthState } from '@/types';
 
@@ -45,7 +46,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
+      const { user } = get();
       set({ loading: true });
+      if (user?.id) {
+        const eventTimestamp = new Date().toISOString();
+        try {
+          await chatService.updateUserPresence(user.id, {
+            is_online: false,
+            last_seen: eventTimestamp,
+            updated_at: eventTimestamp,
+          });
+        } catch (presenceError) {
+          console.warn(
+            'Failed to mark user offline during logout:',
+            presenceError
+          );
+        }
+      }
       await authService.signOut();
       set({ session: null, user: null, loading: false });
     } catch (error: unknown) {
