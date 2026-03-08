@@ -72,6 +72,7 @@ export const useChatConversationReconciler = ({
           latestMessages,
           user,
           targetUser,
+          currentChannelId,
           setMessages,
         });
       } catch (error) {

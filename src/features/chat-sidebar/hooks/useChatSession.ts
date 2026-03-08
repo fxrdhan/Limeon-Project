@@ -12,11 +12,16 @@ import {
   type RealtimeChannel,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import {
   getFreshConversationCacheEntry,
   setConversationCacheEntry,
 } from '../utils/conversation-cache';
+import {
+  applyConversationSnapshot as applyConversationSnapshotToState,
+  isConversationMessageForPair,
+  mapConversationMessageForDisplay,
+  reconcileInsertedConversationMessage,
+} from '../utils/conversation-sync';
 import { useChatSessionPresence } from './useChatSessionPresence';
 import { useChatSessionReceipts } from './useChatSessionReceipts';
 
@@ -150,118 +155,24 @@ export const useChatSession = ({
         return [];
       }
 
-      const transformedMessages = mapConversationMessagesForDisplay(
+      return applyConversationSnapshotToState({
         snapshotMessages,
-        {
-          currentUserId: user.id,
-          currentUserName: user.name || 'You',
-          targetUserName: targetUser.name || 'Unknown',
-        }
-      );
-
-      const initialMessageAnimationKeys = new Set(
-        transformedMessages.map(
-          messageItem => messageItem.stableKey || messageItem.id
-        )
-      );
-      initialMessageAnimationKeysRef.current = initialMessageAnimationKeys;
-      initialOpenJumpAnimationKeysRef.current = new Set(
-        initialMessageAnimationKeys
-      );
-
-      setMessages(previousMessages => {
-        if (previousMessages.length === 0) {
-          return transformedMessages;
-        }
-
-        const transformedIds = new Set(
-          transformedMessages.map(messageItem => messageItem.id)
-        );
-        const pendingMessages = previousMessages.filter(
-          messageItem =>
-            messageItem.channel_id === currentChannelId &&
-            !transformedIds.has(messageItem.id) &&
-            messageItem.id.startsWith('temp_')
-        );
-
-        return [...transformedMessages, ...pendingMessages];
+        user,
+        targetUser,
+        currentChannelId,
+        setMessages,
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
       });
-
-      return transformedMessages;
     };
 
     const mapMessageForActiveConversation = (messageItem: ChatMessage) =>
-      mapConversationMessagesForDisplay([messageItem], {
-        currentUserId: user.id,
-        currentUserName: user.name || 'You',
-        targetUserName: targetUser.name || 'Unknown',
-      })[0];
-
-    const reconcileInsertedMessage = (
-      previousMessages: ChatMessage[],
-      insertedMessage: ChatMessage
-    ) => {
-      const existingPersistedMessage = previousMessages.some(
-        messageItem => messageItem.id === insertedMessage.id
+      mapConversationMessageForDisplay(
+        messageItem,
+        user,
+        targetUser,
+        messageItem.stableKey || messageItem.id
       );
-      if (existingPersistedMessage) {
-        return previousMessages;
-      }
-
-      let matchingTempIndex = -1;
-
-      for (
-        let messageIndex = previousMessages.length - 1;
-        messageIndex >= 0;
-        messageIndex -= 1
-      ) {
-        const previousMessage = previousMessages[messageIndex];
-        if (!previousMessage.id.startsWith('temp_')) continue;
-        if (previousMessage.channel_id !== currentChannelId) continue;
-        if (previousMessage.sender_id !== insertedMessage.sender_id) continue;
-        if (previousMessage.receiver_id !== insertedMessage.receiver_id)
-          continue;
-        if (previousMessage.message_type !== insertedMessage.message_type)
-          continue;
-
-        const matchesStoragePath =
-          previousMessage.file_storage_path &&
-          insertedMessage.file_storage_path &&
-          previousMessage.file_storage_path ===
-            insertedMessage.file_storage_path;
-        const matchesAttachmentCaption =
-          previousMessage.message_relation_kind === 'attachment_caption' &&
-          insertedMessage.message_relation_kind === 'attachment_caption' &&
-          previousMessage.message.trim() === insertedMessage.message.trim();
-        const matchesTextContent =
-          previousMessage.message_type === 'text' &&
-          previousMessage.message.trim() === insertedMessage.message.trim() &&
-          (previousMessage.reply_to_id ?? null) ===
-            (insertedMessage.reply_to_id ?? null);
-
-        if (
-          matchesStoragePath ||
-          matchesAttachmentCaption ||
-          matchesTextContent
-        ) {
-          matchingTempIndex = messageIndex;
-          break;
-        }
-      }
-
-      if (matchingTempIndex === -1) {
-        return [...previousMessages, insertedMessage];
-      }
-
-      return previousMessages.map((messageItem, messageIndex) =>
-        messageIndex === matchingTempIndex
-          ? {
-              ...insertedMessage,
-              stableKey: messageItem.stableKey || insertedMessage.stableKey,
-            }
-          : messageItem
-      );
-    };
 
     const loadMessages = async () => {
       const cachedConversation =
@@ -372,16 +283,12 @@ export const useChatSession = ({
             return;
           }
 
-          const isIncomingConversationMessage =
-            insertedMessage.sender_id === targetUser.id &&
-            insertedMessage.receiver_id === user.id;
-          const isOutgoingConversationMessage =
-            insertedMessage.sender_id === user.id &&
-            insertedMessage.receiver_id === targetUser.id;
-
           if (
-            !isIncomingConversationMessage &&
-            !isOutgoingConversationMessage
+            !isConversationMessageForPair(
+              insertedMessage,
+              user.id,
+              targetUser.id
+            )
           ) {
             return;
           }
@@ -390,7 +297,11 @@ export const useChatSession = ({
             mapMessageForActiveConversation(insertedMessage);
 
           setMessages(previousMessages =>
-            reconcileInsertedMessage(previousMessages, mappedInsertedMessage)
+            reconcileInsertedConversationMessage({
+              previousMessages,
+              insertedMessage: mappedInsertedMessage,
+              currentChannelId,
+            })
           );
         }
       );

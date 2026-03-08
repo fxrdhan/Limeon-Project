@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import type { DeleteMessageOptions } from './useChatComposerActions';
+import type { DeleteMessageOptions } from './chatComposerActionTypes';
 
 interface UseChatBulkDeleteProps {
   user?: {

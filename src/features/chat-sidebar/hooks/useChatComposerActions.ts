@@ -1,38 +1,27 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
   useCallback,
-  useEffect,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import { type ChatMessage } from '../data/chatSidebarGateway';
 import { useChatComposerSend } from './useChatComposerSend';
 import type {
   ChatSidebarPanelTargetUser,
   PendingSendRegistration,
   PendingComposerAttachment,
 } from '../types';
-import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
-import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
-import { isTempMessageId } from '../utils/optimistic-message';
-import { resolveChatMessageStoragePaths } from '../utils/message-file';
 import { useChatMessageTransferActions } from './useChatMessageTransferActions';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { useChatMutationScope } from './useChatMutationScope';
+import { useChatMessageUpdateAction } from './useChatMessageUpdateAction';
+import { useChatMessageDeleteAction } from './useChatMessageDeleteAction';
 
 type PendingSendRegistryRef = MutableRefObject<
   Map<string, { cancelled: boolean }>
 >;
-
-export interface DeleteMessageOptions {
-  suppressErrorToast?: boolean;
-  onStorageCleanupFailure?: (failedPaths: string[]) => void;
-}
 
 interface UseChatComposerActionsProps {
   user: {
@@ -105,20 +94,6 @@ export const useChatComposerActions = ({
   const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
     new Map()
   );
-  const pendingEditComposerRestoreRef = useRef(false);
-
-  useEffect(() => {
-    if (
-      pendingEditComposerRestoreRef.current &&
-      (message.length > 0 || editingMessageId !== null)
-    ) {
-      pendingEditComposerRestoreRef.current = false;
-    }
-  }, [editingMessageId, message]);
-
-  useEffect(() => {
-    pendingEditComposerRestoreRef.current = false;
-  }, [currentChannelId]);
 
   const {
     isCurrentConversationScopeActive,
@@ -166,247 +141,40 @@ export const useChatComposerActions = ({
       closeMessageMenu,
     });
 
-  const handleUpdateMessage = useCallback(async () => {
-    if (
-      !message.trim() ||
-      !user ||
-      !targetUser ||
-      !currentChannelId ||
-      !editingMessageId
-    ) {
-      return;
-    }
-
-    if (editingMessageId.startsWith('temp_')) {
-      setEditingMessageId(null);
-      setMessage('');
-      closeMessageMenu();
-      toast.error('Pesan yang masih dikirim belum bisa diedit', {
-        toasterId: CHAT_SIDEBAR_TOASTER_ID,
-      });
-      return;
-    }
-
-    const messageId = editingMessageId;
-    const updatedText = message.trim();
-    const updatedAt = new Date().toISOString();
-    const existingMessage = messages.find(
-      candidate => candidate.id === messageId
-    );
-    const restoreFailedEdit = () => {
-      runInCurrentConversationScope(() => {
-        if (existingMessage) {
-          setMessages(previousMessages =>
-            previousMessages.map(messageItem =>
-              messageItem.id === messageId ? existingMessage : messageItem
-            )
-          );
-        }
-
-        if (pendingEditComposerRestoreRef.current) {
-          pendingEditComposerRestoreRef.current = false;
-          setEditingMessageId(messageId);
-          setMessage(updatedText);
-          requestAnimationFrame(focusMessageComposer);
-        }
-
-        toast.error('Gagal memperbarui pesan', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-      });
-    };
-
-    pendingEditComposerRestoreRef.current = true;
-    setMessage('');
-    setEditingMessageId(null);
-    closeMessageMenu();
-
-    setMessages(previousMessages =>
-      previousMessages.map(messageItem =>
-        messageItem.id === messageId
-          ? { ...messageItem, message: updatedText, updated_at: updatedAt }
-          : messageItem
-      )
-    );
-
-    if (messageId.startsWith('temp_')) return;
-
-    try {
-      const { data: updatedMessage, error } =
-        await chatSidebarGateway.updateMessage(messageId, {
-          message: updatedText,
-          updated_at: updatedAt,
-        });
-
-      if (!isCurrentConversationScopeActive()) {
-        return;
-      }
-
-      if (error) {
-        console.error('Error updating message:', error);
-        restoreFailedEdit();
-        return;
-      }
-
-      const mappedMessage: ChatMessage = {
-        ...(updatedMessage as ChatMessage),
-        sender_name: existingMessage?.sender_name || user.name || 'You',
-        receiver_name:
-          existingMessage?.receiver_name || targetUser.name || 'Unknown',
-        stableKey: existingMessage?.stableKey,
-      };
-
-      setMessages(previousMessages =>
-        previousMessages.map(messageItem =>
-          messageItem.id === messageId ? mappedMessage : messageItem
-        )
-      );
-      pendingEditComposerRestoreRef.current = false;
-
-      broadcastUpdatedMessage(mappedMessage);
-    } catch (error) {
-      console.error('Error updating message:', error);
-      restoreFailedEdit();
-    }
-  }, [
-    broadcastUpdatedMessage,
-    closeMessageMenu,
+  const { handleUpdateMessage } = useChatMessageUpdateAction({
+    user,
+    targetUser,
     currentChannelId,
-    editingMessageId,
-    isCurrentConversationScopeActive,
-    focusMessageComposer,
-    message,
     messages,
+    setMessages,
+    message,
+    setMessage,
+    editingMessageId,
+    setEditingMessageId,
+    closeMessageMenu,
+    focusMessageComposer,
+    broadcastUpdatedMessage,
+    isCurrentConversationScopeActive,
     runInCurrentConversationScope,
+  });
+
+  const { handleDeleteMessage } = useChatMessageDeleteAction({
+    user,
+    targetUser,
+    currentChannelId,
+    messages,
+    setMessages,
+    editingMessageId,
     setEditingMessageId,
     setMessage,
-    setMessages,
-    targetUser,
-    user,
-  ]);
-
-  const handleDeleteMessage = useCallback(
-    async (
-      targetMessage: ChatMessage,
-      options?: DeleteMessageOptions
-    ): Promise<boolean> => {
-      if (!user || !targetUser || !currentChannelId) return false;
-
-      closeMessageMenu();
-      const linkedCaptionMessageIds = getAttachmentCaptionMessageIds(
-        messages,
-        targetMessage
-      );
-      const messageIdsToDelete = [...linkedCaptionMessageIds, targetMessage.id];
-      const threadMessages = messages.filter(messageItem =>
-        messageIdsToDelete.includes(messageItem.id)
-      );
-      const storagePathsToDelete = [
-        ...new Set(
-          threadMessages.flatMap(messageItem =>
-            resolveChatMessageStoragePaths(messageItem)
-          )
-        ),
-      ];
-      const messagesSnapshot = messages.map(messageItem => ({
-        ...messageItem,
-      }));
-
-      setMessages(previousMessages =>
-        previousMessages.filter(
-          messageItem => !messageIdsToDelete.includes(messageItem.id)
-        )
-      );
-
-      if (editingMessageId && messageIdsToDelete.includes(editingMessageId)) {
-        setEditingMessageId(null);
-        setMessage('');
-      }
-
-      const isPersistedThread = !isTempMessageId(targetMessage.id);
-      if (!isPersistedThread) {
-        const pendingEntry = pendingSendRegistryRef.current.get(
-          targetMessage.id
-        );
-        if (pendingEntry) {
-          pendingEntry.cancelled = true;
-        }
-        return true;
-      }
-
-      try {
-        const { data: deletedMessageIds, error } =
-          await chatSidebarGateway.deleteMessageThread(targetMessage.id);
-        if (error) {
-          console.error('Error deleting message thread:', error);
-          throw error;
-        }
-
-        const broadcastTargetIds = getPersistedDeletedThreadMessageIds(
-          deletedMessageIds,
-          messageIdsToDelete
-        );
-
-        runInCurrentConversationScope(() => {
-          broadcastTargetIds.forEach(deletedMessageId => {
-            broadcastDeletedMessage(deletedMessageId);
-          });
-        });
-
-        if (storagePathsToDelete.length > 0) {
-          const failedStoragePaths =
-            await deleteUploadedStorageFiles(storagePathsToDelete);
-          if (failedStoragePaths.length > 0) {
-            options?.onStorageCleanupFailure?.(failedStoragePaths);
-            if (
-              !options?.suppressErrorToast &&
-              isCurrentConversationScopeActive()
-            ) {
-              toast.error(
-                'Pesan dihapus, tetapi sebagian file lampiran gagal dibersihkan',
-                {
-                  toasterId: CHAT_SIDEBAR_TOASTER_ID,
-                }
-              );
-            }
-          }
-        }
-
-        return true;
-      } catch (error) {
-        console.error('Error deleting message:', error);
-        await reconcileCurrentConversationMessages({
-          fallbackMessages: messagesSnapshot,
-        });
-        if (
-          !options?.suppressErrorToast &&
-          isCurrentConversationScopeActive()
-        ) {
-          toast.error('Gagal menghapus pesan', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-        }
-        return false;
-      }
-    },
-    [
-      broadcastDeletedMessage,
-      closeMessageMenu,
-      currentChannelId,
-      editingMessageId,
-      isCurrentConversationScopeActive,
-      messages,
-      runInCurrentConversationScope,
-      setEditingMessageId,
-      setMessage,
-      setMessages,
-      targetUser,
-      user,
-      pendingSendRegistryRef,
-      deleteUploadedStorageFiles,
-      reconcileCurrentConversationMessages,
-    ]
-  );
+    closeMessageMenu,
+    broadcastDeletedMessage,
+    pendingSendRegistryRef,
+    deleteUploadedStorageFiles,
+    reconcileCurrentConversationMessages,
+    isCurrentConversationScopeActive,
+    runInCurrentConversationScope,
+  });
 
   const handleEditMessage = useCallback(
     (targetMessage: ChatMessage) => {

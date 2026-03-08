@@ -9,28 +9,12 @@ import type {
   MenuPlacement,
   MenuSideAnchor,
 } from '../../types';
-import {
-  formatFileFallbackLabel,
-  formatFileSize,
-  isImageFileExtensionOrMime,
-  resolveFileExtension,
-} from '../../utils/message-file';
-import {
-  buildCollapsedSearchSnippet,
-  renderHighlightedText,
-} from '../../utils/message-search';
 import { MessageActionPopover } from './MessageActionPopover';
 import { MessageBubbleContent } from './MessageBubbleContent';
-import {
-  MessageBubbleMeta,
-  type MessageDeliveryStatus,
-} from './MessageBubbleMeta';
-import {
-  buildMessageMenuActions,
-  getFileIcon,
-  getMessageMenuClasses,
-} from './messageItemUtils';
+import { MessageBubbleMeta } from './MessageBubbleMeta';
+import { getMessageMenuClasses } from './messageItemUtils';
 import { areMessageItemPropsEqual } from './messageItemMemo';
+import { buildMessageItemDerivations } from './messageItemDerivations';
 
 export interface MessageItemModel {
   message: ChatMessage;
@@ -114,91 +98,59 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     openImageInPortal,
     openDocumentInPortal,
   } = model;
-  const isCurrentUser = message.sender_id === userId;
-  const attachmentCaptionText = captionMessage?.message?.trim() ?? '';
-  const hasAttachmentCaption =
-    (message.message_type === 'image' || message.message_type === 'file') &&
-    attachmentCaptionText.length > 0;
-  const displayTime = new Date(message.created_at).toLocaleTimeString([], {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
+  const {
+    isCurrentUser,
+    hasAttachmentCaption,
+    displayTime,
+    isEdited,
+    messageDeliveryStatus,
+    isMenuOpen,
+    isMenuTransitionSource,
+    isFlashingTarget,
+    isSearchMatch,
+    isActiveSearchMatch,
+    isImageMessage,
+    isFileMessage,
+    fileName,
+    fileSecondaryLabel,
+    isPdfFileMessage,
+    resolvedPdfPreviewUrl,
+    pdfMetaLabel,
+    fileIcon,
+    bubbleToneClass,
+    bubbleOpacityClass,
+    isExpanded,
+    isMessageLong,
+    bubbleWrapperClass,
+    bubbleSpacingClass,
+    bubbleTypographyClass,
+    collapsedSearchSnippet,
+    highlightedMessage,
+    highlightedCaption,
+    menuActions,
+  } = buildMessageItemDerivations({
+    message,
+    userId,
+    openMenuMessageId,
+    menuTransitionSourceId,
+    flashingMessageId,
+    isFlashHighlightVisible,
+    searchMatchedMessageIds,
+    activeSearchMessageId,
+    expandedMessageIds,
+    maxMessageChars,
+    captionMessage,
+    pdfMessagePreview,
+    getAttachmentFileName,
+    getAttachmentFileKind,
+    normalizedSearchQuery,
+    openImageInPortal,
+    openDocumentInPortal,
+    handleEditMessage,
+    handleCopyMessage,
+    handleDownloadMessage,
+    handleDeleteMessage,
   });
-  const createdTimestamp = new Date(message.created_at).getTime();
-  const updatedTimestamp = new Date(message.updated_at).getTime();
-  const isTextMessage = message.message_type === 'text';
-  const isEdited =
-    isTextMessage &&
-    Number.isFinite(createdTimestamp) &&
-    Number.isFinite(updatedTimestamp) &&
-    updatedTimestamp > createdTimestamp;
-  const messageDeliveryStatus: MessageDeliveryStatus | null = isCurrentUser
-    ? message.id.startsWith('temp_')
-      ? 'sending'
-      : message.is_read
-        ? 'read'
-        : message.is_delivered
-          ? 'delivered'
-          : 'sent'
-    : null;
-  const isMenuOpen = openMenuMessageId === message.id;
-  const isMenuTransitionSource = menuTransitionSourceId === message.id;
-  const isFlashSequenceTarget = flashingMessageId === message.id;
-  const isFlashingTarget = isFlashSequenceTarget && isFlashHighlightVisible;
-  const isSearchMatch = searchMatchedMessageIds.has(message.id);
-  const isActiveSearchMatch = activeSearchMessageId === message.id;
-  const isImageMessage = message.message_type === 'image';
-  const isFileMessage = message.message_type === 'file';
-  const fileKind = isFileMessage ? getAttachmentFileKind(message) : 'document';
-  const isAudioFileMessage = isFileMessage && fileKind === 'audio';
-  const fileName = isFileMessage ? getAttachmentFileName(message) : null;
-  const fileExtension = isFileMessage
-    ? resolveFileExtension(fileName, message.message, message.file_mime_type)
-    : '';
-  const fileSizeLabel = isFileMessage
-    ? formatFileSize(message.file_size)
-    : null;
-  const fileFallbackLabel = isFileMessage
-    ? formatFileFallbackLabel(fileExtension, fileKind)
-    : null;
-  const fileSecondaryLabel = fileSizeLabel || fileFallbackLabel;
-  const isPdfFileMessage =
-    isFileMessage &&
-    !isAudioFileMessage &&
-    (fileExtension === 'pdf' ||
-      message.file_mime_type?.toLowerCase().includes('pdf') === true);
-  const isImageFileMessage =
-    isFileMessage &&
-    !isAudioFileMessage &&
-    isImageFileExtensionOrMime(fileExtension, message.file_mime_type);
-  const persistedPdfPreviewUrl = isPdfFileMessage
-    ? message.file_preview_url?.trim() || null
-    : null;
-  const resolvedPdfPreviewUrl =
-    persistedPdfPreviewUrl || pdfMessagePreview?.coverDataUrl || null;
-  const resolvedPdfPageCount = isPdfFileMessage
-    ? (message.file_preview_page_count ?? pdfMessagePreview?.pageCount)
-    : null;
-  const pdfMetaLabel = isPdfFileMessage
-    ? [
-        resolvedPdfPageCount ? `${resolvedPdfPageCount} halaman` : null,
-        'PDF',
-        fileSizeLabel,
-      ]
-        .filter(Boolean)
-        .join(' · ') || 'PDF'
-    : null;
-  const fileIcon = getFileIcon(fileExtension, isAudioFileMessage);
-  const bubbleToneClass = isFlashingTarget
-    ? 'bg-primary text-white'
-    : isCurrentUser
-      ? 'bg-emerald-200 text-slate-900'
-      : 'bg-white text-slate-800';
-  const bubbleOpacityClass = isFlashSequenceTarget
-    ? isFlashHighlightVisible
-      ? 'opacity-100'
-      : 'opacity-60'
-    : 'opacity-100';
   const animationKey = message.stableKey || message.id;
   const shouldAnimateEnter =
     !initialMessageAnimationKeysRef.current.has(animationKey);
@@ -225,60 +177,6 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         stiffness: 300,
         damping: 24,
       };
-  const isExpanded = expandedMessageIds.has(message.id);
-  const isMessageLong =
-    !isImageMessage &&
-    !isFileMessage &&
-    !isExpanded &&
-    message.message.length > maxMessageChars;
-  const bubbleWrapperClass = isFileMessage
-    ? 'block w-full'
-    : isImageMessage
-      ? 'inline-flex flex-col align-top'
-      : 'inline-block';
-  const bubbleSpacingClass = isImageMessage
-    ? hasAttachmentCaption
-      ? 'px-2 py-2'
-      : 'p-0 overflow-hidden'
-    : isFileMessage
-      ? 'px-2 py-2'
-      : 'px-3 py-2';
-  const bubbleTypographyClass =
-    isImageMessage || isFileMessage
-      ? ''
-      : 'text-sm whitespace-pre-wrap break-words';
-  const collapsedSearchSnippet = buildCollapsedSearchSnippet(
-    message.message,
-    normalizedSearchQuery,
-    maxMessageChars
-  );
-  const displayMessage = isMessageLong
-    ? collapsedSearchSnippet.text
-    : message.message;
-  const highlightedMessage = renderHighlightedText(
-    displayMessage,
-    normalizedSearchQuery
-  );
-  const highlightedCaption = renderHighlightedText(
-    attachmentCaptionText,
-    normalizedSearchQuery
-  );
-  const menuActions = buildMessageMenuActions({
-    message,
-    isCurrentUser,
-    isImageMessage,
-    isFileMessage,
-    isImageFileMessage,
-    isPdfFileMessage,
-    fileKind,
-    fileName,
-    openImageInPortal,
-    openDocumentInPortal,
-    handleEditMessage,
-    handleCopyMessage,
-    handleDownloadMessage,
-    handleDeleteMessage,
-  });
   const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(
     menuPlacement,
     menuSideAnchor
