@@ -3,16 +3,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatMessageTransferActions } from '../hooks/useChatMessageTransferActions';
 
-const { mockToast } = vi.hoisted(() => ({
+const { mockToast, mockGateway } = vi.hoisted(() => ({
   mockToast: {
     error: vi.fn(),
     success: vi.fn(),
     promise: vi.fn(),
   },
+  mockGateway: {
+    downloadStorageFile: vi.fn(),
+  },
 }));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
+}));
+
+vi.mock('../data/chatSidebarGateway', () => ({
+  chatSidebarGateway: mockGateway,
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -45,6 +52,7 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 describe('useChatMessageTransferActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockToast.promise.mockImplementation(async promise => await promise);
   });
 
   it('copies file messages as labeled attachment text instead of the raw url only', async () => {
@@ -81,5 +89,69 @@ describe('useChatMessageTransferActions', () => {
       })
     );
     expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
+
+  it('downloads attachments through the storage fallback when direct fetch fails', async () => {
+    const closeMessageMenu = vi.fn();
+    const downloadBlob = new Blob(['stok'], { type: 'application/pdf' });
+    const anchorClick = vi.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    const appendSpy = vi
+      .spyOn(document.body, 'append')
+      .mockImplementation(() => undefined);
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'a') {
+          return {
+            click: anchorClick,
+            remove: vi.fn(),
+            href: '',
+            download: '',
+            rel: '',
+          } as unknown as HTMLAnchorElement;
+        }
+
+        return originalCreateElement(tagName);
+      });
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('fetch failed'))
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:download'),
+        revokeObjectURL,
+      })
+    );
+    mockGateway.downloadStorageFile.mockResolvedValue(downloadBlob);
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDownloadMessage(
+        buildMessage({
+          message:
+            'https://example.com/storage/v1/object/sign/chat/documents/channel/stok.pdf?token=123',
+          file_storage_path: 'documents/channel/stok.pdf',
+        })
+      );
+    });
+
+    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+      'chat',
+      'documents/channel/stok.pdf'
+    );
+    expect(anchorClick).toHaveBeenCalledOnce();
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
   });
 });

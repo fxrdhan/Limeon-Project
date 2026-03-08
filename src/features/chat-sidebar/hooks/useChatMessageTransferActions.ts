@@ -4,6 +4,7 @@ import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
+import { fetchChatFileBlobWithFallback } from '../utils/message-file';
 
 export const useChatMessageTransferActions = ({
   closeMessageMenu,
@@ -101,12 +102,14 @@ export const useChatMessageTransferActions = ({
       try {
         await toast.promise(
           (async () => {
-            const response = await fetch(fileUrl);
-            if (!response.ok) {
+            const fileBlob = await fetchChatFileBlobWithFallback(
+              fileUrl,
+              targetMessage.file_storage_path
+            );
+            if (!fileBlob) {
               throw new Error('Failed to fetch file for download');
             }
 
-            const fileBlob = await response.blob();
             const objectUrl = URL.createObjectURL(fileBlob);
             const link = document.createElement('a');
 

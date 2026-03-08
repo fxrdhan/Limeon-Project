@@ -51,10 +51,22 @@ export const useChatSessionPresence = ({
   const isClosingRef = useRef(false);
   const previousIsOpenRef = useRef(isOpen);
   const activeTargetUserIdRef = useRef<string | null>(targetUser?.id ?? null);
+  const activePresenceScopeRef = useRef<string | null>(
+    targetUser?.id && currentChannelId
+      ? `${targetUser.id}::${currentChannelId}`
+      : null
+  );
 
   useEffect(() => {
     activeTargetUserIdRef.current = targetUser?.id ?? null;
   }, [targetUser?.id]);
+
+  useEffect(() => {
+    activePresenceScopeRef.current =
+      targetUser?.id && currentChannelId
+        ? `${targetUser.id}::${currentChannelId}`
+        : null;
+  }, [currentChannelId, targetUser?.id]);
 
   const syncPresenceState = useCallback(
     async ({
@@ -184,14 +196,21 @@ export const useChatSessionPresence = ({
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
+      activePresenceScopeRef.current = null;
       setTargetUserPresence(null);
       return;
     }
+
+    const presenceScopeKey = `${targetUser.id}::${currentChannelId}`;
 
     const loadTargetUserPresence = async () => {
       try {
         const { data: presence, error } =
           await chatSidebarGateway.getUserPresence(targetUser.id);
+
+        if (activePresenceScopeRef.current !== presenceScopeKey) {
+          return;
+        }
 
         if (error && error.code !== 'PGRST116') {
           console.error('Error loading target user presence:', error);
@@ -200,6 +219,10 @@ export const useChatSessionPresence = ({
 
         setTargetUserPresence(presence ?? null);
       } catch (error) {
+        if (activePresenceScopeRef.current !== presenceScopeKey) {
+          return;
+        }
+
         console.error('Caught error loading target user presence:', error);
         setTargetUserPresence(null);
       }
@@ -238,6 +261,7 @@ export const useChatSessionPresence = ({
 
     hasClosedRef.current = false;
     isClosingRef.current = false;
+    activePresenceScopeRef.current = presenceScopeKey;
     setTargetUserPresence(null);
     void updateUserChatOpen();
     void loadTargetUserPresence();
@@ -256,6 +280,9 @@ export const useChatSessionPresence = ({
       if (presenceHeartbeatIntervalRef.current !== null) {
         window.clearInterval(presenceHeartbeatIntervalRef.current);
         presenceHeartbeatIntervalRef.current = null;
+      }
+      if (activePresenceScopeRef.current === presenceScopeKey) {
+        activePresenceScopeRef.current = null;
       }
     };
   }, [currentChannelId, isOpen, targetUser, updateUserChatOpen, user]);

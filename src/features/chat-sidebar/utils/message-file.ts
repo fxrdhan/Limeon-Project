@@ -103,17 +103,20 @@ export const extractChatStoragePath = (url: string): string | null => {
   return null;
 };
 
-export const fetchPdfBlobWithFallback = async (
+export const fetchChatFileBlobWithFallback = async (
   url: string,
-  storagePathHint?: string | null
+  storagePathHint?: string | null,
+  forcedMimeType?: string
 ): Promise<Blob | null> => {
   try {
     const response = await fetch(url);
     if (response.ok) {
       const responseBlob = await response.blob();
-      return responseBlob.type === 'application/pdf'
-        ? responseBlob
-        : new Blob([responseBlob], { type: 'application/pdf' });
+      if (!forcedMimeType || responseBlob.type === forcedMimeType) {
+        return responseBlob;
+      }
+
+      return new Blob([responseBlob], { type: forcedMimeType });
     }
   } catch {
     // Continue to storage fallback.
@@ -128,13 +131,20 @@ export const fetchPdfBlobWithFallback = async (
       storagePath
     );
 
-    return data.type === 'application/pdf'
-      ? data
-      : new Blob([data], { type: 'application/pdf' });
+    if (!forcedMimeType || data.type === forcedMimeType) {
+      return data;
+    }
+
+    return new Blob([data], { type: forcedMimeType });
   } catch {
     return null;
   }
 };
+
+export const fetchPdfBlobWithFallback = (
+  url: string,
+  storagePathHint?: string | null
+) => fetchChatFileBlobWithFallback(url, storagePathHint, 'application/pdf');
 
 const IMAGE_FILE_EXTENSIONS = new Set([
   'jpg',

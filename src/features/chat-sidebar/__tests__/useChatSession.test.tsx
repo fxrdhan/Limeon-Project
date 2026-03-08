@@ -420,6 +420,90 @@ describe('useChatSession', () => {
     });
   });
 
+  it('ignores stale target presence responses after switching conversations', async () => {
+    const secondTargetUser = {
+      id: 'user-c',
+      name: 'Kasir',
+      email: 'kasir@example.com',
+      profilephoto: null,
+    };
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    let resolveFirstPresenceRequest:
+      | ((value: {
+          data: {
+            user_id: string;
+            is_online: boolean;
+            last_seen: string;
+            current_chat_channel: string | null;
+          } | null;
+          error: null;
+        }) => void)
+      | null = null;
+
+    mockChatService.getUserPresence
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveFirstPresenceRequest = resolve;
+          })
+      )
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: 'PGRST116' },
+      });
+
+    const { result, rerender } = renderHook(
+      ({
+        activeTargetUser,
+        channelId,
+      }: {
+        activeTargetUser: typeof targetUser;
+        channelId: string;
+      }) =>
+        useChatSession({
+          isOpen: true,
+          user: currentUser,
+          targetUser: activeTargetUser,
+          currentChannelId: channelId,
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        }),
+      {
+        initialProps: {
+          activeTargetUser: targetUser,
+          channelId: 'channel-1',
+        },
+      }
+    );
+
+    rerender({
+      activeTargetUser: secondTargetUser,
+      channelId: 'channel-2',
+    });
+
+    await waitFor(() => {
+      expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(2);
+    });
+
+    await act(async () => {
+      resolveFirstPresenceRequest?.({
+        data: {
+          user_id: targetUser.id,
+          is_online: true,
+          last_seen: '2026-03-06T09:30:00.000Z',
+          current_chat_channel: 'channel-1',
+        },
+        error: null,
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.targetUserPresence).toBeNull();
+    });
+  });
+
   it('keeps user-scoped realtime channels stable while switching conversations', async () => {
     const secondTargetUser = {
       id: 'user-c',
