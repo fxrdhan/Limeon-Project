@@ -74,6 +74,12 @@ const MainLayout = () => {
     setPageFocusBlocked(isChatSidebarOpen);
   }, [isChatSidebarOpen, setPageFocusBlocked]);
 
+  useEffect(() => {
+    return () => {
+      setPageFocusBlocked(false);
+    };
+  }, [setPageFocusBlocked]);
+
   return (
     <div className="flex h-screen bg-slate-100 text-slate-800 relative">
       <Sidebar

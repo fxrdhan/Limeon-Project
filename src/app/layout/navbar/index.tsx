@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
@@ -25,43 +25,95 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const [showPortal, setShowPortal] = useState(false);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const portalTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const portalContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Handle hover with delay for online text
-  const handleOnlineTextEnter = () => {
+  const clearPortalHoverTimeout = useCallback(() => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+  }, []);
 
+  const openPortal = useCallback(() => {
+    clearPortalHoverTimeout();
+    setShowPortal(true);
+  }, [clearPortalHoverTimeout]);
+
+  const closePortal = useCallback(() => {
+    clearPortalHoverTimeout();
+    setShowPortal(false);
+    setHoveredUser(null);
+  }, [clearPortalHoverTimeout]);
+
+  const schedulePortalOpen = useCallback(() => {
+    clearPortalHoverTimeout();
     hoverTimeoutRef.current = setTimeout(() => {
       setShowPortal(true);
       hoverTimeoutRef.current = null;
     }, 200);
-  };
+  }, [clearPortalHoverTimeout]);
 
-  const handleOnlineTextLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-
+  const schedulePortalClose = useCallback(() => {
+    clearPortalHoverTimeout();
     hoverTimeoutRef.current = setTimeout(() => {
       setShowPortal(false);
+      setHoveredUser(null);
       hoverTimeoutRef.current = null;
     }, 100);
-  };
+  }, [clearPortalHoverTimeout]);
 
-  // Chat handlers
-  const handleChatOpen = toggleChatForUser;
+  const handlePortalTriggerClick = useCallback(() => {
+    if (showPortal) {
+      closePortal();
+      return;
+    }
 
-  // Cleanup timeout on unmount
+    openPortal();
+  }, [closePortal, openPortal, showPortal]);
+
+  const handleChatOpen = useCallback(
+    (targetUser: Parameters<typeof toggleChatForUser>[0]) => {
+      closePortal();
+      toggleChatForUser(targetUser);
+    },
+    [closePortal, toggleChatForUser]
+  );
+
   useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
+    if (!showPortal) {
+      return;
+    }
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const eventTarget = event.target;
+      if (!(eventTarget instanceof Node)) return;
+      if (portalTriggerRef.current?.contains(eventTarget)) return;
+      if (portalContainerRef.current?.contains(eventTarget)) return;
+      closePortal();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closePortal();
+        portalTriggerRef.current?.focus();
       }
     };
-  }, []);
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closePortal, showPortal]);
+
+  useEffect(() => {
+    return () => {
+      clearPortalHoverTimeout();
+    };
+  }, [clearPortalHoverTimeout]);
 
   return (
     <nav className="bg-white px-4 py-3 sticky top-0 z-40 select-none">
@@ -155,10 +207,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
           {/* Avatar Stack + Online Text Group */}
           <div className="relative">
-            <div
-              className="flex items-center space-x-3 cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
-              onMouseEnter={handleOnlineTextEnter}
-              onMouseLeave={handleOnlineTextLeave}
+            <button
+              ref={portalTriggerRef}
+              type="button"
+              aria-label="Buka daftar pengguna online"
+              aria-expanded={showPortal}
+              aria-haspopup="dialog"
+              className="flex items-center space-x-3 rounded-lg px-2 py-1 transition-colors hover:bg-slate-50"
+              onMouseEnter={schedulePortalOpen}
+              onMouseLeave={schedulePortalClose}
+              onClick={handlePortalTriggerClick}
             >
               <AvatarStack
                 users={reorderedOnlineUsers}
@@ -171,13 +229,18 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
               <div className="flex items-center text-sm text-slate-600">
                 <span className="font-medium">{displayOnlineUsers} Online</span>
               </div>
-            </div>
+            </button>
 
-            {/* Avatar Portal - fixed position */}
             <AnimatePresence>
               {showPortal && (
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 min-w-64">
-                  {/* Portal Background - this fades */}
+                <div
+                  ref={portalContainerRef}
+                  role="dialog"
+                  aria-label="Daftar pengguna online"
+                  className="absolute top-full left-1/2 z-50 mt-2 min-w-64 -translate-x-1/2 transform"
+                  onMouseEnter={schedulePortalOpen}
+                  onMouseLeave={schedulePortalClose}
+                >
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -186,12 +249,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     className="absolute inset-0 bg-white rounded-xl shadow-lg border border-slate-200"
                   />
 
-                  {/* Portal Content - avatars don't inherit fade */}
-                  <div
-                    className="relative p-3"
-                    onMouseEnter={handleOnlineTextEnter}
-                    onMouseLeave={handleOnlineTextLeave}
-                  >
+                  <div className="relative p-3">
                     <div className="space-y-1">
                       {portalOrderedUsers.map(portalUser => {
                         const isOnline = onlineUserIds.has(portalUser.id);
