@@ -50,7 +50,7 @@ const createModel = (
   getAttachmentFileName: () => '',
   getAttachmentFileKind: () => 'document',
   normalizedSearchQuery: '',
-  openImageInPortal: () => {},
+  openImageInPortal: async () => {},
   openDocumentInPortal: async () => {},
   ...overrides,
 });

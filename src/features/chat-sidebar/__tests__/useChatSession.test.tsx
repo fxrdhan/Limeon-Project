@@ -413,14 +413,9 @@ describe('useChatSession', () => {
           current_chat_channel: null,
         })
       );
-      expect(mockChatService.insertUserPresence).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: currentUser.id,
-          is_online: true,
-          current_chat_channel: null,
-        })
-      );
     });
+
+    expect(mockChatService.insertUserPresence).not.toHaveBeenCalled();
 
     expect(globalPresenceChannel?.send.mock.calls.length).toBe(
       initialPresenceBroadcastCallCount

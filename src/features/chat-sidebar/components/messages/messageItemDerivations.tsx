@@ -32,9 +32,15 @@ interface BuildMessageItemDerivationsParams {
     targetMessage: ChatMessage
   ) => ComposerPendingFileKind;
   normalizedSearchQuery: string;
-  openImageInPortal: (url: string, previewName: string) => void;
+  openImageInPortal: (
+    message: Pick<
+      ChatMessage,
+      'message' | 'file_storage_path' | 'file_mime_type'
+    >,
+    previewName: string
+  ) => Promise<void>;
   openDocumentInPortal: (
-    url: string,
+    message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
     previewName: string,
     forcePdfMime?: boolean
   ) => Promise<void>;

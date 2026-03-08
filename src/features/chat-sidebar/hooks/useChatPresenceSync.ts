@@ -81,8 +81,12 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
           );
 
         let persistedPresence: UserPresence | null = updateData?.[0] ?? null;
+        const didUpdateExistingPresence =
+          !updateError && Boolean(updateData && updateData.length > 0);
+        const shouldInsertMissingPresenceRecord =
+          !updateError && (!updateData || updateData.length === 0);
 
-        if (!updateError && updateData && updateData.length > 0) {
+        if (didUpdateExistingPresence) {
           if (shouldBroadcast) {
             broadcastPresenceChange(broadcastChannel, {
               user_id: user.id,
@@ -99,6 +103,14 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
           return true;
         }
 
+        if (!shouldInsertMissingPresenceRecord) {
+          if (updateError) {
+            console.error('Error updating user presence:', updateError);
+          }
+
+          return false;
+        }
+
         const { data: insertData, error: insertError } =
           await chatSidebarGateway.insertUserPresence({
             user_id: user.id,
@@ -106,9 +118,6 @@ export const useChatPresenceSync = ({ user }: { user: UserDetails | null }) => {
           });
         persistedPresence = insertData?.[0] ?? null;
 
-        if (updateError) {
-          console.error('Error updating user presence:', updateError);
-        }
         if (insertError) {
           console.error('Error inserting user presence:', insertError);
           return false;
