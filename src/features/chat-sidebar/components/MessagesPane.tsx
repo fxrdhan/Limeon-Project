@@ -1,26 +1,18 @@
 import { LayoutGroup } from 'motion/react';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-  type RefObject,
-} from 'react';
+import { useMemo, type MutableRefObject, type RefObject } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { MAX_MESSAGE_CHARS } from '../constants';
+import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
+import { useStableMessageActionHandlers } from '../hooks/useStableMessageActionHandlers';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type {
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
 } from '../types';
-import { useDocumentPreviewPortal } from '../hooks/useDocumentPreviewPortal';
 import { getAttachmentCaptionData } from '../utils/message-derivations';
-import { fetchPdfBlobWithFallback } from '../utils/message-file';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MessageItem from './messages/MessageItem';
 
@@ -117,18 +109,37 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
   } = model;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const {
-    previewUrl: documentPreviewUrl,
-    previewName: documentPreviewName,
-    isPreviewVisible: isDocumentPreviewVisible,
+    documentPreviewUrl,
+    documentPreviewName,
+    isDocumentPreviewVisible,
     closeDocumentPreview,
-    openDocumentPreview,
-  } = useDocumentPreviewPortal();
+    imagePreviewUrl,
+    imagePreviewName,
+    isImagePreviewVisible,
+    closeImagePreview,
+    openImageInPortal,
+    openDocumentInPortal,
+  } = useMessagesPanePreviews();
   const { getPdfMessagePreview } = useMessagePdfPreviews({
     messages,
     getAttachmentFileName,
     getAttachmentFileKind,
   });
-  const messageActionHandlersRef = useRef({
+  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
+    () => getAttachmentCaptionData(messages),
+    [messages]
+  );
+  const {
+    handleToggleMessageSelectionStable,
+    toggleMessageMenuStable,
+    handleToggleExpandStable,
+    handleEditMessageStable,
+    handleCopyMessageStable,
+    handleDownloadMessageStable,
+    handleDeleteMessageStable,
+    getAttachmentFileNameStable,
+    getAttachmentFileKindStable,
+  } = useStableMessageActionHandlers({
     onToggleMessageSelection,
     toggleMessageMenu,
     handleToggleExpand,
@@ -139,170 +150,6 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     getAttachmentFileName,
     getAttachmentFileKind,
   });
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [imagePreviewName, setImagePreviewName] = useState('');
-  const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
-  const imagePreviewCloseTimerRef = useRef<number | null>(null);
-  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
-    () => getAttachmentCaptionData(messages),
-    [messages]
-  );
-
-  const closeImagePreview = useCallback(() => {
-    setIsImagePreviewVisible(false);
-    if (imagePreviewCloseTimerRef.current) {
-      window.clearTimeout(imagePreviewCloseTimerRef.current);
-      imagePreviewCloseTimerRef.current = null;
-    }
-    imagePreviewCloseTimerRef.current = window.setTimeout(() => {
-      setImagePreviewUrl(null);
-      setImagePreviewName('');
-      imagePreviewCloseTimerRef.current = null;
-    }, 150);
-  }, []);
-
-  const openImageInPortal = useCallback((url: string, previewName: string) => {
-    if (imagePreviewCloseTimerRef.current) {
-      window.clearTimeout(imagePreviewCloseTimerRef.current);
-      imagePreviewCloseTimerRef.current = null;
-    }
-    setImagePreviewUrl(url);
-    setImagePreviewName(previewName);
-    requestAnimationFrame(() => {
-      setIsImagePreviewVisible(true);
-    });
-  }, []);
-
-  const openDocumentInPortal = useCallback(
-    async (url: string, previewName: string, forcePdfMime = false) => {
-      await openDocumentPreview({
-        previewName,
-        resolvePreviewUrl: async () => {
-          if (!forcePdfMime) {
-            return {
-              previewUrl: url,
-              revokeOnClose: false,
-            };
-          }
-
-          try {
-            const pdfBlob = await fetchPdfBlobWithFallback(url);
-            if (pdfBlob) {
-              return {
-                previewUrl: URL.createObjectURL(pdfBlob),
-                revokeOnClose: true,
-              };
-            }
-          } catch {
-            // Fall back to direct URL below.
-          }
-
-          return {
-            previewUrl: url,
-            revokeOnClose: false,
-          };
-        },
-      });
-    },
-    [openDocumentPreview]
-  );
-
-  useEffect(() => {
-    messageActionHandlersRef.current = {
-      onToggleMessageSelection,
-      toggleMessageMenu,
-      handleToggleExpand,
-      handleEditMessage,
-      handleCopyMessage,
-      handleDownloadMessage,
-      handleDeleteMessage,
-      getAttachmentFileName,
-      getAttachmentFileKind,
-    };
-  }, [
-    getAttachmentFileKind,
-    getAttachmentFileName,
-    handleCopyMessage,
-    handleDeleteMessage,
-    handleDownloadMessage,
-    handleEditMessage,
-    handleToggleExpand,
-    onToggleMessageSelection,
-    toggleMessageMenu,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      if (imagePreviewCloseTimerRef.current) {
-        window.clearTimeout(imagePreviewCloseTimerRef.current);
-        imagePreviewCloseTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleToggleMessageSelectionStable = useCallback(
-    (messageId: string) => {
-      messageActionHandlersRef.current.onToggleMessageSelection(messageId);
-    },
-    []
-  );
-
-  const toggleMessageMenuStable = useCallback(
-    (
-      anchor: HTMLElement,
-      messageId: string,
-      preferredSide: 'left' | 'right'
-    ) => {
-      messageActionHandlersRef.current.toggleMessageMenu(
-        anchor,
-        messageId,
-        preferredSide
-      );
-    },
-    []
-  );
-
-  const handleToggleExpandStable = useCallback((messageId: string) => {
-    messageActionHandlersRef.current.handleToggleExpand(messageId);
-  }, []);
-
-  const handleEditMessageStable = useCallback((targetMessage: ChatMessage) => {
-    messageActionHandlersRef.current.handleEditMessage(targetMessage);
-  }, []);
-
-  const handleCopyMessageStable = useCallback(
-    async (targetMessage: ChatMessage) => {
-      await messageActionHandlersRef.current.handleCopyMessage(targetMessage);
-    },
-    []
-  );
-
-  const handleDownloadMessageStable = useCallback(
-    async (targetMessage: ChatMessage) => {
-      await messageActionHandlersRef.current.handleDownloadMessage(
-        targetMessage
-      );
-    },
-    []
-  );
-
-  const handleDeleteMessageStable = useCallback(
-    async (targetMessage: ChatMessage) =>
-      messageActionHandlersRef.current.handleDeleteMessage(targetMessage),
-    []
-  );
-
-  const getAttachmentFileNameStable = useCallback(
-    (targetMessage: ChatMessage) =>
-      messageActionHandlersRef.current.getAttachmentFileName(targetMessage),
-    []
-  );
-
-  const getAttachmentFileKindStable = useCallback(
-    (targetMessage: ChatMessage) =>
-      messageActionHandlersRef.current.getAttachmentFileKind(targetMessage),
-    []
-  );
 
   return (
     <>
