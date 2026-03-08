@@ -287,10 +287,20 @@ export const useChatSession = ({
         },
         payload => {
           const insertedMessage = payload.new as ChatMessage;
+          if (!insertedMessage?.id) {
+            return;
+          }
+
+          const isIncomingConversationMessage =
+            insertedMessage.sender_id === targetUser.id &&
+            insertedMessage.receiver_id === user.id;
+          const isOutgoingConversationMessage =
+            insertedMessage.sender_id === user.id &&
+            insertedMessage.receiver_id === targetUser.id;
+
           if (
-            !insertedMessage?.id ||
-            insertedMessage.sender_id !== targetUser.id ||
-            insertedMessage.receiver_id !== user.id
+            !isIncomingConversationMessage &&
+            !isOutgoingConversationMessage
           ) {
             return;
           }

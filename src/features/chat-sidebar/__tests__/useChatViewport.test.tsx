@@ -237,4 +237,95 @@ describe('useChatViewport', () => {
 
     unmount();
   });
+
+  it('marks a tall incoming message as read when a meaningful portion is visible below the sticky header', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 120,
+      writable: true,
+    });
+    messagesContainer.scrollTo = vi.fn();
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    chatHeaderContainer.getBoundingClientRect = () => createRect(0, 100);
+    messageBubble.getBoundingClientRect = () => createRect(80, 240);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>([['incoming-1', messageBubble]]),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
+
+    const { unmount } = renderHook(() =>
+      useChatViewport({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [
+          {
+            id: 'incoming-1',
+            sender_id: 'user-b',
+            receiver_id: 'user-a',
+            is_read: false,
+          },
+        ],
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        messagesCount: 1,
+        loading: false,
+        messageInputHeight: 22,
+        composerContextualOffset: 0,
+        isMessageInputMultiline: false,
+        pendingComposerAttachmentsCount: 0,
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        editingMessageId: null,
+        focusMessageComposer: vi.fn(),
+        markMessageIdsAsRead,
+        messagesContainerRef,
+        messagesEndRef,
+        composerContainerRef,
+        chatHeaderContainerRef,
+        messageBubbleRefs,
+      })
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(markMessageIdsAsRead).toHaveBeenCalledWith(['incoming-1']);
+
+    unmount();
+  });
 });

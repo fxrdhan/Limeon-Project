@@ -1123,6 +1123,65 @@ describe('useChatSession', () => {
     expect(mockChatService.markMessageIdsAsDelivered).not.toHaveBeenCalled();
   });
 
+  it('hydrates outgoing messages from postgres inserts when app broadcast is unavailable', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(createdChannels[0]).toBeDefined();
+    });
+
+    const conversationChannel = createdChannels[0];
+    const insertListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'INSERT'
+    );
+
+    expect(insertListenerCall).toBeDefined();
+    const insertListener = insertListenerCall?.[2] as
+      | ((payload: { new: ChatMessage }) => void)
+      | undefined;
+
+    act(() => {
+      insertListener?.({
+        new: buildMessage({
+          id: 'message-outgoing',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          channel_id: 'channel-1',
+          message: 'pesan fallback outgoing',
+        }),
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toContain('message-outgoing');
+      expect(
+        result.current.messages.find(
+          messageItem => messageItem.id === 'message-outgoing'
+        )?.sender_name
+      ).toBe('Admin');
+      expect(
+        result.current.messages.find(
+          messageItem => messageItem.id === 'message-outgoing'
+        )?.receiver_name
+      ).toBe('Gudang');
+    });
+  });
+
   it('removes messages from postgres delete events when broadcast delete is unavailable', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };

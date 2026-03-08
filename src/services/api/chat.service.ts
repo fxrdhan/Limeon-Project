@@ -81,8 +81,6 @@ export interface UserPresenceInsertInput extends UserPresenceUpdateInput {
   user_id: string;
 }
 
-let chatMessagesSupportsRelationKind: boolean | null = null;
-
 const buildUserPresenceRestUrl = (userId: string) => {
   const requestUrl = new URL(`${supabaseUrl}/rest/v1/user_presence`);
   requestUrl.searchParams.set('user_id', `eq.${userId}`);
@@ -108,8 +106,18 @@ const stripMessageRelationKind = <
 const isMissingMessageRelationKindError = (error: PostgrestError | null) => {
   if (!error) return false;
 
-  return [error.message, error.details, error.hint].some(candidate =>
-    candidate?.includes('message_relation_kind')
+  if (error.code === '42703' || error.code === 'PGRST204') {
+    return true;
+  }
+
+  const errorText = [error.message, error.details, error.hint]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    errorText.includes('message_relation_kind') &&
+    (errorText.includes('schema cache') || errorText.includes('column'))
   );
 };
 
@@ -149,13 +157,9 @@ export const chatService = {
     payload: ChatMessageInsertInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const insertPayload =
-        chatMessagesSupportsRelationKind === false
-          ? stripMessageRelationKind(payload)
-          : payload;
       let { data, error } = await supabase
         .from('chat_messages')
-        .insert(insertPayload)
+        .insert(payload)
         .select()
         .single();
 
@@ -164,14 +168,11 @@ export const chatService = {
         hasOwnMessageRelationKind(payload) &&
         isMissingMessageRelationKindError(error)
       ) {
-        chatMessagesSupportsRelationKind = false;
         ({ data, error } = await supabase
           .from('chat_messages')
           .insert(stripMessageRelationKind(payload))
           .select()
           .single());
-      } else if (!error && hasOwnMessageRelationKind(payload)) {
-        chatMessagesSupportsRelationKind = true;
       }
 
       if (error) {
@@ -189,13 +190,9 @@ export const chatService = {
     payload: ChatMessageUpdateInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const updatePayload =
-        chatMessagesSupportsRelationKind === false
-          ? stripMessageRelationKind(payload)
-          : payload;
       let { data, error } = await supabase
         .from('chat_messages')
-        .update(updatePayload)
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
@@ -205,15 +202,12 @@ export const chatService = {
         hasOwnMessageRelationKind(payload) &&
         isMissingMessageRelationKindError(error)
       ) {
-        chatMessagesSupportsRelationKind = false;
         ({ data, error } = await supabase
           .from('chat_messages')
           .update(stripMessageRelationKind(payload))
           .eq('id', id)
           .select()
           .single());
-      } else if (!error && hasOwnMessageRelationKind(payload)) {
-        chatMessagesSupportsRelationKind = true;
       }
 
       if (error) {

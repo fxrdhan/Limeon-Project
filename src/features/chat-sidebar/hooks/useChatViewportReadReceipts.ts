@@ -6,6 +6,7 @@ import {
 } from '../utils/viewport-visibility';
 
 const SCROLL_READ_RECEIPT_DEBOUNCE_MS = 90;
+const MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX = 48;
 
 interface ReadReceiptMessage {
   id: string;
@@ -62,9 +63,25 @@ export const useChatViewportReadReceipts = ({
           0
         );
         const bubbleRect = bubbleElement.getBoundingClientRect();
-        const isVisible =
+        const visibleTop = Math.max(
+          bubbleRect.top,
+          verticalVisibilityBounds.minVisibleTop
+        );
+        const visibleBottom = Math.min(
+          bubbleRect.bottom,
+          verticalVisibilityBounds.maxVisibleBottom
+        );
+        const visibleHeight = visibleBottom - visibleTop;
+        const isTopEdgeVisible =
           bubbleRect.top >= verticalVisibilityBounds.minVisibleTop &&
           bubbleRect.top < verticalVisibilityBounds.maxVisibleBottom;
+        const isMeaningfullyVisibleBelowHeader =
+          bubbleRect.top < verticalVisibilityBounds.minVisibleTop &&
+          visibleHeight >= MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX;
+        const isVisible =
+          visibleHeight > 0 &&
+          (isTopEdgeVisible || isMeaningfullyVisibleBelowHeader);
+
         return isVisible ? messageItem.id : null;
       })
       .filter((messageId): messageId is string => Boolean(messageId));
