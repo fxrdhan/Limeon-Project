@@ -154,4 +154,60 @@ describe('useChatMessageTransferActions', () => {
     createElementSpy.mockRestore();
     appendSpy.mockRestore();
   });
+
+  it('copies image messages through the storage fallback when direct fetch fails', async () => {
+    const closeMessageMenu = vi.fn();
+    const write = vi.fn().mockResolvedValue(undefined);
+    const imageBlob = new Blob(['image'], { type: 'image/png' });
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { write, writeText: vi.fn() },
+    });
+    vi.stubGlobal(
+      'ClipboardItem',
+      class ClipboardItem {
+        static supports = vi.fn().mockReturnValue(true);
+
+        constructor(public items: Record<string, Blob>) {}
+      }
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('fetch failed'))
+    );
+    mockGateway.downloadStorageFile.mockResolvedValue(imageBlob);
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleCopyMessage(
+        buildMessage({
+          message_type: 'image',
+          message:
+            'https://example.com/storage/v1/object/sign/chat/images/channel/stok.png?token=123',
+          file_name: 'stok.png',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/stok.png',
+        })
+      );
+    });
+
+    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+      'chat',
+      'images/channel/stok.png'
+    );
+    expect(write).toHaveBeenCalledOnce();
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'Gambar berhasil disalin',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
 });

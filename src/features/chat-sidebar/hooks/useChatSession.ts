@@ -321,6 +321,42 @@ export const useChatSession = ({
         }
       );
 
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'chat_messages',
+        },
+        payload => {
+          const deletedMessage = payload.old as
+            | Partial<ChatMessage>
+            | undefined;
+          const deletedMessageId = deletedMessage?.id;
+          if (!deletedMessageId) return;
+          if (
+            deletedMessage.channel_id &&
+            deletedMessage.channel_id !== currentChannelId
+          ) {
+            return;
+          }
+
+          setMessages(previousMessages => {
+            if (
+              !previousMessages.some(
+                messageItem => messageItem.id === deletedMessageId
+              )
+            ) {
+              return previousMessages;
+            }
+
+            return previousMessages.filter(
+              messageItem => messageItem.id !== deletedMessageId
+            );
+          });
+        }
+      );
+
       channel.on('broadcast', { event: 'delete_message' }, payload => {
         const deletedMessage = payload.payload as { id: string };
         setMessages(previousMessages =>

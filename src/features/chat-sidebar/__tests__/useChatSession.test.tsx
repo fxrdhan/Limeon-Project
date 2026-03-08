@@ -946,4 +946,66 @@ describe('useChatSession', () => {
 
     expect(mockChatService.markMessageIdsAsDelivered).not.toHaveBeenCalled();
   });
+
+  it('removes messages from postgres delete events when broadcast delete is unavailable', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: [
+        buildMessage({
+          id: 'message-deleted',
+          sender_id: currentUser.id,
+          receiver_id: targetUser.id,
+          channel_id: 'channel-1',
+          is_delivered: true,
+          message: 'pesan akan dihapus',
+        }),
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toContain('message-deleted');
+    });
+
+    const conversationChannel = createdChannels[0];
+    const deleteListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'DELETE'
+    );
+
+    expect(deleteListenerCall).toBeDefined();
+    const deleteListener = deleteListenerCall?.[2] as
+      | ((payload: { old: Partial<ChatMessage> }) => void)
+      | undefined;
+
+    act(() => {
+      deleteListener?.({
+        old: {
+          id: 'message-deleted',
+          channel_id: 'channel-1',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).not.toContain('message-deleted');
+    });
+  });
 });

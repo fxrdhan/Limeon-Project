@@ -37,12 +37,15 @@ export const useChatMessageTransferActions = ({
             throw new Error('Clipboard image write is not supported');
           }
 
-          const response = await fetch(targetMessage.message);
-          if (!response.ok) {
+          const imageBlob = await fetchChatFileBlobWithFallback(
+            targetMessage.message,
+            targetMessage.file_storage_path,
+            targetMessage.file_mime_type
+          );
+          if (!imageBlob) {
             throw new Error('Failed to fetch image for clipboard');
           }
 
-          const imageBlob = await response.blob();
           const clipboardPayload = await getClipboardImagePayload(imageBlob);
           await writeImageToClipboard([
             new ClipboardItem({

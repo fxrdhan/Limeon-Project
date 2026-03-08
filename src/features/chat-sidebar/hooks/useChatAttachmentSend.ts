@@ -12,10 +12,7 @@ import {
   getPersistedDeletedThreadMessageIds,
   resolveDeletedThreadMessageIds,
 } from '../utils/message-thread';
-import {
-  mapPersistedMessageForDisplay,
-  reconcileConversationMessages,
-} from '../utils/conversation-sync';
+import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
 import { getConversationScopeKey } from '../utils/conversation-scope';
 import {
   markMessageAsAttachmentCaption,
@@ -29,6 +26,7 @@ import {
 } from '../utils/attachment-send';
 import { useActiveConversationScope } from './useActiveConversationScope';
 import { useChatAttachmentPdfPreview } from './useChatAttachmentPdfPreview';
+import { useChatConversationReconciler } from './useChatConversationReconciler';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -142,42 +140,13 @@ export const useChatAttachmentSend = ({
     deleteUploadedStorageFiles,
   });
 
-  const reconcileConversationFromServer = useCallback(
-    async (conversationScopeKey: string | null) => {
-      if (!isConversationScopeActive(conversationScopeKey)) return;
-      if (!user || !targetUser || !currentChannelId) return;
-
-      try {
-        const { data: latestMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(
-            user.id,
-            targetUser.id,
-            currentChannelId
-          );
-
-        if (!isConversationScopeActive(conversationScopeKey)) {
-          return;
-        }
-
-        if (error || !latestMessages) {
-          return;
-        }
-
-        reconcileConversationMessages({
-          latestMessages,
-          user,
-          targetUser,
-          setMessages,
-        });
-      } catch (error) {
-        console.error(
-          'Error reconciling conversation after send failure:',
-          error
-        );
-      }
-    },
-    [currentChannelId, isConversationScopeActive, setMessages, targetUser, user]
-  );
+  const reconcileConversationFromServer = useChatConversationReconciler({
+    user,
+    targetUser,
+    currentChannelId,
+    setMessages,
+    isConversationScopeActive,
+  });
 
   const rollbackPersistedAttachmentThread = useCallback(
     async (
@@ -445,7 +414,7 @@ export const useChatAttachmentSend = ({
                 'Error rolling back attachment thread:',
                 rollbackError
               );
-              await reconcileConversationFromServer(conversationScopeKey);
+              await reconcileConversationFromServer({ conversationScopeKey });
             }
 
             if (
@@ -514,7 +483,6 @@ export const useChatAttachmentSend = ({
       editingMessageId,
       isConversationScopeActive,
       pendingImagePreviewUrlsRef,
-      reconcileConversationFromServer,
       registerPendingSend,
       releasePendingPreviewUrl,
       removeOptimisticAttachmentThreadFromState,
@@ -524,6 +492,7 @@ export const useChatAttachmentSend = ({
       targetUser,
       triggerSendSuccessGlow,
       user,
+      reconcileConversationFromServer,
     ]
   );
 

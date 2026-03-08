@@ -18,9 +18,9 @@ import type {
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
-import { reconcileConversationMessages } from '../utils/conversation-sync';
 import { getConversationScopeKey } from '../utils/conversation-scope';
 import { useActiveConversationScope } from './useActiveConversationScope';
+import { useChatConversationReconciler } from './useChatConversationReconciler';
 import { useChatMessageTransferActions } from './useChatMessageTransferActions';
 
 interface PendingSendRegistration {
@@ -138,54 +138,13 @@ export const useChatComposerActions = ({
       closeMessageMenu,
     });
 
-  const reconcileMessagesFromServer = useCallback(
-    async (
-      fallbackMessages: ChatMessage[],
-      conversationScopeKey: string | null
-    ) => {
-      if (!isConversationScopeActive(conversationScopeKey)) {
-        return;
-      }
-
-      if (!user || !targetUser) {
-        if (isConversationScopeActive(conversationScopeKey)) {
-          setMessages(fallbackMessages);
-        }
-        return;
-      }
-
-      try {
-        const { data: latestMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(
-            user.id,
-            targetUser.id,
-            currentChannelId
-          );
-
-        if (!isConversationScopeActive(conversationScopeKey)) {
-          return;
-        }
-
-        if (error || !latestMessages) {
-          setMessages(fallbackMessages);
-          return;
-        }
-
-        reconcileConversationMessages({
-          latestMessages,
-          user,
-          targetUser,
-          setMessages,
-        });
-      } catch (error) {
-        console.error('Error reconciling conversation:', error);
-        if (isConversationScopeActive(conversationScopeKey)) {
-          setMessages(fallbackMessages);
-        }
-      }
-    },
-    [currentChannelId, isConversationScopeActive, setMessages, targetUser, user]
-  );
+  const reconcileMessagesFromServer = useChatConversationReconciler({
+    user,
+    targetUser,
+    currentChannelId,
+    setMessages,
+    isConversationScopeActive,
+  });
 
   const handleUpdateMessage = useCallback(async () => {
     if (
@@ -371,10 +330,10 @@ export const useChatComposerActions = ({
         return true;
       } catch (error) {
         console.error('Error deleting message:', error);
-        await reconcileMessagesFromServer(
-          messagesSnapshot,
-          conversationScopeKey
-        );
+        await reconcileMessagesFromServer({
+          fallbackMessages: messagesSnapshot,
+          conversationScopeKey,
+        });
         if (
           !options?.suppressErrorToast &&
           isConversationScopeActive(conversationScopeKey)
@@ -393,13 +352,13 @@ export const useChatComposerActions = ({
       editingMessageId,
       isConversationScopeActive,
       messages,
-      reconcileMessagesFromServer,
       setEditingMessageId,
       setMessage,
       setMessages,
       targetUser,
       user,
       pendingSendRegistryRef,
+      reconcileMessagesFromServer,
     ]
   );
 
