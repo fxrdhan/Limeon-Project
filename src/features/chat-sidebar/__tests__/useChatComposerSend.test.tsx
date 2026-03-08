@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { PendingComposerAttachment } from '../types';
@@ -475,6 +475,212 @@ describe('useChatComposerSend', () => {
     expect(broadcastDeletedMessage).toHaveBeenCalledWith('server-text-1');
     expect(broadcastNewMessage).not.toHaveBeenCalled();
     expect(result.current.draftMessage).toBe('');
+  });
+
+  it('keeps a cancelled temp text send hidden when rollback cleanup fails', async () => {
+    let resolveCreateMessage:
+      | ((value: { data: ChatMessage; error: null }) => void)
+      | undefined;
+
+    mockGateway.createMessage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCreateMessage = resolve;
+        })
+    );
+    mockGateway.deleteMessageThread.mockResolvedValue({
+      data: null,
+      error: new Error('delete failed'),
+    });
+
+    const broadcastNewMessage = vi.fn();
+    const broadcastDeletedMessage = vi.fn();
+    const { pendingEntries, registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('pesan pending');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage,
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage,
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+        draftMessage,
+        setMessages,
+      };
+    });
+
+    await act(async () => {
+      const sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+
+      const tempMessageId = pendingEntries.keys().next().value as
+        | string
+        | undefined;
+      expect(tempMessageId).toBeDefined();
+      pendingEntries.get(tempMessageId!)!.cancelled = true;
+      result.current.setMessages(previousMessages =>
+        previousMessages.filter(messageItem => messageItem.id !== tempMessageId)
+      );
+
+      resolveCreateMessage?.({
+        data: buildMessage({
+          id: 'server-text-rollback-fail',
+          message: 'pesan pending',
+          message_type: 'text',
+        }),
+        error: null,
+      });
+
+      await sendPromise;
+    });
+
+    expect(result.current.messages).toEqual([]);
+    expect(broadcastNewMessage).not.toHaveBeenCalled();
+    expect(broadcastDeletedMessage).not.toHaveBeenCalled();
+    expect(result.current.draftMessage).toBe('');
+  });
+
+  it('does not restore stale draft state after switching conversations during a failed text send', async () => {
+    let resolveCreateMessage:
+      | ((value: { data: null; error: Error }) => void)
+      | undefined;
+
+    mockGateway.createMessage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCreateMessage = resolve;
+        })
+    );
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    type HookProps = {
+      channelId: string;
+      targetUserId: string;
+      targetUserName: string;
+      initialDraftMessage: string;
+      initialMessages: ChatMessage[];
+    };
+
+    const initialProps: HookProps = {
+      channelId: 'channel-1',
+      targetUserId: 'user-b',
+      targetUserName: 'Gudang',
+      initialDraftMessage: 'draft lama',
+      initialMessages: [],
+    };
+
+    const nextProps: HookProps = {
+      channelId: 'channel-2',
+      targetUserId: 'user-c',
+      targetUserName: 'Kasir',
+      initialDraftMessage: '',
+      initialMessages: [],
+    };
+
+    const { result, rerender } = renderHook(
+      (props: HookProps) => {
+        const [messages, setMessages] = useState<ChatMessage[]>(
+          props.initialMessages
+        );
+        const [draftMessage, setDraftMessage] = useState(
+          props.initialDraftMessage
+        );
+        const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(
+          new Map()
+        );
+
+        useEffect(() => {
+          setMessages(props.initialMessages);
+          setDraftMessage(props.initialDraftMessage);
+        }, [props.channelId, props.initialDraftMessage, props.initialMessages]);
+
+        const send = useChatComposerSend({
+          user: { id: 'user-a', name: 'Admin' },
+          targetUser: {
+            id: props.targetUserId,
+            name: props.targetUserName,
+            email: `${props.targetUserId}@example.com`,
+            profilephoto: null,
+          },
+          currentChannelId: props.channelId,
+          message: draftMessage,
+          setMessage: setDraftMessage,
+          editingMessageId: null,
+          pendingComposerAttachments: [],
+          clearPendingComposerAttachments: vi.fn(),
+          restorePendingComposerAttachments: vi.fn(),
+          setMessages,
+          scheduleScrollMessagesToBottom: vi.fn(),
+          triggerSendSuccessGlow: vi.fn(),
+          broadcastNewMessage: vi.fn(),
+          broadcastUpdatedMessage: vi.fn(),
+          broadcastDeletedMessage: vi.fn(),
+          pendingImagePreviewUrlsRef,
+          registerPendingSend,
+        });
+
+        return {
+          ...send,
+          messages,
+          draftMessage,
+        };
+      },
+      { initialProps }
+    );
+
+    let sendPromise: Promise<void> | undefined;
+    await act(async () => {
+      sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+    });
+
+    rerender(nextProps);
+
+    await waitFor(() => {
+      expect(result.current.draftMessage).toBe('');
+      expect(result.current.messages).toEqual([]);
+    });
+
+    await act(async () => {
+      resolveCreateMessage?.({
+        data: null,
+        error: new Error('insert failed'),
+      });
+      await sendPromise;
+    });
+
+    expect(result.current.draftMessage).toBe('');
+    expect(result.current.messages).toEqual([]);
+    expect(mockToast.error).not.toHaveBeenCalledWith(
+      'Gagal mengirim pesan',
+      expect.anything()
+    );
   });
 
   it('shows an error toast and restores draft text when text send fails', async () => {

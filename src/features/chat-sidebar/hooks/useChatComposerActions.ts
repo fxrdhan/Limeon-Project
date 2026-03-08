@@ -1,5 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
+  useEffect,
   useCallback,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -21,6 +22,7 @@ import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
+import { getConversationScopeKey } from '../utils/conversation-scope';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -106,6 +108,25 @@ export const useChatComposerActions = ({
   const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
     new Map()
   );
+  const activeConversationScopeKeyRef = useRef<string | null>(
+    getConversationScopeKey(user?.id, targetUser?.id, currentChannelId)
+  );
+
+  useEffect(() => {
+    activeConversationScopeKeyRef.current = getConversationScopeKey(
+      user?.id,
+      targetUser?.id,
+      currentChannelId
+    );
+  }, [currentChannelId, targetUser?.id, user?.id]);
+
+  const isConversationScopeActive = useCallback(
+    (conversationScopeKey: string | null) =>
+      Boolean(conversationScopeKey) &&
+      activeConversationScopeKeyRef.current === conversationScopeKey,
+    []
+  );
+
   const send = useChatComposerSend({
     user,
     targetUser,
@@ -128,9 +149,18 @@ export const useChatComposerActions = ({
   });
 
   const reconcileMessagesFromServer = useCallback(
-    async (fallbackMessages: ChatMessage[]) => {
+    async (
+      fallbackMessages: ChatMessage[],
+      conversationScopeKey: string | null
+    ) => {
+      if (!isConversationScopeActive(conversationScopeKey)) {
+        return;
+      }
+
       if (!user || !targetUser) {
-        setMessages(fallbackMessages);
+        if (isConversationScopeActive(conversationScopeKey)) {
+          setMessages(fallbackMessages);
+        }
         return;
       }
 
@@ -141,6 +171,10 @@ export const useChatComposerActions = ({
             targetUser.id,
             currentChannelId
           );
+
+        if (!isConversationScopeActive(conversationScopeKey)) {
+          return;
+        }
 
         if (error || !latestMessages) {
           setMessages(fallbackMessages);
@@ -155,10 +189,12 @@ export const useChatComposerActions = ({
         });
       } catch (error) {
         console.error('Error reconciling conversation:', error);
-        setMessages(fallbackMessages);
+        if (isConversationScopeActive(conversationScopeKey)) {
+          setMessages(fallbackMessages);
+        }
       }
     },
-    [currentChannelId, setMessages, targetUser, user]
+    [currentChannelId, isConversationScopeActive, setMessages, targetUser, user]
   );
 
   const handleUpdateMessage = useCallback(async () => {
@@ -182,6 +218,11 @@ export const useChatComposerActions = ({
       return;
     }
 
+    const conversationScopeKey = getConversationScopeKey(
+      user.id,
+      targetUser.id,
+      currentChannelId
+    );
     const messageId = editingMessageId;
     const updatedText = message.trim();
     const updatedAt = new Date().toISOString();
@@ -189,6 +230,10 @@ export const useChatComposerActions = ({
       candidate => candidate.id === messageId
     );
     const restoreFailedEdit = () => {
+      if (!isConversationScopeActive(conversationScopeKey)) {
+        return;
+      }
+
       if (existingMessage) {
         setMessages(previousMessages =>
           previousMessages.map(messageItem =>
@@ -226,6 +271,10 @@ export const useChatComposerActions = ({
           updated_at: updatedAt,
         });
 
+      if (!isConversationScopeActive(conversationScopeKey)) {
+        return;
+      }
+
       if (error) {
         console.error('Error updating message:', error);
         restoreFailedEdit();
@@ -256,6 +305,7 @@ export const useChatComposerActions = ({
     closeMessageMenu,
     currentChannelId,
     editingMessageId,
+    isConversationScopeActive,
     focusMessageComposer,
     message,
     messages,
@@ -273,6 +323,11 @@ export const useChatComposerActions = ({
     ): Promise<boolean> => {
       if (!user || !targetUser || !currentChannelId) return false;
 
+      const conversationScopeKey = getConversationScopeKey(
+        user.id,
+        targetUser.id,
+        currentChannelId
+      );
       closeMessageMenu();
       const linkedCaptionMessageIds = getAttachmentCaptionMessageIds(
         messages,
@@ -318,14 +373,22 @@ export const useChatComposerActions = ({
           messageIdsToDelete
         );
 
-        broadcastTargetIds.forEach(deletedMessageId => {
-          broadcastDeletedMessage(deletedMessageId);
-        });
+        if (isConversationScopeActive(conversationScopeKey)) {
+          broadcastTargetIds.forEach(deletedMessageId => {
+            broadcastDeletedMessage(deletedMessageId);
+          });
+        }
         return true;
       } catch (error) {
         console.error('Error deleting message:', error);
-        await reconcileMessagesFromServer(messagesSnapshot);
-        if (!options?.suppressErrorToast) {
+        await reconcileMessagesFromServer(
+          messagesSnapshot,
+          conversationScopeKey
+        );
+        if (
+          !options?.suppressErrorToast &&
+          isConversationScopeActive(conversationScopeKey)
+        ) {
           toast.error('Gagal menghapus pesan', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -338,6 +401,7 @@ export const useChatComposerActions = ({
       closeMessageMenu,
       currentChannelId,
       editingMessageId,
+      isConversationScopeActive,
       messages,
       reconcileMessagesFromServer,
       setEditingMessageId,

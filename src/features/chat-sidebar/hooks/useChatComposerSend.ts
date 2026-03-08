@@ -1,5 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
+  useEffect,
   useCallback,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -17,6 +18,7 @@ import {
 import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
+import { getConversationScopeKey } from '../utils/conversation-scope';
 
 export interface PendingSendRegistration {
   complete: () => void;
@@ -68,6 +70,25 @@ export const useChatComposerSend = ({
   registerPendingSend,
 }: UseChatComposerSendProps) => {
   const isSendingRef = useRef(false);
+  const activeConversationScopeKeyRef = useRef<string | null>(
+    getConversationScopeKey(user?.id, targetUser?.id, currentChannelId)
+  );
+
+  useEffect(() => {
+    activeConversationScopeKeyRef.current = getConversationScopeKey(
+      user?.id,
+      targetUser?.id,
+      currentChannelId
+    );
+  }, [currentChannelId, targetUser?.id, user?.id]);
+
+  const isConversationScopeActive = useCallback(
+    (conversationScopeKey: string | null) =>
+      Boolean(conversationScopeKey) &&
+      activeConversationScopeKeyRef.current === conversationScopeKey,
+    []
+  );
+
   const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
     user,
     targetUser,
@@ -88,6 +109,11 @@ export const useChatComposerSend = ({
       if (!user || !targetUser || !currentChannelId) return false;
       if (!messageText.trim()) return false;
 
+      const conversationScopeKey = getConversationScopeKey(
+        user.id,
+        targetUser.id,
+        currentChannelId
+      );
       const normalizedMessageText = messageText.trim();
       setMessage('');
 
@@ -126,7 +152,10 @@ export const useChatComposerSend = ({
           });
 
         if (error || !newMessage) {
-          if (!pendingSend.isCancelled()) {
+          if (
+            !pendingSend.isCancelled() &&
+            isConversationScopeActive(conversationScopeKey)
+          ) {
             setMessages(previousMessages =>
               previousMessages.filter(messageItem => messageItem.id !== tempId)
             );
@@ -149,31 +178,38 @@ export const useChatComposerSend = ({
           const { data: deletedMessageIds, error: deleteError } =
             await chatSidebarGateway.deleteMessageThread(realMessage.id);
 
-          if (!deleteError) {
+          if (!deleteError && isConversationScopeActive(conversationScopeKey)) {
             getPersistedDeletedThreadMessageIds(deletedMessageIds, [
               realMessage.id,
             ]).forEach(deletedMessageId => {
               broadcastDeletedMessage(deletedMessageId);
             });
-            return false;
           }
 
-          console.error(
-            'Error cancelling temp message after persistence:',
-            deleteError
-          );
+          if (deleteError) {
+            console.error(
+              'Error cancelling temp message after persistence:',
+              deleteError
+            );
+          }
+          return false;
         }
 
-        setMessages(previousMessages =>
-          commitOptimisticMessage(previousMessages, tempId, realMessage)
-        );
+        if (isConversationScopeActive(conversationScopeKey)) {
+          setMessages(previousMessages =>
+            commitOptimisticMessage(previousMessages, tempId, realMessage)
+          );
 
-        broadcastNewMessage(realMessage);
+          broadcastNewMessage(realMessage);
+        }
 
         return true;
       } catch (error) {
         console.error('Error sending message:', error);
-        if (!pendingSend.isCancelled()) {
+        if (
+          !pendingSend.isCancelled() &&
+          isConversationScopeActive(conversationScopeKey)
+        ) {
           setMessages(previousMessages =>
             previousMessages.filter(messageItem => messageItem.id !== tempId)
           );
@@ -191,6 +227,7 @@ export const useChatComposerSend = ({
       broadcastNewMessage,
       broadcastDeletedMessage,
       currentChannelId,
+      isConversationScopeActive,
       registerPendingSend,
       scheduleScrollMessagesToBottom,
       setMessage,
@@ -215,6 +252,11 @@ export const useChatComposerSend = ({
     isSendingRef.current = true;
 
     try {
+      const conversationScopeKey = getConversationScopeKey(
+        user?.id,
+        targetUser?.id,
+        currentChannelId
+      );
       const shouldAttachCaption =
         hasPendingAttachments && messageText.length > 0;
       if (shouldAttachCaption) {
@@ -253,10 +295,15 @@ export const useChatComposerSend = ({
               );
 
         if (!sentAttachmentMessageId) {
-          restorePendingComposerAttachments(
-            attachmentsToSend.slice(attachmentIndex)
-          );
-          if (shouldAttachCaption) {
+          if (isConversationScopeActive(conversationScopeKey)) {
+            restorePendingComposerAttachments(
+              attachmentsToSend.slice(attachmentIndex)
+            );
+          }
+          if (
+            shouldAttachCaption &&
+            isConversationScopeActive(conversationScopeKey)
+          ) {
             setMessage(messageText);
           }
           return;
@@ -283,7 +330,11 @@ export const useChatComposerSend = ({
     sendFileMessage,
     sendImageMessage,
     sendTextMessage,
+    currentChannelId,
     setMessage,
+    targetUser?.id,
+    user?.id,
+    isConversationScopeActive,
   ]);
 
   const handleKeyPress = useCallback(

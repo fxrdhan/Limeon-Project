@@ -1,5 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
@@ -18,6 +18,7 @@ import {
   mapPersistedMessageForDisplay,
   reconcileConversationMessages,
 } from '../utils/conversation-sync';
+import { getConversationScopeKey } from '../utils/conversation-scope';
 import {
   markMessageAsAttachmentCaption,
   toAttachmentCaptionInsertInput,
@@ -86,7 +87,8 @@ interface SendAttachmentOptions {
   onAfterCommit?: (
     realMessage: ChatMessage,
     stableKey: string,
-    uploadedPath: string
+    uploadedPath: string,
+    conversationScopeKey: string | null
   ) => void;
 }
 
@@ -104,6 +106,25 @@ export const useChatAttachmentSend = ({
   pendingImagePreviewUrlsRef,
   registerPendingSend,
 }: UseChatAttachmentSendProps) => {
+  const activeConversationScopeKeyRef = useRef<string | null>(
+    getConversationScopeKey(user?.id, targetUser?.id, currentChannelId)
+  );
+
+  useEffect(() => {
+    activeConversationScopeKeyRef.current = getConversationScopeKey(
+      user?.id,
+      targetUser?.id,
+      currentChannelId
+    );
+  }, [currentChannelId, targetUser?.id, user?.id]);
+
+  const isConversationScopeActive = useCallback(
+    (conversationScopeKey: string | null) =>
+      Boolean(conversationScopeKey) &&
+      activeConversationScopeKeyRef.current === conversationScopeKey,
+    []
+  );
+
   const deleteUploadedStorageFiles = useCallback(
     async (storagePaths: Array<string | null | undefined>) => {
       const uniquePaths = [...new Set(storagePaths)]
@@ -129,39 +150,48 @@ export const useChatAttachmentSend = ({
     []
   );
 
-  const reconcileConversationFromServer = useCallback(async () => {
-    if (!user || !targetUser || !currentChannelId) return;
+  const reconcileConversationFromServer = useCallback(
+    async (conversationScopeKey: string | null) => {
+      if (!isConversationScopeActive(conversationScopeKey)) return;
+      if (!user || !targetUser || !currentChannelId) return;
 
-    try {
-      const { data: latestMessages, error } =
-        await chatSidebarGateway.fetchConversationMessages(
-          user.id,
-          targetUser.id,
-          currentChannelId
+      try {
+        const { data: latestMessages, error } =
+          await chatSidebarGateway.fetchConversationMessages(
+            user.id,
+            targetUser.id,
+            currentChannelId
+          );
+
+        if (!isConversationScopeActive(conversationScopeKey)) {
+          return;
+        }
+
+        if (error || !latestMessages) {
+          return;
+        }
+
+        reconcileConversationMessages({
+          latestMessages,
+          user,
+          targetUser,
+          setMessages,
+        });
+      } catch (error) {
+        console.error(
+          'Error reconciling conversation after send failure:',
+          error
         );
-
-      if (error || !latestMessages) {
-        return;
       }
-
-      reconcileConversationMessages({
-        latestMessages,
-        user,
-        targetUser,
-        setMessages,
-      });
-    } catch (error) {
-      console.error(
-        'Error reconciling conversation after send failure:',
-        error
-      );
-    }
-  }, [currentChannelId, setMessages, targetUser, user]);
+    },
+    [currentChannelId, isConversationScopeActive, setMessages, targetUser, user]
+  );
 
   const rollbackPersistedAttachmentThread = useCallback(
     async (
       persistedMessageId: string,
-      storagePaths: Array<string | null | undefined>
+      storagePaths: Array<string | null | undefined>,
+      conversationScopeKey: string | null
     ) => {
       const { data: deletedMessageIds, error } =
         await chatSidebarGateway.deleteMessageThread(persistedMessageId);
@@ -175,25 +205,36 @@ export const useChatAttachmentSend = ({
         [persistedMessageId]
       );
 
-      setMessages(previousMessages =>
-        previousMessages.filter(
-          messageItem => !effectiveDeletedMessageIds.includes(messageItem.id)
-        )
-      );
+      if (isConversationScopeActive(conversationScopeKey)) {
+        setMessages(previousMessages =>
+          previousMessages.filter(
+            messageItem => !effectiveDeletedMessageIds.includes(messageItem.id)
+          )
+        );
 
-      getPersistedDeletedThreadMessageIds(deletedMessageIds, [
-        persistedMessageId,
-      ]).forEach(messageId => {
-        broadcastDeletedMessage(messageId);
-      });
+        getPersistedDeletedThreadMessageIds(deletedMessageIds, [
+          persistedMessageId,
+        ]).forEach(messageId => {
+          broadcastDeletedMessage(messageId);
+        });
+      }
 
       await deleteUploadedStorageFiles(storagePaths);
     },
-    [broadcastDeletedMessage, deleteUploadedStorageFiles, setMessages]
+    [
+      broadcastDeletedMessage,
+      deleteUploadedStorageFiles,
+      isConversationScopeActive,
+      setMessages,
+    ]
   );
 
   const mergeAndBroadcastPreviewUpdate = useCallback(
-    (payload: ChatMessage) => {
+    (payload: ChatMessage, conversationScopeKey: string | null) => {
+      if (!isConversationScopeActive(conversationScopeKey)) {
+        return;
+      }
+
       setMessages(previousMessages =>
         previousMessages.map(messageItem =>
           messageItem.id === payload.id
@@ -203,7 +244,7 @@ export const useChatAttachmentSend = ({
       );
       broadcastUpdatedMessage(payload);
     },
-    [broadcastUpdatedMessage, setMessages]
+    [broadcastUpdatedMessage, isConversationScopeActive, setMessages]
   );
 
   const processPdfPreview = useCallback(
@@ -211,7 +252,8 @@ export const useChatAttachmentSend = ({
       realMessage: ChatMessage,
       pendingFile: PendingComposerFile,
       filePath: string,
-      stableKey: string
+      stableKey: string,
+      conversationScopeKey: string | null
     ) => {
       if (!user || !targetUser) {
         return;
@@ -231,7 +273,8 @@ export const useChatAttachmentSend = ({
             user,
             targetUser,
             stableKey
-          )
+          ),
+          conversationScopeKey
         );
       };
 
@@ -284,7 +327,8 @@ export const useChatAttachmentSend = ({
             user,
             targetUser,
             stableKey
-          )
+          ),
+          conversationScopeKey
         );
       } catch (error) {
         console.error('Error processing PDF preview metadata:', error);
@@ -357,6 +401,11 @@ export const useChatAttachmentSend = ({
         return null;
       }
 
+      const conversationScopeKey = getConversationScopeKey(
+        user.id,
+        targetUser.id,
+        currentChannelId
+      );
       const timestamp = new Date().toISOString();
       const tempId = `${tempIdPrefix}_${Date.now()}`;
       const stableKey = `${user.id}-${Date.now()}-${stableKeySuffix}`;
@@ -424,11 +473,17 @@ export const useChatAttachmentSend = ({
         );
 
         if (error || !persistedMessage) {
-          if (!pendingSend.isCancelled()) {
+          if (
+            !pendingSend.isCancelled() &&
+            isConversationScopeActive(conversationScopeKey)
+          ) {
             removeOptimisticAttachmentThread(tempId, captionTempId);
           }
           await deleteUploadedStorageFiles([uploadedStoragePath]);
-          if (!pendingSend.isCancelled()) {
+          if (
+            !pendingSend.isCancelled() &&
+            isConversationScopeActive(conversationScopeKey)
+          ) {
             toast.error(sendFailureToast, {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
@@ -444,16 +499,18 @@ export const useChatAttachmentSend = ({
 
         if (pendingSend.isCancelled()) {
           try {
-            await rollbackPersistedAttachmentThread(realMessage.id, [
-              uploadedStoragePath,
-            ]);
-            return null;
+            await rollbackPersistedAttachmentThread(
+              realMessage.id,
+              [uploadedStoragePath],
+              conversationScopeKey
+            );
           } catch (rollbackError) {
             console.error(
               'Error cancelling temp attachment thread after persistence:',
               rollbackError
             );
           }
+          return null;
         }
 
         if (hasAttachmentCaption && captionTempId) {
@@ -482,46 +539,62 @@ export const useChatAttachmentSend = ({
 
             if (pendingSend.isCancelled()) {
               try {
-                await rollbackPersistedAttachmentThread(realMessage.id, [
-                  uploadedStoragePath,
-                ]);
-                return null;
+                await rollbackPersistedAttachmentThread(
+                  realMessage.id,
+                  [uploadedStoragePath],
+                  conversationScopeKey
+                );
               } catch (rollbackError) {
                 console.error(
                   'Error cancelling temp attachment thread after caption persistence:',
                   rollbackError
                 );
               }
+              return null;
             }
 
-            setMessages(previousMessages =>
-              commitOptimisticMessage(
-                commitOptimisticMessage(previousMessages, tempId, realMessage),
-                captionTempId,
-                mappedCaptionMessage
-              )
-            );
+            if (isConversationScopeActive(conversationScopeKey)) {
+              setMessages(previousMessages =>
+                commitOptimisticMessage(
+                  commitOptimisticMessage(
+                    previousMessages,
+                    tempId,
+                    realMessage
+                  ),
+                  captionTempId,
+                  mappedCaptionMessage
+                )
+              );
 
-            broadcastNewMessage(realMessage);
-            broadcastNewMessage(mappedCaptionMessage);
+              broadcastNewMessage(realMessage);
+              broadcastNewMessage(mappedCaptionMessage);
+            }
           } else {
-            if (!pendingSend.isCancelled()) {
+            if (
+              !pendingSend.isCancelled() &&
+              isConversationScopeActive(conversationScopeKey)
+            ) {
               removeOptimisticAttachmentThread(tempId, captionTempId);
             }
 
             try {
-              await rollbackPersistedAttachmentThread(realMessage.id, [
-                uploadedStoragePath,
-              ]);
+              await rollbackPersistedAttachmentThread(
+                realMessage.id,
+                [uploadedStoragePath],
+                conversationScopeKey
+              );
             } catch (rollbackError) {
               console.error(
                 'Error rolling back attachment thread:',
                 rollbackError
               );
-              await reconcileConversationFromServer();
+              await reconcileConversationFromServer(conversationScopeKey);
             }
 
-            if (!pendingSend.isCancelled()) {
+            if (
+              !pendingSend.isCancelled() &&
+              isConversationScopeActive(conversationScopeKey)
+            ) {
               toast.error(captionFailureToast, {
                 toasterId: CHAT_SIDEBAR_TOASTER_ID,
               });
@@ -529,25 +602,38 @@ export const useChatAttachmentSend = ({
             return null;
           }
         } else {
-          setMessages(previousMessages =>
-            commitOptimisticMessage(previousMessages, tempId, realMessage)
-          );
+          if (isConversationScopeActive(conversationScopeKey)) {
+            setMessages(previousMessages =>
+              commitOptimisticMessage(previousMessages, tempId, realMessage)
+            );
 
-          broadcastNewMessage(realMessage);
+            broadcastNewMessage(realMessage);
+          }
         }
 
         if (uploadedStoragePath) {
-          onAfterCommit?.(realMessage, stableKey, uploadedStoragePath);
+          onAfterCommit?.(
+            realMessage,
+            stableKey,
+            uploadedStoragePath,
+            conversationScopeKey
+          );
         }
 
         return realMessage.id;
       } catch (error) {
         console.error('Error sending attachment message:', error);
-        if (!pendingSend.isCancelled()) {
+        if (
+          !pendingSend.isCancelled() &&
+          isConversationScopeActive(conversationScopeKey)
+        ) {
           removeOptimisticAttachmentThread(tempId, captionTempId);
         }
         await deleteUploadedStorageFiles([uploadedStoragePath]);
-        if (!pendingSend.isCancelled()) {
+        if (
+          !pendingSend.isCancelled() &&
+          isConversationScopeActive(conversationScopeKey)
+        ) {
           toast.error(sendFailureToast, {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -563,6 +649,7 @@ export const useChatAttachmentSend = ({
       currentChannelId,
       deleteUploadedStorageFiles,
       editingMessageId,
+      isConversationScopeActive,
       pendingImagePreviewUrlsRef,
       reconcileConversationFromServer,
       registerPendingSend,
@@ -735,7 +822,12 @@ export const useChatAttachmentSend = ({
             targetUser!,
             stableKey
           ),
-        onAfterCommit: (realMessage, stableKey, uploadedPath) => {
+        onAfterCommit: (
+          realMessage,
+          stableKey,
+          uploadedPath,
+          conversationScopeKey
+        ) => {
           if (!isPdfDocument) {
             return;
           }
@@ -744,7 +836,8 @@ export const useChatAttachmentSend = ({
             realMessage,
             pendingFile,
             uploadedPath,
-            stableKey
+            stableKey,
+            conversationScopeKey
           );
         },
       });
