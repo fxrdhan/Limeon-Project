@@ -156,6 +156,8 @@ Tanggung jawab:
 
 - state `targetUserPresence`
 - update row `user_presence` saat chat dibuka
+- heartbeat presence user aktif selama chat open
+- hydrate awal target user presence saat chat dibuka
 - clear `current_chat_channel` saat chat ditutup
 - set user offline pada `beforeunload`
 - subscribe perubahan target user presence via channel `user_presence_changes`

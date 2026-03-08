@@ -46,7 +46,7 @@ export const useChatSessionPresence = ({
   const [targetUserPresence, setTargetUserPresence] =
     useState<UserPresence | null>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
-  const presenceRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const presenceHeartbeatIntervalRef = useRef<number | null>(null);
   const hasClosedRef = useRef(false);
   const previousIsOpenRef = useRef(isOpen);
   const activeTargetUserIdRef = useRef<string | null>(targetUser?.id ?? null);
@@ -231,9 +231,8 @@ export const useChatSessionPresence = ({
     void updateUserChatOpen();
     void loadTargetUserPresence();
 
-    presenceRefreshIntervalRef.current = setInterval(() => {
+    presenceHeartbeatIntervalRef.current = window.setInterval(() => {
       void updateUserChatOpen();
-      void loadTargetUserPresence();
     }, 30000);
 
     return () => {
@@ -243,9 +242,9 @@ export const useChatSessionPresence = ({
         );
         presenceChannelRef.current = null;
       }
-      if (presenceRefreshIntervalRef.current) {
-        clearInterval(presenceRefreshIntervalRef.current);
-        presenceRefreshIntervalRef.current = null;
+      if (presenceHeartbeatIntervalRef.current !== null) {
+        window.clearInterval(presenceHeartbeatIntervalRef.current);
+        presenceHeartbeatIntervalRef.current = null;
       }
     };
   }, [currentChannelId, isOpen, targetUser, updateUserChatOpen, user]);

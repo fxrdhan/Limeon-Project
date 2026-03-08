@@ -18,6 +18,12 @@ import type {
   ComposerPendingFileKind,
   PendingComposerAttachment,
 } from '../types';
+import {
+  buildPendingFileComposerAttachment,
+  buildPendingImageComposerAttachment,
+  isPdfComposerAttachment,
+  upsertPendingComposerAttachment,
+} from '../utils/pending-composer-attachment';
 
 interface UseChatComposerAttachmentsProps {
   editingMessageId: string | null;
@@ -68,10 +74,7 @@ export const useChatComposerAttachments = ({
     let isCancelled = false;
     const pendingPdfAttachments = pendingComposerAttachments.filter(
       attachment =>
-        attachment.fileKind === 'document' &&
-        attachment.pdfCoverUrl === null &&
-        (attachment.mimeType === 'application/pdf' ||
-          attachment.fileName.toLowerCase().endsWith('.pdf'))
+        attachment.pdfCoverUrl === null && isPdfComposerAttachment(attachment)
     );
     if (pendingPdfAttachments.length === 0) return;
 
@@ -303,50 +306,29 @@ export const useChatComposerAttachments = ({
         return false;
       }
 
-      const mimeSubtype = file.type.split('/')[1];
-      const extensionFromName = file.name.split('.').pop();
-      const fileTypeLabel = (
-        mimeSubtype ||
-        extensionFromName ||
-        'image'
-      ).toUpperCase();
-      const nextAttachment: PendingComposerAttachment = {
-        id: `pending_image_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        previewUrl: URL.createObjectURL(file),
-        fileName: file.name || 'Gambar',
-        fileTypeLabel,
-        fileKind: 'image',
-        mimeType: file.type,
-        pdfCoverUrl: null,
-      };
+      const nextAttachment = buildPendingImageComposerAttachment(file);
       let exceededAttachmentLimit = false;
+      let replacedPreviewUrl: string | null = null;
 
       setPendingComposerAttachments(previousAttachments => {
-        if (replaceAttachmentId) {
-          const replaceIndex = previousAttachments.findIndex(
-            attachment =>
-              attachment.id === replaceAttachmentId &&
-              attachment.fileKind === 'image'
-          );
-          if (replaceIndex !== -1) {
-            const targetAttachment = previousAttachments[replaceIndex];
-            if (targetAttachment.previewUrl) {
-              URL.revokeObjectURL(targetAttachment.previewUrl);
-            }
-            const nextAttachments = [...previousAttachments];
-            nextAttachments[replaceIndex] = nextAttachment;
-            return nextAttachments;
+        const upsertResult = upsertPendingComposerAttachment(
+          previousAttachments,
+          nextAttachment,
+          {
+            maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
+            replaceAttachmentId,
+            replaceableKinds: ['image'],
           }
-        }
+        );
 
-        if (previousAttachments.length >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
-          exceededAttachmentLimit = true;
-          return previousAttachments;
-        }
-
-        return [...previousAttachments, nextAttachment];
+        exceededAttachmentLimit = upsertResult.exceededLimit;
+        replacedPreviewUrl = upsertResult.replacedPreviewUrl;
+        return upsertResult.attachments;
       });
+
+      if (replacedPreviewUrl) {
+        URL.revokeObjectURL(replacedPreviewUrl);
+      }
 
       if (exceededAttachmentLimit) {
         if (nextAttachment.previewUrl) {
@@ -388,49 +370,29 @@ export const useChatComposerAttachments = ({
         return false;
       }
 
-      const mimeSubtype = file.type.split('/')[1];
-      const extensionFromName = file.name.split('.').pop();
-      const fileTypeLabel = (
-        mimeSubtype ||
-        extensionFromName ||
-        (fileKind === 'audio' ? 'audio' : 'document')
-      ).toUpperCase();
-      const nextAttachment: PendingComposerAttachment = {
-        id: `pending_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        fileName: file.name || (fileKind === 'audio' ? 'Audio' : 'Dokumen'),
-        fileTypeLabel,
-        fileKind,
-        mimeType: file.type,
-        previewUrl: null,
-        pdfCoverUrl: null,
-      };
+      const nextAttachment = buildPendingFileComposerAttachment(file, fileKind);
       let exceededAttachmentLimit = false;
+      let replacedPreviewUrl: string | null = null;
 
       setPendingComposerAttachments(previousAttachments => {
-        if (replaceAttachmentId) {
-          const replaceIndex = previousAttachments.findIndex(
-            attachment =>
-              attachment.id === replaceAttachmentId &&
-              attachment.fileKind === fileKind
-          );
-          if (replaceIndex !== -1) {
-            const targetAttachment = previousAttachments[replaceIndex];
-            if (targetAttachment.previewUrl) {
-              URL.revokeObjectURL(targetAttachment.previewUrl);
-            }
-            const nextAttachments = [...previousAttachments];
-            nextAttachments[replaceIndex] = nextAttachment;
-            return nextAttachments;
+        const upsertResult = upsertPendingComposerAttachment(
+          previousAttachments,
+          nextAttachment,
+          {
+            maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
+            replaceAttachmentId,
+            replaceableKinds: [fileKind],
           }
-        }
+        );
 
-        if (previousAttachments.length >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
-          exceededAttachmentLimit = true;
-          return previousAttachments;
-        }
-        return [...previousAttachments, nextAttachment];
+        exceededAttachmentLimit = upsertResult.exceededLimit;
+        replacedPreviewUrl = upsertResult.replacedPreviewUrl;
+        return upsertResult.attachments;
       });
+
+      if (replacedPreviewUrl) {
+        URL.revokeObjectURL(replacedPreviewUrl);
+      }
 
       if (exceededAttachmentLimit) {
         toast.error(

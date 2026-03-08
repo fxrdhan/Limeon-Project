@@ -8,7 +8,6 @@ import {
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser, PendingComposerFile } from '../types';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
-import { commitOptimisticMessage } from '../utils/optimistic-message';
 import {
   getPersistedDeletedThreadMessageIds,
   resolveDeletedThreadMessageIds,
@@ -23,6 +22,12 @@ import {
   markMessageAsAttachmentCaption,
   toAttachmentCaptionInsertInput,
 } from '../utils/message-relations';
+import {
+  appendOptimisticAttachmentThread,
+  commitOptimisticAttachmentThread,
+  createOptimisticAttachmentThread,
+  removeOptimisticAttachmentThread,
+} from '../utils/attachment-send';
 import { useActiveConversationScope } from './useActiveConversationScope';
 
 interface PendingSendRegistration {
@@ -352,11 +357,13 @@ export const useChatAttachmentSend = ({
     [pendingImagePreviewUrlsRef]
   );
 
-  const removeOptimisticAttachmentThread = useCallback(
+  const removeOptimisticAttachmentThreadFromState = useCallback(
     (tempId: string, captionTempId: string | null) => {
       setMessages(previousMessages =>
-        previousMessages.filter(
-          messageItem => ![tempId, captionTempId].includes(messageItem.id)
+        removeOptimisticAttachmentThread(
+          previousMessages,
+          tempId,
+          captionTempId
         )
       );
     },
@@ -395,51 +402,31 @@ export const useChatAttachmentSend = ({
         currentChannelId
       );
       const timestamp = new Date().toISOString();
-      const tempId = `${tempIdPrefix}_${Date.now()}`;
-      const stableKey = `${user.id}-${Date.now()}-${stableKeySuffix}`;
-      const normalizedCaptionText = captionText?.trim() ?? '';
-      const hasAttachmentCaption = normalizedCaptionText.length > 0;
-      const captionTempId = hasAttachmentCaption
-        ? `temp_caption_${Date.now()}`
-        : null;
-      const captionStableKey = hasAttachmentCaption
-        ? `${stableKey}-caption`
-        : null;
-      const pendingSend = registerPendingSend(tempId);
       const localPreviewUrl = URL.createObjectURL(file);
-      pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
-
-      const optimisticMessage = buildOptimisticMessage({
-        tempId,
-        stableKey,
+      const optimisticThread = createOptimisticAttachmentThread({
+        tempIdPrefix,
+        stableKeySuffix,
+        captionText,
+        currentChannelId,
         localPreviewUrl,
         timestamp,
+        user,
+        targetUser,
+        buildOptimisticMessage,
       });
-      const optimisticCaptionMessage: ChatMessage | null = hasAttachmentCaption
-        ? markMessageAsAttachmentCaption(
-            {
-              id: captionTempId!,
-              sender_id: user.id,
-              receiver_id: targetUser.id,
-              channel_id: currentChannelId,
-              message: normalizedCaptionText,
-              message_type: 'text',
-              created_at: timestamp,
-              updated_at: timestamp,
-              is_read: false,
-              reply_to_id: tempId,
-              sender_name: user.name || 'You',
-              receiver_name: targetUser.name || 'Unknown',
-              stableKey: captionStableKey!,
-            },
-            tempId
-          )
-        : null;
+      const {
+        tempId,
+        stableKey,
+        normalizedCaptionText,
+        hasAttachmentCaption,
+        captionTempId,
+        captionStableKey,
+      } = optimisticThread;
+      const pendingSend = registerPendingSend(tempId);
+      pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
 
       setMessages(previousMessages =>
-        optimisticCaptionMessage
-          ? [...previousMessages, optimisticMessage, optimisticCaptionMessage]
-          : [...previousMessages, optimisticMessage]
+        appendOptimisticAttachmentThread(previousMessages, optimisticThread)
       );
       triggerSendSuccessGlow();
       scheduleScrollMessagesToBottom();
@@ -465,7 +452,7 @@ export const useChatAttachmentSend = ({
             !pendingSend.isCancelled() &&
             isConversationScopeActive(conversationScopeKey)
           ) {
-            removeOptimisticAttachmentThread(tempId, captionTempId);
+            removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
           }
           await deleteUploadedStorageFiles([uploadedStoragePath]);
           if (
@@ -543,15 +530,13 @@ export const useChatAttachmentSend = ({
 
             if (isConversationScopeActive(conversationScopeKey)) {
               setMessages(previousMessages =>
-                commitOptimisticMessage(
-                  commitOptimisticMessage(
-                    previousMessages,
-                    tempId,
-                    realMessage
-                  ),
+                commitOptimisticAttachmentThread({
+                  previousMessages,
+                  tempId,
+                  realMessage,
                   captionTempId,
-                  mappedCaptionMessage
-                )
+                  mappedCaptionMessage,
+                })
               );
 
               broadcastNewMessage(realMessage);
@@ -562,7 +547,7 @@ export const useChatAttachmentSend = ({
               !pendingSend.isCancelled() &&
               isConversationScopeActive(conversationScopeKey)
             ) {
-              removeOptimisticAttachmentThread(tempId, captionTempId);
+              removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
             }
 
             try {
@@ -592,7 +577,13 @@ export const useChatAttachmentSend = ({
         } else {
           if (isConversationScopeActive(conversationScopeKey)) {
             setMessages(previousMessages =>
-              commitOptimisticMessage(previousMessages, tempId, realMessage)
+              commitOptimisticAttachmentThread({
+                previousMessages,
+                tempId,
+                realMessage,
+                captionTempId: null,
+                mappedCaptionMessage: null,
+              })
             );
 
             broadcastNewMessage(realMessage);
@@ -615,7 +606,7 @@ export const useChatAttachmentSend = ({
           !pendingSend.isCancelled() &&
           isConversationScopeActive(conversationScopeKey)
         ) {
-          removeOptimisticAttachmentThread(tempId, captionTempId);
+          removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
         }
         await deleteUploadedStorageFiles([uploadedStoragePath]);
         if (
@@ -642,7 +633,7 @@ export const useChatAttachmentSend = ({
       reconcileConversationFromServer,
       registerPendingSend,
       releasePendingPreviewUrl,
-      removeOptimisticAttachmentThread,
+      removeOptimisticAttachmentThreadFromState,
       rollbackPersistedAttachmentThread,
       scheduleScrollMessagesToBottom,
       setMessages,

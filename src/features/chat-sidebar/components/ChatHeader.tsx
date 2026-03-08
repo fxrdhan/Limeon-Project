@@ -1,31 +1,17 @@
 import type { SearchState } from '@/components/search-bar/constants';
-import SearchBar from '@/components/search-bar/SearchBar';
 import {
-  type ChangeEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
   useCallback,
   useEffect,
   useRef,
   useState,
   type RefObject,
 } from 'react';
-import PopupMenuContent, {
-  type PopupMenuAction,
-} from '@/components/image-manager/PopupMenuContent';
-import PopupMenuPopover from '@/components/shared/popup-menu-popover';
-import {
-  TbCopy,
-  TbChevronDown,
-  TbChevronUp,
-  TbCheckbox,
-  TbDotsVertical,
-  TbLayoutSidebarRightCollapse,
-  TbSearch,
-  TbTrash,
-  TbX,
-} from 'react-icons/tb';
+import { TbCheckbox, TbSearch } from 'react-icons/tb';
 import type { UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import ConversationHeaderContent from './header/ConversationHeaderContent';
+import SearchHeaderContent from './header/SearchHeaderContent';
+import SelectionHeaderContent from './header/SelectionHeaderContent';
 
 interface ChatHeaderProps {
   targetUser?: ChatSidebarPanelTargetUser;
@@ -56,36 +42,6 @@ interface ChatHeaderProps {
   getInitials: (name: string) => string;
   getInitialsColor: (userId: string) => string;
 }
-
-const ONLINE_PRESENCE_MAX_AGE_MS = 90_000;
-
-const isPresenceFresh = (lastSeen?: string | null): boolean => {
-  if (!lastSeen) return false;
-
-  const parsedTime = new Date(lastSeen).getTime();
-  if (!Number.isFinite(parsedTime)) return false;
-
-  return Date.now() - parsedTime <= ONLINE_PRESENCE_MAX_AGE_MS;
-};
-
-const formatLastSeen = (lastSeen: string): string => {
-  const now = new Date();
-  const lastSeenDate = new Date(lastSeen);
-  const diffInMinutes = Math.floor(
-    (now.getTime() - lastSeenDate.getTime()) / (1000 * 60)
-  );
-
-  if (diffInMinutes < 1) return 'Just now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays}d ago`;
-
-  return lastSeenDate.toLocaleDateString();
-};
 
 const ChatHeader = ({
   targetUser,
@@ -119,6 +75,7 @@ const ChatHeader = ({
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
   const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const optionsMenuRef = useRef<HTMLDivElement | null>(null);
+
   const closeOptionsMenu = useCallback(() => {
     setIsOptionsMenuOpen(false);
   }, []);
@@ -153,7 +110,7 @@ const ChatHeader = ({
     };
   }, [closeOptionsMenu, isOptionsMenuOpen]);
 
-  const optionsActions: PopupMenuAction[] = [
+  const optionsActions = [
     {
       label: 'Pilih pesan',
       icon: <TbCheckbox className="h-4 w-4" />,
@@ -171,264 +128,53 @@ const ChatHeader = ({
       },
     },
   ];
+
   const searchResultPositionLabel =
     searchResultCount === 0
       ? '0/0'
       : `${activeSearchResultIndex + 1}/${searchResultCount}`;
-  const handleSearchChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      onSearchQueryChange(event.target.value);
-    },
-    [onSearchQueryChange]
-  );
-  const handleSearchKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        onNavigateSearchUp();
-        return;
-      }
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        onNavigateSearchDown();
-        return;
-      }
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        if (event.shiftKey) {
-          onNavigateSearchUp();
-        } else {
-          onNavigateSearchDown();
-        }
-      }
-    },
-    [onNavigateSearchDown, onNavigateSearchUp]
-  );
-  const floatingBlockClass =
-    'rounded-xl border border-slate-200/95 bg-white/95';
-  const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
-  const floatingSplitIconButtonClass =
-    'inline-flex h-1/2 w-full cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white';
 
   return (
     <div className="px-3 pt-4 pb-2.5">
       {isSelectionMode ? (
-        <div className="flex w-full items-center justify-end gap-2">
-          <span
-            className={`${floatingBlockClass} inline-flex h-9 min-w-20 items-center justify-center px-3 text-sm font-semibold text-slate-700`}
-            aria-live="polite"
-          >
-            {selectedMessageCount} dipilih
-          </span>
-          <button
-            type="button"
-            className={`${floatingBlockClass} inline-flex h-9 cursor-pointer items-center gap-1.5 px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`}
-            onClick={onCopySelectedMessages}
-            disabled={selectedMessageCount === 0}
-            title="Salin pesan terpilih"
-            aria-label="Salin pesan terpilih"
-          >
-            <TbCopy size={16} />
-            Salin
-          </button>
-          <button
-            type="button"
-            className={`${floatingBlockClass} inline-flex h-9 cursor-pointer items-center gap-1.5 px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300 disabled:hover:bg-white`}
-            onClick={onDeleteSelectedMessages}
-            disabled={!canDeleteSelectedMessages}
-            title="Hapus pesan terpilih"
-            aria-label="Hapus pesan terpilih"
-          >
-            <TbTrash size={16} />
-            Hapus
-          </button>
-          <button
-            type="button"
-            aria-label="Keluar mode pilih pesan"
-            title="Keluar mode pilih pesan"
-            className={floatingIconButtonClass}
-            onClick={onExitSelectionMode}
-          >
-            <TbX size={20} />
-          </button>
-          <button
-            onClick={onClose}
-            aria-label="Collapse chat sidebar"
-            title="Collapse chat sidebar"
-            className={floatingIconButtonClass}
-          >
-            <TbLayoutSidebarRightCollapse size={20} />
-          </button>
-        </div>
+        <SelectionHeaderContent
+          selectedMessageCount={selectedMessageCount}
+          canDeleteSelectedMessages={canDeleteSelectedMessages}
+          onCopySelectedMessages={onCopySelectedMessages}
+          onDeleteSelectedMessages={onDeleteSelectedMessages}
+          onExitSelectionMode={onExitSelectionMode}
+          onClose={onClose}
+        />
       ) : isSearchMode ? (
-        <div className="flex w-full items-center gap-2.5">
-          <SearchBar
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchKeyDown}
-            onFocus={onFocusSearchInput}
-            placeholder="Cari pesan..."
-            className="!mb-0 min-w-0 flex-1"
-            inputRef={searchInputRef}
-            searchState={searchState}
-            showNotFoundArrow={false}
-          />
-          <div className="flex items-center gap-2">
-            <div
-              className={`overflow-hidden transition-[width,opacity,margin] duration-200 ease-out ${
-                searchResultCount > 0
-                  ? 'w-9 opacity-100 mr-0'
-                  : 'w-0 opacity-0 -mr-1 pointer-events-none'
-              }`}
-              aria-hidden={searchResultCount === 0}
-            >
-              <div
-                className={`${floatingBlockClass} inline-flex h-9 w-9 shrink-0 flex-col overflow-hidden divide-y divide-slate-200/95`}
-              >
-                <button
-                  type="button"
-                  aria-label="Hasil sebelumnya"
-                  title="Hasil sebelumnya"
-                  className={floatingSplitIconButtonClass}
-                  onClick={onNavigateSearchUp}
-                  disabled={searchResultCount === 0 || !canNavigateSearchUp}
-                >
-                  <TbChevronUp size={16} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Hasil berikutnya"
-                  title="Hasil berikutnya"
-                  className={floatingSplitIconButtonClass}
-                  onClick={onNavigateSearchDown}
-                  disabled={searchResultCount === 0 || !canNavigateSearchDown}
-                >
-                  <TbChevronDown size={16} />
-                </button>
-              </div>
-            </div>
-            <span
-              className={`${floatingBlockClass} inline-flex h-9 min-w-11 items-center justify-center px-2.5 text-center text-xs font-medium text-slate-500`}
-              aria-live="polite"
-            >
-              {searchResultPositionLabel}
-            </span>
-            <button
-              type="button"
-              aria-label="Tutup pencarian"
-              title="Tutup pencarian"
-              className={floatingIconButtonClass}
-              onClick={onExitSearchMode}
-            >
-              <TbX size={20} />
-            </button>
-            <button
-              onClick={onClose}
-              aria-label="Collapse chat sidebar"
-              title="Collapse chat sidebar"
-              className={floatingIconButtonClass}
-            >
-              <TbLayoutSidebarRightCollapse size={20} />
-            </button>
-          </div>
-        </div>
+        <SearchHeaderContent
+          searchQuery={searchQuery}
+          searchState={searchState}
+          searchResultPositionLabel={searchResultPositionLabel}
+          searchResultCount={searchResultCount}
+          canNavigateSearchUp={canNavigateSearchUp}
+          canNavigateSearchDown={canNavigateSearchDown}
+          searchInputRef={searchInputRef}
+          onSearchQueryChange={onSearchQueryChange}
+          onNavigateSearchUp={onNavigateSearchUp}
+          onNavigateSearchDown={onNavigateSearchDown}
+          onFocusSearchInput={onFocusSearchInput}
+          onExitSearchMode={onExitSearchMode}
+          onClose={onClose}
+        />
       ) : (
-        <div className="flex w-full items-center gap-2.5">
-          <div
-            className={`${floatingBlockClass} flex min-w-0 max-w-[calc(100%-5.75rem)] flex-1 items-center gap-3 px-3 py-1.5`}
-          >
-            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
-              {displayTargetPhotoUrl ? (
-                <img
-                  src={displayTargetPhotoUrl}
-                  alt={targetUser?.name || 'User'}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
-              ) : (
-                <div
-                  className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
-                >
-                  {getInitials(targetUser?.name || 'User')}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex flex-col gap-1">
-              <h3 className="font-medium text-slate-900 truncate leading-tight">
-                {targetUser ? targetUser.name : 'Chat'}
-              </h3>
-              {(() => {
-                const shouldShowOnline =
-                  targetUserPresence &&
-                  targetUserPresence.is_online &&
-                  isPresenceFresh(targetUserPresence.last_seen);
-
-                if (shouldShowOnline) {
-                  return (
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <span className="text-xs text-green-600 font-medium">
-                        Online
-                      </span>
-                    </div>
-                  );
-                }
-
-                if (targetUserPresence && targetUserPresence.last_seen) {
-                  return (
-                    <span className="text-xs text-slate-400">
-                      Last seen {formatLastSeen(targetUserPresence.last_seen)}
-                    </span>
-                  );
-                }
-
-                return null;
-              })()}
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <div className="relative">
-              <button
-                ref={optionsButtonRef}
-                type="button"
-                aria-label="Chat options"
-                title="Chat options"
-                aria-haspopup="menu"
-                aria-expanded={isOptionsMenuOpen}
-                className={floatingIconButtonClass}
-                onClick={toggleOptionsMenu}
-              >
-                <TbDotsVertical size={20} />
-              </button>
-
-              <PopupMenuPopover
-                isOpen={isOptionsMenuOpen}
-                className="absolute right-0 top-full z-30 mt-2 origin-top-right"
-              >
-                <div
-                  ref={optionsMenuRef}
-                  onClick={event => event.stopPropagation()}
-                  role="presentation"
-                >
-                  <PopupMenuContent
-                    actions={optionsActions}
-                    minWidthClassName="min-w-[140px]"
-                  />
-                </div>
-              </PopupMenuPopover>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Collapse chat sidebar"
-              title="Collapse chat sidebar"
-              className={floatingIconButtonClass}
-            >
-              <TbLayoutSidebarRightCollapse size={20} />
-            </button>
-          </div>
-        </div>
+        <ConversationHeaderContent
+          targetUser={targetUser}
+          displayTargetPhotoUrl={displayTargetPhotoUrl}
+          targetUserPresence={targetUserPresence}
+          isOptionsMenuOpen={isOptionsMenuOpen}
+          optionsButtonRef={optionsButtonRef}
+          optionsMenuRef={optionsMenuRef}
+          optionsActions={optionsActions}
+          onToggleOptionsMenu={toggleOptionsMenu}
+          onClose={onClose}
+          getInitials={getInitials}
+          getInitialsColor={getInitialsColor}
+        />
       )}
     </div>
   );
