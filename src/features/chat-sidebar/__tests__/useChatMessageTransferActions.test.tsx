@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatMessageTransferActions } from '../hooks/useChatMessageTransferActions';
 
@@ -53,6 +53,10 @@ describe('useChatMessageTransferActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToast.promise.mockImplementation(async promise => await promise);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('copies file messages as labeled attachment text instead of the raw url only', async () => {
@@ -201,9 +205,242 @@ describe('useChatMessageTransferActions', () => {
       'chat',
       'images/channel/stok.png'
     );
+    expect(mockToast.promise).toHaveBeenCalledWith(
+      expect.any(Promise),
+      expect.objectContaining({
+        loading: 'Menyalin gambar...',
+        success: 'Gambar berhasil disalin',
+        error: 'Gagal menyalin gambar ke clipboard',
+      }),
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
     expect(write).toHaveBeenCalledOnce();
-    expect(mockToast.success).toHaveBeenCalledWith(
-      'Gambar berhasil disalin',
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
+
+  it('copies image messages through storage download when the message only stores a raw storage path', async () => {
+    const closeMessageMenu = vi.fn();
+    const write = vi.fn().mockResolvedValue(undefined);
+    const imageBlob = new Blob(['image'], { type: 'image/png' });
+    const fetchSpy = vi.fn();
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { write, writeText: vi.fn() },
+    });
+    vi.stubGlobal(
+      'ClipboardItem',
+      class ClipboardItem {
+        static supports = vi.fn().mockReturnValue(true);
+
+        constructor(public items: Record<string, Blob>) {}
+      }
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+    mockGateway.downloadStorageFile.mockResolvedValue(imageBlob);
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleCopyMessage(
+        buildMessage({
+          message_type: 'image',
+          message: 'images/channel/stok.png',
+          file_name: 'stok.png',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/stok.png',
+        })
+      );
+    });
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+      'chat',
+      'images/channel/stok.png'
+    );
+    expect(write).toHaveBeenCalledOnce();
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
+
+  it('normalizes copied image payloads to PNG before writing to the clipboard', async () => {
+    const closeMessageMenu = vi.fn();
+    const write = vi.fn().mockResolvedValue(undefined);
+    const originalCreateElement = document.createElement.bind(document);
+    const drawImage = vi.fn();
+    const createdClipboardItems: Array<Record<string, Blob>> = [];
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { write, writeText: vi.fn() },
+    });
+    vi.stubGlobal(
+      'ClipboardItem',
+      class ClipboardItem {
+        static supports = vi.fn().mockReturnValue(true);
+
+        constructor(public items: Record<string, Blob>) {
+          createdClipboardItems.push(items);
+        }
+      }
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => new Blob(['jpeg'], { type: 'image/jpeg' }),
+      })
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:source-image'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+    vi.stubGlobal(
+      'Image',
+      class MockImage {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = 12;
+        naturalHeight = 8;
+        width = 12;
+        height = 8;
+
+        set src(_value: string) {
+          queueMicrotask(() => {
+            this.onload?.();
+          });
+        }
+      }
+    );
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'canvas') {
+          return {
+            width: 0,
+            height: 0,
+            getContext: vi.fn().mockReturnValue({ drawImage }),
+            toBlob: (callback: BlobCallback) => {
+              callback(new Blob(['png'], { type: 'image/png' }));
+            },
+          } as unknown as HTMLCanvasElement;
+        }
+
+        return originalCreateElement(tagName);
+      });
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleCopyMessage(
+        buildMessage({
+          message_type: 'image',
+          message: 'https://example.com/storage/image.jpg',
+          file_name: 'image.jpg',
+          file_mime_type: 'image/jpeg',
+          file_storage_path: 'images/channel/image.jpg',
+        })
+      );
+    });
+
+    expect(write).toHaveBeenCalledOnce();
+    expect(createdClipboardItems).toHaveLength(1);
+    expect(Object.keys(createdClipboardItems[0] ?? {})).toEqual(['image/png']);
+    expect(drawImage).toHaveBeenCalledOnce();
+
+    createElementSpy.mockRestore();
+  });
+
+  it('falls back to the source image mime type when png conversion fails', async () => {
+    const closeMessageMenu = vi.fn();
+    const write = vi.fn().mockResolvedValue(undefined);
+    const createdClipboardItems: Array<Record<string, Blob>> = [];
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { write, writeText: vi.fn() },
+    });
+    vi.stubGlobal(
+      'ClipboardItem',
+      class ClipboardItem {
+        static supports = vi.fn(
+          (mimeType: string) =>
+            mimeType === 'image/png' || mimeType === 'image/webp'
+        );
+
+        constructor(public items: Record<string, Blob>) {
+          createdClipboardItems.push(items);
+        }
+      }
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => new Blob(['webp'], { type: 'image/webp' }),
+      })
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:source-image'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+    vi.stubGlobal(
+      'Image',
+      class MockImage {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+
+        set src(_value: string) {
+          queueMicrotask(() => {
+            this.onerror?.();
+          });
+        }
+      }
+    );
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleCopyMessage(
+        buildMessage({
+          message_type: 'image',
+          message: 'https://example.com/storage/image.webp',
+          file_name: 'image.webp',
+          file_mime_type: 'image/webp',
+          file_storage_path: 'images/channel/image.webp',
+        })
+      );
+    });
+
+    expect(write).toHaveBeenCalledOnce();
+    expect(createdClipboardItems).toHaveLength(1);
+    expect(Object.keys(createdClipboardItems[0] ?? {})).toEqual(['image/webp']);
+    expect(mockToast.promise).toHaveBeenCalledWith(
+      expect.any(Promise),
+      expect.objectContaining({
+        loading: 'Menyalin gambar...',
+        success: 'Gambar berhasil disalin',
+        error: 'Gagal menyalin gambar ke clipboard',
+      }),
       expect.objectContaining({
         toasterId: 'chat-sidebar-toaster',
       })

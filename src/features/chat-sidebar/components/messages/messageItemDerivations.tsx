@@ -17,6 +17,7 @@ import { buildMessageMenuActions, getFileIcon } from './messageItemUtils';
 
 interface BuildMessageItemDerivationsParams {
   message: ChatMessage;
+  resolvedMessageUrl: string | null;
   userId?: string;
   openMenuMessageId: string | null;
   menuTransitionSourceId: string | null;
@@ -89,6 +90,7 @@ export interface MessageItemDerivations {
 
 export const buildMessageItemDerivations = ({
   message,
+  resolvedMessageUrl,
   userId,
   openMenuMessageId,
   menuTransitionSourceId,
@@ -240,6 +242,7 @@ export const buildMessageItemDerivations = ({
   );
   const menuActions = buildMessageMenuActions({
     message,
+    resolvedMessageUrl,
     isCurrentUser,
     isImageMessage,
     isFileMessage,

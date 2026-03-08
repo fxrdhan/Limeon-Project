@@ -177,21 +177,46 @@ export const fetchChatFileBlobWithFallback = async (
   storagePathHint?: string | null,
   forcedMimeType?: string
 ): Promise<Blob | null> => {
-  try {
-    const response = await fetch(url);
-    if (response.ok) {
-      const responseBlob = await response.blob();
-      if (!forcedMimeType || responseBlob.type === forcedMimeType) {
-        return responseBlob;
-      }
+  const normalizedForcedMimeType = forcedMimeType?.toLowerCase();
+  const storagePath =
+    storagePathHint?.trim() ||
+    extractChatStoragePath(url) ||
+    (!isDirectChatAssetUrl(url) ? url.trim() : null);
 
-      return new Blob([responseBlob], { type: forcedMimeType });
+  if (isDirectChatAssetUrl(url)) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const responseBlob = await response.blob();
+        const responseMimeType = responseBlob.type.toLowerCase();
+        const isHtmlFallback =
+          responseMimeType.startsWith('text/html') ||
+          responseMimeType.startsWith('application/xhtml+xml');
+        const isForcedMimeTypeMismatch =
+          normalizedForcedMimeType &&
+          responseMimeType &&
+          normalizedForcedMimeType !== responseMimeType &&
+          ((normalizedForcedMimeType.startsWith('image/') &&
+            !responseMimeType.startsWith('image/')) ||
+            (normalizedForcedMimeType === 'application/pdf' &&
+              responseMimeType !== 'application/pdf'));
+
+        if (!isHtmlFallback && !isForcedMimeTypeMismatch) {
+          if (
+            !normalizedForcedMimeType ||
+            responseMimeType === normalizedForcedMimeType
+          ) {
+            return responseBlob;
+          }
+
+          return new Blob([responseBlob], { type: normalizedForcedMimeType });
+        }
+      }
+    } catch {
+      // Continue to storage fallback.
     }
-  } catch {
-    // Continue to storage fallback.
   }
 
-  const storagePath = storagePathHint?.trim() || extractChatStoragePath(url);
   if (!storagePath) return null;
 
   try {
@@ -200,11 +225,14 @@ export const fetchChatFileBlobWithFallback = async (
       storagePath
     );
 
-    if (!forcedMimeType || data.type === forcedMimeType) {
+    if (
+      !normalizedForcedMimeType ||
+      data.type.toLowerCase() === normalizedForcedMimeType
+    ) {
       return data;
     }
 
-    return new Blob([data], { type: forcedMimeType });
+    return new Blob([data], { type: normalizedForcedMimeType });
   } catch {
     return null;
   }

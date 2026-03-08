@@ -52,4 +52,39 @@ describe('messageItemUtils', () => {
 
     expect(actions.map(action => action.label)).toEqual(['Salin', 'Hapus']);
   });
+
+  it('copies image messages using the resolved preview url when available', async () => {
+    const handleCopyMessage = vi.fn().mockResolvedValue(undefined);
+    const imageMessage = buildMessage({
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
+    });
+    const actions = buildMessageMenuActions({
+      message: imageMessage,
+      resolvedMessageUrl: 'blob:resolved-image',
+      isCurrentUser: true,
+      isImageMessage: true,
+      isFileMessage: false,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: null,
+      openImageInPortal: vi.fn(),
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage: vi.fn(),
+      handleCopyMessage,
+      handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    const copyAction = actions.find(action => action.label === 'Salin');
+    await copyAction?.onClick();
+
+    expect(handleCopyMessage).toHaveBeenCalledWith({
+      ...imageMessage,
+      message: 'blob:resolved-image',
+    });
+  });
 });

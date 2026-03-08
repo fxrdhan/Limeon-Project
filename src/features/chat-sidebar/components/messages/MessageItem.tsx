@@ -138,6 +138,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     menuActions,
   } = buildMessageItemDerivations({
     message,
+    resolvedMessageUrl,
     userId,
     openMenuMessageId,
     menuTransitionSourceId,

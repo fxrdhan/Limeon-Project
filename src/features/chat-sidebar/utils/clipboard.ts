@@ -48,21 +48,46 @@ export const getClipboardImagePayload = async (imageBlob: Blob) => {
       ? clipboardItemWithSupports.supports(mimeType)
       : mimeType === 'image/png';
 
-  const sourceMimeType = imageBlob.type || 'image/png';
-  if (supportsMimeType(sourceMimeType)) {
+  const sourceMimeType = imageBlob.type.toLowerCase() || 'image/png';
+  const canWriteSourceMimeType =
+    sourceMimeType.startsWith('image/') && supportsMimeType(sourceMimeType);
+
+  if (sourceMimeType === 'image/png') {
+    if (!supportsMimeType('image/png')) {
+      throw new Error('Unsupported clipboard image type: image/png');
+    }
+
     return {
       blob: imageBlob,
-      mimeType: sourceMimeType,
+      mimeType: 'image/png',
     };
   }
 
-  const pngBlob = await convertImageBlobToPng(imageBlob);
   if (!supportsMimeType('image/png')) {
-    throw new Error(`Unsupported clipboard image type: ${sourceMimeType}`);
+    if (canWriteSourceMimeType) {
+      return {
+        blob: imageBlob,
+        mimeType: sourceMimeType,
+      };
+    }
+
+    throw new Error('Unsupported clipboard image type: image/png');
   }
 
-  return {
-    blob: pngBlob,
-    mimeType: 'image/png',
-  };
+  try {
+    const pngBlob = await convertImageBlobToPng(imageBlob);
+    return {
+      blob: pngBlob,
+      mimeType: 'image/png',
+    };
+  } catch (error) {
+    if (canWriteSourceMimeType) {
+      return {
+        blob: imageBlob,
+        mimeType: sourceMimeType,
+      };
+    }
+
+    throw error;
+  }
 };

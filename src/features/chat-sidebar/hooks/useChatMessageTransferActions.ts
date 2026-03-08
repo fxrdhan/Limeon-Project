@@ -21,44 +21,60 @@ export const useChatMessageTransferActions = ({
 
   const handleCopyMessage = useCallback(
     async (targetMessage: ChatMessage) => {
-      try {
-        if (targetMessage.message_type === 'image') {
-          const clipboardWithWrite = navigator.clipboard as Clipboard & {
-            write?: (items: ClipboardItem[]) => Promise<void>;
-          };
-          const writeImageToClipboard = clipboardWithWrite.write?.bind(
-            navigator.clipboard
+      closeMessageMenu();
+
+      if (targetMessage.message_type === 'image') {
+        try {
+          await toast.promise(
+            (async () => {
+              const clipboardWithWrite = navigator.clipboard as Clipboard & {
+                write?: (items: ClipboardItem[]) => Promise<void>;
+              };
+              const writeImageToClipboard = clipboardWithWrite.write?.bind(
+                navigator.clipboard
+              );
+              const canCopyBinaryImage =
+                typeof ClipboardItem !== 'undefined' &&
+                typeof writeImageToClipboard === 'function';
+
+              if (!canCopyBinaryImage) {
+                throw new Error('Clipboard image write is not supported');
+              }
+
+              const imageBlob = await fetchChatFileBlobWithFallback(
+                targetMessage.message,
+                targetMessage.file_storage_path,
+                targetMessage.file_mime_type
+              );
+              if (!imageBlob) {
+                throw new Error('Failed to fetch image for clipboard');
+              }
+
+              const clipboardPayload =
+                await getClipboardImagePayload(imageBlob);
+              await writeImageToClipboard([
+                new ClipboardItem({
+                  [clipboardPayload.mimeType]: clipboardPayload.blob,
+                }),
+              ]);
+            })(),
+            {
+              loading: 'Menyalin gambar...',
+              success: 'Gambar berhasil disalin',
+              error: 'Gagal menyalin gambar ke clipboard',
+            },
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
           );
-          const canCopyBinaryImage =
-            typeof ClipboardItem !== 'undefined' &&
-            typeof writeImageToClipboard === 'function';
-
-          if (!canCopyBinaryImage) {
-            throw new Error('Clipboard image write is not supported');
-          }
-
-          const imageBlob = await fetchChatFileBlobWithFallback(
-            targetMessage.message,
-            targetMessage.file_storage_path,
-            targetMessage.file_mime_type
-          );
-          if (!imageBlob) {
-            throw new Error('Failed to fetch image for clipboard');
-          }
-
-          const clipboardPayload = await getClipboardImagePayload(imageBlob);
-          await writeImageToClipboard([
-            new ClipboardItem({
-              [clipboardPayload.mimeType]: clipboardPayload.blob,
-            }),
-          ]);
-
-          toast.success('Gambar berhasil disalin', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-          return;
+        } catch (error) {
+          console.error('Error copying message:', error);
         }
 
+        return;
+      }
+
+      try {
         await navigator.clipboard.writeText(
           buildCopyableMessageText(targetMessage)
         );
@@ -73,17 +89,13 @@ export const useChatMessageTransferActions = ({
       } catch (error) {
         console.error('Error copying message:', error);
         toast.error(
-          targetMessage.message_type === 'image'
-            ? 'Gagal menyalin gambar ke clipboard'
-            : targetMessage.message_type === 'file'
-              ? 'Gagal menyalin lampiran'
-              : 'Gagal menyalin pesan',
+          targetMessage.message_type === 'file'
+            ? 'Gagal menyalin lampiran'
+            : 'Gagal menyalin pesan',
           {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           }
         );
-      } finally {
-        closeMessageMenu();
       }
     },
     [buildCopyableMessageText, closeMessageMenu]

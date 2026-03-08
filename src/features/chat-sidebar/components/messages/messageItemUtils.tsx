@@ -73,6 +73,7 @@ export const getFileIcon = (
 
 interface BuildMessageMenuActionsProps {
   message: ChatMessage;
+  resolvedMessageUrl?: string | null;
   isCurrentUser: boolean;
   isImageMessage: boolean;
   isFileMessage: boolean;
@@ -100,6 +101,7 @@ interface BuildMessageMenuActionsProps {
 
 export const buildMessageMenuActions = ({
   message,
+  resolvedMessageUrl,
   isCurrentUser,
   isImageMessage,
   isFileMessage,
@@ -119,7 +121,14 @@ export const buildMessageMenuActions = ({
       label: 'Salin',
       icon: <TbCopy className="h-4 w-4" />,
       onClick: () => {
-        void handleCopyMessage(message);
+        void handleCopyMessage(
+          isImageMessage && resolvedMessageUrl
+            ? {
+                ...message,
+                message: resolvedMessageUrl,
+              }
+            : message
+        );
       },
     },
   ];
