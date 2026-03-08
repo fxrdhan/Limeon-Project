@@ -339,6 +339,7 @@ export const useChatSession = ({
           event: 'DELETE',
           schema: 'public',
           table: 'chat_messages',
+          filter: `channel_id=eq.${currentChannelId}`,
         },
         payload => {
           const deletedMessage = payload.old as
@@ -346,12 +347,6 @@ export const useChatSession = ({
             | undefined;
           const deletedMessageId = deletedMessage?.id;
           if (!deletedMessageId) return;
-          if (
-            deletedMessage.channel_id &&
-            deletedMessage.channel_id !== currentChannelId
-          ) {
-            return;
-          }
 
           setMessages(previousMessages => {
             if (

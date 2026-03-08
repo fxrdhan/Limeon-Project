@@ -1224,6 +1224,11 @@ describe('useChatSession', () => {
     );
 
     expect(deleteListenerCall).toBeDefined();
+    expect(deleteListenerCall?.[1]).toEqual(
+      expect.objectContaining({
+        filter: 'channel_id=eq.channel-1',
+      })
+    );
     const deleteListener = deleteListenerCall?.[2] as
       | ((payload: { old: Partial<ChatMessage> }) => void)
       | undefined;

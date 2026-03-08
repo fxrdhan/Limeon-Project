@@ -18,6 +18,7 @@ import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { useChatMutationScope } from './useChatMutationScope';
+import { createRuntimeId, createStableKey } from '../utils/runtime-id';
 
 export interface PendingSendRegistration {
   complete: () => void;
@@ -103,8 +104,11 @@ export const useChatComposerSend = ({
       const normalizedMessageText = messageText.trim();
       setMessage('');
 
-      const tempId = `temp_${Date.now()}`;
-      const stableKey = `${user.id}-${Date.now()}-${normalizedMessageText.slice(0, 10)}`;
+      const tempId = createRuntimeId('temp');
+      const stableKey = createStableKey([
+        user.id,
+        normalizedMessageText.slice(0, 10),
+      ]);
       const pendingSend = registerPendingSend(tempId);
       const optimisticMessage: ChatMessage = {
         id: tempId,

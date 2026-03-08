@@ -38,27 +38,15 @@ describe('chatService', () => {
     });
   });
 
-  it('retries inserts without message_relation_kind when the database schema is still old', async () => {
-    mockSingle
-      .mockResolvedValueOnce({
-        data: null,
-        error: {
-          message:
-            "Could not find the 'message_relation_kind' column of 'chat_messages' in the schema cache",
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: 'caption-1',
-          sender_id: 'user-a',
-          receiver_id: 'user-b',
-          channel_id: 'channel-1',
-          message: 'caption',
-          message_type: 'text',
-          reply_to_id: 'file-1',
-        },
-        error: null,
-      });
+  it('fails fast when inserts reference message_relation_kind but the schema is missing it', async () => {
+    const schemaError = {
+      message:
+        "Could not find the 'message_relation_kind' column of 'chat_messages' in the schema cache",
+    };
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: schemaError,
+    });
 
     const { chatService } = await import('./chat.service');
 
@@ -72,108 +60,25 @@ describe('chatService', () => {
       message_relation_kind: 'attachment_caption',
     });
 
-    expect(mockInsert).toHaveBeenNthCalledWith(
-      1,
+    expect(mockInsert).toHaveBeenCalledOnce();
+    expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         message_relation_kind: 'attachment_caption',
       })
     );
-    expect(mockInsert).toHaveBeenNthCalledWith(
-      2,
-      expect.not.objectContaining({
-        message_relation_kind: 'attachment_caption',
-      })
-    );
-    expect(result.error).toBeNull();
-    expect(result.data?.id).toBe('caption-1');
+    expect(result.data).toBeNull();
+    expect(result.error).toBe(schemaError);
   });
 
-  it('does not keep stripping message_relation_kind after a prior fallback insert', async () => {
-    mockSingle
-      .mockResolvedValueOnce({
-        data: null,
-        error: {
-          message:
-            "Could not find the 'message_relation_kind' column of 'chat_messages' in the schema cache",
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: 'caption-legacy',
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: 'caption-supported',
-          message_relation_kind: 'attachment_caption',
-        },
-        error: null,
-      });
-
-    const { chatService } = await import('./chat.service');
-
-    await chatService.insertMessage({
-      sender_id: 'user-a',
-      receiver_id: 'user-b',
-      channel_id: 'channel-1',
-      message: 'caption legacy',
-      message_type: 'text',
-      reply_to_id: 'file-1',
-      message_relation_kind: 'attachment_caption',
+  it('fails fast when updates reference message_relation_kind but the schema is missing it', async () => {
+    const schemaError = {
+      message:
+        "Could not find the 'message_relation_kind' column of 'chat_messages' in the schema cache",
+    };
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: schemaError,
     });
-
-    const result = await chatService.insertMessage({
-      sender_id: 'user-a',
-      receiver_id: 'user-b',
-      channel_id: 'channel-1',
-      message: 'caption supported',
-      message_type: 'text',
-      reply_to_id: 'file-2',
-      message_relation_kind: 'attachment_caption',
-    });
-
-    expect(mockInsert).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        message_relation_kind: 'attachment_caption',
-      })
-    );
-    expect(mockInsert).toHaveBeenNthCalledWith(
-      2,
-      expect.not.objectContaining({
-        message_relation_kind: 'attachment_caption',
-      })
-    );
-    expect(mockInsert).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({
-        message_relation_kind: 'attachment_caption',
-      })
-    );
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({
-      id: 'caption-supported',
-      message_relation_kind: 'attachment_caption',
-    });
-  });
-
-  it('retries updates without message_relation_kind when the database schema is still old', async () => {
-    mockSingle
-      .mockResolvedValueOnce({
-        data: null,
-        error: {
-          message:
-            "Could not find the 'message_relation_kind' column of 'chat_messages' in the schema cache",
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: 'caption-1',
-          message_relation_kind: null,
-        },
-        error: null,
-      });
 
     const { chatService } = await import('./chat.service');
 
@@ -181,22 +86,13 @@ describe('chatService', () => {
       message_relation_kind: 'attachment_caption',
     });
 
-    expect(mockUpdate).toHaveBeenNthCalledWith(
-      1,
+    expect(mockUpdate).toHaveBeenCalledOnce();
+    expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         message_relation_kind: 'attachment_caption',
       })
     );
-    expect(mockUpdate).toHaveBeenNthCalledWith(
-      2,
-      expect.not.objectContaining({
-        message_relation_kind: 'attachment_caption',
-      })
-    );
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({
-      id: 'caption-1',
-      message_relation_kind: null,
-    });
+    expect(result.data).toBeNull();
+    expect(result.error).toBe(schemaError);
   });
 });

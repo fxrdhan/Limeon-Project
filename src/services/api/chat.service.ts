@@ -87,40 +87,6 @@ const buildUserPresenceRestUrl = (userId: string) => {
   return requestUrl.toString();
 };
 
-const hasOwnMessageRelationKind = (
-  payload: ChatMessageInsertInput | ChatMessageUpdateInput
-) => Object.prototype.hasOwnProperty.call(payload, 'message_relation_kind');
-
-const stripMessageRelationKind = <
-  T extends ChatMessageInsertInput | ChatMessageUpdateInput,
->(
-  payload: T
-) => {
-  const {
-    message_relation_kind: _messageRelationKind,
-    ...payloadWithoutRelationKind
-  } = payload;
-  return payloadWithoutRelationKind;
-};
-
-const isMissingMessageRelationKindError = (error: PostgrestError | null) => {
-  if (!error) return false;
-
-  if (error.code === '42703' || error.code === 'PGRST204') {
-    return true;
-  }
-
-  const errorText = [error.message, error.details, error.hint]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
-  return (
-    errorText.includes('message_relation_kind') &&
-    (errorText.includes('schema cache') || errorText.includes('column'))
-  );
-};
-
 export const chatService = {
   async fetchMessagesBetweenUsers(
     userId: string,
@@ -157,23 +123,11 @@ export const chatService = {
     payload: ChatMessageInsertInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .insert(payload)
         .select()
         .single();
-
-      if (
-        error &&
-        hasOwnMessageRelationKind(payload) &&
-        isMissingMessageRelationKindError(error)
-      ) {
-        ({ data, error } = await supabase
-          .from('chat_messages')
-          .insert(stripMessageRelationKind(payload))
-          .select()
-          .single());
-      }
 
       if (error) {
         return { data: null, error };
@@ -190,25 +144,12 @@ export const chatService = {
     payload: ChatMessageUpdateInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .update(payload)
         .eq('id', id)
         .select()
         .single();
-
-      if (
-        error &&
-        hasOwnMessageRelationKind(payload) &&
-        isMissingMessageRelationKindError(error)
-      ) {
-        ({ data, error } = await supabase
-          .from('chat_messages')
-          .update(stripMessageRelationKind(payload))
-          .eq('id', id)
-          .select()
-          .single());
-      }
 
       if (error) {
         return { data: null, error };

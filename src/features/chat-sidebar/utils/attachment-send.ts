@@ -2,6 +2,7 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { commitOptimisticMessage } from './optimistic-message';
 import { markMessageAsAttachmentCaption } from './message-relations';
+import { createRuntimeId, createStableKey } from './runtime-id';
 
 interface AttachmentParticipant {
   id: string;
@@ -47,12 +48,12 @@ export const createOptimisticAttachmentThread = ({
   targetUser,
   buildOptimisticMessage,
 }: CreateOptimisticAttachmentThreadParams): OptimisticAttachmentThread => {
-  const tempId = `${tempIdPrefix}_${Date.now()}`;
-  const stableKey = `${user.id}-${Date.now()}-${stableKeySuffix}`;
+  const tempId = createRuntimeId(tempIdPrefix);
+  const stableKey = createStableKey([user.id, stableKeySuffix]);
   const normalizedCaptionText = captionText?.trim() ?? '';
   const hasAttachmentCaption = normalizedCaptionText.length > 0;
   const captionTempId = hasAttachmentCaption
-    ? `temp_caption_${Date.now()}`
+    ? createRuntimeId('temp_caption')
     : null;
   const captionStableKey = hasAttachmentCaption ? `${stableKey}-caption` : null;
   const optimisticMessage = buildOptimisticMessage({
