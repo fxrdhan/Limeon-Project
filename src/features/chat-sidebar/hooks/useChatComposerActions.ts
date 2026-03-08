@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import {
   useCallback,
+  useEffect,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
@@ -105,6 +106,21 @@ export const useChatComposerActions = ({
   const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
     new Map()
   );
+  const pendingEditComposerRestoreRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      pendingEditComposerRestoreRef.current &&
+      (message.length > 0 || editingMessageId !== null)
+    ) {
+      pendingEditComposerRestoreRef.current = false;
+    }
+  }, [editingMessageId, message]);
+
+  useEffect(() => {
+    pendingEditComposerRestoreRef.current = false;
+  }, [currentChannelId]);
+
   const {
     conversationScopeKey,
     isConversationScopeActive,
@@ -179,15 +195,20 @@ export const useChatComposerActions = ({
           );
         }
 
-        setEditingMessageId(messageId);
-        setMessage(updatedText);
-        requestAnimationFrame(focusMessageComposer);
+        if (pendingEditComposerRestoreRef.current) {
+          pendingEditComposerRestoreRef.current = false;
+          setEditingMessageId(messageId);
+          setMessage(updatedText);
+          requestAnimationFrame(focusMessageComposer);
+        }
+
         toast.error('Gagal memperbarui pesan', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
       });
     };
 
+    pendingEditComposerRestoreRef.current = true;
     setMessage('');
     setEditingMessageId(null);
     closeMessageMenu();
@@ -232,6 +253,7 @@ export const useChatComposerActions = ({
           messageItem.id === messageId ? mappedMessage : messageItem
         )
       );
+      pendingEditComposerRestoreRef.current = false;
 
       broadcastUpdatedMessage(mappedMessage);
     } catch (error) {

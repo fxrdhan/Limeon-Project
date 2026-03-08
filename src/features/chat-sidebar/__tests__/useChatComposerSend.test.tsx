@@ -525,10 +525,16 @@ describe('useChatComposerSend', () => {
     expect(result.current.draftMessage).toBe('');
   });
 
-  it('keeps a cancelled temp text send hidden when rollback cleanup fails', async () => {
+  it('reconciles a cancelled temp text send when rollback cleanup fails', async () => {
     let resolveCreateMessage:
       | ((value: { data: ChatMessage; error: null }) => void)
       | undefined;
+
+    const persistedTextMessage = buildMessage({
+      id: 'server-text-rollback-fail',
+      message: 'pesan pending',
+      message_type: 'text',
+    });
 
     mockGateway.createMessage.mockImplementation(
       () =>
@@ -539,6 +545,10 @@ describe('useChatComposerSend', () => {
     mockGateway.deleteMessageThread.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
+    });
+    mockGateway.fetchConversationMessages.mockResolvedValue({
+      data: [persistedTextMessage],
+      error: null,
     });
 
     const broadcastNewMessage = vi.fn();
@@ -597,18 +607,28 @@ describe('useChatComposerSend', () => {
       );
 
       resolveCreateMessage?.({
-        data: buildMessage({
-          id: 'server-text-rollback-fail',
-          message: 'pesan pending',
-          message_type: 'text',
-        }),
+        data: persistedTextMessage,
         error: null,
       });
 
       await sendPromise;
     });
 
-    expect(result.current.messages).toEqual([]);
+    await waitFor(() => {
+      expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
+        'user-a',
+        'user-b',
+        'channel-1'
+      );
+      expect(result.current.messages).toEqual([
+        expect.objectContaining({
+          id: 'server-text-rollback-fail',
+          message: 'pesan pending',
+          message_type: 'text',
+        }),
+      ]);
+    });
+
     expect(broadcastNewMessage).not.toHaveBeenCalled();
     expect(broadcastDeletedMessage).not.toHaveBeenCalled();
     expect(result.current.draftMessage).toBe('');
@@ -916,6 +936,83 @@ describe('useChatComposerSend', () => {
 
     expect(result.current.messages).toEqual([]);
     expect(result.current.draftMessage).toBe('pesan gagal');
+    expect(mockToast.error).toHaveBeenCalledWith('Gagal mengirim pesan', {
+      toasterId: 'chat-sidebar-toaster',
+    });
+  });
+
+  it('preserves a newer draft when text send fails after the user keeps typing', async () => {
+    let resolveCreateMessage:
+      | ((value: { data: null; error: Error }) => void)
+      | undefined;
+
+    mockGateway.createMessage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCreateMessage = resolve;
+        })
+    );
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('pesan gagal');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+        draftMessage,
+        setDraftMessage,
+      };
+    });
+
+    let sendPromise: Promise<void> | undefined;
+    await act(async () => {
+      sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.setDraftMessage('draft baru');
+    });
+
+    await act(async () => {
+      resolveCreateMessage?.({
+        data: null,
+        error: new Error('insert failed'),
+      });
+      await sendPromise;
+    });
+
+    expect(result.current.messages).toEqual([]);
+    expect(result.current.draftMessage).toBe('draft baru');
     expect(mockToast.error).toHaveBeenCalledWith('Gagal mengirim pesan', {
       toasterId: 'chat-sidebar-toaster',
     });

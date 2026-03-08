@@ -164,6 +164,106 @@ describe('useChatComposerActions', () => {
     );
   });
 
+  it('preserves a newer draft when an edit request fails after the user keeps typing', async () => {
+    let resolveUpdateMessage:
+      | ((value: { data: null; error: Error }) => void)
+      | undefined;
+
+    mockChatService.updateMessage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveUpdateMessage = resolve;
+        })
+    );
+
+    const focusMessageComposer = vi.fn();
+    const closeMessageMenu = vi.fn();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        buildMessage({
+          id: 'message-1',
+          message: 'before edit',
+          sender_name: 'Admin',
+          receiver_name: 'Gudang',
+        }),
+      ]);
+      const [message, setMessage] = useState('after edit');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        'message-1'
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const actions = useChatComposerActions({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        messages,
+        setMessages,
+        message,
+        setMessage,
+        editingMessageId,
+        setEditingMessageId,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        closeMessageMenu,
+        focusMessageComposer,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+      });
+
+      return {
+        ...actions,
+        messages,
+        message,
+        editingMessageId,
+        setMessage,
+      };
+    });
+
+    let sendPromise: Promise<void> | undefined;
+    await act(async () => {
+      sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.setMessage('draft baru');
+    });
+
+    await act(async () => {
+      resolveUpdateMessage?.({
+        data: null,
+        error: new Error('update failed'),
+      });
+      await sendPromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages[0]?.message).toBe('before edit');
+      expect(result.current.message).toBe('draft baru');
+      expect(result.current.editingMessageId).toBe(null);
+    });
+
+    expect(focusMessageComposer).not.toHaveBeenCalled();
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Gagal memperbarui pesan',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+  });
+
   it('does not restore stale edit state after switching conversations', async () => {
     let resolveUpdateMessage:
       | ((value: { data: null; error: Error }) => void)

@@ -73,6 +73,7 @@ export const useChatComposerSend = ({
   const {
     conversationScopeKey,
     isConversationScopeActive,
+    reconcileMessagesFromServer,
     runIfConversationScopeActive,
   } = useChatMutationScope({
     user,
@@ -149,7 +150,11 @@ export const useChatComposerSend = ({
             setMessages(previousMessages =>
               previousMessages.filter(messageItem => messageItem.id !== tempId)
             );
-            setMessage(normalizedMessageText);
+            setMessage(currentMessage =>
+              currentMessage.length === 0
+                ? normalizedMessageText
+                : currentMessage
+            );
             toast.error('Gagal mengirim pesan', {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
@@ -181,6 +186,7 @@ export const useChatComposerSend = ({
               'Error cancelling temp message after persistence:',
               deleteError
             );
+            await reconcileMessagesFromServer({ conversationScopeKey });
           }
           return false;
         }
@@ -203,7 +209,9 @@ export const useChatComposerSend = ({
           setMessages(previousMessages =>
             previousMessages.filter(messageItem => messageItem.id !== tempId)
           );
-          setMessage(normalizedMessageText);
+          setMessage(currentMessage =>
+            currentMessage.length === 0 ? normalizedMessageText : currentMessage
+          );
           toast.error('Gagal mengirim pesan', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -219,6 +227,7 @@ export const useChatComposerSend = ({
       conversationScopeKey,
       currentChannelId,
       isConversationScopeActive,
+      reconcileMessagesFromServer,
       runIfConversationScopeActive,
       registerPendingSend,
       scheduleScrollMessagesToBottom,
