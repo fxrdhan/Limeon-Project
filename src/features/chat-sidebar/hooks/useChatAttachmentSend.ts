@@ -31,6 +31,13 @@ interface PendingSendRegistration {
   isCancelled: () => boolean;
 }
 
+const normalizeStoragePaths = (
+  storagePaths: Array<string | null | undefined>
+) =>
+  [...new Set(storagePaths)]
+    .map(storagePath => storagePath?.trim() || null)
+    .filter((storagePath): storagePath is string => Boolean(storagePath));
+
 const isPdfDocumentFile = (fileName: string, mimeType: string) =>
   mimeType.toLowerCase().includes('pdf') ||
   fileName.toLowerCase().endsWith('.pdf');
@@ -113,9 +120,7 @@ export const useChatAttachmentSend = ({
 
   const deleteUploadedStorageFiles = useCallback(
     async (storagePaths: Array<string | null | undefined>) => {
-      const uniquePaths = [...new Set(storagePaths)]
-        .map(storagePath => storagePath?.trim() || null)
-        .filter((storagePath): storagePath is string => Boolean(storagePath));
+      const uniquePaths = normalizeStoragePaths(storagePaths);
 
       if (uniquePaths.length === 0) return;
 
@@ -132,6 +137,31 @@ export const useChatAttachmentSend = ({
           result.reason
         );
       });
+    },
+    []
+  );
+  const deleteUploadedStorageFilesOrThrow = useCallback(
+    async (storagePaths: Array<string | null | undefined>) => {
+      const uniquePaths = normalizeStoragePaths(storagePaths);
+
+      if (uniquePaths.length === 0) return;
+
+      const results = await Promise.allSettled(
+        uniquePaths.map(storagePath =>
+          chatSidebarGateway.deleteStorageFile(CHAT_IMAGE_BUCKET, storagePath)
+        )
+      );
+      const failedPaths = results.flatMap((result, index) =>
+        result.status === 'rejected' ? [uniquePaths[index]] : []
+      );
+
+      if (failedPaths.length === 0) {
+        return;
+      }
+
+      throw new Error(
+        `Failed to delete chat storage file(s): ${failedPaths.join(', ')}`
+      );
     },
     []
   );
@@ -154,6 +184,32 @@ export const useChatAttachmentSend = ({
         await chatSidebarGateway.deleteMessageThread(persistedMessageId);
 
       if (error) {
+        if (user && targetUser && currentChannelId) {
+          try {
+            const { data: latestMessages, error: latestMessagesError } =
+              await chatSidebarGateway.fetchConversationMessages(
+                user.id,
+                targetUser.id,
+                currentChannelId
+              );
+
+            if (!latestMessagesError && latestMessages) {
+              const messageStillExists = latestMessages.some(
+                messageItem => messageItem.id === persistedMessageId
+              );
+
+              if (!messageStillExists) {
+                await deleteUploadedStorageFilesOrThrow(storagePaths);
+              }
+            }
+          } catch (verificationError) {
+            console.error(
+              'Error verifying attachment rollback state:',
+              verificationError
+            );
+          }
+        }
+
         throw error;
       }
 
@@ -176,13 +232,16 @@ export const useChatAttachmentSend = ({
         });
       }
 
-      await deleteUploadedStorageFiles(storagePaths);
+      await deleteUploadedStorageFilesOrThrow(storagePaths);
     },
     [
       broadcastDeletedMessage,
-      deleteUploadedStorageFiles,
+      currentChannelId,
+      deleteUploadedStorageFilesOrThrow,
       isConversationScopeActive,
       setMessages,
+      targetUser,
+      user,
     ]
   );
 
@@ -328,6 +387,7 @@ export const useChatAttachmentSend = ({
               'Error cancelling temp attachment thread after persistence:',
               rollbackError
             );
+            await reconcileMessagesFromServer({ conversationScopeKey });
           }
           return null;
         }
@@ -368,6 +428,7 @@ export const useChatAttachmentSend = ({
                   'Error cancelling temp attachment thread after caption persistence:',
                   rollbackError
                 );
+                await reconcileMessagesFromServer({ conversationScopeKey });
               }
               return null;
             }

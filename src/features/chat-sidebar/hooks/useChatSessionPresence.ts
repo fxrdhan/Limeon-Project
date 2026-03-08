@@ -49,7 +49,8 @@ export const useChatSessionPresence = ({
     useState<UserPresence | null>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const presenceHeartbeatIntervalRef = useRef<number | null>(null);
-  const hasClosedRef = useRef(false);
+  const hasClosedChatRef = useRef(false);
+  const hasHandledPageExitRef = useRef(false);
   const isClosingRef = useRef(false);
   const previousIsOpenRef = useRef(isOpen);
   const activeTargetUserIdRef = useRef<string | null>(targetUser?.id ?? null);
@@ -102,21 +103,6 @@ export const useChatSessionPresence = ({
         currentChatChannel,
         timestamp,
       });
-      const eventTimestamp =
-        nextPresenceState.last_seen ?? new Date().toISOString();
-
-      if (shouldBroadcast && globalPresenceChannelRef.current) {
-        void globalPresenceChannelRef.current.send({
-          type: 'broadcast',
-          event: 'presence_changed',
-          payload: {
-            user_id: user.id,
-            is_online: keepOnline,
-            current_chat_channel: currentChatChannel,
-            last_seen: eventTimestamp,
-          },
-        });
-      }
 
       try {
         const { data: updateData, error: updateError } =
@@ -125,23 +111,61 @@ export const useChatSessionPresence = ({
             nextPresenceState
           );
 
+        let persistedPresence: UserPresence | null = updateData?.[0] ?? null;
+
         if (!updateError && updateData && updateData.length > 0) {
+          if (shouldBroadcast && globalPresenceChannelRef.current) {
+            void globalPresenceChannelRef.current.send({
+              type: 'broadcast',
+              event: 'presence_changed',
+              payload: {
+                user_id: user.id,
+                is_online:
+                  persistedPresence?.is_online ?? nextPresenceState.is_online,
+                current_chat_channel:
+                  persistedPresence?.current_chat_channel ??
+                  nextPresenceState.current_chat_channel,
+                last_seen:
+                  persistedPresence?.last_seen ?? nextPresenceState.last_seen,
+              },
+            });
+          }
           return true;
         }
 
-        const { error: insertError } =
+        const { data: insertData, error: insertError } =
           await chatSidebarGateway.insertUserPresence({
             user_id: user.id,
             ...nextPresenceState,
           });
+        persistedPresence = insertData?.[0] ?? null;
 
         if (updateError) {
           console.error('Error updating user presence:', updateError);
         }
         if (insertError) {
           console.error('Error inserting user presence:', insertError);
+          return false;
         }
-        return !insertError;
+
+        if (shouldBroadcast && globalPresenceChannelRef.current) {
+          void globalPresenceChannelRef.current.send({
+            type: 'broadcast',
+            event: 'presence_changed',
+            payload: {
+              user_id: user.id,
+              is_online:
+                persistedPresence?.is_online ?? nextPresenceState.is_online,
+              current_chat_channel:
+                persistedPresence?.current_chat_channel ??
+                nextPresenceState.current_chat_channel,
+              last_seen:
+                persistedPresence?.last_seen ?? nextPresenceState.last_seen,
+            },
+          });
+        }
+
+        return true;
       } catch (error) {
         console.error('Caught error syncing user presence:', error);
         return false;
@@ -163,7 +187,7 @@ export const useChatSessionPresence = ({
   );
 
   const performClose = useCallback(async () => {
-    if (!user || hasClosedRef.current || isClosingRef.current) {
+    if (!user || hasClosedChatRef.current || isClosingRef.current) {
       return false;
     }
 
@@ -178,7 +202,7 @@ export const useChatSessionPresence = ({
         timestamp: eventTimestamp,
       });
       if (didSync) {
-        hasClosedRef.current = true;
+        hasClosedChatRef.current = true;
       }
       return didSync;
     } catch (error) {
@@ -209,7 +233,7 @@ export const useChatSessionPresence = ({
     const previousIsOpen = previousIsOpenRef.current;
     previousIsOpenRef.current = isOpen;
 
-    if (previousIsOpen && !isOpen && user && !hasClosedRef.current) {
+    if (previousIsOpen && !isOpen && user && !hasClosedChatRef.current) {
       void performClose();
     }
   }, [isOpen, performClose, user]);
@@ -279,7 +303,8 @@ export const useChatSessionPresence = ({
     presenceChannel.subscribe();
     presenceChannelRef.current = presenceChannel;
 
-    hasClosedRef.current = false;
+    hasClosedChatRef.current = false;
+    hasHandledPageExitRef.current = false;
     isClosingRef.current = false;
     activePresenceScopeRef.current = presenceScopeKey;
     setTargetUserPresence(null);
@@ -377,7 +402,7 @@ export const useChatSessionPresence = ({
 
   useEffect(() => {
     return () => {
-      if (!hasClosedRef.current && user) {
+      if (!hasClosedChatRef.current && !hasHandledPageExitRef.current && user) {
         void performClose();
       }
     };
@@ -385,9 +410,10 @@ export const useChatSessionPresence = ({
 
   useEffect(() => {
     const handlePageExit = () => {
-      if (!hasClosedRef.current && user) {
+      if (!hasHandledPageExitRef.current && user) {
         const eventTimestamp = new Date().toISOString();
-        hasClosedRef.current = true;
+        hasHandledPageExitRef.current = true;
+        hasClosedChatRef.current = true;
         chatSidebarGateway.sendUserPresenceUpdateKeepalive(
           user.id,
           buildPresenceStatePayload({

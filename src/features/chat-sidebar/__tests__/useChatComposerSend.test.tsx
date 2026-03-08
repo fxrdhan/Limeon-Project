@@ -614,6 +614,140 @@ describe('useChatComposerSend', () => {
     expect(result.current.draftMessage).toBe('');
   });
 
+  it('reconciles the persisted attachment thread when cancellation rollback fails', async () => {
+    let resolveCreateMessage:
+      | ((value: { data: ChatMessage; error: null }) => void)
+      | undefined;
+
+    const persistedImageMessage = buildMessage({
+      id: 'server-image-rollback-fail',
+      message: 'https://example.com/chat.png',
+      message_type: 'image',
+      file_name: undefined,
+      file_kind: undefined,
+      file_mime_type: 'image/png',
+      file_size: 1024,
+      file_storage_path: 'images/channel/chat.png',
+    });
+
+    mockGateway.uploadImage.mockResolvedValue({
+      path: 'images/channel/chat.png',
+      publicUrl: 'https://example.com/chat.png',
+    });
+    mockGateway.createMessage.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveCreateMessage = resolve;
+        })
+    );
+    mockGateway.deleteMessageThread.mockResolvedValue({
+      data: null,
+      error: new Error('delete failed'),
+    });
+    mockGateway.fetchConversationMessages.mockResolvedValue({
+      data: [persistedImageMessage],
+      error: null,
+    });
+
+    const { pendingEntries, registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [
+          buildPendingAttachment({
+            id: 'pending-image-1',
+            file: new File(['image'], 'chat.png', { type: 'image/png' }),
+            fileName: 'chat.png',
+            fileTypeLabel: 'PNG',
+            fileKind: 'image',
+            mimeType: 'image/png',
+            previewUrl: 'blob:image-preview',
+          }),
+        ],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+        setMessages,
+      };
+    });
+
+    await act(async () => {
+      const sendPromise = result.current.handleSendMessage();
+      await waitFor(() => {
+        expect(mockGateway.createMessage).toHaveBeenCalledWith(
+          expect.objectContaining({
+            sender_id: 'user-a',
+            receiver_id: 'user-b',
+            channel_id: 'channel-1',
+            message: 'https://example.com/chat.png',
+            message_type: 'image',
+          })
+        );
+      });
+
+      const tempMessageId = pendingEntries.keys().next().value as
+        | string
+        | undefined;
+      expect(tempMessageId).toBeDefined();
+      pendingEntries.get(tempMessageId!)!.cancelled = true;
+      result.current.setMessages(previousMessages =>
+        previousMessages.filter(messageItem => messageItem.id !== tempMessageId)
+      );
+
+      resolveCreateMessage?.({
+        data: persistedImageMessage,
+        error: null,
+      });
+
+      await sendPromise;
+    });
+
+    await waitFor(() => {
+      expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
+        'server-image-rollback-fail'
+      );
+      expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
+        'user-a',
+        'user-b',
+        'channel-1'
+      );
+      expect(result.current.messages).toEqual([
+        expect.objectContaining({
+          id: 'server-image-rollback-fail',
+          message: 'https://example.com/chat.png',
+          message_type: 'image',
+        }),
+      ]);
+    });
+  });
+
   it('does not restore stale draft state after switching conversations during a failed text send', async () => {
     let resolveCreateMessage:
       | ((value: { data: null; error: Error }) => void)
