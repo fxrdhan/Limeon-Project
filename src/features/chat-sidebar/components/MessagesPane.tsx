@@ -18,6 +18,7 @@ import type {
   MenuPlacement,
   MenuSideAnchor,
 } from '../types';
+import { useDocumentPreviewPortal } from '../hooks/useDocumentPreviewPortal';
 import { getAttachmentCaptionData } from '../utils/message-derivations';
 import { fetchPdfBlobWithFallback } from '../utils/message-file';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
@@ -114,6 +115,13 @@ const MessagesPane = ({
   onScrollToBottom,
 }: MessagesPaneProps) => {
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const {
+    previewUrl: documentPreviewUrl,
+    previewName: documentPreviewName,
+    isPreviewVisible: isDocumentPreviewVisible,
+    closeDocumentPreview,
+    openDocumentPreview,
+  } = useDocumentPreviewPortal();
   const { getPdfMessagePreview } = useMessagePdfPreviews({
     messages,
     getAttachmentFileName,
@@ -123,14 +131,6 @@ const MessagesPane = ({
   const [imagePreviewName, setImagePreviewName] = useState('');
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
   const imagePreviewCloseTimerRef = useRef<number | null>(null);
-  const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(
-    null
-  );
-  const [documentPreviewName, setDocumentPreviewName] = useState('');
-  const [isDocumentPreviewVisible, setIsDocumentPreviewVisible] =
-    useState(false);
-  const documentPreviewCloseTimerRef = useRef<number | null>(null);
-  const documentPreviewObjectUrlRef = useRef<string | null>(null);
   const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
     () => getAttachmentCaptionData(messages),
     [messages]
@@ -161,55 +161,38 @@ const MessagesPane = ({
     });
   }, []);
 
-  const releaseDocumentPreviewObjectUrl = useCallback(() => {
-    if (!documentPreviewObjectUrlRef.current) return;
-    URL.revokeObjectURL(documentPreviewObjectUrlRef.current);
-    documentPreviewObjectUrlRef.current = null;
-  }, []);
-
-  const closeDocumentPreview = useCallback(() => {
-    setIsDocumentPreviewVisible(false);
-    if (documentPreviewCloseTimerRef.current) {
-      window.clearTimeout(documentPreviewCloseTimerRef.current);
-      documentPreviewCloseTimerRef.current = null;
-    }
-    documentPreviewCloseTimerRef.current = window.setTimeout(() => {
-      setDocumentPreviewUrl(null);
-      setDocumentPreviewName('');
-      releaseDocumentPreviewObjectUrl();
-      documentPreviewCloseTimerRef.current = null;
-    }, 150);
-  }, [releaseDocumentPreviewObjectUrl]);
-
   const openDocumentInPortal = useCallback(
     async (url: string, previewName: string, forcePdfMime = false) => {
-      if (documentPreviewCloseTimerRef.current) {
-        window.clearTimeout(documentPreviewCloseTimerRef.current);
-        documentPreviewCloseTimerRef.current = null;
-      }
-      releaseDocumentPreviewObjectUrl();
-
-      let nextPreviewUrl = url;
-      if (forcePdfMime) {
-        try {
-          const pdfBlob = await fetchPdfBlobWithFallback(url);
-          if (pdfBlob) {
-            const pdfBlobUrl = URL.createObjectURL(pdfBlob);
-            documentPreviewObjectUrlRef.current = pdfBlobUrl;
-            nextPreviewUrl = pdfBlobUrl;
+      await openDocumentPreview({
+        previewName,
+        resolvePreviewUrl: async () => {
+          if (!forcePdfMime) {
+            return {
+              previewUrl: url,
+              revokeOnClose: false,
+            };
           }
-        } catch {
-          nextPreviewUrl = url;
-        }
-      }
 
-      setDocumentPreviewUrl(nextPreviewUrl);
-      setDocumentPreviewName(previewName);
-      requestAnimationFrame(() => {
-        setIsDocumentPreviewVisible(true);
+          try {
+            const pdfBlob = await fetchPdfBlobWithFallback(url);
+            if (pdfBlob) {
+              return {
+                previewUrl: URL.createObjectURL(pdfBlob),
+                revokeOnClose: true,
+              };
+            }
+          } catch {
+            // Fall back to direct URL below.
+          }
+
+          return {
+            previewUrl: url,
+            revokeOnClose: false,
+          };
+        },
       });
     },
-    [releaseDocumentPreviewObjectUrl]
+    [openDocumentPreview]
   );
 
   useEffect(() => {
@@ -218,13 +201,8 @@ const MessagesPane = ({
         window.clearTimeout(imagePreviewCloseTimerRef.current);
         imagePreviewCloseTimerRef.current = null;
       }
-      if (documentPreviewCloseTimerRef.current) {
-        window.clearTimeout(documentPreviewCloseTimerRef.current);
-        documentPreviewCloseTimerRef.current = null;
-      }
-      releaseDocumentPreviewObjectUrl();
     };
-  }, [releaseDocumentPreviewObjectUrl]);
+  }, []);
 
   return (
     <>

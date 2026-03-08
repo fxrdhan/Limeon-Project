@@ -10,6 +10,7 @@ import {
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { PendingComposerAttachment } from '../types';
 import { resolveComposerAttachmentExtension } from '../utils/composer-attachment';
+import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 
 const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
 const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
@@ -37,19 +38,15 @@ export const useComposerAttachmentPreview = ({
     top: number;
     left: number;
   } | null>(null);
-  const [composerDocumentPreviewUrl, setComposerDocumentPreviewUrl] = useState<
-    string | null
-  >(null);
-  const [composerDocumentPreviewName, setComposerDocumentPreviewName] =
-    useState('');
-  const [
-    isComposerDocumentPreviewVisible,
-    setIsComposerDocumentPreviewVisible,
-  ] = useState(false);
   const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
-  const composerDocumentPreviewCloseTimerRef = useRef<number | null>(null);
-  const composerDocumentPreviewObjectUrlRef = useRef<string | null>(null);
+  const {
+    previewUrl: composerDocumentPreviewUrl,
+    previewName: composerDocumentPreviewName,
+    isPreviewVisible: isComposerDocumentPreviewVisible,
+    closeDocumentPreview: closeComposerDocumentPreview,
+    openDocumentPreview,
+  } = useDocumentPreviewPortal();
 
   const getImageActionsMenuPosition = useCallback(
     (targetButton: HTMLButtonElement) => {
@@ -93,34 +90,8 @@ export const useComposerAttachmentPreview = ({
     setImageActionsMenuPosition(null);
   }, []);
 
-  const releaseComposerDocumentPreviewObjectUrl = useCallback(() => {
-    if (!composerDocumentPreviewObjectUrlRef.current) return;
-    URL.revokeObjectURL(composerDocumentPreviewObjectUrlRef.current);
-    composerDocumentPreviewObjectUrlRef.current = null;
-  }, []);
-
-  const closeComposerDocumentPreview = useCallback(() => {
-    setIsComposerDocumentPreviewVisible(false);
-    if (composerDocumentPreviewCloseTimerRef.current) {
-      window.clearTimeout(composerDocumentPreviewCloseTimerRef.current);
-      composerDocumentPreviewCloseTimerRef.current = null;
-    }
-    composerDocumentPreviewCloseTimerRef.current = window.setTimeout(() => {
-      setComposerDocumentPreviewUrl(null);
-      setComposerDocumentPreviewName('');
-      releaseComposerDocumentPreviewObjectUrl();
-      composerDocumentPreviewCloseTimerRef.current = null;
-    }, 150);
-  }, [releaseComposerDocumentPreviewObjectUrl]);
-
   const openDocumentAttachmentInPortal = useCallback(
     (attachment: PendingComposerAttachment) => {
-      if (composerDocumentPreviewCloseTimerRef.current) {
-        window.clearTimeout(composerDocumentPreviewCloseTimerRef.current);
-        composerDocumentPreviewCloseTimerRef.current = null;
-      }
-      releaseComposerDocumentPreviewObjectUrl();
-
       const isPdfAttachment =
         resolveComposerAttachmentExtension(attachment) === 'pdf' ||
         attachment.mimeType.toLowerCase().includes('pdf');
@@ -141,19 +112,21 @@ export const useComposerAttachmentPreview = ({
         return;
       }
 
-      const openTarget =
-        attachment.file.type !== 'application/pdf'
-          ? new Blob([attachment.file], { type: 'application/pdf' })
-          : attachment.file;
-      const attachmentUrl = URL.createObjectURL(openTarget);
-      composerDocumentPreviewObjectUrlRef.current = attachmentUrl;
-      setComposerDocumentPreviewUrl(attachmentUrl);
-      setComposerDocumentPreviewName(attachment.fileName || 'Dokumen');
-      requestAnimationFrame(() => {
-        setIsComposerDocumentPreviewVisible(true);
+      void openDocumentPreview({
+        previewName: attachment.fileName || 'Dokumen',
+        resolvePreviewUrl: async () => {
+          const openTarget =
+            attachment.file.type !== 'application/pdf'
+              ? new Blob([attachment.file], { type: 'application/pdf' })
+              : attachment.file;
+          return {
+            previewUrl: URL.createObjectURL(openTarget),
+            revokeOnClose: true,
+          };
+        },
       });
     },
-    [releaseComposerDocumentPreviewObjectUrl]
+    [openDocumentPreview]
   );
 
   const openImageActionsAttachment = pendingComposerAttachments.find(
@@ -317,16 +290,6 @@ export const useComposerAttachmentPreview = ({
     getImageActionsMenuPosition,
     openImageActionsAttachmentId,
   ]);
-
-  useEffect(() => {
-    return () => {
-      if (composerDocumentPreviewCloseTimerRef.current) {
-        window.clearTimeout(composerDocumentPreviewCloseTimerRef.current);
-        composerDocumentPreviewCloseTimerRef.current = null;
-      }
-      releaseComposerDocumentPreviewObjectUrl();
-    };
-  }, [releaseComposerDocumentPreviewObjectUrl]);
 
   return {
     openImageActionsAttachmentId,

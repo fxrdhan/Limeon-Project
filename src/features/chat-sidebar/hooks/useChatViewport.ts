@@ -8,14 +8,11 @@ import {
   type RefObject,
 } from 'react';
 import { MESSAGE_BOTTOM_GAP } from '../constants';
-import {
-  getVerticalVisibilityBounds,
-  type VisibleBounds,
-} from '../utils/viewport-visibility';
+import type { VisibleBounds } from '../utils/viewport-visibility';
+import { useComposerContainerHeight } from './useComposerContainerHeight';
 import { useChatViewportFocus } from './useChatViewportFocus';
+import { useChatViewportReadReceipts } from './useChatViewportReadReceipts';
 import { useChatViewportMenu } from './useChatViewportMenu';
-
-const SCROLL_READ_RECEIPT_DEBOUNCE_MS = 90;
 
 interface UseChatViewportProps {
   isOpen: boolean;
@@ -76,12 +73,10 @@ export const useChatViewport = ({
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [hasNewMessages, setHasNewMessages] = useState(false);
-  const [composerContainerHeight, setComposerContainerHeight] = useState(0);
 
   const atTopVisibilityRef = useRef(true);
   const shouldPinToBottomOnOpenRef = useRef(false);
   const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
-  const pendingReadReceiptTimeoutRef = useRef<number | null>(null);
 
   const getVisibleMessagesBounds = useCallback((): VisibleBounds | null => {
     const containerRect =
@@ -228,6 +223,22 @@ export const useChatViewport = ({
     editingMessageId,
   });
   const { focusEditingTargetMessage, focusSearchTargetMessage } = focus;
+  const { composerContainerHeight } = useComposerContainerHeight({
+    composerContainerRef,
+    composerContextualOffset,
+    isMessageInputMultiline,
+    messageInputHeight,
+    pendingComposerAttachmentsCount,
+  });
+  const { scheduleVisibleUnreadReadReceipts } = useChatViewportReadReceipts({
+    messages,
+    userId,
+    targetUserId,
+    markMessageIdsAsRead,
+    getVisibleMessagesBounds,
+    chatHeaderContainerRef,
+    messageBubbleRefs,
+  });
 
   useEffect(() => {
     if (
@@ -276,66 +287,6 @@ export const useChatViewport = ({
 
     return true;
   }, [messagesContainerRef]);
-
-  const flushVisibleUnreadReadReceipts = useCallback(() => {
-    if (!userId || !targetUserId) {
-      return;
-    }
-
-    const bounds = getVisibleMessagesBounds();
-    if (!bounds) {
-      return;
-    }
-
-    const visibleUnreadIncomingMessageIds = messages
-      .filter(
-        messageItem =>
-          messageItem.sender_id === targetUserId &&
-          messageItem.receiver_id === userId &&
-          !messageItem.is_read
-      )
-      .map(messageItem => {
-        const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
-        if (!bubbleElement) return null;
-
-        const verticalVisibilityBounds = getVerticalVisibilityBounds(
-          bounds,
-          chatHeaderContainerRef.current?.getBoundingClientRect(),
-          0
-        );
-        const bubbleRect = bubbleElement.getBoundingClientRect();
-        const isVisible =
-          bubbleRect.top >= verticalVisibilityBounds.minVisibleTop &&
-          bubbleRect.top < verticalVisibilityBounds.maxVisibleBottom;
-        return isVisible ? messageItem.id : null;
-      })
-      .filter((messageId): messageId is string => Boolean(messageId));
-
-    if (visibleUnreadIncomingMessageIds.length === 0) {
-      return;
-    }
-
-    void markMessageIdsAsRead(visibleUnreadIncomingMessageIds);
-  }, [
-    getVisibleMessagesBounds,
-    markMessageIdsAsRead,
-    chatHeaderContainerRef,
-    messageBubbleRefs,
-    messages,
-    targetUserId,
-    userId,
-  ]);
-
-  const scheduleVisibleUnreadReadReceipts = useCallback(() => {
-    if (pendingReadReceiptTimeoutRef.current !== null) {
-      window.clearTimeout(pendingReadReceiptTimeoutRef.current);
-    }
-
-    pendingReadReceiptTimeoutRef.current = window.setTimeout(() => {
-      pendingReadReceiptTimeoutRef.current = null;
-      flushVisibleUnreadReadReceipts();
-    }, SCROLL_READ_RECEIPT_DEBOUNCE_MS);
-  }, [flushVisibleUnreadReadReceipts]);
 
   const handleScroll = useCallback(() => {
     requestAnimationFrame(() => {
@@ -454,39 +405,9 @@ export const useChatViewport = ({
   useEffect(
     () => () => {
       cancelScrollToBottomAnimation();
-      if (pendingReadReceiptTimeoutRef.current !== null) {
-        window.clearTimeout(pendingReadReceiptTimeoutRef.current);
-        pendingReadReceiptTimeoutRef.current = null;
-      }
     },
     [cancelScrollToBottomAnimation]
   );
-
-  useLayoutEffect(() => {
-    const composerContainer = composerContainerRef.current;
-    if (!composerContainer) return;
-
-    const updateComposerContainerHeight = () => {
-      setComposerContainerHeight(composerContainer.offsetHeight);
-    };
-
-    updateComposerContainerHeight();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateComposerContainerHeight();
-    });
-    resizeObserver.observe(composerContainer);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [
-    composerContainerRef,
-    composerContextualOffset,
-    isMessageInputMultiline,
-    messageInputHeight,
-    pendingComposerAttachmentsCount,
-  ]);
 
   const scrollToBottom = useCallback(() => {
     animateScrollToBottom();

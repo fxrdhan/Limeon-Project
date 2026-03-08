@@ -1,0 +1,49 @@
+import { useLayoutEffect, useState, type RefObject } from 'react';
+
+interface UseComposerContainerHeightProps {
+  composerContainerRef: RefObject<HTMLDivElement | null>;
+  composerContextualOffset: number;
+  isMessageInputMultiline: boolean;
+  messageInputHeight: number;
+  pendingComposerAttachmentsCount: number;
+}
+
+export const useComposerContainerHeight = ({
+  composerContainerRef,
+  composerContextualOffset,
+  isMessageInputMultiline,
+  messageInputHeight,
+  pendingComposerAttachmentsCount,
+}: UseComposerContainerHeightProps) => {
+  const [composerContainerHeight, setComposerContainerHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const composerContainer = composerContainerRef.current;
+    if (!composerContainer) return;
+
+    const updateComposerContainerHeight = () => {
+      setComposerContainerHeight(composerContainer.offsetHeight);
+    };
+
+    updateComposerContainerHeight();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateComposerContainerHeight();
+    });
+    resizeObserver.observe(composerContainer);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [
+    composerContainerRef,
+    composerContextualOffset,
+    isMessageInputMultiline,
+    messageInputHeight,
+    pendingComposerAttachmentsCount,
+  ]);
+
+  return {
+    composerContainerHeight,
+  };
+};

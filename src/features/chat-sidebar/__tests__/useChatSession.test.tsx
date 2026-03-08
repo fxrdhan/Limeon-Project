@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { UserDetails } from '../../../types/database';
 import { useChatSession } from '../hooks/useChatSession';
+import { resetConversationCache } from '../utils/conversation-cache';
 
 const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
   () => ({
@@ -100,6 +101,7 @@ describe('useChatSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    resetConversationCache();
     createdChannels.length = 0;
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({

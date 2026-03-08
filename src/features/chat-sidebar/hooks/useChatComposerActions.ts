@@ -15,14 +15,13 @@ import type {
   ChatSidebarPanelTargetUser,
   PendingComposerAttachment,
 } from '../types';
-import { getAttachmentFileName } from '../utils/attachment';
-import { getClipboardImagePayload } from '../utils/clipboard';
 import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
 import { getConversationScopeKey } from '../utils/conversation-scope';
 import { useActiveConversationScope } from './useActiveConversationScope';
+import { useChatMessageTransferActions } from './useChatMessageTransferActions';
 
 interface PendingSendRegistration {
   complete: () => void;
@@ -134,6 +133,10 @@ export const useChatComposerActions = ({
     registerPendingSend: tempMessageId =>
       createPendingSendRegistration(pendingSendRegistryRef, tempMessageId),
   });
+  const { handleCopyMessage, handleDownloadMessage } =
+    useChatMessageTransferActions({
+      closeMessageMenu,
+    });
 
   const reconcileMessagesFromServer = useCallback(
     async (
@@ -432,118 +435,6 @@ export const useChatComposerActions = ({
     closeMessageMenu();
     requestAnimationFrame(focusMessageComposer);
   }, [closeMessageMenu, focusMessageComposer, setEditingMessageId, setMessage]);
-
-  const handleCopyMessage = useCallback(
-    async (targetMessage: ChatMessage) => {
-      try {
-        if (targetMessage.message_type === 'image') {
-          const clipboardWithWrite = navigator.clipboard as Clipboard & {
-            write?: (items: ClipboardItem[]) => Promise<void>;
-          };
-          const writeImageToClipboard = clipboardWithWrite.write?.bind(
-            navigator.clipboard
-          );
-          const canCopyBinaryImage =
-            typeof ClipboardItem !== 'undefined' &&
-            typeof writeImageToClipboard === 'function';
-
-          if (!canCopyBinaryImage) {
-            throw new Error('Clipboard image write is not supported');
-          }
-
-          const response = await fetch(targetMessage.message);
-          if (!response.ok) {
-            throw new Error('Failed to fetch image for clipboard');
-          }
-
-          const imageBlob = await response.blob();
-          const clipboardPayload = await getClipboardImagePayload(imageBlob);
-          await writeImageToClipboard([
-            new ClipboardItem({
-              [clipboardPayload.mimeType]: clipboardPayload.blob,
-            }),
-          ]);
-
-          toast.success('Gambar berhasil disalin', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-          return;
-        }
-
-        await navigator.clipboard.writeText(targetMessage.message);
-        toast.success('Pesan berhasil disalin', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-      } catch (error) {
-        console.error('Error copying message:', error);
-        toast.error(
-          targetMessage.message_type === 'image'
-            ? 'Gagal menyalin gambar ke clipboard'
-            : 'Gagal menyalin pesan',
-          {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          }
-        );
-      } finally {
-        closeMessageMenu();
-      }
-    },
-    [closeMessageMenu]
-  );
-
-  const handleDownloadMessage = useCallback(
-    async (targetMessage: ChatMessage) => {
-      const fileUrl = targetMessage.message;
-      const fileName = getAttachmentFileName(targetMessage);
-
-      if (!fileUrl) {
-        toast.error('File tidak tersedia untuk diunduh', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-        closeMessageMenu();
-        return;
-      }
-
-      try {
-        await toast.promise(
-          (async () => {
-            const response = await fetch(fileUrl);
-            if (!response.ok) {
-              throw new Error('Failed to fetch file for download');
-            }
-
-            const fileBlob = await response.blob();
-            const objectUrl = URL.createObjectURL(fileBlob);
-            const link = document.createElement('a');
-
-            link.href = objectUrl;
-            link.download = fileName;
-            link.rel = 'noreferrer';
-            document.body.append(link);
-            link.click();
-            link.remove();
-
-            window.setTimeout(() => {
-              URL.revokeObjectURL(objectUrl);
-            }, 1500);
-          })(),
-          {
-            loading: 'Menyiapkan unduhan...',
-            success: 'Unduhan dimulai',
-            error: 'Gagal mengunduh file',
-          },
-          {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          }
-        );
-      } catch (error) {
-        console.error('Error downloading file:', error);
-      } finally {
-        closeMessageMenu();
-      }
-    },
-    [closeMessageMenu]
-  );
 
   const handleSendMessage = useCallback(async () => {
     if (editingMessageId) {

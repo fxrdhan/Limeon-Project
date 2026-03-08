@@ -16,7 +16,6 @@ import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import {
   getFreshConversationCacheEntry,
   setConversationCacheEntry,
-  type ConversationCacheEntry,
 } from '../utils/conversation-cache';
 import { useChatSessionPresence } from './useChatSessionPresence';
 import { useChatSessionReceipts } from './useChatSessionReceipts';
@@ -42,9 +41,6 @@ export const useChatSession = ({
   const [loading, setLoading] = useState(false);
   const conversationChannelRef = useRef<RealtimeChannel | null>(null);
   const globalPresenceChannelRef = useRef<RealtimeChannel | null>(null);
-  const conversationCacheRef = useRef<Map<string, ConversationCacheEntry>>(
-    new Map()
-  );
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
   const activeConversationChannelIdRef = useRef<string | null>(
@@ -185,10 +181,8 @@ export const useChatSession = ({
       })[0];
 
     const loadMessages = async () => {
-      const cachedConversation = getFreshConversationCacheEntry(
-        conversationCacheRef.current,
-        currentChannelId
-      );
+      const cachedConversation =
+        getFreshConversationCacheEntry(currentChannelId);
       const hasCachedConversation = Boolean(cachedConversation);
 
       if (cachedConversation) {
@@ -226,11 +220,7 @@ export const useChatSession = ({
           return;
         }
 
-        setConversationCacheEntry(
-          conversationCacheRef.current,
-          currentChannelId,
-          transformedMessages
-        );
+        setConversationCacheEntry(currentChannelId, transformedMessages);
 
         const undeliveredIncomingMessageIds = transformedMessages
           .filter(
@@ -399,11 +389,7 @@ export const useChatSession = ({
       messageItem => !messageItem.id.startsWith('temp_')
     );
 
-    setConversationCacheEntry(
-      conversationCacheRef.current,
-      currentChannelId,
-      persistedMessages
-    );
+    setConversationCacheEntry(currentChannelId, persistedMessages);
   }, [currentChannelId, isOpen, messages]);
 
   return {

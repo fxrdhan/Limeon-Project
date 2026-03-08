@@ -134,7 +134,7 @@ Tanggung jawab:
 - mapping display name via `mapConversationMessagesForDisplay()`
 - optimistic-message reconciliation terhadap message `temp_*`
 - subscription realtime conversation channel `chat_<channelId>`
-- write-through cache percakapan di ref lokal hook
+- write-through cache percakapan di shared feature cache
 - expose callback:
   - `broadcastNewMessage`
   - `broadcastUpdatedMessage`
@@ -142,11 +142,11 @@ Tanggung jawab:
   - `markMessageIdsAsRead`
   - `performClose`
 
-Cache percakapan disimpan di:
+Cache percakapan disimpan di shared module cache:
 
-- `conversationCacheRef: Map<string, ConversationCacheEntry>`
+- `sharedConversationCache: Map<string, ConversationCacheEntry>`
 
-Cache ini hidup selama instance hook masih mounted.
+Cache ini hidup lintas mount panel, tetap dibatasi TTL dan max entries.
 
 ### 5.3 `useChatSessionPresence`
 
@@ -226,8 +226,8 @@ Tanggung jawab:
 
 - edit text message
 - delete thread message + caption
-- copy message/image
-- download file
+- copy message/image via hook transfer terpisah
+- download file via hook transfer terpisah
 - delegasi send ke `useChatComposerSend`
 
 Delete path untuk persisted message:
@@ -280,6 +280,8 @@ Tanggung jawab:
 - ukur tinggi composer container
 - mark visible unread message sebagai read
 - compose:
+  - `useComposerContainerHeight`
+  - `useChatViewportReadReceipts`
   - `useChatViewportMenu`
   - `useChatViewportFocus`
 
@@ -706,7 +708,7 @@ Area yang sudah dicakup:
 - Implementasi saat ini tidak memakai React Query untuk data chat sidebar;
   realtime session, optimistic send, dan receipt/presence sync tetap
   diorkestrasi langsung di feature hooks.
-- Conversation cache chat sidebar tidak global; cache hidup per instance `useChatSession`.
+- Conversation cache chat sidebar sekarang shared di level feature module, bukan lagi ref lokal per instance `useChatSession`.
 - Delivery receipt incoming sekarang hidup di level layout aplikasi, tidak bergantung pada panel chat open.
 - Fallback PDF storage sekarang lewat data access layer, bukan import Supabase langsung dari util feature.
 - `ChatSidebar` wrapper memakai width responsif berdasarkan viewport, dengan target desktop `420px`.

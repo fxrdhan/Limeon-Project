@@ -9,9 +9,11 @@ export type ConversationCacheEntry = {
   cachedAt: number;
 };
 
+const sharedConversationCache = new Map<string, ConversationCacheEntry>();
+
 export const getFreshConversationCacheEntry = (
-  cache: Map<string, ConversationCacheEntry>,
-  channelId: string
+  channelId: string,
+  cache: Map<string, ConversationCacheEntry> = sharedConversationCache
 ) => {
   const cachedEntry = cache.get(channelId);
   if (!cachedEntry) return null;
@@ -25,9 +27,9 @@ export const getFreshConversationCacheEntry = (
 };
 
 export const setConversationCacheEntry = (
-  cache: Map<string, ConversationCacheEntry>,
   channelId: string,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  cache: Map<string, ConversationCacheEntry> = sharedConversationCache
 ) => {
   cache.set(channelId, {
     messages: messages.map(messageItem => ({ ...messageItem })),
@@ -42,4 +44,10 @@ export const setConversationCacheEntry = (
     currentEntry[1].cachedAt < oldest[1].cachedAt ? currentEntry : oldest
   );
   cache.delete(oldestEntry[0]);
+};
+
+export const resetConversationCache = (
+  cache: Map<string, ConversationCacheEntry> = sharedConversationCache
+) => {
+  cache.clear();
 };
