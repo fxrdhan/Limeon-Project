@@ -82,8 +82,7 @@ Store ini bukan bagian internal chat sidebar, tetapi dipakai `Navbar` untuk:
 
 - jumlah user online
 - list user online
-- list semua user untuk portal
-- image URL portal
+- channel subscription roster presence
 
 ## 4) Feature Composition Root
 
@@ -580,11 +579,11 @@ Foreign key:
 
 ### App-level presence
 
-Channel:
+Runtime:
 
-- `browser-active`
-
-Dipakai oleh `usePresence()` untuk track user browser presence global aplikasi.
+- `usePresence()` menulis heartbeat ke `public.user_presence`
+- `usePresence()` subscribe channel `user_presence_roster_changes`
+  untuk refresh roster online di navbar
 
 ### Chat sidebar channels
 

@@ -37,14 +37,8 @@ const getPresenceTimestamp = (presence: UserPresence) =>
 
 export const usePresence = () => {
   const { user, session } = useAuthStore();
-  const {
-    onlineUsersList,
-    setChannel,
-    setOnlineUsers,
-    setOnlineUsersList,
-    setAllUsersList,
-    setPortalImageUrls,
-  } = usePresenceStore();
+  const { onlineUsersList, setChannel, setOnlineUsers, setOnlineUsersList } =
+    usePresenceStore();
   const rosterChannelRef = useRef<RealtimeChannel | null>(null);
   const onlineUsersListRef = useRef(onlineUsersList);
   const sessionTokenRef = useRef<string | null>(session?.access_token ?? null);
@@ -364,16 +358,12 @@ export const usePresence = () => {
     setChannel(null);
     setOnlineUsers(0);
     setOnlineUsersList([]);
-    setAllUsersList([]);
-    setPortalImageUrls({});
   }, [
     cleanupRosterChannel,
     markRecoverySuccess,
-    setAllUsersList,
     setChannel,
     setOnlineUsers,
     setOnlineUsersList,
-    setPortalImageUrls,
   ]);
 
   useEffect(() => {

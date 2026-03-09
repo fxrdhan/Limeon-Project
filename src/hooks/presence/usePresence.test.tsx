@@ -87,8 +87,6 @@ describe('usePresence', () => {
       channel: null,
       onlineUsers: 0,
       onlineUsersList: [],
-      allUsersList: [],
-      portalImageUrls: {},
     });
 
     mockAuthState.user = {
