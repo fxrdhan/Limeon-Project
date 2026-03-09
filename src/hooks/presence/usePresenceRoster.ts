@@ -2,72 +2,105 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import { usersService } from '@/services/api/users.service';
+import type { OnlineUser } from '@/types';
 import { mergePresenceUsers, moveCurrentUserToEdge } from './roster';
+
+const DIRECTORY_PAGE_SIZE = 30;
+const DIRECTORY_CACHE_MAX_AGE_MS = 60_000;
+
+const EMPTY_USERS: OnlineUser[] = [];
+
+const mergeDirectoryUsers = (
+  previousUsers: OnlineUser[],
+  nextUsers: OnlineUser[]
+) => {
+  const mergedUsersById = new Map(previousUsers.map(user => [user.id, user]));
+  nextUsers.forEach(user => {
+    mergedUsersById.set(user.id, user);
+  });
+
+  return [...mergedUsersById.values()];
+};
 
 export const usePresenceRoster = (shouldLoadDirectory = false) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
-  const [directoryUsers, setDirectoryUsers] = useState(onlineUsersList);
+  const [directoryUsers, setDirectoryUsers] = useState(EMPTY_USERS);
   const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
   const [directoryError, setDirectoryError] = useState<string | null>(null);
-  const [directoryReloadTick, setDirectoryReloadTick] = useState(0);
-  const hasLoadedDirectoryRef = useRef(false);
+  const [hasMoreDirectoryUsers, setHasMoreDirectoryUsers] = useState(true);
+  const lastDirectoryLoadedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!user?.id) {
-      hasLoadedDirectoryRef.current = false;
-      setDirectoryUsers([]);
+      lastDirectoryLoadedAtRef.current = null;
+      setDirectoryUsers(EMPTY_USERS);
       setDirectoryError(null);
       setIsDirectoryLoading(false);
+      setHasMoreDirectoryUsers(true);
     }
   }, [user?.id]);
 
-  useEffect(() => {
-    if (
-      !shouldLoadDirectory ||
-      !user?.id ||
-      isDirectoryLoading ||
-      hasLoadedDirectoryRef.current
-    ) {
-      return;
-    }
+  const loadDirectoryPage = useCallback(
+    async (reset = false) => {
+      if (!user?.id || isDirectoryLoading) {
+        return;
+      }
 
-    let isActive = true;
-    setIsDirectoryLoading(true);
-    setDirectoryError(null);
+      if (!reset && !hasMoreDirectoryUsers) {
+        return;
+      }
 
-    const loadDirectory = async () => {
+      setIsDirectoryLoading(true);
+      setDirectoryError(null);
       try {
-        const { data, error } = await usersService.getAllUsers();
-        if (!isActive) {
-          return;
-        }
+        const { data, error } = await usersService.getUsersPage(
+          DIRECTORY_PAGE_SIZE,
+          reset ? 0 : directoryUsers.length
+        );
 
         if (error || !data) {
           setDirectoryError('Gagal memuat daftar pengguna');
           return;
         }
 
-        hasLoadedDirectoryRef.current = true;
-        setDirectoryUsers(data);
+        lastDirectoryLoadedAtRef.current = Date.now();
+        setDirectoryError(null);
+        setHasMoreDirectoryUsers(data.hasMore);
+        setDirectoryUsers(previousUsers =>
+          reset ? data.users : mergeDirectoryUsers(previousUsers, data.users)
+        );
       } catch (error) {
         console.error('Error loading chat user directory:', error);
-        if (isActive) {
-          setDirectoryError('Gagal memuat daftar pengguna');
-        }
+        setDirectoryError('Gagal memuat daftar pengguna');
       } finally {
-        if (isActive) {
-          setIsDirectoryLoading(false);
-        }
+        setIsDirectoryLoading(false);
       }
-    };
+    },
+    [directoryUsers.length, hasMoreDirectoryUsers, isDirectoryLoading, user?.id]
+  );
 
-    void loadDirectory();
+  useEffect(() => {
+    if (!shouldLoadDirectory || !user?.id || isDirectoryLoading) {
+      return;
+    }
 
-    return () => {
-      isActive = false;
-    };
-  }, [directoryReloadTick, isDirectoryLoading, shouldLoadDirectory, user?.id]);
+    const isDirectoryStale =
+      lastDirectoryLoadedAtRef.current === null ||
+      Date.now() - lastDirectoryLoadedAtRef.current >
+        DIRECTORY_CACHE_MAX_AGE_MS;
+    if (!isDirectoryStale && directoryUsers.length > 0) {
+      return;
+    }
+
+    void loadDirectoryPage(true);
+  }, [
+    directoryUsers.length,
+    isDirectoryLoading,
+    loadDirectoryPage,
+    shouldLoadDirectory,
+    user?.id,
+  ]);
 
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
 
@@ -100,10 +133,15 @@ export const usePresenceRoster = (shouldLoadDirectory = false) => {
   );
 
   const retryLoadDirectory = useCallback(() => {
-    hasLoadedDirectoryRef.current = false;
+    lastDirectoryLoadedAtRef.current = null;
     setDirectoryError(null);
-    setDirectoryReloadTick(previousTick => previousTick + 1);
+    setHasMoreDirectoryUsers(true);
+    setDirectoryUsers(EMPTY_USERS);
   }, []);
+
+  const loadMoreDirectoryUsers = useCallback(() => {
+    void loadDirectoryPage(false);
+  }, [loadDirectoryPage]);
 
   return {
     displayOnlineUsers,
@@ -113,6 +151,8 @@ export const usePresenceRoster = (shouldLoadDirectory = false) => {
     portalOrderedUsers,
     isDirectoryLoading,
     directoryError,
+    hasMoreDirectoryUsers,
     retryLoadDirectory,
+    loadMoreDirectoryUsers,
   };
 };

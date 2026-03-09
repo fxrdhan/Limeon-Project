@@ -3,6 +3,11 @@ import type { OnlineUser } from '@/types';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
 
+export interface UserDirectoryPage {
+  users: OnlineUser[];
+  hasMore: boolean;
+}
+
 export class UsersService {
   async getUsersByIds(
     userIds: string[]
@@ -35,23 +40,35 @@ export class UsersService {
     }
   }
 
-  async getAllUsers(): Promise<ServiceResponse<OnlineUser[]>> {
+  async getUsersPage(
+    limit = 30,
+    offset = 0
+  ): Promise<ServiceResponse<UserDirectoryPage>> {
+    const pageSize = Math.max(1, limit);
+
     try {
       const { data, error } = await supabase
         .from('users')
         .select('id, name, email, profilephoto')
-        .order('name', { ascending: true });
+        .order('name', { ascending: true })
+        .range(offset, offset + pageSize);
 
       if (error) {
         return { data: null, error };
       }
 
-      const users: OnlineUser[] = (data || []).map(user => ({
+      const users: OnlineUser[] = (data || []).slice(0, pageSize).map(user => ({
         ...user,
         online_at: new Date().toISOString(),
       }));
 
-      return { data: users, error: null };
+      return {
+        data: {
+          users,
+          hasMore: (data?.length ?? 0) > pageSize,
+        },
+        error: null,
+      };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }

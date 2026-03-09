@@ -23,7 +23,9 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     portalOrderedUsers,
     isDirectoryLoading,
     directoryError,
+    hasMoreDirectoryUsers,
     retryLoadDirectory,
+    loadMoreDirectoryUsers,
   } = usePresenceRoster(showPortal);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -383,6 +385,18 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                           </div>
                         );
                       })}
+                      {hasMoreDirectoryUsers && !directoryError ? (
+                        <button
+                          type="button"
+                          onClick={loadMoreDirectoryUsers}
+                          disabled={isDirectoryLoading}
+                          className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
+                        >
+                          {isDirectoryLoading
+                            ? 'Memuat pengguna...'
+                            : 'Muat lebih banyak'}
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 </div>
