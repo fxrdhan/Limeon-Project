@@ -147,9 +147,6 @@ describe('useChatComposerSend', () => {
       error: null,
     });
 
-    const broadcastNewMessage = vi.fn();
-    const broadcastUpdatedMessage = vi.fn();
-    const broadcastDeletedMessage = vi.fn();
     const clearPendingComposerAttachments = vi.fn();
     const restorePendingComposerAttachments = vi.fn();
     const { registerPendingSend } = createPendingSendRegistry();
@@ -177,9 +174,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage,
-        broadcastUpdatedMessage,
-        broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -208,9 +202,6 @@ describe('useChatComposerSend', () => {
       expect(result.current.draftMessage).toBe('stok opname');
     });
 
-    expect(broadcastNewMessage).not.toHaveBeenCalled();
-    expect(broadcastUpdatedMessage).not.toHaveBeenCalled();
-    expect(broadcastDeletedMessage).toHaveBeenCalledWith('server-file-1');
     expect(clearPendingComposerAttachments).toHaveBeenCalledOnce();
     expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
       2,
@@ -263,9 +254,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -319,9 +307,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -371,9 +356,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -424,8 +406,6 @@ describe('useChatComposerSend', () => {
         error: null,
       });
 
-    const broadcastNewMessage = vi.fn();
-    const broadcastUpdatedMessage = vi.fn();
     const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
@@ -451,9 +431,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage,
-        broadcastUpdatedMessage,
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -478,18 +455,6 @@ describe('useChatComposerSend', () => {
         'Gagal menyimpan preview PDF'
       );
     });
-
-    expect(broadcastNewMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'server-file-2',
-      })
-    );
-    expect(broadcastUpdatedMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'server-file-2',
-        file_preview_status: 'failed',
-      })
-    );
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {
@@ -508,8 +473,6 @@ describe('useChatComposerSend', () => {
       error: null,
     });
 
-    const broadcastNewMessage = vi.fn();
-    const broadcastDeletedMessage = vi.fn();
     const { pendingEntries, registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
@@ -535,9 +498,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage,
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -582,8 +542,6 @@ describe('useChatComposerSend', () => {
     expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
       'server-text-1'
     );
-    expect(broadcastDeletedMessage).toHaveBeenCalledWith('server-text-1');
-    expect(broadcastNewMessage).not.toHaveBeenCalled();
     expect(result.current.draftMessage).toBe('');
   });
 
@@ -613,8 +571,6 @@ describe('useChatComposerSend', () => {
       error: null,
     });
 
-    const broadcastNewMessage = vi.fn();
-    const broadcastDeletedMessage = vi.fn();
     const { pendingEntries, registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
@@ -640,9 +596,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage,
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -694,8 +647,6 @@ describe('useChatComposerSend', () => {
       ]);
     });
 
-    expect(broadcastNewMessage).not.toHaveBeenCalled();
-    expect(broadcastDeletedMessage).not.toHaveBeenCalled();
     expect(result.current.draftMessage).toBe('');
   });
 
@@ -769,9 +720,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -913,9 +861,6 @@ describe('useChatComposerSend', () => {
           setMessages,
           scheduleScrollMessagesToBottom: vi.fn(),
           triggerSendSuccessGlow: vi.fn(),
-          broadcastNewMessage: vi.fn(),
-          broadcastUpdatedMessage: vi.fn(),
-          broadcastDeletedMessage: vi.fn(),
           pendingImagePreviewUrlsRef,
           registerPendingSend,
         });
@@ -989,9 +934,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });
@@ -1051,9 +993,6 @@ describe('useChatComposerSend', () => {
         setMessages,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
         registerPendingSend,
       });

@@ -23,7 +23,6 @@ interface UseChatMessageUpdateActionProps {
   setEditingMessageId: Dispatch<SetStateAction<string | null>>;
   closeMessageMenu: () => void;
   focusMessageComposer: () => void;
-  broadcastUpdatedMessage: (message: ChatMessage) => void;
   isCurrentConversationScopeActive: () => boolean;
   runInCurrentConversationScope: (effect: () => void) => boolean;
 }
@@ -40,7 +39,6 @@ export const useChatMessageUpdateAction = ({
   setEditingMessageId,
   closeMessageMenu,
   focusMessageComposer,
-  broadcastUpdatedMessage,
   isCurrentConversationScopeActive,
   runInCurrentConversationScope,
 }: UseChatMessageUpdateActionProps) => {
@@ -153,14 +151,11 @@ export const useChatMessageUpdateAction = ({
         )
       );
       pendingEditComposerRestoreRef.current = false;
-
-      broadcastUpdatedMessage(mappedMessage);
     } catch (error) {
       console.error('Error updating message:', error);
       restoreFailedEdit();
     }
   }, [
-    broadcastUpdatedMessage,
     closeMessageMenu,
     currentChannelId,
     editingMessageId,

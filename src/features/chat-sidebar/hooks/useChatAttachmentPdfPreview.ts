@@ -17,7 +17,6 @@ interface UseChatAttachmentPdfPreviewProps {
   } | null;
   targetUser?: ChatSidebarPanelTargetUser;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-  broadcastUpdatedMessage: (message: ChatMessage) => void;
   isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
   deleteUploadedStorageFilesOrThrow: (
     storagePaths: Array<string | null | undefined>
@@ -28,7 +27,6 @@ export const useChatAttachmentPdfPreview = ({
   user,
   targetUser,
   setMessages,
-  broadcastUpdatedMessage,
   isConversationScopeActive,
   deleteUploadedStorageFilesOrThrow,
 }: UseChatAttachmentPdfPreviewProps) => {
@@ -45,9 +43,8 @@ export const useChatAttachmentPdfPreview = ({
             : messageItem
         )
       );
-      broadcastUpdatedMessage(payload);
     },
-    [broadcastUpdatedMessage, isConversationScopeActive, setMessages]
+    [isConversationScopeActive, setMessages]
   );
 
   const cleanupPreviewStorageFiles = useCallback(

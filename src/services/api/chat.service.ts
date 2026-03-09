@@ -95,6 +95,27 @@ const buildUserPresenceRestUrl = (userId: string) => {
 };
 
 export const chatService = {
+  async getMessageById(id: string): Promise<ServiceResponse<ChatMessage>> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return {
+        data: data ? (data as ChatMessage) : null,
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async fetchMessagesBetweenUsers(
     userId: string,
     targetUserId: string,

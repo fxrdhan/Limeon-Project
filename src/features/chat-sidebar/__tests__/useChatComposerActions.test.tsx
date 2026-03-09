@@ -141,9 +141,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
       });
 
@@ -227,9 +224,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer,
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
       });
 
@@ -381,9 +375,6 @@ describe('useChatComposerActions', () => {
           focusMessageComposer,
           scheduleScrollMessagesToBottom: vi.fn(),
           triggerSendSuccessGlow: vi.fn(),
-          broadcastNewMessage: vi.fn(),
-          broadcastUpdatedMessage: vi.fn(),
-          broadcastDeletedMessage: vi.fn(),
           pendingImagePreviewUrlsRef,
         });
 
@@ -450,8 +441,6 @@ describe('useChatComposerActions', () => {
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
-    const broadcastDeletedMessage = vi.fn();
-
     mockChatService.deleteMessageThread.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
@@ -494,9 +483,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer: vi.fn(),
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
       });
 
@@ -520,7 +506,6 @@ describe('useChatComposerActions', () => {
 
     expect(deleteResult).toBe(false);
     expect(mockChatService.deleteMessageThread).toHaveBeenCalledWith('file-1');
-    expect(broadcastDeletedMessage).not.toHaveBeenCalled();
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
       'user-a',
       'user-b',
@@ -613,9 +598,6 @@ describe('useChatComposerActions', () => {
           focusMessageComposer: vi.fn(),
           scheduleScrollMessagesToBottom: vi.fn(),
           triggerSendSuccessGlow: vi.fn(),
-          broadcastNewMessage: vi.fn(),
-          broadcastUpdatedMessage: vi.fn(),
-          broadcastDeletedMessage: vi.fn(),
           pendingImagePreviewUrlsRef,
         });
 
@@ -681,7 +663,7 @@ describe('useChatComposerActions', () => {
     );
   });
 
-  it('broadcasts every deleted id returned by the atomic delete thread rpc', async () => {
+  it('deletes the full persisted attachment thread returned by the atomic delete rpc', async () => {
     const attachmentMessage = buildMessage({
       id: 'file-atomic',
       message:
@@ -703,8 +685,6 @@ describe('useChatComposerActions', () => {
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
-    const broadcastDeletedMessage = vi.fn();
-
     mockChatService.deleteMessageThread.mockResolvedValue({
       data: ['caption-atomic', 'file-atomic'],
       error: null,
@@ -743,9 +723,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer: vi.fn(),
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage,
         pendingImagePreviewUrlsRef,
       });
     });
@@ -757,8 +734,6 @@ describe('useChatComposerActions', () => {
     expect(mockChatService.deleteMessageThread).toHaveBeenCalledWith(
       'file-atomic'
     );
-    expect(broadcastDeletedMessage).toHaveBeenCalledWith('caption-atomic');
-    expect(broadcastDeletedMessage).toHaveBeenCalledWith('file-atomic');
     expect(mockStorageService.deleteFile).toHaveBeenCalledWith(
       'chat',
       'documents/channel/report-atomic.pdf'
@@ -821,9 +796,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer: vi.fn(),
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
       });
     });
@@ -898,9 +870,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer: vi.fn(),
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
       });
     });
@@ -964,9 +933,6 @@ describe('useChatComposerActions', () => {
         focusMessageComposer: vi.fn(),
         scheduleScrollMessagesToBottom: vi.fn(),
         triggerSendSuccessGlow: vi.fn(),
-        broadcastNewMessage: vi.fn(),
-        broadcastUpdatedMessage: vi.fn(),
-        broadcastDeletedMessage: vi.fn(),
         pendingImagePreviewUrlsRef,
       });
     });

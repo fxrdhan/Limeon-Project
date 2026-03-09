@@ -12,7 +12,6 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
-import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { useChatMutationScope } from './useChatMutationScope';
 import { createRuntimeId, createStableKey } from '../utils/runtime-id';
@@ -37,9 +36,6 @@ interface UseChatComposerSendProps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   scheduleScrollMessagesToBottom: () => void;
   triggerSendSuccessGlow: () => void;
-  broadcastNewMessage: (message: ChatMessage) => void;
-  broadcastUpdatedMessage: (message: ChatMessage) => void;
-  broadcastDeletedMessage: (messageId: string) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
 }
@@ -58,9 +54,6 @@ export const useChatComposerSend = ({
   setMessages,
   scheduleScrollMessagesToBottom,
   triggerSendSuccessGlow,
-  broadcastNewMessage,
-  broadcastUpdatedMessage,
-  broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
   registerPendingSend,
 }: UseChatComposerSendProps) => {
@@ -83,11 +76,7 @@ export const useChatComposerSend = ({
     rollbackPersistedAttachmentThread,
     releasePendingPreviewUrl,
   } = useChatAttachmentCleanup({
-    user,
-    targetUser,
-    currentChannelId,
     setMessages,
-    broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
     isConversationScopeActive,
   });
@@ -100,8 +89,6 @@ export const useChatComposerSend = ({
     setMessages,
     scheduleScrollMessagesToBottom,
     triggerSendSuccessGlow,
-    broadcastNewMessage,
-    broadcastUpdatedMessage,
     pendingImagePreviewUrlsRef,
     registerPendingSend,
     conversationScopeKey,
@@ -187,16 +174,8 @@ export const useChatComposerSend = ({
         };
 
         if (pendingSend.isCancelled()) {
-          const { data: deletedMessageIds, error: deleteError } =
+          const { error: deleteError } =
             await chatSidebarGateway.deleteMessageThread(realMessage.id);
-
-          if (!deleteError && isCurrentConversationScopeActive()) {
-            getPersistedDeletedThreadMessageIds(deletedMessageIds, [
-              realMessage.id,
-            ]).forEach(deletedMessageId => {
-              broadcastDeletedMessage(deletedMessageId);
-            });
-          }
 
           if (deleteError) {
             console.error(
@@ -212,8 +191,6 @@ export const useChatComposerSend = ({
           setMessages(previousMessages =>
             commitOptimisticMessage(previousMessages, tempId, realMessage)
           );
-
-          broadcastNewMessage(realMessage);
         });
 
         return true;
@@ -236,8 +213,6 @@ export const useChatComposerSend = ({
       }
     },
     [
-      broadcastNewMessage,
-      broadcastDeletedMessage,
       currentChannelId,
       isCurrentConversationScopeActive,
       reconcileCurrentConversationMessages,

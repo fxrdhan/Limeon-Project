@@ -7,7 +7,6 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import { getPersistedDeletedThreadMessageIds } from '../utils/message-thread';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import { resolveChatMessageStoragePaths } from '../utils/message-file';
@@ -26,7 +25,6 @@ interface UseChatMessageDeleteActionProps {
   setEditingMessageId: Dispatch<SetStateAction<string | null>>;
   setMessage: Dispatch<SetStateAction<string>>;
   closeMessageMenu: () => void;
-  broadcastDeletedMessage: (messageId: string) => void;
   pendingSendRegistryRef: MutableRefObject<Map<string, { cancelled: boolean }>>;
   deleteUploadedStorageFiles: (
     storagePaths: Array<string | null | undefined>
@@ -35,7 +33,6 @@ interface UseChatMessageDeleteActionProps {
     fallbackMessages?: ChatMessage[];
   }) => Promise<void>;
   isCurrentConversationScopeActive: () => boolean;
-  runInCurrentConversationScope: (effect: () => void) => boolean;
 }
 
 export const useChatMessageDeleteAction = ({
@@ -48,12 +45,10 @@ export const useChatMessageDeleteAction = ({
   setEditingMessageId,
   setMessage,
   closeMessageMenu,
-  broadcastDeletedMessage,
   pendingSendRegistryRef,
   deleteUploadedStorageFiles,
   reconcileCurrentConversationMessages,
   isCurrentConversationScopeActive,
-  runInCurrentConversationScope,
 }: UseChatMessageDeleteActionProps) => {
   const handleDeleteMessage = useCallback(
     async (
@@ -105,23 +100,13 @@ export const useChatMessageDeleteAction = ({
       }
 
       try {
-        const { data: deletedMessageIds, error } =
-          await chatSidebarGateway.deleteMessageThread(targetMessage.id);
+        const { error } = await chatSidebarGateway.deleteMessageThread(
+          targetMessage.id
+        );
         if (error) {
           console.error('Error deleting message thread:', error);
           throw error;
         }
-
-        const broadcastTargetIds = getPersistedDeletedThreadMessageIds(
-          deletedMessageIds,
-          messageIdsToDelete
-        );
-
-        runInCurrentConversationScope(() => {
-          broadcastTargetIds.forEach(deletedMessageId => {
-            broadcastDeletedMessage(deletedMessageId);
-          });
-        });
 
         if (storagePathsToDelete.length > 0) {
           const failedStoragePaths =
@@ -160,7 +145,6 @@ export const useChatMessageDeleteAction = ({
       }
     },
     [
-      broadcastDeletedMessage,
       closeMessageMenu,
       currentChannelId,
       deleteUploadedStorageFiles,
@@ -169,7 +153,6 @@ export const useChatMessageDeleteAction = ({
       messages,
       pendingSendRegistryRef,
       reconcileCurrentConversationMessages,
-      runInCurrentConversationScope,
       setEditingMessageId,
       setMessage,
       setMessages,

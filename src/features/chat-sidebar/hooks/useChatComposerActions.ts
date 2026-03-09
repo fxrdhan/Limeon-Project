@@ -45,9 +45,6 @@ interface UseChatComposerActionsProps {
   focusMessageComposer: () => void;
   scheduleScrollMessagesToBottom: () => void;
   triggerSendSuccessGlow: () => void;
-  broadcastNewMessage: (message: ChatMessage) => void;
-  broadcastUpdatedMessage: (message: ChatMessage) => void;
-  broadcastDeletedMessage: (messageId: string) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
 }
 
@@ -86,9 +83,6 @@ export const useChatComposerActions = ({
   focusMessageComposer,
   scheduleScrollMessagesToBottom,
   triggerSendSuccessGlow,
-  broadcastNewMessage,
-  broadcastUpdatedMessage,
-  broadcastDeletedMessage,
   pendingImagePreviewUrlsRef,
 }: UseChatComposerActionsProps) => {
   const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
@@ -108,11 +102,7 @@ export const useChatComposerActions = ({
     setMessages,
   });
   const { deleteUploadedStorageFiles } = useChatAttachmentCleanup({
-    user,
-    targetUser,
-    currentChannelId,
     setMessages,
-    broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
     isConversationScopeActive,
   });
@@ -131,9 +121,6 @@ export const useChatComposerActions = ({
     setMessages,
     scheduleScrollMessagesToBottom,
     triggerSendSuccessGlow,
-    broadcastNewMessage,
-    broadcastUpdatedMessage,
-    broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
     registerPendingSend: tempMessageId =>
       createPendingSendRegistration(pendingSendRegistryRef, tempMessageId),
@@ -155,7 +142,6 @@ export const useChatComposerActions = ({
     setEditingMessageId,
     closeMessageMenu,
     focusMessageComposer,
-    broadcastUpdatedMessage,
     isCurrentConversationScopeActive,
     runInCurrentConversationScope,
   });
@@ -170,12 +156,10 @@ export const useChatComposerActions = ({
     setEditingMessageId,
     setMessage,
     closeMessageMenu,
-    broadcastDeletedMessage,
     pendingSendRegistryRef,
     deleteUploadedStorageFiles,
     reconcileCurrentConversationMessages,
     isCurrentConversationScopeActive,
-    runInCurrentConversationScope,
   });
 
   const handleEditMessage = useCallback(

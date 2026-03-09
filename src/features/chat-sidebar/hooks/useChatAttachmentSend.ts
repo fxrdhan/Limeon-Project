@@ -40,8 +40,6 @@ interface UseChatAttachmentSendProps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   scheduleScrollMessagesToBottom: () => void;
   triggerSendSuccessGlow: () => void;
-  broadcastNewMessage: (message: ChatMessage) => void;
-  broadcastUpdatedMessage: (message: ChatMessage) => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
   conversationScopeKey: string | null;
@@ -105,8 +103,6 @@ export const useChatAttachmentSend = ({
   setMessages,
   scheduleScrollMessagesToBottom,
   triggerSendSuccessGlow,
-  broadcastNewMessage,
-  broadcastUpdatedMessage,
   pendingImagePreviewUrlsRef,
   registerPendingSend,
   conversationScopeKey,
@@ -122,7 +118,6 @@ export const useChatAttachmentSend = ({
     user,
     targetUser,
     setMessages,
-    broadcastUpdatedMessage,
     isConversationScopeActive,
     deleteUploadedStorageFilesOrThrow,
   });
@@ -346,9 +341,6 @@ export const useChatAttachmentSend = ({
                   mappedCaptionMessage,
                 })
               );
-
-              broadcastNewMessage(realMessage);
-              broadcastNewMessage(mappedCaptionMessage);
             });
           } else {
             if (
@@ -393,8 +385,6 @@ export const useChatAttachmentSend = ({
                 mappedCaptionMessage: null,
               })
             );
-
-            broadcastNewMessage(realMessage);
           });
         }
 
@@ -437,7 +427,6 @@ export const useChatAttachmentSend = ({
       }
     },
     [
-      broadcastNewMessage,
       conversationScopeKey,
       cleanupUncommittedStorageFiles,
       currentChannelId,

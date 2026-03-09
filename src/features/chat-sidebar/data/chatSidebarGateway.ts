@@ -14,6 +14,9 @@ import type {
 } from '@supabase/supabase-js';
 
 export const chatSidebarGateway = {
+  getMessageById(id: string) {
+    return chatService.getMessageById(id);
+  },
   fetchConversationMessages(
     userId: string,
     targetUserId: string,

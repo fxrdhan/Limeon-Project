@@ -31,9 +31,6 @@ interface UseChatComposerProps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   closeMessageMenu: () => void;
   scheduleScrollMessagesToBottom: () => void;
-  broadcastNewMessage: (message: ChatMessage) => void;
-  broadcastUpdatedMessage: (message: ChatMessage) => void;
-  broadcastDeletedMessage: (messageId: string) => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
   focusMessageComposer: () => void;
 }
@@ -47,9 +44,6 @@ export const useChatComposer = ({
   setMessages,
   closeMessageMenu,
   scheduleScrollMessagesToBottom,
-  broadcastNewMessage,
-  broadcastUpdatedMessage,
-  broadcastDeletedMessage,
   messageInputRef,
   focusMessageComposer,
 }: UseChatComposerProps) => {
@@ -257,9 +251,6 @@ export const useChatComposer = ({
     focusMessageComposer,
     scheduleScrollMessagesToBottom,
     triggerSendSuccessGlow,
-    broadcastNewMessage,
-    broadcastUpdatedMessage,
-    broadcastDeletedMessage,
     pendingImagePreviewUrlsRef,
   });
 

@@ -116,15 +116,6 @@ export const useChatSession = ({
     markRecoverySuccess: markConversationRecoverySuccess,
   } = useRealtimeChannelRecovery();
 
-  const broadcastNewMessage = useCallback((_message: ChatMessage) => {}, []);
-
-  const broadcastUpdatedMessage = useCallback(
-    (_message: ChatMessage) => {},
-    []
-  );
-
-  const broadcastDeletedMessage = useCallback((_messageId: string) => {}, []);
-
   const isSessionTokenActive = useCallback(
     (sessionToken: number) => activeSessionTokenRef.current === sessionToken,
     []
@@ -622,10 +613,6 @@ export const useChatSession = ({
     retryLoadMessages,
     targetUserPresence,
     targetUserPresenceError,
-    broadcastNewMessage,
-    broadcastUpdatedMessage,
-    broadcastDeletedMessage,
     markMessageIdsAsRead,
-    hasCompletedInitialOpenLoadRef,
   };
 };
