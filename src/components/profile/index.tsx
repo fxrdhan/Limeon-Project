@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
+  releaseCachedImageBlob,
   setCachedImage,
 } from '@/utils/imageCache';
 import { motion, AnimatePresence } from 'motion/react';
@@ -97,6 +98,9 @@ const Profile = () => {
 
     return () => {
       isActive = false;
+      if (profilePhotoUrl?.startsWith('http')) {
+        releaseCachedImageBlob(profilePhotoUrl);
+      }
     };
   }, [profilePhotoUrl]);
 

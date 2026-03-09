@@ -6,6 +6,7 @@ import { getInitials, getInitialsColor } from '@/utils/avatar';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
+  releaseCachedImageBlob,
   setCachedImage,
 } from '@/utils/imageCache';
 
@@ -87,6 +88,9 @@ const Avatar = memo(
 
       return () => {
         isActive = false;
+        if (profilePhotoUrl?.startsWith('http')) {
+          releaseCachedImageBlob(profilePhotoUrl);
+        }
       };
     }, [profilePhotoUrl]);
 

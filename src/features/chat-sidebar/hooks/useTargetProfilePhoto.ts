@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
+  releaseCachedImageBlob,
   setCachedImage,
 } from '@/utils/imageCache';
 
@@ -52,6 +53,9 @@ export const useTargetProfilePhoto = (targetUser?: {
 
     return () => {
       isActive = false;
+      if (targetProfilePhotoUrl?.startsWith('http')) {
+        releaseCachedImageBlob(targetProfilePhotoUrl);
+      }
     };
   }, [targetProfilePhotoUrl]);
 
