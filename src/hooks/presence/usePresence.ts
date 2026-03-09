@@ -7,8 +7,8 @@ import { usersService } from '@/services/api/users.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type { OnlineUser } from '@/types';
 
-const ONLINE_PRESENCE_MAX_AGE_MS = 90_000;
-const PRESENCE_HEARTBEAT_MS = 30_000;
+const ONLINE_PRESENCE_MAX_AGE_MS = 45_000;
+const PRESENCE_HEARTBEAT_MS = 15_000;
 
 const areOnlineUserListsEqual = (
   previousUsers: OnlineUser[],
@@ -341,7 +341,16 @@ export const usePresence = () => {
     void setupPresenceRosterSubscription();
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'visible' || !user) {
+      if (!user) {
+        return;
+      }
+
+      if (document.visibilityState === 'hidden') {
+        handlePageExit();
+        return;
+      }
+
+      if (document.visibilityState !== 'visible') {
         return;
       }
 
@@ -381,11 +390,13 @@ export const usePresence = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handlePageExit);
     window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('unload', handlePageExit);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handlePageExit);
       window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('unload', handlePageExit);
       void cleanup();
     };
   }, [

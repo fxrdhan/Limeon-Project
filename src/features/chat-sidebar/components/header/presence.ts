@@ -1,4 +1,4 @@
-const ONLINE_PRESENCE_MAX_AGE_MS = 90_000;
+const ONLINE_PRESENCE_MAX_AGE_MS = 45_000;
 
 export const isPresenceFresh = (lastSeen?: string | null): boolean => {
   if (!lastSeen) return false;

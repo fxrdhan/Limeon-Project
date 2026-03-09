@@ -289,4 +289,60 @@ describe('usePresence', () => {
 
     unmount();
   });
+
+  it('sends an offline keepalive when the browser unloads', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    await act(async () => {
+      window.dispatchEvent(new Event('unload'));
+      await Promise.resolve();
+    });
+
+    expect(
+      mockChatService.sendUserPresenceUpdateKeepalive
+    ).toHaveBeenCalledWith(
+      'user-a',
+      expect.objectContaining({
+        is_online: false,
+      }),
+      'presence-access-token'
+    );
+
+    unmount();
+  });
+
+  it('marks the user offline when the document becomes hidden', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    expect(
+      mockChatService.sendUserPresenceUpdateKeepalive
+    ).toHaveBeenCalledWith(
+      'user-a',
+      expect.objectContaining({
+        is_online: false,
+      }),
+      'presence-access-token'
+    );
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+
+    unmount();
+  });
 });
