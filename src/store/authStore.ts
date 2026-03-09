@@ -3,6 +3,76 @@ import authService from '@/services/authService';
 import { chatService } from '@/services/api/chat.service';
 import { StorageService } from '@/services/api/storage.service';
 import type { AuthState } from '@/types';
+import type { Session } from '@supabase/supabase-js';
+
+type AuthStoreSet = (
+  partial:
+    | AuthState
+    | Partial<AuthState>
+    | ((state: AuthState) => AuthState | Partial<AuthState>)
+) => void;
+type AuthStoreGet = () => AuthState;
+
+let authStateSubscription: {
+  unsubscribe: () => void;
+} | null = null;
+
+const syncStoreFromSession = async (
+  session: Session | null,
+  set: AuthStoreSet,
+  get: AuthStoreGet
+) => {
+  if (!session?.user?.id) {
+    set({ session: null, user: null, loading: false, error: null });
+    return;
+  }
+
+  const currentUser = get().user;
+  if (currentUser?.id === session.user.id) {
+    set({
+      session,
+      user: currentUser,
+      loading: false,
+      error: null,
+    });
+    return;
+  }
+
+  try {
+    const user = await authService.fetchUserById(session.user.id);
+    set({
+      session,
+      user,
+      loading: false,
+      error: null,
+    });
+  } catch (error) {
+    console.error('Error syncing auth state:', error);
+    set({
+      session,
+      user: null,
+      loading: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to sync auth state',
+    });
+  }
+};
+
+const ensureAuthStateSubscription = (set: AuthStoreSet, get: AuthStoreGet) => {
+  if (authStateSubscription) {
+    return;
+  }
+
+  const {
+    data: { subscription },
+  } = authService.onAuthStateChange(
+    (_event: string, session: Session | null) => {
+      void syncStoreFromSession(session, set, get);
+    }
+  );
+
+  authStateSubscription = subscription;
+};
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -11,9 +81,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   initialize: async () => {
+    ensureAuthStateSubscription(set, get);
     try {
       const { session, user } = await authService.initializeAuth();
-      set({ session, user, loading: false });
+      set({ session, user, loading: false, error: null });
     } catch (error) {
       console.error('Error initializing auth:', error);
       set({ loading: false });

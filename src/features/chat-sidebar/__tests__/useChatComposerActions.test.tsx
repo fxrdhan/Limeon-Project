@@ -16,7 +16,7 @@ const {
   mockUseChatComposerSend,
 } = vi.hoisted(() => ({
   mockChatService: {
-    updateMessage: vi.fn(),
+    editTextMessage: vi.fn(),
     deleteMessageThread: vi.fn(),
     fetchMessagesBetweenUsers: vi.fn(),
   },
@@ -96,7 +96,7 @@ describe('useChatComposerActions', () => {
   });
 
   it('restores message state when editing fails', async () => {
-    mockChatService.updateMessage.mockResolvedValue({
+    mockChatService.editTextMessage.mockResolvedValue({
       data: null,
       error: new Error('update failed'),
     });
@@ -177,7 +177,7 @@ describe('useChatComposerActions', () => {
       | ((value: { data: null; error: Error }) => void)
       | undefined;
 
-    mockChatService.updateMessage.mockImplementation(
+    mockChatService.editTextMessage.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveUpdateMessage = resolve;
@@ -274,7 +274,7 @@ describe('useChatComposerActions', () => {
       | ((value: { data: null; error: Error }) => void)
       | undefined;
 
-    mockChatService.updateMessage.mockImplementation(
+    mockChatService.editTextMessage.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveUpdateMessage = resolve;

@@ -4,7 +4,8 @@ import {
   type ChatMessage,
   type ConversationMessagesPage,
   type ChatMessageInsertInput,
-  type ChatMessageUpdateInput,
+  type EditChatMessageTextInput,
+  type ChatFilePreviewUpdateInput,
   type UserPresence,
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
@@ -36,8 +37,11 @@ export const chatSidebarGateway = {
   createMessage(payload: ChatMessageInsertInput) {
     return chatService.insertMessage(payload);
   },
-  updateMessage(id: string, payload: ChatMessageUpdateInput) {
-    return chatService.updateMessage(id, payload);
+  editTextMessage(id: string, payload: EditChatMessageTextInput) {
+    return chatService.editTextMessage(id, payload);
+  },
+  updateFilePreview(id: string, payload: ChatFilePreviewUpdateInput) {
+    return chatService.updateFilePreview(id, payload);
   },
   deleteMessage(id: string) {
     return chatService.deleteMessage(id);

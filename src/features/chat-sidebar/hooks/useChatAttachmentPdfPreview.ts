@@ -90,7 +90,7 @@ export const useChatAttachmentPdfPreview = ({
 
       const applyPreviewFailedState = async (errorMessage: string) => {
         const { data: failedPreviewMessage, error: failedPreviewError } =
-          await chatSidebarGateway.updateMessage(realMessage.id, {
+          await chatSidebarGateway.updateFilePreview(realMessage.id, {
             file_preview_status: 'failed',
             file_preview_error: errorMessage,
           });
@@ -138,7 +138,7 @@ export const useChatAttachmentPdfPreview = ({
         uploadedPreviewPath = storedPreviewPath;
 
         const { data: previewReadyMessage, error: previewReadyError } =
-          await chatSidebarGateway.updateMessage(realMessage.id, {
+          await chatSidebarGateway.updateFilePreview(realMessage.id, {
             file_preview_url: storedPreviewPath,
             file_preview_page_count: generatedPreview.pageCount,
             file_preview_status: 'ready',

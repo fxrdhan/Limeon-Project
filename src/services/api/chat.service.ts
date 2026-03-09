@@ -4,7 +4,6 @@ import type { ServiceResponse } from './base.service';
 import type {
   ChatMessageInsertRow,
   ChatMessageRow,
-  ChatMessageUpdateRow,
   UserPresenceInsertRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
@@ -58,14 +57,17 @@ export type ChatMessageInsertInput = Omit<
   file_kind?: 'audio' | 'document';
 };
 
-export type ChatMessageUpdateInput = Omit<
-  ChatMessageUpdateRow,
-  'message_relation_kind' | 'message_type' | 'file_kind'
-> & {
-  message_relation_kind?: 'attachment_caption' | null;
-  message_type?: 'text' | 'image' | 'file';
-  file_kind?: 'audio' | 'document';
-};
+export interface EditChatMessageTextInput {
+  message: string;
+  updated_at?: string;
+}
+
+export interface ChatFilePreviewUpdateInput {
+  file_preview_url?: string | null;
+  file_preview_page_count?: number | null;
+  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
+  file_preview_error?: string | null;
+}
 
 export type UserPresenceUpdateInput = Omit<
   UserPresenceUpdateRow,
@@ -193,17 +195,16 @@ export const chatService = {
     }
   },
 
-  async updateMessage(
+  async editTextMessage(
     id: string,
-    payload: ChatMessageUpdateInput
+    payload: EditChatMessageTextInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .update(payload)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('edit_chat_message_text', {
+        p_message_id: id,
+        p_message: payload.message,
+        p_updated_at: payload.updated_at ?? new Date().toISOString(),
+      });
 
       if (error) {
         return { data: null, error };
@@ -215,40 +216,19 @@ export const chatService = {
     }
   },
 
-  async markMessagesAsRead(
-    senderId: string,
-    receiverId: string,
-    channelId?: string | null
-  ): Promise<ServiceResponse<ChatMessage[]>> {
-    try {
-      const { data, error } = await supabase.rpc('mark_chat_messages_as_read', {
-        p_sender_id: senderId,
-        p_receiver_id: receiverId,
-        p_channel_id: channelId ?? null,
-      });
-
-      if (error) {
-        return { data: null, error };
-      }
-
-      return { data: (data || []) as ChatMessage[], error: null };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
-    }
-  },
-
-  async markMessagesAsDelivered(
-    senderId: string,
-    receiverId: string,
-    channelId?: string | null
-  ): Promise<ServiceResponse<ChatMessage[]>> {
+  async updateFilePreview(
+    id: string,
+    payload: ChatFilePreviewUpdateInput
+  ): Promise<ServiceResponse<ChatMessage>> {
     try {
       const { data, error } = await supabase.rpc(
-        'mark_chat_messages_as_delivered',
+        'update_chat_file_preview_metadata',
         {
-          p_sender_id: senderId,
-          p_receiver_id: receiverId,
-          p_channel_id: channelId ?? null,
+          p_message_id: id,
+          p_file_preview_url: payload.file_preview_url ?? null,
+          p_file_preview_page_count: payload.file_preview_page_count ?? null,
+          p_file_preview_status: payload.file_preview_status ?? null,
+          p_file_preview_error: payload.file_preview_error ?? null,
         }
       );
 
@@ -256,7 +236,7 @@ export const chatService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ChatMessage[], error: null };
+      return { data: data as ChatMessage, error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }

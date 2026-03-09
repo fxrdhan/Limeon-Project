@@ -80,9 +80,6 @@ describe('useChatComposer', () => {
     const focusMessageComposer = vi.fn();
     const closeMessageMenu = vi.fn();
     const scheduleScrollMessagesToBottom = vi.fn();
-    const broadcastNewMessage = vi.fn();
-    const broadcastUpdatedMessage = vi.fn();
-    const broadcastDeletedMessage = vi.fn();
     const currentMessage = buildMessage({
       id: 'message-1',
       message: 'draft edit',
@@ -106,9 +103,6 @@ describe('useChatComposer', () => {
           setMessages: vi.fn(),
           closeMessageMenu,
           scheduleScrollMessagesToBottom,
-          broadcastNewMessage,
-          broadcastUpdatedMessage,
-          broadcastDeletedMessage,
           messageInputRef,
           focusMessageComposer,
         });

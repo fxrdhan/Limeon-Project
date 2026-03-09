@@ -9,7 +9,7 @@ const { mockGateway, mockToast, mockRenderPdfPreviewBlob } = vi.hoisted(() => ({
   mockGateway: {
     fetchConversationMessages: vi.fn(),
     createMessage: vi.fn(),
-    updateMessage: vi.fn(),
+    updateFilePreview: vi.fn(),
     deleteMessageThread: vi.fn(),
     uploadImage: vi.fn(),
     uploadAttachment: vi.fn(),
@@ -391,7 +391,7 @@ describe('useChatComposerSend', () => {
       }),
       error: null,
     });
-    mockGateway.updateMessage
+    mockGateway.updateFilePreview
       .mockResolvedValueOnce({
         data: null,
         error: new Error('preview update failed'),

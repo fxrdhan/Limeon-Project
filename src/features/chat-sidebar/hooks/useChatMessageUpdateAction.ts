@@ -122,7 +122,7 @@ export const useChatMessageUpdateAction = ({
 
     try {
       const { data: updatedMessage, error } =
-        await chatSidebarGateway.updateMessage(messageId, {
+        await chatSidebarGateway.editTextMessage(messageId, {
           message: updatedText,
           updated_at: updatedAt,
         });

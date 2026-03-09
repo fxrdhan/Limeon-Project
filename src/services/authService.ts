@@ -128,6 +128,12 @@ export async function initializeAuth(): Promise<{
   return { session: null, user: null };
 }
 
+export function onAuthStateChange(
+  callback: (event: string, session: Session | null) => void
+) {
+  return apiAuthService.onAuthStateChange(callback);
+}
+
 /**
  * Service facade for easier imports and mocking
  */
@@ -139,6 +145,7 @@ const authService = {
   updateUserProfilePhotoUrl,
   clearUserProfilePhoto,
   initializeAuth,
+  onAuthStateChange,
 };
 
 export default authService;
