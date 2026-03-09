@@ -26,6 +26,55 @@ import {
 import { useChatSessionPresence } from './useChatSessionPresence';
 import { useChatSessionReceipts } from './useChatSessionReceipts';
 
+type PendingConversationRealtimeEvent =
+  | {
+      type: 'insert';
+      message: ChatMessage;
+    }
+  | {
+      type: 'update';
+      message: Partial<ChatMessage> & { id: string };
+    }
+  | {
+      type: 'delete';
+      messageId: string;
+    };
+
+const replayPendingConversationRealtimeEvents = ({
+  previousMessages,
+  pendingEvents,
+  currentChannelId,
+}: {
+  previousMessages: ChatMessage[];
+  pendingEvents: PendingConversationRealtimeEvent[];
+  currentChannelId: string | null;
+}) =>
+  pendingEvents.reduce<ChatMessage[]>((nextMessages, pendingEvent) => {
+    if (pendingEvent.type === 'insert') {
+      return reconcileInsertedConversationMessage({
+        previousMessages: nextMessages,
+        insertedMessage: pendingEvent.message,
+        currentChannelId,
+      });
+    }
+
+    if (pendingEvent.type === 'update') {
+      return nextMessages.map(previousMessage =>
+        previousMessage.id === pendingEvent.message.id
+          ? {
+              ...previousMessage,
+              ...pendingEvent.message,
+              stableKey: previousMessage.stableKey,
+            }
+          : previousMessage
+      );
+    }
+
+    return nextMessages.filter(
+      messageItem => messageItem.id !== pendingEvent.messageId
+    );
+  }, previousMessages);
+
 interface UseChatSessionProps {
   isOpen: boolean;
   user: UserDetails | null;
@@ -58,6 +107,10 @@ export const useChatSession = ({
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
   const oldestLoadedMessageCreatedAtRef = useRef<string | null>(null);
+  const isInitialConversationLoadPendingRef = useRef(false);
+  const pendingConversationRealtimeEventsRef = useRef<
+    PendingConversationRealtimeEvent[]
+  >([]);
 
   const broadcastNewMessage = useCallback((_message: ChatMessage) => {}, []);
 
@@ -189,6 +242,8 @@ export const useChatSession = ({
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       hasCompletedInitialOpenLoadRef.current = false;
+      isInitialConversationLoadPendingRef.current = false;
+      pendingConversationRealtimeEventsRef.current = [];
       setLoading(false);
       setLoadError(null);
       setHasOlderMessages(false);
@@ -201,6 +256,8 @@ export const useChatSession = ({
     const sessionToken = activeSessionTokenRef.current + 1;
     activeSessionTokenRef.current = sessionToken;
     hasCompletedInitialOpenLoadRef.current = false;
+    isInitialConversationLoadPendingRef.current = true;
+    pendingConversationRealtimeEventsRef.current = [];
     let isCancelled = false;
     const isActiveSession = () =>
       !isCancelled && activeSessionTokenRef.current === sessionToken;
@@ -284,13 +341,37 @@ export const useChatSession = ({
           return;
         }
 
-        setConversationCacheEntry(currentChannelId, transformedMessages);
+        const pendingConversationRealtimeEvents =
+          pendingConversationRealtimeEventsRef.current;
+        isInitialConversationLoadPendingRef.current = false;
+        pendingConversationRealtimeEventsRef.current = [];
+
+        if (pendingConversationRealtimeEvents.length > 0) {
+          setMessages(previousMessages =>
+            replayPendingConversationRealtimeEvents({
+              previousMessages,
+              pendingEvents: pendingConversationRealtimeEvents,
+              currentChannelId,
+            })
+          );
+        }
+
+        const latestPersistedMessages =
+          pendingConversationRealtimeEvents.length > 0
+            ? replayPendingConversationRealtimeEvents({
+                previousMessages: transformedMessages,
+                pendingEvents: pendingConversationRealtimeEvents,
+                currentChannelId,
+              })
+            : transformedMessages;
+
+        setConversationCacheEntry(currentChannelId, latestPersistedMessages);
         oldestLoadedMessageCreatedAtRef.current =
-          transformedMessages[0]?.created_at ?? null;
+          latestPersistedMessages[0]?.created_at ?? null;
         setHasOlderMessages(existingMessagesPayload?.hasMore ?? false);
         setLoadError(null);
 
-        const undeliveredIncomingMessageIds = transformedMessages
+        const undeliveredIncomingMessageIds = latestPersistedMessages
           .filter(
             messageItem =>
               messageItem.sender_id === targetUser.id &&
@@ -312,6 +393,8 @@ export const useChatSession = ({
         );
       } finally {
         if (isActiveSession()) {
+          isInitialConversationLoadPendingRef.current = false;
+          pendingConversationRealtimeEventsRef.current = [];
           hasCompletedInitialOpenLoadRef.current = true;
           setLoading(false);
         }
@@ -356,6 +439,13 @@ export const useChatSession = ({
           const mappedInsertedMessage =
             mapMessageForActiveConversation(insertedMessage);
 
+          if (isInitialConversationLoadPendingRef.current) {
+            pendingConversationRealtimeEventsRef.current.push({
+              type: 'insert',
+              message: mappedInsertedMessage,
+            });
+          }
+
           setMessages(previousMessages =>
             reconcileInsertedConversationMessage({
               previousMessages,
@@ -377,7 +467,17 @@ export const useChatSession = ({
         payload => {
           const updatedMessage = payload.new as ChatMessage;
           if (!updatedMessage?.id) return;
-          applyMessageUpdate(updatedMessage);
+          const mappedUpdatedMessage =
+            mapMessageForActiveConversation(updatedMessage);
+
+          if (isInitialConversationLoadPendingRef.current) {
+            pendingConversationRealtimeEventsRef.current.push({
+              type: 'update',
+              message: mappedUpdatedMessage,
+            });
+          }
+
+          applyMessageUpdate(mappedUpdatedMessage);
         }
       );
 
@@ -395,6 +495,13 @@ export const useChatSession = ({
             | undefined;
           const deletedMessageId = deletedMessage?.id;
           if (!deletedMessageId) return;
+
+          if (isInitialConversationLoadPendingRef.current) {
+            pendingConversationRealtimeEventsRef.current.push({
+              type: 'delete',
+              messageId: deletedMessageId,
+            });
+          }
 
           setMessages(previousMessages => {
             if (
@@ -429,6 +536,8 @@ export const useChatSession = ({
       if (activeSessionTokenRef.current === sessionToken) {
         activeSessionTokenRef.current += 1;
       }
+      isInitialConversationLoadPendingRef.current = false;
+      pendingConversationRealtimeEventsRef.current = [];
       if (conversationChannelRef.current) {
         void chatSidebarGateway.removeRealtimeChannel(
           conversationChannelRef.current

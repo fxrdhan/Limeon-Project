@@ -862,6 +862,215 @@ describe('useChatSession', () => {
     expect(mockChatService.markMessageIdsAsDelivered).not.toHaveBeenCalled();
   });
 
+  it('preserves realtime inserts that arrive before the initial fetch resolves', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    let resolveFetchMessages:
+      | ((value: { data: ChatMessage[]; error: null }) => void)
+      | null = null;
+
+    mockChatService.fetchMessagesBetweenUsers.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveFetchMessages = resolve;
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+    });
+
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const insertListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'INSERT'
+    );
+    const insertListener = insertListenerCall?.[2] as
+      | ((payload: { new: ChatMessage }) => void)
+      | undefined;
+
+    act(() => {
+      insertListener?.({
+        new: buildMessage({
+          id: 'message-bootstrap-insert',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          channel_id: 'channel-1',
+          message: 'pesan masuk saat bootstrap',
+        }),
+      });
+    });
+
+    await act(async () => {
+      resolveFetchMessages?.({
+        data: [],
+        error: null,
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toContain('message-bootstrap-insert');
+    });
+
+    expect(mockChatService.markMessageIdsAsDelivered).toHaveBeenCalledWith([
+      'message-bootstrap-insert',
+    ]);
+  });
+
+  it('replays queued realtime updates on top of the initial fetch snapshot', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    let resolveFetchMessages:
+      | ((value: { data: ChatMessage[]; error: null }) => void)
+      | null = null;
+
+    mockChatService.fetchMessagesBetweenUsers.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveFetchMessages = resolve;
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+    });
+
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const updateListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'UPDATE'
+    );
+    const updateListener = updateListenerCall?.[2] as
+      | ((payload: { new: ChatMessage }) => void)
+      | undefined;
+
+    act(() => {
+      updateListener?.({
+        new: buildMessage({
+          id: 'message-bootstrap-update',
+          sender_id: targetUser.id,
+          receiver_id: currentUser.id,
+          channel_id: 'channel-1',
+          message: 'versi terbaru',
+          updated_at: '2026-03-06T09:35:00.000Z',
+        }),
+      });
+    });
+
+    await act(async () => {
+      resolveFetchMessages?.({
+        data: [
+          buildMessage({
+            id: 'message-bootstrap-update',
+            sender_id: targetUser.id,
+            receiver_id: currentUser.id,
+            channel_id: 'channel-1',
+            message: 'versi lama',
+            updated_at: '2026-03-06T09:30:00.000Z',
+          }),
+        ],
+        error: null,
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.find(
+          messageItem => messageItem.id === 'message-bootstrap-update'
+        )?.message
+      ).toBe('versi terbaru');
+    });
+  });
+
+  it('replays queued realtime deletes on top of the initial fetch snapshot', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    let resolveFetchMessages:
+      | ((value: { data: ChatMessage[]; error: null }) => void)
+      | null = null;
+
+    mockChatService.fetchMessagesBetweenUsers.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveFetchMessages = resolve;
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+    });
+
+    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const deleteListenerCall = conversationChannel.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'DELETE'
+    );
+    const deleteListener = deleteListenerCall?.[2] as
+      | ((payload: { old: Partial<ChatMessage> }) => void)
+      | undefined;
+
+    act(() => {
+      deleteListener?.({
+        old: {
+          id: 'message-bootstrap-delete',
+        },
+      });
+    });
+
+    await act(async () => {
+      resolveFetchMessages?.({
+        data: [
+          buildMessage({
+            id: 'message-bootstrap-delete',
+            sender_id: targetUser.id,
+            receiver_id: currentUser.id,
+            channel_id: 'channel-1',
+            message: 'hapus saat bootstrap',
+          }),
+        ],
+        error: null,
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).not.toContain('message-bootstrap-delete');
+    });
+  });
+
   it('hydrates outgoing messages from postgres inserts when app broadcast is unavailable', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
