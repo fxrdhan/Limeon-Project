@@ -31,8 +31,11 @@ const startConnectionHealthCheck = () => {
 
   connectionHealthCheck = setInterval(async () => {
     try {
-      // Simple health check by testing connection
-      const { error } = await supabase.from('users').select('count').limit(1);
+      // Lightweight REST probe to catch connectivity issues without pulling rows.
+      const { error } = await supabase
+        .from('users')
+        .select('id', { head: true })
+        .limit(1);
       if (error && error.message.includes('network')) {
         console.warn(
           '🔍 Network issue detected, realtime may need reconnection'
