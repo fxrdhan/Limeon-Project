@@ -6,8 +6,6 @@ import {
   type ChatMessageInsertInput,
   type ChatMessageUpdateInput,
   type UserPresence,
-  type UserPresenceInsertInput,
-  type UserPresenceUpdateInput,
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type {
@@ -55,23 +53,6 @@ export const chatSidebarGateway = {
   },
   getUserPresence(userId: string) {
     return chatService.getUserPresence(userId);
-  },
-  updateUserPresence(userId: string, payload: UserPresenceUpdateInput) {
-    return chatService.updateUserPresence(userId, payload);
-  },
-  insertUserPresence(payload: UserPresenceInsertInput) {
-    return chatService.insertUserPresence(payload);
-  },
-  sendUserPresenceUpdateKeepalive(
-    userId: string,
-    payload: UserPresenceUpdateInput,
-    accessToken?: string | null
-  ) {
-    return chatService.sendUserPresenceUpdateKeepalive(
-      userId,
-      payload,
-      accessToken
-    );
   },
   createRealtimeChannel(name: string, options?: RealtimeChannelOptions) {
     return realtimeService.createChannel(name, options);

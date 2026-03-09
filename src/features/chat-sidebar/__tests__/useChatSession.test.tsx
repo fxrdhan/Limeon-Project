@@ -194,7 +194,6 @@ describe('useChatSession', () => {
         useChatSession({
           isOpen,
           user: currentUser,
-          accessToken: 'access-token',
           targetUser,
           currentChannelId: 'channel-1',
           initialMessageAnimationKeysRef,
@@ -222,29 +221,6 @@ describe('useChatSession', () => {
     await act(async () => {
       await Promise.resolve();
     });
-
-    expect(mockChatService.updateUserPresence).not.toHaveBeenCalled();
-    expect(
-      mockChatService.sendUserPresenceUpdateKeepalive
-    ).not.toHaveBeenCalled();
-  });
-
-  it('performClose resolves without side effects on current user presence', async () => {
-    const initialMessageAnimationKeysRef = { current: new Set<string>() };
-    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
-
-    const { result } = renderHook(() =>
-      useChatSession({
-        isOpen: true,
-        user: currentUser,
-        targetUser,
-        currentChannelId: 'channel-1',
-        initialMessageAnimationKeysRef,
-        initialOpenJumpAnimationKeysRef,
-      })
-    );
-
-    await expect(result.current.performClose()).resolves.toBe(true);
 
     expect(mockChatService.updateUserPresence).not.toHaveBeenCalled();
     expect(

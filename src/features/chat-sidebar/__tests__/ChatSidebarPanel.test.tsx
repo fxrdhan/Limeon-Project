@@ -3,8 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatSidebarPanel from '../index';
 
-const { mockPerformClose, renderedChildProps } = vi.hoisted(() => ({
-  mockPerformClose: vi.fn(),
+const { renderedChildProps } = vi.hoisted(() => ({
   renderedChildProps: {
     header: null as Record<string, unknown> | null,
     messages: null as Record<string, unknown> | null,
@@ -39,7 +38,6 @@ vi.mock('../hooks/useChatSession', () => ({
     setMessages: vi.fn(),
     loading: false,
     targetUserPresence: null,
-    performClose: mockPerformClose,
     broadcastNewMessage: vi.fn(),
     broadcastUpdatedMessage: vi.fn(),
     broadcastDeletedMessage: vi.fn(),
@@ -176,13 +174,12 @@ vi.mock('../components/ComposerPanel', () => ({
 describe('ChatSidebarPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPerformClose.mockImplementation(() => new Promise(() => {}));
     renderedChildProps.header = null;
     renderedChildProps.messages = null;
     renderedChildProps.composer = null;
   });
 
-  it('closes the UI immediately without waiting for performClose to resolve', () => {
+  it('closes the UI immediately through the header action', () => {
     const onClose = vi.fn();
 
     render(
@@ -200,7 +197,6 @@ describe('ChatSidebarPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'close chat' }));
 
-    expect(mockPerformClose).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
   });
 

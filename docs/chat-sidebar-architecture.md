@@ -46,7 +46,7 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
 ### 2.2 Close Flow
 
 - `ChatHeader` memanggil `onClose`.
-- `useChatSidebarController` menjalankan `performClose()` dari `useChatSession`, lalu memanggil `chatSidebarStore.closeChat()`.
+- `useChatSidebarController` langsung memanggil `chatSidebarStore.closeChat()`.
 - `MainLayout` meng-set `pageFocusBlockStore.isBlocked` mengikuti status open chat sidebar.
 
 ## 3) Global State Ownership
@@ -140,7 +140,6 @@ Tanggung jawab:
   - `broadcastUpdatedMessage`
   - `broadcastDeletedMessage`
   - `markMessageIdsAsRead`
-  - `performClose`
 
 Cache percakapan disimpan di shared module cache:
 
@@ -155,13 +154,8 @@ File: `src/features/chat-sidebar/hooks/useChatSessionPresence.ts`
 Tanggung jawab:
 
 - state `targetUserPresence`
-- update row `user_presence` saat chat dibuka
-- heartbeat presence user aktif selama chat open
 - hydrate awal target user presence saat chat dibuka
-- refresh `last_seen` saat chat ditutup tanpa menandai user offline
-- set user offline pada `beforeunload`
 - subscribe perubahan target user presence via channel `user_presence_changes`
-- subscribe broadcast global presence/receipt via channel `global_presence_updates`
 
 ### 5.4 `useChatIncomingDeliveries`
 
@@ -404,8 +398,6 @@ Method yang diekspos gateway saat ini:
 - `markMessageIdsAsDelivered`
 - `markMessageIdsAsRead`
 - `getUserPresence`
-- `updateUserPresence`
-- `insertUserPresence`
 - `createRealtimeChannel`
 - `removeRealtimeChannel`
 - `uploadImage`
@@ -429,8 +421,6 @@ Method:
 - `deleteMessage(id)`
 - `deleteMessageThread(id)`
 - `getUserPresence(userId)`
-- `updateUserPresence(userId, payload)`
-- `insertUserPresence(payload)`
 
 #### `StorageService`
 
@@ -517,7 +507,7 @@ Kolom yang tersedia:
 - `user_id uuid unique`
 - `is_online boolean default false`
 - `last_seen timestamptz default now()`
-- `last_chat_opened timestamptz nullable`
+- `last_chat_opened timestamptz nullable` (saat ini tidak dipakai runtime chat sidebar)
 - `updated_at timestamptz default now()`
 
 Foreign key:
@@ -599,15 +589,9 @@ Dipakai oleh `usePresence()` untuk track user browser presence global aplikasi.
 ### Chat sidebar channels
 
 - `chat_<channelId>`
-  - broadcast `new_message`
-  - broadcast `update_message`
-  - broadcast `delete_message`
   - postgres insert/update `chat_messages` by `channel_id`
 - `user_presence_changes`
   - postgres `user_presence` change untuk target user aktif
-- `global_presence_updates`
-  - broadcast `presence_changed`
-  - broadcast `message_receipt_updated`
 - `incoming_messages_<userId>`
   - postgres insert `chat_messages` by `receiver_id`
   - disubscribe app-level lewat `useChatIncomingDeliveries`

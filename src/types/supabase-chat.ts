@@ -76,7 +76,6 @@ export interface ChatMessageUpdateRow {
 export interface UserPresenceRow {
   id: string;
   is_online: boolean | null;
-  last_chat_opened: string | null;
   last_seen: string | null;
   updated_at: string | null;
   user_id: string;
@@ -85,7 +84,6 @@ export interface UserPresenceRow {
 export interface UserPresenceInsertRow {
   id?: string;
   is_online?: boolean | null;
-  last_chat_opened?: string | null;
   last_seen?: string | null;
   updated_at?: string | null;
   user_id: string;
@@ -94,7 +92,6 @@ export interface UserPresenceInsertRow {
 export interface UserPresenceUpdateRow {
   id?: string;
   is_online?: boolean | null;
-  last_chat_opened?: string | null;
   last_seen?: string | null;
   updated_at?: string | null;
   user_id?: string;

@@ -54,7 +54,6 @@ export const useChatSidebarController = ({
     loadError,
     targetUserPresence,
     targetUserPresenceError,
-    performClose,
     broadcastNewMessage,
     broadcastUpdatedMessage,
     broadcastDeletedMessage,
@@ -169,9 +168,8 @@ export const useChatSidebarController = ({
   });
 
   const handleClose = useCallback(() => {
-    void performClose();
     onClose();
-  }, [onClose, performClose]);
+  }, [onClose]);
 
   const headerModel = createChatHeaderModel({
     targetUser,

@@ -78,7 +78,6 @@ const replayPendingConversationRealtimeEvents = ({
 interface UseChatSessionProps {
   isOpen: boolean;
   user: UserDetails | null;
-  accessToken?: string | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
@@ -88,7 +87,6 @@ interface UseChatSessionProps {
 export const useChatSession = ({
   isOpen,
   user,
-  accessToken: _accessToken,
   targetUser,
   currentChannelId,
   initialMessageAnimationKeysRef,
@@ -143,7 +141,7 @@ export const useChatSession = ({
     []
   );
 
-  const { targetUserPresence, targetUserPresenceError, performClose } =
+  const { targetUserPresence, targetUserPresenceError } =
     useChatSessionPresence({
       isOpen,
       user,
@@ -590,7 +588,6 @@ export const useChatSession = ({
     retryLoadMessages,
     targetUserPresence,
     targetUserPresenceError,
-    performClose,
     broadcastNewMessage,
     broadcastUpdatedMessage,
     broadcastDeletedMessage,

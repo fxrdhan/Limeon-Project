@@ -3,10 +3,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatSidebarPanel from '../index';
 
-const { mockPerformClose } = vi.hoisted(() => ({
-  mockPerformClose: vi.fn(),
-}));
-
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   LayoutGroup: ({ children }: { children: React.ReactNode }) => children,
@@ -67,7 +63,6 @@ vi.mock('../hooks/useChatSession', () => ({
       is_online: true,
       last_seen: '2026-03-07T09:59:40.000Z',
     },
-    performClose: mockPerformClose,
     broadcastNewMessage: vi.fn(),
     broadcastUpdatedMessage: vi.fn(),
     broadcastDeletedMessage: vi.fn(),
@@ -177,7 +172,6 @@ describe('ChatSidebarPanel integration', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'));
-    mockPerformClose.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -204,7 +198,7 @@ describe('ChatSidebarPanel integration', () => {
     expect(screen.getByRole('button', { name: 'Attach file' })).toBeTruthy();
   });
 
-  it('closes through the real header action and triggers session cleanup', () => {
+  it('closes through the real header action', () => {
     const onClose = vi.fn();
 
     render(
@@ -224,7 +218,6 @@ describe('ChatSidebarPanel integration', () => {
       screen.getByRole('button', { name: 'Collapse chat sidebar' })
     );
 
-    expect(mockPerformClose).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
   });
 });

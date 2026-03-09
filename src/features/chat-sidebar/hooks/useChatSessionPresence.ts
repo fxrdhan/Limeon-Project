@@ -1,5 +1,5 @@
 import type { UserDetails } from '@/types/database';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { type UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { useChatSessionPresenceSubscriptions } from './useChatSessionPresenceSubscriptions';
@@ -23,10 +23,6 @@ export const useChatSessionPresence = ({
     string | null
   >(null);
 
-  const performClose = useCallback(async () => {
-    return true;
-  }, []);
-
   useChatSessionPresenceSubscriptions({
     isOpen,
     user,
@@ -39,6 +35,5 @@ export const useChatSessionPresence = ({
   return {
     targetUserPresence,
     targetUserPresenceError,
-    performClose,
   };
 };
