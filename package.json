@@ -60,7 +60,7 @@
     "clsx": "^2.1.1",
     "compressorjs": "^1.2.1",
     "cropperjs": "2.1.0",
-    "framer-motion": "^12.34.5",
+    "framer-motion": "^12.35.1",
     "fuzzysort": "^3.1.0",
     "google-auth-library": "^10.6.1",
     "googleapis": "^171.4.0",
