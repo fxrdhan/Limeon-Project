@@ -51,9 +51,9 @@ interface UseChatAttachmentSendProps {
     fallbackMessages?: ChatMessage[];
   }) => Promise<void>;
   runInCurrentConversationScope: (effect: () => void) => boolean;
-  deleteUploadedStorageFiles: (
+  deleteUploadedStorageFilesOrThrow: (
     storagePaths: Array<string | null | undefined>
-  ) => Promise<string[]>;
+  ) => Promise<void>;
   rollbackPersistedAttachmentThread: (
     persistedMessageId: string,
     storagePaths: Array<string | null | undefined>,
@@ -114,7 +114,7 @@ export const useChatAttachmentSend = ({
   isCurrentConversationScopeActive,
   reconcileCurrentConversationMessages,
   runInCurrentConversationScope,
-  deleteUploadedStorageFiles,
+  deleteUploadedStorageFilesOrThrow,
   rollbackPersistedAttachmentThread,
   releasePendingPreviewUrl,
 }: UseChatAttachmentSendProps) => {
@@ -124,7 +124,7 @@ export const useChatAttachmentSend = ({
     setMessages,
     broadcastUpdatedMessage,
     isConversationScopeActive,
-    deleteUploadedStorageFiles,
+    deleteUploadedStorageFilesOrThrow,
   });
 
   const removeOptimisticAttachmentThreadFromState = useCallback(
@@ -138,6 +138,39 @@ export const useChatAttachmentSend = ({
       );
     },
     [setMessages]
+  );
+
+  const cleanupUncommittedStorageFiles = useCallback(
+    async (
+      storagePaths: Array<string | null | undefined>,
+      options?: {
+        toastMessage?: string;
+        shouldToast?: boolean;
+      }
+    ) => {
+      try {
+        await deleteUploadedStorageFilesOrThrow(storagePaths);
+        return true;
+      } catch (cleanupError) {
+        console.error('Error cleaning up uncommitted chat attachment:', {
+          cleanupError,
+          storagePaths,
+        });
+
+        if (
+          options?.shouldToast &&
+          options.toastMessage &&
+          isCurrentConversationScopeActive()
+        ) {
+          toast.error(options.toastMessage, {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
+
+        return false;
+      }
+    },
+    [deleteUploadedStorageFilesOrThrow, isCurrentConversationScopeActive]
   );
 
   const sendAttachmentMessage = useCallback(
@@ -203,7 +236,7 @@ export const useChatAttachmentSend = ({
         uploadedStoragePath = path;
 
         if (pendingSend.isCancelled()) {
-          await deleteUploadedStorageFiles([uploadedStoragePath]);
+          await cleanupUncommittedStorageFiles([uploadedStoragePath]);
           return null;
         }
 
@@ -219,8 +252,16 @@ export const useChatAttachmentSend = ({
           ) {
             removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
           }
-          await deleteUploadedStorageFiles([uploadedStoragePath]);
+          const didCleanupStorage = await cleanupUncommittedStorageFiles(
+            [uploadedStoragePath],
+            {
+              toastMessage:
+                'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
+              shouldToast: !pendingSend.isCancelled(),
+            }
+          );
           if (
+            didCleanupStorage &&
             !pendingSend.isCancelled() &&
             isCurrentConversationScopeActive()
           ) {
@@ -372,8 +413,19 @@ export const useChatAttachmentSend = ({
         if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
           removeOptimisticAttachmentThreadFromState(tempId, captionTempId);
         }
-        await deleteUploadedStorageFiles([uploadedStoragePath]);
-        if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
+        const didCleanupStorage = await cleanupUncommittedStorageFiles(
+          [uploadedStoragePath],
+          {
+            toastMessage:
+              'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
+            shouldToast: !pendingSend.isCancelled(),
+          }
+        );
+        if (
+          didCleanupStorage &&
+          !pendingSend.isCancelled() &&
+          isCurrentConversationScopeActive()
+        ) {
           toast.error(sendFailureToast, {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
@@ -387,8 +439,8 @@ export const useChatAttachmentSend = ({
     [
       broadcastNewMessage,
       conversationScopeKey,
+      cleanupUncommittedStorageFiles,
       currentChannelId,
-      deleteUploadedStorageFiles,
       editingMessageId,
       isCurrentConversationScopeActive,
       pendingImagePreviewUrlsRef,

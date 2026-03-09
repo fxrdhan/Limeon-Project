@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
+import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
@@ -16,6 +17,8 @@ export const useChatIncomingDeliveries = () => {
   const pendingDeliveryMessageIdsRef = useRef<Set<string>>(new Set());
   const queuedDeliveryMessageIdsRef = useRef<Set<string>>(new Set());
   const flushDeliveryTimeoutRef = useRef<number | null>(null);
+  const { recoveryTick, scheduleRecovery, markRecoverySuccess } =
+    useRealtimeChannelRecovery();
 
   const flushQueuedDeliveryMessageIds = useCallback(async () => {
     if (flushDeliveryTimeoutRef.current !== null) {
@@ -101,6 +104,7 @@ export const useChatIncomingDeliveries = () => {
 
   useEffect(() => {
     if (!user?.id) {
+      markRecoverySuccess();
       return;
     }
 
@@ -135,6 +139,7 @@ export const useChatIncomingDeliveries = () => {
 
     incomingMessagesChannel.subscribe(status => {
       if (status === 'SUBSCRIBED') {
+        markRecoverySuccess();
         void (async () => {
           try {
             const { data: undeliveredMessageIds, error } =
@@ -173,12 +178,37 @@ export const useChatIncomingDeliveries = () => {
 
       if (status === 'CHANNEL_ERROR') {
         console.error('Failed to connect to incoming chat delivery channel');
+        if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
+          incomingMessagesChannelRef.current = null;
+          void chatSidebarGateway.removeRealtimeChannel(
+            incomingMessagesChannel
+          );
+        }
         toast.error(
           'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
           {
             id: CHAT_DELIVERY_SYNC_TOAST_ID,
           }
         );
+        void scheduleRecovery();
+        return;
+      }
+
+      if (status === 'TIMED_OUT') {
+        console.error('Timed out while connecting to chat delivery channel');
+        if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
+          incomingMessagesChannelRef.current = null;
+          void chatSidebarGateway.removeRealtimeChannel(
+            incomingMessagesChannel
+          );
+        }
+        toast.error(
+          'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
+          {
+            id: CHAT_DELIVERY_SYNC_TOAST_ID,
+          }
+        );
+        void scheduleRecovery();
       }
     });
     incomingMessagesChannelRef.current = incomingMessagesChannel;
@@ -196,5 +226,11 @@ export const useChatIncomingDeliveries = () => {
         incomingMessagesChannelRef.current = null;
       }
     };
-  }, [queueDeliveryMessageIds, user?.id]);
+  }, [
+    markRecoverySuccess,
+    queueDeliveryMessageIds,
+    recoveryTick,
+    scheduleRecovery,
+    user?.id,
+  ]);
 };

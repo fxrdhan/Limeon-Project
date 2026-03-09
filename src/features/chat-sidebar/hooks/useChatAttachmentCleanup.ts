@@ -216,6 +216,7 @@ export const useChatAttachmentCleanup = ({
 
   return {
     deleteUploadedStorageFiles,
+    deleteUploadedStorageFilesOrThrow,
     rollbackPersistedAttachmentThread,
     releasePendingPreviewUrl,
   };

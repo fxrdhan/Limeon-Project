@@ -1,3 +1,4 @@
+import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { UserDetails } from '@/types/database';
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import {
@@ -26,9 +27,12 @@ export const useChatSessionPresenceSubscriptions = ({
 }: UseChatSessionPresenceSubscriptionsProps) => {
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const activePresenceScopeRef = useRef<string | null>(null);
+  const { recoveryTick, scheduleRecovery, markRecoverySuccess } =
+    useRealtimeChannelRecovery();
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
+      markRecoverySuccess();
       activePresenceScopeRef.current =
         targetUser?.id && currentChannelId
           ? `${targetUser.id}::${currentChannelId}`
@@ -107,11 +111,34 @@ export const useChatSessionPresenceSubscriptions = ({
     );
 
     presenceChannel.subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        markRecoverySuccess();
+        return;
+      }
+
       if (status === 'CHANNEL_ERROR') {
         console.error('Failed to connect to target user presence channel');
+        if (presenceChannelRef.current === presenceChannel) {
+          presenceChannelRef.current = null;
+          void chatSidebarGateway.removeRealtimeChannel(presenceChannel);
+        }
         if (activePresenceScopeRef.current === presenceScopeKey) {
           setTargetUserPresenceError('Status online tidak tersedia');
         }
+        void scheduleRecovery();
+        return;
+      }
+
+      if (status === 'TIMED_OUT') {
+        console.error('Timed out while connecting to target user presence');
+        if (presenceChannelRef.current === presenceChannel) {
+          presenceChannelRef.current = null;
+          void chatSidebarGateway.removeRealtimeChannel(presenceChannel);
+        }
+        if (activePresenceScopeRef.current === presenceScopeKey) {
+          setTargetUserPresenceError('Status online tidak tersedia');
+        }
+        void scheduleRecovery();
       }
     });
     presenceChannelRef.current = presenceChannel;
@@ -133,6 +160,9 @@ export const useChatSessionPresenceSubscriptions = ({
   }, [
     currentChannelId,
     isOpen,
+    markRecoverySuccess,
+    recoveryTick,
+    scheduleRecovery,
     setTargetUserPresenceError,
     setTargetUserPresence,
     targetUser,

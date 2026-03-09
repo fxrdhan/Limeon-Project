@@ -60,7 +60,20 @@ const flushPresenceEffects = async () => {
 };
 
 describe('usePresence', () => {
-  let postgresChangeHandler: (() => void) | null;
+  let postgresChangeHandler:
+    | ((payload?: {
+        eventType?: string;
+        new?: {
+          user_id?: string;
+          is_online?: boolean;
+        };
+        old?: {
+          user_id?: string;
+          is_online?: boolean;
+        };
+      }) => void)
+    | null;
+  let rosterChannelStatusHandler: ((status: string) => void) | null;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -68,6 +81,7 @@ describe('usePresence', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.useFakeTimers();
     postgresChangeHandler = null;
+    rosterChannelStatusHandler = null;
 
     usePresenceStore.setState({
       channel: null,
@@ -163,7 +177,17 @@ describe('usePresence', () => {
       (
         event: string,
         _filter: Record<string, string>,
-        callback: () => void
+        callback: (payload?: {
+          eventType?: string;
+          new?: {
+            user_id?: string;
+            is_online?: boolean;
+          };
+          old?: {
+            user_id?: string;
+            is_online?: boolean;
+          };
+        }) => void
       ) => {
         if (event === 'postgres_changes') {
           postgresChangeHandler = callback;
@@ -174,6 +198,7 @@ describe('usePresence', () => {
     );
     mockChannel.subscribe.mockImplementation(
       (callback?: (status: string) => void) => {
+        rosterChannelStatusHandler = callback ?? null;
         callback?.('SUBSCRIBED');
         return mockChannel;
       }
@@ -272,7 +297,9 @@ describe('usePresence', () => {
     });
 
     await act(async () => {
-      postgresChangeHandler?.();
+      postgresChangeHandler?.({
+        eventType: 'DELETE',
+      });
       await Promise.resolve();
     });
 
@@ -286,6 +313,35 @@ describe('usePresence', () => {
         online_at: '2099-03-09T09:00:10.000Z',
       },
     ]);
+
+    unmount();
+  });
+
+  it('keeps the roster stable for heartbeat-only presence updates', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    const previousRoster = usePresenceStore.getState().onlineUsersList;
+    mockChatService.listActivePresenceSince.mockClear();
+
+    await act(async () => {
+      postgresChangeHandler?.({
+        eventType: 'UPDATE',
+        new: {
+          user_id: 'user-b',
+          is_online: true,
+        },
+        old: {
+          user_id: 'user-b',
+          is_online: true,
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(mockChatService.listActivePresenceSince).not.toHaveBeenCalled();
+    expect(usePresenceStore.getState().onlineUsersList).toBe(previousRoster);
 
     unmount();
   });
@@ -313,7 +369,7 @@ describe('usePresence', () => {
     unmount();
   });
 
-  it('marks the user offline when the document becomes hidden', async () => {
+  it('does not mark the user offline when the document becomes hidden', async () => {
     const { unmount } = renderHook(() => usePresence());
 
     await flushPresenceEffects();
@@ -330,18 +386,87 @@ describe('usePresence', () => {
 
     expect(
       mockChatService.sendUserPresenceUpdateKeepalive
-    ).toHaveBeenCalledWith(
+    ).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+
+    unmount();
+  });
+
+  it('does not refresh the full roster on every heartbeat tick', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+    mockChatService.listActivePresenceSince.mockClear();
+
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+      await Promise.resolve();
+    });
+
+    expect(mockChatService.listActivePresenceSince).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
+  it('keeps heartbeats running while the document stays hidden', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    mockChatService.updateUserPresence.mockClear();
+
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+      await Promise.resolve();
+    });
+
+    expect(mockChatService.updateUserPresence).toHaveBeenCalledWith(
       'user-a',
       expect.objectContaining({
-        is_online: false,
-      }),
-      'presence-access-token'
+        is_online: true,
+      })
     );
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       value: 'visible',
     });
+
+    unmount();
+  });
+
+  it('reconnects the roster channel after a channel error', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rosterChannelStatusHandler?.('CHANNEL_ERROR');
+      vi.advanceTimersByTime(800);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+    expect(mockRealtimeService.createChannel).toHaveBeenLastCalledWith(
+      'user_presence_roster_changes'
+    );
 
     unmount();
   });

@@ -1,3 +1,4 @@
+import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { UserDetails } from '@/types/database';
 import {
   useCallback,
@@ -109,6 +110,11 @@ export const useChatSession = ({
   const pendingConversationRealtimeEventsRef = useRef<
     PendingConversationRealtimeEvent[]
   >([]);
+  const {
+    recoveryTick: realtimeRecoveryTick,
+    scheduleRecovery: scheduleConversationRecovery,
+    markRecoverySuccess: markConversationRecoverySuccess,
+  } = useRealtimeChannelRecovery();
 
   const broadcastNewMessage = useCallback((_message: ChatMessage) => {}, []);
 
@@ -239,6 +245,7 @@ export const useChatSession = ({
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
+      markConversationRecoverySuccess();
       hasCompletedInitialOpenLoadRef.current = false;
       isInitialConversationLoadPendingRef.current = false;
       pendingConversationRealtimeEventsRef.current = [];
@@ -518,8 +525,32 @@ export const useChatSession = ({
       );
 
       channel.subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          markConversationRecoverySuccess();
+          return;
+        }
+
         if (status === 'CHANNEL_ERROR') {
           console.error('Failed to connect to chat channel');
+          if (conversationChannelRef.current === channel) {
+            conversationChannelRef.current = null;
+            void chatSidebarGateway.removeRealtimeChannel(channel);
+          }
+          if (scheduleConversationRecovery()) {
+            setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
+          }
+          return;
+        }
+
+        if (status === 'TIMED_OUT') {
+          console.error('Timed out while connecting to chat channel');
+          if (conversationChannelRef.current === channel) {
+            conversationChannelRef.current = null;
+            void chatSidebarGateway.removeRealtimeChannel(channel);
+          }
+          if (scheduleConversationRecovery()) {
+            setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
+          }
         }
       });
 
@@ -549,7 +580,10 @@ export const useChatSession = ({
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
     isOpen,
+    markConversationRecoverySuccess,
     markMessageIdsAsDelivered,
+    realtimeRecoveryTick,
+    scheduleConversationRecovery,
     targetUser,
     user,
     retryInitialLoadTick,

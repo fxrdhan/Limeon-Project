@@ -79,7 +79,7 @@ export const useChatComposerSend = ({
     setMessages,
   });
   const {
-    deleteUploadedStorageFiles,
+    deleteUploadedStorageFilesOrThrow,
     rollbackPersistedAttachmentThread,
     releasePendingPreviewUrl,
   } = useChatAttachmentCleanup({
@@ -109,7 +109,7 @@ export const useChatComposerSend = ({
     isCurrentConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
-    deleteUploadedStorageFiles,
+    deleteUploadedStorageFilesOrThrow,
     rollbackPersistedAttachmentThread,
     releasePendingPreviewUrl,
   });

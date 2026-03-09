@@ -1,5 +1,6 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
-import { CHAT_IMAGE_BUCKET } from '../constants';
+import toast from 'react-hot-toast';
+import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -18,9 +19,9 @@ interface UseChatAttachmentPdfPreviewProps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   broadcastUpdatedMessage: (message: ChatMessage) => void;
   isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
-  deleteUploadedStorageFiles: (
+  deleteUploadedStorageFilesOrThrow: (
     storagePaths: Array<string | null | undefined>
-  ) => Promise<string[]>;
+  ) => Promise<void>;
 }
 
 export const useChatAttachmentPdfPreview = ({
@@ -29,7 +30,7 @@ export const useChatAttachmentPdfPreview = ({
   setMessages,
   broadcastUpdatedMessage,
   isConversationScopeActive,
-  deleteUploadedStorageFiles,
+  deleteUploadedStorageFilesOrThrow,
 }: UseChatAttachmentPdfPreviewProps) => {
   const mergeAndBroadcastPreviewUpdate = useCallback(
     (payload: ChatMessage, conversationScopeKey: string | null) => {
@@ -47,6 +48,35 @@ export const useChatAttachmentPdfPreview = ({
       broadcastUpdatedMessage(payload);
     },
     [broadcastUpdatedMessage, isConversationScopeActive, setMessages]
+  );
+
+  const cleanupPreviewStorageFiles = useCallback(
+    async (
+      storagePaths: Array<string | null | undefined>,
+      conversationScopeKey: string | null
+    ) => {
+      try {
+        await deleteUploadedStorageFilesOrThrow(storagePaths);
+        return true;
+      } catch (cleanupError) {
+        console.error('Error cleaning up PDF preview storage:', {
+          cleanupError,
+          storagePaths,
+        });
+
+        if (isConversationScopeActive(conversationScopeKey)) {
+          toast.error(
+            'Preview PDF gagal dibersihkan sepenuhnya. Cek storage chat.',
+            {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            }
+          );
+        }
+
+        return false;
+      }
+    },
+    [deleteUploadedStorageFilesOrThrow, isConversationScopeActive]
   );
 
   const processPdfPreview = useCallback(
@@ -118,7 +148,10 @@ export const useChatAttachmentPdfPreview = ({
             file_preview_error: null,
           });
         if (previewReadyError || !previewReadyMessage) {
-          await deleteUploadedStorageFiles([uploadedPreviewPath]);
+          await cleanupPreviewStorageFiles(
+            [uploadedPreviewPath],
+            conversationScopeKey
+          );
           await applyPreviewFailedState('Gagal menyimpan preview PDF');
           return;
         }
@@ -134,12 +167,15 @@ export const useChatAttachmentPdfPreview = ({
         );
       } catch (error) {
         console.error('Error processing PDF preview metadata:', error);
-        await deleteUploadedStorageFiles([uploadedPreviewPath]);
+        await cleanupPreviewStorageFiles(
+          [uploadedPreviewPath],
+          conversationScopeKey
+        );
         await applyPreviewFailedState('Gagal memproses preview PDF');
       }
     },
     [
-      deleteUploadedStorageFiles,
+      cleanupPreviewStorageFiles,
       mergeAndBroadcastPreviewUpdate,
       targetUser,
       user,

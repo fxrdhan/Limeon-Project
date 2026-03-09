@@ -281,6 +281,68 @@ describe('useChatComposerSend', () => {
     ]);
   });
 
+  it('surfaces a cleanup warning when an uncommitted uploaded file cannot be deleted', async () => {
+    mockGateway.uploadAttachment.mockResolvedValue({
+      path: 'documents/channel/stok.pdf',
+      publicUrl: 'https://example.com/stok.pdf',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: null,
+      error: new Error('insert failed'),
+    });
+    mockGateway.deleteStorageFile.mockRejectedValue(new Error('delete failed'));
+
+    const clearPendingComposerAttachments = vi.fn();
+    const restorePendingComposerAttachments = vi.fn();
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useChatComposerSend({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [buildPendingAttachment()],
+        clearPendingComposerAttachments,
+        restorePendingComposerAttachments,
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        broadcastNewMessage: vi.fn(),
+        broadcastUpdatedMessage: vi.fn(),
+        broadcastDeletedMessage: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(mockGateway.deleteStorageFile).toHaveBeenCalledWith(
+      'chat',
+      'documents/channel/stok.pdf'
+    );
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+  });
+
   it('does nothing when attachment send is triggered without an active channel', async () => {
     const clearPendingComposerAttachments = vi.fn();
     const restorePendingComposerAttachments = vi.fn();

@@ -8,6 +8,7 @@ import { resetConversationCache } from '../utils/conversation-cache';
 const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
   () => ({
     createdChannels: [] as Array<{
+      emitStatus: (status: string) => void;
       on: ReturnType<typeof vi.fn>;
       send: ReturnType<typeof vi.fn>;
       subscribe: ReturnType<typeof vi.fn>;
@@ -78,7 +79,11 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 });
 
 const buildMockChannel = () => {
+  let statusHandler: ((status: string) => void) | null = null;
   const channel = {
+    emitStatus: (status: string) => {
+      statusHandler?.(status);
+    },
     on: vi.fn(),
     send: vi.fn().mockResolvedValue(undefined),
     subscribe: vi.fn(),
@@ -87,9 +92,8 @@ const buildMockChannel = () => {
   channel.on.mockReturnValue(channel);
   channel.subscribe.mockImplementation(
     (callback?: (status: string) => void) => {
-      if (callback) {
-        callback('SUBSCRIBED');
-      }
+      statusHandler = callback ?? null;
+      callback?.('SUBSCRIBED');
 
       return channel;
     }
@@ -250,6 +254,38 @@ describe('useChatSession', () => {
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
     ).toEqual(['user_presence_changes', 'chat_channel-1']);
+  });
+
+  it('reconnects the conversation channel after a channel error', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+    });
+
+    await act(async () => {
+      getCreatedChannelByName('chat_channel-1')?.emitStatus('CHANNEL_ERROR');
+      await new Promise(resolve => {
+        setTimeout(resolve, 900);
+      });
+    });
+
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(3);
+    expect(
+      mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
+    ).toEqual(['user_presence_changes', 'chat_channel-1', 'chat_channel-1']);
   });
 
   it('clears stale target presence when switching to a user without presence data', async () => {

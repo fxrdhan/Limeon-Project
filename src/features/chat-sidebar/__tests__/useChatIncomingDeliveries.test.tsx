@@ -5,6 +5,7 @@ import { useChatIncomingDeliveries } from '../hooks/useChatIncomingDeliveries';
 
 const { createdChannels, mockGateway } = vi.hoisted(() => ({
   createdChannels: [] as Array<{
+    emitStatus: (status: string) => void;
     on: ReturnType<typeof vi.fn>;
     subscribe: ReturnType<typeof vi.fn>;
   }>,
@@ -30,14 +31,19 @@ vi.mock('../data/chatSidebarGateway', () => ({
 }));
 
 const buildMockChannel = () => {
+  let statusHandler: ((status: string) => void) | null = null;
   const channel = {
     on: vi.fn(),
     subscribe: vi.fn(),
+    emitStatus: (status: string) => {
+      statusHandler?.(status);
+    },
   };
 
   channel.on.mockReturnValue(channel);
   channel.subscribe.mockImplementation(
     (callback?: (status: string) => void) => {
+      statusHandler = callback ?? null;
       callback?.('SUBSCRIBED');
       return channel;
     }
@@ -139,5 +145,23 @@ describe('useChatIncomingDeliveries', () => {
       'message-legacy-1',
       'message-legacy-2',
     ]);
+  });
+
+  it('reconnects the delivery channel after a channel error', async () => {
+    renderHook(() => useChatIncomingDeliveries());
+
+    expect(mockGateway.createRealtimeChannel).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      createdChannels[0]?.emitStatus('CHANNEL_ERROR');
+      vi.advanceTimersByTime(800);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.createRealtimeChannel).toHaveBeenCalledTimes(2);
+    expect(mockGateway.createRealtimeChannel).toHaveBeenLastCalledWith(
+      'incoming_messages_user-a'
+    );
   });
 });
