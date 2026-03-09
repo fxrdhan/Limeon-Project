@@ -3,43 +3,72 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePresence } from './usePresence';
 import { usePresenceStore } from '../../store/presenceStore';
 
-const { mockAuthUser, mockUsersService, mockRealtimeService } = vi.hoisted(
-  () => ({
-    mockAuthUser: {
+const {
+  mockAuthState,
+  mockUsersService,
+  mockChatService,
+  mockRealtimeService,
+} = vi.hoisted(() => ({
+  mockAuthState: {
+    user: {
       id: 'user-a',
       name: 'Admin',
       email: 'admin@example.com',
       profilephoto: 'https://example.com/admin.png',
     },
-    mockUsersService: {
-      getAllUsers: vi.fn(),
+    session: {
+      access_token: 'presence-access-token',
     },
-    mockRealtimeService: {
-      createChannel: vi.fn(),
-      removeChannel: vi.fn(),
-    },
-  })
-);
+  },
+  mockUsersService: {
+    getAllUsers: vi.fn(),
+    getUsersByIds: vi.fn(),
+  },
+  mockChatService: {
+    listActivePresenceSince: vi.fn(),
+    updateUserPresence: vi.fn(),
+    insertUserPresence: vi.fn(),
+    sendUserPresenceUpdateKeepalive: vi.fn(),
+  },
+  mockRealtimeService: {
+    createChannel: vi.fn(),
+    removeChannel: vi.fn(),
+  },
+}));
 
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: () => ({
-    user: mockAuthUser,
-  }),
+  useAuthStore: () => mockAuthState,
 }));
 
 vi.mock('@/services/api/users.service', () => ({
   usersService: mockUsersService,
 }));
 
+vi.mock('@/services/api/chat.service', () => ({
+  chatService: mockChatService,
+}));
+
 vi.mock('@/services/realtime/realtime.service', () => ({
   realtimeService: mockRealtimeService,
 }));
 
+const flushPresenceEffects = async () => {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+};
+
 describe('usePresence', () => {
+  let postgresChangeHandler: (() => void) | null;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.useFakeTimers();
+    postgresChangeHandler = null;
+
     usePresenceStore.setState({
       channel: null,
       onlineUsers: 0,
@@ -48,6 +77,50 @@ describe('usePresence', () => {
       portalImageUrls: {},
     });
 
+    mockAuthState.user = {
+      id: 'user-a',
+      name: 'Admin',
+      email: 'admin@example.com',
+      profilephoto: 'https://example.com/admin.png',
+    };
+    mockAuthState.session = {
+      access_token: 'presence-access-token',
+    };
+
+    mockChatService.updateUserPresence.mockResolvedValue({
+      data: [
+        {
+          user_id: 'user-a',
+          is_online: true,
+          last_seen: '2026-03-09T09:00:00.000Z',
+          updated_at: '2026-03-09T09:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+    mockChatService.insertUserPresence.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mockChatService.listActivePresenceSince.mockResolvedValue({
+      data: [
+        {
+          user_id: 'user-a',
+          is_online: true,
+          last_seen: '2099-03-09T09:00:00.000Z',
+          updated_at: '2099-03-09T09:00:00.000Z',
+        },
+        {
+          user_id: 'user-b',
+          is_online: true,
+          last_seen: '2099-03-09T09:00:05.000Z',
+          updated_at: '2099-03-09T09:00:05.000Z',
+        },
+      ],
+      error: null,
+    });
+    mockChatService.sendUserPresenceUpdateKeepalive.mockReturnValue(true);
+
     mockUsersService.getAllUsers.mockResolvedValue({
       data: [
         {
@@ -55,14 +128,26 @@ describe('usePresence', () => {
           name: 'Admin',
           email: 'admin@example.com',
           profilephoto: 'https://example.com/admin.png',
-          online_at: '2026-03-08T10:00:00.000Z',
+          online_at: '2099-03-09T09:00:00.000Z',
         },
         {
           id: 'user-b',
           name: 'Gudang',
           email: 'gudang@example.com',
           profilephoto: 'https://example.com/gudang.png',
-          online_at: '2026-03-08T10:00:00.000Z',
+          online_at: '2099-03-09T09:00:05.000Z',
+        },
+      ],
+      error: null,
+    });
+    mockUsersService.getUsersByIds.mockResolvedValue({
+      data: [
+        {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: 'https://example.com/gudang.png',
+          online_at: '2099-03-09T09:00:05.000Z',
         },
       ],
       error: null,
@@ -71,14 +156,22 @@ describe('usePresence', () => {
     const mockChannel = {
       on: vi.fn(),
       subscribe: vi.fn(),
-      track: vi.fn().mockResolvedValue(undefined),
       unsubscribe: vi.fn(),
-      presenceState: vi.fn(() => ({
-        'presence-user-a': [{ user_id: 'user-a' }],
-      })),
     };
 
-    mockChannel.on.mockReturnValue(mockChannel);
+    mockChannel.on.mockImplementation(
+      (
+        event: string,
+        _filter: Record<string, string>,
+        callback: () => void
+      ) => {
+        if (event === 'postgres_changes') {
+          postgresChangeHandler = callback;
+        }
+
+        return mockChannel;
+      }
+    );
     mockChannel.subscribe.mockImplementation(
       (callback?: (status: string) => void) => {
         callback?.('SUBSCRIBED');
@@ -94,23 +187,106 @@ describe('usePresence', () => {
     vi.useRealTimers();
   });
 
-  it('does not recreate the presence channel when the directory data loads', async () => {
-    renderHook(() => usePresence());
+  it('hydrates the navbar roster from active user_presence rows', async () => {
+    const { unmount } = renderHook(() => usePresence());
 
-    expect(mockUsersService.getAllUsers).toHaveBeenCalledTimes(1);
+    await flushPresenceEffects();
+
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledWith(
+      'user_presence_roster_changes'
+    );
+    expect(mockChatService.listActivePresenceSince).toHaveBeenCalled();
+    expect(usePresenceStore.getState().onlineUsers).toBe(2);
+    expect(usePresenceStore.getState().onlineUsersList).toEqual([
+      {
+        id: 'user-a',
+        name: 'Admin',
+        email: 'admin@example.com',
+        profilephoto: 'https://example.com/admin.png',
+        online_at: '2099-03-09T09:00:00.000Z',
+      },
+      {
+        id: 'user-b',
+        name: 'Gudang',
+        email: 'gudang@example.com',
+        profilephoto: 'https://example.com/gudang.png',
+        online_at: '2099-03-09T09:00:05.000Z',
+      },
+    ]);
+
+    unmount();
+  });
+
+  it('does not eagerly load the full user directory when presence initializes', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(mockUsersService.getAllUsers).not.toHaveBeenCalled();
+    expect(mockUsersService.getUsersByIds).toHaveBeenCalledWith(['user-b']);
+
+    unmount();
+  });
+
+  it('falls back to the current user when active presence rows are unavailable', async () => {
+    mockChatService.listActivePresenceSince.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(usePresenceStore.getState().onlineUsers).toBe(1);
+    expect(usePresenceStore.getState().onlineUsersList).toEqual([
+      {
+        id: 'user-a',
+        name: 'Admin',
+        email: 'admin@example.com',
+        profilephoto: 'https://example.com/admin.png',
+        online_at: expect.any(String),
+      },
+    ]);
+
+    unmount();
+  });
+
+  it('refreshes the counter when user_presence changes arrive', async () => {
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(usePresenceStore.getState().onlineUsers).toBe(2);
+
+    mockChatService.listActivePresenceSince.mockResolvedValueOnce({
+      data: [
+        {
+          user_id: 'user-a',
+          is_online: true,
+          last_seen: '2099-03-09T09:00:10.000Z',
+          updated_at: '2099-03-09T09:00:10.000Z',
+        },
+      ],
+      error: null,
+    });
 
     await act(async () => {
+      postgresChangeHandler?.();
       await Promise.resolve();
-      await vi.advanceTimersByTimeAsync(150);
     });
 
-    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
-    expect(usePresenceStore.getState().allUsersList).toHaveLength(2);
+    expect(usePresenceStore.getState().onlineUsers).toBe(1);
+    expect(usePresenceStore.getState().onlineUsersList).toEqual([
+      {
+        id: 'user-a',
+        name: 'Admin',
+        email: 'admin@example.com',
+        profilephoto: 'https://example.com/admin.png',
+        online_at: '2099-03-09T09:00:10.000Z',
+      },
+    ]);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(150);
-    });
-
-    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
+    unmount();
   });
 });

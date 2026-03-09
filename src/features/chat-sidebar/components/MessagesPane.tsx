@@ -24,6 +24,7 @@ interface ChatPanelUser {
 
 export interface MessagesPaneModel {
   loading: boolean;
+  loadError: string | null;
   messages: ChatMessage[];
   user?: ChatPanelUser | null;
   messageInputHeight: number;
@@ -46,6 +47,7 @@ export interface MessagesPaneModel {
   showScrollToBottom: boolean;
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
+  olderMessagesError: string | null;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
@@ -69,11 +71,13 @@ export interface MessagesPaneModel {
   ) => ComposerPendingFileKind;
   onScrollToBottom: () => void;
   onLoadOlderMessages: () => void;
+  onRetryLoadMessages: () => void;
 }
 
 const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
   const {
     loading,
+    loadError,
     messages,
     user,
     messageInputHeight,
@@ -96,6 +100,7 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     showScrollToBottom,
     hasOlderMessages,
     isLoadingOlderMessages,
+    olderMessagesError,
     messagesContainerRef,
     messagesEndRef,
     messageBubbleRefs,
@@ -113,6 +118,7 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     getAttachmentFileKind,
     onScrollToBottom,
     onLoadOlderMessages,
+    onRetryLoadMessages,
   } = model;
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const { getImageMessageUrl } = useMessageImagePreviews({ messages });
@@ -175,10 +181,37 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
           <div className="flex justify-center items-center py-8">
             <div className="text-slate-400 text-sm">Loading messages...</div>
           </div>
+        ) : loadError && messages.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className="max-w-xs rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {loadError}
+            </div>
+            <button
+              type="button"
+              onClick={onRetryLoadMessages}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              Coba lagi
+            </button>
+          </div>
         ) : (
           <LayoutGroup id="chat-message-menus">
+            {loadError ? (
+              <div className="pb-2">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  <span>{loadError}</span>
+                  <button
+                    type="button"
+                    onClick={onRetryLoadMessages}
+                    className="rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                  >
+                    Muat ulang
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {hasOlderMessages ? (
-              <div className="flex justify-center pb-1">
+              <div className="flex flex-col items-center gap-1 pb-1">
                 <button
                   type="button"
                   onClick={onLoadOlderMessages}
@@ -189,6 +222,11 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
                     ? 'Loading older messages...'
                     : 'Load older messages'}
                 </button>
+                {olderMessagesError ? (
+                  <p className="text-[11px] text-rose-600">
+                    {olderMessagesError}
+                  </p>
+                ) : null}
               </div>
             ) : null}
             {messages.map(messageItem => {

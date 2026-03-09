@@ -373,6 +373,26 @@ export const chatService = {
     }
   },
 
+  async listActivePresenceSince(
+    since: string
+  ): Promise<ServiceResponse<UserPresence[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('user_presence')
+        .select('user_id, is_online, last_seen, updated_at')
+        .eq('is_online', true)
+        .gte('last_seen', since);
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as UserPresence[], error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async updateUserPresence(
     userId: string,
     payload: UserPresenceUpdateInput

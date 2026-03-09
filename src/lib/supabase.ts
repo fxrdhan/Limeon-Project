@@ -10,6 +10,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+const syncRealtimeAuthToken = (accessToken?: string | null) => {
+  if (!accessToken) {
+    return;
+  }
+
+  try {
+    void supabase.realtime.setAuth(accessToken);
+  } catch (error) {
+    console.warn('Failed to sync Supabase Realtime auth token:', error);
+  }
+};
+
 // Connection health monitoring
 let connectionHealthCheck: NodeJS.Timeout | null = null;
 
@@ -34,6 +46,19 @@ const startConnectionHealthCheck = () => {
 
 // Handle page visibility changes for better reconnection
 if (typeof window !== 'undefined') {
+  void supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      syncRealtimeAuthToken(data.session?.access_token ?? null);
+    })
+    .catch(error => {
+      console.warn('Failed to hydrate Supabase Realtime auth token:', error);
+    });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    syncRealtimeAuthToken(session?.access_token ?? null);
+  });
+
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       // Page became visible - good time to check connections

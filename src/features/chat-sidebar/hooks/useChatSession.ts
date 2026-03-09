@@ -39,7 +39,7 @@ interface UseChatSessionProps {
 export const useChatSession = ({
   isOpen,
   user,
-  accessToken,
+  accessToken: _accessToken,
   targetUser,
   currentChannelId,
   initialMessageAnimationKeysRef,
@@ -47,55 +47,26 @@ export const useChatSession = ({
 }: UseChatSessionProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
+  const [olderMessagesError, setOlderMessagesError] = useState<string | null>(
+    null
+  );
+  const [retryInitialLoadTick, setRetryInitialLoadTick] = useState(0);
   const conversationChannelRef = useRef<RealtimeChannel | null>(null);
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
-  const activeConversationChannelIdRef = useRef<string | null>(
-    currentChannelId
-  );
   const oldestLoadedMessageCreatedAtRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    activeConversationChannelIdRef.current = currentChannelId;
-  }, [currentChannelId]);
+  const broadcastNewMessage = useCallback((_message: ChatMessage) => {}, []);
 
-  const broadcastNewMessage = useCallback((message: ChatMessage) => {
-    if (!conversationChannelRef.current) return;
+  const broadcastUpdatedMessage = useCallback(
+    (_message: ChatMessage) => {},
+    []
+  );
 
-    void conversationChannelRef.current.send({
-      type: 'broadcast',
-      event: 'new_message',
-      payload: message,
-    });
-  }, []);
-
-  const broadcastUpdatedMessage = useCallback((message: ChatMessage) => {
-    if (!conversationChannelRef.current) return;
-    if (
-      message.channel_id &&
-      message.channel_id !== activeConversationChannelIdRef.current
-    ) {
-      return;
-    }
-
-    void conversationChannelRef.current.send({
-      type: 'broadcast',
-      event: 'update_message',
-      payload: message,
-    });
-  }, []);
-
-  const broadcastDeletedMessage = useCallback((messageId: string) => {
-    if (!conversationChannelRef.current) return;
-
-    void conversationChannelRef.current.send({
-      type: 'broadcast',
-      event: 'delete_message',
-      payload: { id: messageId },
-    });
-  }, []);
+  const broadcastDeletedMessage = useCallback((_messageId: string) => {}, []);
 
   const isSessionTokenActive = useCallback(
     (sessionToken: number) => activeSessionTokenRef.current === sessionToken,
@@ -119,26 +90,19 @@ export const useChatSession = ({
     []
   );
 
-  const { targetUserPresence, performClose, broadcastReceiptUpdate } =
+  const { targetUserPresence, targetUserPresenceError, performClose } =
     useChatSessionPresence({
       isOpen,
       user,
-      accessToken,
       targetUser,
       currentChannelId,
-      applyReceiptUpdate: applyMessageUpdate,
     });
 
-  const {
-    mergeAndBroadcastMessageUpdates,
-    markMessageIdsAsDelivered,
-    markMessageIdsAsRead,
-  } = useChatSessionReceipts({
-    applyMessageUpdate,
-    broadcastConversationUpdate: broadcastUpdatedMessage,
-    broadcastReceiptUpdate,
-    isSessionTokenActive,
-  });
+  const { markMessageIdsAsDelivered, markMessageIdsAsRead } =
+    useChatSessionReceipts({
+      applyMessageUpdate,
+      isSessionTokenActive,
+    });
 
   const loadOlderMessages = useCallback(async () => {
     if (
@@ -154,6 +118,7 @@ export const useChatSession = ({
     }
 
     setIsLoadingOlderMessages(true);
+    setOlderMessagesError(null);
 
     try {
       const { data: olderMessagesPage, error } =
@@ -178,6 +143,7 @@ export const useChatSession = ({
         if (error) {
           console.error('Error loading older messages:', error);
         }
+        setOlderMessagesError('Gagal memuat pesan lama');
         return;
       }
 
@@ -204,8 +170,10 @@ export const useChatSession = ({
       oldestLoadedMessageCreatedAtRef.current =
         olderMessages[0]?.created_at ?? oldestLoadedMessageCreatedAtRef.current;
       setHasOlderMessages(olderMessagesPayload.hasMore);
+      setOlderMessagesError(null);
     } catch (error) {
       console.error('Error loading older messages:', error);
+      setOlderMessagesError('Gagal memuat pesan lama');
     } finally {
       setIsLoadingOlderMessages(false);
     }
@@ -222,8 +190,10 @@ export const useChatSession = ({
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       hasCompletedInitialOpenLoadRef.current = false;
       setLoading(false);
+      setLoadError(null);
       setHasOlderMessages(false);
       setIsLoadingOlderMessages(false);
+      setOlderMessagesError(null);
       oldestLoadedMessageCreatedAtRef.current = null;
       return;
     }
@@ -273,6 +243,7 @@ export const useChatSession = ({
 
       if (isActiveSession()) {
         setLoading(!hasCachedConversation);
+        setLoadError(null);
       }
 
       try {
@@ -292,6 +263,11 @@ export const useChatSession = ({
 
         if (error) {
           console.error('Error loading messages:', error);
+          setLoadError(
+            hasCachedConversation
+              ? 'Gagal menyegarkan percakapan'
+              : 'Gagal memuat percakapan'
+          );
           return;
         }
 
@@ -312,6 +288,7 @@ export const useChatSession = ({
         oldestLoadedMessageCreatedAtRef.current =
           transformedMessages[0]?.created_at ?? null;
         setHasOlderMessages(existingMessagesPayload?.hasMore ?? false);
+        setLoadError(null);
 
         const undeliveredIncomingMessageIds = transformedMessages
           .filter(
@@ -328,6 +305,11 @@ export const useChatSession = ({
         );
       } catch (error) {
         console.error('Error loading messages:', error);
+        setLoadError(
+          hasCachedConversation
+            ? 'Gagal menyegarkan percakapan'
+            : 'Gagal memuat percakapan'
+        );
       } finally {
         if (isActiveSession()) {
           hasCompletedInitialOpenLoadRef.current = true;
@@ -344,27 +326,8 @@ export const useChatSession = ({
       }
 
       const channel = chatSidebarGateway.createRealtimeChannel(
-        `chat_${currentChannelId}`,
-        {
-          config: {
-            broadcast: { self: true },
-          },
-        }
+        `chat_${currentChannelId}`
       );
-
-      channel.on('broadcast', { event: 'new_message' }, payload => {
-        const newMessage = payload.payload as ChatMessage;
-        setMessages(previousMessages => {
-          const exists = previousMessages.some(msg => msg.id === newMessage.id);
-          if (exists) return previousMessages;
-          return [...previousMessages, newMessage];
-        });
-      });
-
-      channel.on('broadcast', { event: 'update_message' }, payload => {
-        const updatedMessage = payload.payload as ChatMessage;
-        applyMessageUpdate(updatedMessage);
-      });
 
       channel.on(
         'postgres_changes',
@@ -449,17 +412,6 @@ export const useChatSession = ({
         }
       );
 
-      channel.on('broadcast', { event: 'delete_message' }, payload => {
-        const deletedMessage = payload.payload as { id: string };
-        setMessages(previousMessages =>
-          previousMessages.filter(
-            messageItem => messageItem.id !== deletedMessage.id
-          )
-        );
-      });
-
-      channel.on('broadcast', { event: 'typing' }, () => {});
-
       channel.subscribe(status => {
         if (status === 'CHANNEL_ERROR') {
           console.error('Failed to connect to chat channel');
@@ -493,7 +445,13 @@ export const useChatSession = ({
     markMessageIdsAsDelivered,
     targetUser,
     user,
+    retryInitialLoadTick,
   ]);
+
+  const retryLoadMessages = useCallback(() => {
+    setLoadError(null);
+    setRetryInitialLoadTick(previousTick => previousTick + 1);
+  }, []);
 
   useEffect(() => {
     if (
@@ -515,15 +473,18 @@ export const useChatSession = ({
     messages,
     setMessages,
     loading,
+    loadError,
     hasOlderMessages,
     isLoadingOlderMessages,
+    olderMessagesError,
     loadOlderMessages,
+    retryLoadMessages,
     targetUserPresence,
+    targetUserPresenceError,
     performClose,
     broadcastNewMessage,
     broadcastUpdatedMessage,
     broadcastDeletedMessage,
-    mergeAndBroadcastMessageUpdates,
     markMessageIdsAsRead,
     hasCompletedInitialOpenLoadRef,
   };

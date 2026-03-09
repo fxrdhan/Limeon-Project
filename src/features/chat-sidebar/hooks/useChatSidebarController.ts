@@ -25,7 +25,7 @@ export const useChatSidebarController = ({
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
     () => new Set()
   );
-  const { user, session } = useAuthStore();
+  const { user } = useAuthStore();
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -51,7 +51,9 @@ export const useChatSidebarController = ({
     messages,
     setMessages,
     loading,
+    loadError,
     targetUserPresence,
+    targetUserPresenceError,
     performClose,
     broadcastNewMessage,
     broadcastUpdatedMessage,
@@ -59,11 +61,12 @@ export const useChatSidebarController = ({
     markMessageIdsAsRead,
     hasOlderMessages,
     isLoadingOlderMessages,
+    olderMessagesError,
     loadOlderMessages,
+    retryLoadMessages,
   } = useChatSession({
     isOpen,
     user,
-    accessToken: session?.access_token ?? null,
     targetUser,
     currentChannelId,
     initialMessageAnimationKeysRef,
@@ -177,6 +180,7 @@ export const useChatSidebarController = ({
       targetUserPresence?.is_online === true &&
       isPresenceFresh(targetUserPresence.last_seen),
     targetUserPresence,
+    targetUserPresenceError,
     interaction,
     handleDeleteSelectedMessages,
     handleClose,
@@ -186,6 +190,7 @@ export const useChatSidebarController = ({
 
   const messagesModel = createMessagesPaneModel({
     loading,
+    loadError,
     messages,
     user,
     composer: {
@@ -211,10 +216,12 @@ export const useChatSidebarController = ({
       isAtBottom: viewport.isAtBottom,
       hasOlderMessages,
       isLoadingOlderMessages,
+      olderMessagesError,
       closeMessageMenu: viewport.closeMessageMenu,
       toggleMessageMenu,
       scrollToBottom: viewport.scrollToBottom,
       loadOlderMessages,
+      retryLoadMessages,
       messagesContainerRef,
       messagesEndRef,
       messageBubbleRefs,

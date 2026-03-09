@@ -15,14 +15,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const toggleChatForUser = useChatSidebarStore(
     state => state.toggleChatForUser
   );
+  const [showPortal, setShowPortal] = useState(false);
   const {
     displayOnlineUsers,
     onlineUserIds,
     reorderedOnlineUsers,
     portalOrderedUsers,
-    portalImageUrls,
-  } = usePresenceRoster();
-  const [showPortal, setShowPortal] = useState(false);
+    isDirectoryLoading,
+    directoryError,
+    retryLoadDirectory,
+  } = usePresenceRoster(showPortal);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const portalTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -251,6 +253,23 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
                   <div className="relative p-3">
                     <div className="space-y-1">
+                      {isDirectoryLoading && portalOrderedUsers.length === 0 ? (
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+                          Memuat daftar pengguna...
+                        </div>
+                      ) : null}
+                      {directoryError ? (
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                          <span>{directoryError}</span>
+                          <button
+                            type="button"
+                            onClick={retryLoadDirectory}
+                            className="rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                          >
+                            Coba lagi
+                          </button>
+                        </div>
+                      ) : null}
                       {portalOrderedUsers.map(portalUser => {
                         const isOnline = onlineUserIds.has(portalUser.id);
 
@@ -298,11 +317,12 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                 className={`relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden ${isOnline ? '' : 'opacity-50'}`}
                                 title={`${portalUser.name} - ${isOnline ? 'Online' : 'Offline'}`}
                               >
-                                {portalImageUrls[portalUser.id] ? (
+                                {portalUser.profilephoto ? (
                                   <img
-                                    src={portalImageUrls[portalUser.id]}
+                                    src={portalUser.profilephoto}
                                     alt={portalUser.name}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
                                     draggable={false}
                                   />
                                 ) : (

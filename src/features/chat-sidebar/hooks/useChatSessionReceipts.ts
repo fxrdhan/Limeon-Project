@@ -8,21 +8,17 @@ interface UseChatSessionReceiptsProps {
   applyMessageUpdate: (
     updatedMessage: Partial<ChatMessage> & { id: string }
   ) => void;
-  broadcastConversationUpdate: (message: ChatMessage) => void;
-  broadcastReceiptUpdate: (message: ChatMessage) => void;
   isSessionTokenActive: (sessionToken: number) => boolean;
 }
 
 export const useChatSessionReceipts = ({
   applyMessageUpdate,
-  broadcastConversationUpdate,
-  broadcastReceiptUpdate,
   isSessionTokenActive,
 }: UseChatSessionReceiptsProps) => {
   const pendingDeliveredReceiptMessageIdsRef = useRef<Set<string>>(new Set());
   const pendingReadReceiptMessageIdsRef = useRef<Set<string>>(new Set());
 
-  const mergeAndBroadcastMessageUpdates = useCallback(
+  const mergeMessageUpdates = useCallback(
     (updatedMessages: ChatMessage[], sessionToken?: number) => {
       if (updatedMessages.length === 0) return;
       if (
@@ -34,16 +30,9 @@ export const useChatSessionReceipts = ({
 
       updatedMessages.forEach(updatedMessage => {
         applyMessageUpdate(updatedMessage);
-        broadcastConversationUpdate(updatedMessage);
-        broadcastReceiptUpdate(updatedMessage);
       });
     },
-    [
-      applyMessageUpdate,
-      broadcastConversationUpdate,
-      broadcastReceiptUpdate,
-      isSessionTokenActive,
-    ]
+    [applyMessageUpdate, isSessionTokenActive]
   );
 
   const markMessageIdsAsDelivered = useCallback(
@@ -67,7 +56,7 @@ export const useChatSessionReceipts = ({
           return;
         }
 
-        mergeAndBroadcastMessageUpdates(deliveredMessages, sessionToken);
+        mergeMessageUpdates(deliveredMessages, sessionToken);
       } catch (error) {
         console.error('Error marking messages as delivered:', error);
       } finally {
@@ -76,7 +65,7 @@ export const useChatSessionReceipts = ({
         });
       }
     },
-    [mergeAndBroadcastMessageUpdates]
+    [mergeMessageUpdates]
   );
 
   const markMessageIdsAsRead = useCallback(
@@ -97,7 +86,7 @@ export const useChatSessionReceipts = ({
         const { data: readMessages, error } =
           await chatSidebarGateway.markMessageIdsAsRead(targetIds);
         if (error || !readMessages || readMessages.length === 0) return;
-        mergeAndBroadcastMessageUpdates(readMessages, sessionToken);
+        mergeMessageUpdates(readMessages, sessionToken);
       } catch (error) {
         console.error('Error marking messages as read:', error);
       } finally {
@@ -106,11 +95,11 @@ export const useChatSessionReceipts = ({
         });
       }
     },
-    [mergeAndBroadcastMessageUpdates]
+    [mergeMessageUpdates]
   );
 
   return {
-    mergeAndBroadcastMessageUpdates,
+    mergeMessageUpdates,
     markMessageIdsAsDelivered,
     markMessageIdsAsRead,
   };

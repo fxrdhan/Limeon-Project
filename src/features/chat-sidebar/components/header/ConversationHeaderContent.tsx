@@ -13,6 +13,7 @@ interface ConversationHeaderContentProps {
   displayTargetPhotoUrl: string | null;
   isTargetOnline: boolean;
   targetUserPresence: UserPresence | null;
+  targetUserPresenceError: string | null;
   isOptionsMenuOpen: boolean;
   optionsButtonRef: RefObject<HTMLButtonElement | null>;
   optionsMenuRef: RefObject<HTMLDivElement | null>;
@@ -31,6 +32,7 @@ const ConversationHeaderContent = ({
   displayTargetPhotoUrl,
   isTargetOnline,
   targetUserPresence,
+  targetUserPresenceError,
   isOptionsMenuOpen,
   optionsButtonRef,
   optionsMenuRef,
@@ -70,6 +72,10 @@ const ConversationHeaderContent = ({
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs text-green-600 font-medium">Online</span>
             </div>
+          ) : targetUserPresenceError ? (
+            <span className="text-xs text-amber-600">
+              {targetUserPresenceError}
+            </span>
           ) : targetUserPresence?.last_seen ? (
             <span className="text-xs text-slate-400">
               Last seen {formatLastSeen(targetUserPresence.last_seen)}

@@ -18,6 +18,7 @@ export interface ChatHeaderModel {
   displayTargetPhotoUrl: string | null;
   isTargetOnline: boolean;
   targetUserPresence: UserPresence | null;
+  targetUserPresenceError: string | null;
   isSearchMode: boolean;
   searchQuery: string;
   searchState: SearchState;
@@ -50,6 +51,7 @@ const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
     displayTargetPhotoUrl,
     isTargetOnline,
     targetUserPresence,
+    targetUserPresenceError,
     isSearchMode,
     searchQuery,
     searchState,
@@ -170,6 +172,7 @@ const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
           displayTargetPhotoUrl={displayTargetPhotoUrl}
           isTargetOnline={isTargetOnline}
           targetUserPresence={targetUserPresence}
+          targetUserPresenceError={targetUserPresenceError}
           isOptionsMenuOpen={isOptionsMenuOpen}
           optionsButtonRef={optionsButtonRef}
           optionsMenuRef={optionsMenuRef}

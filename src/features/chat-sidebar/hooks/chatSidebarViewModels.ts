@@ -11,6 +11,7 @@ export const createChatHeaderModel = ({
   displayTargetPhotoUrl,
   isTargetOnline,
   targetUserPresence,
+  targetUserPresenceError,
   interaction,
   handleDeleteSelectedMessages,
   handleClose,
@@ -21,6 +22,7 @@ export const createChatHeaderModel = ({
   displayTargetPhotoUrl: ChatHeaderModel['displayTargetPhotoUrl'];
   isTargetOnline: ChatHeaderModel['isTargetOnline'];
   targetUserPresence: ChatHeaderModel['targetUserPresence'];
+  targetUserPresenceError: ChatHeaderModel['targetUserPresenceError'];
   interaction: {
     isMessageSearchMode: boolean;
     messageSearchQuery: string;
@@ -52,6 +54,7 @@ export const createChatHeaderModel = ({
   displayTargetPhotoUrl,
   isTargetOnline,
   targetUserPresence,
+  targetUserPresenceError,
   isSearchMode: interaction.isMessageSearchMode,
   searchQuery: interaction.messageSearchQuery,
   searchState: interaction.messageSearchState,
@@ -80,6 +83,7 @@ export const createChatHeaderModel = ({
 
 export const createMessagesPaneModel = ({
   loading,
+  loadError,
   messages,
   user,
   composer,
@@ -89,6 +93,7 @@ export const createMessagesPaneModel = ({
   handleToggleExpand,
 }: {
   loading: boolean;
+  loadError: string | null;
   messages: MessagesPaneModel['messages'];
   user: MessagesPaneModel['user'];
   composer: {
@@ -114,9 +119,11 @@ export const createMessagesPaneModel = ({
     isAtBottom: boolean;
     hasOlderMessages: boolean;
     isLoadingOlderMessages: boolean;
+    olderMessagesError: string | null;
     closeMessageMenu: () => void;
     toggleMessageMenu: MessagesPaneModel['toggleMessageMenu'];
     scrollToBottom: () => void;
+    retryLoadMessages: () => void;
     messagesContainerRef: MessagesPaneModel['messagesContainerRef'];
     messagesEndRef: MessagesPaneModel['messagesEndRef'];
     messageBubbleRefs: MessagesPaneModel['messageBubbleRefs'];
@@ -137,6 +144,7 @@ export const createMessagesPaneModel = ({
   handleToggleExpand: MessagesPaneModel['handleToggleExpand'];
 }): MessagesPaneModel => ({
   loading,
+  loadError,
   messages,
   user,
   messageInputHeight: composer.messageInputHeight,
@@ -165,6 +173,7 @@ export const createMessagesPaneModel = ({
   showScrollToBottom: viewport.hasNewMessages || !viewport.isAtBottom,
   hasOlderMessages: viewport.hasOlderMessages,
   isLoadingOlderMessages: viewport.isLoadingOlderMessages,
+  olderMessagesError: viewport.olderMessagesError,
   messagesContainerRef: viewport.messagesContainerRef,
   messagesEndRef: viewport.messagesEndRef,
   messageBubbleRefs: viewport.messageBubbleRefs,
@@ -182,6 +191,7 @@ export const createMessagesPaneModel = ({
   getAttachmentFileKind,
   onScrollToBottom: viewport.scrollToBottom,
   onLoadOlderMessages: viewport.loadOlderMessages,
+  onRetryLoadMessages: viewport.retryLoadMessages,
 });
 
 export const createComposerPanelModel = ({

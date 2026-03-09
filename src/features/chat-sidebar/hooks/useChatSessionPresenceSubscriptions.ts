@@ -1,15 +1,7 @@
 import type { UserDetails } from '@/types/database';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  type Dispatch,
-  type MutableRefObject,
-  type SetStateAction,
-} from 'react';
+import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import {
   chatSidebarGateway,
-  type ChatMessage,
   type RealtimeChannel,
   type UserPresence,
 } from '../data/chatSidebarGateway';
@@ -20,15 +12,8 @@ interface UseChatSessionPresenceSubscriptionsProps {
   user: UserDetails | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
-  applyReceiptUpdate: (message: Partial<ChatMessage> & { id: string }) => void;
-  updateUserChatOpen: () => Promise<void>;
   setTargetUserPresence: Dispatch<SetStateAction<UserPresence | null>>;
-  globalPresenceChannelRef: MutableRefObject<RealtimeChannel | null>;
-  activeTargetUserIdRef: MutableRefObject<string | null>;
-  activePresenceScopeRef: MutableRefObject<string | null>;
-  hasClosedChatRef: MutableRefObject<boolean>;
-  hasHandledPageExitRef: MutableRefObject<boolean>;
-  isClosingRef: MutableRefObject<boolean>;
+  setTargetUserPresenceError: Dispatch<SetStateAction<string | null>>;
 }
 
 export const useChatSessionPresenceSubscriptions = ({
@@ -36,53 +21,29 @@ export const useChatSessionPresenceSubscriptions = ({
   user,
   targetUser,
   currentChannelId,
-  applyReceiptUpdate,
-  updateUserChatOpen,
   setTargetUserPresence,
-  globalPresenceChannelRef,
-  activeTargetUserIdRef,
-  activePresenceScopeRef,
-  hasClosedChatRef,
-  hasHandledPageExitRef,
-  isClosingRef,
+  setTargetUserPresenceError,
 }: UseChatSessionPresenceSubscriptionsProps) => {
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
-  const presenceHeartbeatIntervalRef = useRef<number | null>(null);
-
-  const broadcastReceiptUpdate = useCallback(
-    (message: ChatMessage) => {
-      if (!globalPresenceChannelRef.current) return;
-
-      void globalPresenceChannelRef.current.send({
-        type: 'broadcast',
-        event: 'message_receipt_updated',
-        payload: message,
-      });
-    },
-    [globalPresenceChannelRef]
-  );
-
-  useEffect(() => {
-    activeTargetUserIdRef.current = targetUser?.id ?? null;
-  }, [activeTargetUserIdRef, targetUser?.id]);
-
-  useEffect(() => {
-    activePresenceScopeRef.current =
-      targetUser?.id && currentChannelId
-        ? `${targetUser.id}::${currentChannelId}`
-        : null;
-  }, [activePresenceScopeRef, currentChannelId, targetUser?.id]);
+  const activePresenceScopeRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
-      activePresenceScopeRef.current = null;
+      activePresenceScopeRef.current =
+        targetUser?.id && currentChannelId
+          ? `${targetUser.id}::${currentChannelId}`
+          : null;
       setTargetUserPresence(null);
+      setTargetUserPresenceError(null);
       return;
     }
 
     const presenceScopeKey = `${targetUser.id}::${currentChannelId}`;
+    activePresenceScopeRef.current = presenceScopeKey;
 
     const loadTargetUserPresence = async () => {
+      setTargetUserPresenceError(null);
+
       try {
         const { data: presence, error } =
           await chatSidebarGateway.getUserPresence(targetUser.id);
@@ -93,6 +54,8 @@ export const useChatSessionPresenceSubscriptions = ({
 
         if (error && error.code !== 'PGRST116') {
           console.error('Error loading target user presence:', error);
+          setTargetUserPresenceError('Status online tidak tersedia');
+          setTargetUserPresence(null);
           return;
         }
 
@@ -103,6 +66,7 @@ export const useChatSessionPresenceSubscriptions = ({
         }
 
         console.error('Caught error loading target user presence:', error);
+        setTargetUserPresenceError('Status online tidak tersedia');
         setTargetUserPresence(null);
       }
     };
@@ -130,25 +94,30 @@ export const useChatSessionPresenceSubscriptions = ({
       },
       payload => {
         if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+          setTargetUserPresenceError(null);
           setTargetUserPresence(payload.new as UserPresence);
+          return;
+        }
+
+        if (payload.eventType === 'DELETE') {
+          setTargetUserPresenceError(null);
+          setTargetUserPresence(null);
         }
       }
     );
 
-    presenceChannel.subscribe();
+    presenceChannel.subscribe(status => {
+      if (status === 'CHANNEL_ERROR') {
+        console.error('Failed to connect to target user presence channel');
+        if (activePresenceScopeRef.current === presenceScopeKey) {
+          setTargetUserPresenceError('Status online tidak tersedia');
+        }
+      }
+    });
     presenceChannelRef.current = presenceChannel;
 
-    hasClosedChatRef.current = false;
-    hasHandledPageExitRef.current = false;
-    isClosingRef.current = false;
-    activePresenceScopeRef.current = presenceScopeKey;
     setTargetUserPresence(null);
-    void updateUserChatOpen();
     void loadTargetUserPresence();
-
-    presenceHeartbeatIntervalRef.current = window.setInterval(() => {
-      void updateUserChatOpen();
-    }, 30000);
 
     return () => {
       if (presenceChannelRef.current) {
@@ -157,111 +126,16 @@ export const useChatSessionPresenceSubscriptions = ({
         );
         presenceChannelRef.current = null;
       }
-      if (presenceHeartbeatIntervalRef.current !== null) {
-        window.clearInterval(presenceHeartbeatIntervalRef.current);
-        presenceHeartbeatIntervalRef.current = null;
-      }
       if (activePresenceScopeRef.current === presenceScopeKey) {
         activePresenceScopeRef.current = null;
       }
     };
   }, [
-    activePresenceScopeRef,
     currentChannelId,
-    hasClosedChatRef,
-    hasHandledPageExitRef,
-    isClosingRef,
     isOpen,
+    setTargetUserPresenceError,
     setTargetUserPresence,
     targetUser,
-    updateUserChatOpen,
     user,
   ]);
-
-  useEffect(() => {
-    if (!isOpen || !user) {
-      return;
-    }
-
-    if (globalPresenceChannelRef.current) {
-      void chatSidebarGateway.removeRealtimeChannel(
-        globalPresenceChannelRef.current
-      );
-    }
-
-    const globalPresenceChannel = chatSidebarGateway.createRealtimeChannel(
-      'global_presence_updates',
-      {
-        config: {
-          broadcast: { self: true },
-        },
-      }
-    );
-
-    globalPresenceChannel.on(
-      'broadcast',
-      { event: 'presence_changed' },
-      payload => {
-        const presenceUpdate = payload.payload as Partial<UserPresence>;
-        if (presenceUpdate.user_id !== activeTargetUserIdRef.current) {
-          return;
-        }
-
-        setTargetUserPresence(previousPresence =>
-          previousPresence
-            ? {
-                ...previousPresence,
-                user_id: previousPresence.user_id,
-                is_online:
-                  presenceUpdate.is_online ?? previousPresence.is_online,
-                last_seen:
-                  presenceUpdate.last_seen ?? previousPresence.last_seen,
-                updated_at:
-                  presenceUpdate.updated_at ?? previousPresence.updated_at,
-              }
-            : {
-                user_id: presenceUpdate.user_id!,
-                is_online: presenceUpdate.is_online ?? false,
-                last_seen: presenceUpdate.last_seen ?? new Date().toISOString(),
-                updated_at: presenceUpdate.updated_at ?? null,
-              }
-        );
-      }
-    );
-
-    globalPresenceChannel.on(
-      'broadcast',
-      { event: 'message_receipt_updated' },
-      payload => {
-        const updatedMessage = payload.payload as Partial<ChatMessage>;
-        if (!updatedMessage?.id) return;
-        applyReceiptUpdate(
-          updatedMessage as Partial<ChatMessage> & { id: string }
-        );
-      }
-    );
-
-    globalPresenceChannel.subscribe();
-    globalPresenceChannelRef.current = globalPresenceChannel;
-
-    return () => {
-      if (globalPresenceChannelRef.current) {
-        void chatSidebarGateway.removeRealtimeChannel(
-          globalPresenceChannelRef.current
-        );
-        globalPresenceChannelRef.current = null;
-      }
-    };
-  }, [
-    activeTargetUserIdRef,
-    applyReceiptUpdate,
-    globalPresenceChannelRef,
-    isOpen,
-    setTargetUserPresence,
-    user,
-  ]);
-
-  return {
-    broadcastReceiptUpdate,
-  };
 };

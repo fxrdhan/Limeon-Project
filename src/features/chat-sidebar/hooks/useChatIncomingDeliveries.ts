@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { useCallback, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import {
   chatSidebarGateway,
   type ChatMessage,
@@ -7,6 +8,7 @@ import {
 } from '../data/chatSidebarGateway';
 
 const DELIVERY_BATCH_WINDOW_MS = 90;
+const CHAT_DELIVERY_SYNC_TOAST_ID = 'chat-delivery-sync-warning';
 
 export const useChatIncomingDeliveries = () => {
   const { user } = useAuthStore();
@@ -33,11 +35,23 @@ export const useChatIncomingDeliveries = () => {
         await chatSidebarGateway.markMessageIdsAsDelivered(queuedMessageIds);
       if (error) {
         console.error('Error marking incoming messages as delivered:', error);
+        toast.error(
+          'Sinkronisasi status chat tertunda. Status delivered bisa terlambat diperbarui.',
+          {
+            id: CHAT_DELIVERY_SYNC_TOAST_ID,
+          }
+        );
       }
     } catch (error) {
       console.error(
         'Caught error marking incoming messages as delivered:',
         error
+      );
+      toast.error(
+        'Sinkronisasi status chat tertunda. Status delivered bisa terlambat diperbarui.',
+        {
+          id: CHAT_DELIVERY_SYNC_TOAST_ID,
+        }
       );
     } finally {
       queuedMessageIds.forEach(messageId => {
@@ -132,6 +146,12 @@ export const useChatIncomingDeliveries = () => {
                 'Error backfilling undelivered incoming messages:',
                 error
               );
+              toast.error(
+                'Riwayat delivered chat belum tersinkron penuh. Coba buka ulang chat jika status belum sesuai.',
+                {
+                  id: CHAT_DELIVERY_SYNC_TOAST_ID,
+                }
+              );
               return;
             }
 
@@ -141,12 +161,24 @@ export const useChatIncomingDeliveries = () => {
               'Caught error backfilling undelivered incoming messages:',
               error
             );
+            toast.error(
+              'Riwayat delivered chat belum tersinkron penuh. Coba buka ulang chat jika status belum sesuai.',
+              {
+                id: CHAT_DELIVERY_SYNC_TOAST_ID,
+              }
+            );
           }
         })();
       }
 
       if (status === 'CHANNEL_ERROR') {
         console.error('Failed to connect to incoming chat delivery channel');
+        toast.error(
+          'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
+          {
+            id: CHAT_DELIVERY_SYNC_TOAST_ID,
+          }
+        );
       }
     });
     incomingMessagesChannelRef.current = incomingMessagesChannel;
