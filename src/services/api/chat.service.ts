@@ -133,11 +133,12 @@ export const chatService = {
   },
 
   async fetchMessagesBetweenUsers(
-    userId: string,
+    _userId: string,
     targetUserId: string,
     channelId?: string | null,
     options?: {
       beforeCreatedAt?: string | null;
+      beforeId?: string | null;
       limit?: number;
     }
   ): Promise<ServiceResponse<ConversationMessagesPage>> {
@@ -146,26 +147,13 @@ export const chatService = {
         1,
         options?.limit ?? DEFAULT_CHAT_MESSAGES_PAGE_SIZE
       );
-      let query = supabase
-        .from('chat_messages')
-        .select('*')
-        .or(
-          `and(sender_id.eq.${userId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${userId})`
-        );
-
-      if (channelId) {
-        query = query.eq('channel_id', channelId);
-      }
-
-      if (options?.beforeCreatedAt) {
-        query = query.lt('created_at', options.beforeCreatedAt);
-      }
-
-      const { data, error } = await query
-        .order('created_at', {
-          ascending: false,
-        })
-        .limit(pageSize + 1);
+      const { data, error } = await supabase.rpc('fetch_chat_messages_page', {
+        p_target_user_id: targetUserId,
+        p_channel_id: channelId ?? null,
+        p_before_created_at: options?.beforeCreatedAt ?? null,
+        p_before_id: options?.beforeId ?? null,
+        p_limit: pageSize + 1,
+      });
 
       if (error) {
         return { data: null, error };

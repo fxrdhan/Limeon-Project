@@ -27,6 +27,7 @@ export const chatSidebarGateway = {
     channelId?: string | null,
     options?: {
       beforeCreatedAt?: string | null;
+      beforeId?: string | null;
       limit?: number;
     }
   ) {

@@ -9,6 +9,7 @@ import {
 import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface UseChatSessionPresenceSubscriptionsProps {
+  enabled?: boolean;
   isOpen: boolean;
   user: UserDetails | null;
   targetUser?: ChatSidebarPanelTargetUser;
@@ -18,6 +19,7 @@ interface UseChatSessionPresenceSubscriptionsProps {
 }
 
 export const useChatSessionPresenceSubscriptions = ({
+  enabled = true,
   isOpen,
   user,
   targetUser,
@@ -38,6 +40,13 @@ export const useChatSessionPresenceSubscriptions = ({
           ? `${targetUser.id}::${currentChannelId}`
           : null;
       setTargetUserPresence(null);
+      setTargetUserPresenceError(null);
+      return;
+    }
+
+    if (!enabled) {
+      markRecoverySuccess();
+      activePresenceScopeRef.current = `${targetUser.id}::${currentChannelId}`;
       setTargetUserPresenceError(null);
       return;
     }
@@ -159,6 +168,7 @@ export const useChatSessionPresenceSubscriptions = ({
     };
   }, [
     currentChannelId,
+    enabled,
     isOpen,
     markRecoverySuccess,
     recoveryTick,

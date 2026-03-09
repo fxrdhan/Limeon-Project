@@ -62,6 +62,7 @@ export const useChatSession = ({
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
   const oldestLoadedMessageCreatedAtRef = useRef<string | null>(null);
+  const oldestLoadedMessageIdRef = useRef<string | null>(null);
   const isInitialConversationLoadPendingRef = useRef(false);
   const pendingConversationRealtimeEventsRef = useRef<
     PendingConversationRealtimeEvent[]
@@ -140,6 +141,7 @@ export const useChatSession = ({
     hasOlderMessages,
     isLoadingOlderMessages,
     oldestLoadedMessageCreatedAtRef,
+    oldestLoadedMessageIdRef,
     setMessages,
     setHasOlderMessages,
     setIsLoadingOlderMessages,
@@ -175,6 +177,7 @@ export const useChatSession = ({
       setIsLoadingOlderMessages(false);
       setOlderMessagesError(null);
       oldestLoadedMessageCreatedAtRef.current = null;
+      oldestLoadedMessageIdRef.current = null;
       return;
     }
 
@@ -287,6 +290,8 @@ export const useChatSession = ({
         setConversationCacheEntry(currentChannelId, latestPersistedMessages);
         oldestLoadedMessageCreatedAtRef.current =
           latestPersistedMessages[0]?.created_at ?? null;
+        oldestLoadedMessageIdRef.current =
+          latestPersistedMessages[0]?.id ?? null;
         setHasOlderMessages(existingMessagesPayload?.hasMore ?? false);
         setLoadError(null);
 

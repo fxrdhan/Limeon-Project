@@ -62,6 +62,51 @@ describe('chatService', () => {
     });
   });
 
+  it('fetches conversation pages through the deterministic pagination rpc', async () => {
+    const rpcMessages = [
+      {
+        id: 'message-3',
+        created_at: '2026-03-09T10:02:00.000Z',
+      },
+      {
+        id: 'message-2',
+        created_at: '2026-03-09T10:01:00.000Z',
+      },
+    ];
+    mockRpc.mockResolvedValueOnce({
+      data: rpcMessages,
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.fetchMessagesBetweenUsers(
+      'user-a',
+      'user-b',
+      'channel-1',
+      {
+        beforeCreatedAt: '2026-03-09T10:03:00.000Z',
+        beforeId: 'message-4',
+        limit: 2,
+      }
+    );
+
+    expect(mockRpc).toHaveBeenCalledWith('fetch_chat_messages_page', {
+      p_target_user_id: 'user-b',
+      p_channel_id: 'channel-1',
+      p_before_created_at: '2026-03-09T10:03:00.000Z',
+      p_before_id: 'message-4',
+      p_limit: 3,
+    });
+    expect(result).toEqual({
+      data: {
+        messages: [...rpcMessages].reverse(),
+        hasMore: false,
+      },
+      error: null,
+    });
+  });
+
   it('updates file preview metadata through the dedicated rpc', async () => {
     const updatedMessage = {
       id: 'file-1',

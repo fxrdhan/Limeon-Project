@@ -13,9 +13,18 @@ import {
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
-import { useChatMutationScope } from './useChatMutationScope';
 import { createRuntimeId, createStableKey } from '../utils/runtime-id';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
+
+interface ChatComposerSendMutationScope {
+  conversationScopeKey: string | null;
+  isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
+  isCurrentConversationScopeActive: () => boolean;
+  reconcileCurrentConversationMessages: (options?: {
+    fallbackMessages?: ChatMessage[];
+  }) => Promise<void>;
+  runInCurrentConversationScope: (effect: () => void) => boolean;
+}
 
 interface UseChatComposerSendProps {
   user: {
@@ -27,7 +36,6 @@ interface UseChatComposerSendProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
-  messagesCount?: number;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
   restorePendingComposerAttachments: (
@@ -38,6 +46,7 @@ interface UseChatComposerSendProps {
   triggerSendSuccessGlow: () => void;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
+  mutationScope: ChatComposerSendMutationScope;
 }
 
 export const useChatComposerSend = ({
@@ -47,7 +56,6 @@ export const useChatComposerSend = ({
   message,
   setMessage,
   editingMessageId,
-  messagesCount = 0,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
   restorePendingComposerAttachments,
@@ -56,6 +64,7 @@ export const useChatComposerSend = ({
   triggerSendSuccessGlow,
   pendingImagePreviewUrlsRef,
   registerPendingSend,
+  mutationScope,
 }: UseChatComposerSendProps) => {
   const isSendingRef = useRef(false);
   const {
@@ -64,13 +73,7 @@ export const useChatComposerSend = ({
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
     conversationScopeKey,
-  } = useChatMutationScope({
-    user,
-    targetUser,
-    currentChannelId,
-    messagesCount,
-    setMessages,
-  });
+  } = mutationScope;
   const {
     deleteUploadedStorageFilesOrThrow,
     rollbackPersistedAttachmentThread,

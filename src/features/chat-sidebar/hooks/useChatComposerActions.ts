@@ -89,6 +89,8 @@ export const useChatComposerActions = ({
   );
 
   const {
+    conversationScopeKey,
+    isConversationScopeActive,
     isCurrentConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
@@ -107,7 +109,6 @@ export const useChatComposerActions = ({
     message,
     setMessage,
     editingMessageId,
-    messagesCount: messages.length,
     pendingComposerAttachments,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
@@ -117,6 +118,13 @@ export const useChatComposerActions = ({
     pendingImagePreviewUrlsRef,
     registerPendingSend: tempMessageId =>
       createPendingSendRegistration(pendingSendRegistryRef, tempMessageId),
+    mutationScope: {
+      conversationScopeKey,
+      isConversationScopeActive,
+      isCurrentConversationScopeActive,
+      reconcileCurrentConversationMessages,
+      runInCurrentConversationScope,
+    },
   });
   const { handleCopyMessage, handleDownloadMessage } =
     useChatMessageTransferActions({

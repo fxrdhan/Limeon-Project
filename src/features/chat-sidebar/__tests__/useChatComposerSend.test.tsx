@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { PendingComposerAttachment } from '../types';
 import { useChatComposerSend } from '../hooks/useChatComposerSend';
+import { useChatMutationScope } from '../hooks/useChatMutationScope';
 
 const { mockGateway, mockToast, mockRenderPdfPreviewBlob } = vi.hoisted(() => ({
   mockGateway: {
@@ -100,6 +101,26 @@ const createPendingSendRegistry = () => {
   };
 };
 
+const useComposerSendWithMutationScope = ({
+  messagesCount = 0,
+  ...props
+}: Omit<Parameters<typeof useChatComposerSend>[0], 'mutationScope'> & {
+  messagesCount?: number;
+}) => {
+  const mutationScope = useChatMutationScope({
+    user: props.user,
+    targetUser: props.targetUser,
+    currentChannelId: props.currentChannelId,
+    messagesCount,
+    setMessages: props.setMessages,
+  });
+
+  return useChatComposerSend({
+    ...props,
+    mutationScope,
+  });
+};
+
 describe('useChatComposerSend', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -165,7 +186,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('stok opname');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -241,7 +262,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      return useChatComposerSend({
+      return useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -299,7 +320,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      return useChatComposerSend({
+      return useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -347,7 +368,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      return useChatComposerSend({
+      return useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -422,7 +443,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -488,7 +509,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('pesan pending');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -586,7 +607,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('pesan pending');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -700,7 +721,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -851,7 +872,7 @@ describe('useChatComposerSend', () => {
           setDraftMessage(props.initialDraftMessage);
         }, [props.channelId, props.initialDraftMessage, props.initialMessages]);
 
-        const send = useChatComposerSend({
+        const send = useComposerSendWithMutationScope({
           user: { id: 'user-a', name: 'Admin' },
           targetUser: {
             id: props.targetUserId,
@@ -924,7 +945,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('pesan gagal');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -983,7 +1004,7 @@ describe('useChatComposerSend', () => {
       const [draftMessage, setDraftMessage] = useState('pesan gagal');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
-      const send = useChatComposerSend({
+      const send = useComposerSendWithMutationScope({
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',

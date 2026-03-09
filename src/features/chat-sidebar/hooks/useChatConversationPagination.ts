@@ -18,6 +18,7 @@ interface UseChatConversationPaginationProps {
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
   oldestLoadedMessageCreatedAtRef: MutableRefObject<string | null>;
+  oldestLoadedMessageIdRef: MutableRefObject<string | null>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setHasOlderMessages: Dispatch<SetStateAction<boolean>>;
   setIsLoadingOlderMessages: Dispatch<SetStateAction<boolean>>;
@@ -32,6 +33,7 @@ export const useChatConversationPagination = ({
   hasOlderMessages,
   isLoadingOlderMessages,
   oldestLoadedMessageCreatedAtRef,
+  oldestLoadedMessageIdRef,
   setMessages,
   setHasOlderMessages,
   setIsLoadingOlderMessages,
@@ -45,7 +47,8 @@ export const useChatConversationPagination = ({
       !currentChannelId ||
       !hasOlderMessages ||
       isLoadingOlderMessages ||
-      !oldestLoadedMessageCreatedAtRef.current
+      !oldestLoadedMessageCreatedAtRef.current ||
+      !oldestLoadedMessageIdRef.current
     ) {
       return;
     }
@@ -61,6 +64,7 @@ export const useChatConversationPagination = ({
           currentChannelId,
           {
             beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
+            beforeId: oldestLoadedMessageIdRef.current,
             limit: CHAT_CONVERSATION_PAGE_SIZE,
           }
         );
@@ -102,6 +106,8 @@ export const useChatConversationPagination = ({
 
       oldestLoadedMessageCreatedAtRef.current =
         olderMessages[0]?.created_at ?? oldestLoadedMessageCreatedAtRef.current;
+      oldestLoadedMessageIdRef.current =
+        olderMessages[0]?.id ?? oldestLoadedMessageIdRef.current;
       setHasOlderMessages(olderMessagesPayload.hasMore);
       setOlderMessagesError(null);
     } catch (error) {
@@ -116,6 +122,7 @@ export const useChatConversationPagination = ({
     isLoadingOlderMessages,
     isOpen,
     oldestLoadedMessageCreatedAtRef,
+    oldestLoadedMessageIdRef,
     setHasOlderMessages,
     setIsLoadingOlderMessages,
     setMessages,

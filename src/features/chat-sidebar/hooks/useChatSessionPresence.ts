@@ -1,8 +1,11 @@
 import type { UserDetails } from '@/types/database';
 import { usePresenceStore } from '@/store/presenceStore';
 import { isPresenceFresh } from '@/hooks/presence/presenceStatus';
-import { useMemo, useState } from 'react';
-import { type UserPresence } from '../data/chatSidebarGateway';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  chatSidebarGateway,
+  type UserPresence,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { useChatSessionPresenceSubscriptions } from './useChatSessionPresenceSubscriptions';
 
@@ -34,8 +37,49 @@ export const useChatSessionPresence = ({
         )
       : false
   );
+  const targetPresenceRequestIdRef = useRef(0);
+  const previousRosterOnlineRef = useRef<boolean | null>(null);
+
+  const loadTargetUserPresenceSnapshot = useCallback(async () => {
+    if (!isOpen || !user || !targetUser || !currentChannelId) {
+      setTargetUserPresence(null);
+      setTargetUserPresenceError(null);
+      return;
+    }
+
+    const requestId = targetPresenceRequestIdRef.current + 1;
+    targetPresenceRequestIdRef.current = requestId;
+    setTargetUserPresenceError(null);
+
+    try {
+      const { data: presence, error } =
+        await chatSidebarGateway.getUserPresence(targetUser.id);
+
+      if (targetPresenceRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading target user presence:', error);
+        setTargetUserPresenceError('Status online tidak tersedia');
+        setTargetUserPresence(null);
+        return;
+      }
+
+      setTargetUserPresence(presence ?? null);
+    } catch (error) {
+      if (targetPresenceRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      console.error('Caught error loading target user presence:', error);
+      setTargetUserPresenceError('Status online tidak tersedia');
+      setTargetUserPresence(null);
+    }
+  }, [currentChannelId, isOpen, targetUser, user]);
 
   useChatSessionPresenceSubscriptions({
+    enabled: !hasPresenceRosterChannel,
     isOpen,
     user,
     targetUser,
@@ -43,6 +87,34 @@ export const useChatSessionPresence = ({
     setTargetUserPresence,
     setTargetUserPresenceError,
   });
+
+  useEffect(() => {
+    if (!hasPresenceRosterChannel) {
+      return;
+    }
+
+    void loadTargetUserPresenceSnapshot();
+  }, [hasPresenceRosterChannel, loadTargetUserPresenceSnapshot]);
+
+  useEffect(() => {
+    if (!hasPresenceRosterChannel || !isOpen || !targetUser) {
+      previousRosterOnlineRef.current = isTargetOnlineInRoster;
+      return;
+    }
+
+    const wasTargetOnline = previousRosterOnlineRef.current;
+    previousRosterOnlineRef.current = isTargetOnlineInRoster;
+
+    if (wasTargetOnline === true && !isTargetOnlineInRoster) {
+      void loadTargetUserPresenceSnapshot();
+    }
+  }, [
+    hasPresenceRosterChannel,
+    isOpen,
+    isTargetOnlineInRoster,
+    loadTargetUserPresenceSnapshot,
+    targetUser,
+  ]);
 
   const isTargetOnline = useMemo(() => {
     if (!isOpen || !targetUser) {
