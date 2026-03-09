@@ -7,10 +7,12 @@ import { chatService, type UserPresence } from '@/services/api/chat.service';
 import { usersService } from '@/services/api/users.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type { OnlineUser } from '@/types';
-
-const ONLINE_PRESENCE_MAX_AGE_MS = 45_000;
-const PRESENCE_HEARTBEAT_MS = 15_000;
-const PRESENCE_ROSTER_REFRESH_MS = ONLINE_PRESENCE_MAX_AGE_MS;
+import {
+  PRESENCE_HEARTBEAT_MS,
+  PRESENCE_ROSTER_REFRESH_MS,
+  getPresenceFreshnessCutoff,
+  isPresenceFresh,
+} from './presenceStatus';
 
 const areOnlineUserListsEqual = (
   previousUsers: OnlineUser[],
@@ -27,22 +29,6 @@ const areOnlineUserListsEqual = (
       Boolean(nextUser)
     );
   });
-
-const isPresenceFresh = (lastSeen?: string | null) => {
-  if (!lastSeen) {
-    return false;
-  }
-
-  const parsedLastSeen = new Date(lastSeen).getTime();
-  if (Number.isNaN(parsedLastSeen)) {
-    return false;
-  }
-
-  return Date.now() - parsedLastSeen <= ONLINE_PRESENCE_MAX_AGE_MS;
-};
-
-const getPresenceFreshnessCutoff = () =>
-  new Date(Date.now() - ONLINE_PRESENCE_MAX_AGE_MS).toISOString();
 
 const getPresenceTimestamp = (presence: UserPresence) =>
   new Date(

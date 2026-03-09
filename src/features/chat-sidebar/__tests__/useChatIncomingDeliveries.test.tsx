@@ -164,4 +164,61 @@ describe('useChatIncomingDeliveries', () => {
       'incoming_messages_user-a'
     );
   });
+
+  it('retries failed delivered flushes instead of dropping the queued ids', async () => {
+    mockGateway.markMessageIdsAsDelivered
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'temporary failure' },
+      })
+      .mockResolvedValueOnce({
+        data: [],
+        error: null,
+      });
+
+    renderHook(() => useChatIncomingDeliveries());
+
+    const insertListenerCall = createdChannels[0]?.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'INSERT'
+    );
+    const insertListener = insertListenerCall?.[2] as
+      | ((payload: { new: ChatMessage }) => void)
+      | undefined;
+
+    act(() => {
+      insertListener?.({
+        new: {
+          id: 'message-retry-1',
+          sender_id: 'user-b',
+          receiver_id: 'user-a',
+          channel_id: 'channel-1',
+          message: 'stok datang',
+          message_type: 'text',
+          created_at: '2026-03-07T10:00:00.000Z',
+          updated_at: '2026-03-07T10:00:00.000Z',
+          is_read: false,
+          is_delivered: false,
+          reply_to_id: null,
+        },
+      });
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(1_200);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledTimes(2);
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenLastCalledWith([
+      'message-retry-1',
+    ]);
+  });
 });

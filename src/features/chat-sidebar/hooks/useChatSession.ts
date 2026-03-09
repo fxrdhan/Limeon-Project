@@ -150,6 +150,16 @@ export const useChatSession = ({
     useChatSessionReceipts({
       applyMessageUpdate,
       isSessionTokenActive,
+      receiptScopeResetKey:
+        isOpen && user && targetUser && currentChannelId
+          ? [
+              user.id,
+              targetUser.id,
+              currentChannelId,
+              retryInitialLoadTick,
+              realtimeRecoveryTick,
+            ].join('::')
+          : null,
     });
 
   const loadOlderMessages = useCallback(async () => {

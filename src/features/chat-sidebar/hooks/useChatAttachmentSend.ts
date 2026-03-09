@@ -95,6 +95,17 @@ interface SendAttachmentOptions {
   ) => void;
 }
 
+interface PersistedAttachmentResult {
+  uploadedStoragePath: string;
+  realMessage: ChatMessage | null;
+  error: unknown;
+}
+
+interface PersistedAttachmentCaptionResult {
+  mappedCaptionMessage: ChatMessage | null;
+  error: unknown;
+}
+
 export const useChatAttachmentSend = ({
   user,
   targetUser,
@@ -168,6 +179,124 @@ export const useChatAttachmentSend = ({
     [deleteUploadedStorageFilesOrThrow, isCurrentConversationScopeActive]
   );
 
+  const persistAttachmentMessage = useCallback(
+    async ({
+      uploadAsset,
+      createPersistedMessage,
+      mapPersistedMessage,
+      stableKey,
+    }: Pick<
+      SendAttachmentOptions,
+      'uploadAsset' | 'createPersistedMessage' | 'mapPersistedMessage'
+    > & {
+      stableKey: string;
+    }): Promise<PersistedAttachmentResult> => {
+      const { path: uploadedStoragePath, publicUrl } = await uploadAsset();
+      const { data: persistedMessage, error } = await createPersistedMessage(
+        publicUrl,
+        uploadedStoragePath
+      );
+
+      if (error || !persistedMessage) {
+        return {
+          uploadedStoragePath,
+          realMessage: null,
+          error,
+        };
+      }
+
+      return {
+        uploadedStoragePath,
+        realMessage: mapPersistedMessage(
+          persistedMessage,
+          uploadedStoragePath,
+          stableKey
+        ),
+        error: null,
+      };
+    },
+    []
+  );
+
+  const persistAttachmentCaptionMessage = useCallback(
+    async ({
+      realMessage,
+      normalizedCaptionText,
+      captionStableKey,
+    }: {
+      realMessage: ChatMessage;
+      normalizedCaptionText: string;
+      captionStableKey: string;
+    }): Promise<PersistedAttachmentCaptionResult> => {
+      if (!user || !targetUser || !currentChannelId) {
+        return {
+          mappedCaptionMessage: null,
+          error: new Error('Missing active chat participants'),
+        };
+      }
+
+      const { data: captionMessage, error } =
+        await chatSidebarGateway.createMessage(
+          toAttachmentCaptionInsertInput({
+            sender_id: user.id,
+            receiver_id: targetUser.id,
+            channel_id: currentChannelId,
+            message: normalizedCaptionText,
+            message_type: 'text',
+            reply_to_id: realMessage.id,
+          })
+        );
+
+      if (error || !captionMessage) {
+        return {
+          mappedCaptionMessage: null,
+          error,
+        };
+      }
+
+      return {
+        mappedCaptionMessage: markMessageAsAttachmentCaption(
+          mapPersistedMessageForDisplay(
+            captionMessage,
+            user,
+            targetUser,
+            captionStableKey
+          ),
+          realMessage.id
+        ),
+        error: null,
+      };
+    },
+    [currentChannelId, targetUser, user]
+  );
+
+  const commitAttachmentThreadInScope = useCallback(
+    ({
+      tempId,
+      realMessage,
+      captionTempId,
+      mappedCaptionMessage,
+    }: {
+      tempId: string;
+      realMessage: ChatMessage;
+      captionTempId: string | null;
+      mappedCaptionMessage?: ChatMessage | null;
+    }) => {
+      runInCurrentConversationScope(() => {
+        setMessages(previousMessages =>
+          commitOptimisticAttachmentThread({
+            previousMessages,
+            tempId,
+            realMessage,
+            captionTempId,
+            mappedCaptionMessage,
+          })
+        );
+      });
+    },
+    [runInCurrentConversationScope, setMessages]
+  );
+
   const sendAttachmentMessage = useCallback(
     async ({
       tempIdPrefix,
@@ -227,20 +356,20 @@ export const useChatAttachmentSend = ({
       let uploadedStoragePath: string | null = null;
 
       try {
-        const { path, publicUrl } = await uploadAsset();
-        uploadedStoragePath = path;
+        const persistedAttachment = await persistAttachmentMessage({
+          uploadAsset,
+          createPersistedMessage,
+          mapPersistedMessage,
+          stableKey,
+        });
+        uploadedStoragePath = persistedAttachment.uploadedStoragePath;
 
-        if (pendingSend.isCancelled()) {
-          await cleanupUncommittedStorageFiles([uploadedStoragePath]);
-          return null;
-        }
+        if (!persistedAttachment.realMessage || persistedAttachment.error) {
+          if (pendingSend.isCancelled()) {
+            await cleanupUncommittedStorageFiles([uploadedStoragePath]);
+            return null;
+          }
 
-        const { data: persistedMessage, error } = await createPersistedMessage(
-          publicUrl,
-          uploadedStoragePath
-        );
-
-        if (error || !persistedMessage) {
           if (
             !pendingSend.isCancelled() &&
             isCurrentConversationScopeActive()
@@ -267,11 +396,7 @@ export const useChatAttachmentSend = ({
           return null;
         }
 
-        const realMessage = mapPersistedMessage(
-          persistedMessage,
-          uploadedStoragePath,
-          stableKey
-        );
+        const realMessage = persistedAttachment.realMessage;
 
         if (pendingSend.isCancelled()) {
           try {
@@ -291,29 +416,16 @@ export const useChatAttachmentSend = ({
         }
 
         if (hasAttachmentCaption && captionTempId) {
-          const { data: captionMessage, error: captionError } =
-            await chatSidebarGateway.createMessage(
-              toAttachmentCaptionInsertInput({
-                sender_id: user.id,
-                receiver_id: targetUser.id,
-                channel_id: currentChannelId,
-                message: normalizedCaptionText,
-                message_type: 'text',
-                reply_to_id: realMessage.id,
-              })
-            );
+          const persistedCaption = await persistAttachmentCaptionMessage({
+            realMessage,
+            normalizedCaptionText,
+            captionStableKey: captionStableKey!,
+          });
 
-          if (!captionError && captionMessage) {
-            const mappedCaptionMessage = markMessageAsAttachmentCaption(
-              mapPersistedMessageForDisplay(
-                captionMessage,
-                user,
-                targetUser,
-                captionStableKey!
-              ),
-              realMessage.id
-            );
-
+          if (
+            !persistedCaption.error &&
+            persistedCaption.mappedCaptionMessage
+          ) {
             if (pendingSend.isCancelled()) {
               try {
                 await rollbackPersistedAttachmentThread(
@@ -331,16 +443,11 @@ export const useChatAttachmentSend = ({
               return null;
             }
 
-            runInCurrentConversationScope(() => {
-              setMessages(previousMessages =>
-                commitOptimisticAttachmentThread({
-                  previousMessages,
-                  tempId,
-                  realMessage,
-                  captionTempId,
-                  mappedCaptionMessage,
-                })
-              );
+            commitAttachmentThreadInScope({
+              tempId,
+              realMessage,
+              captionTempId,
+              mappedCaptionMessage: persistedCaption.mappedCaptionMessage,
             });
           } else {
             if (
@@ -375,16 +482,11 @@ export const useChatAttachmentSend = ({
             return null;
           }
         } else {
-          runInCurrentConversationScope(() => {
-            setMessages(previousMessages =>
-              commitOptimisticAttachmentThread({
-                previousMessages,
-                tempId,
-                realMessage,
-                captionTempId: null,
-                mappedCaptionMessage: null,
-              })
-            );
+          commitAttachmentThreadInScope({
+            tempId,
+            realMessage,
+            captionTempId: null,
+            mappedCaptionMessage: null,
           });
         }
 
@@ -427,17 +529,19 @@ export const useChatAttachmentSend = ({
       }
     },
     [
+      commitAttachmentThreadInScope,
       conversationScopeKey,
       cleanupUncommittedStorageFiles,
       currentChannelId,
       editingMessageId,
       isCurrentConversationScopeActive,
       pendingImagePreviewUrlsRef,
+      persistAttachmentCaptionMessage,
+      persistAttachmentMessage,
       registerPendingSend,
       releasePendingPreviewUrl,
       removeOptimisticAttachmentThreadFromState,
       rollbackPersistedAttachmentThread,
-      runInCurrentConversationScope,
       scheduleScrollMessagesToBottom,
       setMessages,
       targetUser,
