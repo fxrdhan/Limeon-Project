@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { chatService } from '@/services/api/chat.service';
 import { usePresenceLifecycle } from './usePresenceLifecycle';
 import { usePresenceRosterSync } from './usePresenceRosterSync';
@@ -35,14 +35,6 @@ export const usePresence = () => {
     },
     [user?.id]
   );
-
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
-    void chatService.retryChatCleanupFailures();
-  }, [user?.id]);
 
   usePresenceRosterSync({ user });
   usePresenceLifecycle({

@@ -20,11 +20,15 @@ import {
 } from '../utils/conversation-cache';
 import {
   applyConversationSnapshot as applyConversationSnapshotToState,
-  isConversationMessageForPair,
   mapConversationMessageForDisplay,
-  reconcileInsertedConversationMessage,
 } from '../utils/conversation-sync';
 import { useChatSessionPresence } from './useChatSessionPresence';
+import {
+  replayPendingConversationRealtimeEvents,
+  useChatConversationRealtime,
+  type PendingConversationRealtimeEvent,
+} from './useChatConversationRealtime';
+import { useChatConversationPagination } from './useChatConversationPagination';
 import { useChatSessionReceipts } from './useChatSessionReceipts';
 
 interface UseChatSessionProps {
@@ -35,55 +39,6 @@ interface UseChatSessionProps {
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
 }
-
-type PendingConversationRealtimeEvent =
-  | {
-      type: 'insert';
-      message: ChatMessage;
-    }
-  | {
-      type: 'update';
-      message: Partial<ChatMessage> & { id: string };
-    }
-  | {
-      type: 'delete';
-      messageId: string;
-    };
-
-const replayPendingConversationRealtimeEvents = ({
-  previousMessages,
-  pendingEvents,
-  currentChannelId,
-}: {
-  previousMessages: ChatMessage[];
-  pendingEvents: PendingConversationRealtimeEvent[];
-  currentChannelId: string | null;
-}) =>
-  pendingEvents.reduce<ChatMessage[]>((nextMessages, pendingEvent) => {
-    if (pendingEvent.type === 'insert') {
-      return reconcileInsertedConversationMessage({
-        previousMessages: nextMessages,
-        insertedMessage: pendingEvent.message,
-        currentChannelId,
-      });
-    }
-
-    if (pendingEvent.type === 'update') {
-      return nextMessages.map(previousMessage =>
-        previousMessage.id === pendingEvent.message.id
-          ? {
-              ...previousMessage,
-              ...pendingEvent.message,
-              stableKey: previousMessage.stableKey,
-            }
-          : previousMessage
-      );
-    }
-
-    return nextMessages.filter(
-      messageItem => messageItem.id !== pendingEvent.messageId
-    );
-  }, previousMessages);
 
 export const useChatSession = ({
   isOpen,
@@ -164,87 +119,49 @@ export const useChatSession = ({
           : null,
     });
 
-  const loadOlderMessages = useCallback(async () => {
-    if (
-      !isOpen ||
-      !user ||
-      !targetUser ||
-      !currentChannelId ||
-      !hasOlderMessages ||
-      isLoadingOlderMessages ||
-      !oldestLoadedMessageCreatedAtRef.current
-    ) {
-      return;
-    }
+  const mapMessageForActiveConversation = useCallback(
+    (messageItem: ChatMessage) =>
+      user && targetUser
+        ? mapConversationMessageForDisplay(
+            messageItem,
+            user,
+            targetUser,
+            messageItem.stableKey || messageItem.id
+          )
+        : messageItem,
+    [targetUser, user]
+  );
 
-    setIsLoadingOlderMessages(true);
-    setOlderMessagesError(null);
-
-    try {
-      const { data: olderMessagesPage, error } =
-        await chatSidebarGateway.fetchConversationMessages(
-          user.id,
-          targetUser.id,
-          currentChannelId,
-          {
-            beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
-            limit: CHAT_CONVERSATION_PAGE_SIZE,
-          }
-        );
-
-      const olderMessagesPayload = Array.isArray(olderMessagesPage)
-        ? {
-            messages: olderMessagesPage,
-            hasMore: false,
-          }
-        : olderMessagesPage;
-
-      if (error || !olderMessagesPayload?.messages) {
-        if (error) {
-          console.error('Error loading older messages:', error);
-        }
-        setOlderMessagesError('Gagal memuat pesan lama');
-        return;
-      }
-
-      const olderMessages = olderMessagesPayload.messages.map(messageItem =>
-        mapConversationMessageForDisplay(
-          messageItem,
-          user,
-          targetUser,
-          messageItem.stableKey || messageItem.id
-        )
-      );
-
-      setMessages(previousMessages => {
-        const seenMessageIds = new Set(previousMessages.map(({ id }) => id));
-        const uniqueOlderMessages = olderMessages.filter(
-          messageItem => !seenMessageIds.has(messageItem.id)
-        );
-
-        return uniqueOlderMessages.length > 0
-          ? [...uniqueOlderMessages, ...previousMessages]
-          : previousMessages;
-      });
-
-      oldestLoadedMessageCreatedAtRef.current =
-        olderMessages[0]?.created_at ?? oldestLoadedMessageCreatedAtRef.current;
-      setHasOlderMessages(olderMessagesPayload.hasMore);
-      setOlderMessagesError(null);
-    } catch (error) {
-      console.error('Error loading older messages:', error);
-      setOlderMessagesError('Gagal memuat pesan lama');
-    } finally {
-      setIsLoadingOlderMessages(false);
-    }
-  }, [
+  const loadOlderMessages = useChatConversationPagination({
+    isOpen,
+    user,
+    targetUser,
     currentChannelId,
     hasOlderMessages,
     isLoadingOlderMessages,
+    oldestLoadedMessageCreatedAtRef,
+    setMessages,
+    setHasOlderMessages,
+    setIsLoadingOlderMessages,
+    setOlderMessagesError,
+  });
+
+  useChatConversationRealtime({
     isOpen,
-    targetUser,
     user,
-  ]);
+    targetUser,
+    currentChannelId,
+    recoveryTick: realtimeRecoveryTick,
+    conversationChannelRef,
+    isInitialConversationLoadPendingRef,
+    pendingConversationRealtimeEventsRef,
+    mapMessageForActiveConversation,
+    applyMessageUpdate,
+    setMessages,
+    setLoadError,
+    markConversationRecoverySuccess,
+    scheduleConversationRecovery,
+  });
 
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
@@ -286,14 +203,6 @@ export const useChatSession = ({
         initialOpenJumpAnimationKeysRef,
       });
     };
-
-    const mapMessageForActiveConversation = (messageItem: ChatMessage) =>
-      mapConversationMessageForDisplay(
-        messageItem,
-        user,
-        targetUser,
-        messageItem.stableKey || messageItem.id
-      );
 
     const loadMessages = async () => {
       const cachedConversation =
@@ -410,159 +319,6 @@ export const useChatSession = ({
         }
       }
     };
-
-    const setupConversationSubscription = () => {
-      if (conversationChannelRef.current) {
-        void chatSidebarGateway.removeRealtimeChannel(
-          conversationChannelRef.current
-        );
-      }
-
-      const channel = chatSidebarGateway.createRealtimeChannel(
-        `chat_${currentChannelId}`
-      );
-
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `channel_id=eq.${currentChannelId}`,
-        },
-        payload => {
-          const insertedMessage = payload.new as ChatMessage;
-          if (!insertedMessage?.id) {
-            return;
-          }
-
-          if (
-            !isConversationMessageForPair(
-              insertedMessage,
-              user.id,
-              targetUser.id
-            )
-          ) {
-            return;
-          }
-
-          const mappedInsertedMessage =
-            mapMessageForActiveConversation(insertedMessage);
-
-          if (isInitialConversationLoadPendingRef.current) {
-            pendingConversationRealtimeEventsRef.current.push({
-              type: 'insert',
-              message: mappedInsertedMessage,
-            });
-          }
-
-          setMessages(previousMessages =>
-            reconcileInsertedConversationMessage({
-              previousMessages,
-              insertedMessage: mappedInsertedMessage,
-              currentChannelId,
-            })
-          );
-        }
-      );
-
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `channel_id=eq.${currentChannelId}`,
-        },
-        payload => {
-          const updatedMessage = payload.new as ChatMessage;
-          if (!updatedMessage?.id) return;
-          const mappedUpdatedMessage =
-            mapMessageForActiveConversation(updatedMessage);
-
-          if (isInitialConversationLoadPendingRef.current) {
-            pendingConversationRealtimeEventsRef.current.push({
-              type: 'update',
-              message: mappedUpdatedMessage,
-            });
-          }
-
-          applyMessageUpdate(mappedUpdatedMessage);
-        }
-      );
-
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `channel_id=eq.${currentChannelId}`,
-        },
-        payload => {
-          const deletedMessage = payload.old as
-            | Partial<ChatMessage>
-            | undefined;
-          const deletedMessageId = deletedMessage?.id;
-          if (!deletedMessageId) return;
-
-          if (isInitialConversationLoadPendingRef.current) {
-            pendingConversationRealtimeEventsRef.current.push({
-              type: 'delete',
-              messageId: deletedMessageId,
-            });
-          }
-
-          setMessages(previousMessages => {
-            if (
-              !previousMessages.some(
-                messageItem => messageItem.id === deletedMessageId
-              )
-            ) {
-              return previousMessages;
-            }
-
-            return previousMessages.filter(
-              messageItem => messageItem.id !== deletedMessageId
-            );
-          });
-        }
-      );
-
-      channel.subscribe(status => {
-        if (status === 'SUBSCRIBED') {
-          markConversationRecoverySuccess();
-          return;
-        }
-
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Failed to connect to chat channel');
-          if (conversationChannelRef.current === channel) {
-            conversationChannelRef.current = null;
-            void chatSidebarGateway.removeRealtimeChannel(channel);
-          }
-          if (scheduleConversationRecovery()) {
-            setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
-          }
-          return;
-        }
-
-        if (status === 'TIMED_OUT') {
-          console.error('Timed out while connecting to chat channel');
-          if (conversationChannelRef.current === channel) {
-            conversationChannelRef.current = null;
-            void chatSidebarGateway.removeRealtimeChannel(channel);
-          }
-          if (scheduleConversationRecovery()) {
-            setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
-          }
-        }
-      });
-
-      conversationChannelRef.current = channel;
-    };
-
-    setupConversationSubscription();
     void loadMessages();
 
     return () => {
@@ -593,6 +349,7 @@ export const useChatSession = ({
     targetUser,
     user,
     retryInitialLoadTick,
+    mapMessageForActiveConversation,
   ]);
 
   const retryLoadMessages = useCallback(() => {
