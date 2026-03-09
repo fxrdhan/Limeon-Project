@@ -9,34 +9,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposerActions } from '../hooks/useChatComposerActions';
 
-const {
-  mockChatService,
-  mockStorageService,
-  mockToast,
-  mockUseChatComposerSend,
-} = vi.hoisted(() => ({
-  mockChatService: {
-    editTextMessage: vi.fn(),
-    deleteMessageThread: vi.fn(),
-    fetchMessagesBetweenUsers: vi.fn(),
-  },
-  mockStorageService: {
-    deleteFile: vi.fn(),
-  },
-  mockToast: {
-    error: vi.fn(),
-    success: vi.fn(),
-    promise: vi.fn(),
-  },
-  mockUseChatComposerSend: vi.fn(),
-}));
+const { mockChatService, mockToast, mockUseChatComposerSend } = vi.hoisted(
+  () => ({
+    mockChatService: {
+      editTextMessage: vi.fn(),
+      deleteMessageThreadAndCleanup: vi.fn(),
+      fetchMessagesBetweenUsers: vi.fn(),
+    },
+    mockToast: {
+      error: vi.fn(),
+      success: vi.fn(),
+      promise: vi.fn(),
+    },
+    mockUseChatComposerSend: vi.fn(),
+  })
+);
 
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
-}));
-
-vi.mock('@/services/api/storage.service', () => ({
-  StorageService: mockStorageService,
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -78,7 +68,6 @@ describe('useChatComposerActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockStorageService.deleteFile.mockResolvedValue(undefined);
     mockUseChatComposerSend.mockReturnValue({
       handleSendMessage: vi.fn(),
       handleKeyPress: vi.fn(),
@@ -441,7 +430,7 @@ describe('useChatComposerActions', () => {
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
-    mockChatService.deleteMessageThread.mockResolvedValue({
+    mockChatService.deleteMessageThreadAndCleanup.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
     });
@@ -505,7 +494,9 @@ describe('useChatComposerActions', () => {
     });
 
     expect(deleteResult).toBe(false);
-    expect(mockChatService.deleteMessageThread).toHaveBeenCalledWith('file-1');
+    expect(mockChatService.deleteMessageThreadAndCleanup).toHaveBeenCalledWith(
+      'file-1'
+    );
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
       'user-a',
       'user-b',
@@ -539,7 +530,7 @@ describe('useChatComposerActions', () => {
       receiver_name: 'Gudang',
     });
 
-    mockChatService.deleteMessageThread.mockResolvedValue({
+    mockChatService.deleteMessageThreadAndCleanup.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
     });
@@ -685,8 +676,11 @@ describe('useChatComposerActions', () => {
       sender_name: 'Admin',
       receiver_name: 'Gudang',
     });
-    mockChatService.deleteMessageThread.mockResolvedValue({
-      data: ['caption-atomic', 'file-atomic'],
+    mockChatService.deleteMessageThreadAndCleanup.mockResolvedValue({
+      data: {
+        deletedMessageIds: ['caption-atomic', 'file-atomic'],
+        failedStoragePaths: [],
+      },
       error: null,
     });
 
@@ -731,16 +725,8 @@ describe('useChatComposerActions', () => {
       await result.current.handleDeleteMessage(attachmentMessage);
     });
 
-    expect(mockChatService.deleteMessageThread).toHaveBeenCalledWith(
+    expect(mockChatService.deleteMessageThreadAndCleanup).toHaveBeenCalledWith(
       'file-atomic'
-    );
-    expect(mockStorageService.deleteFile).toHaveBeenCalledWith(
-      'chat',
-      'documents/channel/report-atomic.pdf'
-    );
-    expect(mockStorageService.deleteFile).toHaveBeenCalledWith(
-      'chat',
-      'previews/channel/report-atomic.png'
     );
   });
 
@@ -755,7 +741,7 @@ describe('useChatComposerActions', () => {
       receiver_name: 'Gudang',
     });
 
-    mockChatService.deleteMessageThread.mockResolvedValue({
+    mockChatService.deleteMessageThreadAndCleanup.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
     });
@@ -830,13 +816,16 @@ describe('useChatComposerActions', () => {
     });
     const onStorageCleanupFailure = vi.fn();
 
-    mockChatService.deleteMessageThread.mockResolvedValue({
-      data: ['file-cleanup-warning'],
+    mockChatService.deleteMessageThreadAndCleanup.mockResolvedValue({
+      data: {
+        deletedMessageIds: ['file-cleanup-warning'],
+        failedStoragePaths: [
+          'documents/channel/report-warning.pdf',
+          'previews/channel/report-warning.png',
+        ],
+      },
       error: null,
     });
-    mockStorageService.deleteFile.mockRejectedValue(
-      new Error('storage cleanup failed')
-    );
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([

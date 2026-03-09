@@ -2,15 +2,8 @@ import { usePresenceStore } from '@/store/presenceStore';
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useCallback, useEffect, useRef } from 'react';
-import { chatService, type UserPresence } from '@/services/api/chat.service';
-import { usersService } from '@/services/api/users.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type { OnlineUser } from '@/types';
-import {
-  PRESENCE_ROSTER_REFRESH_MS,
-  getPresenceFreshnessCutoff,
-  isPresenceFresh,
-} from './presenceStatus';
 
 interface PresenceRosterUser {
   id: string;
@@ -19,32 +12,13 @@ interface PresenceRosterUser {
   profilephoto?: string | null;
 }
 
-type PresenceRealtimePayload = {
-  eventType?: string;
-  new?: Partial<UserPresence>;
-  old?: Partial<UserPresence>;
-};
-
-const areOnlineUserListsEqual = (
-  previousUsers: OnlineUser[],
-  nextUsers: OnlineUser[]
-) =>
-  previousUsers.length === nextUsers.length &&
-  previousUsers.every((previousUser, index) => {
-    const nextUser = nextUsers[index];
-    return (
-      previousUser.id === nextUser?.id &&
-      previousUser.name === nextUser?.name &&
-      previousUser.email === nextUser?.email &&
-      previousUser.profilephoto === nextUser?.profilephoto &&
-      Boolean(nextUser)
-    );
-  });
-
-const getPresenceTimestamp = (presence: Partial<UserPresence>) =>
-  new Date(
-    presence.last_seen ?? presence.updated_at ?? new Date().toISOString()
-  ).getTime();
+interface BrowserActivePresencePayload {
+  user_id: string;
+  name: string;
+  email: string;
+  profilephoto: string | null;
+  online_at: string;
+}
 
 const sortOnlineUsers = (users: OnlineUser[]) =>
   [...users].sort((leftUser, rightUser) =>
@@ -53,15 +27,23 @@ const sortOnlineUsers = (users: OnlineUser[]) =>
     )
   );
 
-const buildPresenceTimestamp = (presence?: Partial<UserPresence>) =>
-  presence?.last_seen ?? presence?.updated_at ?? new Date().toISOString();
+const getPresenceTimestamp = (
+  presence: Partial<BrowserActivePresencePayload>
+) => new Date(presence.online_at ?? new Date().toISOString()).getTime();
 
-const isRealtimePresenceOnline = (presence?: Partial<UserPresence>) => {
-  if (!presence?.user_id || presence.is_online !== true) {
-    return false;
+const selectLatestPresence = (
+  presences: BrowserActivePresencePayload[]
+): BrowserActivePresencePayload | null => {
+  if (presences.length === 0) {
+    return null;
   }
 
-  return isPresenceFresh(buildPresenceTimestamp(presence));
+  return presences.reduce((latestPresence, currentPresence) =>
+    getPresenceTimestamp(currentPresence) >=
+    getPresenceTimestamp(latestPresence)
+      ? currentPresence
+      : latestPresence
+  );
 };
 
 export const usePresenceRosterSync = ({
@@ -69,32 +51,10 @@ export const usePresenceRosterSync = ({
 }: {
   user: PresenceRosterUser | null;
 }) => {
-  const { onlineUsersList, setChannel, setOnlineUsers, setOnlineUsersList } =
-    usePresenceStore();
+  const { setChannel, setOnlineUsers, setOnlineUsersList } = usePresenceStore();
   const rosterChannelRef = useRef<RealtimeChannel | null>(null);
-  const onlineUsersListRef = useRef(onlineUsersList);
-  const knownUsersByIdRef = useRef<Map<string, OnlineUser>>(new Map());
   const { recoveryTick, scheduleRecovery, markRecoverySuccess } =
     useRealtimeChannelRecovery();
-
-  useEffect(() => {
-    onlineUsersListRef.current = onlineUsersList;
-  }, [onlineUsersList]);
-
-  useEffect(() => {
-    if (!user) {
-      knownUsersByIdRef.current.clear();
-      return;
-    }
-
-    knownUsersByIdRef.current.set(user.id, {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      profilephoto: user.profilephoto ?? null,
-      online_at: new Date().toISOString(),
-    });
-  }, [user]);
 
   const buildCurrentOnlineUser = useCallback((): OnlineUser | null => {
     if (!user) {
@@ -112,249 +72,42 @@ export const usePresenceRosterSync = ({
 
   const applyOnlineRoster = useCallback(
     (nextUsers: OnlineUser[]) => {
-      setOnlineUsers(nextUsers.length);
-
-      if (!areOnlineUserListsEqual(onlineUsersListRef.current, nextUsers)) {
-        setOnlineUsersList(nextUsers);
-      }
+      const sortedUsers = sortOnlineUsers(nextUsers);
+      setOnlineUsers(sortedUsers.length);
+      setOnlineUsersList(sortedUsers);
     },
     [setOnlineUsers, setOnlineUsersList]
   );
 
-  const hydratePresenceRoster = useCallback(
-    async (presenceRows: UserPresence[]) => {
+  const hydrateRosterFromPresenceState = useCallback(
+    (channel: RealtimeChannel) => {
       const currentUser = buildCurrentOnlineUser();
-      const activePresenceByUserId = new Map<string, UserPresence>();
+      const presenceState =
+        channel.presenceState<BrowserActivePresencePayload>();
 
-      presenceRows.forEach(presence => {
-        if (!presence.user_id || !presence.is_online) {
-          return;
-        }
-
-        if (!isPresenceFresh(presence.last_seen)) {
-          return;
-        }
-
-        const existingPresence = activePresenceByUserId.get(presence.user_id);
-        if (
-          !existingPresence ||
-          getPresenceTimestamp(presence) >
-            getPresenceTimestamp(existingPresence)
-        ) {
-          activePresenceByUserId.set(presence.user_id, presence);
-        }
-      });
-
-      if (currentUser && !activePresenceByUserId.has(currentUser.id)) {
-        activePresenceByUserId.set(currentUser.id, {
-          user_id: currentUser.id,
-          is_online: true,
-          last_seen: currentUser.online_at,
-          updated_at: currentUser.online_at,
-        });
-      }
-
-      const otherUserIds = [...activePresenceByUserId.keys()].filter(
-        presenceUserId => presenceUserId !== currentUser?.id
-      );
-      const missingUserIds = otherUserIds.filter(
-        otherUserId => !knownUsersByIdRef.current.has(otherUserId)
-      );
-
-      if (missingUserIds.length > 0) {
-        const { data: otherUsersData, error: otherUsersError } =
-          await usersService.getUsersByIds(missingUserIds);
-
-        if (otherUsersError) {
-          console.error(
-            'Failed to hydrate online presence roster:',
-            otherUsersError
-          );
-        }
-
-        (otherUsersData || []).forEach(otherUser => {
-          knownUsersByIdRef.current.set(otherUser.id, otherUser);
-        });
-      }
-
-      const nextOnlineUsers = sortOnlineUsers(
-        [...activePresenceByUserId.values()].map<OnlineUser>(presence => {
-          if (presence.user_id === currentUser?.id && currentUser) {
-            return {
-              ...currentUser,
-              online_at: presence.last_seen ?? currentUser.online_at,
-            };
-          }
-
-          const matchedUser = knownUsersByIdRef.current.get(presence.user_id);
-          return {
-            id: presence.user_id,
-            name: matchedUser?.name || matchedUser?.email || 'Unknown',
-            email: matchedUser?.email || '',
-            profilephoto: matchedUser?.profilephoto ?? null,
-            online_at: presence.last_seen ?? new Date().toISOString(),
-          };
-        })
-      );
-
-      applyOnlineRoster(nextOnlineUsers);
-    },
-    [applyOnlineRoster, buildCurrentOnlineUser]
-  );
-
-  const refreshPresenceRoster = useCallback(async () => {
-    const currentUser = buildCurrentOnlineUser();
-
-    if (!currentUser) {
-      setOnlineUsers(0);
-      setOnlineUsersList([]);
-      return;
-    }
-
-    try {
-      const { data, error } = await chatService.listActivePresenceSince(
-        getPresenceFreshnessCutoff()
-      );
-
-      if (error) {
-        console.error('Failed to load active presence roster:', error);
-
-        if (onlineUsersListRef.current.length === 0) {
-          applyOnlineRoster([currentUser]);
-        }
-
-        return;
-      }
-
-      await hydratePresenceRoster(data || []);
-    } catch (error) {
-      console.error('Caught error loading active presence roster:', error);
-
-      if (onlineUsersListRef.current.length === 0) {
-        applyOnlineRoster([currentUser]);
-      }
-    }
-  }, [
-    applyOnlineRoster,
-    buildCurrentOnlineUser,
-    hydratePresenceRoster,
-    setOnlineUsers,
-    setOnlineUsersList,
-  ]);
-
-  const upsertOnlineUser = useCallback(
-    async (presence: Partial<UserPresence>) => {
-      const userId = presence.user_id;
-      const currentUser = buildCurrentOnlineUser();
-
-      if (!userId) {
-        return;
-      }
-
-      if (userId === currentUser?.id && currentUser) {
-        const nextUsers = sortOnlineUsers([
-          ...onlineUsersListRef.current.filter(
-            onlineUser => onlineUser.id !== userId
-          ),
-          {
-            ...currentUser,
-            online_at: buildPresenceTimestamp(presence),
-          },
-        ]);
-        applyOnlineRoster(nextUsers);
-        return;
-      }
-
-      let matchedUser = knownUsersByIdRef.current.get(userId);
-      if (!matchedUser) {
-        const { data: otherUsersData, error: otherUsersError } =
-          await usersService.getUsersByIds([userId]);
-
-        if (otherUsersError || !otherUsersData?.[0]) {
-          console.error(
-            'Failed to hydrate realtime presence user:',
-            otherUsersError
-          );
-          void refreshPresenceRoster();
-          return;
-        }
-
-        matchedUser = otherUsersData[0];
-        knownUsersByIdRef.current.set(userId, matchedUser);
-      }
-
-      const nextUsers = sortOnlineUsers([
-        ...onlineUsersListRef.current.filter(
-          onlineUser => onlineUser.id !== userId
-        ),
-        {
-          ...matchedUser,
-          online_at: buildPresenceTimestamp(presence),
-        },
-      ]);
-
-      applyOnlineRoster(nextUsers);
-    },
-    [applyOnlineRoster, buildCurrentOnlineUser, refreshPresenceRoster]
-  );
-
-  const removeOnlineUser = useCallback(
-    (userId?: string) => {
-      if (!userId) {
-        void refreshPresenceRoster();
-        return;
-      }
-
-      const currentUser = buildCurrentOnlineUser();
-      const nextUsers = onlineUsersListRef.current.filter(
-        onlineUser => onlineUser.id !== userId
-      );
-
-      if (currentUser && userId === currentUser.id) {
-        applyOnlineRoster(sortOnlineUsers([currentUser, ...nextUsers]));
-        return;
-      }
-
-      applyOnlineRoster(nextUsers);
-    },
-    [applyOnlineRoster, buildCurrentOnlineUser, refreshPresenceRoster]
-  );
-
-  const handlePresenceChange = useCallback(
-    (payload?: PresenceRealtimePayload) => {
-      if (!payload?.eventType) {
-        void refreshPresenceRoster();
-        return;
-      }
-
-      if (payload.eventType === 'DELETE') {
-        removeOnlineUser(payload.old?.user_id);
-        return;
-      }
-
-      const nextPresence = payload.new;
-      const previousPresence = payload.old;
-      const isKnownOnlineUser = onlineUsersListRef.current.some(
-        onlineUser => onlineUser.id === nextPresence?.user_id
-      );
+      const nextUsers = Object.values(presenceState)
+        .map(selectLatestPresence)
+        .filter((presence): presence is BrowserActivePresencePayload =>
+          Boolean(presence)
+        )
+        .map<OnlineUser>(presence => ({
+          id: presence.user_id,
+          name: presence.name,
+          email: presence.email,
+          profilephoto: presence.profilephoto ?? null,
+          online_at: presence.online_at,
+        }));
 
       if (
-        payload.eventType === 'UPDATE' &&
-        nextPresence?.user_id &&
-        isKnownOnlineUser &&
-        nextPresence.is_online === previousPresence?.is_online
+        currentUser &&
+        !nextUsers.some(onlineUser => onlineUser.id === user?.id)
       ) {
-        return;
+        nextUsers.push(currentUser);
       }
 
-      if (isRealtimePresenceOnline(nextPresence)) {
-        void upsertOnlineUser(nextPresence || {});
-        return;
-      }
-
-      removeOnlineUser(nextPresence?.user_id);
+      applyOnlineRoster(nextUsers);
     },
-    [refreshPresenceRoster, removeOnlineUser, upsertOnlineUser]
+    [applyOnlineRoster, buildCurrentOnlineUser, user?.id]
   );
 
   const cleanupRosterChannel = useCallback(async () => {
@@ -367,12 +120,51 @@ export const usePresenceRosterSync = ({
     rosterChannelRef.current = null;
 
     try {
+      void currentChannel.untrack();
       void currentChannel.unsubscribe();
       await realtimeService.removeChannel(currentChannel);
     } catch (cleanupError) {
       console.warn('Presence roster channel cleanup warning:', cleanupError);
     }
   }, []);
+
+  const resetPresenceState = useCallback(async () => {
+    await cleanupRosterChannel();
+    markRecoverySuccess();
+    setChannel(null);
+    setOnlineUsers(0);
+    setOnlineUsersList([]);
+  }, [
+    cleanupRosterChannel,
+    markRecoverySuccess,
+    setChannel,
+    setOnlineUsers,
+    setOnlineUsersList,
+  ]);
+
+  const trackCurrentUserPresence = useCallback(
+    async (channel: RealtimeChannel) => {
+      const currentUser = buildCurrentOnlineUser();
+      if (!currentUser) {
+        return;
+      }
+
+      const trackStatus = await channel.track({
+        user_id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        profilephoto: currentUser.profilephoto ?? null,
+        online_at: currentUser.online_at,
+      });
+
+      if (trackStatus !== 'ok') {
+        throw new Error(`Failed to track browser presence: ${trackStatus}`);
+      }
+
+      hydrateRosterFromPresenceState(channel);
+    },
+    [buildCurrentOnlineUser, hydrateRosterFromPresenceState]
+  );
 
   const setupPresenceRosterSubscription = useCallback(async () => {
     if (!user?.id) {
@@ -382,18 +174,22 @@ export const usePresenceRosterSync = ({
     await cleanupRosterChannel();
 
     const newChannel = realtimeService
-      .createChannel('user_presence_roster_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_presence',
+      .createChannel('browser-active', {
+        config: {
+          presence: {
+            key: user.id,
+          },
         },
-        payload => {
-          handlePresenceChange(payload as PresenceRealtimePayload);
-        }
-      );
+      })
+      .on('presence', { event: 'sync' }, () => {
+        hydrateRosterFromPresenceState(newChannel);
+      })
+      .on('presence', { event: 'join' }, () => {
+        hydrateRosterFromPresenceState(newChannel);
+      })
+      .on('presence', { event: 'leave' }, () => {
+        hydrateRosterFromPresenceState(newChannel);
+      });
 
     rosterChannelRef.current = newChannel;
     setChannel(newChannel);
@@ -401,13 +197,13 @@ export const usePresenceRosterSync = ({
     newChannel.subscribe(status => {
       if (status === 'SUBSCRIBED') {
         markRecoverySuccess();
-        void refreshPresenceRoster();
+        void trackCurrentUserPresence(newChannel);
         return;
       }
 
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         console.error(
-          'Failed to subscribe user presence roster channel:',
+          'Failed to subscribe browser active presence channel:',
           status
         );
         if (rosterChannelRef.current === newChannel) {
@@ -420,27 +216,12 @@ export const usePresenceRosterSync = ({
     });
   }, [
     cleanupRosterChannel,
-    handlePresenceChange,
+    hydrateRosterFromPresenceState,
     markRecoverySuccess,
-    refreshPresenceRoster,
     scheduleRecovery,
     setChannel,
+    trackCurrentUserPresence,
     user?.id,
-  ]);
-
-  const resetPresenceState = useCallback(async () => {
-    await cleanupRosterChannel();
-    markRecoverySuccess();
-    knownUsersByIdRef.current.clear();
-    setChannel(null);
-    setOnlineUsers(0);
-    setOnlineUsersList([]);
-  }, [
-    cleanupRosterChannel,
-    markRecoverySuccess,
-    setChannel,
-    setOnlineUsers,
-    setOnlineUsersList,
   ]);
 
   useEffect(() => {
@@ -472,22 +253,9 @@ export const usePresenceRosterSync = ({
     recoveryTick,
     setChannel,
     setupPresenceRosterSubscription,
+    user?.email,
     user?.id,
+    user?.name,
+    user?.profilephoto,
   ]);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    const rosterRefresh = setInterval(() => {
-      if (document.visibilityState !== 'visible') {
-        return;
-      }
-
-      void refreshPresenceRoster();
-    }, PRESENCE_ROSTER_REFRESH_MS);
-
-    return () => clearInterval(rosterRefresh);
-  }, [refreshPresenceRoster, user]);
 };

@@ -9,7 +9,6 @@ import {
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
-import { resolveChatMessageStoragePaths } from '../utils/message-file';
 import type { DeleteMessageOptions } from './chatComposerActionTypes';
 
 interface UseChatMessageDeleteActionProps {
@@ -26,9 +25,6 @@ interface UseChatMessageDeleteActionProps {
   setMessage: Dispatch<SetStateAction<string>>;
   closeMessageMenu: () => void;
   pendingSendRegistryRef: MutableRefObject<Map<string, { cancelled: boolean }>>;
-  deleteUploadedStorageFiles: (
-    storagePaths: Array<string | null | undefined>
-  ) => Promise<string[]>;
   reconcileCurrentConversationMessages: (options?: {
     fallbackMessages?: ChatMessage[];
   }) => Promise<void>;
@@ -46,7 +42,6 @@ export const useChatMessageDeleteAction = ({
   setMessage,
   closeMessageMenu,
   pendingSendRegistryRef,
-  deleteUploadedStorageFiles,
   reconcileCurrentConversationMessages,
   isCurrentConversationScopeActive,
 }: UseChatMessageDeleteActionProps) => {
@@ -63,16 +58,6 @@ export const useChatMessageDeleteAction = ({
         targetMessage
       );
       const messageIdsToDelete = [...linkedCaptionMessageIds, targetMessage.id];
-      const threadMessages = messages.filter(messageItem =>
-        messageIdsToDelete.includes(messageItem.id)
-      );
-      const storagePathsToDelete = [
-        ...new Set(
-          threadMessages.flatMap(messageItem =>
-            resolveChatMessageStoragePaths(messageItem)
-          )
-        ),
-      ];
       const messagesSnapshot = messages.map(messageItem => ({
         ...messageItem,
       }));
@@ -100,30 +85,27 @@ export const useChatMessageDeleteAction = ({
       }
 
       try {
-        const { error } = await chatSidebarGateway.deleteMessageThread(
-          targetMessage.id
-        );
-        if (error) {
+        const { data, error } =
+          await chatSidebarGateway.deleteMessageThreadAndCleanup(
+            targetMessage.id
+          );
+        if (error || !data) {
           console.error('Error deleting message thread:', error);
           throw error;
         }
 
-        if (storagePathsToDelete.length > 0) {
-          const failedStoragePaths =
-            await deleteUploadedStorageFiles(storagePathsToDelete);
-          if (failedStoragePaths.length > 0) {
-            options?.onStorageCleanupFailure?.(failedStoragePaths);
-            if (
-              !options?.suppressErrorToast &&
-              isCurrentConversationScopeActive()
-            ) {
-              toast.error(
-                'Pesan dihapus, tetapi sebagian file lampiran gagal dibersihkan',
-                {
-                  toasterId: CHAT_SIDEBAR_TOASTER_ID,
-                }
-              );
-            }
+        if (data.failedStoragePaths.length > 0) {
+          options?.onStorageCleanupFailure?.(data.failedStoragePaths);
+          if (
+            !options?.suppressErrorToast &&
+            isCurrentConversationScopeActive()
+          ) {
+            toast.error(
+              'Pesan dihapus, tetapi sebagian file lampiran gagal dibersihkan',
+              {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              }
+            );
           }
         }
 
@@ -147,7 +129,6 @@ export const useChatMessageDeleteAction = ({
     [
       closeMessageMenu,
       currentChannelId,
-      deleteUploadedStorageFiles,
       editingMessageId,
       isCurrentConversationScopeActive,
       messages,

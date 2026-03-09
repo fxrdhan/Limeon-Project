@@ -7,6 +7,9 @@ import {
   type EditChatMessageTextInput,
   type ChatFilePreviewUpdateInput,
   type UserPresence,
+  type DeleteMessageThreadAndCleanupResult,
+  type CleanupStoragePathsResult,
+  type RetryChatCleanupFailuresResult,
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type {
@@ -49,6 +52,15 @@ export const chatSidebarGateway = {
   deleteMessageThread(id: string) {
     return chatService.deleteMessageThread(id);
   },
+  deleteMessageThreadAndCleanup(id: string) {
+    return chatService.deleteMessageThreadAndCleanup(id);
+  },
+  cleanupStoragePaths(storagePaths: Array<string | null | undefined>) {
+    return chatService.cleanupStoragePaths(storagePaths);
+  },
+  retryChatCleanupFailures() {
+    return chatService.retryChatCleanupFailures();
+  },
   markMessageIdsAsDelivered(messageIds: string[]) {
     return chatService.markMessageIdsAsDelivered(messageIds);
   },
@@ -60,6 +72,14 @@ export const chatSidebarGateway = {
   },
   getUserPresence(userId: string) {
     return chatService.getUserPresence(userId);
+  },
+  upsertUserPresence(
+    userId: string,
+    payload: {
+      is_online?: boolean;
+    }
+  ) {
+    return chatService.upsertUserPresence(userId, payload);
   },
   createRealtimeChannel(name: string, options?: RealtimeChannelOptions) {
     return realtimeService.createChannel(name, options);
@@ -99,4 +119,7 @@ export type {
   UserPresence,
   RealtimeChannel,
   ConversationMessagesPage,
+  DeleteMessageThreadAndCleanupResult,
+  CleanupStoragePathsResult,
+  RetryChatCleanupFailuresResult,
 };

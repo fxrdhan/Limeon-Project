@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 import {
   fetchChatFileBlobWithFallback,
@@ -7,6 +8,7 @@ import {
   resolveChatAssetUrl,
 } from '../utils/message-file';
 import type { ChatMessage } from '../data/chatSidebarGateway';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 
 type PreviewableMessage = Pick<
   ChatMessage,
@@ -62,7 +64,7 @@ export const useMessagesPanePreviews = () => {
       }
       releaseImagePreviewObjectUrl();
 
-      let nextPreviewUrl = message.message;
+      let nextPreviewUrl: string | null = null;
       let revokeOnClose = false;
 
       try {
@@ -85,8 +87,19 @@ export const useMessagesPanePreviews = () => {
           }
         }
       } catch {
-        nextPreviewUrl = message.message;
+        nextPreviewUrl = null;
         revokeOnClose = false;
+      }
+
+      if (!nextPreviewUrl && isDirectChatAssetUrl(message.message)) {
+        nextPreviewUrl = message.message;
+      }
+
+      if (!nextPreviewUrl) {
+        toast.error('Preview gambar tidak tersedia', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
       }
 
       if (activeImagePreviewRequestIdRef.current !== requestId) {
@@ -114,54 +127,64 @@ export const useMessagesPanePreviews = () => {
       previewName: string,
       forcePdfMime = false
     ) => {
-      await openDocumentPreview({
-        previewName,
-        resolvePreviewUrl: async () => {
-          if (!forcePdfMime && isDirectChatAssetUrl(message.message)) {
-            return {
-              previewUrl: message.message,
-              revokeOnClose: false,
-            };
-          }
+      try {
+        await openDocumentPreview({
+          previewName,
+          resolvePreviewUrl: async () => {
+            if (!forcePdfMime && isDirectChatAssetUrl(message.message)) {
+              return {
+                previewUrl: message.message,
+                revokeOnClose: false,
+              };
+            }
 
-          if (!forcePdfMime) {
+            if (!forcePdfMime) {
+              try {
+                const fileBlob = await fetchChatFileBlobWithFallback(
+                  message.message,
+                  message.file_storage_path
+                );
+                if (fileBlob) {
+                  return {
+                    previewUrl: URL.createObjectURL(fileBlob),
+                    revokeOnClose: true,
+                  };
+                }
+              } catch {
+                // Fall back to PDF/blob checks below.
+              }
+            }
+
             try {
-              const fileBlob = await fetchChatFileBlobWithFallback(
+              const pdfBlob = await fetchPdfBlobWithFallback(
                 message.message,
                 message.file_storage_path
               );
-              if (fileBlob) {
+              if (pdfBlob) {
                 return {
-                  previewUrl: URL.createObjectURL(fileBlob),
+                  previewUrl: URL.createObjectURL(pdfBlob),
                   revokeOnClose: true,
                 };
               }
             } catch {
-              // Fall back to direct URL below.
+              // Fall back to a direct URL only when the payload is already usable.
             }
-          }
 
-          try {
-            const pdfBlob = await fetchPdfBlobWithFallback(
-              message.message,
-              message.file_storage_path
-            );
-            if (pdfBlob) {
+            if (isDirectChatAssetUrl(message.message)) {
               return {
-                previewUrl: URL.createObjectURL(pdfBlob),
-                revokeOnClose: true,
+                previewUrl: message.message,
+                revokeOnClose: false,
               };
             }
-          } catch {
-            // Fall back to direct URL below.
-          }
 
-          return {
-            previewUrl: message.message,
-            revokeOnClose: false,
-          };
-        },
-      });
+            throw new Error('Document preview is unavailable');
+          },
+        });
+      } catch {
+        toast.error('Preview dokumen tidak tersedia', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+      }
     },
     [openDocumentPreview]
   );

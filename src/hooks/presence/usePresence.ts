@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { chatService } from '@/services/api/chat.service';
 import { usePresenceLifecycle } from './usePresenceLifecycle';
 import { usePresenceRosterSync } from './usePresenceRosterSync';
@@ -8,37 +8,22 @@ export const usePresence = () => {
   const { user, session } = useAuthStore();
 
   const syncUserPresenceState = useCallback(
-    async (keepOnline: boolean, timestamp = new Date().toISOString()) => {
+    async (keepOnline: boolean, _timestamp = new Date().toISOString()) => {
       if (!user?.id) {
         return false;
       }
 
       const payload = {
         is_online: keepOnline,
-        last_seen: timestamp,
-        updated_at: timestamp,
       };
 
       try {
-        const { data: updateData, error: updateError } =
-          await chatService.updateUserPresence(user.id, payload);
-
-        if (!updateError && (updateData?.length ?? 0) > 0) {
-          return true;
-        }
-
-        if (updateError) {
-          console.error('Failed to update presence row:', updateError);
-          return false;
-        }
-
-        const { error: insertError } = await chatService.insertUserPresence({
-          user_id: user.id,
-          ...payload,
-        });
-
-        if (insertError) {
-          console.error('Failed to insert presence row:', insertError);
+        const { error } = await chatService.upsertUserPresence(
+          user.id,
+          payload
+        );
+        if (error) {
+          console.error('Failed to upsert presence row:', error);
           return false;
         }
 
@@ -50,6 +35,14 @@ export const usePresence = () => {
     },
     [user?.id]
   );
+
+  useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+
+    void chatService.retryChatCleanupFailures();
+  }, [user?.id]);
 
   usePresenceRosterSync({ user });
   usePresenceLifecycle({

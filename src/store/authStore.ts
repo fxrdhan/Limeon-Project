@@ -120,12 +120,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user } = get();
       set({ loading: true });
       if (user?.id) {
-        const eventTimestamp = new Date().toISOString();
         try {
-          await chatService.updateUserPresence(user.id, {
+          await chatService.upsertUserPresence(user.id, {
             is_online: false,
-            last_seen: eventTimestamp,
-            updated_at: eventTimestamp,
           });
         } catch (presenceError) {
           console.warn(

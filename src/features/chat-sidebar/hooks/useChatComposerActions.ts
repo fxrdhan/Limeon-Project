@@ -14,7 +14,6 @@ import type {
   PendingComposerAttachment,
 } from '../types';
 import { useChatMessageTransferActions } from './useChatMessageTransferActions';
-import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { useChatMutationScope } from './useChatMutationScope';
 import { useChatMessageUpdateAction } from './useChatMessageUpdateAction';
 import { useChatMessageDeleteAction } from './useChatMessageDeleteAction';
@@ -93,18 +92,12 @@ export const useChatComposerActions = ({
     isCurrentConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
-    isConversationScopeActive,
   } = useChatMutationScope({
     user,
     targetUser,
     currentChannelId,
     messagesCount: messages.length,
     setMessages,
-  });
-  const { deleteUploadedStorageFiles } = useChatAttachmentCleanup({
-    setMessages,
-    pendingImagePreviewUrlsRef,
-    isConversationScopeActive,
   });
 
   const send = useChatComposerSend({
@@ -157,7 +150,6 @@ export const useChatComposerActions = ({
     setMessage,
     closeMessageMenu,
     pendingSendRegistryRef,
-    deleteUploadedStorageFiles,
     reconcileCurrentConversationMessages,
     isCurrentConversationScopeActive,
   });

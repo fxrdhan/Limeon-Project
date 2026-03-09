@@ -69,6 +69,20 @@ export interface ChatFilePreviewUpdateInput {
   file_preview_error?: string | null;
 }
 
+export interface DeleteMessageThreadAndCleanupResult {
+  deletedMessageIds: string[];
+  failedStoragePaths: string[];
+}
+
+export interface CleanupStoragePathsResult {
+  failedStoragePaths: string[];
+}
+
+export interface RetryChatCleanupFailuresResult {
+  resolvedCount: number;
+  remainingCount: number;
+}
+
 export type UserPresenceUpdateInput = Omit<
   UserPresenceUpdateRow,
   'is_online' | 'last_seen'
@@ -288,6 +302,130 @@ export const chatService = {
     }
   },
 
+  async deleteMessageThreadAndCleanup(
+    id: string
+  ): Promise<ServiceResponse<DeleteMessageThreadAndCleanupResult>> {
+    try {
+      const { data, error } =
+        await supabase.functions.invoke<DeleteMessageThreadAndCleanupResult>(
+          'chat-cleanup',
+          {
+            body: {
+              action: 'delete_thread',
+              messageId: id,
+            },
+          }
+        );
+
+      if (error) {
+        return { data: null, error: error as PostgrestError };
+      }
+
+      return {
+        data: {
+          deletedMessageIds: Array.isArray(data?.deletedMessageIds)
+            ? data.deletedMessageIds.filter(
+                deletedMessageId =>
+                  typeof deletedMessageId === 'string' &&
+                  deletedMessageId.length > 0
+              )
+            : [],
+          failedStoragePaths: Array.isArray(data?.failedStoragePaths)
+            ? data.failedStoragePaths.filter(
+                failedStoragePath =>
+                  typeof failedStoragePath === 'string' &&
+                  failedStoragePath.length > 0
+              )
+            : [],
+        },
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async cleanupStoragePaths(
+    storagePaths: Array<string | null | undefined>
+  ): Promise<ServiceResponse<CleanupStoragePathsResult>> {
+    const normalizedStoragePaths = [...new Set(storagePaths)]
+      .map(storagePath => storagePath?.trim() || null)
+      .filter((storagePath): storagePath is string => Boolean(storagePath));
+
+    if (normalizedStoragePaths.length === 0) {
+      return {
+        data: {
+          failedStoragePaths: [],
+        },
+        error: null,
+      };
+    }
+
+    try {
+      const { data, error } =
+        await supabase.functions.invoke<CleanupStoragePathsResult>(
+          'chat-cleanup',
+          {
+            body: {
+              action: 'cleanup_storage',
+              storagePaths: normalizedStoragePaths,
+            },
+          }
+        );
+
+      if (error) {
+        return { data: null, error: error as PostgrestError };
+      }
+
+      return {
+        data: {
+          failedStoragePaths: Array.isArray(data?.failedStoragePaths)
+            ? data.failedStoragePaths.filter(
+                failedStoragePath =>
+                  typeof failedStoragePath === 'string' &&
+                  failedStoragePath.length > 0
+              )
+            : [],
+        },
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async retryChatCleanupFailures(): Promise<
+    ServiceResponse<RetryChatCleanupFailuresResult>
+  > {
+    try {
+      const { data, error } =
+        await supabase.functions.invoke<RetryChatCleanupFailuresResult>(
+          'chat-cleanup',
+          {
+            body: {
+              action: 'retry_failures',
+            },
+          }
+        );
+
+      if (error) {
+        return { data: null, error: error as PostgrestError };
+      }
+
+      return {
+        data: {
+          resolvedCount:
+            typeof data?.resolvedCount === 'number' ? data.resolvedCount : 0,
+          remainingCount:
+            typeof data?.remainingCount === 'number' ? data.remainingCount : 0,
+        },
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
   async listUndeliveredIncomingMessageIds(
     receiverId: string
   ): Promise<ServiceResponse<string[]>> {
@@ -363,6 +501,28 @@ export const chatService = {
         .select('user_id, is_online, last_seen, updated_at')
         .eq('user_id', userId)
         .single();
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: data as UserPresence, error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async upsertUserPresence(
+    userId: string,
+    payload: Pick<UserPresenceUpdateInput, 'is_online'>
+  ): Promise<ServiceResponse<UserPresence>> {
+    try {
+      const { data, error } = await supabase.rpc('upsert_user_presence', {
+        p_user_id: userId,
+        p_is_online:
+          typeof payload.is_online === 'boolean' ? payload.is_online : null,
+        p_last_chat_opened: null,
+      });
 
       if (error) {
         return { data: null, error };

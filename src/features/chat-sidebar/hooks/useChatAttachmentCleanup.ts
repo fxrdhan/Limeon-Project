@@ -1,14 +1,10 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback } from 'react';
-import { CHAT_IMAGE_BUCKET } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import { resolveDeletedThreadMessageIds } from '../utils/message-thread';
-
-const STORAGE_DELETE_MAX_ATTEMPTS = 3;
-const STORAGE_DELETE_RETRY_DELAY_MS = 180;
 
 const normalizeStoragePaths = (
   storagePaths: Array<string | null | undefined>
@@ -16,11 +12,6 @@ const normalizeStoragePaths = (
   [...new Set(storagePaths)]
     .map(storagePath => storagePath?.trim() || null)
     .filter((storagePath): storagePath is string => Boolean(storagePath));
-
-const wait = (durationMs: number) =>
-  new Promise(resolve => {
-    window.setTimeout(resolve, durationMs);
-  });
 
 interface UseChatAttachmentCleanupProps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
@@ -33,47 +24,18 @@ export const useChatAttachmentCleanup = ({
   pendingImagePreviewUrlsRef,
   isConversationScopeActive,
 }: UseChatAttachmentCleanupProps) => {
-  const deleteStoragePathsWithRetry = useCallback(
+  const deleteUploadedStorageFiles = useCallback(
     async (storagePaths: Array<string | null | undefined>) => {
-      const remainingPaths = normalizeStoragePaths(storagePaths);
-
-      if (remainingPaths.length === 0) {
+      const normalizedStoragePaths = normalizeStoragePaths(storagePaths);
+      if (normalizedStoragePaths.length === 0) {
         return [];
       }
 
-      let pendingPaths = remainingPaths;
-
-      for (
-        let attemptIndex = 0;
-        attemptIndex < STORAGE_DELETE_MAX_ATTEMPTS && pendingPaths.length > 0;
-        attemptIndex += 1
-      ) {
-        const results = await Promise.allSettled(
-          pendingPaths.map(storagePath =>
-            chatSidebarGateway.deleteStorageFile(CHAT_IMAGE_BUCKET, storagePath)
-          )
-        );
-
-        pendingPaths = results.flatMap((result, resultIndex) =>
-          result.status === 'rejected' ? [pendingPaths[resultIndex]] : []
-        );
-
-        if (
-          pendingPaths.length > 0 &&
-          attemptIndex < STORAGE_DELETE_MAX_ATTEMPTS - 1
-        ) {
-          await wait(STORAGE_DELETE_RETRY_DELAY_MS * (attemptIndex + 1));
-        }
-      }
-
-      return pendingPaths;
-    },
-    []
-  );
-
-  const deleteUploadedStorageFiles = useCallback(
-    async (storagePaths: Array<string | null | undefined>) => {
-      const failedPaths = await deleteStoragePathsWithRetry(storagePaths);
+      const { data, error } = await chatSidebarGateway.cleanupStoragePaths(
+        normalizedStoragePaths
+      );
+      const failedPaths =
+        error || !data ? normalizedStoragePaths : data.failedStoragePaths;
 
       failedPaths.forEach(storagePath => {
         console.error(
@@ -83,12 +45,12 @@ export const useChatAttachmentCleanup = ({
 
       return failedPaths;
     },
-    [deleteStoragePathsWithRetry]
+    []
   );
 
   const deleteUploadedStorageFilesOrThrow = useCallback(
     async (storagePaths: Array<string | null | undefined>) => {
-      const failedPaths = await deleteStoragePathsWithRetry(storagePaths);
+      const failedPaths = await deleteUploadedStorageFiles(storagePaths);
 
       if (failedPaths.length === 0) {
         return;
@@ -98,7 +60,7 @@ export const useChatAttachmentCleanup = ({
         `Failed to delete chat storage file(s): ${failedPaths.join(', ')}`
       );
     },
-    [deleteStoragePathsWithRetry]
+    [deleteUploadedStorageFiles]
   );
 
   const rollbackPersistedAttachmentThread = useCallback(
@@ -107,8 +69,10 @@ export const useChatAttachmentCleanup = ({
       storagePaths: Array<string | null | undefined>,
       conversationScopeKey: string | null
     ) => {
-      const { data: deletedMessageIds, error } =
-        await chatSidebarGateway.deleteMessageThread(persistedMessageId);
+      const { data, error } =
+        await chatSidebarGateway.deleteMessageThreadAndCleanup(
+          persistedMessageId
+        );
 
       if (error) {
         try {
@@ -129,7 +93,7 @@ export const useChatAttachmentCleanup = ({
       }
 
       const effectiveDeletedMessageIds = resolveDeletedThreadMessageIds(
-        deletedMessageIds,
+        data?.deletedMessageIds,
         [persistedMessageId]
       );
 
@@ -141,7 +105,11 @@ export const useChatAttachmentCleanup = ({
         );
       }
 
-      await deleteUploadedStorageFilesOrThrow(storagePaths);
+      data?.failedStoragePaths.forEach(storagePath => {
+        console.error(
+          `Error deleting chat storage file after server cleanup: ${storagePath}`
+        );
+      });
     },
     [deleteUploadedStorageFilesOrThrow, isConversationScopeActive, setMessages]
   );

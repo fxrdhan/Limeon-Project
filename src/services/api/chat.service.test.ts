@@ -1,19 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockSingle, mockSelect, mockInsert, mockFrom, mockRpc } = vi.hoisted(
-  () => ({
+const { mockSingle, mockSelect, mockInsert, mockFrom, mockRpc, mockInvoke } =
+  vi.hoisted(() => ({
     mockSingle: vi.fn(),
     mockSelect: vi.fn(),
     mockInsert: vi.fn(),
     mockFrom: vi.fn(),
     mockRpc: vi.fn(),
-  })
-);
+    mockInvoke: vi.fn(),
+  }));
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: mockFrom,
     rpc: mockRpc,
+    functions: {
+      invoke: mockInvoke,
+    },
   },
 }));
 
@@ -120,5 +123,66 @@ describe('chatService', () => {
         message_relation_kind: 'attachment_caption',
       })
     );
+  });
+
+  it('uses the edge cleanup function when deleting a thread and cleaning files', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      data: {
+        deletedMessageIds: ['message-1'],
+        failedStoragePaths: [],
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.deleteMessageThreadAndCleanup('message-1');
+
+    expect(mockInvoke).toHaveBeenCalledWith('chat-cleanup', {
+      body: {
+        action: 'delete_thread',
+        messageId: 'message-1',
+      },
+    });
+    expect(result).toEqual({
+      data: {
+        deletedMessageIds: ['message-1'],
+        failedStoragePaths: [],
+      },
+      error: null,
+    });
+  });
+
+  it('upserts presence through the dedicated rpc', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: {
+        user_id: 'user-a',
+        is_online: true,
+        last_seen: '2026-03-09T10:00:00.000Z',
+        updated_at: '2026-03-09T10:00:00.000Z',
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.upsertUserPresence('user-a', {
+      is_online: true,
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith('upsert_user_presence', {
+      p_user_id: 'user-a',
+      p_is_online: true,
+      p_last_chat_opened: null,
+    });
+    expect(result).toEqual({
+      data: {
+        user_id: 'user-a',
+        is_online: true,
+        last_seen: '2026-03-09T10:00:00.000Z',
+        updated_at: '2026-03-09T10:00:00.000Z',
+      },
+      error: null,
+    });
   });
 });

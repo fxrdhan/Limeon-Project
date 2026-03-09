@@ -11,9 +11,10 @@ const { mockGateway, mockToast, mockRenderPdfPreviewBlob } = vi.hoisted(() => ({
     createMessage: vi.fn(),
     updateFilePreview: vi.fn(),
     deleteMessageThread: vi.fn(),
+    deleteMessageThreadAndCleanup: vi.fn(),
     uploadImage: vi.fn(),
     uploadAttachment: vi.fn(),
-    deleteStorageFile: vi.fn(),
+    cleanupStoragePaths: vi.fn(),
   },
   mockToast: {
     error: vi.fn(),
@@ -117,7 +118,12 @@ describe('useChatComposerSend', () => {
       data: [],
       error: null,
     });
-    mockGateway.deleteStorageFile.mockResolvedValue(undefined);
+    mockGateway.cleanupStoragePaths.mockResolvedValue({
+      data: {
+        failedStoragePaths: [],
+      },
+      error: null,
+    });
     mockRenderPdfPreviewBlob.mockResolvedValue({
       coverBlob: new Blob(['preview'], { type: 'image/png' }),
       pageCount: 2,
@@ -142,8 +148,11 @@ describe('useChatComposerSend', () => {
         data: null,
         error: new Error('caption failed'),
       });
-    mockGateway.deleteMessageThread.mockResolvedValue({
-      data: ['server-file-1'],
+    mockGateway.deleteMessageThreadAndCleanup.mockResolvedValue({
+      data: {
+        deletedMessageIds: ['server-file-1'],
+        failedStoragePaths: [],
+      },
       error: null,
     });
 
@@ -191,12 +200,8 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
+      expect(mockGateway.deleteMessageThreadAndCleanup).toHaveBeenCalledWith(
         'server-file-1'
-      );
-      expect(mockGateway.deleteStorageFile).toHaveBeenCalledWith(
-        'chat',
-        'documents/channel/stok.pdf'
       );
       expect(result.current.messages).toEqual([]);
       expect(result.current.draftMessage).toBe('stok opname');
@@ -278,7 +283,12 @@ describe('useChatComposerSend', () => {
       data: null,
       error: new Error('insert failed'),
     });
-    mockGateway.deleteStorageFile.mockRejectedValue(new Error('delete failed'));
+    mockGateway.cleanupStoragePaths.mockResolvedValue({
+      data: {
+        failedStoragePaths: ['documents/channel/stok.pdf'],
+      },
+      error: null,
+    });
 
     const clearPendingComposerAttachments = vi.fn();
     const restorePendingComposerAttachments = vi.fn();
@@ -316,10 +326,9 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(mockGateway.deleteStorageFile).toHaveBeenCalledWith(
-      'chat',
-      'documents/channel/stok.pdf'
-    );
+    expect(mockGateway.cleanupStoragePaths).toHaveBeenCalledWith([
+      'documents/channel/stok.pdf',
+    ]);
     expect(mockToast.error).toHaveBeenCalledWith(
       'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
       expect.objectContaining({
@@ -446,10 +455,9 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.deleteStorageFile).toHaveBeenCalledWith(
-        'chat',
-        'previews/channel/stok.png'
-      );
+      expect(mockGateway.cleanupStoragePaths).toHaveBeenCalledWith([
+        'previews/channel/stok.png',
+      ]);
       expect(result.current.messages[0]?.file_preview_status).toBe('failed');
       expect(result.current.messages[0]?.file_preview_error).toBe(
         'Gagal menyimpan preview PDF'
@@ -676,7 +684,7 @@ describe('useChatComposerSend', () => {
           resolveCreateMessage = resolve;
         })
     );
-    mockGateway.deleteMessageThread.mockResolvedValue({
+    mockGateway.deleteMessageThreadAndCleanup.mockResolvedValue({
       data: null,
       error: new Error('delete failed'),
     });
@@ -768,7 +776,7 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
+      expect(mockGateway.deleteMessageThreadAndCleanup).toHaveBeenCalledWith(
         'server-image-rollback-fail'
       );
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
