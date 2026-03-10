@@ -3,6 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
 
+const { mockSearchConversationMessages, mockFetchConversationMessageContext } =
+  vi.hoisted(() => ({
+    mockSearchConversationMessages: vi.fn(),
+    mockFetchConversationMessageContext: vi.fn(),
+  }));
+
+vi.mock('../data/chatSidebarGateway', () => ({
+  chatSidebarGateway: {
+    searchConversationMessages: mockSearchConversationMessages,
+    fetchConversationMessageContext: mockFetchConversationMessageContext,
+  },
+}));
+
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
   sender_id: overrides.sender_id ?? 'user-a',
@@ -34,6 +47,7 @@ describe('useChatInteractionModes', () => {
   let clipboardWriteText: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback
     ) => {
@@ -49,6 +63,14 @@ describe('useChatInteractionModes', () => {
       clipboard: {
         writeText: clipboardWriteText,
       },
+    });
+    mockSearchConversationMessages.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mockFetchConversationMessageContext.mockResolvedValue({
+      data: [],
+      error: null,
     });
   });
 
@@ -76,6 +98,7 @@ describe('useChatInteractionModes', () => {
         isOpen: true,
         currentChannelId: 'channel-1',
         messages,
+        setMessages: vi.fn(),
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -88,6 +111,11 @@ describe('useChatInteractionModes', () => {
           messageItem.file_name || 'Lampiran',
       })
     );
+
+    mockSearchConversationMessages.mockResolvedValueOnce({
+      data: [messages[0], messages[1], messages[3]],
+      error: null,
+    });
 
     act(() => {
       result.current.handleEnterMessageSearchMode();
@@ -133,6 +161,7 @@ describe('useChatInteractionModes', () => {
               sender_name: 'Admin',
             }),
           ],
+          setMessages: vi.fn(),
           user: { id: 'user-a', name: 'Admin' },
           targetUser: {
             id: 'user-b',
@@ -173,6 +202,17 @@ describe('useChatInteractionModes', () => {
     expect(clipboardWriteText).toHaveBeenCalledWith(
       expect.stringContaining('Admin: Rak depan')
     );
+
+    mockSearchConversationMessages.mockResolvedValueOnce({
+      data: [
+        buildMessage({
+          id: 'image-1',
+          message: 'https://example.com/image.png',
+          message_type: 'image',
+        }),
+      ],
+      error: null,
+    });
 
     act(() => {
       result.current.handleEnterMessageSearchMode();

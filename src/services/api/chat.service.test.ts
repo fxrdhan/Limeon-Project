@@ -1,14 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockSingle, mockSelect, mockInsert, mockFrom, mockRpc, mockInvoke } =
-  vi.hoisted(() => ({
-    mockSingle: vi.fn(),
-    mockSelect: vi.fn(),
-    mockInsert: vi.fn(),
-    mockFrom: vi.fn(),
-    mockRpc: vi.fn(),
-    mockInvoke: vi.fn(),
-  }));
+const {
+  mockSingle,
+  mockSelect,
+  mockInsert,
+  mockFrom,
+  mockRpc,
+  mockInvoke,
+  mockUpdate,
+  mockEq,
+  mockUpdateSelect,
+} = vi.hoisted(() => ({
+  mockSingle: vi.fn(),
+  mockSelect: vi.fn(),
+  mockInsert: vi.fn(),
+  mockFrom: vi.fn(),
+  mockRpc: vi.fn(),
+  mockInvoke: vi.fn(),
+  mockUpdate: vi.fn(),
+  mockEq: vi.fn(),
+  mockUpdateSelect: vi.fn(),
+}));
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -18,6 +30,8 @@ vi.mock('@/lib/supabase', () => ({
       invoke: mockInvoke,
     },
   },
+  supabaseAnonKey: 'test-anon-key',
+  supabaseUrl: 'https://example.supabase.co',
 }));
 
 describe('chatService', () => {
@@ -26,12 +40,23 @@ describe('chatService', () => {
     vi.clearAllMocks();
     mockFrom.mockReturnValue({
       insert: mockInsert,
+      update: mockUpdate,
     });
     mockInsert.mockReturnValue({
       select: mockSelect,
     });
     mockSelect.mockReturnValue({
       single: mockSingle,
+    });
+    mockUpdate.mockReturnValue({
+      eq: mockEq,
+    });
+    mockEq.mockReturnValue({
+      select: mockUpdateSelect,
+    });
+    mockUpdateSelect.mockResolvedValue({
+      data: [],
+      error: null,
     });
   });
 
@@ -142,6 +167,80 @@ describe('chatService', () => {
     });
   });
 
+  it('searches conversation matches through the dedicated rpc', async () => {
+    const matchedMessages = [
+      {
+        id: 'message-1',
+        created_at: '2026-03-10T08:00:00.000Z',
+      },
+    ];
+    mockRpc.mockResolvedValueOnce({
+      data: matchedMessages,
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.searchConversationMessages(
+      'user-b',
+      'channel-1',
+      'stok',
+      150
+    );
+
+    expect(mockRpc).toHaveBeenCalledWith('search_chat_messages', {
+      p_target_user_id: 'user-b',
+      p_channel_id: 'channel-1',
+      p_query: 'stok',
+      p_limit: 150,
+    });
+    expect(result).toEqual({
+      data: matchedMessages,
+      error: null,
+    });
+  });
+
+  it('loads a search context window through the dedicated rpc', async () => {
+    const contextMessages = [
+      {
+        id: 'message-10',
+        created_at: '2026-03-10T08:00:00.000Z',
+      },
+      {
+        id: 'message-11',
+        created_at: '2026-03-10T08:01:00.000Z',
+      },
+    ];
+    mockRpc.mockResolvedValueOnce({
+      data: contextMessages,
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.fetchConversationMessageContext(
+      'user-b',
+      'channel-1',
+      'message-11',
+      {
+        beforeLimit: 12,
+        afterLimit: 6,
+      }
+    );
+
+    expect(mockRpc).toHaveBeenCalledWith('fetch_chat_message_context', {
+      p_target_user_id: 'user-b',
+      p_channel_id: 'channel-1',
+      p_message_id: 'message-11',
+      p_before_limit: 12,
+      p_after_limit: 6,
+    });
+    expect(result).toEqual({
+      data: contextMessages,
+      error: null,
+    });
+  });
+
   it('still persists attachment captions with message_relation_kind on insert', async () => {
     mockSingle.mockResolvedValueOnce({
       data: null,
@@ -229,5 +328,59 @@ describe('chatService', () => {
       },
       error: null,
     });
+  });
+
+  it('normalizes standard presence sync behind the rpc-based helper', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: {
+        user_id: 'user-a',
+        is_online: false,
+        last_seen: '2026-03-09T10:00:00.000Z',
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const didSync = await chatService.syncUserPresenceOnlineState(
+      'user-a',
+      false
+    );
+
+    expect(didSync).toBe(true);
+    expect(mockRpc).toHaveBeenCalledWith('upsert_user_presence', {
+      p_user_id: 'user-a',
+      p_is_online: false,
+      p_last_chat_opened: null,
+    });
+  });
+
+  it('starts keepalive and fallback update through the page-exit helper', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+
+    const { chatService } = await import('./chat.service');
+
+    const didStartKeepalive = chatService.syncUserPresenceOnPageExit(
+      'user-a',
+      'access-token',
+      '2026-03-10T12:00:00.000Z'
+    );
+
+    expect(didStartKeepalive).toBe(true);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/user_presence?user_id=eq.user-a',
+      expect.objectContaining({
+        method: 'PATCH',
+        keepalive: true,
+      })
+    );
+    expect(mockUpdate).toHaveBeenCalledWith({
+      is_online: false,
+      last_seen: '2026-03-10T12:00:00.000Z',
+      updated_at: '2026-03-10T12:00:00.000Z',
+    });
+    fetchSpy.mockRestore();
   });
 });

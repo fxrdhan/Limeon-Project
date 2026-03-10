@@ -94,6 +94,7 @@ export const useChatSidebarController = ({
     isOpen,
     currentChannelId,
     messages,
+    setMessages,
     user,
     targetUser,
     closeMessageMenu,

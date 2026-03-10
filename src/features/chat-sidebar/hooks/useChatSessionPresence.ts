@@ -2,11 +2,9 @@ import type { UserDetails } from '@/types/database';
 import { usePresenceStore } from '@/store/presenceStore';
 import { isPresenceFresh } from '@/hooks/presence/presenceStatus';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  chatSidebarGateway,
-  type UserPresence,
-} from '../data/chatSidebarGateway';
+import type { UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import { loadTargetPresenceSnapshot } from '../utils/target-presence';
 import { useChatSessionPresenceSubscriptions } from './useChatSessionPresenceSubscriptions';
 
 interface UseChatSessionPresenceProps {
@@ -51,31 +49,20 @@ export const useChatSessionPresence = ({
     targetPresenceRequestIdRef.current = requestId;
     setTargetUserPresenceError(null);
 
-    try {
-      const { data: presence, error } =
-        await chatSidebarGateway.getUserPresence(targetUser.id);
-
-      if (targetPresenceRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading target user presence:', error);
-        setTargetUserPresenceError('Status online tidak tersedia');
-        setTargetUserPresence(null);
-        return;
-      }
-
-      setTargetUserPresence(presence ?? null);
-    } catch (error) {
-      if (targetPresenceRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      console.error('Caught error loading target user presence:', error);
-      setTargetUserPresenceError('Status online tidak tersedia');
-      setTargetUserPresence(null);
+    if (targetPresenceRequestIdRef.current !== requestId) {
+      return;
     }
+    const { presence, errorMessage } = await loadTargetPresenceSnapshot(
+      targetUser.id,
+      'Error loading target user presence'
+    );
+
+    if (targetPresenceRequestIdRef.current !== requestId) {
+      return;
+    }
+
+    setTargetUserPresence(presence);
+    setTargetUserPresenceError(errorMessage);
   }, [currentChannelId, isOpen, targetUser, user]);
 
   useChatSessionPresenceSubscriptions({

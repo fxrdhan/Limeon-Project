@@ -60,6 +60,51 @@ export const mergeConversationSnapshotWithPending = (
   return [...mappedMessagesWithStableKeys, ...pendingMessages];
 };
 
+const sortPersistedConversationMessages = (messages: ChatMessage[]) =>
+  [...messages].sort((leftMessage, rightMessage) => {
+    const createdAtOrder = leftMessage.created_at.localeCompare(
+      rightMessage.created_at
+    );
+    if (createdAtOrder !== 0) {
+      return createdAtOrder;
+    }
+
+    return leftMessage.id.localeCompare(rightMessage.id);
+  });
+
+export const mergeConversationContextWithExisting = (
+  previousMessages: ChatMessage[],
+  mappedContextMessages: ChatMessage[],
+  currentChannelId?: string | null
+) => {
+  const stableKeysByMessageId = new Map(
+    previousMessages.map(messageItem => [messageItem.id, messageItem.stableKey])
+  );
+  const pendingMessages = previousMessages.filter(
+    messageItem =>
+      messageItem.id.startsWith('temp_') &&
+      (!currentChannelId || messageItem.channel_id === currentChannelId)
+  );
+  const persistedMessagesById = new Map(
+    previousMessages
+      .filter(messageItem => !messageItem.id.startsWith('temp_'))
+      .map(messageItem => [messageItem.id, messageItem])
+  );
+
+  mappedContextMessages.forEach(messageItem => {
+    persistedMessagesById.set(messageItem.id, {
+      ...messageItem,
+      stableKey:
+        stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
+    });
+  });
+
+  return [
+    ...sortPersistedConversationMessages([...persistedMessagesById.values()]),
+    ...pendingMessages,
+  ];
+};
+
 export const reconcileConversationMessages = ({
   latestMessages,
   user,

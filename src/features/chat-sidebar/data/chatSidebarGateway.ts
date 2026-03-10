@@ -38,6 +38,35 @@ export const chatSidebarGateway = {
       options
     );
   },
+  searchConversationMessages(
+    targetUserId: string,
+    channelId: string,
+    query: string,
+    limit?: number
+  ) {
+    return chatService.searchConversationMessages(
+      targetUserId,
+      channelId,
+      query,
+      limit
+    );
+  },
+  fetchConversationMessageContext(
+    targetUserId: string,
+    channelId: string,
+    messageId: string,
+    options?: {
+      beforeLimit?: number;
+      afterLimit?: number;
+    }
+  ) {
+    return chatService.fetchConversationMessageContext(
+      targetUserId,
+      channelId,
+      messageId,
+      options
+    );
+  },
   createMessage(payload: ChatMessageInsertInput) {
     return chatService.insertMessage(payload);
   },

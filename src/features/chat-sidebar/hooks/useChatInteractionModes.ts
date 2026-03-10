@@ -1,24 +1,22 @@
-import {
-  SEARCH_STATES,
-  type SearchState,
-} from '@/components/search-bar/constants';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   getAttachmentCaptionData,
-  getSearchMatchedMessageIds,
   getSelectableMessageIdSet,
   getSelectedVisibleMessages,
   serializeSelectedMessages,
 } from '../utils/message-derivations';
+import { useChatMessageSearchMode } from './useChatMessageSearchMode';
 
 interface UseChatInteractionModesProps {
   isOpen: boolean;
   currentChannelId: string | null;
   messages: ChatMessage[];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   user?: {
     id: string;
     name: string;
@@ -32,57 +30,29 @@ export const useChatInteractionModes = ({
   isOpen,
   currentChannelId,
   messages,
+  setMessages,
   user,
   targetUser,
   closeMessageMenu,
   getAttachmentFileName,
 }: UseChatInteractionModesProps) => {
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const [isMessageSearchMode, setIsMessageSearchMode] = useState(false);
-  const [messageSearchQuery, setMessageSearchQuery] = useState('');
-  const [activeSearchMessageId, setActiveSearchMessageId] = useState<
-    string | null
-  >(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
     () => new Set()
   );
-  const [searchNavigationTick, setSearchNavigationTick] = useState(0);
-  const normalizedMessageSearchQuery = messageSearchQuery.trim().toLowerCase();
+  const search = useChatMessageSearchMode({
+    isOpen,
+    currentChannelId,
+    messages,
+    setMessages,
+    user,
+    targetUser,
+  });
 
   const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
     () => getAttachmentCaptionData(messages),
     [messages]
   );
-  const searchMatchedMessageIds = useMemo(
-    () =>
-      getSearchMatchedMessageIds(messages, normalizedMessageSearchQuery, {
-        captionMessagesByAttachmentId,
-        captionMessageIds,
-      }),
-    [
-      captionMessageIds,
-      captionMessagesByAttachmentId,
-      messages,
-      normalizedMessageSearchQuery,
-    ]
-  );
-  const searchMatchedMessageIdSet = useMemo(
-    () => new Set(searchMatchedMessageIds),
-    [searchMatchedMessageIds]
-  );
-  const activeSearchResultIndex = searchMatchedMessageIds.findIndex(
-    messageId => messageId === activeSearchMessageId
-  );
-  const canNavigateSearchUp = activeSearchResultIndex > 0;
-  const canNavigateSearchDown =
-    activeSearchResultIndex >= 0 &&
-    activeSearchResultIndex < searchMatchedMessageIds.length - 1;
-  const messageSearchState: SearchState = !normalizedMessageSearchQuery
-    ? SEARCH_STATES.IDLE
-    : searchMatchedMessageIds.length > 0
-      ? SEARCH_STATES.FOUND
-      : SEARCH_STATES.NOT_FOUND;
   const selectableMessageIdSet = useMemo(
     () => getSelectableMessageIdSet(messages, captionMessageIds),
     [captionMessageIds, messages]
@@ -105,17 +75,11 @@ export const useChatInteractionModes = ({
 
   useEffect(() => {
     if (isOpen) return;
-    setIsMessageSearchMode(false);
-    setMessageSearchQuery('');
-    setActiveSearchMessageId(null);
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
   }, [isOpen]);
 
   useEffect(() => {
-    setIsMessageSearchMode(false);
-    setMessageSearchQuery('');
-    setActiveSearchMessageId(null);
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
   }, [currentChannelId]);
@@ -136,39 +100,22 @@ export const useChatInteractionModes = ({
     });
   }, [selectableMessageIdSet]);
 
-  useEffect(() => {
-    if (!isMessageSearchMode) return;
-    const rafId = requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, [isMessageSearchMode]);
-
   const handleEnterMessageSearchMode = useCallback(() => {
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
-    setIsMessageSearchMode(true);
-  }, []);
+    search.handleEnterMessageSearchMode();
+  }, [search]);
 
   const handleExitMessageSearchMode = useCallback(() => {
-    setIsMessageSearchMode(false);
-    setMessageSearchQuery('');
-    setActiveSearchMessageId(null);
-    setSearchNavigationTick(0);
-  }, []);
+    search.handleExitMessageSearchMode();
+  }, [search]);
 
   const handleEnterMessageSelectionMode = useCallback(() => {
     closeMessageMenu();
-    setIsMessageSearchMode(false);
-    setMessageSearchQuery('');
-    setActiveSearchMessageId(null);
-    setSearchNavigationTick(0);
+    search.handleExitMessageSearchMode();
     setSelectedMessageIds(new Set());
     setIsSelectionMode(true);
-  }, [closeMessageMenu]);
+  }, [closeMessageMenu, search]);
 
   const handleExitMessageSelectionMode = useCallback(() => {
     setIsSelectionMode(false);
@@ -192,79 +139,16 @@ export const useChatInteractionModes = ({
   );
 
   const handleFocusSearchInput = useCallback(() => {
-    if (!isMessageSearchMode) return;
-    requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
-  }, [isMessageSearchMode]);
-
-  const handleMessageSearchQueryChange = useCallback((nextQuery: string) => {
-    setMessageSearchQuery(nextQuery);
-  }, []);
-
-  const navigateToSearchResult = useCallback(
-    (direction: 'up' | 'down') => {
-      if (searchMatchedMessageIds.length === 0) return;
-
-      setActiveSearchMessageId(currentMessageId => {
-        const currentIndex =
-          currentMessageId === null
-            ? -1
-            : searchMatchedMessageIds.findIndex(
-                messageId => messageId === currentMessageId
-              );
-        const fallbackIndex =
-          direction === 'up' ? searchMatchedMessageIds.length - 1 : 0;
-        const safeCurrentIndex =
-          currentIndex >= 0 ? currentIndex : fallbackIndex;
-        const nextIndex =
-          direction === 'up'
-            ? Math.max(0, safeCurrentIndex - 1)
-            : Math.min(
-                searchMatchedMessageIds.length - 1,
-                safeCurrentIndex + 1
-              );
-
-        return searchMatchedMessageIds[nextIndex];
-      });
-      setSearchNavigationTick(previousTick => previousTick + 1);
-    },
-    [searchMatchedMessageIds]
-  );
+    search.handleFocusSearchInput();
+  }, [search]);
 
   const handleNavigateSearchUp = useCallback(() => {
-    navigateToSearchResult('up');
-  }, [navigateToSearchResult]);
+    search.handleNavigateSearchUp();
+  }, [search]);
 
   const handleNavigateSearchDown = useCallback(() => {
-    navigateToSearchResult('down');
-  }, [navigateToSearchResult]);
-
-  useEffect(() => {
-    if (
-      !isMessageSearchMode ||
-      !normalizedMessageSearchQuery ||
-      searchMatchedMessageIds.length === 0
-    ) {
-      setActiveSearchMessageId(null);
-      return;
-    }
-
-    setActiveSearchMessageId(currentMessageId => {
-      if (
-        currentMessageId &&
-        searchMatchedMessageIds.includes(currentMessageId)
-      ) {
-        return currentMessageId;
-      }
-
-      return searchMatchedMessageIds[0];
-    });
-  }, [
-    isMessageSearchMode,
-    normalizedMessageSearchQuery,
-    searchMatchedMessageIds,
-  ]);
+    search.handleNavigateSearchDown();
+  }, [search]);
 
   const handleCopySelectedMessages = useCallback(async () => {
     if (selectedVisibleMessages.length === 0) {
@@ -314,26 +198,25 @@ export const useChatInteractionModes = ({
   ]);
 
   return {
-    searchInputRef,
-    isMessageSearchMode,
-    messageSearchQuery,
-    activeSearchMessageId,
+    isMessageSearchMode: search.isMessageSearchMode,
+    messageSearchQuery: search.messageSearchQuery,
+    activeSearchMessageId: search.activeSearchMessageId,
     isSelectionMode,
     selectedMessageIds,
-    searchNavigationTick,
-    normalizedMessageSearchQuery,
+    searchNavigationTick: search.searchNavigationTick,
+    normalizedMessageSearchQuery: search.normalizedMessageSearchQuery,
     captionMessagesByAttachmentId,
     captionMessageIds,
-    searchMatchedMessageIds,
-    searchMatchedMessageIdSet,
-    activeSearchResultIndex,
-    canNavigateSearchUp,
-    canNavigateSearchDown,
-    messageSearchState,
+    searchMatchedMessageIds: search.searchMatchedMessageIds,
+    searchMatchedMessageIdSet: search.searchMatchedMessageIdSet,
+    activeSearchResultIndex: search.activeSearchResultIndex,
+    canNavigateSearchUp: search.canNavigateSearchUp,
+    canNavigateSearchDown: search.canNavigateSearchDown,
+    messageSearchState: search.messageSearchState,
     selectableMessageIdSet,
     selectedVisibleMessages,
     canDeleteSelectedMessages,
-    setActiveSearchMessageId,
+    searchInputRef: search.searchInputRef,
     setIsSelectionMode,
     setSelectedMessageIds,
     handleEnterMessageSearchMode,
@@ -342,7 +225,7 @@ export const useChatInteractionModes = ({
     handleExitMessageSelectionMode,
     handleToggleMessageSelection,
     handleFocusSearchInput,
-    handleMessageSearchQueryChange,
+    handleMessageSearchQueryChange: search.handleMessageSearchQueryChange,
     handleNavigateSearchUp,
     handleNavigateSearchDown,
     handleCopySelectedMessages,

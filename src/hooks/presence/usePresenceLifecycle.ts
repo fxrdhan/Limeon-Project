@@ -1,24 +1,15 @@
-import { chatService } from '@/services/api/chat.service';
 import { useEffect, useRef } from 'react';
+import { chatService } from '@/services/api/chat.service';
 import { PRESENCE_HEARTBEAT_MS } from './presenceStatus';
 
-interface PresenceLifecycleUser {
-  id: string;
-}
-
 interface UsePresenceLifecycleProps {
-  user: PresenceLifecycleUser | null;
+  userId?: string | null;
   accessToken?: string | null;
-  syncUserPresenceState: (
-    keepOnline: boolean,
-    timestamp?: string
-  ) => Promise<boolean>;
 }
 
 export const usePresenceLifecycle = ({
-  user,
+  userId,
   accessToken,
-  syncUserPresenceState,
 }: UsePresenceLifecycleProps) => {
   const sessionTokenRef = useRef<string | null>(accessToken ?? null);
   const hasHandledPageExitRef = useRef(false);
@@ -28,42 +19,36 @@ export const usePresenceLifecycle = ({
   }, [accessToken]);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       hasHandledPageExitRef.current = false;
       return;
     }
 
     hasHandledPageExitRef.current = false;
-    void syncUserPresenceState(true);
+    void chatService.syncUserPresenceOnlineState(userId, true);
 
     const handleVisibilityChange = () => {
-      if (!user || document.visibilityState !== 'visible') {
+      if (!userId || document.visibilityState !== 'visible') {
         return;
       }
 
       hasHandledPageExitRef.current = false;
-      void syncUserPresenceState(true);
+      void chatService.syncUserPresenceOnlineState(userId, true);
     };
 
     const handlePageExit = () => {
-      if (!user || hasHandledPageExitRef.current) {
+      if (!userId || hasHandledPageExitRef.current) {
         return;
       }
 
       hasHandledPageExitRef.current = true;
       const eventTimestamp = new Date().toISOString();
 
-      chatService.sendUserPresenceUpdateKeepalive(
-        user.id,
-        {
-          is_online: false,
-          last_seen: eventTimestamp,
-          updated_at: eventTimestamp,
-        },
-        sessionTokenRef.current
+      chatService.syncUserPresenceOnPageExit(
+        userId,
+        sessionTokenRef.current,
+        eventTimestamp
       );
-
-      void syncUserPresenceState(false, eventTimestamp);
     };
 
     const handlePageHide = (event: PageTransitionEvent) => {
@@ -83,17 +68,17 @@ export const usePresenceLifecycle = ({
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('unload', handlePageExit);
     };
-  }, [syncUserPresenceState, user]);
+  }, [userId]);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       return;
     }
 
     const heartbeat = setInterval(() => {
-      void syncUserPresenceState(true);
+      void chatService.syncUserPresenceOnlineState(userId, true);
     }, PRESENCE_HEARTBEAT_MS);
 
     return () => clearInterval(heartbeat);
-  }, [syncUserPresenceState, user]);
+  }, [userId]);
 };

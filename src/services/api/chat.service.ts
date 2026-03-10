@@ -104,6 +104,11 @@ export interface ConversationMessagesPage {
   hasMore: boolean;
 }
 
+export interface ConversationSearchContextOptions {
+  beforeLimit?: number;
+  afterLimit?: number;
+}
+
 const buildUserPresenceRestUrl = (userId: string) => {
   const requestUrl = new URL(`${supabaseUrl}/rest/v1/user_presence`);
   requestUrl.searchParams.set('user_id', `eq.${userId}`);
@@ -172,6 +177,60 @@ export const chatService = {
         },
         error: null,
       };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async searchConversationMessages(
+    targetUserId: string,
+    channelId: string,
+    query: string,
+    limit = 200
+  ): Promise<ServiceResponse<ChatMessage[]>> {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      return { data: [], error: null };
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('search_chat_messages', {
+        p_target_user_id: targetUserId,
+        p_channel_id: channelId,
+        p_query: normalizedQuery,
+        p_limit: limit,
+      });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as ChatMessage[], error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async fetchConversationMessageContext(
+    targetUserId: string,
+    channelId: string,
+    messageId: string,
+    options?: ConversationSearchContextOptions
+  ): Promise<ServiceResponse<ChatMessage[]>> {
+    try {
+      const { data, error } = await supabase.rpc('fetch_chat_message_context', {
+        p_target_user_id: targetUserId,
+        p_channel_id: channelId,
+        p_message_id: messageId,
+        p_before_limit: options?.beforeLimit ?? 20,
+        p_after_limit: options?.afterLimit ?? 20,
+      });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      return { data: (data || []) as ChatMessage[], error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -522,6 +581,24 @@ export const chatService = {
     }
   },
 
+  async syncUserPresenceOnlineState(userId: string, isOnline: boolean) {
+    try {
+      const { error } = await chatService.upsertUserPresence(userId, {
+        is_online: isOnline,
+      });
+
+      if (error) {
+        console.error('Failed to sync user presence state:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Caught error syncing user presence state:', error);
+      return false;
+    }
+  },
+
   async listActivePresenceSince(
     since: string
   ): Promise<ServiceResponse<UserPresence[]>> {
@@ -619,5 +696,42 @@ export const chatService = {
       console.error('Error starting keepalive presence update:', error);
       return false;
     }
+  },
+
+  syncUserPresenceOnPageExit(
+    userId: string,
+    accessToken?: string | null,
+    timestamp = new Date().toISOString()
+  ) {
+    const exitPayload: UserPresenceUpdateInput = {
+      is_online: false,
+      last_seen: timestamp,
+      updated_at: timestamp,
+    };
+
+    const keepaliveStarted = chatService.sendUserPresenceUpdateKeepalive(
+      userId,
+      exitPayload,
+      accessToken
+    );
+
+    void chatService
+      .updateUserPresence(userId, exitPayload)
+      .then(({ error }) => {
+        if (error) {
+          console.error(
+            'Fallback presence update failed while closing chat:',
+            error
+          );
+        }
+      })
+      .catch(error => {
+        console.error(
+          'Fallback presence update crashed while closing chat:',
+          error
+        );
+      });
+
+    return keepaliveStarted;
   },
 };

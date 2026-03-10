@@ -7,6 +7,7 @@ import {
   type UserPresence,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import { loadTargetPresenceSnapshot } from '../utils/target-presence';
 
 interface UseChatSessionPresenceSubscriptionsProps {
   enabled?: boolean;
@@ -57,31 +58,17 @@ export const useChatSessionPresenceSubscriptions = ({
     const loadTargetUserPresence = async () => {
       setTargetUserPresenceError(null);
 
-      try {
-        const { data: presence, error } =
-          await chatSidebarGateway.getUserPresence(targetUser.id);
+      const { presence, errorMessage } = await loadTargetPresenceSnapshot(
+        targetUser.id,
+        'Error loading target user presence'
+      );
 
-        if (activePresenceScopeRef.current !== presenceScopeKey) {
-          return;
-        }
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error loading target user presence:', error);
-          setTargetUserPresenceError('Status online tidak tersedia');
-          setTargetUserPresence(null);
-          return;
-        }
-
-        setTargetUserPresence(presence ?? null);
-      } catch (error) {
-        if (activePresenceScopeRef.current !== presenceScopeKey) {
-          return;
-        }
-
-        console.error('Caught error loading target user presence:', error);
-        setTargetUserPresenceError('Status online tidak tersedia');
-        setTargetUserPresence(null);
+      if (activePresenceScopeRef.current !== presenceScopeKey) {
+        return;
       }
+
+      setTargetUserPresence(presence);
+      setTargetUserPresenceError(errorMessage);
     };
 
     if (presenceChannelRef.current) {
