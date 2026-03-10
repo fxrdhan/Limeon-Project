@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import { chatMessagesService } from '@/services/api/chat.service';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 
 const RECEIPT_RETRY_DELAY_MS = 1_200;
 
@@ -195,7 +193,7 @@ export const useChatSessionReceipts = ({
 
       try {
         const { data: deliveredMessages, error } =
-          await chatSidebarGateway.markMessageIdsAsDelivered(targetIds);
+          await chatMessagesService.markMessageIdsAsDelivered(targetIds);
         if (receiptScopeVersion !== receiptScopeVersionRef.current) {
           return;
         }
@@ -256,7 +254,7 @@ export const useChatSessionReceipts = ({
 
       try {
         const { data: readMessages, error } =
-          await chatSidebarGateway.markMessageIdsAsRead(targetIds);
+          await chatMessagesService.markMessageIdsAsRead(targetIds);
         if (receiptScopeVersion !== receiptScopeVersionRef.current) {
           return;
         }

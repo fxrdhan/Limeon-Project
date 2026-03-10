@@ -9,6 +9,7 @@ interface UseChatConversationCacheSyncProps {
   messages: ChatMessage[];
   hasOlderMessages: boolean;
   hasCompletedInitialOpenLoadRef: MutableRefObject<boolean>;
+  excludedMessageIdsRef?: MutableRefObject<Set<string>>;
 }
 
 export const useChatConversationCacheSync = ({
@@ -17,8 +18,11 @@ export const useChatConversationCacheSync = ({
   messages,
   hasOlderMessages,
   hasCompletedInitialOpenLoadRef,
+  excludedMessageIdsRef,
 }: UseChatConversationCacheSyncProps) => {
   useEffect(() => {
+    const excludedMessageIds = excludedMessageIdsRef?.current ?? null;
+
     if (
       !isOpen ||
       !currentChannelId ||
@@ -28,7 +32,9 @@ export const useChatConversationCacheSync = ({
     }
 
     const persistedMessages = messages.filter(
-      messageItem => !messageItem.id.startsWith('temp_')
+      messageItem =>
+        !messageItem.id.startsWith('temp_') &&
+        !excludedMessageIds?.has(messageItem.id)
     );
 
     setConversationCacheEntry(
@@ -38,6 +44,7 @@ export const useChatConversationCacheSync = ({
     );
   }, [
     currentChannelId,
+    excludedMessageIdsRef,
     hasCompletedInitialOpenLoadRef,
     hasOlderMessages,
     isOpen,

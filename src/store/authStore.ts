@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import authService from '@/services/authService';
-import { chatService } from '@/services/api/chat.service';
+import { chatPresenceService } from '@/services/api/chat.service';
 import { StorageService } from '@/services/api/storage.service';
 import type { AuthState } from '@/types';
 import type { Session } from '@supabase/supabase-js';
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true });
       if (user?.id) {
         try {
-          await chatService.upsertUserPresence(user.id, {
+          await chatPresenceService.upsertUserPresence(user.id, {
             is_online: false,
           });
         } catch (presenceError) {

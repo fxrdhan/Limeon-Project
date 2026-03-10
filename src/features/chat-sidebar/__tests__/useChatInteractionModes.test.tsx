@@ -9,8 +9,8 @@ const { mockSearchConversationMessages, mockFetchConversationMessageContext } =
     mockFetchConversationMessageContext: vi.fn(),
   }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: {
+vi.mock('@/services/api/chat.service', () => ({
+  chatMessagesService: {
     searchConversationMessages: mockSearchConversationMessages,
     fetchConversationMessageContext: mockFetchConversationMessageContext,
   },
@@ -98,7 +98,7 @@ describe('useChatInteractionModes', () => {
         isOpen: true,
         currentChannelId: 'channel-1',
         messages,
-        setMessages: vi.fn(),
+        mergeSearchContextMessages: vi.fn(),
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
           id: 'user-b',
@@ -161,7 +161,7 @@ describe('useChatInteractionModes', () => {
               sender_name: 'Admin',
             }),
           ],
-          setMessages: vi.fn(),
+          mergeSearchContextMessages: vi.fn(),
           user: { id: 'user-a', name: 'Admin' },
           targetUser: {
             id: 'user-b',

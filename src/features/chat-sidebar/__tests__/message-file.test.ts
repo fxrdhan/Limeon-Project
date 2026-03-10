@@ -1,22 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchPdfBlobWithFallback,
+  resetSignedChatAssetUrlCache,
   resolveChatMessageStoragePaths,
 } from '../utils/message-file';
 
-const { mockGateway } = vi.hoisted(() => ({
-  mockGateway: {
-    downloadStorageFile: vi.fn(),
+const { mockStorageService } = vi.hoisted(() => ({
+  mockStorageService: {
+    downloadFile: vi.fn(),
   },
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: mockStorageService,
 }));
 
 describe('message-file utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetSignedChatAssetUrlCache();
   });
 
   it('falls back to the chat storage gateway when direct fetch fails', async () => {
@@ -24,7 +26,7 @@ describe('message-file utils', () => {
       'fetch',
       vi.fn().mockRejectedValue(new Error('network failed')) as typeof fetch
     );
-    mockGateway.downloadStorageFile.mockResolvedValue(
+    mockStorageService.downloadFile.mockResolvedValue(
       new Blob(['pdf'], { type: 'application/pdf' })
     );
 
@@ -32,7 +34,7 @@ describe('message-file utils', () => {
       'https://example.com/storage/v1/object/public/chat/documents/channel/stok.pdf?token=123'
     );
 
-    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+    expect(mockStorageService.downloadFile).toHaveBeenCalledWith(
       'chat',
       'documents/channel/stok.pdf'
     );

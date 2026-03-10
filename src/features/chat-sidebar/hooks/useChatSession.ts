@@ -3,7 +3,10 @@ import type { UserDetails } from '@/types/database';
 import { useCallback, useRef, useState, type MutableRefObject } from 'react';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import { mapConversationMessageForDisplay } from '../utils/conversation-sync';
+import {
+  mapConversationMessageForDisplay,
+  mergeConversationContextWithExisting,
+} from '../utils/conversation-sync';
 import { useChatConversationCacheSync } from './useChatConversationCacheSync';
 import { useChatConversationInitialLoad } from './useChatConversationInitialLoad';
 import { useChatSessionPresence } from './useChatSessionPresence';
@@ -22,6 +25,20 @@ interface UseChatSessionProps {
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
 }
+
+const compareMessageOrder = (
+  leftMessage: Pick<ChatMessage, 'created_at' | 'id'>,
+  rightMessage: Pick<ChatMessage, 'created_at' | 'id'>
+) => {
+  const createdAtOrder = leftMessage.created_at.localeCompare(
+    rightMessage.created_at
+  );
+  if (createdAtOrder !== 0) {
+    return createdAtOrder;
+  }
+
+  return leftMessage.id.localeCompare(rightMessage.id);
+};
 
 export const useChatSession = ({
   isOpen,
@@ -49,6 +66,7 @@ export const useChatSession = ({
   const pendingConversationRealtimeEventsRef = useRef<
     PendingConversationRealtimeEvent[]
   >([]);
+  const searchContextMessageIdsRef = useRef<Set<string>>(new Set());
 
   const {
     recoveryTick: realtimeRecoveryTick,
@@ -119,6 +137,73 @@ export const useChatSession = ({
     [targetUser, user]
   );
 
+  const mergeSearchContextMessages = useCallback(
+    (searchContextMessages: ChatMessage[]) => {
+      if (!currentChannelId || searchContextMessages.length === 0) {
+        return;
+      }
+
+      const mappedContextMessages = searchContextMessages.map(messageItem =>
+        mapMessageForActiveConversation(messageItem)
+      );
+      const previousOldestMessage =
+        oldestLoadedMessageCreatedAtRef.current &&
+        oldestLoadedMessageIdRef.current
+          ? {
+              created_at: oldestLoadedMessageCreatedAtRef.current,
+              id: oldestLoadedMessageIdRef.current,
+            }
+          : null;
+      let injectedOlderPersistedMessage = false;
+
+      setMessages(previousMessages => {
+        const knownPersistedMessageIds = new Set(
+          previousMessages
+            .filter(messageItem => !messageItem.id.startsWith('temp_'))
+            .map(messageItem => messageItem.id)
+        );
+        const nextMessages = mergeConversationContextWithExisting(
+          previousMessages,
+          mappedContextMessages,
+          currentChannelId
+        );
+        const nextPersistedMessages = nextMessages.filter(
+          messageItem => !messageItem.id.startsWith('temp_')
+        );
+
+        mappedContextMessages.forEach(messageItem => {
+          if (knownPersistedMessageIds.has(messageItem.id)) {
+            return;
+          }
+
+          searchContextMessageIdsRef.current.add(messageItem.id);
+          if (
+            previousOldestMessage &&
+            compareMessageOrder(messageItem, previousOldestMessage) < 0
+          ) {
+            injectedOlderPersistedMessage = true;
+          }
+        });
+
+        oldestLoadedMessageCreatedAtRef.current =
+          nextPersistedMessages[0]?.created_at ?? null;
+        oldestLoadedMessageIdRef.current = nextPersistedMessages[0]?.id ?? null;
+
+        return nextMessages;
+      });
+
+      if (injectedOlderPersistedMessage) {
+        setHasOlderMessages(true);
+      }
+    },
+    [
+      currentChannelId,
+      mapMessageForActiveConversation,
+      oldestLoadedMessageCreatedAtRef,
+      oldestLoadedMessageIdRef,
+    ]
+  );
+
   const loadOlderMessages = useChatConversationPagination({
     isOpen,
     user,
@@ -130,6 +215,7 @@ export const useChatSession = ({
     isLoadingOlderMessages,
     oldestLoadedMessageCreatedAtRef,
     oldestLoadedMessageIdRef,
+    searchContextMessageIdsRef,
     setMessages,
     setHasOlderMessages,
     setIsLoadingOlderMessages,
@@ -171,6 +257,7 @@ export const useChatSession = ({
     oldestLoadedMessageIdRef,
     isInitialConversationLoadPendingRef,
     pendingConversationRealtimeEventsRef,
+    searchContextMessageIdsRef,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
     markConversationRecoverySuccess,
@@ -188,6 +275,7 @@ export const useChatSession = ({
     messages,
     hasOlderMessages,
     hasCompletedInitialOpenLoadRef,
+    excludedMessageIdsRef: searchContextMessageIdsRef,
   });
 
   return {
@@ -204,5 +292,6 @@ export const useChatSession = ({
     targetUserPresence,
     targetUserPresenceError,
     markMessageIdsAsRead,
+    mergeSearchContextMessages,
   };
 };

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { chatCleanupService } from '@/services/api/chat.service';
 import toast from 'react-hot-toast';
-import { chatSidebarGateway } from '../data/chatSidebarGateway';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
 
 const CHAT_CLEANUP_RUNTIME_TOAST_ID = 'chat-cleanup-runtime-warning';
@@ -46,7 +46,7 @@ export const useChatRuntime = () => {
 
     const runCleanupRetry = async () => {
       const { data, error } =
-        await chatSidebarGateway.retryChatCleanupFailures();
+        await chatCleanupService.retryChatCleanupFailures();
       if (isCancelled) {
         return;
       }

@@ -3,19 +3,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatIncomingDeliveries } from '../hooks/useChatIncomingDeliveries';
 
-const { createdChannels, mockGateway } = vi.hoisted(() => ({
-  createdChannels: [] as Array<{
-    emitStatus: (status: string) => void;
-    on: ReturnType<typeof vi.fn>;
-    subscribe: ReturnType<typeof vi.fn>;
-  }>,
-  mockGateway: {
-    createRealtimeChannel: vi.fn(),
-    removeRealtimeChannel: vi.fn(),
-    listUndeliveredIncomingMessageIds: vi.fn(),
-    markMessageIdsAsDelivered: vi.fn(),
-  },
-}));
+const { createdChannels, mockGateway, mockRealtimeService } = vi.hoisted(
+  () => ({
+    createdChannels: [] as Array<{
+      emitStatus: (status: string) => void;
+      on: ReturnType<typeof vi.fn>;
+      subscribe: ReturnType<typeof vi.fn>;
+    }>,
+    mockGateway: {
+      listUndeliveredIncomingMessageIds: vi.fn(),
+      markMessageIdsAsDelivered: vi.fn(),
+    },
+    mockRealtimeService: {
+      createChannel: vi.fn(),
+      removeChannel: vi.fn(),
+    },
+  })
+);
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: () => ({
@@ -26,8 +30,12 @@ vi.mock('@/store/authStore', () => ({
   }),
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/chat.service', () => ({
+  chatMessagesService: mockGateway,
+}));
+
+vi.mock('@/services/realtime/realtime.service', () => ({
+  realtimeService: mockRealtimeService,
 }));
 
 const buildMockChannel = () => {
@@ -70,8 +78,8 @@ describe('useChatIncomingDeliveries', () => {
       },
       error: null,
     });
-    mockGateway.removeRealtimeChannel.mockResolvedValue(undefined);
-    mockGateway.createRealtimeChannel.mockImplementation(() => {
+    mockRealtimeService.removeChannel.mockResolvedValue(undefined);
+    mockRealtimeService.createChannel.mockImplementation(() => {
       const channel = buildMockChannel();
       createdChannels.push(channel);
       return channel;
@@ -85,7 +93,7 @@ describe('useChatIncomingDeliveries', () => {
   it('marks incoming inserts as delivered without relying on sidebar open state', async () => {
     renderHook(() => useChatIncomingDeliveries());
 
-    expect(mockGateway.createRealtimeChannel).toHaveBeenCalledWith(
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledWith(
       'incoming_messages_user-a'
     );
 
@@ -206,7 +214,7 @@ describe('useChatIncomingDeliveries', () => {
   it('reconnects the delivery channel after a channel error', async () => {
     renderHook(() => useChatIncomingDeliveries());
 
-    expect(mockGateway.createRealtimeChannel).toHaveBeenCalledTimes(1);
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       createdChannels[0]?.emitStatus('CHANNEL_ERROR');
@@ -215,8 +223,8 @@ describe('useChatIncomingDeliveries', () => {
       await Promise.resolve();
     });
 
-    expect(mockGateway.createRealtimeChannel).toHaveBeenCalledTimes(2);
-    expect(mockGateway.createRealtimeChannel).toHaveBeenLastCalledWith(
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+    expect(mockRealtimeService.createChannel).toHaveBeenLastCalledWith(
       'incoming_messages_user-a'
     );
   });

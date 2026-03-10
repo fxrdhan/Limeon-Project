@@ -1,9 +1,10 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+  chatCleanupService,
+  chatMessagesService,
+} from '@/services/api/chat.service';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import { resolveDeletedThreadMessageIds } from '../utils/message-thread';
 
 const normalizeStoragePaths = (
@@ -31,7 +32,7 @@ export const useChatAttachmentCleanup = ({
         return [];
       }
 
-      const { data, error } = await chatSidebarGateway.cleanupStoragePaths(
+      const { data, error } = await chatCleanupService.cleanupStoragePaths(
         normalizedStoragePaths
       );
       const failedPaths =
@@ -70,14 +71,14 @@ export const useChatAttachmentCleanup = ({
       conversationScopeKey: string | null
     ) => {
       const { data, error } =
-        await chatSidebarGateway.deleteMessageThreadAndCleanup(
+        await chatCleanupService.deleteMessageThreadAndCleanup(
           persistedMessageId
         );
 
       if (error) {
         try {
           const { data: persistedMessage, error: persistedMessageError } =
-            await chatSidebarGateway.getMessageById(persistedMessageId);
+            await chatMessagesService.getMessageById(persistedMessageId);
 
           if (!persistedMessageError && !persistedMessage) {
             await deleteUploadedStorageFilesOrThrow(storagePaths);

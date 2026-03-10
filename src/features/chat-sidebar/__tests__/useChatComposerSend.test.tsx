@@ -25,8 +25,23 @@ const { mockQueuePersistedPdfPreview } = vi.hoisted(() => ({
   mockQueuePersistedPdfPreview: vi.fn(),
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/chat.service', () => ({
+  chatMessagesService: {
+    fetchMessagesBetweenUsers: mockGateway.fetchConversationMessages,
+    insertMessage: mockGateway.createMessage,
+    deleteMessageThread: mockGateway.deleteMessageThread,
+  },
+  chatCleanupService: {
+    deleteMessageThreadAndCleanup: mockGateway.deleteMessageThreadAndCleanup,
+    cleanupStoragePaths: mockGateway.cleanupStoragePaths,
+  },
+}));
+
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: {
+    uploadFile: mockGateway.uploadImage,
+    uploadRawFile: mockGateway.uploadAttachment,
+  },
 }));
 
 vi.mock('../utils/pdf-preview-persistence', () => ({

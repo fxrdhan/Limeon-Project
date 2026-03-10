@@ -1,6 +1,8 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { chatMessagesService } from '@/services/api/chat.service';
+import { StorageService } from '@/services/api/storage.service';
 import type {
   PendingComposerFile,
   ChatSidebarPanelTargetUser,
@@ -8,10 +10,7 @@ import type {
   PendingComposerAttachment,
 } from '../types';
 import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import { type ChatMessage } from '../data/chatSidebarGateway';
 import { commitOptimisticMessage } from '../utils/optimistic-message';
 import { createRuntimeId, createStableKey } from '../utils/runtime-id';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
@@ -225,9 +224,9 @@ export const useChatComposerSend = ({
           stableKey,
         }),
         uploadAsset: async () =>
-          chatSidebarGateway.uploadImage(CHAT_IMAGE_BUCKET, file, imagePath),
+          StorageService.uploadFile(CHAT_IMAGE_BUCKET, file, imagePath),
         createPersistedMessage: async () =>
-          chatSidebarGateway.createMessage({
+          chatMessagesService.insertMessage({
             receiver_id: targetUser.id,
             message: imagePath,
             message_type: 'image',
@@ -302,14 +301,14 @@ export const useChatComposerSend = ({
           stableKey,
         }),
         uploadAsset: async () =>
-          chatSidebarGateway.uploadAttachment(
+          StorageService.uploadRawFile(
             CHAT_IMAGE_BUCKET,
             pendingFile.file,
             filePath,
             pendingFile.mimeType || undefined
           ),
         createPersistedMessage: async () =>
-          chatSidebarGateway.createMessage({
+          chatMessagesService.insertMessage({
             receiver_id: targetUser.id,
             message: filePath,
             message_type: 'file',
@@ -393,7 +392,7 @@ export const useChatComposerSend = ({
 
       try {
         const { data: newMessage, error } =
-          await chatSidebarGateway.createMessage({
+          await chatMessagesService.insertMessage({
             receiver_id: targetUser.id,
             message: normalizedMessageText,
             message_type: 'text',
@@ -429,7 +428,7 @@ export const useChatComposerSend = ({
 
         if (pendingSend.isCancelled()) {
           const { error: deleteError } =
-            await chatSidebarGateway.deleteMessageThread(realMessage.id);
+            await chatMessagesService.deleteMessageThread(realMessage.id);
 
           if (deleteError) {
             console.error(

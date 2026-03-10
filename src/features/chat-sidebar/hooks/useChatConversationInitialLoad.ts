@@ -1,11 +1,9 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect } from 'react';
 import type { UserDetails } from '@/types/database';
+import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   getFreshConversationCacheEntry,
@@ -64,6 +62,7 @@ interface UseChatConversationInitialLoadProps {
   pendingConversationRealtimeEventsRef: MutableRefObject<
     PendingConversationRealtimeEvent[]
   >;
+  searchContextMessageIdsRef: MutableRefObject<Set<string>>;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
   markConversationRecoverySuccess: () => void;
@@ -92,12 +91,15 @@ export const useChatConversationInitialLoad = ({
   oldestLoadedMessageIdRef,
   isInitialConversationLoadPendingRef,
   pendingConversationRealtimeEventsRef,
+  searchContextMessageIdsRef,
   initialMessageAnimationKeysRef,
   initialOpenJumpAnimationKeysRef,
   markConversationRecoverySuccess,
   markMessageIdsAsDelivered,
 }: UseChatConversationInitialLoadProps) => {
   useEffect(() => {
+    const activeSearchContextMessageIds = searchContextMessageIdsRef.current;
+
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       markConversationRecoverySuccess();
       hasCompletedInitialOpenLoadRef.current = false;
@@ -110,6 +112,7 @@ export const useChatConversationInitialLoad = ({
       setOlderMessagesError(null);
       oldestLoadedMessageCreatedAtRef.current = null;
       oldestLoadedMessageIdRef.current = null;
+      activeSearchContextMessageIds.clear();
       return;
     }
 
@@ -118,6 +121,7 @@ export const useChatConversationInitialLoad = ({
     hasCompletedInitialOpenLoadRef.current = false;
     isInitialConversationLoadPendingRef.current = true;
     pendingConversationRealtimeEventsRef.current = [];
+    activeSearchContextMessageIds.clear();
     setIsLoadingOlderMessages(false);
     setOlderMessagesError(null);
     let isCancelled = false;
@@ -168,7 +172,7 @@ export const useChatConversationInitialLoad = ({
 
       try {
         const { data: existingMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(targetUser.id, {
+          await chatMessagesService.fetchMessagesBetweenUsers(targetUser.id, {
             limit: CHAT_CONVERSATION_PAGE_SIZE,
           });
 
@@ -249,6 +253,9 @@ export const useChatConversationInitialLoad = ({
                 currentChannelId,
               })
             : mergedPersistedMessages;
+        latestPersistedMessages.forEach(messageItem => {
+          activeSearchContextMessageIds.delete(messageItem.id);
+        });
 
         const nextHasOlderMessages =
           shouldPreserveCachedOlderMessages && cachedConversation
@@ -306,6 +313,7 @@ export const useChatConversationInitialLoad = ({
       }
       isInitialConversationLoadPendingRef.current = false;
       pendingConversationRealtimeEventsRef.current = [];
+      activeSearchContextMessageIds.clear();
     };
   }, [
     activeSessionTokenRef,
@@ -320,6 +328,7 @@ export const useChatConversationInitialLoad = ({
     oldestLoadedMessageCreatedAtRef,
     oldestLoadedMessageIdRef,
     pendingConversationRealtimeEventsRef,
+    searchContextMessageIdsRef,
     realtimeRecoveryTick,
     retryInitialLoadTick,
     setHasOlderMessages,

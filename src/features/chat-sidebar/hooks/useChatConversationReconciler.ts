@@ -1,10 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
+import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
 
@@ -54,7 +52,7 @@ export const useChatConversationReconciler = ({
 
       try {
         const { data: latestMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(targetUser.id, {
+          await chatMessagesService.fetchMessagesBetweenUsers(targetUser.id, {
             limit: Math.max(messagesCount, CHAT_CONVERSATION_PAGE_SIZE),
           });
 

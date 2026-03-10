@@ -23,8 +23,8 @@ vi.mock('@/store/authStore', () => ({
   useAuthStore: () => authState,
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: {
+vi.mock('@/services/api/chat.service', () => ({
+  chatCleanupService: {
     retryChatCleanupFailures: mockRetryChatCleanupFailures,
   },
 }));

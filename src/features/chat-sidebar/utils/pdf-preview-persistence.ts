@@ -1,8 +1,9 @@
 import { CHAT_IMAGE_BUCKET } from '../constants';
 import {
-  chatSidebarGateway,
+  chatMessagesService,
   type ChatMessage,
-} from '../data/chatSidebarGateway';
+} from '@/services/api/chat.service';
+import { StorageService } from '@/services/api/storage.service';
 import {
   buildPdfPreviewStoragePath,
   resolveFileExtension,
@@ -75,7 +76,7 @@ const updatePreviewMetadata = async (
   errorContext: string
 ) => {
   try {
-    const { error } = await chatSidebarGateway.updateFilePreview(
+    const { error } = await chatMessagesService.updateFilePreview(
       messageId,
       payload
     );
@@ -128,7 +129,7 @@ const persistPdfPreview = async (
       }
     );
 
-    await chatSidebarGateway.uploadAttachment(
+    await StorageService.uploadRawFile(
       CHAT_IMAGE_BUCKET,
       previewFile,
       previewStoragePath,
@@ -148,10 +149,7 @@ const persistPdfPreview = async (
 
     if (!didPersistReadyPreview) {
       try {
-        await chatSidebarGateway.deleteStorageFile(
-          CHAT_IMAGE_BUCKET,
-          previewStoragePath
-        );
+        await StorageService.deleteFile(CHAT_IMAGE_BUCKET, previewStoragePath);
       } catch (storageError) {
         console.error(
           'Failed to clean up uploaded PDF preview after metadata update failure:',
@@ -171,14 +169,14 @@ const persistPdfPreview = async (
       );
     }
   } catch (error) {
-    void chatSidebarGateway
-      .deleteStorageFile(CHAT_IMAGE_BUCKET, previewStoragePath)
-      .catch(storageError => {
+    void StorageService.deleteFile(CHAT_IMAGE_BUCKET, previewStoragePath).catch(
+      storageError => {
         console.error(
           'Failed to clean up uploaded PDF preview after persistence failure:',
           storageError
         );
-      });
+      }
+    );
 
     await updatePreviewMetadata(
       message.id,

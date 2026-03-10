@@ -10,7 +10,7 @@ const { mockToast, mockGateway } = vi.hoisted(() => ({
     promise: vi.fn(),
   },
   mockGateway: {
-    downloadStorageFile: vi.fn(),
+    downloadFile: vi.fn(),
   },
 }));
 
@@ -18,8 +18,8 @@ vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: mockGateway,
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -128,7 +128,7 @@ describe('useChatMessageTransferActions', () => {
         revokeObjectURL,
       })
     );
-    mockGateway.downloadStorageFile.mockResolvedValue(downloadBlob);
+    mockGateway.downloadFile.mockResolvedValue(downloadBlob);
 
     const { result } = renderHook(() =>
       useChatMessageTransferActions({
@@ -146,7 +146,7 @@ describe('useChatMessageTransferActions', () => {
       );
     });
 
-    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+    expect(mockGateway.downloadFile).toHaveBeenCalledWith(
       'chat',
       'documents/channel/stok.pdf'
     );
@@ -178,7 +178,7 @@ describe('useChatMessageTransferActions', () => {
       'fetch',
       vi.fn().mockRejectedValue(new Error('fetch failed'))
     );
-    mockGateway.downloadStorageFile.mockResolvedValue(imageBlob);
+    mockGateway.downloadFile.mockResolvedValue(imageBlob);
 
     const { result } = renderHook(() =>
       useChatMessageTransferActions({
@@ -199,7 +199,7 @@ describe('useChatMessageTransferActions', () => {
       );
     });
 
-    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+    expect(mockGateway.downloadFile).toHaveBeenCalledWith(
       'chat',
       'images/channel/stok.png'
     );
@@ -237,7 +237,7 @@ describe('useChatMessageTransferActions', () => {
       }
     );
     vi.stubGlobal('fetch', fetchSpy);
-    mockGateway.downloadStorageFile.mockResolvedValue(imageBlob);
+    mockGateway.downloadFile.mockResolvedValue(imageBlob);
 
     const { result } = renderHook(() =>
       useChatMessageTransferActions({
@@ -258,7 +258,7 @@ describe('useChatMessageTransferActions', () => {
     });
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(mockGateway.downloadStorageFile).toHaveBeenCalledWith(
+    expect(mockGateway.downloadFile).toHaveBeenCalledWith(
       'chat',
       'images/channel/stok.png'
     );

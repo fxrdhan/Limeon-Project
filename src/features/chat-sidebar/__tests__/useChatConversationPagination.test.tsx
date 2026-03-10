@@ -8,8 +8,10 @@ const { mockGateway } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/chat.service', () => ({
+  chatMessagesService: {
+    fetchMessagesBetweenUsers: mockGateway.fetchConversationMessages,
+  },
 }));
 
 describe('useChatConversationPagination', () => {
@@ -70,6 +72,9 @@ describe('useChatConversationPagination', () => {
         },
         oldestLoadedMessageIdRef: {
           current: 'message-10',
+        },
+        searchContextMessageIdsRef: {
+          current: new Set<string>(),
         },
         setMessages,
         setHasOlderMessages,

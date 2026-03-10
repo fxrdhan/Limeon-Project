@@ -3,23 +3,16 @@ import {
   SEARCH_STATES,
   type SearchState,
 } from '@/components/search-bar/constants';
-import type { Dispatch, SetStateAction } from 'react';
+import { chatMessagesService } from '@/services/api/chat.service';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import {
-  mapConversationMessageForDisplay,
-  mergeConversationContextWithExisting,
-} from '../utils/conversation-sync';
 
 interface UseChatMessageSearchModeProps {
   isOpen: boolean;
   currentChannelId: string | null;
   messages: ChatMessage[];
-  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  mergeSearchContextMessages: (searchContextMessages: ChatMessage[]) => void;
   user?: {
     id: string;
     name: string;
@@ -31,7 +24,7 @@ export const useChatMessageSearchMode = ({
   isOpen,
   currentChannelId,
   messages,
-  setMessages,
+  mergeSearchContextMessages,
   user,
   targetUser,
 }: UseChatMessageSearchModeProps) => {
@@ -52,9 +45,7 @@ export const useChatMessageSearchMode = ({
   const [searchError, setSearchError] = useState<string | null>(null);
   const normalizedMessageSearchQuery = messageSearchQuery.trim().toLowerCase();
   const userId = user?.id ?? null;
-  const userName = user?.name ?? 'You';
   const targetUserId = targetUser?.id ?? null;
-  const targetUserName = targetUser?.name ?? 'Unknown';
 
   useEffect(() => {
     if (isOpen) return;
@@ -125,7 +116,7 @@ export const useChatMessageSearchMode = ({
     const searchTimerId = window.setTimeout(() => {
       void (async () => {
         const { data: matchedMessages, error } =
-          await chatSidebarGateway.searchConversationMessages(
+          await chatMessagesService.searchConversationMessages(
             targetUserId,
             normalizedMessageSearchQuery
           );
@@ -205,7 +196,7 @@ export const useChatMessageSearchMode = ({
     void (async () => {
       try {
         const { data: searchContextMessages, error } =
-          await chatSidebarGateway.fetchConversationMessageContext(
+          await chatMessagesService.fetchConversationMessageContext(
             targetUserId,
             activeSearchMessageId
           );
@@ -222,30 +213,7 @@ export const useChatMessageSearchMode = ({
           return;
         }
 
-        const mappedContextMessages = searchContextMessages.map(messageItem =>
-          mapConversationMessageForDisplay(
-            messageItem,
-            {
-              id: userId,
-              name: userName,
-            },
-            {
-              id: targetUserId,
-              name: targetUserName,
-              email: targetUser?.email ?? '',
-              profilephoto: targetUser?.profilephoto ?? null,
-            },
-            messageItem.stableKey || messageItem.id
-          )
-        );
-
-        setMessages(previousMessages =>
-          mergeConversationContextWithExisting(
-            previousMessages,
-            mappedContextMessages,
-            currentChannelId
-          )
-        );
+        mergeSearchContextMessages(searchContextMessages);
         setSearchNavigationTick(previousTick => previousTick + 1);
         setSearchError(null);
       } finally {
@@ -261,13 +229,9 @@ export const useChatMessageSearchMode = ({
     isOpen,
     messages,
     normalizedMessageSearchQuery,
-    setMessages,
-    targetUser?.email,
-    targetUser?.profilephoto,
     targetUserId,
-    targetUserName,
     userId,
-    userName,
+    mergeSearchContextMessages,
   ]);
 
   const navigateToSearchResult = useCallback(

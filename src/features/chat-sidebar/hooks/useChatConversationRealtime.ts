@@ -1,11 +1,9 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 import type { UserDetails } from '@/types/database';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-  type RealtimeChannel,
-} from '../data/chatSidebarGateway';
+import { realtimeService } from '@/services/realtime/realtime.service';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   isConversationMessageForPair,
@@ -101,9 +99,7 @@ export const useChatConversationRealtime = ({
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       if (conversationChannelRef.current) {
-        void chatSidebarGateway.removeRealtimeChannel(
-          conversationChannelRef.current
-        );
+        void realtimeService.removeChannel(conversationChannelRef.current);
         conversationChannelRef.current = null;
       }
       markConversationRecoverySuccess();
@@ -111,15 +107,11 @@ export const useChatConversationRealtime = ({
     }
 
     if (conversationChannelRef.current) {
-      void chatSidebarGateway.removeRealtimeChannel(
-        conversationChannelRef.current
-      );
+      void realtimeService.removeChannel(conversationChannelRef.current);
       conversationChannelRef.current = null;
     }
 
-    const channel = chatSidebarGateway.createRealtimeChannel(
-      `chat_${currentChannelId}`
-    );
+    const channel = realtimeService.createChannel(`chat_${currentChannelId}`);
 
     channel.on(
       'postgres_changes',
@@ -232,7 +224,7 @@ export const useChatConversationRealtime = ({
         console.error('Failed to connect to chat channel');
         if (conversationChannelRef.current === channel) {
           conversationChannelRef.current = null;
-          void chatSidebarGateway.removeRealtimeChannel(channel);
+          void realtimeService.removeChannel(channel);
         }
         if (scheduleConversationRecovery()) {
           setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
@@ -244,7 +236,7 @@ export const useChatConversationRealtime = ({
         console.error('Timed out while connecting to chat channel');
         if (conversationChannelRef.current === channel) {
           conversationChannelRef.current = null;
-          void chatSidebarGateway.removeRealtimeChannel(channel);
+          void realtimeService.removeChannel(channel);
         }
         if (scheduleConversationRecovery()) {
           setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
@@ -256,7 +248,7 @@ export const useChatConversationRealtime = ({
 
     return () => {
       if (conversationChannelRef.current === channel) {
-        void chatSidebarGateway.removeRealtimeChannel(channel);
+        void realtimeService.removeChannel(channel);
         conversationChannelRef.current = null;
       }
     };

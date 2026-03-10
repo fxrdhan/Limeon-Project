@@ -10,8 +10,8 @@ const { mockGateway } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/chat.service', () => ({
+  chatMessagesService: mockGateway,
 }));
 
 const buildMessage = (overrides: {

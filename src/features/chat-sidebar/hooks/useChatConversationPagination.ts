@@ -2,11 +2,9 @@ import type { MutableRefObject } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import type { UserDetails } from '@/types/database';
+import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { mapConversationMessageForDisplay } from '../utils/conversation-sync';
 
@@ -21,6 +19,7 @@ interface UseChatConversationPaginationProps {
   isLoadingOlderMessages: boolean;
   oldestLoadedMessageCreatedAtRef: MutableRefObject<string | null>;
   oldestLoadedMessageIdRef: MutableRefObject<string | null>;
+  searchContextMessageIdsRef: MutableRefObject<Set<string>>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setHasOlderMessages: Dispatch<SetStateAction<boolean>>;
   setIsLoadingOlderMessages: Dispatch<SetStateAction<boolean>>;
@@ -38,6 +37,7 @@ export const useChatConversationPagination = ({
   isLoadingOlderMessages,
   oldestLoadedMessageCreatedAtRef,
   oldestLoadedMessageIdRef,
+  searchContextMessageIdsRef,
   setMessages,
   setHasOlderMessages,
   setIsLoadingOlderMessages,
@@ -63,7 +63,7 @@ export const useChatConversationPagination = ({
 
     try {
       const { data: olderMessagesPage, error } =
-        await chatSidebarGateway.fetchConversationMessages(targetUser.id, {
+        await chatMessagesService.fetchMessagesBetweenUsers(targetUser.id, {
           beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
           beforeId: oldestLoadedMessageIdRef.current,
           limit: CHAT_CONVERSATION_PAGE_SIZE,
@@ -96,6 +96,9 @@ export const useChatConversationPagination = ({
           messageItem.stableKey || messageItem.id
         )
       );
+      olderMessages.forEach(messageItem => {
+        searchContextMessageIdsRef.current.delete(messageItem.id);
+      });
 
       if (!isSessionTokenActive(paginationSessionToken)) {
         return;
@@ -138,6 +141,7 @@ export const useChatConversationPagination = ({
     isOpen,
     oldestLoadedMessageCreatedAtRef,
     oldestLoadedMessageIdRef,
+    searchContextMessageIdsRef,
     setHasOlderMessages,
     setIsLoadingOlderMessages,
     setMessages,

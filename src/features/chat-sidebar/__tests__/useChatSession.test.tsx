@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { UserDetails } from '../../../types/database';
 import { useChatSession } from '../hooks/useChatSession';
-import { resetConversationCache } from '../utils/conversation-cache';
+import {
+  getFreshConversationCacheEntry,
+  resetConversationCache,
+} from '../utils/conversation-cache';
 import { usePresenceStore } from '../../../store/presenceStore';
 
 const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
@@ -32,6 +35,9 @@ const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
 
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
+  chatMessagesService: mockChatService,
+  chatPresenceService: mockChatService,
+  chatCleanupService: mockChatService,
 }));
 
 vi.mock('@/services/realtime/realtime.service', () => ({
@@ -354,6 +360,83 @@ describe('useChatSession', () => {
     await waitFor(() => {
       expect(result.current.targetUserPresence).toBeNull();
     });
+  });
+
+  it('keeps search context out of the shared cache and advances the older-message cursor', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    const latestMessage = buildMessage({
+      id: 'latest-message',
+      created_at: '2026-03-06T09:30:00.000Z',
+      updated_at: '2026-03-06T09:30:00.000Z',
+    });
+    const searchContextMessage = buildMessage({
+      id: 'search-context-message',
+      created_at: '2026-03-05T09:30:00.000Z',
+      updated_at: '2026-03-05T09:30:00.000Z',
+    });
+
+    mockChatService.fetchMessagesBetweenUsers
+      .mockResolvedValueOnce({
+        data: {
+          messages: [latestMessage],
+          hasMore: true,
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          messages: [],
+          hasMore: false,
+        },
+        error: null,
+      });
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.mergeSearchContextMessages([searchContextMessage]);
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages.map(message => message.id)).toEqual([
+        'search-context-message',
+        'latest-message',
+      ]);
+    });
+
+    await waitFor(() => {
+      expect(getFreshConversationCacheEntry('channel-1')?.messages).toEqual([
+        expect.objectContaining({
+          id: 'latest-message',
+        }),
+      ]);
+    });
+
+    await act(async () => {
+      await result.current.loadOlderMessages();
+    });
+
+    expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenLastCalledWith(
+      targetUser.id,
+      expect.objectContaining({
+        beforeCreatedAt: '2026-03-05T09:30:00.000Z',
+        beforeId: 'search-context-message',
+      })
+    );
   });
 
   it('falls back to a fresh presence snapshot when the roster channel is connected but missing the target user', async () => {

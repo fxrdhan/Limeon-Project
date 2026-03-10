@@ -6,7 +6,6 @@ import { MAX_MESSAGE_CHARS } from '../constants';
 import { useMessageImagePreviews } from '../hooks/useMessageImagePreviews';
 import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
-import { useStableMessageActionHandlers } from '../hooks/useStableMessageActionHandlers';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type {
   ComposerPendingFileKind,
@@ -143,27 +142,6 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     () => getAttachmentCaptionData(messages),
     [messages]
   );
-  const {
-    handleToggleMessageSelectionStable,
-    toggleMessageMenuStable,
-    handleToggleExpandStable,
-    handleEditMessageStable,
-    handleCopyMessageStable,
-    handleDownloadMessageStable,
-    handleDeleteMessageStable,
-    getAttachmentFileNameStable,
-    getAttachmentFileKindStable,
-  } = useStableMessageActionHandlers({
-    onToggleMessageSelection,
-    toggleMessageMenu,
-    handleToggleExpand,
-    handleEditMessage,
-    handleCopyMessage,
-    handleDownloadMessage,
-    handleDeleteMessage,
-    getAttachmentFileName,
-    getAttachmentFileKind,
-  });
 
   return (
     <>
@@ -266,18 +244,17 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
                     ),
                     pdfMessagePreview: getPdfMessagePreview(
                       messageItem,
-                      getAttachmentFileNameStable(messageItem)
+                      getAttachmentFileName(messageItem)
                     ),
-                    onToggleMessageSelection:
-                      handleToggleMessageSelectionStable,
-                    toggleMessageMenu: toggleMessageMenuStable,
-                    handleToggleExpand: handleToggleExpandStable,
-                    handleEditMessage: handleEditMessageStable,
-                    handleCopyMessage: handleCopyMessageStable,
-                    handleDownloadMessage: handleDownloadMessageStable,
-                    handleDeleteMessage: handleDeleteMessageStable,
-                    getAttachmentFileName: getAttachmentFileNameStable,
-                    getAttachmentFileKind: getAttachmentFileKindStable,
+                    onToggleMessageSelection,
+                    toggleMessageMenu,
+                    handleToggleExpand,
+                    handleEditMessage,
+                    handleCopyMessage,
+                    handleDownloadMessage,
+                    handleDeleteMessage,
+                    getAttachmentFileName,
+                    getAttachmentFileKind,
                     normalizedSearchQuery,
                     openImageInPortal,
                     openDocumentInPortal,

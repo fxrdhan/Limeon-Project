@@ -29,7 +29,12 @@ export { authService } from './auth.service';
 export { companyProfileService } from './companyProfile.service';
 export { usersService } from './users.service';
 export { customerLevelsService } from './customerLevels.service';
-export { chatService } from './chat.service';
+export {
+  chatService,
+  chatMessagesService,
+  chatCleanupService,
+  chatPresenceService,
+} from './chat.service';
 export { StorageService } from './storage.service';
 export { dashboardService } from './dashboard.service';
 export {

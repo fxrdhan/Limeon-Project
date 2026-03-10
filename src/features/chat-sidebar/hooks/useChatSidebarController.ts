@@ -1,13 +1,20 @@
 import { useAuthStore } from '@/store/authStore';
-import { useCallback, useRef, useState } from 'react';
+import { getInitials, getInitialsColor } from '@/utils/avatar';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ChatSidebarPanelProps } from '../types';
-import { getAttachmentFileName } from '../utils/attachment';
+import type { ChatHeaderModel } from '../components/ChatHeader';
+import type { ComposerPanelModel } from '../components/ComposerPanel';
+import type { MessagesPaneModel } from '../components/MessagesPane';
+import { isPresenceFresh } from '../components/header/presence';
+import {
+  getAttachmentFileKind,
+  getAttachmentFileName,
+} from '../utils/attachment';
 import { computeDmChannelId } from '../utils/channel';
 import { useChatComposer } from './useChatComposer';
 import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatSession } from './useChatSession';
-import { useChatSidebarViewModels } from './useChatSidebarViewModels';
 import { useChatViewport } from './useChatViewport';
 import { useTargetProfilePhoto } from './useTargetProfilePhoto';
 
@@ -55,6 +62,7 @@ export const useChatSidebarController = ({
     olderMessagesError,
     loadOlderMessages,
     retryLoadMessages,
+    mergeSearchContextMessages,
   } = useChatSession({
     isOpen,
     user,
@@ -90,7 +98,7 @@ export const useChatSidebarController = ({
     isOpen,
     currentChannelId,
     messages,
-    setMessages,
+    mergeSearchContextMessages,
     user,
     targetUser,
     closeMessageMenu,
@@ -161,41 +169,167 @@ export const useChatSidebarController = ({
     onClose();
   }, [onClose]);
 
-  const { headerModel, messagesModel, composerModel } =
-    useChatSidebarViewModels({
+  const headerModel = useMemo<ChatHeaderModel>(
+    () => ({
       targetUser,
       displayTargetPhotoUrl,
-      isTargetOnline,
+      isTargetOnline:
+        typeof isTargetOnline === 'boolean'
+          ? isTargetOnline
+          : targetUserPresence?.is_online === true &&
+            isPresenceFresh(targetUserPresence.last_seen),
       targetUserPresence,
       targetUserPresenceError,
-      user,
-      messages,
+      isSearchMode: interaction.isMessageSearchMode,
+      searchQuery: interaction.messageSearchQuery,
+      searchState: interaction.messageSearchState,
+      searchResultCount: interaction.searchMatchedMessageIds.length,
+      activeSearchResultIndex: Math.max(interaction.activeSearchResultIndex, 0),
+      canNavigateSearchUp: interaction.canNavigateSearchUp,
+      canNavigateSearchDown: interaction.canNavigateSearchDown,
+      isSelectionMode: interaction.isSelectionMode,
+      selectedMessageCount: interaction.selectedVisibleMessages.length,
+      canDeleteSelectedMessages: interaction.canDeleteSelectedMessages,
+      searchInputRef: interaction.searchInputRef,
+      onEnterSearchMode: interaction.handleEnterMessageSearchMode,
+      onExitSearchMode: interaction.handleExitMessageSearchMode,
+      onEnterSelectionMode: interaction.handleEnterMessageSelectionMode,
+      onExitSelectionMode: interaction.handleExitMessageSelectionMode,
+      onSearchQueryChange: interaction.handleMessageSearchQueryChange,
+      onNavigateSearchUp: interaction.handleNavigateSearchUp,
+      onNavigateSearchDown: interaction.handleNavigateSearchDown,
+      onFocusSearchInput: interaction.handleFocusSearchInput,
+      onCopySelectedMessages: interaction.handleCopySelectedMessages,
+      onDeleteSelectedMessages: handleDeleteSelectedMessages,
+      onClose: handleClose,
+      getInitials,
+      getInitialsColor,
+    }),
+    [
+      displayTargetPhotoUrl,
+      handleClose,
+      handleDeleteSelectedMessages,
+      interaction,
+      isTargetOnline,
+      targetUser,
+      targetUserPresence,
+      targetUserPresenceError,
+    ]
+  );
+
+  const messagesModel = useMemo<MessagesPaneModel>(
+    () => ({
       loading,
       loadError,
+      messages,
+      user,
+      messageInputHeight: composer.messageInputHeight,
+      composerContextualOffset: composer.composerContextualOffset,
+      composerContainerHeight: viewport.composerContainerHeight,
+      openMenuMessageId: viewport.openMenuMessageId,
+      menuPlacement: viewport.menuPlacement,
+      menuSideAnchor: viewport.menuSideAnchor,
+      shouldAnimateMenuOpen: viewport.shouldAnimateMenuOpen,
+      menuTransitionSourceId: viewport.menuTransitionSourceId,
+      menuOffsetX: viewport.menuOffsetX,
+      expandedMessageIds,
+      flashingMessageId: viewport.flashingMessageId,
+      isFlashHighlightVisible: viewport.isFlashHighlightVisible,
+      isSelectionMode: interaction.isSelectionMode,
+      selectedMessageIds: interaction.selectedMessageIds,
+      searchQuery: interaction.isMessageSearchMode
+        ? interaction.messageSearchQuery
+        : '',
+      searchMatchedMessageIds: interaction.isMessageSearchMode
+        ? interaction.searchMatchedMessageIdSet
+        : new Set<string>(),
+      activeSearchMessageId: interaction.isMessageSearchMode
+        ? interaction.activeSearchMessageId
+        : null,
+      showScrollToBottom: viewport.hasNewMessages || !viewport.isAtBottom,
       hasOlderMessages,
       isLoadingOlderMessages,
       olderMessagesError,
-      expandedMessageIds,
-      handleDeleteSelectedMessages,
-      handleClose,
-      loadOlderMessages,
-      retryLoadMessages,
+      messagesContainerRef,
+      messagesEndRef,
+      messageBubbleRefs,
+      initialMessageAnimationKeysRef,
+      initialOpenJumpAnimationKeysRef,
+      closeMessageMenu: viewport.closeMessageMenu,
       toggleMessageMenu,
       handleToggleExpand,
-      interaction,
+      handleEditMessage: composer.handleEditMessage,
+      handleCopyMessage: composer.handleCopyMessage,
+      handleDownloadMessage: composer.handleDownloadMessage,
+      handleDeleteMessage: composer.handleDeleteMessage,
+      onToggleMessageSelection: interaction.handleToggleMessageSelection,
+      getAttachmentFileName,
+      getAttachmentFileKind,
+      onScrollToBottom: viewport.scrollToBottom,
+      onLoadOlderMessages: loadOlderMessages,
+      onRetryLoadMessages: retryLoadMessages,
+    }),
+    [
       composer,
+      expandedMessageIds,
+      handleToggleExpand,
+      hasOlderMessages,
+      interaction,
+      isLoadingOlderMessages,
+      loadError,
+      loadOlderMessages,
+      loading,
+      messages,
+      olderMessagesError,
+      retryLoadMessages,
+      toggleMessageMenu,
+      user,
       viewport,
-      refs: {
-        messageInputRef,
-        composerContainerRef,
-        messagesContainerRef,
-        messagesEndRef,
-        messageBubbleRefs,
-        chatHeaderContainerRef,
-        initialMessageAnimationKeysRef,
-        initialOpenJumpAnimationKeysRef,
+    ]
+  );
+
+  const composerModel = useMemo<ComposerPanelModel>(
+    () => ({
+      message: composer.message,
+      editingMessagePreview: composer.editingMessagePreview,
+      messageInputHeight: composer.messageInputHeight,
+      isMessageInputMultiline: composer.isMessageInputMultiline,
+      isSendSuccessGlowVisible: composer.isSendSuccessGlowVisible,
+      isAttachModalOpen: composer.isAttachModalOpen,
+      pendingComposerAttachments: composer.pendingComposerAttachments,
+      previewComposerImageAttachment: composer.previewComposerImageAttachment,
+      isComposerImageExpanded: composer.isComposerImageExpanded,
+      isComposerImageExpandedVisible: composer.isComposerImageExpandedVisible,
+      messageInputRef,
+      composerContainerRef,
+      attachButtonRef: composer.attachButtonRef,
+      attachModalRef: composer.attachModalRef,
+      imageInputRef: composer.imageInputRef,
+      documentInputRef: composer.documentInputRef,
+      audioInputRef: composer.audioInputRef,
+      onMessageChange: composer.setMessage,
+      onKeyDown: composer.handleKeyPress,
+      onPaste: composer.handleComposerPaste,
+      onSendMessage: () => {
+        void composer.handleSendMessage();
       },
-    });
+      onAttachButtonClick: composer.handleAttachButtonClick,
+      onAttachImageClick: composer.handleAttachImageClick,
+      onAttachDocumentClick: composer.handleAttachDocumentClick,
+      onAttachAudioClick: composer.handleAttachAudioClick,
+      onImageFileChange: composer.handleImageFileChange,
+      onDocumentFileChange: composer.handleDocumentFileChange,
+      onAudioFileChange: composer.handleAudioFileChange,
+      onCancelEditMessage: composer.handleCancelEditMessage,
+      onFocusEditingTargetMessage: viewport.focusEditingTargetMessage,
+      onOpenComposerImagePreview: composer.openComposerImagePreview,
+      onCloseComposerImagePreview: composer.closeComposerImagePreview,
+      onRemovePendingComposerAttachment:
+        composer.removePendingComposerAttachment,
+      onQueueComposerImage: composer.queueComposerImage,
+    }),
+    [composer, composerContainerRef, messageInputRef, viewport]
+  );
 
   return {
     chatHeaderContainerRef,

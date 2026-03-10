@@ -9,14 +9,20 @@ import {
 const { mockGateway, mockRenderPdfPreviewBlob } = vi.hoisted(() => ({
   mockGateway: {
     updateFilePreview: vi.fn(),
-    uploadAttachment: vi.fn(),
-    deleteStorageFile: vi.fn(),
+    uploadRawFile: vi.fn(),
+    deleteFile: vi.fn(),
   },
   mockRenderPdfPreviewBlob: vi.fn(),
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarGateway: mockGateway,
+vi.mock('@/services/api/chat.service', () => ({
+  chatMessagesService: {
+    updateFilePreview: mockGateway.updateFilePreview,
+  },
+}));
+
+vi.mock('@/services/api/storage.service', () => ({
+  StorageService: mockGateway,
 }));
 
 vi.mock('../utils/pdf-preview', () => ({
@@ -57,11 +63,11 @@ describe('pdf-preview-persistence', () => {
       data: null,
       error: null,
     });
-    mockGateway.uploadAttachment.mockResolvedValue({
+    mockGateway.uploadRawFile.mockResolvedValue({
       path: 'previews/channel/report.png',
       publicUrl: 'https://example.com/previews/channel/report.png',
     });
-    mockGateway.deleteStorageFile.mockResolvedValue(undefined);
+    mockGateway.deleteFile.mockResolvedValue(undefined);
   });
 
   it('persists preview metadata for committed PDF messages', async () => {
@@ -93,7 +99,7 @@ describe('pdf-preview-persistence', () => {
         file_preview_error: null,
       }
     );
-    expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
+    expect(mockGateway.uploadRawFile).toHaveBeenCalledWith(
       'chat',
       expect.any(File),
       'previews/channel/report.png',
@@ -128,7 +134,7 @@ describe('pdf-preview-persistence', () => {
       expect(mockGateway.updateFilePreview).toHaveBeenCalledTimes(2);
     });
 
-    expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
+    expect(mockGateway.uploadRawFile).not.toHaveBeenCalled();
     expect(mockGateway.updateFilePreview).toHaveBeenNthCalledWith(
       2,
       'message-2',

@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
@@ -16,7 +15,7 @@ interface UseChatInteractionModesProps {
   isOpen: boolean;
   currentChannelId: string | null;
   messages: ChatMessage[];
-  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  mergeSearchContextMessages: (searchContextMessages: ChatMessage[]) => void;
   user?: {
     id: string;
     name: string;
@@ -30,7 +29,7 @@ export const useChatInteractionModes = ({
   isOpen,
   currentChannelId,
   messages,
-  setMessages,
+  mergeSearchContextMessages,
   user,
   targetUser,
   closeMessageMenu,
@@ -44,7 +43,7 @@ export const useChatInteractionModes = ({
     isOpen,
     currentChannelId,
     messages,
-    setMessages,
+    mergeSearchContextMessages,
     user,
     targetUser,
   });

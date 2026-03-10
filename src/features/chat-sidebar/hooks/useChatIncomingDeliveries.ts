@@ -1,12 +1,11 @@
 import { useAuthStore } from '@/store/authStore';
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
+import { chatMessagesService } from '@/services/api/chat.service';
+import { realtimeService } from '@/services/realtime/realtime.service';
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import {
-  chatSidebarGateway,
-  type ChatMessage,
-  type RealtimeChannel,
-} from '../data/chatSidebarGateway';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 
 const DELIVERY_BATCH_WINDOW_MS = 90;
 const DELIVERY_RETRY_WINDOW_MS = 1_200;
@@ -78,7 +77,7 @@ export const useChatIncomingDeliveries = () => {
 
     try {
       const { error } =
-        await chatSidebarGateway.markMessageIdsAsDelivered(queuedMessageIds);
+        await chatMessagesService.markMessageIdsAsDelivered(queuedMessageIds);
       if (error) {
         shouldRetry = true;
         console.error('Error marking incoming messages as delivered:', error);
@@ -151,13 +150,11 @@ export const useChatIncomingDeliveries = () => {
     const queuedDeliveryMessageIds = queuedDeliveryMessageIdsRef.current;
 
     if (incomingMessagesChannelRef.current) {
-      void chatSidebarGateway.removeRealtimeChannel(
-        incomingMessagesChannelRef.current
-      );
+      void realtimeService.removeChannel(incomingMessagesChannelRef.current);
       incomingMessagesChannelRef.current = null;
     }
 
-    const incomingMessagesChannel = chatSidebarGateway.createRealtimeChannel(
+    const incomingMessagesChannel = realtimeService.createChannel(
       `incoming_messages_${user.id}`
     );
 
@@ -187,7 +184,7 @@ export const useChatIncomingDeliveries = () => {
 
             while (hasMore) {
               const { data: undeliveredPage, error } =
-                await chatSidebarGateway.listUndeliveredIncomingMessageIds(
+                await chatMessagesService.listUndeliveredIncomingMessageIds(
                   user.id,
                   {
                     limit: DELIVERY_BACKFILL_PAGE_SIZE,
@@ -239,9 +236,7 @@ export const useChatIncomingDeliveries = () => {
         console.error('Failed to connect to incoming chat delivery channel');
         if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
           incomingMessagesChannelRef.current = null;
-          void chatSidebarGateway.removeRealtimeChannel(
-            incomingMessagesChannel
-          );
+          void realtimeService.removeChannel(incomingMessagesChannel);
         }
         toast.error(
           'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
@@ -257,9 +252,7 @@ export const useChatIncomingDeliveries = () => {
         console.error('Timed out while connecting to chat delivery channel');
         if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
           incomingMessagesChannelRef.current = null;
-          void chatSidebarGateway.removeRealtimeChannel(
-            incomingMessagesChannel
-          );
+          void realtimeService.removeChannel(incomingMessagesChannel);
         }
         toast.error(
           'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
@@ -280,7 +273,7 @@ export const useChatIncomingDeliveries = () => {
       }
       pendingDeliveryMessageIds.clear();
       queuedDeliveryMessageIds.clear();
-      void chatSidebarGateway.removeRealtimeChannel(activeChannel);
+      void realtimeService.removeChannel(activeChannel);
       if (incomingMessagesChannelRef.current === activeChannel) {
         incomingMessagesChannelRef.current = null;
       }

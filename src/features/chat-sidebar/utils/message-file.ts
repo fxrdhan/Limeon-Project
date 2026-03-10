@@ -1,5 +1,5 @@
 import { CHAT_IMAGE_BUCKET } from '../constants';
-import { chatSidebarGateway } from '../data/chatSidebarGateway';
+import { StorageService } from '@/services/api/storage.service';
 import type { ComposerPendingFileKind } from '../types';
 import {
   buildPdfPreviewStoragePath,
@@ -53,10 +53,47 @@ export const isDirectChatAssetUrl = (url: string) =>
   /^(https?:\/\/|blob:|data:|\/)/i.test(url);
 
 export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
+export const SIGNED_CHAT_ASSET_URL_CACHE_MAX_ENTRIES = 128;
 const signedChatAssetUrlCache = new Map<
   string,
   { signedUrl: string; expiresAt: number }
 >();
+
+const pruneExpiredSignedChatAssetUrls = (now = Date.now()) => {
+  for (const [storagePath, cachedEntry] of signedChatAssetUrlCache) {
+    if (cachedEntry.expiresAt > now) {
+      continue;
+    }
+
+    signedChatAssetUrlCache.delete(storagePath);
+  }
+};
+
+const setSignedChatAssetUrlCacheEntry = (
+  storagePath: string,
+  signedUrl: string,
+  expiresAt: number
+) => {
+  if (signedChatAssetUrlCache.has(storagePath)) {
+    signedChatAssetUrlCache.delete(storagePath);
+  }
+
+  signedChatAssetUrlCache.set(storagePath, {
+    signedUrl,
+    expiresAt,
+  });
+
+  while (
+    signedChatAssetUrlCache.size > SIGNED_CHAT_ASSET_URL_CACHE_MAX_ENTRIES
+  ) {
+    const oldestStoragePath = signedChatAssetUrlCache.keys().next().value;
+    if (!oldestStoragePath) {
+      break;
+    }
+
+    signedChatAssetUrlCache.delete(oldestStoragePath);
+  }
+};
 
 export const fetchChatFileBlobWithFallback = async (
   url: string,
@@ -106,7 +143,7 @@ export const fetchChatFileBlobWithFallback = async (
   if (!storagePath) return null;
 
   try {
-    const data = await chatSidebarGateway.downloadStorageFile(
+    const data = await StorageService.downloadFile(
       CHAT_IMAGE_BUCKET,
       storagePath
     );
@@ -146,6 +183,7 @@ export const resolveChatAssetUrlWithExpiry = async (
     return null;
   }
 
+  pruneExpiredSignedChatAssetUrls();
   const cachedSignedUrl = signedChatAssetUrlCache.get(storagePath);
   if (cachedSignedUrl && cachedSignedUrl.expiresAt > Date.now()) {
     return {
@@ -155,17 +193,14 @@ export const resolveChatAssetUrlWithExpiry = async (
   }
 
   try {
-    const signedUrl = await chatSidebarGateway.createSignedStorageUrl(
+    const signedUrl = await StorageService.createSignedUrl(
       CHAT_IMAGE_BUCKET,
       storagePath,
       expiresInSeconds
     );
 
     const expiresAt = Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS;
-    signedChatAssetUrlCache.set(storagePath, {
-      signedUrl,
-      expiresAt,
-    });
+    setSignedChatAssetUrlCacheEntry(storagePath, signedUrl, expiresAt);
 
     return {
       url: signedUrl,
@@ -236,3 +271,7 @@ export const isImageFileExtensionOrMime = (
 ) =>
   IMAGE_FILE_EXTENSIONS.has(extension) ||
   mimeType?.toLowerCase().startsWith('image/') === true;
+
+export const resetSignedChatAssetUrlCache = () => {
+  signedChatAssetUrlCache.clear();
+};

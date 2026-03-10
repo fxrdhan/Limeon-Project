@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { chatService } from '@/services/api/chat.service';
+import { chatPresenceService } from '@/services/api/chat.service';
 import { PRESENCE_HEARTBEAT_MS } from './presenceStatus';
 
 interface UsePresenceLifecycleProps {
@@ -25,7 +25,7 @@ export const usePresenceLifecycle = ({
     }
 
     hasHandledPageExitRef.current = false;
-    void chatService.syncUserPresenceOnlineState(userId, true);
+    void chatPresenceService.syncUserPresenceOnlineState(userId, true);
 
     const handleVisibilityChange = () => {
       if (!userId || document.visibilityState !== 'visible') {
@@ -33,7 +33,7 @@ export const usePresenceLifecycle = ({
       }
 
       hasHandledPageExitRef.current = false;
-      void chatService.syncUserPresenceOnlineState(userId, true);
+      void chatPresenceService.syncUserPresenceOnlineState(userId, true);
     };
 
     const handlePageExit = () => {
@@ -44,7 +44,7 @@ export const usePresenceLifecycle = ({
       hasHandledPageExitRef.current = true;
       const eventTimestamp = new Date().toISOString();
 
-      chatService.syncUserPresenceOnPageExit(
+      chatPresenceService.syncUserPresenceOnPageExit(
         userId,
         sessionTokenRef.current,
         eventTimestamp
@@ -76,7 +76,7 @@ export const usePresenceLifecycle = ({
     }
 
     const heartbeat = setInterval(() => {
-      void chatService.syncUserPresenceOnlineState(userId, true);
+      void chatPresenceService.syncUserPresenceOnlineState(userId, true);
     }, PRESENCE_HEARTBEAT_MS);
 
     return () => clearInterval(heartbeat);

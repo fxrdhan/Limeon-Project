@@ -27,6 +27,9 @@ const { mockChatService, mockToast, mockUseChatComposerSend } = vi.hoisted(
 
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
+  chatMessagesService: mockChatService,
+  chatCleanupService: mockChatService,
+  chatPresenceService: mockChatService,
 }));
 
 vi.mock('react-hot-toast', () => ({
