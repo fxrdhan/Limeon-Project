@@ -327,8 +327,9 @@ describe('chatService', () => {
 
   it('pages undelivered incoming message ids instead of loading them unbounded', async () => {
     const mockRange = vi.fn().mockResolvedValue({
-      data: [{ id: 'message-1' }, { id: 'message-2' }, { id: 'message-3' }],
+      data: [{ id: 'message-1' }, { id: 'message-2' }],
       error: null,
+      count: 7,
     });
     const mockOrderById = vi.fn().mockReturnValue({
       range: mockRange,
@@ -360,7 +361,7 @@ describe('chatService', () => {
       }
     );
 
-    expect(mockRange).toHaveBeenCalledWith(4, 6);
+    expect(mockRange).toHaveBeenCalledWith(4, 5);
     expect(result).toEqual({
       data: {
         messageIds: ['message-1', 'message-2'],

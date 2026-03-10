@@ -256,9 +256,9 @@ export const chatMessagesService = {
     try {
       const pageSize = Math.max(1, options?.limit ?? 200);
       const offset = Math.max(0, options?.offset ?? 0);
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('chat_messages')
-        .select('id')
+        .select('id', { count: 'exact' })
         .eq('receiver_id', receiverId)
         .eq('is_delivered', false)
         .order('created_at', {
@@ -267,7 +267,7 @@ export const chatMessagesService = {
         .order('id', {
           ascending: true,
         })
-        .range(offset, offset + pageSize);
+        .range(offset, offset + pageSize - 1);
 
       if (error) {
         return { data: null, error };
@@ -279,8 +279,11 @@ export const chatMessagesService = {
 
       return {
         data: {
-          messageIds: orderedMessageIds.slice(0, pageSize),
-          hasMore: orderedMessageIds.length > pageSize,
+          messageIds: orderedMessageIds,
+          hasMore:
+            typeof count === 'number'
+              ? offset + orderedMessageIds.length < count
+              : orderedMessageIds.length === pageSize,
         },
         error: null,
       };

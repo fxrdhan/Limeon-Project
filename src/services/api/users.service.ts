@@ -47,17 +47,17 @@ export class UsersService {
     const pageSize = Math.max(1, limit);
 
     try {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('users')
-        .select('id, name, email, profilephoto')
+        .select('id, name, email, profilephoto', { count: 'exact' })
         .order('name', { ascending: true })
-        .range(offset, offset + pageSize);
+        .range(offset, offset + pageSize - 1);
 
       if (error) {
         return { data: null, error };
       }
 
-      const users: OnlineUser[] = (data || []).slice(0, pageSize).map(user => ({
+      const users: OnlineUser[] = (data || []).map(user => ({
         ...user,
         online_at: new Date().toISOString(),
       }));
@@ -65,7 +65,10 @@ export class UsersService {
       return {
         data: {
           users,
-          hasMore: (data?.length ?? 0) > pageSize,
+          hasMore:
+            typeof count === 'number'
+              ? offset + users.length < count
+              : users.length === pageSize,
         },
         error: null,
       };
