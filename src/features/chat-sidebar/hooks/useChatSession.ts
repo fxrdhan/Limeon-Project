@@ -1,30 +1,16 @@
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { UserDetails } from '@/types/database';
+import { useCallback, useRef, useState, type MutableRefObject } from 'react';
 import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from 'react';
-import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import {
-  chatSidebarGateway,
   type ChatMessage,
   type RealtimeChannel,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import {
-  getFreshConversationCacheEntry,
-  setConversationCacheEntry,
-} from '../utils/conversation-cache';
-import {
-  applyConversationSnapshot as applyConversationSnapshotToState,
-  mapConversationMessageForDisplay,
-} from '../utils/conversation-sync';
+import { mapConversationMessageForDisplay } from '../utils/conversation-sync';
+import { useChatConversationCacheSync } from './useChatConversationCacheSync';
+import { useChatConversationInitialLoad } from './useChatConversationInitialLoad';
 import { useChatSessionPresence } from './useChatSessionPresence';
 import {
-  replayPendingConversationRealtimeEvents,
   useChatConversationRealtime,
   type PendingConversationRealtimeEvent,
 } from './useChatConversationRealtime';
@@ -165,218 +151,43 @@ export const useChatSession = ({
     scheduleConversationRecovery,
   });
 
-  useEffect(() => {
-    if (!isOpen || !user || !targetUser || !currentChannelId) {
-      markConversationRecoverySuccess();
-      hasCompletedInitialOpenLoadRef.current = false;
-      isInitialConversationLoadPendingRef.current = false;
-      pendingConversationRealtimeEventsRef.current = [];
-      setLoading(false);
-      setLoadError(null);
-      setHasOlderMessages(false);
-      setIsLoadingOlderMessages(false);
-      setOlderMessagesError(null);
-      oldestLoadedMessageCreatedAtRef.current = null;
-      oldestLoadedMessageIdRef.current = null;
-      return;
-    }
-
-    const sessionToken = activeSessionTokenRef.current + 1;
-    activeSessionTokenRef.current = sessionToken;
-    hasCompletedInitialOpenLoadRef.current = false;
-    isInitialConversationLoadPendingRef.current = true;
-    pendingConversationRealtimeEventsRef.current = [];
-    let isCancelled = false;
-
-    const isActiveSession = () =>
-      !isCancelled && activeSessionTokenRef.current === sessionToken;
-
-    const applyConversationSnapshot = (snapshotMessages: ChatMessage[]) => {
-      if (!isActiveSession()) {
-        return [];
-      }
-
-      return applyConversationSnapshotToState({
-        snapshotMessages,
-        user,
-        targetUser,
-        currentChannelId,
-        setMessages,
-        initialMessageAnimationKeysRef,
-        initialOpenJumpAnimationKeysRef,
-      });
-    };
-
-    const loadMessages = async () => {
-      const cachedConversation =
-        getFreshConversationCacheEntry(currentChannelId);
-      const hasCachedConversation = Boolean(cachedConversation);
-
-      if (cachedConversation) {
-        applyConversationSnapshot(cachedConversation.messages);
-        hasCompletedInitialOpenLoadRef.current = true;
-      } else if (isActiveSession()) {
-        setMessages([]);
-      }
-
-      if (isActiveSession()) {
-        setLoading(!hasCachedConversation);
-        setLoadError(null);
-      }
-
-      try {
-        const { data: existingMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(
-            user.id,
-            targetUser.id,
-            currentChannelId,
-            {
-              limit: CHAT_CONVERSATION_PAGE_SIZE,
-            }
-          );
-
-        if (!isActiveSession()) {
-          return;
-        }
-
-        if (error) {
-          console.error('Error loading messages:', error);
-          setLoadError(
-            hasCachedConversation
-              ? 'Gagal menyegarkan percakapan'
-              : 'Gagal memuat percakapan'
-          );
-          return;
-        }
-
-        const existingMessagesPayload = Array.isArray(existingMessages)
-          ? {
-              messages: existingMessages,
-              hasMore: false,
-            }
-          : existingMessages;
-        const transformedMessages = applyConversationSnapshot(
-          existingMessagesPayload?.messages || []
-        );
-
-        if (!isActiveSession()) {
-          return;
-        }
-
-        const pendingConversationRealtimeEvents =
-          pendingConversationRealtimeEventsRef.current;
-        isInitialConversationLoadPendingRef.current = false;
-        pendingConversationRealtimeEventsRef.current = [];
-
-        if (pendingConversationRealtimeEvents.length > 0) {
-          setMessages(previousMessages =>
-            replayPendingConversationRealtimeEvents({
-              previousMessages,
-              pendingEvents: pendingConversationRealtimeEvents,
-              currentChannelId,
-            })
-          );
-        }
-
-        const latestPersistedMessages =
-          pendingConversationRealtimeEvents.length > 0
-            ? replayPendingConversationRealtimeEvents({
-                previousMessages: transformedMessages,
-                pendingEvents: pendingConversationRealtimeEvents,
-                currentChannelId,
-              })
-            : transformedMessages;
-
-        setConversationCacheEntry(currentChannelId, latestPersistedMessages);
-        oldestLoadedMessageCreatedAtRef.current =
-          latestPersistedMessages[0]?.created_at ?? null;
-        oldestLoadedMessageIdRef.current =
-          latestPersistedMessages[0]?.id ?? null;
-        setHasOlderMessages(existingMessagesPayload?.hasMore ?? false);
-        setLoadError(null);
-
-        const undeliveredIncomingMessageIds = latestPersistedMessages
-          .filter(
-            messageItem =>
-              messageItem.sender_id === targetUser.id &&
-              messageItem.receiver_id === user.id &&
-              !messageItem.is_delivered
-          )
-          .map(messageItem => messageItem.id);
-
-        await markMessageIdsAsDelivered(
-          undeliveredIncomingMessageIds,
-          sessionToken
-        );
-      } catch (error) {
-        console.error('Error loading messages:', error);
-        setLoadError(
-          hasCachedConversation
-            ? 'Gagal menyegarkan percakapan'
-            : 'Gagal memuat percakapan'
-        );
-      } finally {
-        if (isActiveSession()) {
-          isInitialConversationLoadPendingRef.current = false;
-          pendingConversationRealtimeEventsRef.current = [];
-          hasCompletedInitialOpenLoadRef.current = true;
-          setLoading(false);
-        }
-      }
-    };
-    void loadMessages();
-
-    return () => {
-      isCancelled = true;
-      if (activeSessionTokenRef.current === sessionToken) {
-        activeSessionTokenRef.current += 1;
-      }
-      isInitialConversationLoadPendingRef.current = false;
-      pendingConversationRealtimeEventsRef.current = [];
-
-      if (conversationChannelRef.current) {
-        void chatSidebarGateway.removeRealtimeChannel(
-          conversationChannelRef.current
-        );
-        conversationChannelRef.current = null;
-      }
-    };
-  }, [
-    applyMessageUpdate,
+  useChatConversationInitialLoad({
+    isOpen,
+    user,
+    targetUser,
     currentChannelId,
+    retryInitialLoadTick,
+    realtimeRecoveryTick,
+    setMessages,
+    setLoading,
+    setLoadError,
+    setHasOlderMessages,
+    setIsLoadingOlderMessages,
+    setOlderMessagesError,
+    conversationChannelRef,
+    hasCompletedInitialOpenLoadRef,
+    activeSessionTokenRef,
+    oldestLoadedMessageCreatedAtRef,
+    oldestLoadedMessageIdRef,
+    isInitialConversationLoadPendingRef,
+    pendingConversationRealtimeEventsRef,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
-    isOpen,
     markConversationRecoverySuccess,
     markMessageIdsAsDelivered,
-    realtimeRecoveryTick,
-    scheduleConversationRecovery,
-    targetUser,
-    user,
-    retryInitialLoadTick,
-    mapMessageForActiveConversation,
-  ]);
+  });
 
   const retryLoadMessages = useCallback(() => {
     setLoadError(null);
     setRetryInitialLoadTick(previousTick => previousTick + 1);
   }, []);
 
-  useEffect(() => {
-    if (
-      !isOpen ||
-      !currentChannelId ||
-      !hasCompletedInitialOpenLoadRef.current
-    ) {
-      return;
-    }
-
-    const persistedMessages = messages.filter(
-      messageItem => !messageItem.id.startsWith('temp_')
-    );
-
-    setConversationCacheEntry(currentChannelId, persistedMessages);
-  }, [currentChannelId, isOpen, messages]);
+  useChatConversationCacheSync({
+    isOpen,
+    currentChannelId,
+    messages,
+    hasCompletedInitialOpenLoadRef,
+  });
 
   return {
     messages,
