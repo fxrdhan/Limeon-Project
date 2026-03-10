@@ -1,8 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { reconcileConversationMessages } from '../utils/conversation-sync';
 
@@ -51,23 +53,19 @@ export const useChatConversationReconciler = ({
       }
 
       try {
-        const { data: latestMessages, error } =
-          await chatMessagesService.fetchMessagesBetweenUsers(targetUser.id, {
-            limit: Math.max(messagesCount, CHAT_CONVERSATION_PAGE_SIZE),
-          });
+        const { data: latestMessagesPage, error } =
+          await chatSidebarMessagesGateway.fetchConversationMessages(
+            targetUser.id,
+            {
+              limit: Math.max(messagesCount, CHAT_CONVERSATION_PAGE_SIZE),
+            }
+          );
 
         if (!isConversationScopeActive(conversationScopeKey)) {
           return;
         }
 
-        const latestMessagesPayload = Array.isArray(latestMessages)
-          ? {
-              messages: latestMessages,
-              hasMore: false,
-            }
-          : latestMessages;
-
-        if (error || !latestMessagesPayload?.messages) {
+        if (error || !latestMessagesPage) {
           if (fallbackMessages) {
             setMessages(fallbackMessages);
           }
@@ -75,7 +73,7 @@ export const useChatConversationReconciler = ({
         }
 
         reconcileConversationMessages({
-          latestMessages: latestMessagesPayload.messages,
+          latestMessages: latestMessagesPage.messages,
           user,
           targetUser,
           currentChannelId,

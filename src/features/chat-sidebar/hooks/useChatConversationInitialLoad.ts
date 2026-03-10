@@ -1,9 +1,11 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect } from 'react';
 import type { UserDetails } from '@/types/database';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   getFreshConversationCacheEntry,
@@ -18,28 +20,6 @@ import {
   replayPendingConversationRealtimeEvents,
   type PendingConversationRealtimeEvent,
 } from './useChatConversationRealtime';
-
-type ConversationMessagesPageLike =
-  | {
-      messages: ChatMessage[];
-      hasMore: boolean;
-    }
-  | ChatMessage[]
-  | null
-  | undefined;
-
-const normalizeConversationMessagesPage = (
-  payload: ConversationMessagesPageLike
-) =>
-  Array.isArray(payload)
-    ? {
-        messages: payload,
-        hasMore: false,
-      }
-    : {
-        messages: payload?.messages || [],
-        hasMore: payload?.hasMore ?? false,
-      };
 
 interface UseChatConversationInitialLoadProps {
   isOpen: boolean;
@@ -171,16 +151,19 @@ export const useChatConversationInitialLoad = ({
       }
 
       try {
-        const { data: existingMessages, error } =
-          await chatMessagesService.fetchMessagesBetweenUsers(targetUser.id, {
-            limit: CHAT_CONVERSATION_PAGE_SIZE,
-          });
+        const { data: existingMessagesPage, error } =
+          await chatSidebarMessagesGateway.fetchConversationMessages(
+            targetUser.id,
+            {
+              limit: CHAT_CONVERSATION_PAGE_SIZE,
+            }
+          );
 
         if (!isActiveSession()) {
           return;
         }
 
-        if (error) {
+        if (error || !existingMessagesPage) {
           console.error('Error loading messages:', error);
           setLoadError(
             hasCachedConversation
@@ -190,19 +173,14 @@ export const useChatConversationInitialLoad = ({
           return;
         }
 
-        const existingMessagesPayload =
-          normalizeConversationMessagesPage(existingMessages);
         const cachedConversationMessages = cachedConversation?.messages || [];
         const transformedMessages = hasCachedConversation
-          ? mapConversationMessagesForDisplay(
-              existingMessagesPayload.messages,
-              {
-                currentUserId: user.id,
-                currentUserName: user.name || 'You',
-                targetUserName: targetUser.name || 'Unknown',
-              }
-            )
-          : applyActiveConversationSnapshot(existingMessagesPayload.messages);
+          ? mapConversationMessagesForDisplay(existingMessagesPage.messages, {
+              currentUserId: user.id,
+              currentUserName: user.name || 'You',
+              targetUserName: targetUser.name || 'Unknown',
+            })
+          : applyActiveConversationSnapshot(existingMessagesPage.messages);
 
         if (!isActiveSession()) {
           return;
@@ -260,7 +238,7 @@ export const useChatConversationInitialLoad = ({
         const nextHasOlderMessages =
           shouldPreserveCachedOlderMessages && cachedConversation
             ? cachedConversation.hasOlderMessages
-            : existingMessagesPayload.hasMore;
+            : existingMessagesPage.hasMore;
 
         setConversationCacheEntry(
           currentChannelId,

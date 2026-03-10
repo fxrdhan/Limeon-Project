@@ -1,7 +1,7 @@
 import {
-  chatPresenceService,
+  chatSidebarPresenceGateway,
   type UserPresence,
-} from '@/services/api/chat.service';
+} from '../data/chatSidebarGateway';
 
 export interface TargetPresenceSnapshotResult {
   presence: UserPresence | null;
@@ -14,7 +14,7 @@ export const loadTargetPresenceSnapshot = async (
 ): Promise<TargetPresenceSnapshotResult> => {
   try {
     const { data: presence, error } =
-      await chatPresenceService.getUserPresence(targetUserId);
+      await chatSidebarPresenceGateway.getUserPresence(targetUserId);
 
     if (error && error.code !== 'PGRST116') {
       console.error(`${errorContext}:`, error);

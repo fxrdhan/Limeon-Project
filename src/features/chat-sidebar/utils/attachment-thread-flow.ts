@@ -1,8 +1,10 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import toast from 'react-hot-toast';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type {
   ChatSidebarPanelTargetUser,
   PendingSendRegistration,
@@ -161,7 +163,7 @@ export const persistAttachmentCaptionMessage = async ({
   }
 
   const { data: captionMessage, error } =
-    await chatMessagesService.insertMessage(
+    await chatSidebarMessagesGateway.createMessage(
       toAttachmentCaptionInsertInput({
         receiver_id: targetUser.id,
         message: normalizedCaptionText,

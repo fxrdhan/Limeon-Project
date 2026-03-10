@@ -1,9 +1,11 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { chatCleanupService } from '@/services/api/chat.service';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarCleanupGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
@@ -84,7 +86,7 @@ export const useChatMessageDeleteAction = ({
 
       try {
         const { data, error } =
-          await chatCleanupService.deleteMessageThreadAndCleanup(
+          await chatSidebarCleanupGateway.deleteMessageThreadAndCleanup(
             targetMessage.id
           );
         if (error || !data) {

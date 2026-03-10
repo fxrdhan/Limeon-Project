@@ -3,9 +3,11 @@ import {
   SEARCH_STATES,
   type SearchState,
 } from '@/components/search-bar/constants';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface UseChatMessageSearchModeProps {
@@ -116,7 +118,7 @@ export const useChatMessageSearchMode = ({
     const searchTimerId = window.setTimeout(() => {
       void (async () => {
         const { data: matchedMessages, error } =
-          await chatMessagesService.searchConversationMessages(
+          await chatSidebarMessagesGateway.searchConversationMessages(
             targetUserId,
             normalizedMessageSearchQuery
           );
@@ -196,7 +198,7 @@ export const useChatMessageSearchMode = ({
     void (async () => {
       try {
         const { data: searchContextMessages, error } =
-          await chatMessagesService.fetchConversationMessageContext(
+          await chatSidebarMessagesGateway.fetchConversationMessageContext(
             targetUserId,
             activeSearchMessageId
           );

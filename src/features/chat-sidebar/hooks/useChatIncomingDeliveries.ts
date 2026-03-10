@@ -1,11 +1,13 @@
 import { useAuthStore } from '@/store/authStore';
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 
 const DELIVERY_BATCH_WINDOW_MS = 90;
 const DELIVERY_RETRY_WINDOW_MS = 1_200;
@@ -77,7 +79,9 @@ export const useChatIncomingDeliveries = () => {
 
     try {
       const { error } =
-        await chatMessagesService.markMessageIdsAsDelivered(queuedMessageIds);
+        await chatSidebarMessagesGateway.markMessageIdsAsDelivered(
+          queuedMessageIds
+        );
       if (error) {
         shouldRetry = true;
         console.error('Error marking incoming messages as delivered:', error);
@@ -184,7 +188,7 @@ export const useChatIncomingDeliveries = () => {
 
             while (hasMore) {
               const { data: undeliveredPage, error } =
-                await chatMessagesService.listUndeliveredIncomingMessageIds(
+                await chatSidebarMessagesGateway.listUndeliveredIncomingMessageIds(
                   user.id,
                   {
                     limit: DELIVERY_BACKFILL_PAGE_SIZE,

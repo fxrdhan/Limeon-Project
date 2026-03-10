@@ -2,9 +2,11 @@ import type { MutableRefObject } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import type { UserDetails } from '@/types/database';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { mapConversationMessageForDisplay } from '../utils/conversation-sync';
 
@@ -63,24 +65,20 @@ export const useChatConversationPagination = ({
 
     try {
       const { data: olderMessagesPage, error } =
-        await chatMessagesService.fetchMessagesBetweenUsers(targetUser.id, {
-          beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
-          beforeId: oldestLoadedMessageIdRef.current,
-          limit: CHAT_CONVERSATION_PAGE_SIZE,
-        });
-
-      const olderMessagesPayload = Array.isArray(olderMessagesPage)
-        ? {
-            messages: olderMessagesPage,
-            hasMore: false,
+        await chatSidebarMessagesGateway.fetchConversationMessages(
+          targetUser.id,
+          {
+            beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
+            beforeId: oldestLoadedMessageIdRef.current,
+            limit: CHAT_CONVERSATION_PAGE_SIZE,
           }
-        : olderMessagesPage;
+        );
 
       if (!isSessionTokenActive(paginationSessionToken)) {
         return;
       }
 
-      if (error || !olderMessagesPayload?.messages) {
+      if (error || !olderMessagesPage) {
         if (error) {
           console.error('Error loading older messages:', error);
         }
@@ -88,7 +86,7 @@ export const useChatConversationPagination = ({
         return;
       }
 
-      const olderMessages = olderMessagesPayload.messages.map(messageItem =>
+      const olderMessages = olderMessagesPage.messages.map(messageItem =>
         mapConversationMessageForDisplay(
           messageItem,
           user,
@@ -119,7 +117,7 @@ export const useChatConversationPagination = ({
         olderMessages[0]?.created_at ?? oldestLoadedMessageCreatedAtRef.current;
       oldestLoadedMessageIdRef.current =
         olderMessages[0]?.id ?? oldestLoadedMessageIdRef.current;
-      setHasOlderMessages(olderMessagesPayload.hasMore);
+      setHasOlderMessages(olderMessagesPage.hasMore);
       setOlderMessagesError(null);
     } catch (error) {
       if (!isSessionTokenActive(paginationSessionToken)) {

@@ -1,10 +1,10 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import {
-  chatCleanupService,
-  chatMessagesService,
-} from '@/services/api/chat.service';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+  chatSidebarCleanupGateway,
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import { resolveDeletedThreadMessageIds } from '../utils/message-thread';
 
 const normalizeStoragePaths = (
@@ -32,9 +32,10 @@ export const useChatAttachmentCleanup = ({
         return [];
       }
 
-      const { data, error } = await chatCleanupService.cleanupStoragePaths(
-        normalizedStoragePaths
-      );
+      const { data, error } =
+        await chatSidebarCleanupGateway.cleanupStoragePaths(
+          normalizedStoragePaths
+        );
       const failedPaths =
         error || !data ? normalizedStoragePaths : data.failedStoragePaths;
 
@@ -71,14 +72,14 @@ export const useChatAttachmentCleanup = ({
       conversationScopeKey: string | null
     ) => {
       const { data, error } =
-        await chatCleanupService.deleteMessageThreadAndCleanup(
+        await chatSidebarCleanupGateway.deleteMessageThreadAndCleanup(
           persistedMessageId
         );
 
       if (error) {
         try {
           const { data: persistedMessage, error: persistedMessageError } =
-            await chatMessagesService.getMessageById(persistedMessageId);
+            await chatSidebarMessagesGateway.getMessageById(persistedMessageId);
 
           if (!persistedMessageError && !persistedMessage) {
             await deleteUploadedStorageFilesOrThrow(storagePaths);

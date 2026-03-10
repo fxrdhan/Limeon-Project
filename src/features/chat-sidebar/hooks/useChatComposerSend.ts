@@ -1,7 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { StorageService } from '@/services/api/storage.service';
 import type {
   PendingComposerFile,
@@ -10,15 +9,17 @@ import type {
   PendingComposerAttachment,
 } from '../types';
 import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import { type ChatMessage } from '../data/chatSidebarGateway';
-import { commitOptimisticMessage } from '../utils/optimistic-message';
-import { createRuntimeId, createStableKey } from '../utils/runtime-id';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
 import { queuePersistedPdfPreview } from '../utils/pdf-preview-persistence';
 import { resolveFileExtension } from '../utils/message-file';
 import { sendAttachmentThread } from '../utils/attachment-thread-flow';
+import { sendTextChatMessage } from '../utils/text-message-send';
 
 interface ChatComposerSendMutationScope {
   conversationScopeKey: string | null;
@@ -226,7 +227,7 @@ export const useChatComposerSend = ({
         uploadAsset: async () =>
           StorageService.uploadFile(CHAT_IMAGE_BUCKET, file, imagePath),
         createPersistedMessage: async () =>
-          chatMessagesService.insertMessage({
+          chatSidebarMessagesGateway.createMessage({
             receiver_id: targetUser.id,
             message: imagePath,
             message_type: 'image',
@@ -308,7 +309,7 @@ export const useChatComposerSend = ({
             pendingFile.mimeType || undefined
           ),
         createPersistedMessage: async () =>
-          chatMessagesService.insertMessage({
+          chatSidebarMessagesGateway.createMessage({
             receiver_id: targetUser.id,
             message: filePath,
             message_type: 'file',
@@ -359,111 +360,21 @@ export const useChatComposerSend = ({
   const sendTextMessage = useCallback(
     async (messageText: string, replyToId?: string | null) => {
       if (!user || !targetUser || !currentChannelId) return false;
-      if (!messageText.trim()) return false;
-
-      const normalizedMessageText = messageText.trim();
-      setMessage('');
-
-      const tempId = createRuntimeId('temp');
-      const stableKey = createStableKey([
-        user.id,
-        normalizedMessageText.slice(0, 10),
-      ]);
-      const pendingSend = registerPendingSend(tempId);
-      const optimisticMessage: ChatMessage = {
-        id: tempId,
-        sender_id: user.id,
-        receiver_id: targetUser.id,
-        channel_id: currentChannelId,
-        message: normalizedMessageText,
-        message_type: 'text',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_read: false,
-        reply_to_id: replyToId ?? null,
-        sender_name: user.name || 'You',
-        receiver_name: targetUser.name || 'Unknown',
-        stableKey,
-      };
-
-      setMessages(previousMessages => [...previousMessages, optimisticMessage]);
-      triggerSendSuccessGlow();
-      scheduleScrollMessagesToBottom();
-
-      try {
-        const { data: newMessage, error } =
-          await chatMessagesService.insertMessage({
-            receiver_id: targetUser.id,
-            message: normalizedMessageText,
-            message_type: 'text',
-            ...(replyToId ? { reply_to_id: replyToId } : {}),
-          });
-
-        if (error || !newMessage) {
-          if (
-            !pendingSend.isCancelled() &&
-            isCurrentConversationScopeActive()
-          ) {
-            setMessages(previousMessages =>
-              previousMessages.filter(messageItem => messageItem.id !== tempId)
-            );
-            setMessage(currentMessage =>
-              currentMessage.length === 0
-                ? normalizedMessageText
-                : currentMessage
-            );
-            toast.error('Gagal mengirim pesan', {
-              toasterId: CHAT_SIDEBAR_TOASTER_ID,
-            });
-          }
-          return false;
-        }
-
-        const realMessage: ChatMessage = {
-          ...newMessage,
-          sender_name: user.name || 'You',
-          receiver_name: targetUser.name || 'Unknown',
-          stableKey,
-        };
-
-        if (pendingSend.isCancelled()) {
-          const { error: deleteError } =
-            await chatMessagesService.deleteMessageThread(realMessage.id);
-
-          if (deleteError) {
-            console.error(
-              'Error cancelling temp message after persistence:',
-              deleteError
-            );
-            await reconcileCurrentConversationMessages();
-          }
-          return false;
-        }
-
-        runInCurrentConversationScope(() => {
-          setMessages(previousMessages =>
-            commitOptimisticMessage(previousMessages, tempId, realMessage)
-          );
-        });
-
-        return true;
-      } catch (error) {
-        console.error('Error sending message:', error);
-        if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
-          setMessages(previousMessages =>
-            previousMessages.filter(messageItem => messageItem.id !== tempId)
-          );
-          setMessage(currentMessage =>
-            currentMessage.length === 0 ? normalizedMessageText : currentMessage
-          );
-          toast.error('Gagal mengirim pesan', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-        }
-        return false;
-      } finally {
-        pendingSend.complete();
-      }
+      return sendTextChatMessage({
+        user,
+        targetUser,
+        currentChannelId,
+        messageText,
+        replyToId,
+        setMessage,
+        setMessages,
+        scheduleScrollMessagesToBottom,
+        triggerSendSuccessGlow,
+        registerPendingSend,
+        isCurrentConversationScopeActive,
+        runInCurrentConversationScope,
+        reconcileCurrentConversationMessages,
+      });
     },
     [
       currentChannelId,

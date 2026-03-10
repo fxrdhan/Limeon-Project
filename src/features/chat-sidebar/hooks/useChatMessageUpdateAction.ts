@@ -1,9 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { chatMessagesService } from '@/services/api/chat.service';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface UseChatMessageUpdateActionProps {
@@ -120,7 +122,7 @@ export const useChatMessageUpdateAction = ({
 
     try {
       const { data: updatedMessage, error } =
-        await chatMessagesService.editTextMessage(messageId, {
+        await chatSidebarMessagesGateway.editTextMessage(messageId, {
           message: updatedText,
           updated_at: updatedAt,
         });

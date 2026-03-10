@@ -1,8 +1,8 @@
 import { CHAT_IMAGE_BUCKET } from '../constants';
 import {
-  chatMessagesService,
+  chatSidebarMessagesGateway,
   type ChatMessage,
-} from '@/services/api/chat.service';
+} from '../data/chatSidebarGateway';
 import { StorageService } from '@/services/api/storage.service';
 import {
   buildPdfPreviewStoragePath,
@@ -76,7 +76,7 @@ const updatePreviewMetadata = async (
   errorContext: string
 ) => {
   try {
-    const { error } = await chatMessagesService.updateFilePreview(
+    const { error } = await chatSidebarMessagesGateway.updateFilePreview(
       messageId,
       payload
     );
