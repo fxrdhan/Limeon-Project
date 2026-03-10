@@ -248,12 +248,12 @@ describe('useChatSession', () => {
     );
 
     await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
     });
 
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
-    ).toEqual(['user_presence_changes', 'chat_channel-1']);
+    ).toEqual(['chat_channel-1']);
   });
 
   it('reconnects the conversation channel after a channel error', async () => {
@@ -272,7 +272,7 @@ describe('useChatSession', () => {
     );
 
     await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
     });
 
     await act(async () => {
@@ -282,10 +282,10 @@ describe('useChatSession', () => {
       });
     });
 
-    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(3);
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
-    ).toEqual(['user_presence_changes', 'chat_channel-1', 'chat_channel-1']);
+    ).toEqual(['chat_channel-1', 'chat_channel-1']);
   });
 
   it('clears stale target presence when switching to a user without presence data', async () => {
@@ -467,7 +467,7 @@ describe('useChatSession', () => {
     );
 
     await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
     });
 
     rerender({
@@ -476,17 +476,12 @@ describe('useChatSession', () => {
     });
 
     await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(4);
+      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
     });
 
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
-    ).toEqual([
-      'user_presence_changes',
-      'chat_channel-1',
-      'user_presence_changes',
-      'chat_channel-2',
-    ]);
+    ).toEqual(['chat_channel-1', 'chat_channel-2']);
   });
 
   it('ignores stale fetch results after switching to another conversation', async () => {

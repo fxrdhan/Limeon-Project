@@ -154,7 +154,8 @@ Tanggung jawab:
 
 - state `targetUserPresence`
 - hydrate awal target user presence saat chat dibuka
-- subscribe perubahan target user presence via channel `user_presence_changes`
+- gunakan `browser-active` roster sebagai sinyal online utama
+- fallback ke snapshot `public.user_presence` untuk `last_seen`
 
 ### 5.4 `useChatIncomingDeliveries`
 
@@ -583,15 +584,13 @@ Foreign key:
 Runtime:
 
 - `usePresence()` menulis heartbeat ke `public.user_presence`
-- `usePresence()` subscribe channel `user_presence_roster_changes`
+- `usePresence()` subscribe presence channel `browser-active`
   untuk refresh roster online di navbar
 
 ### Chat sidebar channels
 
 - `chat_<channelId>`
   - postgres insert/update `chat_messages` by `channel_id`
-- `user_presence_changes`
-  - postgres `user_presence` change untuk target user aktif
 - `incoming_messages_<userId>`
   - postgres insert `chat_messages` by `receiver_id`
   - disubscribe app-level lewat `useChatIncomingDeliveries`

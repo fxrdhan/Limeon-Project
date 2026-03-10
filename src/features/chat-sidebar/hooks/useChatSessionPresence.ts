@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { loadTargetPresenceSnapshot } from '../utils/target-presence';
-import { useChatSessionPresenceSubscriptions } from './useChatSessionPresenceSubscriptions';
 
 interface UseChatSessionPresenceProps {
   isOpen: boolean;
@@ -65,23 +64,9 @@ export const useChatSessionPresence = ({
     setTargetUserPresenceError(errorMessage);
   }, [currentChannelId, isOpen, targetUser, user]);
 
-  useChatSessionPresenceSubscriptions({
-    enabled: !hasPresenceRosterChannel,
-    isOpen,
-    user,
-    targetUser,
-    currentChannelId,
-    setTargetUserPresence,
-    setTargetUserPresenceError,
-  });
-
   useEffect(() => {
-    if (!hasPresenceRosterChannel) {
-      return;
-    }
-
     void loadTargetUserPresenceSnapshot();
-  }, [hasPresenceRosterChannel, loadTargetUserPresenceSnapshot]);
+  }, [loadTargetUserPresenceSnapshot]);
 
   useEffect(() => {
     if (!hasPresenceRosterChannel || !isOpen || !targetUser) {
