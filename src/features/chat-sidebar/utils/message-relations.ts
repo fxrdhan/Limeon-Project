@@ -1,6 +1,6 @@
 import type {
   ChatMessage,
-  ChatMessageInsertInput,
+  CreateChatMessageInput,
 } from '../data/chatSidebarGateway';
 
 export const ATTACHMENT_CAPTION_RELATION_KIND = 'attachment_caption' as const;
@@ -17,8 +17,8 @@ export const isAttachmentCaptionMessage = (
 };
 
 export const toAttachmentCaptionInsertInput = (
-  payload: ChatMessageInsertInput
-): ChatMessageInsertInput => ({
+  payload: CreateChatMessageInput
+): CreateChatMessageInput => ({
   ...payload,
   message_relation_kind: ATTACHMENT_CAPTION_RELATION_KIND,
 });

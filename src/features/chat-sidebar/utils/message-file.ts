@@ -52,7 +52,7 @@ export const openInNewTab = (url: string) => {
 export const isDirectChatAssetUrl = (url: string) =>
   /^(https?:\/\/|blob:|data:|\/)/i.test(url);
 
-const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
+export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
 const signedChatAssetUrlCache = new Map<
   string,
   { signedUrl: string; expiresAt: number }
@@ -129,13 +129,16 @@ export const fetchPdfBlobWithFallback = (
   storagePathHint?: string | null
 ) => fetchChatFileBlobWithFallback(url, storagePathHint, 'application/pdf');
 
-export const resolveChatAssetUrl = async (
+export const resolveChatAssetUrlWithExpiry = async (
   url: string,
   storagePathHint?: string | null,
   expiresInSeconds = 3600
 ) => {
   if (isDirectChatAssetUrl(url)) {
-    return url;
+    return {
+      url,
+      expiresAt: null,
+    };
   }
 
   const storagePath = storagePathHint?.trim() || extractChatStoragePath(url);
@@ -145,7 +148,10 @@ export const resolveChatAssetUrl = async (
 
   const cachedSignedUrl = signedChatAssetUrlCache.get(storagePath);
   if (cachedSignedUrl && cachedSignedUrl.expiresAt > Date.now()) {
-    return cachedSignedUrl.signedUrl;
+    return {
+      url: cachedSignedUrl.signedUrl,
+      expiresAt: cachedSignedUrl.expiresAt,
+    };
   }
 
   try {
@@ -155,15 +161,33 @@ export const resolveChatAssetUrl = async (
       expiresInSeconds
     );
 
+    const expiresAt = Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS;
     signedChatAssetUrlCache.set(storagePath, {
       signedUrl,
-      expiresAt: Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS,
+      expiresAt,
     });
 
-    return signedUrl;
+    return {
+      url: signedUrl,
+      expiresAt,
+    };
   } catch {
     return null;
   }
+};
+
+export const resolveChatAssetUrl = async (
+  url: string,
+  storagePathHint?: string | null,
+  expiresInSeconds = 3600
+) => {
+  const resolvedAsset = await resolveChatAssetUrlWithExpiry(
+    url,
+    storagePathHint,
+    expiresInSeconds
+  );
+
+  return resolvedAsset?.url ?? null;
 };
 
 export const openChatFileInNewTab = async (

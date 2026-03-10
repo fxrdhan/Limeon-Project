@@ -165,9 +165,7 @@ export const persistAttachmentCaptionMessage = async ({
   const { data: captionMessage, error } =
     await chatSidebarGateway.createMessage(
       toAttachmentCaptionInsertInput({
-        sender_id: user.id,
         receiver_id: targetUser.id,
-        channel_id: currentChannelId,
         message: normalizedCaptionText,
         message_type: 'text',
         reply_to_id: realMessage.id,

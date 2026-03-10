@@ -77,6 +77,8 @@ export const useChatViewport = ({
   const atTopVisibilityRef = useRef(true);
   const shouldPinToBottomOnOpenRef = useRef(false);
   const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
+  const previousMessagesCountRef = useRef<number | null>(null);
+  const previousLatestMessageIdRef = useRef<string | null>(null);
 
   const getVisibleMessagesBounds = useCallback((): VisibleBounds | null => {
     const containerRect =
@@ -323,10 +325,22 @@ export const useChatViewport = ({
   ]);
 
   useEffect(() => {
+    const latestMessageId = messages[messages.length - 1]?.id ?? null;
+    const previousMessagesCount = previousMessagesCountRef.current;
+    const previousLatestMessageId = previousLatestMessageIdRef.current;
+
+    previousMessagesCountRef.current = messagesCount;
+    previousLatestMessageIdRef.current = latestMessageId;
+
+    if (shouldPinToBottomOnOpenRef.current || !currentChannelId) {
+      return;
+    }
+
     if (
-      shouldPinToBottomOnOpenRef.current ||
-      !messagesCount ||
-      !currentChannelId
+      previousMessagesCount === null ||
+      messagesCount <= previousMessagesCount ||
+      latestMessageId === null ||
+      latestMessageId === previousLatestMessageId
     ) {
       return;
     }
@@ -340,6 +354,7 @@ export const useChatViewport = ({
   }, [
     currentChannelId,
     isAtBottom,
+    messages,
     messagesCount,
     scheduleScrollMessagesToBottom,
   ]);
@@ -398,9 +413,12 @@ export const useChatViewport = ({
     if (!isOpen || !currentChannelId) return;
 
     shouldPinToBottomOnOpenRef.current = true;
+    previousMessagesCountRef.current = messagesCount;
+    previousLatestMessageIdRef.current =
+      messages[messages.length - 1]?.id ?? null;
     setIsAtBottom(true);
     setHasNewMessages(false);
-  }, [currentChannelId, isOpen]);
+  }, [currentChannelId, isOpen, messages, messagesCount]);
 
   useEffect(
     () => () => {

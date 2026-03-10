@@ -121,7 +121,6 @@ export const useChatMessageSearchMode = ({
         const { data: matchedMessages, error } =
           await chatSidebarGateway.searchConversationMessages(
             targetUserId,
-            currentChannelId,
             normalizedMessageSearchQuery
           );
 
@@ -199,7 +198,6 @@ export const useChatMessageSearchMode = ({
         const { data: searchContextMessages, error } =
           await chatSidebarGateway.fetchConversationMessageContext(
             targetUserId,
-            currentChannelId,
             activeSearchMessageId
           );
 

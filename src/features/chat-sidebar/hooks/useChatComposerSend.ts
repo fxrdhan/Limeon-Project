@@ -140,9 +140,7 @@ export const useChatComposerSend = ({
       try {
         const { data: newMessage, error } =
           await chatSidebarGateway.createMessage({
-            sender_id: user.id,
             receiver_id: targetUser.id,
-            channel_id: currentChannelId,
             message: normalizedMessageText,
             message_type: 'text',
             ...(replyToId ? { reply_to_id: replyToId } : {}),

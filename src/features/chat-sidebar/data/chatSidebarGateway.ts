@@ -3,7 +3,7 @@ import {
   chatService,
   type ChatMessage,
   type ConversationMessagesPage,
-  type ChatMessageInsertInput,
+  type CreateChatMessageInput,
   type EditChatMessageTextInput,
   type ChatFilePreviewUpdateInput,
   type UserPresence,
@@ -23,38 +23,24 @@ export const chatSidebarGateway = {
     return chatService.getMessageById(id);
   },
   fetchConversationMessages(
-    userId: string,
     targetUserId: string,
-    channelId?: string | null,
     options?: {
       beforeCreatedAt?: string | null;
       beforeId?: string | null;
       limit?: number;
     }
   ) {
-    return chatService.fetchMessagesBetweenUsers(
-      userId,
-      targetUserId,
-      channelId,
-      options
-    );
+    return chatService.fetchMessagesBetweenUsers(targetUserId, options);
   },
   searchConversationMessages(
     targetUserId: string,
-    channelId: string,
     query: string,
     limit?: number
   ) {
-    return chatService.searchConversationMessages(
-      targetUserId,
-      channelId,
-      query,
-      limit
-    );
+    return chatService.searchConversationMessages(targetUserId, query, limit);
   },
   fetchConversationMessageContext(
     targetUserId: string,
-    channelId: string,
     messageId: string,
     options?: {
       beforeLimit?: number;
@@ -63,12 +49,11 @@ export const chatSidebarGateway = {
   ) {
     return chatService.fetchConversationMessageContext(
       targetUserId,
-      channelId,
       messageId,
       options
     );
   },
-  createMessage(payload: ChatMessageInsertInput) {
+  createMessage(payload: CreateChatMessageInput) {
     return chatService.insertMessage(payload);
   },
   editTextMessage(id: string, payload: EditChatMessageTextInput) {
@@ -76,9 +61,6 @@ export const chatSidebarGateway = {
   },
   updateFilePreview(id: string, payload: ChatFilePreviewUpdateInput) {
     return chatService.updateFilePreview(id, payload);
-  },
-  deleteMessage(id: string) {
-    return chatService.deleteMessage(id);
   },
   deleteMessageThread(id: string) {
     return chatService.deleteMessageThread(id);
@@ -109,14 +91,6 @@ export const chatSidebarGateway = {
   },
   getUserPresence(userId: string) {
     return chatService.getUserPresence(userId);
-  },
-  upsertUserPresence(
-    userId: string,
-    payload: {
-      is_online?: boolean;
-    }
-  ) {
-    return chatService.upsertUserPresence(userId, payload);
   },
   createRealtimeChannel(name: string, options?: RealtimeChannelOptions) {
     return realtimeService.createChannel(name, options);
@@ -152,7 +126,7 @@ export const chatSidebarGateway = {
 
 export type {
   ChatMessage,
-  ChatMessageInsertInput,
+  CreateChatMessageInput,
   UserPresence,
   RealtimeChannel,
   ConversationMessagesPage,

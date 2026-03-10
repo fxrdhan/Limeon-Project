@@ -105,20 +105,14 @@ describe('chatService', () => {
 
     const { chatService } = await import('./chat.service');
 
-    const result = await chatService.fetchMessagesBetweenUsers(
-      'user-a',
-      'user-b',
-      'channel-1',
-      {
-        beforeCreatedAt: '2026-03-09T10:03:00.000Z',
-        beforeId: 'message-4',
-        limit: 2,
-      }
-    );
+    const result = await chatService.fetchMessagesBetweenUsers('user-b', {
+      beforeCreatedAt: '2026-03-09T10:03:00.000Z',
+      beforeId: 'message-4',
+      limit: 2,
+    });
 
     expect(mockRpc).toHaveBeenCalledWith('fetch_chat_messages_page', {
       p_target_user_id: 'user-b',
-      p_channel_id: 'channel-1',
       p_before_created_at: '2026-03-09T10:03:00.000Z',
       p_before_id: 'message-4',
       p_limit: 3,
@@ -183,14 +177,12 @@ describe('chatService', () => {
 
     const result = await chatService.searchConversationMessages(
       'user-b',
-      'channel-1',
       'stok',
       150
     );
 
     expect(mockRpc).toHaveBeenCalledWith('search_chat_messages', {
       p_target_user_id: 'user-b',
-      p_channel_id: 'channel-1',
       p_query: 'stok',
       p_limit: 150,
     });
@@ -220,7 +212,6 @@ describe('chatService', () => {
 
     const result = await chatService.fetchConversationMessageContext(
       'user-b',
-      'channel-1',
       'message-11',
       {
         beforeLimit: 12,
@@ -230,7 +221,6 @@ describe('chatService', () => {
 
     expect(mockRpc).toHaveBeenCalledWith('fetch_chat_message_context', {
       p_target_user_id: 'user-b',
-      p_channel_id: 'channel-1',
       p_message_id: 'message-11',
       p_before_limit: 12,
       p_after_limit: 6,
@@ -241,8 +231,8 @@ describe('chatService', () => {
     });
   });
 
-  it('still persists attachment captions with message_relation_kind on insert', async () => {
-    mockSingle.mockResolvedValueOnce({
+  it('creates chat messages through the dedicated rpc and preserves attachment metadata', async () => {
+    mockRpc.mockResolvedValueOnce({
       data: null,
       error: {
         message:
@@ -253,20 +243,25 @@ describe('chatService', () => {
     const { chatService } = await import('./chat.service');
 
     await chatService.insertMessage({
-      sender_id: 'user-a',
       receiver_id: 'user-b',
-      channel_id: 'channel-1',
       message: 'caption',
       message_type: 'text',
       reply_to_id: 'file-1',
       message_relation_kind: 'attachment_caption',
     });
 
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message_relation_kind: 'attachment_caption',
-      })
-    );
+    expect(mockRpc).toHaveBeenCalledWith('create_chat_message', {
+      p_receiver_id: 'user-b',
+      p_message: 'caption',
+      p_message_type: 'text',
+      p_reply_to_id: 'file-1',
+      p_message_relation_kind: 'attachment_caption',
+      p_file_name: null,
+      p_file_kind: null,
+      p_file_mime_type: null,
+      p_file_size: null,
+      p_file_storage_path: null,
+    });
   });
 
   it('uses the edge cleanup function when deleting a thread and cleaning files', async () => {

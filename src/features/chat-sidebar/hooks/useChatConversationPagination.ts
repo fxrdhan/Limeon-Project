@@ -63,16 +63,11 @@ export const useChatConversationPagination = ({
 
     try {
       const { data: olderMessagesPage, error } =
-        await chatSidebarGateway.fetchConversationMessages(
-          user.id,
-          targetUser.id,
-          currentChannelId,
-          {
-            beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
-            beforeId: oldestLoadedMessageIdRef.current,
-            limit: CHAT_CONVERSATION_PAGE_SIZE,
-          }
-        );
+        await chatSidebarGateway.fetchConversationMessages(targetUser.id, {
+          beforeCreatedAt: oldestLoadedMessageCreatedAtRef.current,
+          beforeId: oldestLoadedMessageIdRef.current,
+          limit: CHAT_CONVERSATION_PAGE_SIZE,
+        });
 
       const olderMessagesPayload = Array.isArray(olderMessagesPage)
         ? {

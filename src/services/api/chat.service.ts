@@ -4,7 +4,6 @@ import type { ServiceResponse } from './base.service';
 import type {
   ChatMessageInsertRow,
   ChatMessageRow,
-  UserPresenceInsertRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
 
@@ -57,6 +56,13 @@ export type ChatMessageInsertInput = Omit<
   file_kind?: 'audio' | 'document';
 };
 
+export type CreateChatMessageInput = Omit<
+  ChatMessageInsertInput,
+  'sender_id' | 'channel_id'
+> & {
+  receiver_id: string;
+};
+
 export interface EditChatMessageTextInput {
   message: string;
   updated_at?: string;
@@ -91,14 +97,6 @@ export type UserPresenceUpdateInput = Omit<
   last_seen?: string;
 };
 
-export type UserPresenceInsertInput = Omit<
-  UserPresenceInsertRow,
-  'is_online' | 'last_seen'
-> & {
-  is_online?: boolean;
-  last_seen?: string;
-};
-
 export interface ConversationMessagesPage {
   messages: ChatMessage[];
   hasMore: boolean;
@@ -118,6 +116,27 @@ const buildUserPresenceRestUrl = (userId: string) => {
   const requestUrl = new URL(`${supabaseUrl}/rest/v1/user_presence`);
   requestUrl.searchParams.set('user_id', `eq.${userId}`);
   return requestUrl.toString();
+};
+
+const updateUserPresenceRow = async (
+  userId: string,
+  payload: UserPresenceUpdateInput
+): Promise<ServiceResponse<UserPresence[]>> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_presence')
+      .update(payload)
+      .eq('user_id', userId)
+      .select();
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    return { data: (data || []) as UserPresence[], error: null };
+  } catch (error) {
+    return { data: null, error: error as PostgrestError };
+  }
 };
 
 export const chatService = {
@@ -143,9 +162,7 @@ export const chatService = {
   },
 
   async fetchMessagesBetweenUsers(
-    _userId: string,
     targetUserId: string,
-    channelId?: string | null,
     options?: {
       beforeCreatedAt?: string | null;
       beforeId?: string | null;
@@ -159,7 +176,6 @@ export const chatService = {
       );
       const { data, error } = await supabase.rpc('fetch_chat_messages_page', {
         p_target_user_id: targetUserId,
-        p_channel_id: channelId ?? null,
         p_before_created_at: options?.beforeCreatedAt ?? null,
         p_before_id: options?.beforeId ?? null,
         p_limit: pageSize + 1,
@@ -189,7 +205,6 @@ export const chatService = {
 
   async searchConversationMessages(
     targetUserId: string,
-    channelId: string,
     query: string,
     limit = 200
   ): Promise<ServiceResponse<ChatMessage[]>> {
@@ -201,7 +216,6 @@ export const chatService = {
     try {
       const { data, error } = await supabase.rpc('search_chat_messages', {
         p_target_user_id: targetUserId,
-        p_channel_id: channelId,
         p_query: normalizedQuery,
         p_limit: limit,
       });
@@ -218,14 +232,12 @@ export const chatService = {
 
   async fetchConversationMessageContext(
     targetUserId: string,
-    channelId: string,
     messageId: string,
     options?: ConversationSearchContextOptions
   ): Promise<ServiceResponse<ChatMessage[]>> {
     try {
       const { data, error } = await supabase.rpc('fetch_chat_message_context', {
         p_target_user_id: targetUserId,
-        p_channel_id: channelId,
         p_message_id: messageId,
         p_before_limit: options?.beforeLimit ?? 20,
         p_after_limit: options?.afterLimit ?? 20,
@@ -242,14 +254,21 @@ export const chatService = {
   },
 
   async insertMessage(
-    payload: ChatMessageInsertInput
+    payload: CreateChatMessageInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert(payload)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('create_chat_message', {
+        p_receiver_id: payload.receiver_id,
+        p_message: payload.message,
+        p_message_type: payload.message_type ?? 'text',
+        p_reply_to_id: payload.reply_to_id ?? null,
+        p_message_relation_kind: payload.message_relation_kind ?? null,
+        p_file_name: payload.file_name ?? null,
+        p_file_kind: payload.file_kind ?? null,
+        p_file_mime_type: payload.file_mime_type ?? null,
+        p_file_size: payload.file_size ?? null,
+        p_file_storage_path: payload.file_storage_path ?? null,
+      });
 
       if (error) {
         return { data: null, error };
@@ -521,19 +540,6 @@ export const chatService = {
     }
   },
 
-  async deleteMessage(id: string): Promise<ServiceResponse<null>> {
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('id', id);
-
-      return { data: null, error };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
-    }
-  },
-
   async deleteMessageThread(id: string): Promise<ServiceResponse<string[]>> {
     try {
       const { data, error } = await supabase.rpc('delete_chat_message_thread', {
@@ -639,46 +645,6 @@ export const chatService = {
     }
   },
 
-  async updateUserPresence(
-    userId: string,
-    payload: UserPresenceUpdateInput
-  ): Promise<ServiceResponse<UserPresence[]>> {
-    try {
-      const { data, error } = await supabase
-        .from('user_presence')
-        .update(payload)
-        .eq('user_id', userId)
-        .select();
-
-      if (error) {
-        return { data: null, error };
-      }
-
-      return { data: (data || []) as UserPresence[], error: null };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
-    }
-  },
-
-  async insertUserPresence(
-    payload: UserPresenceInsertInput
-  ): Promise<ServiceResponse<UserPresence[]>> {
-    try {
-      const { data, error } = await supabase
-        .from('user_presence')
-        .insert(payload)
-        .select();
-
-      if (error) {
-        return { data: null, error };
-      }
-
-      return { data: (data || []) as UserPresence[], error: null };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
-    }
-  },
-
   sendUserPresenceUpdateKeepalive(
     userId: string,
     payload: UserPresenceUpdateInput,
@@ -735,8 +701,7 @@ export const chatService = {
       accessToken
     );
 
-    void chatService
-      .updateUserPresence(userId, exitPayload)
+    void updateUserPresenceRow(userId, exitPayload)
       .then(({ error }) => {
         if (error) {
           console.error(

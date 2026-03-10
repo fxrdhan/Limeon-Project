@@ -171,14 +171,9 @@ export const useChatConversationInitialLoad = ({
 
       try {
         const { data: existingMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(
-            user.id,
-            targetUser.id,
-            currentChannelId,
-            {
-              limit: CHAT_CONVERSATION_PAGE_SIZE,
-            }
-          );
+          await chatSidebarGateway.fetchConversationMessages(targetUser.id, {
+            limit: CHAT_CONVERSATION_PAGE_SIZE,
+          });
 
         if (!isActiveSession()) {
           return;

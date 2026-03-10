@@ -48,6 +48,11 @@ supabase/*
 !supabase/migrations/
 supabase/migrations/*
 !supabase/migrations/*.sql
+!supabase/functions/
+supabase/functions/*
+!supabase/functions/chat-cleanup/
+supabase/functions/chat-cleanup/*
+!supabase/functions/chat-cleanup/index.ts
 
 # gemini-cli settings
 .gemini/

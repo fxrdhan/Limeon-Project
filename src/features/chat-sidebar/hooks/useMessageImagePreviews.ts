@@ -3,19 +3,30 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import {
   fetchChatFileBlobWithFallback,
   isDirectChatAssetUrl,
-  resolveChatAssetUrl,
+  resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
+
+const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
+
+interface ImageMessagePreviewEntry {
+  url: string;
+  expiresAt: number | null;
+  isObjectUrl: boolean;
+}
 
 export const useMessageImagePreviews = ({
   messages,
 }: {
   messages: ChatMessage[];
 }) => {
-  const [imageMessageUrls, setImageMessageUrls] = useState<
-    Record<string, string>
+  const [imageMessagePreviewEntries, setImageMessagePreviewEntries] = useState<
+    Record<string, ImageMessagePreviewEntry>
   >({});
+  const [imagePreviewRefreshTick, setImagePreviewRefreshTick] = useState(0);
   const objectUrlsRef = useRef<Map<string, string>>(new Map());
-  const imageMessageUrlsRef = useRef<Record<string, string>>({});
+  const imageMessagePreviewEntriesRef = useRef<
+    Record<string, ImageMessagePreviewEntry>
+  >({});
 
   const releaseImagePreviewUrl = useCallback((messageId: string) => {
     const existingUrl = objectUrlsRef.current.get(messageId);
@@ -28,8 +39,33 @@ export const useMessageImagePreviews = ({
   }, []);
 
   useEffect(() => {
-    imageMessageUrlsRef.current = imageMessageUrls;
-  }, [imageMessageUrls]);
+    imageMessagePreviewEntriesRef.current = imageMessagePreviewEntries;
+  }, [imageMessagePreviewEntries]);
+
+  useEffect(() => {
+    const signedUrlExpirations = Object.values(imageMessagePreviewEntries)
+      .map(previewEntry => previewEntry.expiresAt)
+      .filter(
+        (expiresAt): expiresAt is number => typeof expiresAt === 'number'
+      );
+
+    if (signedUrlExpirations.length === 0) {
+      return;
+    }
+
+    const nearestExpiry = Math.min(...signedUrlExpirations);
+    const refreshDelay = Math.max(
+      nearestExpiry - Date.now() - IMAGE_URL_REFRESH_LEAD_MS,
+      0
+    );
+    const refreshTimerId = window.setTimeout(() => {
+      setImagePreviewRefreshTick(previousTick => previousTick + 1);
+    }, refreshDelay);
+
+    return () => {
+      window.clearTimeout(refreshTimerId);
+    };
+  }, [imageMessagePreviewEntries]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -40,21 +76,21 @@ export const useMessageImagePreviews = ({
         .map(messageItem => messageItem.id)
     );
 
-    setImageMessageUrls(previousUrls => {
+    setImageMessagePreviewEntries(previousEntries => {
       let hasChanges = false;
-      const nextUrls: Record<string, string> = {};
+      const nextEntries: Record<string, ImageMessagePreviewEntry> = {};
 
-      Object.entries(previousUrls).forEach(([messageId, previewUrl]) => {
+      Object.entries(previousEntries).forEach(([messageId, previewEntry]) => {
         if (!activeImageMessageIds.has(messageId)) {
           hasChanges = true;
           releaseImagePreviewUrl(messageId);
           return;
         }
 
-        nextUrls[messageId] = previewUrl;
+        nextEntries[messageId] = previewEntry;
       });
 
-      return hasChanges ? nextUrls : previousUrls;
+      return hasChanges ? nextEntries : previousEntries;
     });
 
     const pendingImageMessages = messages.filter(messageItem => {
@@ -70,11 +106,21 @@ export const useMessageImagePreviews = ({
         return false;
       }
 
-      if (imageMessageUrlsRef.current[messageItem.id]) {
+      const existingPreviewEntry =
+        imageMessagePreviewEntriesRef.current[messageItem.id];
+      if (
+        existingPreviewEntry &&
+        (existingPreviewEntry.expiresAt === null ||
+          existingPreviewEntry.expiresAt >
+            Date.now() + IMAGE_URL_REFRESH_LEAD_MS)
+      ) {
         return false;
       }
 
-      if (objectUrlsRef.current.has(messageItem.id)) {
+      if (
+        objectUrlsRef.current.has(messageItem.id) &&
+        !existingPreviewEntry?.expiresAt
+      ) {
         return false;
       }
 
@@ -89,15 +135,18 @@ export const useMessageImagePreviews = ({
       const resolvedEntries = await Promise.all(
         pendingImageMessages.map(async messageItem => {
           try {
-            const signedUrl = await resolveChatAssetUrl(
+            const resolvedAsset = await resolveChatAssetUrlWithExpiry(
               messageItem.message,
               messageItem.file_storage_path
             );
-            if (signedUrl) {
+            if (resolvedAsset) {
               return {
                 messageId: messageItem.id,
-                resolvedUrl: signedUrl,
-                objectUrl: null,
+                previewEntry: {
+                  url: resolvedAsset.url,
+                  expiresAt: resolvedAsset.expiresAt,
+                  isObjectUrl: false,
+                },
               };
             }
 
@@ -112,8 +161,11 @@ export const useMessageImagePreviews = ({
 
             return {
               messageId: messageItem.id,
-              resolvedUrl: URL.createObjectURL(imageBlob),
-              objectUrl: true,
+              previewEntry: {
+                url: URL.createObjectURL(imageBlob),
+                expiresAt: null,
+                isObjectUrl: true,
+              },
             };
           } catch (error) {
             console.error('Error resolving chat image preview:', error);
@@ -124,45 +176,51 @@ export const useMessageImagePreviews = ({
 
       if (isCancelled) {
         resolvedEntries.forEach(resolvedEntry => {
-          if (resolvedEntry?.objectUrl) {
-            URL.revokeObjectURL(resolvedEntry.resolvedUrl);
+          if (resolvedEntry?.previewEntry.isObjectUrl) {
+            URL.revokeObjectURL(resolvedEntry.previewEntry.url);
           }
         });
         return;
       }
 
-      const nextImageMessageUrls: Record<string, string> = {};
+      const nextImageMessagePreviewEntries: Record<
+        string,
+        ImageMessagePreviewEntry
+      > = {};
 
       resolvedEntries.forEach(resolvedEntry => {
         if (!resolvedEntry) {
           return;
         }
 
-        if (resolvedEntry.objectUrl) {
-          const previousUrl = objectUrlsRef.current.get(
-            resolvedEntry.messageId
-          );
-          if (previousUrl) {
-            URL.revokeObjectURL(previousUrl);
-          }
+        const previousUrl = objectUrlsRef.current.get(resolvedEntry.messageId);
+        if (
+          previousUrl &&
+          (!resolvedEntry.previewEntry.isObjectUrl ||
+            previousUrl !== resolvedEntry.previewEntry.url)
+        ) {
+          URL.revokeObjectURL(previousUrl);
+          objectUrlsRef.current.delete(resolvedEntry.messageId);
+        }
 
+        if (resolvedEntry.previewEntry.isObjectUrl) {
           objectUrlsRef.current.set(
             resolvedEntry.messageId,
-            resolvedEntry.resolvedUrl
+            resolvedEntry.previewEntry.url
           );
         }
 
-        nextImageMessageUrls[resolvedEntry.messageId] =
-          resolvedEntry.resolvedUrl;
+        nextImageMessagePreviewEntries[resolvedEntry.messageId] =
+          resolvedEntry.previewEntry;
       });
 
-      if (Object.keys(nextImageMessageUrls).length === 0) {
+      if (Object.keys(nextImageMessagePreviewEntries).length === 0) {
         return;
       }
 
-      setImageMessageUrls(previousUrls => ({
-        ...previousUrls,
-        ...nextImageMessageUrls,
+      setImageMessagePreviewEntries(previousEntries => ({
+        ...previousEntries,
+        ...nextImageMessagePreviewEntries,
       }));
     };
 
@@ -171,7 +229,7 @@ export const useMessageImagePreviews = ({
     return () => {
       isCancelled = true;
     };
-  }, [messages, releaseImagePreviewUrl]);
+  }, [imagePreviewRefreshTick, messages, releaseImagePreviewUrl]);
 
   useEffect(() => {
     const objectUrls = objectUrlsRef.current;
@@ -190,7 +248,7 @@ export const useMessageImagePreviews = ({
         return null;
       }
 
-      const resolvedPreviewUrl = imageMessageUrls[message.id];
+      const resolvedPreviewUrl = imageMessagePreviewEntries[message.id]?.url;
       if (resolvedPreviewUrl) {
         return resolvedPreviewUrl;
       }
@@ -204,7 +262,7 @@ export const useMessageImagePreviews = ({
 
       return null;
     },
-    [imageMessageUrls]
+    [imageMessagePreviewEntries]
   );
 
   return {

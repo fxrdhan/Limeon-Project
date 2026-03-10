@@ -498,9 +498,7 @@ describe('useChatComposerActions', () => {
       'file-1'
     );
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
-      'user-a',
       'user-b',
-      'channel-1',
       expect.objectContaining({
         limit: 50,
       })

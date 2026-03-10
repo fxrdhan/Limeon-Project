@@ -1,21 +1,13 @@
 import { useAuthStore } from '@/store/authStore';
 import { useCallback, useRef, useState } from 'react';
 import type { ChatSidebarPanelProps } from '../types';
-import { getInitials, getInitialsColor } from '@/utils/avatar';
-import {
-  getAttachmentFileKind,
-  getAttachmentFileName,
-} from '../utils/attachment';
-import { generateChannelId } from '../utils/channel';
-import {
-  buildChatComposerModel,
-  buildChatHeaderModel,
-  buildChatMessagesModel,
-} from './chatSidebarModels';
+import { getAttachmentFileName } from '../utils/attachment';
+import { computeDmChannelId } from '../utils/channel';
 import { useChatComposer } from './useChatComposer';
 import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatSession } from './useChatSession';
+import { useChatSidebarViewModels } from './useChatSidebarViewModels';
 import { useChatViewport } from './useChatViewport';
 import { useTargetProfilePhoto } from './useTargetProfilePhoto';
 
@@ -40,7 +32,7 @@ export const useChatSidebarController = ({
   const scheduleScrollMessagesToBottomRef = useRef<() => void>(() => {});
   /* c8 ignore next */
   const currentChannelId =
-    user && targetUser ? generateChannelId(user.id, targetUser.id) : null;
+    user && targetUser ? computeDmChannelId(user.id, targetUser.id) : null;
   const closeMessageMenu = useCallback(() => {
     closeMessageMenuRef.current();
   }, []);
@@ -169,50 +161,41 @@ export const useChatSidebarController = ({
     onClose();
   }, [onClose]);
 
-  const headerModel = buildChatHeaderModel({
-    targetUser,
-    displayTargetPhotoUrl,
-    isTargetOnline,
-    targetUserPresence,
-    targetUserPresenceError,
-    interaction,
-    onDeleteSelectedMessages: handleDeleteSelectedMessages,
-    onClose: handleClose,
-    getInitials,
-    getInitialsColor,
-  });
-
-  const messagesModel = buildChatMessagesModel({
-    loading,
-    loadError,
-    messages,
-    user,
-    composer,
-    viewport,
-    interaction,
-    hasOlderMessages,
-    isLoadingOlderMessages,
-    olderMessagesError,
-    expandedMessageIds,
-    messagesContainerRef,
-    messagesEndRef,
-    messageBubbleRefs,
-    initialMessageAnimationKeysRef,
-    initialOpenJumpAnimationKeysRef,
-    toggleMessageMenu,
-    handleToggleExpand,
-    getAttachmentFileName,
-    getAttachmentFileKind,
-    loadOlderMessages,
-    retryLoadMessages,
-  });
-
-  const composerModel = buildChatComposerModel({
-    composer,
-    messageInputRef,
-    composerContainerRef,
-    focusEditingTargetMessage: viewport.focusEditingTargetMessage,
-  });
+  const { headerModel, messagesModel, composerModel } =
+    useChatSidebarViewModels({
+      targetUser,
+      displayTargetPhotoUrl,
+      isTargetOnline,
+      targetUserPresence,
+      targetUserPresenceError,
+      user,
+      messages,
+      loading,
+      loadError,
+      hasOlderMessages,
+      isLoadingOlderMessages,
+      olderMessagesError,
+      expandedMessageIds,
+      handleDeleteSelectedMessages,
+      handleClose,
+      loadOlderMessages,
+      retryLoadMessages,
+      toggleMessageMenu,
+      handleToggleExpand,
+      interaction,
+      composer,
+      viewport,
+      refs: {
+        messageInputRef,
+        composerContainerRef,
+        messagesContainerRef,
+        messagesEndRef,
+        messageBubbleRefs,
+        chatHeaderContainerRef,
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      },
+    });
 
   return {
     chatHeaderContainerRef,

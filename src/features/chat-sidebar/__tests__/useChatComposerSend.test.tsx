@@ -649,9 +649,7 @@ describe('useChatComposerSend', () => {
 
     await waitFor(() => {
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
-        'user-a',
         'user-b',
-        'channel-1',
         expect.objectContaining({
           limit: 50,
         })
@@ -754,9 +752,7 @@ describe('useChatComposerSend', () => {
       await waitFor(() => {
         expect(mockGateway.createMessage).toHaveBeenCalledWith(
           expect.objectContaining({
-            sender_id: 'user-a',
             receiver_id: 'user-b',
-            channel_id: 'channel-1',
             message: expect.stringMatching(
               /^images\/channel-1\/user-a_image_.+\.png$/
             ),
@@ -790,9 +786,7 @@ describe('useChatComposerSend', () => {
         'server-image-rollback-fail'
       );
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
-        'user-a',
         'user-b',
-        'channel-1',
         expect.objectContaining({
           limit: 50,
         })

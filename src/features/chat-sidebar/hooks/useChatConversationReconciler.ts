@@ -54,14 +54,9 @@ export const useChatConversationReconciler = ({
 
       try {
         const { data: latestMessages, error } =
-          await chatSidebarGateway.fetchConversationMessages(
-            user.id,
-            targetUser.id,
-            currentChannelId,
-            {
-              limit: Math.max(messagesCount, CHAT_CONVERSATION_PAGE_SIZE),
-            }
-          );
+          await chatSidebarGateway.fetchConversationMessages(targetUser.id, {
+            limit: Math.max(messagesCount, CHAT_CONVERSATION_PAGE_SIZE),
+          });
 
         if (!isConversationScopeActive(conversationScopeKey)) {
           return;

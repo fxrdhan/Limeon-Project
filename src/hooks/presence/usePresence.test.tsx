@@ -17,9 +17,8 @@ const { mockAuthState, mockChatService, mockRealtimeService } = vi.hoisted(
       },
     },
     mockChatService: {
-      retryChatCleanupFailures: vi.fn(),
-      upsertUserPresence: vi.fn(),
-      sendUserPresenceUpdateKeepalive: vi.fn(),
+      syncUserPresenceOnlineState: vi.fn(),
+      syncUserPresenceOnPageExit: vi.fn(),
     },
     mockRealtimeService: {
       createChannel: vi.fn(),
@@ -99,23 +98,8 @@ describe('usePresence', () => {
       access_token: 'presence-access-token',
     };
 
-    mockChatService.retryChatCleanupFailures.mockResolvedValue({
-      data: {
-        resolvedCount: 0,
-        remainingCount: 0,
-      },
-      error: null,
-    });
-    mockChatService.upsertUserPresence.mockResolvedValue({
-      data: {
-        user_id: 'user-a',
-        is_online: true,
-        last_seen: '2026-03-09T09:00:00.000Z',
-        updated_at: '2026-03-09T09:00:00.000Z',
-      },
-      error: null,
-    });
-    mockChatService.sendUserPresenceUpdateKeepalive.mockReturnValue(true);
+    mockChatService.syncUserPresenceOnlineState.mockResolvedValue(true);
+    mockChatService.syncUserPresenceOnPageExit.mockReturnValue(true);
 
     const mockChannel = {
       on: vi.fn(),
@@ -203,26 +187,14 @@ describe('usePresence', () => {
     unmount();
   });
 
-  it('retries queued chat cleanup failures on initialization', async () => {
+  it('sends presence writes through the high-level online sync path', async () => {
     const { unmount } = renderHook(() => usePresence());
 
     await flushPresenceEffects();
 
-    expect(mockChatService.retryChatCleanupFailures).toHaveBeenCalledOnce();
-
-    unmount();
-  });
-
-  it('sends presence writes through the atomic upsert path', async () => {
-    const { unmount } = renderHook(() => usePresence());
-
-    await flushPresenceEffects();
-
-    expect(mockChatService.upsertUserPresence).toHaveBeenCalledWith(
+    expect(mockChatService.syncUserPresenceOnlineState).toHaveBeenCalledWith(
       'user-a',
-      expect.objectContaining({
-        is_online: true,
-      })
+      true
     );
 
     unmount();
@@ -238,14 +210,10 @@ describe('usePresence', () => {
       await Promise.resolve();
     });
 
-    expect(
-      mockChatService.sendUserPresenceUpdateKeepalive
-    ).toHaveBeenCalledWith(
+    expect(mockChatService.syncUserPresenceOnPageExit).toHaveBeenCalledWith(
       'user-a',
-      expect.objectContaining({
-        is_online: false,
-      }),
-      'presence-access-token'
+      'presence-access-token',
+      expect.any(String)
     );
 
     unmount();
@@ -266,9 +234,7 @@ describe('usePresence', () => {
       await Promise.resolve();
     });
 
-    expect(
-      mockChatService.sendUserPresenceUpdateKeepalive
-    ).not.toHaveBeenCalled();
+    expect(mockChatService.syncUserPresenceOnPageExit).not.toHaveBeenCalled();
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -293,18 +259,16 @@ describe('usePresence', () => {
       await Promise.resolve();
     });
 
-    mockChatService.upsertUserPresence.mockClear();
+    mockChatService.syncUserPresenceOnlineState.mockClear();
 
     await act(async () => {
       vi.advanceTimersByTime(15_000);
       await Promise.resolve();
     });
 
-    expect(mockChatService.upsertUserPresence).toHaveBeenCalledWith(
+    expect(mockChatService.syncUserPresenceOnlineState).toHaveBeenCalledWith(
       'user-a',
-      expect.objectContaining({
-        is_online: true,
-      })
+      true
     );
 
     Object.defineProperty(document, 'visibilityState', {

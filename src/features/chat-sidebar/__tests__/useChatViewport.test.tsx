@@ -328,4 +328,121 @@ describe('useChatViewport', () => {
 
     unmount();
   });
+
+  it('does not surface a new-message indicator when older history is prepended', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 120,
+      writable: true,
+    });
+    messagesContainer.scrollTo = vi.fn();
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
+    const initialMessages = [
+      {
+        id: 'message-latest',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        is_read: false,
+      },
+    ];
+
+    const { result, rerender, unmount } = renderHook(
+      ({ messages, messagesCount }) =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages,
+          userId: 'user-a',
+          targetUserId: 'user-b',
+          messagesCount,
+          loading: false,
+          messageInputHeight: 22,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: false,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead,
+          messagesContainerRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        }),
+      {
+        initialProps: {
+          messages: initialMessages,
+          messagesCount: initialMessages.length,
+        },
+      }
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(result.current.hasNewMessages).toBe(false);
+
+    const olderMessages = [
+      {
+        id: 'message-older',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        is_read: true,
+      },
+      ...initialMessages,
+    ];
+
+    rerender({
+      messages: olderMessages,
+      messagesCount: olderMessages.length,
+    });
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(result.current.hasNewMessages).toBe(false);
+
+    unmount();
+  });
 });

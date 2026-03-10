@@ -210,9 +210,7 @@ export const useChatAttachmentSend = ({
           chatSidebarGateway.uploadImage(CHAT_IMAGE_BUCKET, file, imagePath),
         createPersistedMessage: async () =>
           chatSidebarGateway.createMessage({
-            sender_id: user.id,
             receiver_id: targetUser.id,
-            channel_id: currentChannelId,
             message: imagePath,
             message_type: 'image',
             file_storage_path: imagePath,
@@ -294,9 +292,7 @@ export const useChatAttachmentSend = ({
           ),
         createPersistedMessage: async () =>
           chatSidebarGateway.createMessage({
-            sender_id: user.id,
             receiver_id: targetUser.id,
-            channel_id: currentChannelId,
             message: filePath,
             message_type: 'file',
             file_name: pendingFile.fileName,
