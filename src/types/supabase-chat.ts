@@ -1,98 +1,69 @@
-// Generated from the Supabase chat schema and kept as the TS source of truth
-// for the chat sidebar data contract.
+import type {
+  ChatFunctionArgs,
+  ChatFunctionReturn,
+  ChatTableInsert,
+  ChatTableRow,
+  ChatTableUpdate,
+} from './supabase-chat.generated';
 
-export interface ChatMessageRow {
-  channel_id: string | null;
-  created_at: string | null;
-  file_kind: string | null;
-  file_mime_type: string | null;
-  file_name: string | null;
-  file_preview_error: string | null;
-  file_preview_page_count: number | null;
-  file_preview_status: string | null;
-  file_preview_url: string | null;
-  file_size: number | null;
-  file_storage_path: string | null;
-  id: string;
-  is_delivered: boolean;
-  is_read: boolean | null;
-  message: string;
-  message_relation_kind: string | null;
-  message_type: string | null;
-  receiver_id: string | null;
-  reply_to_id: string | null;
-  sender_id: string;
-  updated_at: string | null;
-}
+export type ChatMessageRow = ChatTableRow<'chat_messages'>;
+export type ChatMessageInsertRow = ChatTableInsert<'chat_messages'>;
+export type ChatMessageUpdateRow = ChatTableUpdate<'chat_messages'>;
 
-export interface ChatMessageInsertRow {
-  channel_id?: string | null;
-  created_at?: string | null;
-  file_kind?: string | null;
-  file_mime_type?: string | null;
-  file_name?: string | null;
-  file_preview_error?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: string | null;
-  file_preview_url?: string | null;
-  file_size?: number | null;
-  file_storage_path?: string | null;
-  id?: string;
-  is_delivered?: boolean;
-  is_read?: boolean | null;
-  message: string;
-  message_relation_kind?: string | null;
-  message_type?: string | null;
-  receiver_id?: string | null;
-  reply_to_id?: string | null;
-  sender_id: string;
-  updated_at?: string | null;
-}
+export type UserPresenceRow = ChatTableRow<'user_presence'>;
+export type UserPresenceInsertRow = ChatTableInsert<'user_presence'>;
+export type UserPresenceUpdateRow = ChatTableUpdate<'user_presence'>;
 
-export interface ChatMessageUpdateRow {
-  channel_id?: string | null;
-  created_at?: string | null;
-  file_kind?: string | null;
-  file_mime_type?: string | null;
-  file_name?: string | null;
-  file_preview_error?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: string | null;
-  file_preview_url?: string | null;
-  file_size?: number | null;
-  file_storage_path?: string | null;
-  id?: string;
-  is_delivered?: boolean;
-  is_read?: boolean | null;
-  message?: string;
-  message_relation_kind?: string | null;
-  message_type?: string | null;
-  receiver_id?: string | null;
-  reply_to_id?: string | null;
-  sender_id?: string;
-  updated_at?: string | null;
-}
+export type CreateChatMessageRpcArgs = ChatFunctionArgs<'create_chat_message'>;
+export type CreateChatMessageRpcReturn =
+  ChatFunctionReturn<'create_chat_message'>;
 
-export interface UserPresenceRow {
-  id: string;
-  is_online: boolean | null;
-  last_seen: string | null;
-  updated_at: string | null;
-  user_id: string;
-}
+export type DeleteChatMessageThreadRpcArgs =
+  ChatFunctionArgs<'delete_chat_message_thread'>;
+export type DeleteChatMessageThreadRpcReturn =
+  ChatFunctionReturn<'delete_chat_message_thread'>;
 
-export interface UserPresenceInsertRow {
-  id?: string;
-  is_online?: boolean | null;
-  last_seen?: string | null;
-  updated_at?: string | null;
-  user_id: string;
-}
+export type EditChatMessageTextRpcArgs =
+  ChatFunctionArgs<'edit_chat_message_text'>;
+export type EditChatMessageTextRpcReturn =
+  ChatFunctionReturn<'edit_chat_message_text'>;
 
-export interface UserPresenceUpdateRow {
-  id?: string;
-  is_online?: boolean | null;
-  last_seen?: string | null;
-  updated_at?: string | null;
-  user_id?: string;
-}
+export type FetchChatMessageContextRpcArgs =
+  ChatFunctionArgs<'fetch_chat_message_context'>;
+export type FetchChatMessageContextRpcReturn =
+  ChatFunctionReturn<'fetch_chat_message_context'>;
+
+export type FetchChatMessagesPageRpcArgs =
+  ChatFunctionArgs<'fetch_chat_messages_page'>;
+export type FetchChatMessagesPageRpcReturn =
+  ChatFunctionReturn<'fetch_chat_messages_page'>;
+
+export type MarkChatMessageIdsAsDeliveredRpcArgs =
+  ChatFunctionArgs<'mark_chat_message_ids_as_delivered'>;
+export type MarkChatMessageIdsAsDeliveredRpcReturn =
+  ChatFunctionReturn<'mark_chat_message_ids_as_delivered'>;
+
+export type MarkChatMessageIdsAsReadRpcArgs =
+  ChatFunctionArgs<'mark_chat_message_ids_as_read'>;
+export type MarkChatMessageIdsAsReadRpcReturn =
+  ChatFunctionReturn<'mark_chat_message_ids_as_read'>;
+
+export type SearchChatMessagesRpcArgs =
+  ChatFunctionArgs<'search_chat_messages'>;
+export type SearchChatMessagesRpcReturn =
+  ChatFunctionReturn<'search_chat_messages'>;
+
+export type SyncUserPresenceOnExitRpcArgs =
+  ChatFunctionArgs<'sync_user_presence_on_exit'>;
+export type SyncUserPresenceOnExitRpcReturn =
+  ChatFunctionReturn<'sync_user_presence_on_exit'>;
+
+export type UpdateChatFilePreviewMetadataRpcArgs =
+  ChatFunctionArgs<'update_chat_file_preview_metadata'>;
+export type UpdateChatFilePreviewMetadataRpcReturn =
+  ChatFunctionReturn<'update_chat_file_preview_metadata'>;
+
+export type UpsertUserPresenceRpcArgs =
+  ChatFunctionArgs<'upsert_user_presence'>;
+export type UpsertUserPresenceRpcReturn =
+  ChatFunctionReturn<'upsert_user_presence'>;

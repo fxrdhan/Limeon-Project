@@ -7,6 +7,11 @@ export interface ChatStoragePathRecord {
   file_storage_path?: string | null;
 }
 
+export interface ChatCleanupMessageRecord extends ChatStoragePathRecord {
+  id: string;
+  sender_id: string;
+}
+
 const CHAT_STORAGE_PATH_PATTERNS = [
   '/storage/v1/object/public/chat/',
   '/storage/v1/object/sign/chat/',

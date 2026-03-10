@@ -11,6 +11,18 @@ import {
   type EditChatMessageTextInput,
   type UndeliveredIncomingMessageIdsPage,
 } from './types';
+import {
+  buildCreateChatMessageRpcArgs,
+  buildDeleteChatMessageThreadRpcArgs,
+  buildEditChatMessageTextRpcArgs,
+  buildFetchChatMessageContextRpcArgs,
+  buildFetchChatMessagesPageRpcArgs,
+  buildMarkChatMessageIdsAsDeliveredRpcArgs,
+  buildMarkChatMessageIdsAsReadRpcArgs,
+  buildSearchChatMessagesRpcArgs,
+  buildUpdateChatFilePreviewMetadataRpcArgs,
+  CHAT_RPC_NAMES,
+} from './rpc-contract';
 
 export const chatMessagesService = {
   async getMessageById(id: string): Promise<ServiceResponse<ChatMessage>> {
@@ -47,12 +59,13 @@ export const chatMessagesService = {
         1,
         options?.limit ?? DEFAULT_CHAT_MESSAGES_PAGE_SIZE
       );
-      const { data, error } = await supabase.rpc('fetch_chat_messages_page', {
-        p_target_user_id: targetUserId,
-        p_before_created_at: options?.beforeCreatedAt ?? null,
-        p_before_id: options?.beforeId ?? null,
-        p_limit: pageSize + 1,
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.fetchMessagesPage,
+        buildFetchChatMessagesPageRpcArgs(targetUserId, {
+          ...options,
+          limit: pageSize + 1,
+        })
+      );
 
       if (error) {
         return { data: null, error };
@@ -87,11 +100,10 @@ export const chatMessagesService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('search_chat_messages', {
-        p_target_user_id: targetUserId,
-        p_query: normalizedQuery,
-        p_limit: limit,
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.searchMessages,
+        buildSearchChatMessagesRpcArgs(targetUserId, normalizedQuery, limit)
+      );
 
       if (error) {
         return { data: null, error };
@@ -109,12 +121,10 @@ export const chatMessagesService = {
     options?: ConversationSearchContextOptions
   ): Promise<ServiceResponse<ChatMessage[]>> {
     try {
-      const { data, error } = await supabase.rpc('fetch_chat_message_context', {
-        p_target_user_id: targetUserId,
-        p_message_id: messageId,
-        p_before_limit: options?.beforeLimit ?? 20,
-        p_after_limit: options?.afterLimit ?? 20,
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.fetchMessageContext,
+        buildFetchChatMessageContextRpcArgs(targetUserId, messageId, options)
+      );
 
       if (error) {
         return { data: null, error };
@@ -130,18 +140,10 @@ export const chatMessagesService = {
     payload: CreateChatMessageInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase.rpc('create_chat_message', {
-        p_receiver_id: payload.receiver_id,
-        p_message: payload.message,
-        p_message_type: payload.message_type ?? 'text',
-        p_reply_to_id: payload.reply_to_id ?? null,
-        p_message_relation_kind: payload.message_relation_kind ?? null,
-        p_file_name: payload.file_name ?? null,
-        p_file_kind: payload.file_kind ?? null,
-        p_file_mime_type: payload.file_mime_type ?? null,
-        p_file_size: payload.file_size ?? null,
-        p_file_storage_path: payload.file_storage_path ?? null,
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.createMessage,
+        buildCreateChatMessageRpcArgs(payload)
+      );
 
       if (error) {
         return { data: null, error };
@@ -158,11 +160,10 @@ export const chatMessagesService = {
     payload: EditChatMessageTextInput
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase.rpc('edit_chat_message_text', {
-        p_message_id: id,
-        p_message: payload.message,
-        p_updated_at: payload.updated_at ?? new Date().toISOString(),
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.editMessageText,
+        buildEditChatMessageTextRpcArgs(id, payload)
+      );
 
       if (error) {
         return { data: null, error };
@@ -180,14 +181,8 @@ export const chatMessagesService = {
   ): Promise<ServiceResponse<ChatMessage>> {
     try {
       const { data, error } = await supabase.rpc(
-        'update_chat_file_preview_metadata',
-        {
-          p_message_id: id,
-          p_file_preview_url: payload.file_preview_url ?? null,
-          p_file_preview_page_count: payload.file_preview_page_count ?? null,
-          p_file_preview_status: payload.file_preview_status ?? null,
-          p_file_preview_error: payload.file_preview_error ?? null,
-        }
+        CHAT_RPC_NAMES.updateFilePreviewMetadata,
+        buildUpdateChatFilePreviewMetadataRpcArgs(id, payload)
       );
 
       if (error) {
@@ -207,10 +202,8 @@ export const chatMessagesService = {
 
     try {
       const { data, error } = await supabase.rpc(
-        'mark_chat_message_ids_as_delivered',
-        {
-          p_message_ids: messageIds,
-        }
+        CHAT_RPC_NAMES.markMessageIdsAsDelivered,
+        buildMarkChatMessageIdsAsDeliveredRpcArgs(messageIds)
       );
 
       if (error) {
@@ -230,10 +223,8 @@ export const chatMessagesService = {
 
     try {
       const { data, error } = await supabase.rpc(
-        'mark_chat_message_ids_as_read',
-        {
-          p_message_ids: messageIds,
-        }
+        CHAT_RPC_NAMES.markMessageIdsAsRead,
+        buildMarkChatMessageIdsAsReadRpcArgs(messageIds)
       );
 
       if (error) {
@@ -294,9 +285,10 @@ export const chatMessagesService = {
 
   async deleteMessageThread(id: string): Promise<ServiceResponse<string[]>> {
     try {
-      const { data, error } = await supabase.rpc('delete_chat_message_thread', {
-        p_message_id: id,
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.deleteMessageThread,
+        buildDeleteChatMessageThreadRpcArgs(id)
+      );
 
       if (error) {
         return { data: null, error };

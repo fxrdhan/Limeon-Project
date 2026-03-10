@@ -2,8 +2,13 @@ import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type { UserPresence, UserPresenceUpdateInput } from './types';
+import {
+  buildSyncUserPresenceOnExitRpcArgs,
+  buildUpsertUserPresenceRpcArgs,
+  CHAT_RPC_NAMES,
+} from './rpc-contract';
 
-const USER_PRESENCE_EXIT_RPC = 'sync_user_presence_on_exit';
+const USER_PRESENCE_EXIT_RPC = CHAT_RPC_NAMES.syncUserPresenceOnExit;
 
 const buildUserPresenceExitRpcUrl = () =>
   new URL(`${supabaseUrl}/rest/v1/rpc/${USER_PRESENCE_EXIT_RPC}`).toString();
@@ -13,12 +18,10 @@ const syncUserPresenceExitRpc = async (
   payload: UserPresenceUpdateInput
 ): Promise<ServiceResponse<UserPresence>> => {
   try {
-    const { data, error } = await supabase.rpc(USER_PRESENCE_EXIT_RPC, {
-      p_user_id: userId,
-      p_is_online:
-        typeof payload.is_online === 'boolean' ? payload.is_online : null,
-      p_last_seen: payload.last_seen ?? null,
-    });
+    const { data, error } = await supabase.rpc(
+      USER_PRESENCE_EXIT_RPC,
+      buildSyncUserPresenceOnExitRpcArgs(userId, payload)
+    );
 
     if (error) {
       return { data: null, error };
@@ -56,12 +59,10 @@ export const chatPresenceService = {
     payload: Pick<UserPresenceUpdateInput, 'is_online'>
   ): Promise<ServiceResponse<UserPresence>> {
     try {
-      const { data, error } = await supabase.rpc('upsert_user_presence', {
-        p_user_id: userId,
-        p_is_online:
-          typeof payload.is_online === 'boolean' ? payload.is_online : null,
-        p_last_chat_opened: null,
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.upsertUserPresence,
+        buildUpsertUserPresenceRpcArgs(userId, payload)
+      );
 
       if (error) {
         return { data: null, error };

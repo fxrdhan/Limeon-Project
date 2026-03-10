@@ -11,12 +11,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 const syncRealtimeAuthToken = (accessToken?: string | null) => {
-  if (!accessToken) {
-    return;
-  }
-
   try {
-    void supabase.realtime.setAuth(accessToken);
+    void supabase.realtime.setAuth(accessToken ?? null);
   } catch (error) {
     console.warn('Failed to sync Supabase Realtime auth token:', error);
   }

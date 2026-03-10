@@ -3,10 +3,12 @@ import {
   type ChangeEvent,
   type ClipboardEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
+import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
   TbArrowUp,
@@ -28,7 +30,6 @@ import {
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
-import { useComposerAttachmentPreview } from '../hooks/useComposerAttachmentPreview';
 import type { PendingComposerAttachment } from '../types';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
@@ -52,6 +53,17 @@ export interface ComposerPanelModel {
   imageInputRef: RefObject<HTMLInputElement | null>;
   documentInputRef: RefObject<HTMLInputElement | null>;
   audioInputRef: RefObject<HTMLInputElement | null>;
+  openImageActionsAttachmentId: string | null;
+  imageActionsMenuPosition: {
+    top: number;
+    left: number;
+  } | null;
+  composerDocumentPreviewUrl: string | null;
+  composerDocumentPreviewName: string;
+  isComposerDocumentPreviewVisible: boolean;
+  imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
+  imageActionsMenuRef: RefObject<HTMLDivElement | null>;
+  imageActions: PopupMenuAction[];
   onMessageChange: (nextMessage: string) => void;
   onKeyDown: (e: ReactKeyboardEvent) => void;
   onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
@@ -69,6 +81,14 @@ export interface ComposerPanelModel {
   onCloseComposerImagePreview: () => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
   onQueueComposerImage: (file: File, replaceAttachmentId?: string) => boolean;
+  onCloseComposerDocumentPreview: () => void;
+  onOpenDocumentAttachmentInPortal: (
+    attachment: PendingComposerAttachment
+  ) => void;
+  onToggleImageActionsMenu: (
+    event: MouseEvent<HTMLButtonElement>,
+    attachmentId: string
+  ) => void;
 }
 
 const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
@@ -90,6 +110,14 @@ const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
     imageInputRef,
     documentInputRef,
     audioInputRef,
+    openImageActionsAttachmentId,
+    imageActionsMenuPosition,
+    composerDocumentPreviewUrl,
+    composerDocumentPreviewName,
+    isComposerDocumentPreviewVisible,
+    imageActionsButtonRef,
+    imageActionsMenuRef,
+    imageActions,
     onMessageChange,
     onKeyDown,
     onPaste,
@@ -107,26 +135,10 @@ const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
     onCloseComposerImagePreview,
     onRemovePendingComposerAttachment,
     onQueueComposerImage,
+    onCloseComposerDocumentPreview,
+    onOpenDocumentAttachmentInPortal,
+    onToggleImageActionsMenu,
   } = model;
-  const {
-    openImageActionsAttachmentId,
-    imageActionsMenuPosition,
-    composerDocumentPreviewUrl,
-    composerDocumentPreviewName,
-    isComposerDocumentPreviewVisible,
-    imageActionsButtonRef,
-    imageActionsMenuRef,
-    imageActions,
-    closeComposerDocumentPreview,
-    openDocumentAttachmentInPortal,
-    handleToggleImageActionsMenu,
-  } = useComposerAttachmentPreview({
-    pendingComposerAttachments,
-    onAttachImageClick,
-    onAttachDocumentClick,
-    onRemovePendingComposerAttachment,
-    onOpenComposerImagePreview,
-  });
 
   const contextualPanelTransition = {
     duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
@@ -219,8 +231,8 @@ const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
                   imageActionsButtonRef={imageActionsButtonRef}
                   transition={contextualPanelTransition}
                   onOpenComposerImagePreview={onOpenComposerImagePreview}
-                  onOpenDocumentAttachment={openDocumentAttachmentInPortal}
-                  onToggleImageActionsMenu={handleToggleImageActionsMenu}
+                  onOpenDocumentAttachment={onOpenDocumentAttachmentInPortal}
+                  onToggleImageActionsMenu={onToggleImageActionsMenu}
                   onRemovePendingComposerAttachment={
                     onRemovePendingComposerAttachment
                   }
@@ -439,7 +451,7 @@ const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => {
         isVisible={isComposerDocumentPreviewVisible}
         previewUrl={composerDocumentPreviewUrl}
         previewName={composerDocumentPreviewName}
-        onClose={closeComposerDocumentPreview}
+        onClose={onCloseComposerDocumentPreview}
         backdropClassName="z-[72] px-4 py-6"
         iframeTitle="Preview dokumen composer"
       />

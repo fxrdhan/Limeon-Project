@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
+  type ChatCleanupMessageRecord,
   isOwnedChatPath,
   resolveChatMessageStoragePaths,
 } from "../../../shared/chatStoragePaths.ts";
@@ -15,17 +16,6 @@ interface ChatCleanupRequest {
   action?: CleanupAction;
   messageId?: string;
   storagePaths?: string[];
-}
-
-interface ChatMessageRecord {
-  id: string;
-  sender_id: string;
-  message: string;
-  message_type: string | null;
-  file_name: string | null;
-  file_mime_type: string | null;
-  file_preview_url: string | null;
-  file_storage_path: string | null;
 }
 
 const buildCorsHeaders = (req: Request) => {
@@ -269,7 +259,7 @@ Deno.serve(async req => {
     }
 
     const storagePaths = resolveChatMessageStoragePaths(
-      parentMessage as ChatMessageRecord
+      parentMessage as ChatCleanupMessageRecord
     );
     const { ownedStoragePaths, foreignStoragePaths } = partitionOwnedChatPaths(
       storagePaths,

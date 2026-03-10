@@ -1,18 +1,15 @@
 import { LayoutGroup } from 'motion/react';
-import { useMemo, type MutableRefObject, type RefObject } from 'react';
+import type { MutableRefObject, RefObject } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { MAX_MESSAGE_CHARS } from '../constants';
-import { useMessageImagePreviews } from '../hooks/useMessageImagePreviews';
-import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
-import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
 import type { ChatMessage } from '../data/chatSidebarGateway';
+import type { PdfMessagePreview } from '../hooks/useMessagePdfPreviews';
 import type {
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
 } from '../types';
-import { getAttachmentCaptionData } from '../utils/message-derivations';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MessageItem from './messages/MessageItem';
 
@@ -26,6 +23,7 @@ export interface MessagesPaneModel {
   loadError: string | null;
   messages: ChatMessage[];
   user?: ChatPanelUser | null;
+  normalizedSearchQuery: string;
   messageInputHeight: number;
   composerContextualOffset: number;
   composerContainerHeight: number;
@@ -40,7 +38,6 @@ export interface MessagesPaneModel {
   isFlashHighlightVisible: boolean;
   isSelectionMode: boolean;
   selectedMessageIds: Set<string>;
-  searchQuery: string;
   searchMatchedMessageIds: Set<string>;
   activeSearchMessageId: string | null;
   showScrollToBottom: boolean;
@@ -52,6 +49,8 @@ export interface MessagesPaneModel {
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
+  captionMessagesByAttachmentId: Map<string, ChatMessage>;
+  captionMessageIds: Set<string>;
   closeMessageMenu: () => void;
   toggleMessageMenu: (
     anchor: HTMLElement,
@@ -68,6 +67,33 @@ export interface MessagesPaneModel {
   getAttachmentFileKind: (
     targetMessage: ChatMessage
   ) => ComposerPendingFileKind;
+  getImageMessageUrl: (
+    message: Pick<ChatMessage, 'id' | 'message' | 'message_type'>
+  ) => string | null;
+  getPdfMessagePreview: (
+    message: ChatMessage,
+    fileName: string | null
+  ) => PdfMessagePreview | undefined;
+  documentPreviewUrl: string | null;
+  documentPreviewName: string;
+  isDocumentPreviewVisible: boolean;
+  closeDocumentPreview: () => void;
+  imagePreviewUrl: string | null;
+  imagePreviewName: string;
+  isImagePreviewVisible: boolean;
+  closeImagePreview: () => void;
+  openImageInPortal: (
+    message: Pick<
+      ChatMessage,
+      'message' | 'file_storage_path' | 'file_mime_type'
+    >,
+    previewName: string
+  ) => Promise<void>;
+  openDocumentInPortal: (
+    message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
+    previewName: string,
+    forcePdfMime?: boolean
+  ) => Promise<void>;
   onScrollToBottom: () => void;
   onLoadOlderMessages: () => void;
   onRetryLoadMessages: () => void;
@@ -79,6 +105,7 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     loadError,
     messages,
     user,
+    normalizedSearchQuery,
     messageInputHeight,
     composerContextualOffset,
     composerContainerHeight,
@@ -93,7 +120,6 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     isFlashHighlightVisible,
     isSelectionMode,
     selectedMessageIds,
-    searchQuery,
     searchMatchedMessageIds,
     activeSearchMessageId,
     showScrollToBottom,
@@ -105,6 +131,8 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     messageBubbleRefs,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
+    captionMessagesByAttachmentId,
+    captionMessageIds,
     closeMessageMenu,
     toggleMessageMenu,
     handleToggleExpand,
@@ -115,13 +143,8 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     onToggleMessageSelection,
     getAttachmentFileName,
     getAttachmentFileKind,
-    onScrollToBottom,
-    onLoadOlderMessages,
-    onRetryLoadMessages,
-  } = model;
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const { getImageMessageUrl } = useMessageImagePreviews({ messages });
-  const {
+    getImageMessageUrl,
+    getPdfMessagePreview,
     documentPreviewUrl,
     documentPreviewName,
     isDocumentPreviewVisible,
@@ -132,16 +155,10 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     closeImagePreview,
     openImageInPortal,
     openDocumentInPortal,
-  } = useMessagesPanePreviews();
-  const { getPdfMessagePreview } = useMessagePdfPreviews({
-    messages,
-    getAttachmentFileName,
-    getAttachmentFileKind,
-  });
-  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
-    () => getAttachmentCaptionData(messages),
-    [messages]
-  );
+    onScrollToBottom,
+    onLoadOlderMessages,
+    onRetryLoadMessages,
+  } = model;
 
   return (
     <>
