@@ -17,6 +17,8 @@ import {
   sendAttachmentThread,
   type SendAttachmentOptions,
 } from '../utils/attachment-thread-flow';
+import { queuePersistedPdfPreview } from '../utils/pdf-preview-persistence';
+import { resolveFileExtension } from '../utils/message-file';
 
 interface UseChatAttachmentSendProps {
   user: {
@@ -69,6 +71,23 @@ export const useChatAttachmentSend = ({
   rollbackPersistedAttachmentThread,
   releasePendingPreviewUrl,
 }: UseChatAttachmentSendProps) => {
+  const isPdfPendingFile = useCallback((pendingFile: PendingComposerFile) => {
+    if (pendingFile.fileKind !== 'document') {
+      return false;
+    }
+
+    const fileExtension = resolveFileExtension(
+      pendingFile.fileName,
+      pendingFile.file.name,
+      pendingFile.mimeType
+    );
+
+    return (
+      fileExtension === 'pdf' ||
+      pendingFile.mimeType.toLowerCase().includes('pdf')
+    );
+  }, []);
+
   const cleanupUncommittedStorageFiles = useCallback(
     async (
       storagePaths: Array<string | null | undefined>,
@@ -232,6 +251,7 @@ export const useChatAttachmentSend = ({
         pendingFile.fileKind === 'audio'
           ? 'Gagal mengirim audio'
           : 'Gagal mengirim dokumen';
+      const shouldPersistPdfPreview = isPdfPendingFile(pendingFile);
 
       return sendAttachmentMessage({
         tempIdPrefix: 'temp_file',
@@ -299,9 +319,28 @@ export const useChatAttachmentSend = ({
             targetUser,
             stableKey
           ),
+        onAfterCommit: shouldPersistPdfPreview
+          ? realMessage => {
+              queuePersistedPdfPreview({
+                message: {
+                  ...realMessage,
+                  file_name: pendingFile.fileName,
+                  file_mime_type: pendingFile.mimeType,
+                  file_storage_path: realMessage.file_storage_path || filePath,
+                },
+                file: pendingFile.file,
+              });
+            }
+          : undefined,
       });
     },
-    [currentChannelId, sendAttachmentMessage, targetUser, user]
+    [
+      currentChannelId,
+      isPdfPendingFile,
+      sendAttachmentMessage,
+      targetUser,
+      user,
+    ]
   );
 
   return {

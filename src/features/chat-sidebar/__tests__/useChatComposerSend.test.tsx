@@ -21,9 +21,16 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
     success: vi.fn(),
   },
 }));
+const { mockQueuePersistedPdfPreview } = vi.hoisted(() => ({
+  mockQueuePersistedPdfPreview: vi.fn(),
+}));
 
 vi.mock('../data/chatSidebarGateway', () => ({
   chatSidebarGateway: mockGateway,
+}));
+
+vi.mock('../utils/pdf-preview-persistence', () => ({
+  queuePersistedPdfPreview: mockQueuePersistedPdfPreview,
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -139,6 +146,7 @@ describe('useChatComposerSend', () => {
       },
       error: null,
     });
+    mockQueuePersistedPdfPreview.mockReturnValue(true);
   });
 
   it('rolls back the persisted attachment thread when caption insert fails', async () => {
@@ -453,6 +461,18 @@ describe('useChatComposerSend', () => {
     expect(mockGateway.cleanupStoragePaths).not.toHaveBeenCalled();
     expect(result.current.messages[0]?.file_preview_status).toBeUndefined();
     expect(result.current.messages[0]?.file_preview_error).toBeUndefined();
+    expect(mockQueuePersistedPdfPreview).toHaveBeenCalledTimes(1);
+    expect(mockQueuePersistedPdfPreview).toHaveBeenCalledWith({
+      message: expect.objectContaining({
+        id: 'server-file-2',
+        file_name: 'stok.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: expect.stringMatching(
+          /^documents\/channel-1\/user-a_document_.*\.pdf$/
+        ),
+      }),
+      file: expect.any(File),
+    });
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {

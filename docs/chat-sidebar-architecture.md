@@ -306,6 +306,7 @@ File: `src/features/chat-sidebar/hooks/useMessagePdfPreviews.ts`
 Tanggung jawab:
 
 - generate fallback preview PDF untuk message file yang belum punya `file_preview_url`
+- trigger backfill persistence untuk preview PDF milik sender saat metadata belum lengkap
 - cache preview di memory
 - retry render hingga 3 kali
 
@@ -625,7 +626,7 @@ Runtime:
 3. Upload file ke storage bucket `chat`.
 4. Insert row `message_type = 'file'`.
 5. Jika file PDF:
-   - render preview PNG lokal
+   - jadwalkan background sync preview PNG
    - upload PNG preview ke storage
    - update row `file_preview_*`
 6. Jika ada caption, insert text row kedua dengan `reply_to_id = file_message.id`.

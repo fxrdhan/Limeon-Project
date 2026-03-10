@@ -138,6 +138,7 @@ const MessagesPane = ({ model }: { model: MessagesPaneModel }) => {
     messages,
     getAttachmentFileName,
     getAttachmentFileKind,
+    currentUserId: user?.id,
   });
   const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
     () => getAttachmentCaptionData(messages),
