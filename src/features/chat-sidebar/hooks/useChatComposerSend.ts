@@ -95,7 +95,6 @@ export const useChatComposerSend = ({
     pendingImagePreviewUrlsRef,
     registerPendingSend,
     conversationScopeKey,
-    isConversationScopeActive,
     isCurrentConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,

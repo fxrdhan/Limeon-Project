@@ -7,7 +7,11 @@ import {
   getAttachmentFileName,
 } from '../utils/attachment';
 import { generateChannelId } from '../utils/channel';
-import { isPresenceFresh } from '../components/header/presence';
+import {
+  buildChatComposerModel,
+  buildChatHeaderModel,
+  buildChatMessagesModel,
+} from './chatSidebarModels';
 import { useChatComposer } from './useChatComposer';
 import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatInteractionModes } from './useChatInteractionModes';
@@ -164,134 +168,51 @@ export const useChatSidebarController = ({
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
-  const resolvedTargetOnline =
-    typeof isTargetOnline === 'boolean'
-      ? isTargetOnline
-      : targetUserPresence?.is_online === true &&
-        isPresenceFresh(targetUserPresence.last_seen);
 
-  const headerModel = {
+  const headerModel = buildChatHeaderModel({
     targetUser,
     displayTargetPhotoUrl,
-    isTargetOnline: resolvedTargetOnline,
+    isTargetOnline,
     targetUserPresence,
     targetUserPresenceError,
-    isSearchMode: interaction.isMessageSearchMode,
-    searchQuery: interaction.messageSearchQuery,
-    searchState: interaction.messageSearchState,
-    searchResultCount: interaction.searchMatchedMessageIds.length,
-    activeSearchResultIndex: Math.max(interaction.activeSearchResultIndex, 0),
-    canNavigateSearchUp: interaction.canNavigateSearchUp,
-    canNavigateSearchDown: interaction.canNavigateSearchDown,
-    isSelectionMode: interaction.isSelectionMode,
-    selectedMessageCount: interaction.selectedVisibleMessages.length,
-    canDeleteSelectedMessages: interaction.canDeleteSelectedMessages,
-    searchInputRef: interaction.searchInputRef,
-    onEnterSearchMode: interaction.handleEnterMessageSearchMode,
-    onExitSearchMode: interaction.handleExitMessageSearchMode,
-    onEnterSelectionMode: interaction.handleEnterMessageSelectionMode,
-    onExitSelectionMode: interaction.handleExitMessageSelectionMode,
-    onSearchQueryChange: interaction.handleMessageSearchQueryChange,
-    onNavigateSearchUp: interaction.handleNavigateSearchUp,
-    onNavigateSearchDown: interaction.handleNavigateSearchDown,
-    onFocusSearchInput: interaction.handleFocusSearchInput,
-    onCopySelectedMessages: interaction.handleCopySelectedMessages,
+    interaction,
     onDeleteSelectedMessages: handleDeleteSelectedMessages,
     onClose: handleClose,
     getInitials,
     getInitialsColor,
-  };
+  });
 
-  const messagesModel = {
+  const messagesModel = buildChatMessagesModel({
     loading,
     loadError,
     messages,
     user,
-    messageInputHeight: composer.messageInputHeight,
-    composerContextualOffset: composer.composerContextualOffset,
-    composerContainerHeight: viewport.composerContainerHeight,
-    openMenuMessageId: viewport.openMenuMessageId,
-    menuPlacement: viewport.menuPlacement,
-    menuSideAnchor: viewport.menuSideAnchor,
-    shouldAnimateMenuOpen: viewport.shouldAnimateMenuOpen,
-    menuTransitionSourceId: viewport.menuTransitionSourceId,
-    menuOffsetX: viewport.menuOffsetX,
-    expandedMessageIds,
-    flashingMessageId: viewport.flashingMessageId,
-    isFlashHighlightVisible: viewport.isFlashHighlightVisible,
-    isSelectionMode: interaction.isSelectionMode,
-    selectedMessageIds: interaction.selectedMessageIds,
-    searchQuery: interaction.isMessageSearchMode
-      ? interaction.messageSearchQuery
-      : '',
-    searchMatchedMessageIds: interaction.isMessageSearchMode
-      ? interaction.searchMatchedMessageIdSet
-      : new Set<string>(),
-    activeSearchMessageId: interaction.isMessageSearchMode
-      ? interaction.activeSearchMessageId
-      : null,
-    showScrollToBottom: viewport.hasNewMessages || !viewport.isAtBottom,
+    composer,
+    viewport,
+    interaction,
     hasOlderMessages,
     isLoadingOlderMessages,
     olderMessagesError,
+    expandedMessageIds,
     messagesContainerRef,
     messagesEndRef,
     messageBubbleRefs,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
-    closeMessageMenu: viewport.closeMessageMenu,
     toggleMessageMenu,
     handleToggleExpand,
-    handleEditMessage: composer.handleEditMessage,
-    handleCopyMessage: composer.handleCopyMessage,
-    handleDownloadMessage: composer.handleDownloadMessage,
-    handleDeleteMessage: composer.handleDeleteMessage,
-    onToggleMessageSelection: interaction.handleToggleMessageSelection,
     getAttachmentFileName,
     getAttachmentFileKind,
-    onScrollToBottom: viewport.scrollToBottom,
-    onLoadOlderMessages: loadOlderMessages,
-    onRetryLoadMessages: retryLoadMessages,
-  };
+    loadOlderMessages,
+    retryLoadMessages,
+  });
 
-  const composerModel = {
-    message: composer.message,
-    editingMessagePreview: composer.editingMessagePreview,
-    messageInputHeight: composer.messageInputHeight,
-    isMessageInputMultiline: composer.isMessageInputMultiline,
-    isSendSuccessGlowVisible: composer.isSendSuccessGlowVisible,
-    isAttachModalOpen: composer.isAttachModalOpen,
-    pendingComposerAttachments: composer.pendingComposerAttachments,
-    previewComposerImageAttachment: composer.previewComposerImageAttachment,
-    isComposerImageExpanded: composer.isComposerImageExpanded,
-    isComposerImageExpandedVisible: composer.isComposerImageExpandedVisible,
+  const composerModel = buildChatComposerModel({
+    composer,
     messageInputRef,
     composerContainerRef,
-    attachButtonRef: composer.attachButtonRef,
-    attachModalRef: composer.attachModalRef,
-    imageInputRef: composer.imageInputRef,
-    documentInputRef: composer.documentInputRef,
-    audioInputRef: composer.audioInputRef,
-    onMessageChange: composer.setMessage,
-    onKeyDown: composer.handleKeyPress,
-    onPaste: composer.handleComposerPaste,
-    onSendMessage: () => {
-      void composer.handleSendMessage();
-    },
-    onAttachButtonClick: composer.handleAttachButtonClick,
-    onAttachImageClick: composer.handleAttachImageClick,
-    onAttachDocumentClick: composer.handleAttachDocumentClick,
-    onAttachAudioClick: composer.handleAttachAudioClick,
-    onImageFileChange: composer.handleImageFileChange,
-    onDocumentFileChange: composer.handleDocumentFileChange,
-    onAudioFileChange: composer.handleAudioFileChange,
-    onCancelEditMessage: composer.handleCancelEditMessage,
-    onFocusEditingTargetMessage: viewport.focusEditingTargetMessage,
-    onOpenComposerImagePreview: composer.openComposerImagePreview,
-    onCloseComposerImagePreview: composer.closeComposerImagePreview,
-    onRemovePendingComposerAttachment: composer.removePendingComposerAttachment,
-    onQueueComposerImage: composer.queueComposerImage,
-  };
+    focusEditingTargetMessage: viewport.focusEditingTargetMessage,
+  });
 
   return {
     chatHeaderContainerRef,

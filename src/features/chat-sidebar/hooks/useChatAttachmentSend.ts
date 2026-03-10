@@ -17,11 +17,6 @@ import {
   sendAttachmentThread,
   type SendAttachmentOptions,
 } from '../utils/attachment-thread-flow';
-import { useChatAttachmentPdfPreview } from './useChatAttachmentPdfPreview';
-
-const isPdfDocumentFile = (fileName: string, mimeType: string) =>
-  mimeType.toLowerCase().includes('pdf') ||
-  fileName.toLowerCase().endsWith('.pdf');
 
 interface UseChatAttachmentSendProps {
   user: {
@@ -37,7 +32,6 @@ interface UseChatAttachmentSendProps {
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
   conversationScopeKey: string | null;
-  isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
   isCurrentConversationScopeActive: () => boolean;
   reconcileCurrentConversationMessages: (options?: {
     fallbackMessages?: ChatMessage[];
@@ -68,7 +62,6 @@ export const useChatAttachmentSend = ({
   pendingImagePreviewUrlsRef,
   registerPendingSend,
   conversationScopeKey,
-  isConversationScopeActive,
   isCurrentConversationScopeActive,
   reconcileCurrentConversationMessages,
   runInCurrentConversationScope,
@@ -76,14 +69,6 @@ export const useChatAttachmentSend = ({
   rollbackPersistedAttachmentThread,
   releasePendingPreviewUrl,
 }: UseChatAttachmentSendProps) => {
-  const { processPdfPreview } = useChatAttachmentPdfPreview({
-    user,
-    targetUser,
-    setMessages,
-    isConversationScopeActive,
-    deleteUploadedStorageFilesOrThrow,
-  });
-
   const cleanupUncommittedStorageFiles = useCallback(
     async (
       storagePaths: Array<string | null | undefined>,
@@ -243,9 +228,6 @@ export const useChatAttachmentSend = ({
         pendingFile.file,
         pendingFile.fileKind
       );
-      const isPdfDocument =
-        pendingFile.fileKind === 'document' &&
-        isPdfDocumentFile(pendingFile.fileName, pendingFile.mimeType);
       const sendFailureToast =
         pendingFile.fileKind === 'audio'
           ? 'Gagal mengirim audio'
@@ -258,7 +240,6 @@ export const useChatAttachmentSend = ({
         captionText,
         sendFailureToast,
         captionFailureToast: 'Gagal mengirim deskripsi lampiran',
-        shouldDelayPreviewCleanup: isPdfDocument,
         buildOptimisticMessage: ({
           tempId,
           stableKey,
@@ -276,7 +257,6 @@ export const useChatAttachmentSend = ({
           file_mime_type: pendingFile.mimeType,
           file_size: pendingFile.file.size,
           file_storage_path: filePath,
-          file_preview_status: isPdfDocument ? 'pending' : null,
           created_at: timestamp,
           updated_at: timestamp,
           is_read: false,
@@ -304,7 +284,6 @@ export const useChatAttachmentSend = ({
             file_mime_type: pendingFile.mimeType,
             file_size: pendingFile.file.size,
             file_storage_path: filePath,
-            file_preview_status: isPdfDocument ? 'pending' : null,
           }),
         mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
           mapPersistedMessageForDisplay(
@@ -315,39 +294,14 @@ export const useChatAttachmentSend = ({
               file_mime_type: pendingFile.mimeType,
               file_size: pendingFile.file.size,
               file_storage_path: filePath,
-              file_preview_status: isPdfDocument ? 'pending' : null,
             },
             user,
             targetUser,
             stableKey
           ),
-        onAfterCommit: (
-          realMessage,
-          stableKey,
-          uploadedPath,
-          currentConversationScopeKey
-        ) => {
-          if (!isPdfDocument) {
-            return;
-          }
-
-          void processPdfPreview(
-            realMessage,
-            pendingFile,
-            uploadedPath,
-            stableKey,
-            currentConversationScopeKey
-          );
-        },
       });
     },
-    [
-      currentChannelId,
-      processPdfPreview,
-      sendAttachmentMessage,
-      targetUser,
-      user,
-    ]
+    [currentChannelId, sendAttachmentMessage, targetUser, user]
   );
 
   return {

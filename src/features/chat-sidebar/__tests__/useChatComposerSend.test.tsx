@@ -6,11 +6,10 @@ import type { PendingComposerAttachment } from '../types';
 import { useChatComposerSend } from '../hooks/useChatComposerSend';
 import { useChatMutationScope } from '../hooks/useChatMutationScope';
 
-const { mockGateway, mockToast, mockRenderPdfPreviewBlob } = vi.hoisted(() => ({
+const { mockGateway, mockToast } = vi.hoisted(() => ({
   mockGateway: {
     fetchConversationMessages: vi.fn(),
     createMessage: vi.fn(),
-    updateFilePreview: vi.fn(),
     deleteMessageThread: vi.fn(),
     deleteMessageThreadAndCleanup: vi.fn(),
     uploadImage: vi.fn(),
@@ -21,7 +20,6 @@ const { mockGateway, mockToast, mockRenderPdfPreviewBlob } = vi.hoisted(() => ({
     error: vi.fn(),
     success: vi.fn(),
   },
-  mockRenderPdfPreviewBlob: vi.fn(),
 }));
 
 vi.mock('../data/chatSidebarGateway', () => ({
@@ -30,10 +28,6 @@ vi.mock('../data/chatSidebarGateway', () => ({
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
-}));
-
-vi.mock('../utils/pdf-preview', () => ({
-  renderPdfPreviewBlob: mockRenderPdfPreviewBlob,
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -144,10 +138,6 @@ describe('useChatComposerSend', () => {
         failedStoragePaths: [],
       },
       error: null,
-    });
-    mockRenderPdfPreviewBlob.mockResolvedValue({
-      coverBlob: new Blob(['preview'], { type: 'image/png' }),
-      pageCount: 2,
     });
   });
 
@@ -403,38 +393,18 @@ describe('useChatComposerSend', () => {
     expect(pendingEntries.size).toBe(0);
   });
 
-  it('deletes orphaned preview files and marks preview metadata as failed', async () => {
-    mockGateway.uploadAttachment
-      .mockResolvedValueOnce({
-        path: 'documents/channel/stok.pdf',
-        publicUrl: 'https://example.com/stok.pdf',
-      })
-      .mockResolvedValueOnce({
-        path: 'previews/channel/stok.png',
-        publicUrl: 'https://example.com/stok.png',
-      });
+  it('keeps pdf preview persistence out of the send pipeline', async () => {
+    mockGateway.uploadAttachment.mockResolvedValue({
+      path: 'documents/channel/stok.pdf',
+      publicUrl: 'https://example.com/stok.pdf',
+    });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
         id: 'server-file-2',
         file_storage_path: 'documents/channel/stok.pdf',
-        file_preview_status: 'pending',
       }),
       error: null,
     });
-    mockGateway.updateFilePreview
-      .mockResolvedValueOnce({
-        data: null,
-        error: new Error('preview update failed'),
-      })
-      .mockResolvedValueOnce({
-        data: buildMessage({
-          id: 'server-file-2',
-          file_storage_path: 'documents/channel/stok.pdf',
-          file_preview_status: 'failed',
-          file_preview_error: 'Gagal menyimpan preview PDF',
-        }),
-        error: null,
-      });
 
     const { registerPendingSend } = createPendingSendRegistry();
 
@@ -476,14 +446,13 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.cleanupStoragePaths).toHaveBeenCalledWith([
-        'previews/channel/stok.png',
-      ]);
-      expect(result.current.messages[0]?.file_preview_status).toBe('failed');
-      expect(result.current.messages[0]?.file_preview_error).toBe(
-        'Gagal menyimpan preview PDF'
-      );
+      expect(result.current.messages).toHaveLength(1);
     });
+
+    expect(mockGateway.uploadAttachment).toHaveBeenCalledTimes(1);
+    expect(mockGateway.cleanupStoragePaths).not.toHaveBeenCalled();
+    expect(result.current.messages[0]?.file_preview_status).toBeUndefined();
+    expect(result.current.messages[0]?.file_preview_error).toBeUndefined();
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {
