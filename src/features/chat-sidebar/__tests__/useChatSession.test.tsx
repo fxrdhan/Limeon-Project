@@ -4,6 +4,7 @@ import type { ChatMessage } from '../../../services/api/chat.service';
 import type { UserDetails } from '../../../types/database';
 import { useChatSession } from '../hooks/useChatSession';
 import { resetConversationCache } from '../utils/conversation-cache';
+import { usePresenceStore } from '../../../store/presenceStore';
 
 const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
   () => ({
@@ -116,6 +117,11 @@ describe('useChatSession', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     resetConversationCache();
     createdChannels.length = 0;
+    usePresenceStore.setState({
+      channel: null,
+      onlineUsers: 0,
+      onlineUsersList: [],
+    });
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
       data: [],
@@ -348,6 +354,43 @@ describe('useChatSession', () => {
     await waitFor(() => {
       expect(result.current.targetUserPresence).toBeNull();
     });
+  });
+
+  it('falls back to a fresh presence snapshot when the roster channel is connected but missing the target user', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    mockChatService.getUserPresence.mockResolvedValueOnce({
+      data: {
+        user_id: targetUser.id,
+        is_online: true,
+        last_seen: new Date().toISOString(),
+      },
+      error: null,
+    });
+
+    usePresenceStore.setState({
+      channel: {} as never,
+      onlineUsers: 1,
+      onlineUsersList: [],
+    });
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.targetUserPresence?.user_id).toBe(targetUser.id);
+    });
+
+    expect(result.current.isTargetOnline).toBe(true);
   });
 
   it('ignores stale target presence responses after switching conversations', async () => {

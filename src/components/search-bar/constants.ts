@@ -14,6 +14,7 @@ export const SEARCH_STATES = {
   IDLE: 'idle',
   TYPING: 'typing',
   FOUND: 'found',
+  ERROR: 'error',
   NOT_FOUND: 'not-found',
 } as const;
 

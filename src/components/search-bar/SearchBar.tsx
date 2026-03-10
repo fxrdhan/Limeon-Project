@@ -1,5 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { TbArrowBack, TbZoom, TbZoomCancel } from 'react-icons/tb';
+import {
+  TbAlertCircle,
+  TbArrowBack,
+  TbZoom,
+  TbZoomCancel,
+} from 'react-icons/tb';
 import { TableSearchProps } from './types';
 import { SEARCH_CONSTANTS } from './constants';
 import {
@@ -39,6 +44,8 @@ const SearchBar: React.FC<TableSearchProps> = ({
         return 'text-slate-800';
       case 'found':
         return 'text-primary';
+      case 'error':
+        return 'text-amber-500';
       case 'not-found':
         return 'text-red-500';
       default:
@@ -46,7 +53,12 @@ const SearchBar: React.FC<TableSearchProps> = ({
     }
   };
 
-  const SearchIcon = searchState === 'not-found' ? TbZoomCancel : TbZoom;
+  const SearchIcon =
+    searchState === 'error'
+      ? TbAlertCircle
+      : searchState === 'not-found'
+        ? TbZoomCancel
+        : TbZoom;
 
   return (
     <div className={`mb-4 relative ${className}`}>
@@ -74,9 +86,11 @@ const SearchBar: React.FC<TableSearchProps> = ({
             className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               hasValue ? (showNotFoundArrow ? 'pl-3' : 'pl-2.5') : 'pl-10'
             } ${
-              searchState === 'not-found'
-                ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_SOFT_CLASS}`
-                : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
+              searchState === 'error'
+                ? 'border-amber-400 focus:outline-hidden focus:border-amber-500 focus:ring-3 focus:ring-amber-100'
+                : searchState === 'not-found'
+                  ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_SOFT_CLASS}`
+                  : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
             } rounded-lg bg-white`}
             value={value}
             onChange={onChange}

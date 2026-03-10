@@ -167,7 +167,7 @@ export interface TableSearchProps {
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
-  searchState?: 'idle' | 'typing' | 'found' | 'not-found';
+  searchState?: 'idle' | 'typing' | 'found' | 'error' | 'not-found';
   resultsCount?: number;
 }
 

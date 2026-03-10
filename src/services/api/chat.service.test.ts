@@ -399,6 +399,14 @@ describe('chatService', () => {
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(null, { status: 204 }));
+    mockRpc.mockResolvedValueOnce({
+      data: {
+        user_id: 'user-a',
+        is_online: false,
+        last_seen: '2026-03-10T12:00:00.000Z',
+      },
+      error: null,
+    });
 
     const { chatService } = await import('./chat.service');
 
@@ -410,16 +418,21 @@ describe('chatService', () => {
 
     expect(didStartKeepalive).toBe(true);
     expect(fetchSpy).toHaveBeenCalledWith(
-      'https://example.supabase.co/rest/v1/user_presence?user_id=eq.user-a',
+      'https://example.supabase.co/rest/v1/rpc/sync_user_presence_on_exit',
       expect.objectContaining({
-        method: 'PATCH',
+        method: 'POST',
         keepalive: true,
+        body: JSON.stringify({
+          p_user_id: 'user-a',
+          p_is_online: false,
+          p_last_seen: '2026-03-10T12:00:00.000Z',
+        }),
       })
     );
-    expect(mockUpdate).toHaveBeenCalledWith({
-      is_online: false,
-      last_seen: '2026-03-10T12:00:00.000Z',
-      updated_at: '2026-03-10T12:00:00.000Z',
+    expect(mockRpc).toHaveBeenCalledWith('sync_user_presence_on_exit', {
+      p_user_id: 'user-a',
+      p_is_online: false,
+      p_last_seen: '2026-03-10T12:00:00.000Z',
     });
     fetchSpy.mockRestore();
   });

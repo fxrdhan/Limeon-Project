@@ -112,28 +112,28 @@ export interface ConversationSearchContextOptions {
   afterLimit?: number;
 }
 
-const buildUserPresenceRestUrl = (userId: string) => {
-  const requestUrl = new URL(`${supabaseUrl}/rest/v1/user_presence`);
-  requestUrl.searchParams.set('user_id', `eq.${userId}`);
-  return requestUrl.toString();
-};
+const USER_PRESENCE_EXIT_RPC = 'sync_user_presence_on_exit';
 
-const updateUserPresenceRow = async (
+const buildUserPresenceExitRpcUrl = () =>
+  new URL(`${supabaseUrl}/rest/v1/rpc/${USER_PRESENCE_EXIT_RPC}`).toString();
+
+const syncUserPresenceExitRpc = async (
   userId: string,
   payload: UserPresenceUpdateInput
-): Promise<ServiceResponse<UserPresence[]>> => {
+): Promise<ServiceResponse<UserPresence>> => {
   try {
-    const { data, error } = await supabase
-      .from('user_presence')
-      .update(payload)
-      .eq('user_id', userId)
-      .select();
+    const { data, error } = await supabase.rpc(USER_PRESENCE_EXIT_RPC, {
+      p_user_id: userId,
+      p_is_online:
+        typeof payload.is_online === 'boolean' ? payload.is_online : null,
+      p_last_seen: payload.last_seen ?? null,
+    });
 
     if (error) {
       return { data: null, error };
     }
 
-    return { data: (data || []) as UserPresence[], error: null };
+    return { data: data as UserPresence, error: null };
   } catch (error) {
     return { data: null, error: error as PostgrestError };
   }
@@ -660,15 +660,20 @@ export const chatService = {
     }
 
     try {
-      void fetch(buildUserPresenceRestUrl(userId), {
-        method: 'PATCH',
+      void fetch(buildUserPresenceExitRpcUrl(), {
+        method: 'POST',
         headers: {
           apikey: supabaseAnonKey,
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           Prefer: 'return=minimal',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          p_user_id: userId,
+          p_is_online:
+            typeof payload.is_online === 'boolean' ? payload.is_online : null,
+          p_last_seen: payload.last_seen ?? null,
+        }),
         keepalive: true,
       }).catch(error => {
         console.error(
@@ -701,7 +706,7 @@ export const chatService = {
       accessToken
     );
 
-    void updateUserPresenceRow(userId, exitPayload)
+    void syncUserPresenceExitRpc(userId, exitPayload)
       .then(({ error }) => {
         if (error) {
           console.error(

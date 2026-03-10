@@ -135,10 +135,9 @@ Tanggung jawab:
 - subscription realtime conversation channel `chat_<channelId>`
 - write-through cache percakapan di shared feature cache
 - expose callback:
-  - `broadcastNewMessage`
-  - `broadcastUpdatedMessage`
-  - `broadcastDeletedMessage`
   - `markMessageIdsAsRead`
+  - `loadOlderMessages`
+  - `retryLoadMessages`
 
 Cache percakapan disimpan di shared module cache:
 
@@ -226,8 +225,9 @@ Tanggung jawab:
 
 Delete path untuk persisted message:
 
-- memanggil RPC `delete_chat_message_thread`
-- membroadcast semua ID yang dikembalikan RPC
+- memanggil edge function `chat-cleanup` dengan action `delete_thread`
+- edge function menjalankan RPC `delete_chat_message_thread`
+- cleanup storage gagal dicatat di `chat_storage_cleanup_failures`
 
 ### 5.9 `useChatComposerSend`
 
@@ -599,7 +599,7 @@ Runtime:
 
 ### 11.1 Initial load
 
-1. `useChatSession` fetch row percakapan dari `chat_messages`.
+1. `useChatSession` fetch page percakapan via RPC `fetch_chat_messages_page`.
 2. Row dimap ke display form (`sender_name`, `receiver_name`).
 3. Message incoming yang belum delivered ditandai delivered via RPC per-ID.
 
@@ -608,7 +608,7 @@ Runtime:
 1. Buat optimistic row `temp_*`.
 2. Insert row text ke `chat_messages`.
 3. Replace optimistic row dengan row persisted.
-4. Broadcast `new_message`.
+4. Realtime postgres insert pada channel percakapan merekonsiliasi optimistic row jika perlu.
 
 ### 11.3 Image send
 
@@ -633,8 +633,9 @@ Runtime:
 ### 11.5 Delete
 
 - UI menghapus optimistic thread dari state lokal lebih dulu.
-- Untuk persisted thread, feature memanggil RPC `delete_chat_message_thread`.
-- Semua ID hasil RPC dibroadcast lewat `delete_message`.
+- Untuk persisted thread, feature memanggil edge function `chat-cleanup`.
+- Edge function memanggil RPC `delete_chat_message_thread` lalu membersihkan storage.
+- Jika cleanup storage gagal, path gagal dicatat untuk retry runtime berikutnya.
 
 ### 11.6 Read receipt
 

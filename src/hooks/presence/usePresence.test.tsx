@@ -307,4 +307,78 @@ describe('usePresence', () => {
 
     unmount();
   });
+
+  it('reconnects the roster channel when presence tracking fails after subscribe', async () => {
+    const buildTrackChannel = (trackStatus: 'ok' | 'error') => {
+      const channel = {
+        on: vi.fn(),
+        presenceState: vi.fn(() => presenceStateByKey),
+        subscribe: vi.fn(),
+        track: vi.fn(),
+        untrack: vi.fn(),
+        unsubscribe: vi.fn(),
+      };
+
+      channel.on.mockImplementation(
+        (
+          eventType: string,
+          filter: Record<string, string>,
+          callback: () => void
+        ) => {
+          if (eventType === 'presence' && filter.event === 'sync') {
+            presenceSyncHandler = callback;
+          }
+
+          return channel;
+        }
+      );
+
+      channel.track.mockImplementation(async payload => {
+        if (trackStatus === 'ok') {
+          presenceStateByKey[payload.user_id] = [
+            {
+              ...payload,
+              presence_ref: 'presence-a',
+            },
+          ];
+          presenceSyncHandler?.();
+        }
+
+        return trackStatus;
+      });
+
+      channel.subscribe.mockImplementation(
+        (callback?: (status: string) => void) => {
+          rosterChannelStatusHandler = callback ?? null;
+          callback?.('SUBSCRIBED');
+          return channel;
+        }
+      );
+
+      return channel;
+    };
+
+    mockRealtimeService.createChannel
+      .mockReset()
+      .mockReturnValueOnce(buildTrackChannel('error'))
+      .mockReturnValueOnce(buildTrackChannel('ok'));
+
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(mockRealtimeService.removeChannel).toHaveBeenCalledTimes(1);
+    expect(usePresenceStore.getState().channel).toBeNull();
+
+    await act(async () => {
+      vi.advanceTimersByTime(800);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+    expect(usePresenceStore.getState().onlineUsers).toBe(2);
+
+    unmount();
+  });
 });

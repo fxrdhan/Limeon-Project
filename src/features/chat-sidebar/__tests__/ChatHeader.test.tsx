@@ -112,4 +112,50 @@ describe('ChatHeader', () => {
     expect(screen.getByText(/Last seen/i)).toBeTruthy();
     expect(screen.queryByText('Online')).toBeNull();
   });
+
+  it('shows a dedicated error label while search mode is in an error state', () => {
+    render(
+      <ChatHeader
+        model={{
+          targetUser: {
+            id: 'user-b',
+            name: 'Gudang',
+            email: 'gudang@example.com',
+            profilephoto: null,
+          },
+          displayTargetPhotoUrl: null,
+          isTargetOnline: false,
+          targetUserPresence: null,
+          targetUserPresenceError: null,
+          isSearchMode: true,
+          searchQuery: 'stok',
+          searchState: 'error',
+          searchResultCount: 0,
+          activeSearchResultIndex: 0,
+          canNavigateSearchUp: false,
+          canNavigateSearchDown: false,
+          isSelectionMode: false,
+          selectedMessageCount: 0,
+          canDeleteSelectedMessages: false,
+          searchInputRef: { current: null },
+          onEnterSearchMode: vi.fn(),
+          onExitSearchMode: vi.fn(),
+          onEnterSelectionMode: vi.fn(),
+          onExitSelectionMode: vi.fn(),
+          onSearchQueryChange: vi.fn(),
+          onNavigateSearchUp: vi.fn(),
+          onNavigateSearchDown: vi.fn(),
+          onFocusSearchInput: vi.fn(),
+          onCopySelectedMessages: vi.fn(),
+          onDeleteSelectedMessages: vi.fn(),
+          onClose: vi.fn(),
+          getInitials: name => name.slice(0, 2).toUpperCase(),
+          getInitialsColor: () => 'bg-slate-500',
+        }}
+      />
+    );
+
+    expect(screen.getByText('Error')).toBeTruthy();
+    expect(screen.queryByText('0/0')).toBeNull();
+  });
 });

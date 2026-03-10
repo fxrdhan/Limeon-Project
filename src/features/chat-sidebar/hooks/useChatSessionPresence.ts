@@ -93,15 +93,17 @@ export const useChatSessionPresence = ({
       return false;
     }
 
-    // Browser-active presence is the authoritative UI signal when available.
+    const hasFreshPresenceSnapshot =
+      targetUserPresence?.is_online === true &&
+      isPresenceFresh(targetUserPresence.last_seen);
+
+    // Browser-active presence remains the primary signal, but a fresh
+    // persisted snapshot covers temporary roster gaps while recovery happens.
     if (hasPresenceRosterChannel) {
-      return isTargetOnlineInRoster;
+      return isTargetOnlineInRoster || hasFreshPresenceSnapshot;
     }
 
-    return (
-      targetUserPresence?.is_online === true &&
-      isPresenceFresh(targetUserPresence.last_seen)
-    );
+    return hasFreshPresenceSnapshot;
   }, [
     hasPresenceRosterChannel,
     isOpen,

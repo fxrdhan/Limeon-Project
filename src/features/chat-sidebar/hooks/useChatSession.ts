@@ -1,10 +1,7 @@
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { UserDetails } from '@/types/database';
 import { useCallback, useRef, useState, type MutableRefObject } from 'react';
-import {
-  type ChatMessage,
-  type RealtimeChannel,
-} from '../data/chatSidebarGateway';
+import { type ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { mapConversationMessageForDisplay } from '../utils/conversation-sync';
 import { useChatConversationCacheSync } from './useChatConversationCacheSync';
@@ -44,7 +41,6 @@ export const useChatSession = ({
   );
   const [retryInitialLoadTick, setRetryInitialLoadTick] = useState(0);
 
-  const conversationChannelRef = useRef<RealtimeChannel | null>(null);
   const hasCompletedInitialOpenLoadRef = useRef(false);
   const activeSessionTokenRef = useRef(0);
   const oldestLoadedMessageCreatedAtRef = useRef<string | null>(null);
@@ -146,7 +142,6 @@ export const useChatSession = ({
     targetUser,
     currentChannelId,
     recoveryTick: realtimeRecoveryTick,
-    conversationChannelRef,
     isInitialConversationLoadPendingRef,
     pendingConversationRealtimeEventsRef,
     mapMessageForActiveConversation,
@@ -170,7 +165,6 @@ export const useChatSession = ({
     setHasOlderMessages,
     setIsLoadingOlderMessages,
     setOlderMessagesError,
-    conversationChannelRef,
     hasCompletedInitialOpenLoadRef,
     activeSessionTokenRef,
     oldestLoadedMessageCreatedAtRef,

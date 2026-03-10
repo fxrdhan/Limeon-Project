@@ -1,6 +1,5 @@
-import type { MutableRefObject } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
-import { useEffect } from 'react';
+import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import { useEffect, useRef } from 'react';
 import type { UserDetails } from '@/types/database';
 import {
   chatSidebarGateway,
@@ -68,7 +67,6 @@ interface UseChatConversationRealtimeProps {
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   recoveryTick: number;
-  conversationChannelRef: MutableRefObject<RealtimeChannel | null>;
   isInitialConversationLoadPendingRef: MutableRefObject<boolean>;
   pendingConversationRealtimeEventsRef: MutableRefObject<
     PendingConversationRealtimeEvent[]
@@ -89,7 +87,6 @@ export const useChatConversationRealtime = ({
   targetUser,
   currentChannelId,
   recoveryTick,
-  conversationChannelRef,
   isInitialConversationLoadPendingRef,
   pendingConversationRealtimeEventsRef,
   mapMessageForActiveConversation,
@@ -99,6 +96,8 @@ export const useChatConversationRealtime = ({
   markConversationRecoverySuccess,
   scheduleConversationRecovery,
 }: UseChatConversationRealtimeProps) => {
+  const conversationChannelRef = useRef<RealtimeChannel | null>(null);
+
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       if (conversationChannelRef.current) {

@@ -12,7 +12,6 @@ import {
   setCachedPdfMessagePreview,
   type PdfMessagePreviewCacheEntry,
 } from '../utils/pdf-message-preview-cache';
-import { queuePersistedPdfPreview } from '../utils/pdf-preview-persistence';
 import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
 
 export type PdfMessagePreview = PdfMessagePreviewCacheEntry;
@@ -64,14 +63,12 @@ interface UseMessagePdfPreviewsProps {
   messages: ChatMessage[];
   getAttachmentFileName: (message: ChatMessage) => string;
   getAttachmentFileKind: (message: ChatMessage) => 'audio' | 'document';
-  currentUserId?: string;
 }
 
 export const useMessagePdfPreviews = ({
   messages,
   getAttachmentFileName,
   getAttachmentFileKind,
-  currentUserId,
 }: UseMessagePdfPreviewsProps) => {
   const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
     Record<string, PdfMessagePreview>
@@ -313,18 +310,6 @@ export const useMessagePdfPreviews = ({
               cacheKey,
             };
             setCachedPdfMessagePreview(pendingMessage.id, nextPreview);
-            if (
-              currentUserId &&
-              pendingMessage.sender_id === currentUserId &&
-              !pendingMessage.file_preview_url?.trim()
-            ) {
-              queuePersistedPdfPreview({
-                message: pendingMessage,
-                file: new File([pdfBlob], pendingFileName || 'attachment.pdf', {
-                  type: pendingMessage.file_mime_type || 'application/pdf',
-                }),
-              });
-            }
             pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
             clearPdfPreviewRetryTimer(pendingMessage.id);
             setPdfMessagePreviews(previousPreviews => ({
@@ -353,7 +338,6 @@ export const useMessagePdfPreviews = ({
     };
   }, [
     clearPdfPreviewRetryTimer,
-    currentUserId,
     getAttachmentFileKind,
     getAttachmentFileName,
     messages,

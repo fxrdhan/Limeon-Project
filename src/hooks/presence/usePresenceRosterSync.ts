@@ -196,8 +196,24 @@ export const usePresenceRosterSync = ({
 
     newChannel.subscribe(status => {
       if (status === 'SUBSCRIBED') {
-        markRecoverySuccess();
-        void trackCurrentUserPresence(newChannel);
+        void (async () => {
+          try {
+            await trackCurrentUserPresence(newChannel);
+            markRecoverySuccess();
+          } catch (trackingError) {
+            console.error(
+              'Failed to track browser active presence after subscribe:',
+              trackingError
+            );
+            if (rosterChannelRef.current === newChannel) {
+              rosterChannelRef.current = null;
+              setChannel(null);
+              applyOnlineRoster([]);
+              void realtimeService.removeChannel(newChannel);
+            }
+            void scheduleRecovery();
+          }
+        })();
         return;
       }
 
@@ -215,6 +231,7 @@ export const usePresenceRosterSync = ({
       }
     });
   }, [
+    applyOnlineRoster,
     cleanupRosterChannel,
     hydrateRosterFromPresenceState,
     markRecoverySuccess,

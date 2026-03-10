@@ -75,6 +75,9 @@ const SearchHeaderContent = ({
     }
   };
 
+  const searchResultLabel =
+    searchState === 'error' ? 'Error' : searchResultPositionLabel;
+
   return (
     <div className="flex w-full items-center gap-2.5">
       <SearchBar
@@ -126,7 +129,7 @@ const SearchHeaderContent = ({
           className={`${floatingBlockClass} inline-flex h-9 min-w-11 items-center justify-center px-2.5 text-center text-xs font-medium text-slate-500`}
           aria-live="polite"
         >
-          {searchResultPositionLabel}
+          {searchResultLabel}
         </span>
         <button
           type="button"

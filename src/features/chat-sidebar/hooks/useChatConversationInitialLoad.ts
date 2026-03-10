@@ -5,7 +5,6 @@ import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
 import {
   chatSidebarGateway,
   type ChatMessage,
-  type RealtimeChannel,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
@@ -57,7 +56,6 @@ interface UseChatConversationInitialLoadProps {
   setHasOlderMessages: Dispatch<SetStateAction<boolean>>;
   setIsLoadingOlderMessages: Dispatch<SetStateAction<boolean>>;
   setOlderMessagesError: Dispatch<SetStateAction<string | null>>;
-  conversationChannelRef: MutableRefObject<RealtimeChannel | null>;
   hasCompletedInitialOpenLoadRef: MutableRefObject<boolean>;
   activeSessionTokenRef: MutableRefObject<number>;
   oldestLoadedMessageCreatedAtRef: MutableRefObject<string | null>;
@@ -88,7 +86,6 @@ export const useChatConversationInitialLoad = ({
   setHasOlderMessages,
   setIsLoadingOlderMessages,
   setOlderMessagesError,
-  conversationChannelRef,
   hasCompletedInitialOpenLoadRef,
   activeSessionTokenRef,
   oldestLoadedMessageCreatedAtRef,
@@ -309,17 +306,9 @@ export const useChatConversationInitialLoad = ({
       }
       isInitialConversationLoadPendingRef.current = false;
       pendingConversationRealtimeEventsRef.current = [];
-
-      if (conversationChannelRef.current) {
-        void chatSidebarGateway.removeRealtimeChannel(
-          conversationChannelRef.current
-        );
-        conversationChannelRef.current = null;
-      }
     };
   }, [
     activeSessionTokenRef,
-    conversationChannelRef,
     currentChannelId,
     hasCompletedInitialOpenLoadRef,
     initialMessageAnimationKeysRef,

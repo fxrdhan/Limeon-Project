@@ -49,6 +49,7 @@ export const useChatMessageSearchMode = ({
   >(null);
   const [searchNavigationTick, setSearchNavigationTick] = useState(0);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const normalizedMessageSearchQuery = messageSearchQuery.trim().toLowerCase();
   const userId = user?.id ?? null;
   const userName = user?.name ?? 'You';
@@ -66,6 +67,7 @@ export const useChatMessageSearchMode = ({
     setActiveSearchMessageId(null);
     setSearchNavigationTick(0);
     setIsSearchLoading(false);
+    setSearchError(null);
   }, [isOpen]);
 
   useEffect(() => {
@@ -78,6 +80,7 @@ export const useChatMessageSearchMode = ({
     setActiveSearchMessageId(null);
     setSearchNavigationTick(0);
     setIsSearchLoading(false);
+    setSearchError(null);
   }, [currentChannelId]);
 
   useEffect(() => {
@@ -102,6 +105,7 @@ export const useChatMessageSearchMode = ({
       setSearchMatchedMessageIds([]);
       setActiveSearchMessageId(null);
       setIsSearchLoading(false);
+      setSearchError(null);
       return;
     }
 
@@ -109,12 +113,14 @@ export const useChatMessageSearchMode = ({
       setSearchMatchedMessageIds([]);
       setActiveSearchMessageId(null);
       setIsSearchLoading(false);
+      setSearchError(null);
       return;
     }
 
     const requestId = activeSearchRequestIdRef.current + 1;
     activeSearchRequestIdRef.current = requestId;
     setIsSearchLoading(true);
+    setSearchError(null);
 
     const searchTimerId = window.setTimeout(() => {
       void (async () => {
@@ -133,6 +139,7 @@ export const useChatMessageSearchMode = ({
           setSearchMatchedMessageIds([]);
           setActiveSearchMessageId(null);
           setIsSearchLoading(false);
+          setSearchError('Gagal mencari pesan');
           return;
         }
 
@@ -141,6 +148,7 @@ export const useChatMessageSearchMode = ({
         );
 
         setSearchMatchedMessageIds(nextMatchedMessageIds);
+        setSearchError(null);
         setActiveSearchMessageId(currentMessageId => {
           if (
             currentMessageId &&
@@ -192,6 +200,7 @@ export const useChatMessageSearchMode = ({
     const requestId = activeSearchContextRequestIdRef.current + 1;
     activeSearchContextRequestIdRef.current = requestId;
     loadingSearchContextMessageIdRef.current = activeSearchMessageId;
+    setSearchError(null);
 
     void (async () => {
       try {
@@ -209,6 +218,7 @@ export const useChatMessageSearchMode = ({
           if (error) {
             console.error('Error loading search message context:', error);
           }
+          setSearchError('Gagal memuat konteks pencarian');
           return;
         }
 
@@ -237,6 +247,7 @@ export const useChatMessageSearchMode = ({
           )
         );
         setSearchNavigationTick(previousTick => previousTick + 1);
+        setSearchError(null);
       } finally {
         if (activeSearchContextRequestIdRef.current === requestId) {
           loadingSearchContextMessageIdRef.current = null;
@@ -303,6 +314,7 @@ export const useChatMessageSearchMode = ({
     setActiveSearchMessageId(null);
     setSearchNavigationTick(0);
     setIsSearchLoading(false);
+    setSearchError(null);
   }, []);
 
   const handleFocusSearchInput = useCallback(() => {
@@ -333,11 +345,13 @@ export const useChatMessageSearchMode = ({
     activeSearchResultIndex < searchMatchedMessageIds.length - 1;
   const messageSearchState: SearchState = !normalizedMessageSearchQuery
     ? SEARCH_STATES.IDLE
-    : isSearchLoading
-      ? SEARCH_STATES.TYPING
-      : searchMatchedMessageIds.length > 0
-        ? SEARCH_STATES.FOUND
-        : SEARCH_STATES.NOT_FOUND;
+    : searchError
+      ? SEARCH_STATES.ERROR
+      : isSearchLoading
+        ? SEARCH_STATES.TYPING
+        : searchMatchedMessageIds.length > 0
+          ? SEARCH_STATES.FOUND
+          : SEARCH_STATES.NOT_FOUND;
   const searchMatchedMessageIdSet = useMemo(
     () => new Set(searchMatchedMessageIds),
     [searchMatchedMessageIds]
