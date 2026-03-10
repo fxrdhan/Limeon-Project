@@ -10,6 +10,8 @@ import {
 
 const DELIVERY_BATCH_WINDOW_MS = 90;
 const DELIVERY_RETRY_WINDOW_MS = 1_200;
+const DELIVERY_BACKFILL_PAGE_SIZE = 200;
+const DELIVERY_FLUSH_BATCH_SIZE = 200;
 const CHAT_DELIVERY_SYNC_TOAST_ID = 'chat-delivery-sync-warning';
 
 export const useChatIncomingDeliveries = () => {
@@ -61,12 +63,17 @@ export const useChatIncomingDeliveries = () => {
       flushDeliveryTimeoutRef.current = null;
     }
 
-    const queuedMessageIds = [...queuedDeliveryMessageIdsRef.current];
+    const queuedMessageIds = [...queuedDeliveryMessageIdsRef.current].slice(
+      0,
+      DELIVERY_FLUSH_BATCH_SIZE
+    );
     if (queuedMessageIds.length === 0) {
       return;
     }
 
-    queuedDeliveryMessageIdsRef.current.clear();
+    queuedMessageIds.forEach(messageId => {
+      queuedDeliveryMessageIdsRef.current.delete(messageId);
+    });
     let shouldRetry = false;
 
     try {
@@ -174,25 +181,45 @@ export const useChatIncomingDeliveries = () => {
         markRecoverySuccess();
         void (async () => {
           try {
-            const { data: undeliveredMessageIds, error } =
-              await chatSidebarGateway.listUndeliveredIncomingMessageIds(
-                user.id
-              );
-            if (error) {
-              console.error(
-                'Error backfilling undelivered incoming messages:',
-                error
-              );
-              toast.error(
-                'Riwayat delivered chat belum tersinkron penuh. Coba buka ulang chat jika status belum sesuai.',
-                {
-                  id: CHAT_DELIVERY_SYNC_TOAST_ID,
-                }
-              );
-              return;
+            const backfillMessageIds: string[] = [];
+            let offset = 0;
+            let hasMore = true;
+
+            while (hasMore) {
+              const { data: undeliveredPage, error } =
+                await chatSidebarGateway.listUndeliveredIncomingMessageIds(
+                  user.id,
+                  {
+                    limit: DELIVERY_BACKFILL_PAGE_SIZE,
+                    offset,
+                  }
+                );
+
+              if (error) {
+                console.error(
+                  'Error backfilling undelivered incoming messages:',
+                  error
+                );
+                toast.error(
+                  'Riwayat delivered chat belum tersinkron penuh. Coba buka ulang chat jika status belum sesuai.',
+                  {
+                    id: CHAT_DELIVERY_SYNC_TOAST_ID,
+                  }
+                );
+                return;
+              }
+
+              const nextMessageIds = undeliveredPage?.messageIds || [];
+              if (nextMessageIds.length === 0) {
+                break;
+              }
+
+              backfillMessageIds.push(...nextMessageIds);
+              hasMore = undeliveredPage?.hasMore ?? false;
+              offset += nextMessageIds.length;
             }
 
-            queueDeliveryMessageIds(undeliveredMessageIds || []);
+            queueDeliveryMessageIds(backfillMessageIds);
           } catch (error) {
             console.error(
               'Caught error backfilling undelivered incoming messages:',

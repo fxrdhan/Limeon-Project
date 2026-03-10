@@ -6,6 +6,7 @@ import {
 
 export type ConversationCacheEntry = {
   messages: ChatMessage[];
+  hasOlderMessages: boolean;
   cachedAt: number;
 };
 
@@ -29,10 +30,12 @@ export const getFreshConversationCacheEntry = (
 export const setConversationCacheEntry = (
   channelId: string,
   messages: ChatMessage[],
+  hasOlderMessages: boolean,
   cache: Map<string, ConversationCacheEntry> = sharedConversationCache
 ) => {
   cache.set(channelId, {
     messages: messages.map(messageItem => ({ ...messageItem })),
+    hasOlderMessages,
     cachedAt: Date.now(),
   });
 

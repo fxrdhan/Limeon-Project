@@ -10,6 +10,7 @@ import {
   type DeleteMessageThreadAndCleanupResult,
   type CleanupStoragePathsResult,
   type RetryChatCleanupFailuresResult,
+  type UndeliveredIncomingMessageIdsPage,
 } from '@/services/api/chat.service';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type {
@@ -97,8 +98,14 @@ export const chatSidebarGateway = {
   markMessageIdsAsRead(messageIds: string[]) {
     return chatService.markMessageIdsAsRead(messageIds);
   },
-  listUndeliveredIncomingMessageIds(receiverId: string) {
-    return chatService.listUndeliveredIncomingMessageIds(receiverId);
+  listUndeliveredIncomingMessageIds(
+    receiverId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+    }
+  ) {
+    return chatService.listUndeliveredIncomingMessageIds(receiverId, options);
   },
   getUserPresence(userId: string) {
     return chatService.getUserPresence(userId);
@@ -152,4 +159,5 @@ export type {
   DeleteMessageThreadAndCleanupResult,
   CleanupStoragePathsResult,
   RetryChatCleanupFailuresResult,
+  UndeliveredIncomingMessageIdsPage,
 };

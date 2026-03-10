@@ -104,6 +104,11 @@ export interface ConversationMessagesPage {
   hasMore: boolean;
 }
 
+export interface UndeliveredIncomingMessageIdsPage {
+  messageIds: string[];
+  hasMore: boolean;
+}
+
 export interface ConversationSearchContextOptions {
   beforeLimit?: number;
   afterLimit?: number;
@@ -474,9 +479,15 @@ export const chatService = {
   },
 
   async listUndeliveredIncomingMessageIds(
-    receiverId: string
-  ): Promise<ServiceResponse<string[]>> {
+    receiverId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<ServiceResponse<UndeliveredIncomingMessageIdsPage>> {
     try {
+      const pageSize = Math.max(1, options?.limit ?? 200);
+      const offset = Math.max(0, options?.offset ?? 0);
       const { data, error } = await supabase
         .from('chat_messages')
         .select('id')
@@ -484,16 +495,25 @@ export const chatService = {
         .eq('is_delivered', false)
         .order('created_at', {
           ascending: true,
-        });
+        })
+        .order('id', {
+          ascending: true,
+        })
+        .range(offset, offset + pageSize);
 
       if (error) {
         return { data: null, error };
       }
 
+      const orderedMessageIds = (data || [])
+        .map(record => record.id)
+        .filter((messageId): messageId is string => Boolean(messageId));
+
       return {
-        data: (data || [])
-          .map(record => record.id)
-          .filter((messageId): messageId is string => Boolean(messageId)),
+        data: {
+          messageIds: orderedMessageIds.slice(0, pageSize),
+          hasMore: orderedMessageIds.length > pageSize,
+        },
         error: null,
       };
     } catch (error) {

@@ -64,6 +64,10 @@ export const useChatSession = ({
     (sessionToken: number) => activeSessionTokenRef.current === sessionToken,
     []
   );
+  const getActiveSessionToken = useCallback(
+    () => activeSessionTokenRef.current,
+    []
+  );
 
   const applyMessageUpdate = useCallback(
     (updatedMessage: Partial<ChatMessage> & { id: string }) => {
@@ -124,6 +128,8 @@ export const useChatSession = ({
     user,
     targetUser,
     currentChannelId,
+    getActiveSessionToken,
+    isSessionTokenActive,
     hasOlderMessages,
     isLoadingOlderMessages,
     oldestLoadedMessageCreatedAtRef,
@@ -186,6 +192,7 @@ export const useChatSession = ({
     isOpen,
     currentChannelId,
     messages,
+    hasOlderMessages,
     hasCompletedInitialOpenLoadRef,
   });
 

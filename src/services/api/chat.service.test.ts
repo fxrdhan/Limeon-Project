@@ -330,6 +330,51 @@ describe('chatService', () => {
     });
   });
 
+  it('pages undelivered incoming message ids instead of loading them unbounded', async () => {
+    const mockRange = vi.fn().mockResolvedValue({
+      data: [{ id: 'message-1' }, { id: 'message-2' }, { id: 'message-3' }],
+      error: null,
+    });
+    const mockOrderById = vi.fn().mockReturnValue({
+      range: mockRange,
+    });
+    const mockOrderByCreatedAt = vi.fn().mockReturnValue({
+      order: mockOrderById,
+    });
+    mockFrom.mockReturnValueOnce({
+      select: mockSelect,
+    });
+    mockSelect.mockReturnValueOnce({
+      eq: mockEq,
+    });
+    mockEq
+      .mockReturnValueOnce({
+        eq: mockEq,
+      })
+      .mockReturnValueOnce({
+        order: mockOrderByCreatedAt,
+      });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.listUndeliveredIncomingMessageIds(
+      'user-a',
+      {
+        limit: 2,
+        offset: 4,
+      }
+    );
+
+    expect(mockRange).toHaveBeenCalledWith(4, 6);
+    expect(result).toEqual({
+      data: {
+        messageIds: ['message-1', 'message-2'],
+        hasMore: true,
+      },
+      error: null,
+    });
+  });
+
   it('normalizes standard presence sync behind the rpc-based helper', async () => {
     mockRpc.mockResolvedValueOnce({
       data: {

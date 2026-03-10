@@ -15,6 +15,8 @@ interface UseChatConversationPaginationProps {
   user: UserDetails | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
+  getActiveSessionToken: () => number;
+  isSessionTokenActive: (sessionToken: number) => boolean;
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
   oldestLoadedMessageCreatedAtRef: MutableRefObject<string | null>;
@@ -30,6 +32,8 @@ export const useChatConversationPagination = ({
   user,
   targetUser,
   currentChannelId,
+  getActiveSessionToken,
+  isSessionTokenActive,
   hasOlderMessages,
   isLoadingOlderMessages,
   oldestLoadedMessageCreatedAtRef,
@@ -55,6 +59,7 @@ export const useChatConversationPagination = ({
 
     setIsLoadingOlderMessages(true);
     setOlderMessagesError(null);
+    const paginationSessionToken = getActiveSessionToken();
 
     try {
       const { data: olderMessagesPage, error } =
@@ -76,6 +81,10 @@ export const useChatConversationPagination = ({
           }
         : olderMessagesPage;
 
+      if (!isSessionTokenActive(paginationSessionToken)) {
+        return;
+      }
+
       if (error || !olderMessagesPayload?.messages) {
         if (error) {
           console.error('Error loading older messages:', error);
@@ -92,6 +101,10 @@ export const useChatConversationPagination = ({
           messageItem.stableKey || messageItem.id
         )
       );
+
+      if (!isSessionTokenActive(paginationSessionToken)) {
+        return;
+      }
 
       setMessages(previousMessages => {
         const seenMessageIds = new Set(previousMessages.map(({ id }) => id));
@@ -111,15 +124,22 @@ export const useChatConversationPagination = ({
       setHasOlderMessages(olderMessagesPayload.hasMore);
       setOlderMessagesError(null);
     } catch (error) {
+      if (!isSessionTokenActive(paginationSessionToken)) {
+        return;
+      }
       console.error('Error loading older messages:', error);
       setOlderMessagesError('Gagal memuat pesan lama');
     } finally {
-      setIsLoadingOlderMessages(false);
+      if (isSessionTokenActive(paginationSessionToken)) {
+        setIsLoadingOlderMessages(false);
+      }
     }
   }, [
     currentChannelId,
+    getActiveSessionToken,
     hasOlderMessages,
     isLoadingOlderMessages,
+    isSessionTokenActive,
     isOpen,
     oldestLoadedMessageCreatedAtRef,
     oldestLoadedMessageIdRef,

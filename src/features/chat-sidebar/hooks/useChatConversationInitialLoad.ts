@@ -12,7 +12,11 @@ import {
   getFreshConversationCacheEntry,
   setConversationCacheEntry,
 } from '../utils/conversation-cache';
-import { applyConversationSnapshot } from '../utils/conversation-sync';
+import {
+  applyConversationSnapshot,
+  mergeLatestConversationPageWithExisting,
+} from '../utils/conversation-sync';
+import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import {
   replayPendingConversationRealtimeEvents,
   type PendingConversationRealtimeEvent,
@@ -117,6 +121,8 @@ export const useChatConversationInitialLoad = ({
     hasCompletedInitialOpenLoadRef.current = false;
     isInitialConversationLoadPendingRef.current = true;
     pendingConversationRealtimeEventsRef.current = [];
+    setIsLoadingOlderMessages(false);
+    setOlderMessagesError(null);
     let isCancelled = false;
 
     const isActiveSession = () =>
@@ -148,8 +154,14 @@ export const useChatConversationInitialLoad = ({
       if (cachedConversation) {
         applyActiveConversationSnapshot(cachedConversation.messages);
         hasCompletedInitialOpenLoadRef.current = true;
+        oldestLoadedMessageCreatedAtRef.current =
+          cachedConversation.messages[0]?.created_at ?? null;
+        oldestLoadedMessageIdRef.current =
+          cachedConversation.messages[0]?.id ?? null;
+        setHasOlderMessages(cachedConversation.hasOlderMessages);
       } else if (isActiveSession()) {
         setMessages([]);
+        setHasOlderMessages(false);
       }
 
       if (isActiveSession()) {
@@ -184,12 +196,42 @@ export const useChatConversationInitialLoad = ({
 
         const existingMessagesPayload =
           normalizeConversationMessagesPage(existingMessages);
-        const transformedMessages = applyActiveConversationSnapshot(
-          existingMessagesPayload.messages
-        );
+        const cachedConversationMessages = cachedConversation?.messages || [];
+        const transformedMessages = hasCachedConversation
+          ? mapConversationMessagesForDisplay(
+              existingMessagesPayload.messages,
+              {
+                currentUserId: user.id,
+                currentUserName: user.name || 'You',
+                targetUserName: targetUser.name || 'Unknown',
+              }
+            )
+          : applyActiveConversationSnapshot(existingMessagesPayload.messages);
 
         if (!isActiveSession()) {
           return;
+        }
+
+        const shouldPreserveCachedOlderMessages =
+          cachedConversationMessages.length > transformedMessages.length;
+        const mergedPersistedMessages = hasCachedConversation
+          ? mergeLatestConversationPageWithExisting({
+              previousMessages: cachedConversationMessages,
+              latestMessages: transformedMessages,
+              currentChannelId,
+              preserveOlderPersistedMessages: shouldPreserveCachedOlderMessages,
+            }).filter(messageItem => !messageItem.id.startsWith('temp_'))
+          : transformedMessages;
+
+        if (hasCachedConversation) {
+          setMessages(previousMessages =>
+            mergeLatestConversationPageWithExisting({
+              previousMessages,
+              latestMessages: transformedMessages,
+              currentChannelId,
+              preserveOlderPersistedMessages: shouldPreserveCachedOlderMessages,
+            })
+          );
         }
 
         const pendingConversationRealtimeEvents =
@@ -210,18 +252,27 @@ export const useChatConversationInitialLoad = ({
         const latestPersistedMessages =
           pendingConversationRealtimeEvents.length > 0
             ? replayPendingConversationRealtimeEvents({
-                previousMessages: transformedMessages,
+                previousMessages: mergedPersistedMessages,
                 pendingEvents: pendingConversationRealtimeEvents,
                 currentChannelId,
               })
-            : transformedMessages;
+            : mergedPersistedMessages;
 
-        setConversationCacheEntry(currentChannelId, latestPersistedMessages);
+        const nextHasOlderMessages =
+          shouldPreserveCachedOlderMessages && cachedConversation
+            ? cachedConversation.hasOlderMessages
+            : existingMessagesPayload.hasMore;
+
+        setConversationCacheEntry(
+          currentChannelId,
+          latestPersistedMessages,
+          nextHasOlderMessages
+        );
         oldestLoadedMessageCreatedAtRef.current =
           latestPersistedMessages[0]?.created_at ?? null;
         oldestLoadedMessageIdRef.current =
           latestPersistedMessages[0]?.id ?? null;
-        setHasOlderMessages(existingMessagesPayload.hasMore);
+        setHasOlderMessages(nextHasOlderMessages);
         setLoadError(null);
 
         const undeliveredIncomingMessageIds = latestPersistedMessages

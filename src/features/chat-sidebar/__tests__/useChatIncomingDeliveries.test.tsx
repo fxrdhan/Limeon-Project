@@ -64,7 +64,10 @@ describe('useChatIncomingDeliveries', () => {
       error: null,
     });
     mockGateway.listUndeliveredIncomingMessageIds.mockResolvedValue({
-      data: [],
+      data: {
+        messageIds: [],
+        hasMore: false,
+      },
       error: null,
     });
     mockGateway.removeRealtimeChannel.mockResolvedValue(undefined);
@@ -126,7 +129,10 @@ describe('useChatIncomingDeliveries', () => {
 
   it('backfills undelivered incoming messages when the subscription becomes ready', async () => {
     mockGateway.listUndeliveredIncomingMessageIds.mockResolvedValue({
-      data: ['message-legacy-1', 'message-legacy-2'],
+      data: {
+        messageIds: ['message-legacy-1', 'message-legacy-2'],
+        hasMore: false,
+      },
       error: null,
     });
 
@@ -139,12 +145,62 @@ describe('useChatIncomingDeliveries', () => {
     });
 
     expect(mockGateway.listUndeliveredIncomingMessageIds).toHaveBeenCalledWith(
-      'user-a'
+      'user-a',
+      {
+        limit: 200,
+        offset: 0,
+      }
     );
     expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
       'message-legacy-1',
       'message-legacy-2',
     ]);
+  });
+
+  it('chunks large backfills instead of flushing every undelivered id in one mutation', async () => {
+    const legacyMessageIds = Array.from(
+      { length: 205 },
+      (_, index) => `message-legacy-${index + 1}`
+    );
+    mockGateway.listUndeliveredIncomingMessageIds
+      .mockResolvedValueOnce({
+        data: {
+          messageIds: legacyMessageIds.slice(0, 200),
+          hasMore: true,
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          messageIds: legacyMessageIds.slice(200),
+          hasMore: false,
+        },
+        error: null,
+      });
+
+    renderHook(() => useChatIncomingDeliveries());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledTimes(1);
+    expect(
+      mockGateway.markMessageIdsAsDelivered.mock.calls[0]?.[0]
+    ).toHaveLength(200);
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledTimes(2);
+    expect(mockGateway.markMessageIdsAsDelivered.mock.calls[1]?.[0]).toEqual(
+      legacyMessageIds.slice(200)
+    );
   });
 
   it('reconnects the delivery channel after a channel error', async () => {

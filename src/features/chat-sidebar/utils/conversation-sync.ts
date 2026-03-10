@@ -8,6 +8,20 @@ interface ConversationParticipant {
   name: string;
 }
 
+const compareConversationMessageOrder = (
+  leftMessage: Pick<ChatMessage, 'created_at' | 'id'>,
+  rightMessage: Pick<ChatMessage, 'created_at' | 'id'>
+) => {
+  const createdAtOrder = leftMessage.created_at.localeCompare(
+    rightMessage.created_at
+  );
+  if (createdAtOrder !== 0) {
+    return createdAtOrder;
+  }
+
+  return leftMessage.id.localeCompare(rightMessage.id);
+};
+
 export const mapPersistedMessageForDisplay = (
   message: ChatMessage,
   user: ConversationParticipant,
@@ -61,16 +75,70 @@ export const mergeConversationSnapshotWithPending = (
 };
 
 const sortPersistedConversationMessages = (messages: ChatMessage[]) =>
-  [...messages].sort((leftMessage, rightMessage) => {
-    const createdAtOrder = leftMessage.created_at.localeCompare(
-      rightMessage.created_at
-    );
-    if (createdAtOrder !== 0) {
-      return createdAtOrder;
-    }
+  [...messages].sort(compareConversationMessageOrder);
 
-    return leftMessage.id.localeCompare(rightMessage.id);
-  });
+export const mergeLatestConversationPageWithExisting = ({
+  previousMessages,
+  latestMessages,
+  currentChannelId,
+  preserveOlderPersistedMessages,
+}: {
+  previousMessages: ChatMessage[];
+  latestMessages: ChatMessage[];
+  currentChannelId?: string | null;
+  preserveOlderPersistedMessages: boolean;
+}) => {
+  const stableKeysByMessageId = new Map(
+    previousMessages.map(messageItem => [messageItem.id, messageItem.stableKey])
+  );
+  const latestMessagesWithStableKeys = latestMessages.map(messageItem => ({
+    ...messageItem,
+    stableKey:
+      stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
+  }));
+  const latestMessageIds = new Set(
+    latestMessagesWithStableKeys.map(messageItem => messageItem.id)
+  );
+  const pendingMessages = previousMessages.filter(
+    messageItem =>
+      messageItem.id.startsWith('temp_') &&
+      (!currentChannelId || messageItem.channel_id === currentChannelId) &&
+      !latestMessageIds.has(messageItem.id)
+  );
+
+  if (latestMessagesWithStableKeys.length === 0) {
+    return pendingMessages;
+  }
+
+  const oldestLatestMessage = latestMessagesWithStableKeys[0];
+  const olderPersistedMessages = preserveOlderPersistedMessages
+    ? previousMessages.filter(messageItem => {
+        if (messageItem.id.startsWith('temp_')) {
+          return false;
+        }
+
+        if (latestMessageIds.has(messageItem.id)) {
+          return false;
+        }
+
+        if (currentChannelId && messageItem.channel_id !== currentChannelId) {
+          return false;
+        }
+
+        return (
+          compareConversationMessageOrder(messageItem, oldestLatestMessage) < 0
+        );
+      })
+    : [];
+
+  return [
+    ...sortPersistedConversationMessages([
+      ...olderPersistedMessages,
+      ...latestMessagesWithStableKeys,
+    ]),
+    ...pendingMessages,
+  ];
+};
 
 export const mergeConversationContextWithExisting = (
   previousMessages: ChatMessage[],
