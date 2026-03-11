@@ -202,7 +202,15 @@ export const useChatViewportScroll = ({
     });
 
     return () => {
-      cancelAnimationFrame(rafId);
+      const cancelAnimationFrameFn =
+        typeof window !== 'undefined' &&
+        typeof window.cancelAnimationFrame === 'function'
+          ? window.cancelAnimationFrame.bind(window)
+          : typeof cancelAnimationFrame === 'function'
+            ? cancelAnimationFrame
+            : null;
+
+      cancelAnimationFrameFn?.(rafId);
     };
   }, [
     composerContextualOffset,
@@ -284,12 +292,15 @@ export const useChatViewportScroll = ({
     if (!isOpen || !currentChannelId) return;
 
     shouldPinToBottomOnOpenRef.current = true;
-    previousMessagesCountRef.current = messagesCount;
-    previousLatestMessageIdRef.current =
-      messages[messages.length - 1]?.id ?? null;
+    previousMessagesCountRef.current = null;
+    previousLatestMessageIdRef.current = null;
     setIsAtBottom(true);
     setHasNewMessages(false);
-  }, [currentChannelId, isOpen, messages, messagesCount]);
+
+    return () => {
+      shouldPinToBottomOnOpenRef.current = false;
+    };
+  }, [currentChannelId, isOpen]);
 
   useEffect(
     () => () => {

@@ -1,12 +1,11 @@
 import { useAuthStore } from '@/store/authStore';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import type { ChatSidebarPanelProps } from '../types';
 import {
   getAttachmentFileKind,
   getAttachmentFileName,
 } from '../utils/attachment';
 import { computeDmChannelId } from '../utils/channel';
-import { getAttachmentCaptionData } from '../utils/message-derivations';
 import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatComposer } from './useChatComposer';
 import { useChatComposerModel } from './useChatComposerModel';
@@ -14,11 +13,9 @@ import { useChatHeaderModel } from './useChatHeaderModel';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatMessagesModel } from './useChatMessagesModel';
 import { useChatSession } from './useChatSession';
+import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
+import { useChatSidebarRefs } from './useChatSidebarRefs';
 import { useChatViewport } from './useChatViewport';
-import { useComposerAttachmentPreview } from './useComposerAttachmentPreview';
-import { useMessageImagePreviews } from './useMessageImagePreviews';
-import { useMessagePdfPreviews } from './useMessagePdfPreviews';
-import { useMessagesPanePreviews } from './useMessagesPanePreviews';
 import { useTargetProfilePhoto } from './useTargetProfilePhoto';
 
 export const useChatSidebarController = ({
@@ -26,29 +23,11 @@ export const useChatSidebarController = ({
   onClose,
   targetUser,
 }: ChatSidebarPanelProps) => {
-  const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(
-    () => new Set()
-  );
   const { user } = useAuthStore();
-  const messageInputRef = useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const composerContainerRef = useRef<HTMLDivElement>(null);
-  const chatHeaderContainerRef = useRef<HTMLDivElement>(null);
-  const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const initialMessageAnimationKeysRef = useRef<Set<string>>(new Set());
-  const initialOpenJumpAnimationKeysRef = useRef<Set<string>>(new Set());
-  const closeMessageMenuRef = useRef<() => void>(() => {});
-  const scheduleScrollMessagesToBottomRef = useRef<() => void>(() => {});
+  const refs = useChatSidebarRefs();
   /* c8 ignore next */
   const currentChannelId =
     user && targetUser ? computeDmChannelId(user.id, targetUser.id) : null;
-  const closeMessageMenu = useCallback(() => {
-    closeMessageMenuRef.current();
-  }, []);
-  const scheduleScrollMessagesToBottom = useCallback(() => {
-    scheduleScrollMessagesToBottomRef.current();
-  }, []);
 
   const { displayTargetPhotoUrl } = useTargetProfilePhoto(targetUser);
   const {
@@ -71,18 +50,18 @@ export const useChatSidebarController = ({
     user,
     targetUser,
     currentChannelId,
-    initialMessageAnimationKeysRef,
-    initialOpenJumpAnimationKeysRef,
+    initialMessageAnimationKeysRef: refs.initialMessageAnimationKeysRef,
+    initialOpenJumpAnimationKeysRef: refs.initialOpenJumpAnimationKeysRef,
   });
 
   const focusMessageComposer = useCallback(() => {
-    const textarea = messageInputRef.current;
+    const textarea = refs.messageInputRef.current;
     if (!textarea) return;
 
     textarea.focus();
     const cursorPosition = textarea.value.length;
     textarea.setSelectionRange(cursorPosition, cursorPosition);
-  }, []);
+  }, [refs.messageInputRef]);
 
   const composer = useChatComposer({
     isOpen,
@@ -91,9 +70,9 @@ export const useChatSidebarController = ({
     currentChannelId,
     messages,
     setMessages,
-    closeMessageMenu,
-    scheduleScrollMessagesToBottom,
-    messageInputRef,
+    closeMessageMenu: refs.closeMessageMenu,
+    scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
+    messageInputRef: refs.messageInputRef,
     focusMessageComposer,
   });
   const {
@@ -144,7 +123,7 @@ export const useChatSidebarController = ({
     mergeSearchContextMessages,
     user,
     targetUser,
-    closeMessageMenu,
+    closeMessageMenu: refs.closeMessageMenu,
     getAttachmentFileName,
   });
   const {
@@ -196,11 +175,11 @@ export const useChatSidebarController = ({
     editingMessageId,
     focusMessageComposer,
     markMessageIdsAsRead,
-    messagesContainerRef,
-    messagesEndRef,
-    composerContainerRef,
-    chatHeaderContainerRef,
-    messageBubbleRefs,
+    messagesContainerRef: refs.messagesContainerRef,
+    messagesEndRef: refs.messagesEndRef,
+    composerContainerRef: refs.composerContainerRef,
+    chatHeaderContainerRef: refs.chatHeaderContainerRef,
+    messageBubbleRefs: refs.messageBubbleRefs,
   });
   const {
     isAtBottom,
@@ -222,8 +201,8 @@ export const useChatSidebarController = ({
     handleChatPortalBackgroundClick,
     scrollToBottom,
   } = viewport;
-  closeMessageMenuRef.current = closeViewportMessageMenu;
-  scheduleScrollMessagesToBottomRef.current =
+  refs.closeMessageMenuRef.current = closeViewportMessageMenu;
+  refs.scheduleScrollMessagesToBottomRef.current =
     scheduleViewportScrollMessagesToBottom;
 
   const {
@@ -237,18 +216,10 @@ export const useChatSidebarController = ({
     closeImagePreview,
     openImageInPortal,
     openDocumentInPortal,
-  } = useMessagesPanePreviews();
-  const { getImageMessageUrl } = useMessageImagePreviews({ messages });
-  const { getPdfMessagePreview } = useMessagePdfPreviews({
-    messages,
-    getAttachmentFileName,
-    getAttachmentFileKind,
-  });
-  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
-    () => getAttachmentCaptionData(messages),
-    [messages]
-  );
-  const {
+    getImageMessageUrl,
+    getPdfMessagePreview,
+    captionMessagesByAttachmentId,
+    captionMessageIds,
     openImageActionsAttachmentId,
     imageActionsMenuPosition,
     composerDocumentPreviewUrl,
@@ -261,12 +232,15 @@ export const useChatSidebarController = ({
     closeComposerDocumentPreview,
     openDocumentAttachmentInPortal,
     handleToggleImageActionsMenu,
-  } = useComposerAttachmentPreview({
+  } = useChatSidebarPreviewState({
+    messages,
     pendingComposerAttachments,
-    onAttachImageClick: handleAttachImageClick,
-    onAttachDocumentClick: handleAttachDocumentClick,
-    onRemovePendingComposerAttachment: removePendingComposerAttachment,
-    onOpenComposerImagePreview: openComposerImagePreview,
+    handleAttachImageClick,
+    handleAttachDocumentClick,
+    removePendingComposerAttachment,
+    openComposerImagePreview,
+    getAttachmentFileName,
+    getAttachmentFileKind,
   });
 
   const toggleMessageMenu = useCallback(
@@ -281,18 +255,6 @@ export const useChatSidebarController = ({
     },
     [closeAttachModal, closeImageActionsMenu, toggleViewportMessageMenu]
   );
-
-  const handleToggleExpand = useCallback((messageId: string) => {
-    setExpandedMessageIds(previousIds => {
-      const nextIds = new Set(previousIds);
-      if (nextIds.has(messageId)) {
-        nextIds.delete(messageId);
-      } else {
-        nextIds.add(messageId);
-      }
-      return nextIds;
-    });
-  }, []);
 
   const handleDeleteSelectedMessages = useChatBulkDelete({
     user,
@@ -350,7 +312,7 @@ export const useChatSidebarController = ({
     shouldAnimateMenuOpen,
     menuTransitionSourceId,
     menuOffsetX,
-    expandedMessageIds,
+    expandedMessageIds: refs.expandedMessageIds,
     flashingMessageId,
     isFlashHighlightVisible,
     isSelectionMode,
@@ -363,16 +325,16 @@ export const useChatSidebarController = ({
     hasOlderMessages,
     isLoadingOlderMessages,
     olderMessagesError,
-    messagesContainerRef,
-    messagesEndRef,
-    messageBubbleRefs,
-    initialMessageAnimationKeysRef,
-    initialOpenJumpAnimationKeysRef,
+    messagesContainerRef: refs.messagesContainerRef,
+    messagesEndRef: refs.messagesEndRef,
+    messageBubbleRefs: refs.messageBubbleRefs,
+    initialMessageAnimationKeysRef: refs.initialMessageAnimationKeysRef,
+    initialOpenJumpAnimationKeysRef: refs.initialOpenJumpAnimationKeysRef,
     captionMessagesByAttachmentId,
     captionMessageIds,
     closeViewportMessageMenu,
     toggleMessageMenu,
-    handleToggleExpand,
+    handleToggleExpand: refs.handleToggleExpand,
     handleEditMessage,
     handleCopyMessage,
     handleDownloadMessage,
@@ -408,8 +370,8 @@ export const useChatSidebarController = ({
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
-    messageInputRef,
-    composerContainerRef,
+    messageInputRef: refs.messageInputRef,
+    composerContainerRef: refs.composerContainerRef,
     attachButtonRef,
     attachModalRef,
     imageInputRef,
@@ -446,7 +408,7 @@ export const useChatSidebarController = ({
   });
 
   return {
-    chatHeaderContainerRef,
+    chatHeaderContainerRef: refs.chatHeaderContainerRef,
     isAtTop,
     handleChatPortalBackgroundClick,
     headerModel,

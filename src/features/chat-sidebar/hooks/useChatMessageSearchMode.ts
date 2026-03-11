@@ -93,6 +93,9 @@ export const useChatMessageSearchMode = ({
       return;
     }
 
+    activeSearchContextRequestIdRef.current += 1;
+    loadingSearchContextMessageIdRef.current = null;
+
     if (!normalizedMessageSearchQuery) {
       activeSearchRequestIdRef.current += 1;
       setSearchMatchedMessageIds([]);

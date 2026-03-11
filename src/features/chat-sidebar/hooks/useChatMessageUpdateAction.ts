@@ -89,7 +89,13 @@ export const useChatMessageUpdateAction = ({
         if (existingMessage) {
           setMessages(previousMessages =>
             previousMessages.map(messageItem =>
-              messageItem.id === messageId ? existingMessage : messageItem
+              messageItem.id === messageId
+                ? {
+                    ...messageItem,
+                    message: existingMessage.message,
+                    updated_at: existingMessage.updated_at,
+                  }
+                : messageItem
             )
           );
         }
