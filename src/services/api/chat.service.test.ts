@@ -381,13 +381,10 @@ describe('chatService', () => {
 
     const { chatService } = await import('./chat.service');
 
-    const result = await chatService.listUndeliveredIncomingMessageIds(
-      'user-a',
-      {
-        limit: 2,
-        offset: 4,
-      }
-    );
+    const result = await chatService.listUndeliveredIncomingMessageIds({
+      limit: 2,
+      offset: 4,
+    });
 
     expect(mockRpc).toHaveBeenCalledWith(
       'list_undelivered_incoming_message_ids',

@@ -152,13 +152,10 @@ describe('useChatIncomingDeliveries', () => {
       await Promise.resolve();
     });
 
-    expect(mockGateway.listUndeliveredIncomingMessageIds).toHaveBeenCalledWith(
-      'user-a',
-      {
-        limit: 200,
-        offset: 0,
-      }
-    );
+    expect(mockGateway.listUndeliveredIncomingMessageIds).toHaveBeenCalledWith({
+      limit: 200,
+      offset: 0,
+    });
     expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
       'message-legacy-1',
       'message-legacy-2',

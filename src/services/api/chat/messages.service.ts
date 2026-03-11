@@ -238,13 +238,10 @@ export const chatMessagesService = {
     }
   },
 
-  async listUndeliveredIncomingMessageIds(
-    _receiverId: string,
-    options?: {
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<ServiceResponse<UndeliveredIncomingMessageIdsPage>> {
+  async listUndeliveredIncomingMessageIds(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ServiceResponse<UndeliveredIncomingMessageIdsPage>> {
     try {
       const pageSize = Math.max(1, options?.limit ?? 200);
       const { data, error } = await supabase.rpc(

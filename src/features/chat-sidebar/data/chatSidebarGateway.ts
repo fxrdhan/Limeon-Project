@@ -99,15 +99,11 @@ export const chatSidebarMessagesGateway = {
     return chatMessagesService.markMessageIdsAsRead(messageIds);
   },
   listUndeliveredIncomingMessageIds(
-    receiverId: string,
     options?: Parameters<
       typeof chatMessagesService.listUndeliveredIncomingMessageIds
-    >[1]
+    >[0]
   ) {
-    return chatMessagesService.listUndeliveredIncomingMessageIds(
-      receiverId,
-      options
-    );
+    return chatMessagesService.listUndeliveredIncomingMessageIds(options);
   },
   deleteMessageThread(id: string) {
     return chatMessagesService.deleteMessageThread(id);

@@ -8,17 +8,17 @@ import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
+import { useChatReceiptMutationQueue } from './useChatReceiptMutationQueue';
 
 const DELIVERY_BATCH_WINDOW_MS = 90;
-const DELIVERY_RETRY_WINDOW_MS = 1_200;
 const DELIVERY_BACKFILL_PAGE_SIZE = 200;
 const DELIVERY_FLUSH_BATCH_SIZE = 200;
 const CHAT_DELIVERY_SYNC_TOAST_ID = 'chat-delivery-sync-warning';
+const DELIVERY_RETRY_WINDOW_MS = 1_200;
 
 export const useChatIncomingDeliveries = () => {
   const { user } = useAuthStore();
   const incomingMessagesChannelRef = useRef<RealtimeChannel | null>(null);
-  const pendingDeliveryMessageIdsRef = useRef<Set<string>>(new Set());
   const queuedDeliveryMessageIdsRef = useRef<Set<string>>(new Set());
   const flushDeliveryTimeoutRef = useRef<number | null>(null);
   const flushQueuedDeliveryMessageIdsRef = useRef<() => Promise<void>>(
@@ -26,6 +26,26 @@ export const useChatIncomingDeliveries = () => {
   );
   const { recoveryTick, scheduleRecovery, markRecoverySuccess } =
     useRealtimeChannelRecovery();
+  const runDeliveredMutation = useCallback(
+    (messageIds: string[]) =>
+      chatSidebarMessagesGateway.markMessageIdsAsDelivered(messageIds),
+    []
+  );
+  const handleDeliveryMutationError = useCallback((error: unknown) => {
+    console.error('Error marking incoming messages as delivered:', error);
+    toast.error(
+      'Sinkronisasi status chat tertunda. Status delivered bisa terlambat diperbarui.',
+      {
+        id: CHAT_DELIVERY_SYNC_TOAST_ID,
+      }
+    );
+  }, []);
+  const deliveryMutation = useChatReceiptMutationQueue<ChatMessage>({
+    scopeResetKey: user?.id ?? null,
+    retryDelayMs: DELIVERY_RETRY_WINDOW_MS,
+    runMutation: runDeliveredMutation,
+    onMutationError: handleDeliveryMutationError,
+  });
 
   const scheduleQueuedDeliveryFlush = useCallback(
     (delayMs = DELIVERY_BATCH_WINDOW_MS) => {
@@ -38,24 +58,6 @@ export const useChatIncomingDeliveries = () => {
       }, delayMs);
     },
     []
-  );
-
-  const requeueDeliveryMessageIds = useCallback(
-    (messageIds: string[]) => {
-      messageIds.forEach(messageId => {
-        if (!messageId) {
-          return;
-        }
-
-        pendingDeliveryMessageIdsRef.current.delete(messageId);
-        queuedDeliveryMessageIdsRef.current.add(messageId);
-      });
-
-      if (queuedDeliveryMessageIdsRef.current.size > 0) {
-        scheduleQueuedDeliveryFlush(DELIVERY_RETRY_WINDOW_MS);
-      }
-    },
-    [scheduleQueuedDeliveryFlush]
   );
 
   const flushQueuedDeliveryMessageIds = useCallback(async () => {
@@ -75,50 +77,12 @@ export const useChatIncomingDeliveries = () => {
     queuedMessageIds.forEach(messageId => {
       queuedDeliveryMessageIdsRef.current.delete(messageId);
     });
-    let shouldRetry = false;
-
-    try {
-      const { error } =
-        await chatSidebarMessagesGateway.markMessageIdsAsDelivered(
-          queuedMessageIds
-        );
-      if (error) {
-        shouldRetry = true;
-        console.error('Error marking incoming messages as delivered:', error);
-        toast.error(
-          'Sinkronisasi status chat tertunda. Status delivered bisa terlambat diperbarui.',
-          {
-            id: CHAT_DELIVERY_SYNC_TOAST_ID,
-          }
-        );
-      }
-    } catch (error) {
-      shouldRetry = true;
-      console.error(
-        'Caught error marking incoming messages as delivered:',
-        error
-      );
-      toast.error(
-        'Sinkronisasi status chat tertunda. Status delivered bisa terlambat diperbarui.',
-        {
-          id: CHAT_DELIVERY_SYNC_TOAST_ID,
-        }
-      );
-    } finally {
-      queuedMessageIds.forEach(messageId => {
-        pendingDeliveryMessageIdsRef.current.delete(messageId);
-      });
-    }
-
-    if (shouldRetry) {
-      requeueDeliveryMessageIds(queuedMessageIds);
-      return;
-    }
+    await deliveryMutation.submitMessageIds(queuedMessageIds);
 
     if (queuedDeliveryMessageIdsRef.current.size > 0) {
       scheduleQueuedDeliveryFlush();
     }
-  }, [requeueDeliveryMessageIds, scheduleQueuedDeliveryFlush]);
+  }, [deliveryMutation, scheduleQueuedDeliveryFlush]);
   flushQueuedDeliveryMessageIdsRef.current = flushQueuedDeliveryMessageIds;
 
   const queueDeliveryMessageIds = useCallback(
@@ -128,11 +92,10 @@ export const useChatIncomingDeliveries = () => {
           return false;
         }
 
-        if (pendingDeliveryMessageIdsRef.current.has(messageId)) {
+        if (queuedDeliveryMessageIdsRef.current.has(messageId)) {
           return false;
         }
 
-        pendingDeliveryMessageIdsRef.current.add(messageId);
         queuedDeliveryMessageIdsRef.current.add(messageId);
         return true;
       });
@@ -150,7 +113,6 @@ export const useChatIncomingDeliveries = () => {
       return;
     }
 
-    const pendingDeliveryMessageIds = pendingDeliveryMessageIdsRef.current;
     const queuedDeliveryMessageIds = queuedDeliveryMessageIdsRef.current;
 
     if (incomingMessagesChannelRef.current) {
@@ -189,7 +151,6 @@ export const useChatIncomingDeliveries = () => {
             while (hasMore) {
               const { data: undeliveredPage, error } =
                 await chatSidebarMessagesGateway.listUndeliveredIncomingMessageIds(
-                  user.id,
                   {
                     limit: DELIVERY_BACKFILL_PAGE_SIZE,
                     offset,
@@ -275,7 +236,6 @@ export const useChatIncomingDeliveries = () => {
         window.clearTimeout(flushDeliveryTimeoutRef.current);
         flushDeliveryTimeoutRef.current = null;
       }
-      pendingDeliveryMessageIds.clear();
       queuedDeliveryMessageIds.clear();
       void realtimeService.removeChannel(activeChannel);
       if (incomingMessagesChannelRef.current === activeChannel) {
