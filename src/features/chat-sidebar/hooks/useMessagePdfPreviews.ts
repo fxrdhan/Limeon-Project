@@ -31,7 +31,7 @@ export const useMessagePdfPreviews = ({
   const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
     Record<string, PdfMessagePreview>
   >({});
-  const [, setPdfPreviewRetryNonce] = useState(0);
+  const [pdfPreviewRetryNonce, setPdfPreviewRetryNonce] = useState(0);
   const pdfPreviewRenderingIdsRef = useRef<Set<string>>(new Set());
   const pdfPreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
   const pdfPreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
@@ -233,6 +233,7 @@ export const useMessagePdfPreviews = ({
     getAttachmentFileName,
     messages,
     pdfMessagePreviews,
+    pdfPreviewRetryNonce,
     schedulePdfPreviewRetry,
   ]);
 

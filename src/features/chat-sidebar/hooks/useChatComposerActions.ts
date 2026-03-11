@@ -98,7 +98,7 @@ export const useChatComposerActions = ({
     user,
     targetUser,
     currentChannelId,
-    messagesCount: messages.length,
+    messages,
     setMessages,
   });
 

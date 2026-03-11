@@ -118,16 +118,16 @@ const createPendingSendRegistry = () => {
 };
 
 const useComposerSendWithMutationScope = ({
-  messagesCount = 0,
+  messages = [],
   ...props
 }: Omit<Parameters<typeof useChatComposerSend>[0], 'mutationScope'> & {
-  messagesCount?: number;
+  messages?: ChatMessage[];
 }) => {
   const mutationScope = useChatMutationScope({
     user: props.user,
     targetUser: props.targetUser,
     currentChannelId: props.currentChannelId,
-    messagesCount,
+    messages,
     setMessages: props.setMessages,
   });
 

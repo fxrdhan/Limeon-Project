@@ -7,6 +7,8 @@ import {
 } from '../utils/message-file';
 
 const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
+const IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
+const IMAGE_PREVIEW_RETRY_BASE_DELAY_MS = 900;
 
 interface ImageMessagePreviewEntry {
   url: string;
@@ -23,10 +25,13 @@ export const useMessageImagePreviews = ({
     Record<string, ImageMessagePreviewEntry>
   >({});
   const [imagePreviewRefreshTick, setImagePreviewRefreshTick] = useState(0);
+  const [imagePreviewRetryNonce, setImagePreviewRetryNonce] = useState(0);
   const objectUrlsRef = useRef<Map<string, string>>(new Map());
   const imageMessagePreviewEntriesRef = useRef<
     Record<string, ImageMessagePreviewEntry>
   >({});
+  const imagePreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
+  const imagePreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
 
   const releaseImagePreviewUrl = useCallback((messageId: string) => {
     const existingUrl = objectUrlsRef.current.get(messageId);
@@ -38,9 +43,51 @@ export const useMessageImagePreviews = ({
     objectUrlsRef.current.delete(messageId);
   }, []);
 
+  const clearImagePreviewRetryTimer = useCallback((messageId: string) => {
+    const existingTimerId = imagePreviewRetryTimersRef.current.get(messageId);
+    if (!existingTimerId) {
+      return;
+    }
+
+    window.clearTimeout(existingTimerId);
+    imagePreviewRetryTimersRef.current.delete(messageId);
+  }, []);
+
+  const scheduleImagePreviewRetry = useCallback((messageId: string) => {
+    if (imagePreviewRetryTimersRef.current.has(messageId)) {
+      return;
+    }
+
+    const nextAttemptCount =
+      (imagePreviewRetryAttemptsRef.current.get(messageId) ?? 0) + 1;
+    imagePreviewRetryAttemptsRef.current.set(messageId, nextAttemptCount);
+
+    if (nextAttemptCount >= IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS) {
+      return;
+    }
+
+    const retryDelay = IMAGE_PREVIEW_RETRY_BASE_DELAY_MS * nextAttemptCount;
+    const retryTimerId = window.setTimeout(() => {
+      imagePreviewRetryTimersRef.current.delete(messageId);
+      setImagePreviewRetryNonce(previousValue => previousValue + 1);
+    }, retryDelay);
+    imagePreviewRetryTimersRef.current.set(messageId, retryTimerId);
+  }, []);
+
   useEffect(() => {
     imageMessagePreviewEntriesRef.current = imageMessagePreviewEntries;
   }, [imageMessagePreviewEntries]);
+
+  useEffect(() => {
+    const retryTimers = imagePreviewRetryTimersRef.current;
+
+    return () => {
+      retryTimers.forEach(timerId => {
+        window.clearTimeout(timerId);
+      });
+      retryTimers.clear();
+    };
+  }, []);
 
   useEffect(() => {
     const signedUrlExpirations = Object.values(imageMessagePreviewEntries)
@@ -75,6 +122,15 @@ export const useMessageImagePreviews = ({
         .filter(messageItem => messageItem.message_type === 'image')
         .map(messageItem => messageItem.id)
     );
+
+    for (const [messageId] of imagePreviewRetryAttemptsRef.current) {
+      if (activeImageMessageIds.has(messageId)) {
+        continue;
+      }
+
+      imagePreviewRetryAttemptsRef.current.delete(messageId);
+      clearImagePreviewRetryTimer(messageId);
+    }
 
     setImageMessagePreviewEntries(previousEntries => {
       let hasChanges = false;
@@ -124,6 +180,17 @@ export const useMessageImagePreviews = ({
         return false;
       }
 
+      if (imagePreviewRetryTimersRef.current.has(messageItem.id)) {
+        return false;
+      }
+
+      if (
+        (imagePreviewRetryAttemptsRef.current.get(messageItem.id) ?? 0) >=
+        IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS
+      ) {
+        return false;
+      }
+
       return true;
     });
 
@@ -140,6 +207,8 @@ export const useMessageImagePreviews = ({
               messageItem.file_storage_path
             );
             if (resolvedAsset) {
+              imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
+              clearImagePreviewRetryTimer(messageItem.id);
               return {
                 messageId: messageItem.id,
                 previewEntry: {
@@ -156,9 +225,12 @@ export const useMessageImagePreviews = ({
               messageItem.file_mime_type
             );
             if (!imageBlob) {
+              scheduleImagePreviewRetry(messageItem.id);
               return null;
             }
 
+            imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
+            clearImagePreviewRetryTimer(messageItem.id);
             return {
               messageId: messageItem.id,
               previewEntry: {
@@ -169,6 +241,7 @@ export const useMessageImagePreviews = ({
             };
           } catch (error) {
             console.error('Error resolving chat image preview:', error);
+            scheduleImagePreviewRetry(messageItem.id);
             return null;
           }
         })
@@ -229,7 +302,14 @@ export const useMessageImagePreviews = ({
     return () => {
       isCancelled = true;
     };
-  }, [imagePreviewRefreshTick, messages, releaseImagePreviewUrl]);
+  }, [
+    clearImagePreviewRetryTimer,
+    imagePreviewRefreshTick,
+    imagePreviewRetryNonce,
+    messages,
+    releaseImagePreviewUrl,
+    scheduleImagePreviewRetry,
+  ]);
 
   useEffect(() => {
     const objectUrls = objectUrlsRef.current;

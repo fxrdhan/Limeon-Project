@@ -37,7 +37,7 @@ describe('useChatMutationScope', () => {
           profilephoto: null,
         },
         currentChannelId: 'channel-1',
-        messagesCount: 0,
+        messages: [],
         setMessages: vi.fn(),
       })
     );
@@ -79,7 +79,7 @@ describe('useChatMutationScope', () => {
           profilephoto: null,
         },
         currentChannelId: 'channel-1',
-        messagesCount: 0,
+        messages: [],
         setMessages: vi.fn(),
       })
     );

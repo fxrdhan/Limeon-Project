@@ -13,7 +13,7 @@ interface UseChatMutationScopeProps {
   } | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
-  messagesCount: number;
+  messages: ChatMessage[];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
 }
 
@@ -21,7 +21,7 @@ export const useChatMutationScope = ({
   user,
   targetUser,
   currentChannelId,
-  messagesCount,
+  messages,
   setMessages,
 }: UseChatMutationScopeProps) => {
   const conversationScopeKey = useMemo(
@@ -39,7 +39,7 @@ export const useChatMutationScope = ({
     user,
     targetUser,
     currentChannelId,
-    messagesCount,
+    messages,
     setMessages,
     isConversationScopeActive,
   });
