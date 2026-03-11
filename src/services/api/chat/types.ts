@@ -75,6 +75,14 @@ export interface DeleteMessageThreadAndCleanupResult {
   failedStoragePaths: string[];
 }
 
+export interface DeleteMessageThreadsAndCleanupResult {
+  deletedMessageIds: string[];
+  deletedTargetMessageIds: string[];
+  failedTargetMessageIds: string[];
+  cleanupWarningTargetMessageIds: string[];
+  failedStoragePaths: string[];
+}
+
 export interface CleanupStoragePathsResult {
   failedStoragePaths: string[];
 }

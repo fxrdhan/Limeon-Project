@@ -4,6 +4,7 @@ import type { ServiceResponse } from '../base.service';
 import type {
   CleanupStoragePathsResult,
   DeleteMessageThreadAndCleanupResult,
+  DeleteMessageThreadsAndCleanupResult,
   RetryChatCleanupFailuresResult,
 } from './types';
 
@@ -13,6 +14,11 @@ const normalizeStoragePaths = (
   [...new Set(storagePaths)]
     .map(storagePath => storagePath?.trim() || null)
     .filter((storagePath): storagePath is string => Boolean(storagePath));
+
+const normalizeMessageIds = (messageIds: Array<string | null | undefined>) =>
+  [...new Set(messageIds)]
+    .map(messageId => messageId?.trim() || null)
+    .filter((messageId): messageId is string => Boolean(messageId));
 
 export const chatCleanupService = {
   async deleteMessageThreadAndCleanup(
@@ -50,6 +56,63 @@ export const chatCleanupService = {
                   failedStoragePath.length > 0
               )
             : [],
+        },
+        error: null,
+      };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  async deleteMessageThreadsAndCleanup(
+    messageIds: Array<string | null | undefined>
+  ): Promise<ServiceResponse<DeleteMessageThreadsAndCleanupResult>> {
+    const normalizedMessageIds = normalizeMessageIds(messageIds);
+
+    if (normalizedMessageIds.length === 0) {
+      return {
+        data: {
+          deletedMessageIds: [],
+          deletedTargetMessageIds: [],
+          failedTargetMessageIds: [],
+          cleanupWarningTargetMessageIds: [],
+          failedStoragePaths: [],
+        },
+        error: null,
+      };
+    }
+
+    try {
+      const { data, error } =
+        await supabase.functions.invoke<DeleteMessageThreadsAndCleanupResult>(
+          'chat-cleanup',
+          {
+            body: {
+              action: 'delete_threads',
+              messageIds: normalizedMessageIds,
+            },
+          }
+        );
+
+      if (error) {
+        return { data: null, error: error as PostgrestError };
+      }
+
+      return {
+        data: {
+          deletedMessageIds: normalizeMessageIds(data?.deletedMessageIds ?? []),
+          deletedTargetMessageIds: normalizeMessageIds(
+            data?.deletedTargetMessageIds ?? []
+          ),
+          failedTargetMessageIds: normalizeMessageIds(
+            data?.failedTargetMessageIds ?? []
+          ),
+          cleanupWarningTargetMessageIds: normalizeMessageIds(
+            data?.cleanupWarningTargetMessageIds ?? []
+          ),
+          failedStoragePaths: normalizeStoragePaths(
+            data?.failedStoragePaths ?? []
+          ),
         },
         error: null,
       };

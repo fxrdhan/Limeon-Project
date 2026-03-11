@@ -68,6 +68,11 @@ describe('useChatComposer', () => {
         handleCopyMessage: vi.fn(),
         handleDownloadMessage: vi.fn(),
         handleDeleteMessage: vi.fn().mockResolvedValue(true),
+        handleDeleteMessages: vi.fn().mockResolvedValue({
+          deletedTargetMessageIds: [],
+          failedTargetMessageIds: [],
+          cleanupWarningTargetMessageIds: [],
+        }),
         handleCancelEditMessage: () => {
           setEditingMessageId(null);
           setMessage('');

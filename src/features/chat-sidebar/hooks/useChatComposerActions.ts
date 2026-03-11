@@ -147,20 +147,21 @@ export const useChatComposerActions = ({
     runInCurrentConversationScope,
   });
 
-  const { handleDeleteMessage } = useChatMessageDeleteAction({
-    user,
-    targetUser,
-    currentChannelId,
-    messages,
-    setMessages,
-    editingMessageId,
-    setEditingMessageId,
-    setMessage,
-    closeMessageMenu,
-    pendingSendRegistryRef,
-    reconcileCurrentConversationMessages,
-    isCurrentConversationScopeActive,
-  });
+  const { handleDeleteMessage, handleDeleteMessages } =
+    useChatMessageDeleteAction({
+      user,
+      targetUser,
+      currentChannelId,
+      messages,
+      setMessages,
+      editingMessageId,
+      setEditingMessageId,
+      setMessage,
+      closeMessageMenu,
+      pendingSendRegistryRef,
+      reconcileCurrentConversationMessages,
+      isCurrentConversationScopeActive,
+    });
 
   const handleEditMessage = useCallback(
     (targetMessage: ChatMessage) => {
@@ -221,6 +222,7 @@ export const useChatComposerActions = ({
   return {
     handleEditMessage,
     handleDeleteMessage,
+    handleDeleteMessages,
     handleCancelEditMessage,
     handleCopyMessage,
     handleDownloadMessage,

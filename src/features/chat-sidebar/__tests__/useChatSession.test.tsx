@@ -476,6 +476,50 @@ describe('useChatSession', () => {
     expect(result.current.isTargetOnline).toBe(true);
   });
 
+  it('expires the fallback presence snapshot after the freshness window elapses', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-03-06T10:00:00.000Z'));
+
+      const initialMessageAnimationKeysRef = { current: new Set<string>() };
+      const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+      mockChatService.getUserPresence.mockResolvedValueOnce({
+        data: {
+          user_id: targetUser.id,
+          is_online: true,
+          last_seen: '2026-03-06T09:59:30.000Z',
+        },
+        error: null,
+      });
+
+      const { result } = renderHook(() =>
+        useChatSession({
+          isOpen: true,
+          user: currentUser,
+          targetUser,
+          currentChannelId: 'channel-1',
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.isTargetOnline).toBe(true);
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_100);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isTargetOnline).toBe(false);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('ignores stale target presence responses after switching conversations', async () => {
     const secondTargetUser = {
       id: 'user-c',

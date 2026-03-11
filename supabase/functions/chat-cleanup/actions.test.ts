@@ -3,6 +3,7 @@ import type { ChatCleanupMessageRecord } from "../../../shared/chatStoragePaths.
 import {
   cleanupStoragePaths,
   deleteThreadAndCleanup,
+  deleteThreadsAndCleanup,
   retryCleanupFailures,
   type ChatCleanupFailureRecord,
   type ChatCleanupRepository,
@@ -112,6 +113,59 @@ describe("chat-cleanup actions", () => {
       storagePaths: ["previews/channel/user-2_report.png"],
       lastError:
         "Skipped chat storage cleanup for path(s) that do not belong to the sender",
+    });
+  });
+
+  it("deletes multiple threads in one request and preserves partial failures", async () => {
+    const repository = createRepository();
+
+    vi.mocked(repository.getOwnedParentMessage).mockImplementation(
+      async messageId => ({
+        message:
+          messageId === "message-1"
+            ? buildParentMessage({
+                file_preview_url:
+                  "/storage/v1/object/public/chat/previews/channel/user-2_report.png",
+              })
+            : buildParentMessage({
+                id: "message-2",
+                message: `documents/channel/${USER_ID}_second-report.pdf`,
+                file_name: "second-report.pdf",
+                file_storage_path: `documents/channel/${USER_ID}_second-report.pdf`,
+                file_preview_url:
+                  `/storage/v1/object/public/chat/previews/channel/${USER_ID}_second-report.png`,
+              }),
+        error: null,
+      })
+    );
+    vi.mocked(repository.deleteMessageThread).mockImplementation(
+      async messageId =>
+        messageId === "message-2"
+          ? {
+              deletedMessageIds: [],
+              error: "delete failed",
+            }
+          : {
+              deletedMessageIds: [messageId],
+              error: null,
+            }
+    );
+
+    const result = await deleteThreadsAndCleanup({
+      repository,
+      userId: USER_ID,
+      messageIds: ["message-1", "message-2"],
+    });
+
+    expect(result).toEqual({
+      status: 200,
+      body: {
+        deletedMessageIds: ["message-1"],
+        deletedTargetMessageIds: ["message-1"],
+        failedTargetMessageIds: ["message-2"],
+        cleanupWarningTargetMessageIds: ["message-1"],
+        failedStoragePaths: ["previews/channel/user-2_report.png"],
+      },
     });
   });
 

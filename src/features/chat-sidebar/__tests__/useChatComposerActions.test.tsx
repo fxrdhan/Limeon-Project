@@ -14,6 +14,7 @@ const { mockChatService, mockToast, mockUseChatComposerSend } = vi.hoisted(
     mockChatService: {
       editTextMessage: vi.fn(),
       deleteMessageThreadAndCleanup: vi.fn(),
+      deleteMessageThreadsAndCleanup: vi.fn(),
       fetchMessagesBetweenUsers: vi.fn(),
     },
     mockToast: {
@@ -885,6 +886,124 @@ describe('useChatComposerActions', () => {
         toasterId: 'chat-sidebar-toaster',
       })
     );
+  });
+
+  it('deletes multiple threads through the batch cleanup path and restores only failed ones', async () => {
+    const deletedAttachmentMessage = buildMessage({
+      id: 'file-batch-1',
+      message:
+        'https://example.com/storage/v1/object/public/chat/documents/channel/report-batch-1.pdf',
+      message_type: 'file',
+      file_name: 'report-batch-1.pdf',
+      file_kind: 'document',
+      file_storage_path: 'documents/channel/report-batch-1.pdf',
+      sender_name: 'Admin',
+      receiver_name: 'Gudang',
+    });
+    const failedAttachmentMessage = buildMessage({
+      id: 'file-batch-2',
+      message:
+        'https://example.com/storage/v1/object/public/chat/documents/channel/report-batch-2.pdf',
+      message_type: 'file',
+      file_name: 'report-batch-2.pdf',
+      file_kind: 'document',
+      file_storage_path: 'documents/channel/report-batch-2.pdf',
+      sender_name: 'Admin',
+      receiver_name: 'Gudang',
+    });
+
+    mockChatService.deleteMessageThreadsAndCleanup.mockResolvedValue({
+      data: {
+        deletedMessageIds: ['file-batch-1'],
+        deletedTargetMessageIds: ['file-batch-1'],
+        failedTargetMessageIds: ['file-batch-2'],
+        cleanupWarningTargetMessageIds: ['file-batch-1'],
+        failedStoragePaths: ['documents/channel/report-batch-1.pdf'],
+      },
+      error: null,
+    });
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [failedAttachmentMessage],
+      error: null,
+    });
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        deletedAttachmentMessage,
+        failedAttachmentMessage,
+      ]);
+      const [message, setMessage] = useState('');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        null
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return {
+        ...useChatComposerActions({
+          user: { id: 'user-a', name: 'Admin' },
+          targetUser: {
+            id: 'user-b',
+            name: 'Gudang',
+            email: 'gudang@example.com',
+            profilephoto: null,
+          },
+          currentChannelId: 'channel-1',
+          messages,
+          setMessages,
+          message,
+          setMessage,
+          editingMessageId,
+          setEditingMessageId,
+          pendingComposerAttachments: [],
+          clearPendingComposerAttachments: vi.fn(),
+          restorePendingComposerAttachments: vi.fn(),
+          closeMessageMenu: vi.fn(),
+          focusMessageComposer: vi.fn(),
+          scheduleScrollMessagesToBottom: vi.fn(),
+          triggerSendSuccessGlow: vi.fn(),
+          pendingImagePreviewUrlsRef,
+        }),
+        messages,
+      };
+    });
+
+    let deleteResult:
+      | {
+          deletedTargetMessageIds: string[];
+          failedTargetMessageIds: string[];
+          cleanupWarningTargetMessageIds: string[];
+        }
+      | undefined;
+    await act(async () => {
+      deleteResult = await result.current.handleDeleteMessages(
+        [deletedAttachmentMessage, failedAttachmentMessage],
+        {
+          suppressErrorToast: true,
+        }
+      );
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['file-batch-2']);
+    });
+
+    expect(deleteResult).toEqual({
+      deletedTargetMessageIds: ['file-batch-1'],
+      failedTargetMessageIds: ['file-batch-2'],
+      cleanupWarningTargetMessageIds: ['file-batch-1'],
+    });
+    expect(mockChatService.deleteMessageThreadsAndCleanup).toHaveBeenCalledWith(
+      ['file-batch-1', 'file-batch-2']
+    );
+    expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledWith(
+      'user-b',
+      expect.objectContaining({
+        limit: 50,
+      })
+    );
+    expect(mockToast.error).not.toHaveBeenCalled();
   });
 
   it('does not send while IME composition is still active', async () => {

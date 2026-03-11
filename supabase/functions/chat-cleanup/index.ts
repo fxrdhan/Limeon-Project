@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   cleanupStoragePaths,
   deleteThreadAndCleanup,
+  deleteThreadsAndCleanup,
   normalizeStoragePaths,
   partitionOwnedChatPaths,
   retryCleanupFailures,
@@ -17,6 +18,7 @@ const STORAGE_DELETE_RETRY_DELAY_MS = 180;
 interface ChatCleanupRequest {
   action?: CleanupAction;
   messageId?: string;
+  messageIds?: string[];
   storagePaths?: string[];
 }
 
@@ -290,6 +292,16 @@ Deno.serve(async req => {
       repository,
       userId: user.id,
       messageId: payload.messageId,
+    });
+
+    return json(req, result.status, result.body);
+  }
+
+  if (payload.action === "delete_threads") {
+    const result = await deleteThreadsAndCleanup({
+      repository,
+      userId: user.id,
+      messageIds: payload.messageIds,
     });
 
     return json(req, result.status, result.body);

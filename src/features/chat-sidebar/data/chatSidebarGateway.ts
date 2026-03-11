@@ -18,6 +18,7 @@ export type {
   UserPresence,
   ConversationMessagesPage,
   DeleteMessageThreadAndCleanupResult,
+  DeleteMessageThreadsAndCleanupResult,
   CleanupStoragePathsResult,
   RetryChatCleanupFailuresResult,
   UndeliveredIncomingMessageIdsPage,
@@ -113,6 +114,9 @@ export const chatSidebarMessagesGateway = {
 export const chatSidebarCleanupGateway = {
   deleteMessageThreadAndCleanup(id: string) {
     return chatCleanupService.deleteMessageThreadAndCleanup(id);
+  },
+  deleteMessageThreadsAndCleanup(messageIds: Array<string | null | undefined>) {
+    return chatCleanupService.deleteMessageThreadsAndCleanup(messageIds);
   },
   cleanupStoragePaths(storagePaths: Array<string | null | undefined>) {
     return chatCleanupService.cleanupStoragePaths(storagePaths);

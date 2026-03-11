@@ -37,6 +37,7 @@ vi.mock('../hooks/useChatSession', () => ({
     messages: [],
     setMessages: vi.fn(),
     loading: false,
+    isTargetOnline: false,
     targetUserPresence: null,
     broadcastNewMessage: vi.fn(),
     broadcastUpdatedMessage: vi.fn(),
@@ -84,6 +85,7 @@ vi.mock('../hooks/useChatComposer', () => ({
     handleCopyMessage: vi.fn(),
     handleDownloadMessage: vi.fn(),
     handleDeleteMessage: vi.fn(),
+    handleDeleteMessages: vi.fn(),
   }),
 }));
 

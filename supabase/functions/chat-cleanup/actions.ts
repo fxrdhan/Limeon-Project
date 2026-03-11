@@ -4,7 +4,11 @@ import {
   resolveChatMessageStoragePaths,
 } from "../../../shared/chatStoragePaths.ts";
 
-export type CleanupAction = "delete_thread" | "cleanup_storage" | "retry_failures";
+export type CleanupAction =
+  | "delete_thread"
+  | "delete_threads"
+  | "cleanup_storage"
+  | "retry_failures";
 export type CleanupFailureStage = "delete_thread" | "cleanup_storage";
 
 export interface ChatCleanupFailureRecord {
@@ -70,6 +74,11 @@ const normalizeDeletedMessageIds = (deletedMessageIds: string[]) =>
     (deletedMessageId): deletedMessageId is string =>
       typeof deletedMessageId === "string" && deletedMessageId.length > 0
   );
+
+const normalizeMessageIds = (messageIds: Array<string | null | undefined>) =>
+  [...new Set(messageIds)]
+    .map(messageId => messageId?.trim() || null)
+    .filter((messageId): messageId is string => Boolean(messageId));
 
 export const deleteThreadAndCleanup = async ({
   repository,
@@ -148,6 +157,95 @@ export const deleteThreadAndCleanup = async ({
     body: {
       deletedMessageIds: normalizeDeletedMessageIds(deletedMessageIds),
       failedStoragePaths,
+    },
+  };
+};
+
+export const deleteThreadsAndCleanup = async ({
+  repository,
+  userId,
+  messageIds,
+}: {
+  repository: ChatCleanupRepository;
+  userId: string;
+  messageIds?: Array<string | null | undefined>;
+}) => {
+  const normalizedMessageIds = normalizeMessageIds(messageIds ?? []);
+  if (normalizedMessageIds.length === 0) {
+    return {
+      status: 400,
+      body: { error: "messageIds is required" },
+    };
+  }
+
+  const deletedMessageIds = new Set<string>();
+  const deletedTargetMessageIds: string[] = [];
+  const failedTargetMessageIds: string[] = [];
+  const cleanupWarningTargetMessageIds: string[] = [];
+  const failedStoragePaths: string[] = [];
+  const BATCH_SIZE = 4;
+
+  for (
+    let messageIndex = 0;
+    messageIndex < normalizedMessageIds.length;
+    messageIndex += BATCH_SIZE
+  ) {
+    const batchMessageIds = normalizedMessageIds.slice(
+      messageIndex,
+      messageIndex + BATCH_SIZE
+    );
+    const batchResults = await Promise.all(
+      batchMessageIds.map(async messageId => ({
+        messageId,
+        result: await deleteThreadAndCleanup({
+          repository,
+          userId,
+          messageId,
+        }),
+      }))
+    );
+
+    batchResults.forEach(({ messageId, result }) => {
+      if (result.status !== 200) {
+        failedTargetMessageIds.push(messageId);
+        return;
+      }
+
+      const resolvedDeletedMessageIds =
+        "deletedMessageIds" in result.body
+          ? normalizeDeletedMessageIds(result.body.deletedMessageIds)
+          : [];
+      if (resolvedDeletedMessageIds.length === 0) {
+        failedTargetMessageIds.push(messageId);
+        return;
+      }
+
+      resolvedDeletedMessageIds.forEach(deletedMessageId => {
+        deletedMessageIds.add(deletedMessageId);
+      });
+      deletedTargetMessageIds.push(messageId);
+
+      const resolvedFailedStoragePaths =
+        "failedStoragePaths" in result.body
+          ? normalizeStoragePaths(result.body.failedStoragePaths)
+          : [];
+      if (resolvedFailedStoragePaths.length === 0) {
+        return;
+      }
+
+      cleanupWarningTargetMessageIds.push(messageId);
+      failedStoragePaths.push(...resolvedFailedStoragePaths);
+    });
+  }
+
+  return {
+    status: 200,
+    body: {
+      deletedMessageIds: [...deletedMessageIds],
+      deletedTargetMessageIds,
+      failedTargetMessageIds,
+      cleanupWarningTargetMessageIds,
+      failedStoragePaths: normalizeStoragePaths(failedStoragePaths),
     },
   };
 };

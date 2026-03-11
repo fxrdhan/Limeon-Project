@@ -6,6 +6,7 @@ export type {
   EditChatMessageTextInput,
   ChatFilePreviewUpdateInput,
   DeleteMessageThreadAndCleanupResult,
+  DeleteMessageThreadsAndCleanupResult,
   CleanupStoragePathsResult,
   RetryChatCleanupFailuresResult,
   UserPresenceUpdateInput,

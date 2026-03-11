@@ -1,7 +1,10 @@
 import type { UserDetails } from '@/types/database';
 import { usePresenceStore } from '@/store/presenceStore';
-import { isPresenceFresh } from '@/hooks/presence/presenceStatus';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  getPresenceFreshnessRemainingMs,
+  isPresenceFresh,
+} from '@/hooks/presence/presenceStatus';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { loadTargetPresenceSnapshot } from '../utils/target-presence';
@@ -36,6 +39,7 @@ export const useChatSessionPresence = ({
   );
   const targetPresenceRequestIdRef = useRef(0);
   const previousRosterOnlineRef = useRef<boolean | null>(null);
+  const [, setPresenceFreshnessTick] = useState(0);
 
   const loadTargetUserPresenceSnapshot = useCallback(async () => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
@@ -88,29 +92,43 @@ export const useChatSessionPresence = ({
     targetUser,
   ]);
 
-  const isTargetOnline = useMemo(() => {
-    if (!isOpen || !targetUser) {
-      return false;
+  useEffect(() => {
+    if (!isOpen || targetUserPresence?.is_online !== true) {
+      return;
     }
 
-    const hasFreshPresenceSnapshot =
-      targetUserPresence?.is_online === true &&
-      isPresenceFresh(targetUserPresence.last_seen);
-
-    // Browser-active presence remains the primary signal, but a fresh
-    // persisted snapshot covers temporary roster gaps while recovery happens.
-    if (hasPresenceRosterChannel) {
-      return isTargetOnlineInRoster || hasFreshPresenceSnapshot;
+    const remainingFreshnessMs = getPresenceFreshnessRemainingMs(
+      targetUserPresence.last_seen
+    );
+    if (remainingFreshnessMs === null || remainingFreshnessMs <= 0) {
+      return;
     }
 
-    return hasFreshPresenceSnapshot;
-  }, [
-    hasPresenceRosterChannel,
-    isOpen,
-    isTargetOnlineInRoster,
-    targetUser,
-    targetUserPresence,
-  ]);
+    const timeoutId = window.setTimeout(() => {
+      setPresenceFreshnessTick(previousTick => previousTick + 1);
+    }, remainingFreshnessMs + 32);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isOpen, targetUserPresence]);
+
+  const isTargetOnline =
+    isOpen && targetUser
+      ? (() => {
+          const hasFreshPresenceSnapshot =
+            targetUserPresence?.is_online === true &&
+            isPresenceFresh(targetUserPresence.last_seen);
+
+          // Browser-active presence remains the primary signal, but a fresh
+          // persisted snapshot covers temporary roster gaps while recovery happens.
+          if (hasPresenceRosterChannel) {
+            return isTargetOnlineInRoster || hasFreshPresenceSnapshot;
+          }
+
+          return hasFreshPresenceSnapshot;
+        })()
+      : false;
 
   return {
     isTargetOnline,

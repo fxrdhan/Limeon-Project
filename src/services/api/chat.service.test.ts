@@ -315,6 +315,45 @@ describe('chatService', () => {
     });
   });
 
+  it('uses the edge cleanup function once when deleting multiple threads', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      data: {
+        deletedMessageIds: ['message-1', 'message-2'],
+        deletedTargetMessageIds: ['message-1'],
+        failedTargetMessageIds: ['message-2'],
+        cleanupWarningTargetMessageIds: ['message-1'],
+        failedStoragePaths: ['documents/channel/user-a_report.pdf'],
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.deleteMessageThreadsAndCleanup([
+      'message-1',
+      'message-2',
+      'message-1',
+      '  ',
+    ]);
+
+    expect(mockInvoke).toHaveBeenCalledWith('chat-cleanup', {
+      body: {
+        action: 'delete_threads',
+        messageIds: ['message-1', 'message-2'],
+      },
+    });
+    expect(result).toEqual({
+      data: {
+        deletedMessageIds: ['message-1', 'message-2'],
+        deletedTargetMessageIds: ['message-1'],
+        failedTargetMessageIds: ['message-2'],
+        cleanupWarningTargetMessageIds: ['message-1'],
+        failedStoragePaths: ['documents/channel/user-a_report.pdf'],
+      },
+      error: null,
+    });
+  });
+
   it('upserts presence through the dedicated rpc', async () => {
     mockRpc.mockResolvedValueOnce({
       data: {
