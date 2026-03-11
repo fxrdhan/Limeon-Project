@@ -53,6 +53,8 @@ supabase/functions/*
 !supabase/functions/chat-cleanup/
 supabase/functions/chat-cleanup/*
 !supabase/functions/chat-cleanup/index.ts
+!supabase/functions/chat-cleanup/actions.ts
+!supabase/functions/chat-cleanup/actions.test.ts
 
 # gemini-cli settings
 .gemini/

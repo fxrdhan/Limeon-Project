@@ -1,16 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  type ChatCleanupMessageRecord,
-  isOwnedChatPath,
-  resolveChatMessageStoragePaths,
-} from "../../../shared/chatStoragePaths.ts";
+  cleanupStoragePaths,
+  deleteThreadAndCleanup,
+  normalizeStoragePaths,
+  partitionOwnedChatPaths,
+  retryCleanupFailures,
+  type CleanupAction,
+  type ChatCleanupRepository,
+} from "./actions.ts";
 
 const CHAT_BUCKET = "chat";
 const STORAGE_DELETE_MAX_ATTEMPTS = 3;
 const STORAGE_DELETE_RETRY_DELAY_MS = 180;
-
-type CleanupAction = "delete_thread" | "cleanup_storage" | "retry_failures";
 
 interface ChatCleanupRequest {
   action?: CleanupAction;
@@ -46,30 +48,6 @@ const wait = (durationMs: number) =>
   new Promise(resolve => {
     setTimeout(resolve, durationMs);
   });
-
-const normalizeStoragePaths = (storagePaths: Array<string | null | undefined>) =>
-  [...new Set(storagePaths)]
-    .map(storagePath => storagePath?.trim() || null)
-    .filter((storagePath): storagePath is string => Boolean(storagePath));
-
-const partitionOwnedChatPaths = (storagePaths: string[], userId: string) => {
-  const ownedStoragePaths: string[] = [];
-  const foreignStoragePaths: string[] = [];
-
-  normalizeStoragePaths(storagePaths).forEach(storagePath => {
-    if (isOwnedChatPath(storagePath, userId)) {
-      ownedStoragePaths.push(storagePath);
-      return;
-    }
-
-    foreignStoragePaths.push(storagePath);
-  });
-
-  return {
-    ownedStoragePaths,
-    foreignStoragePaths,
-  };
-};
 
 const deleteStoragePathsWithRetry = async (
   adminClient: ReturnType<typeof createClient>,
@@ -110,7 +88,7 @@ const deleteStoragePathsWithRetry = async (
   return pendingPaths;
 };
 
-const recordCleanupFailure = async ({
+const recordStoredCleanupFailure = async ({
   adminClient,
   requestedBy,
   messageId,
@@ -147,7 +125,7 @@ const recordCleanupFailure = async ({
   }
 };
 
-const resolveCleanupFailure = async (
+const resolveStoredCleanupFailure = async (
   adminClient: ReturnType<typeof createClient>,
   failureId: string
 ) => {
@@ -165,7 +143,7 @@ const resolveCleanupFailure = async (
   }
 };
 
-const updateCleanupFailureAttempt = async (
+const updateStoredCleanupFailureAttempt = async (
   adminClient: ReturnType<typeof createClient>,
   failureId: string,
   attempts: number,
@@ -184,6 +162,74 @@ const updateCleanupFailureAttempt = async (
     console.error("Failed to update chat cleanup failure", error);
   }
 };
+
+const createChatCleanupRepository = ({
+  adminClient,
+  userClient,
+}: {
+  adminClient: ReturnType<typeof createClient>;
+  userClient: ReturnType<typeof createClient>;
+}): ChatCleanupRepository => ({
+  async getOwnedParentMessage(messageId, userId) {
+    const { data, error } = await userClient
+      .from("chat_messages")
+      .select(
+        "id, sender_id, message, message_type, file_name, file_mime_type, file_preview_url, file_storage_path"
+      )
+      .eq("id", messageId)
+      .eq("sender_id", userId)
+      .maybeSingle();
+
+    return {
+      message: data,
+      error: error?.message ?? null,
+    };
+  },
+  async deleteMessageThread(messageId) {
+    const { data, error } = await userClient.rpc("delete_chat_message_thread", {
+      p_message_id: messageId,
+    });
+
+    return {
+      deletedMessageIds: Array.isArray(data) ? data : [],
+      error: error?.message ?? null,
+    };
+  },
+  async deleteStoragePaths(storagePaths) {
+    return deleteStoragePathsWithRetry(adminClient, storagePaths);
+  },
+  async recordCleanupFailure(params) {
+    await recordStoredCleanupFailure({
+      adminClient,
+      ...params,
+    });
+  },
+  async listPendingCleanupFailures(userId, limit) {
+    const { data, error } = await adminClient
+      .from("chat_storage_cleanup_failures")
+      .select("id, storage_paths, attempts")
+      .eq("requested_by", userId)
+      .is("resolved_at", null)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+
+    return {
+      failures: data ?? [],
+      error: error?.message ?? null,
+    };
+  },
+  async resolveCleanupFailure(failureId) {
+    await resolveStoredCleanupFailure(adminClient, failureId);
+  },
+  async updateCleanupFailureAttempt(failureId, attempts, lastError) {
+    await updateStoredCleanupFailureAttempt(
+      adminClient,
+      failureId,
+      attempts,
+      lastError
+    );
+  },
+});
 
 Deno.serve(async req => {
   if (req.method === "OPTIONS") {
@@ -234,168 +280,38 @@ Deno.serve(async req => {
   } catch {
     return json(req, 400, { error: "Invalid JSON body" });
   }
+  const repository = createChatCleanupRepository({
+    adminClient,
+    userClient,
+  });
 
   if (payload.action === "delete_thread") {
-    const messageId = payload.messageId?.trim();
-    if (!messageId) {
-      return json(req, 400, { error: "messageId is required" });
-    }
-
-    const { data: parentMessage, error: parentMessageError } = await userClient
-      .from("chat_messages")
-      .select(
-        "id, sender_id, message, message_type, file_name, file_mime_type, file_preview_url, file_storage_path"
-      )
-      .eq("id", messageId)
-      .eq("sender_id", user.id)
-      .maybeSingle();
-
-    if (parentMessageError) {
-      return json(req, 500, { error: parentMessageError.message });
-    }
-
-    if (!parentMessage || parentMessage.sender_id !== user.id) {
-      return json(req, 403, { error: "Forbidden" });
-    }
-
-    const storagePaths = resolveChatMessageStoragePaths(
-      parentMessage as ChatCleanupMessageRecord
-    );
-    const { ownedStoragePaths, foreignStoragePaths } = partitionOwnedChatPaths(
-      storagePaths,
-      user.id
-    );
-
-    const { data: deletedMessageIds, error: deleteError } = await userClient.rpc(
-      "delete_chat_message_thread",
-      {
-        p_message_id: messageId,
-      }
-    );
-
-    if (deleteError) {
-      return json(req, 500, { error: deleteError.message });
-    }
-
-    const normalizedDeletedMessageIds = (deletedMessageIds || []).filter(
-      (deletedMessageId): deletedMessageId is string =>
-        typeof deletedMessageId === "string" && deletedMessageId.length > 0
-    );
-
-    const deletedOwnedStoragePaths =
-      ownedStoragePaths.length > 0
-        ? await deleteStoragePathsWithRetry(adminClient, ownedStoragePaths)
-        : [];
-    const failedStoragePaths = normalizeStoragePaths([
-      ...foreignStoragePaths,
-      ...deletedOwnedStoragePaths,
-    ]);
-
-    if (failedStoragePaths.length > 0) {
-      await recordCleanupFailure({
-        adminClient,
-        requestedBy: user.id,
-        messageId,
-        failureStage: "delete_thread",
-        storagePaths: failedStoragePaths,
-        lastError:
-          foreignStoragePaths.length > 0
-            ? "Skipped chat storage cleanup for path(s) that do not belong to the sender"
-            : "Failed to fully clean up chat storage after deleting a thread",
-      });
-    }
-
-    return json(req, 200, {
-      deletedMessageIds: normalizedDeletedMessageIds,
-      failedStoragePaths,
+    const result = await deleteThreadAndCleanup({
+      repository,
+      userId: user.id,
+      messageId: payload.messageId,
     });
+
+    return json(req, result.status, result.body);
   }
 
   if (payload.action === "cleanup_storage") {
-    const storagePaths = normalizeStoragePaths(payload.storagePaths ?? []);
-    if (storagePaths.length === 0) {
-      return json(req, 200, { failedStoragePaths: [] });
-    }
-
-    const hasForeignPath = storagePaths.some(
-      storagePath => !isOwnedChatPath(storagePath, user.id)
-    );
-    if (hasForeignPath) {
-      return json(req, 403, { error: "Forbidden" });
-    }
-
-    const failedStoragePaths = await deleteStoragePathsWithRetry(
-      adminClient,
-      storagePaths
-    );
-
-    if (failedStoragePaths.length > 0) {
-      await recordCleanupFailure({
-        adminClient,
-        requestedBy: user.id,
-        messageId: null,
-        failureStage: "cleanup_storage",
-        storagePaths: failedStoragePaths,
-        lastError: "Failed to fully clean up chat storage",
-      });
-    }
-
-    return json(req, 200, {
-      failedStoragePaths,
+    const result = await cleanupStoragePaths({
+      repository,
+      userId: user.id,
+      storagePaths: payload.storagePaths,
     });
+
+    return json(req, result.status, result.body);
   }
 
   if (payload.action === "retry_failures") {
-    const { data: failures, error: failuresError } = await adminClient
-      .from("chat_storage_cleanup_failures")
-      .select("id, storage_paths, attempts")
-      .eq("requested_by", user.id)
-      .is("resolved_at", null)
-      .order("created_at", { ascending: true })
-      .limit(20);
-
-    if (failuresError) {
-      return json(req, 500, { error: failuresError.message });
-    }
-
-    let resolvedCount = 0;
-    let remainingCount = failures?.length ?? 0;
-
-    for (const failure of failures || []) {
-      const { ownedStoragePaths, foreignStoragePaths } = partitionOwnedChatPaths(
-        failure.storage_paths ?? [],
-        user.id
-      );
-      const retriedOwnedStoragePaths =
-        ownedStoragePaths.length > 0
-          ? await deleteStoragePathsWithRetry(adminClient, ownedStoragePaths)
-          : [];
-      const failedStoragePaths = normalizeStoragePaths([
-        ...foreignStoragePaths,
-        ...retriedOwnedStoragePaths,
-      ]);
-
-      if (failedStoragePaths.length === 0) {
-        resolvedCount += 1;
-        remainingCount -= 1;
-        await resolveCleanupFailure(adminClient, failure.id);
-        continue;
-      }
-
-      await updateCleanupFailureAttempt(
-        adminClient,
-        failure.id,
-        (failure.attempts ?? 0) + 1,
-        foreignStoragePaths.length > 0
-          ? "Skipped chat storage cleanup for path(s) that do not belong to the sender"
-          : "Failed to fully clean up chat storage during retry"
-      );
-    }
-
-    return json(req, 200, {
-      resolvedCount,
-      remainingCount,
+    const result = await retryCleanupFailures({
+      repository,
+      userId: user.id,
     });
+
+    return json(req, result.status, result.body);
   }
 
   return json(req, 400, { error: "Unsupported action" });
