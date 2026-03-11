@@ -32,7 +32,7 @@ vi.mock('@/store/authStore', () => ({
 }));
 
 vi.mock('@/services/api/chat.service', () => ({
-  chatService: mockChatService,
+  chatPresenceService: mockChatService,
 }));
 
 vi.mock('@/services/realtime/realtime.service', () => ({
