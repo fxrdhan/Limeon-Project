@@ -7,6 +7,7 @@ import {
   resolveChatMessageStoragePaths,
   resolveFileExtension,
 } from '../../../../shared/chatStoragePaths';
+import { chatRuntimeState } from './chatRuntimeState';
 
 export {
   buildPdfPreviewStoragePath,
@@ -54,10 +55,7 @@ export const isDirectChatAssetUrl = (url: string) =>
 
 export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
 export const SIGNED_CHAT_ASSET_URL_CACHE_MAX_ENTRIES = 128;
-const signedChatAssetUrlCache = new Map<
-  string,
-  { signedUrl: string; expiresAt: number }
->();
+const signedChatAssetUrlCache = chatRuntimeState.signedChatAssetUrls;
 
 const pruneExpiredSignedChatAssetUrls = (now = Date.now()) => {
   for (const [storagePath, cachedEntry] of signedChatAssetUrlCache) {

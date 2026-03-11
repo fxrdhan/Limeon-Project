@@ -1,102 +1,57 @@
 import { useMemo } from 'react';
 import type { ComposerPanelModel } from '../components/ComposerPanel';
+import { useChatSidebarControllerContext } from './useChatSidebarControllerContext';
 
-interface UseChatComposerModelProps {
-  message: string;
-  editingMessagePreview: string | null;
-  messageInputHeight: number;
-  isMessageInputMultiline: boolean;
-  isSendSuccessGlowVisible: boolean;
-  isAttachModalOpen: boolean;
-  pendingComposerAttachments: ComposerPanelModel['pendingComposerAttachments'];
-  previewComposerImageAttachment: ComposerPanelModel['previewComposerImageAttachment'];
-  isComposerImageExpanded: boolean;
-  isComposerImageExpandedVisible: boolean;
-  messageInputRef: ComposerPanelModel['messageInputRef'];
-  composerContainerRef: ComposerPanelModel['composerContainerRef'];
-  attachButtonRef: ComposerPanelModel['attachButtonRef'];
-  attachModalRef: ComposerPanelModel['attachModalRef'];
-  imageInputRef: ComposerPanelModel['imageInputRef'];
-  documentInputRef: ComposerPanelModel['documentInputRef'];
-  audioInputRef: ComposerPanelModel['audioInputRef'];
-  openImageActionsAttachmentId: string | null;
-  imageActionsMenuPosition: ComposerPanelModel['imageActionsMenuPosition'];
-  composerDocumentPreviewUrl: string | null;
-  composerDocumentPreviewName: string;
-  isComposerDocumentPreviewVisible: boolean;
-  imageActionsButtonRef: ComposerPanelModel['imageActionsButtonRef'];
-  imageActionsMenuRef: ComposerPanelModel['imageActionsMenuRef'];
-  imageActions: ComposerPanelModel['imageActions'];
-  setMessage: (value: string) => void;
-  handleKeyPress: ComposerPanelModel['onKeyDown'];
-  handleComposerPaste: ComposerPanelModel['onPaste'];
-  handleSendMessage: () => Promise<void>;
-  handleAttachButtonClick: () => void;
-  handleAttachImageClick: ComposerPanelModel['onAttachImageClick'];
-  handleAttachDocumentClick: ComposerPanelModel['onAttachDocumentClick'];
-  handleAttachAudioClick: () => void;
-  handleImageFileChange: ComposerPanelModel['onImageFileChange'];
-  handleDocumentFileChange: ComposerPanelModel['onDocumentFileChange'];
-  handleAudioFileChange: ComposerPanelModel['onAudioFileChange'];
-  handleCancelEditMessage: () => void;
-  focusEditingTargetMessage: () => void;
-  openComposerImagePreview: (attachmentId: string) => void;
-  closeComposerImagePreview: () => void;
-  removePendingComposerAttachment: (attachmentId: string) => void;
-  queueComposerImage: (file: File, replaceAttachmentId?: string) => boolean;
-  closeComposerDocumentPreview: () => void;
-  openDocumentAttachmentInPortal: ComposerPanelModel['onOpenDocumentAttachmentInPortal'];
-  handleToggleImageActionsMenu: ComposerPanelModel['onToggleImageActionsMenu'];
-}
+export const useChatComposerModel = () => {
+  const {
+    message,
+    editingMessagePreview,
+    messageInputHeight,
+    isMessageInputMultiline,
+    isSendSuccessGlowVisible,
+    isAttachModalOpen,
+    pendingComposerAttachments,
+    previewComposerImageAttachment,
+    isComposerImageExpanded,
+    isComposerImageExpandedVisible,
+    messageInputRef,
+    composerContainerRef,
+    attachButtonRef,
+    attachModalRef,
+    imageInputRef,
+    documentInputRef,
+    audioInputRef,
+    openImageActionsAttachmentId,
+    imageActionsMenuPosition,
+    composerDocumentPreviewUrl,
+    composerDocumentPreviewName,
+    isComposerDocumentPreviewVisible,
+    imageActionsButtonRef,
+    imageActionsMenuRef,
+    imageActions,
+    setMessage,
+    handleKeyPress,
+    handleComposerPaste,
+    handleSendMessage,
+    handleAttachButtonClick,
+    handleAttachImageClick,
+    handleAttachDocumentClick,
+    handleAttachAudioClick,
+    handleImageFileChange,
+    handleDocumentFileChange,
+    handleAudioFileChange,
+    handleCancelEditMessage,
+    focusEditingTargetMessage,
+    openComposerImagePreview,
+    closeComposerImagePreview,
+    removePendingComposerAttachment,
+    queueComposerImage,
+    closeComposerDocumentPreview,
+    openDocumentAttachmentInPortal,
+    handleToggleImageActionsMenu,
+  } = useChatSidebarControllerContext();
 
-export const useChatComposerModel = ({
-  message,
-  editingMessagePreview,
-  messageInputHeight,
-  isMessageInputMultiline,
-  isSendSuccessGlowVisible,
-  isAttachModalOpen,
-  pendingComposerAttachments,
-  previewComposerImageAttachment,
-  isComposerImageExpanded,
-  isComposerImageExpandedVisible,
-  messageInputRef,
-  composerContainerRef,
-  attachButtonRef,
-  attachModalRef,
-  imageInputRef,
-  documentInputRef,
-  audioInputRef,
-  openImageActionsAttachmentId,
-  imageActionsMenuPosition,
-  composerDocumentPreviewUrl,
-  composerDocumentPreviewName,
-  isComposerDocumentPreviewVisible,
-  imageActionsButtonRef,
-  imageActionsMenuRef,
-  imageActions,
-  setMessage,
-  handleKeyPress,
-  handleComposerPaste,
-  handleSendMessage,
-  handleAttachButtonClick,
-  handleAttachImageClick,
-  handleAttachDocumentClick,
-  handleAttachAudioClick,
-  handleImageFileChange,
-  handleDocumentFileChange,
-  handleAudioFileChange,
-  handleCancelEditMessage,
-  focusEditingTargetMessage,
-  openComposerImagePreview,
-  closeComposerImagePreview,
-  removePendingComposerAttachment,
-  queueComposerImage,
-  closeComposerDocumentPreview,
-  openDocumentAttachmentInPortal,
-  handleToggleImageActionsMenu,
-}: UseChatComposerModelProps) =>
-  useMemo<ComposerPanelModel>(
+  return useMemo<ComposerPanelModel>(
     () => ({
       message,
       editingMessagePreview,
@@ -194,3 +149,4 @@ export const useChatComposerModel = ({
       setMessage,
     ]
   );
+};

@@ -142,34 +142,62 @@ vi.mock('../hooks/useChatViewport', () => ({
   }),
 }));
 
-vi.mock('../components/ChatHeader', () => ({
-  default: ({
-    model,
-  }: {
-    model: Record<string, unknown> & { onClose: () => void };
-  }) => {
-    renderedChildProps.header = model;
-    return (
-      <button onClick={model.onClose} type="button">
-        close chat
-      </button>
-    );
-  },
-}));
+vi.mock('../components/ChatHeader', async () => {
+  const { useChatHeaderModel } = await vi.importActual<
+    typeof import('../hooks/useChatHeaderModel')
+  >('../hooks/useChatHeaderModel');
 
-vi.mock('../components/MessagesPane', () => ({
-  default: ({ model }: { model: Record<string, unknown> }) => {
-    renderedChildProps.messages = model;
-    return <div>messages pane</div>;
-  },
-}));
+  return {
+    default: function MockChatHeader() {
+      const model = useChatHeaderModel() as unknown as Record<
+        string,
+        unknown
+      > & {
+        onClose: () => void;
+      };
+      renderedChildProps.header = model;
+      return (
+        <button onClick={model.onClose} type="button">
+          close chat
+        </button>
+      );
+    },
+  };
+});
 
-vi.mock('../components/ComposerPanel', () => ({
-  default: ({ model }: { model: Record<string, unknown> }) => {
-    renderedChildProps.composer = model;
-    return <div>composer panel</div>;
-  },
-}));
+vi.mock('../components/MessagesPane', async () => {
+  const { useChatMessagesModel } = await vi.importActual<
+    typeof import('../hooks/useChatMessagesModel')
+  >('../hooks/useChatMessagesModel');
+
+  return {
+    default: function MockMessagesPane() {
+      const model = useChatMessagesModel() as unknown as Record<
+        string,
+        unknown
+      >;
+      renderedChildProps.messages = model;
+      return <div>messages pane</div>;
+    },
+  };
+});
+
+vi.mock('../components/ComposerPanel', async () => {
+  const { useChatComposerModel } = await vi.importActual<
+    typeof import('../hooks/useChatComposerModel')
+  >('../hooks/useChatComposerModel');
+
+  return {
+    default: function MockComposerPanel() {
+      const model = useChatComposerModel() as unknown as Record<
+        string,
+        unknown
+      >;
+      renderedChildProps.composer = model;
+      return <div>composer panel</div>;
+    },
+  };
+});
 
 describe('ChatSidebarPanel', () => {
   beforeEach(() => {

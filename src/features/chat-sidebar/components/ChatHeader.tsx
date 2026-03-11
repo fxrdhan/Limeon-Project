@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { TbCheckbox, TbSearch } from 'react-icons/tb';
 import type { UserPresence } from '../data/chatSidebarGateway';
+import { useChatHeaderModel } from '../hooks/useChatHeaderModel';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import ConversationHeaderContent from './header/ConversationHeaderContent';
 import SearchHeaderContent from './header/SearchHeaderContent';
@@ -45,7 +46,7 @@ export interface ChatHeaderModel {
   getInitialsColor: (userId: string) => string;
 }
 
-const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
+const ChatHeaderContent = ({ model }: { model: ChatHeaderModel }) => {
   const {
     targetUser,
     displayTargetPhotoUrl,
@@ -186,5 +187,17 @@ const ChatHeader = ({ model }: { model: ChatHeaderModel }) => {
     </div>
   );
 };
+
+const ChatHeaderWithControllerModel = () => {
+  const model = useChatHeaderModel();
+  return <ChatHeaderContent model={model} />;
+};
+
+const ChatHeader = ({ model }: { model?: ChatHeaderModel }) =>
+  model ? (
+    <ChatHeaderContent model={model} />
+  ) : (
+    <ChatHeaderWithControllerModel />
+  );
 
 export default ChatHeader;

@@ -1,13 +1,15 @@
 import { PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES } from '../constants';
+import {
+  chatRuntimeState,
+  type PdfMessagePreviewCacheEntry,
+} from './chatRuntimeState';
 
-export type PdfMessagePreviewCacheEntry = {
-  coverDataUrl: string;
-  pageCount: number;
-  cacheKey: string;
-};
+export type { PdfMessagePreviewCacheEntry } from './chatRuntimeState';
 
-const pdfMessagePreviewCache = new Map<string, PdfMessagePreviewCacheEntry>();
-const pdfMessagePreviewCacheKeysByMessageId = new Map<string, string>();
+const {
+  cache: pdfMessagePreviewCache,
+  keysByMessageId: pdfMessagePreviewCacheKeysByMessageId,
+} = chatRuntimeState.pdfMessagePreviews;
 
 const removeCachedPreviewByKey = (cacheKey: string) => {
   pdfMessagePreviewCache.delete(cacheKey);

@@ -34,6 +34,7 @@ const buildMessage = (
     Pick<
       ChatMessage,
       | 'id'
+      | 'sender_id'
       | 'message'
       | 'message_type'
       | 'file_name'
@@ -45,6 +46,7 @@ const buildMessage = (
   > = {}
 ) => ({
   id: overrides.id ?? 'message-1',
+  sender_id: overrides.sender_id ?? 'user-a',
   message: overrides.message ?? 'documents/channel/report.pdf',
   message_type: overrides.message_type ?? 'file',
   file_name: overrides.file_name ?? 'report.pdf',

@@ -1,78 +1,63 @@
+import {
+  chatRuntimeState,
+  notifyRuntimeListeners,
+  readRuntimeSessionStorage,
+  writeRuntimeSessionStorage,
+} from './chatRuntimeState';
+
 const PENDING_READ_RECEIPT_STORAGE_KEY = 'chat-pending-read-receipts';
 
-const pendingReadReceiptIdsByUser = new Map<string, Set<string>>();
-const pendingReadReceiptListeners = new Set<() => void>();
-let hasHydratedPendingReadReceipts = false;
-
-const canUseSessionStorage = () =>
-  typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+const {
+  idsByUser: pendingReadReceiptIdsByUser,
+  listeners: pendingReadReceiptListeners,
+} = chatRuntimeState.pendingReadReceipts;
 
 const notifyPendingReadReceiptListeners = () => {
-  pendingReadReceiptListeners.forEach(listener => {
-    listener();
-  });
+  notifyRuntimeListeners(pendingReadReceiptListeners);
 };
 
 const persistPendingReadReceiptIds = () => {
-  if (!canUseSessionStorage()) {
-    return;
-  }
-
-  try {
-    const serializedPayload = Object.fromEntries(
-      [...pendingReadReceiptIdsByUser.entries()].map(([userId, messageIds]) => [
-        userId,
-        [...messageIds],
-      ])
-    );
-    window.sessionStorage.setItem(
-      PENDING_READ_RECEIPT_STORAGE_KEY,
-      JSON.stringify(serializedPayload)
-    );
-  } catch {
-    // Ignore persistence failures. The in-memory queue still works.
-  }
+  const serializedPayload = Object.fromEntries(
+    [...pendingReadReceiptIdsByUser.entries()].map(([userId, messageIds]) => [
+      userId,
+      [...messageIds],
+    ])
+  );
+  writeRuntimeSessionStorage(
+    PENDING_READ_RECEIPT_STORAGE_KEY,
+    serializedPayload
+  );
 };
 
 const hydratePendingReadReceiptIds = () => {
-  if (hasHydratedPendingReadReceipts || !canUseSessionStorage()) {
-    hasHydratedPendingReadReceipts = true;
+  if (chatRuntimeState.pendingReadReceipts.hasHydrated) {
     return;
   }
 
-  hasHydratedPendingReadReceipts = true;
+  chatRuntimeState.pendingReadReceipts.hasHydrated = true;
 
-  try {
-    const serializedIds = window.sessionStorage.getItem(
-      PENDING_READ_RECEIPT_STORAGE_KEY
-    );
-    if (!serializedIds) {
-      return;
-    }
-
-    const parsedPayload = JSON.parse(serializedIds);
-    if (!parsedPayload || typeof parsedPayload !== 'object') {
-      return;
-    }
-
-    Object.entries(parsedPayload).forEach(([userId, rawMessageIds]) => {
-      if (!userId.trim() || !Array.isArray(rawMessageIds)) {
-        return;
-      }
-
-      const normalizedMessageIds = rawMessageIds.filter(
-        (messageId): messageId is string =>
-          typeof messageId === 'string' && messageId.trim().length > 0
-      );
-      if (normalizedMessageIds.length === 0) {
-        return;
-      }
-
-      pendingReadReceiptIdsByUser.set(userId, new Set(normalizedMessageIds));
-    });
-  } catch {
-    // Ignore hydration failures and continue with an empty queue.
+  const parsedPayload = readRuntimeSessionStorage<unknown>(
+    PENDING_READ_RECEIPT_STORAGE_KEY
+  );
+  if (!parsedPayload || typeof parsedPayload !== 'object') {
+    return;
   }
+
+  Object.entries(parsedPayload).forEach(([userId, rawMessageIds]) => {
+    if (!userId.trim() || !Array.isArray(rawMessageIds)) {
+      return;
+    }
+
+    const normalizedMessageIds = rawMessageIds.filter(
+      (messageId): messageId is string =>
+        typeof messageId === 'string' && messageId.trim().length > 0
+    );
+    if (normalizedMessageIds.length === 0) {
+      return;
+    }
+
+    pendingReadReceiptIdsByUser.set(userId, new Set(normalizedMessageIds));
+  });
 };
 
 const getPendingMessageIdsForUser = (userId: string) => {

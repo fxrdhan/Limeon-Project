@@ -2,67 +2,40 @@ import { useMemo } from 'react';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
 import { isPresenceFresh } from '../components/header/presence';
 import type { ChatHeaderModel } from '../components/ChatHeader';
+import { useChatSidebarControllerContext } from './useChatSidebarControllerContext';
 
-interface UseChatHeaderModelProps {
-  targetUser: ChatHeaderModel['targetUser'];
-  displayTargetPhotoUrl: string | null;
-  isTargetOnline: boolean | null | undefined;
-  targetUserPresence: ChatHeaderModel['targetUserPresence'];
-  targetUserPresenceError: string | null;
-  isMessageSearchMode: boolean;
-  messageSearchQuery: string;
-  messageSearchState: ChatHeaderModel['searchState'];
-  searchMatchedMessageCount: number;
-  activeSearchResultIndex: number;
-  canNavigateSearchUp: boolean;
-  canNavigateSearchDown: boolean;
-  isSelectionMode: boolean;
-  selectedVisibleMessageCount: number;
-  canDeleteSelectedMessages: boolean;
-  searchInputRef: ChatHeaderModel['searchInputRef'];
-  handleEnterMessageSearchMode: () => void;
-  handleExitMessageSearchMode: () => void;
-  handleEnterMessageSelectionMode: () => void;
-  handleExitMessageSelectionMode: () => void;
-  handleMessageSearchQueryChange: (value: string) => void;
-  handleNavigateSearchUp: () => void;
-  handleNavigateSearchDown: () => void;
-  handleFocusSearchInput: () => void;
-  handleCopySelectedMessages: () => void;
-  handleDeleteSelectedMessages: () => void;
-  handleClose: () => void;
-}
+export const useChatHeaderModel = () => {
+  const {
+    targetUser,
+    displayTargetPhotoUrl,
+    isTargetOnline,
+    targetUserPresence,
+    targetUserPresenceError,
+    isMessageSearchMode,
+    messageSearchQuery,
+    messageSearchState,
+    searchMatchedMessageIds,
+    activeSearchResultIndex,
+    canNavigateSearchUp,
+    canNavigateSearchDown,
+    isSelectionMode,
+    selectedVisibleMessages,
+    canDeleteSelectedMessages,
+    searchInputRef,
+    handleEnterMessageSearchMode,
+    handleExitMessageSearchMode,
+    handleEnterMessageSelectionMode,
+    handleExitMessageSelectionMode,
+    handleMessageSearchQueryChange,
+    handleNavigateSearchUp,
+    handleNavigateSearchDown,
+    handleFocusSearchInput,
+    handleCopySelectedMessages,
+    handleDeleteSelectedMessages,
+    handleClose,
+  } = useChatSidebarControllerContext();
 
-export const useChatHeaderModel = ({
-  targetUser,
-  displayTargetPhotoUrl,
-  isTargetOnline,
-  targetUserPresence,
-  targetUserPresenceError,
-  isMessageSearchMode,
-  messageSearchQuery,
-  messageSearchState,
-  searchMatchedMessageCount,
-  activeSearchResultIndex,
-  canNavigateSearchUp,
-  canNavigateSearchDown,
-  isSelectionMode,
-  selectedVisibleMessageCount,
-  canDeleteSelectedMessages,
-  searchInputRef,
-  handleEnterMessageSearchMode,
-  handleExitMessageSearchMode,
-  handleEnterMessageSelectionMode,
-  handleExitMessageSelectionMode,
-  handleMessageSearchQueryChange,
-  handleNavigateSearchUp,
-  handleNavigateSearchDown,
-  handleFocusSearchInput,
-  handleCopySelectedMessages,
-  handleDeleteSelectedMessages,
-  handleClose,
-}: UseChatHeaderModelProps) =>
-  useMemo<ChatHeaderModel>(
+  return useMemo<ChatHeaderModel>(
     () => ({
       targetUser,
       displayTargetPhotoUrl,
@@ -76,12 +49,12 @@ export const useChatHeaderModel = ({
       isSearchMode: isMessageSearchMode,
       searchQuery: messageSearchQuery,
       searchState: messageSearchState,
-      searchResultCount: searchMatchedMessageCount,
+      searchResultCount: searchMatchedMessageIds.length,
       activeSearchResultIndex: Math.max(activeSearchResultIndex, 0),
       canNavigateSearchUp,
       canNavigateSearchDown,
       isSelectionMode,
-      selectedMessageCount: selectedVisibleMessageCount,
+      selectedMessageCount: selectedVisibleMessages.length,
       canDeleteSelectedMessages,
       searchInputRef,
       onEnterSearchMode: handleEnterMessageSearchMode,
@@ -121,10 +94,11 @@ export const useChatHeaderModel = ({
       messageSearchQuery,
       messageSearchState,
       searchInputRef,
-      searchMatchedMessageCount,
-      selectedVisibleMessageCount,
+      searchMatchedMessageIds.length,
+      selectedVisibleMessages.length,
       targetUser,
       targetUserPresence,
       targetUserPresenceError,
     ]
   );
+};

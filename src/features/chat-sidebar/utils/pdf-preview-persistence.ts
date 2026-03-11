@@ -7,9 +7,18 @@ import { StorageService } from '@/services/api/storage.service';
 import {
   buildPdfPreviewStoragePath,
   fetchPdfBlobWithFallback,
-  resolveFileExtension,
 } from './message-file';
-import { renderPdfPreviewBlob } from './pdf-preview';
+import {
+  chatRuntimeState,
+  notifyRuntimeListeners,
+  readRuntimeSessionStorage,
+  type PendingPdfPreviewJob,
+  writeRuntimeSessionStorage,
+} from './chatRuntimeState';
+import {
+  createPdfPreviewUploadArtifact,
+  isPdfPreviewableMessage,
+} from './pdf-message-preview';
 
 type PersistablePdfMessage = Pick<
   ChatMessage,
@@ -36,102 +45,64 @@ type DirectPersistablePdfMessage = Pick<
   | 'file_storage_path'
 >;
 
-export interface PendingPdfPreviewJob {
-  messageId: string;
-  senderId: string;
-  message: string;
-  fileName: string | null;
-  fileMimeType: string | null;
-  fileStoragePath: string;
-  attempts: number;
-}
-
 const PENDING_PDF_PREVIEW_STORAGE_KEY = 'chat-pending-pdf-preview-jobs';
-const pendingPdfPreviewJobs = new Map<string, PendingPdfPreviewJob>();
-const pendingPdfPreviewListeners = new Set<() => void>();
-let hasHydratedPendingPdfPreviewJobs = false;
-
-const canUseSessionStorage = () =>
-  typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+const { jobs: pendingPdfPreviewJobs, listeners: pendingPdfPreviewListeners } =
+  chatRuntimeState.pendingPdfPreviews;
 
 const notifyPendingPdfPreviewListeners = () => {
-  pendingPdfPreviewListeners.forEach(listener => {
-    listener();
-  });
+  notifyRuntimeListeners(pendingPdfPreviewListeners);
 };
 
 const persistPendingPdfPreviewJobs = () => {
-  if (!canUseSessionStorage()) {
-    return;
-  }
-
-  try {
-    window.sessionStorage.setItem(
-      PENDING_PDF_PREVIEW_STORAGE_KEY,
-      JSON.stringify([...pendingPdfPreviewJobs.values()])
-    );
-  } catch {
-    // Ignore persistence failures. The in-memory queue still works.
-  }
+  writeRuntimeSessionStorage(PENDING_PDF_PREVIEW_STORAGE_KEY, [
+    ...pendingPdfPreviewJobs.values(),
+  ]);
 };
 
 const hydratePendingPdfPreviewJobs = () => {
-  if (hasHydratedPendingPdfPreviewJobs || !canUseSessionStorage()) {
-    hasHydratedPendingPdfPreviewJobs = true;
+  if (chatRuntimeState.pendingPdfPreviews.hasHydrated) {
     return;
   }
 
-  hasHydratedPendingPdfPreviewJobs = true;
+  chatRuntimeState.pendingPdfPreviews.hasHydrated = true;
 
-  try {
-    const serializedJobs = window.sessionStorage.getItem(
-      PENDING_PDF_PREVIEW_STORAGE_KEY
-    );
-    if (!serializedJobs) {
-      return;
-    }
-
-    const parsedJobs = JSON.parse(serializedJobs);
-    if (!Array.isArray(parsedJobs)) {
-      return;
-    }
-
-    parsedJobs.forEach(job => {
-      if (
-        typeof job?.messageId === 'string' &&
-        job.messageId.trim().length > 0 &&
-        typeof job?.senderId === 'string' &&
-        job.senderId.trim().length > 0 &&
-        typeof job?.message === 'string' &&
-        typeof job?.fileStoragePath === 'string' &&
-        job.fileStoragePath.trim().length > 0
-      ) {
-        pendingPdfPreviewJobs.set(job.messageId, {
-          messageId: job.messageId,
-          senderId: job.senderId,
-          message: job.message,
-          fileName: typeof job.fileName === 'string' ? job.fileName : null,
-          fileMimeType:
-            typeof job.fileMimeType === 'string' ? job.fileMimeType : null,
-          fileStoragePath: job.fileStoragePath,
-          attempts:
-            typeof job.attempts === 'number' && Number.isFinite(job.attempts)
-              ? Math.max(0, job.attempts)
-              : 0,
-        });
-      }
-    });
-  } catch {
-    // Ignore hydration failures and continue with an empty queue.
+  const parsedJobs = readRuntimeSessionStorage<unknown>(
+    PENDING_PDF_PREVIEW_STORAGE_KEY
+  );
+  if (!Array.isArray(parsedJobs)) {
+    return;
   }
+
+  parsedJobs.forEach(job => {
+    if (
+      typeof job?.messageId === 'string' &&
+      job.messageId.trim().length > 0 &&
+      typeof job?.senderId === 'string' &&
+      job.senderId.trim().length > 0 &&
+      typeof job?.message === 'string' &&
+      typeof job?.fileStoragePath === 'string' &&
+      job.fileStoragePath.trim().length > 0
+    ) {
+      pendingPdfPreviewJobs.set(job.messageId, {
+        messageId: job.messageId,
+        senderId: job.senderId,
+        message: job.message,
+        fileName: typeof job.fileName === 'string' ? job.fileName : null,
+        fileMimeType:
+          typeof job.fileMimeType === 'string' ? job.fileMimeType : null,
+        fileStoragePath: job.fileStoragePath,
+        attempts:
+          typeof job.attempts === 'number' && Number.isFinite(job.attempts)
+            ? Math.max(0, job.attempts)
+            : 0,
+      });
+    }
+  });
 };
 
 const isPersistablePdfMessage = (message: PersistablePdfMessage) => {
-  if (message.message_type !== 'file') {
-    return false;
-  }
-
   if (
+    message.message_type !== 'file' ||
     !message.id ||
     !message.sender_id ||
     !message.file_storage_path?.trim() ||
@@ -147,47 +118,20 @@ const isPersistablePdfMessage = (message: PersistablePdfMessage) => {
     return false;
   }
 
-  const fileExtension = resolveFileExtension(
-    message.file_name || null,
-    message.message,
-    message.file_mime_type
-  );
-
-  return (
-    fileExtension === 'pdf' ||
-    message.file_mime_type?.toLowerCase().includes('pdf') === true
-  );
+  return isPdfPreviewableMessage(message, message.file_name ?? null);
 };
 
 const isDirectPersistablePdfMessage = (
   message: DirectPersistablePdfMessage,
   file: File
 ) => {
-  if (message.message_type !== 'file' || !message.id) {
-    return false;
-  }
-
-  if (!message.file_storage_path?.trim() || !message.message?.trim()) {
-    return false;
-  }
-
-  if (
-    message.file_preview_status === 'ready' &&
-    message.file_preview_url?.trim()
-  ) {
-    return false;
-  }
-
-  const fileExtension = resolveFileExtension(
-    message.file_name || file.name || null,
-    message.message,
-    message.file_mime_type || file.type
-  );
-
   return (
-    fileExtension === 'pdf' ||
-    message.file_mime_type?.toLowerCase().includes('pdf') === true ||
-    file.type.toLowerCase() === 'application/pdf'
+    isPersistablePdfMessage({
+      ...message,
+      sender_id: 'direct-upload',
+      file_name: message.file_name || file.name || null,
+      file_mime_type: message.file_mime_type || file.type,
+    }) || file.type.toLowerCase() === 'application/pdf'
   );
 };
 
@@ -239,6 +183,33 @@ const buildPendingPdfPreviewJob = (
   fileStoragePath: message.file_storage_path!.trim(),
   attempts: 0,
 });
+
+const persistRenderedPdfPreview = async ({
+  messageId,
+  sourceFile,
+  previewStoragePath,
+}: {
+  messageId: string;
+  sourceFile: Blob;
+  previewStoragePath: string;
+}) => {
+  const renderedPreview = await createPdfPreviewUploadArtifact(
+    sourceFile,
+    messageId
+  );
+  if (!renderedPreview) {
+    throw new Error('Preview dokumen tidak dapat dirender');
+  }
+
+  await StorageService.uploadRawFile(
+    CHAT_IMAGE_BUCKET,
+    renderedPreview.previewFile,
+    previewStoragePath,
+    'image/png'
+  );
+
+  return renderedPreview.pageCount;
+};
 
 export const queuePersistedPdfPreview = ({
   message,
@@ -370,31 +341,17 @@ export const persistQueuedPdfPreviewJob = async (job: PendingPdfPreviewJob) => {
       throw new Error('Preview dokumen tidak dapat dirender');
     }
 
-    const renderedPreview = await renderPdfPreviewBlob(pdfBlob, 260);
-    if (!renderedPreview) {
-      throw new Error('Preview dokumen tidak dapat dirender');
-    }
-
-    const previewFile = new File(
-      [renderedPreview.coverBlob],
-      `${latestMessage.id}-preview.png`,
-      {
-        type: 'image/png',
-      }
-    );
-
-    await StorageService.uploadRawFile(
-      CHAT_IMAGE_BUCKET,
-      previewFile,
+    const pageCount = await persistRenderedPdfPreview({
+      messageId: latestMessage.id,
+      sourceFile: pdfBlob,
       previewStoragePath,
-      'image/png'
-    );
+    });
 
     const didPersistReadyPreview = await updatePreviewMetadata(
       latestMessage.id,
       {
         file_preview_url: previewStoragePath,
-        file_preview_page_count: renderedPreview.pageCount,
+        file_preview_page_count: pageCount,
         file_preview_status: 'ready',
         file_preview_error: null,
       },
@@ -485,31 +442,17 @@ const persistDirectPdfPreview = async (
   );
 
   try {
-    const renderedPreview = await renderPdfPreviewBlob(file, 260);
-    if (!renderedPreview) {
-      throw new Error('Preview dokumen tidak dapat dirender');
-    }
-
-    const previewFile = new File(
-      [renderedPreview.coverBlob],
-      `${message.id}-preview.png`,
-      {
-        type: 'image/png',
-      }
-    );
-
-    await StorageService.uploadRawFile(
-      CHAT_IMAGE_BUCKET,
-      previewFile,
+    const pageCount = await persistRenderedPdfPreview({
+      messageId: message.id,
+      sourceFile: file,
       previewStoragePath,
-      'image/png'
-    );
+    });
 
     const didPersistReadyPreview = await updatePreviewMetadata(
       message.id,
       {
         file_preview_url: previewStoragePath,
-        file_preview_page_count: renderedPreview.pageCount,
+        file_preview_page_count: pageCount,
         file_preview_status: 'ready',
         file_preview_error: null,
       },
