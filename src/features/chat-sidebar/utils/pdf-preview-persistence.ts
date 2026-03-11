@@ -1,19 +1,15 @@
-import { CHAT_IMAGE_BUCKET } from '../constants';
+import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
-import { StorageService } from '@/services/api/storage.service';
 import {
   buildPdfPreviewStoragePath,
   fetchPdfBlobWithFallback,
 } from './message-file';
 import {
   chatRuntimeState,
-  notifyRuntimeListeners,
-  readRuntimeSessionStorage,
   type PendingPdfPreviewJob,
-  writeRuntimeSessionStorage,
 } from './chatRuntimeState';
 import {
   createPdfPreviewUploadArtifact,
@@ -45,60 +41,8 @@ type DirectPersistablePdfMessage = Pick<
   | 'file_storage_path'
 >;
 
-const PENDING_PDF_PREVIEW_STORAGE_KEY = 'chat-pending-pdf-preview-jobs';
-const { jobs: pendingPdfPreviewJobs, listeners: pendingPdfPreviewListeners } =
-  chatRuntimeState.pendingPdfPreviews;
-
-const notifyPendingPdfPreviewListeners = () => {
-  notifyRuntimeListeners(pendingPdfPreviewListeners);
-};
-
-const persistPendingPdfPreviewJobs = () => {
-  writeRuntimeSessionStorage(PENDING_PDF_PREVIEW_STORAGE_KEY, [
-    ...pendingPdfPreviewJobs.values(),
-  ]);
-};
-
-const hydratePendingPdfPreviewJobs = () => {
-  if (chatRuntimeState.pendingPdfPreviews.hasHydrated) {
-    return;
-  }
-
-  chatRuntimeState.pendingPdfPreviews.hasHydrated = true;
-
-  const parsedJobs = readRuntimeSessionStorage<unknown>(
-    PENDING_PDF_PREVIEW_STORAGE_KEY
-  );
-  if (!Array.isArray(parsedJobs)) {
-    return;
-  }
-
-  parsedJobs.forEach(job => {
-    if (
-      typeof job?.messageId === 'string' &&
-      job.messageId.trim().length > 0 &&
-      typeof job?.senderId === 'string' &&
-      job.senderId.trim().length > 0 &&
-      typeof job?.message === 'string' &&
-      typeof job?.fileStoragePath === 'string' &&
-      job.fileStoragePath.trim().length > 0
-    ) {
-      pendingPdfPreviewJobs.set(job.messageId, {
-        messageId: job.messageId,
-        senderId: job.senderId,
-        message: job.message,
-        fileName: typeof job.fileName === 'string' ? job.fileName : null,
-        fileMimeType:
-          typeof job.fileMimeType === 'string' ? job.fileMimeType : null,
-        fileStoragePath: job.fileStoragePath,
-        attempts:
-          typeof job.attempts === 'number' && Number.isFinite(job.attempts)
-            ? Math.max(0, job.attempts)
-            : 0,
-      });
-    }
-  });
-};
+const pendingPdfPreviewStore = chatRuntimeState.pendingPdfPreviews;
+const pendingPdfPreviewJobs = pendingPdfPreviewStore.value;
 
 const isPersistablePdfMessage = (message: PersistablePdfMessage) => {
   if (
@@ -201,11 +145,9 @@ const persistRenderedPdfPreview = async ({
     throw new Error('Preview dokumen tidak dapat dirender');
   }
 
-  await StorageService.uploadRawFile(
-    CHAT_IMAGE_BUCKET,
+  await chatSidebarAssetsGateway.uploadPdfPreview(
     renderedPreview.previewFile,
-    previewStoragePath,
-    'image/png'
+    previewStoragePath
   );
 
   return renderedPreview.pageCount;
@@ -227,20 +169,20 @@ export const queuePersistedPdfPreview = ({
     return false;
   }
 
-  hydratePendingPdfPreviewJobs();
+  pendingPdfPreviewStore.hydrate();
 
   if (pendingPdfPreviewJobs.has(message.id)) {
     return false;
   }
 
   pendingPdfPreviewJobs.set(message.id, buildPendingPdfPreviewJob(message));
-  persistPendingPdfPreviewJobs();
-  notifyPendingPdfPreviewListeners();
+  pendingPdfPreviewStore.persist();
+  pendingPdfPreviewStore.notify();
   return true;
 };
 
 export const peekPendingPdfPreviewJobs = (senderId: string, limit = 2) => {
-  hydratePendingPdfPreviewJobs();
+  pendingPdfPreviewStore.hydrate();
 
   return [...pendingPdfPreviewJobs.values()]
     .filter(job => job.senderId === senderId)
@@ -248,18 +190,18 @@ export const peekPendingPdfPreviewJobs = (senderId: string, limit = 2) => {
 };
 
 export const ackPendingPdfPreviewJob = (messageId: string) => {
-  hydratePendingPdfPreviewJobs();
+  pendingPdfPreviewStore.hydrate();
   if (!pendingPdfPreviewJobs.delete(messageId)) {
     return false;
   }
 
-  persistPendingPdfPreviewJobs();
-  notifyPendingPdfPreviewListeners();
+  pendingPdfPreviewStore.persist();
+  pendingPdfPreviewStore.notify();
   return true;
 };
 
 export const incrementPendingPdfPreviewJobAttempts = (messageId: string) => {
-  hydratePendingPdfPreviewJobs();
+  pendingPdfPreviewStore.hydrate();
   const currentJob = pendingPdfPreviewJobs.get(messageId);
   if (!currentJob) {
     return 0;
@@ -270,13 +212,13 @@ export const incrementPendingPdfPreviewJobAttempts = (messageId: string) => {
     ...currentJob,
     attempts: nextAttempts,
   });
-  persistPendingPdfPreviewJobs();
-  notifyPendingPdfPreviewListeners();
+  pendingPdfPreviewStore.persist();
+  pendingPdfPreviewStore.notify();
   return nextAttempts;
 };
 
 export const hasPendingPdfPreviewJobs = (senderId?: string | null) => {
-  hydratePendingPdfPreviewJobs();
+  pendingPdfPreviewStore.hydrate();
   if (!senderId) {
     return pendingPdfPreviewJobs.size > 0;
   }
@@ -287,12 +229,7 @@ export const hasPendingPdfPreviewJobs = (senderId?: string | null) => {
 };
 
 export const subscribePendingPdfPreviewQueue = (listener: () => void) => {
-  hydratePendingPdfPreviewJobs();
-  pendingPdfPreviewListeners.add(listener);
-
-  return () => {
-    pendingPdfPreviewListeners.delete(listener);
-  };
+  return pendingPdfPreviewStore.subscribe(listener);
 };
 
 export const persistQueuedPdfPreviewJob = async (job: PendingPdfPreviewJob) => {
@@ -360,7 +297,7 @@ export const persistQueuedPdfPreviewJob = async (job: PendingPdfPreviewJob) => {
 
     if (!didPersistReadyPreview) {
       try {
-        await StorageService.deleteFile(CHAT_IMAGE_BUCKET, previewStoragePath);
+        await chatSidebarAssetsGateway.deleteAsset(previewStoragePath);
       } catch (storageError) {
         console.error(
           'Failed to clean up uploaded PDF preview after metadata update failure:',
@@ -384,14 +321,14 @@ export const persistQueuedPdfPreviewJob = async (job: PendingPdfPreviewJob) => {
 
     return true;
   } catch (error) {
-    void StorageService.deleteFile(CHAT_IMAGE_BUCKET, previewStoragePath).catch(
-      storageError => {
+    void chatSidebarAssetsGateway
+      .deleteAsset(previewStoragePath)
+      .catch(storageError => {
         console.error(
           'Failed to clean up uploaded PDF preview after persistence failure:',
           storageError
         );
-      }
-    );
+      });
 
     await updatePreviewMetadata(
       latestMessage.id,
@@ -409,14 +346,14 @@ export const persistQueuedPdfPreviewJob = async (job: PendingPdfPreviewJob) => {
 };
 
 export const resetQueuedPdfPreviewJobs = () => {
-  hydratePendingPdfPreviewJobs();
+  pendingPdfPreviewStore.hydrate();
   if (pendingPdfPreviewJobs.size === 0) {
     return;
   }
 
   pendingPdfPreviewJobs.clear();
-  persistPendingPdfPreviewJobs();
-  notifyPendingPdfPreviewListeners();
+  pendingPdfPreviewStore.persist();
+  pendingPdfPreviewStore.notify();
 };
 
 const persistDirectPdfPreview = async (
@@ -461,7 +398,7 @@ const persistDirectPdfPreview = async (
 
     if (!didPersistReadyPreview) {
       try {
-        await StorageService.deleteFile(CHAT_IMAGE_BUCKET, previewStoragePath);
+        await chatSidebarAssetsGateway.deleteAsset(previewStoragePath);
       } catch (storageError) {
         console.error(
           'Failed to clean up uploaded PDF preview after metadata update failure:',
@@ -485,14 +422,14 @@ const persistDirectPdfPreview = async (
 
     return true;
   } catch (error) {
-    void StorageService.deleteFile(CHAT_IMAGE_BUCKET, previewStoragePath).catch(
-      storageError => {
+    void chatSidebarAssetsGateway
+      .deleteAsset(previewStoragePath)
+      .catch(storageError => {
         console.error(
           'Failed to clean up uploaded PDF preview after persistence failure:',
           storageError
         );
-      }
-    );
+      });
 
     await updatePreviewMetadata(
       message.id,

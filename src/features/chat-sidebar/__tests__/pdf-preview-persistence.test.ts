@@ -21,8 +21,11 @@ vi.mock('@/services/api/chat.service', () => ({
   },
 }));
 
-vi.mock('@/services/api/storage.service', () => ({
-  StorageService: mockGateway,
+vi.mock('../data/chatSidebarAssetsGateway', () => ({
+  chatSidebarAssetsGateway: {
+    uploadPdfPreview: mockGateway.uploadRawFile,
+    deleteAsset: mockGateway.deleteFile,
+  },
 }));
 
 vi.mock('../utils/pdf-preview', () => ({
@@ -102,10 +105,8 @@ describe('pdf-preview-persistence', () => {
       }
     );
     expect(mockGateway.uploadRawFile).toHaveBeenCalledWith(
-      'chat',
       expect.any(File),
-      'previews/channel/report.png',
-      'image/png'
+      'previews/channel/report.png'
     );
     expect(mockGateway.updateFilePreview).toHaveBeenNthCalledWith(
       2,

@@ -37,10 +37,10 @@ vi.mock('@/services/api/chat.service', () => ({
   },
 }));
 
-vi.mock('@/services/api/storage.service', () => ({
-  StorageService: {
-    uploadFile: mockGateway.uploadImage,
-    uploadRawFile: mockGateway.uploadAttachment,
+vi.mock('../data/chatSidebarAssetsGateway', () => ({
+  chatSidebarAssetsGateway: {
+    uploadImage: mockGateway.uploadImage,
+    uploadAttachment: mockGateway.uploadAttachment,
   },
 }));
 

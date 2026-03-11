@@ -30,7 +30,6 @@ import {
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
-import { useChatComposerModel } from '../hooks/useChatComposerModel';
 import type { PendingComposerAttachment } from '../types';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
@@ -460,16 +459,8 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
   );
 };
 
-const ComposerPanelWithControllerModel = () => {
-  const model = useChatComposerModel();
-  return <ComposerPanelContent model={model} />;
-};
-
-const ComposerPanel = ({ model }: { model?: ComposerPanelModel }) =>
-  model ? (
-    <ComposerPanelContent model={model} />
-  ) : (
-    <ComposerPanelWithControllerModel />
-  );
+const ComposerPanel = ({ model }: { model: ComposerPanelModel }) => (
+  <ComposerPanelContent model={model} />
+);
 
 export default ComposerPanel;

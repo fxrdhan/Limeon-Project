@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { TbCheckbox, TbSearch } from 'react-icons/tb';
 import type { UserPresence } from '../data/chatSidebarGateway';
-import { useChatHeaderModel } from '../hooks/useChatHeaderModel';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import ConversationHeaderContent from './header/ConversationHeaderContent';
 import SearchHeaderContent from './header/SearchHeaderContent';
@@ -188,16 +187,8 @@ const ChatHeaderContent = ({ model }: { model: ChatHeaderModel }) => {
   );
 };
 
-const ChatHeaderWithControllerModel = () => {
-  const model = useChatHeaderModel();
-  return <ChatHeaderContent model={model} />;
-};
-
-const ChatHeader = ({ model }: { model?: ChatHeaderModel }) =>
-  model ? (
-    <ChatHeaderContent model={model} />
-  ) : (
-    <ChatHeaderWithControllerModel />
-  );
+const ChatHeader = ({ model }: { model: ChatHeaderModel }) => (
+  <ChatHeaderContent model={model} />
+);
 
 export default ChatHeader;

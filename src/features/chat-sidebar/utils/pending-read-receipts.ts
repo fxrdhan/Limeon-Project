@@ -1,64 +1,7 @@
-import {
-  chatRuntimeState,
-  notifyRuntimeListeners,
-  readRuntimeSessionStorage,
-  writeRuntimeSessionStorage,
-} from './chatRuntimeState';
+import { chatRuntimeState } from './chatRuntimeState';
 
-const PENDING_READ_RECEIPT_STORAGE_KEY = 'chat-pending-read-receipts';
-
-const {
-  idsByUser: pendingReadReceiptIdsByUser,
-  listeners: pendingReadReceiptListeners,
-} = chatRuntimeState.pendingReadReceipts;
-
-const notifyPendingReadReceiptListeners = () => {
-  notifyRuntimeListeners(pendingReadReceiptListeners);
-};
-
-const persistPendingReadReceiptIds = () => {
-  const serializedPayload = Object.fromEntries(
-    [...pendingReadReceiptIdsByUser.entries()].map(([userId, messageIds]) => [
-      userId,
-      [...messageIds],
-    ])
-  );
-  writeRuntimeSessionStorage(
-    PENDING_READ_RECEIPT_STORAGE_KEY,
-    serializedPayload
-  );
-};
-
-const hydratePendingReadReceiptIds = () => {
-  if (chatRuntimeState.pendingReadReceipts.hasHydrated) {
-    return;
-  }
-
-  chatRuntimeState.pendingReadReceipts.hasHydrated = true;
-
-  const parsedPayload = readRuntimeSessionStorage<unknown>(
-    PENDING_READ_RECEIPT_STORAGE_KEY
-  );
-  if (!parsedPayload || typeof parsedPayload !== 'object') {
-    return;
-  }
-
-  Object.entries(parsedPayload).forEach(([userId, rawMessageIds]) => {
-    if (!userId.trim() || !Array.isArray(rawMessageIds)) {
-      return;
-    }
-
-    const normalizedMessageIds = rawMessageIds.filter(
-      (messageId): messageId is string =>
-        typeof messageId === 'string' && messageId.trim().length > 0
-    );
-    if (normalizedMessageIds.length === 0) {
-      return;
-    }
-
-    pendingReadReceiptIdsByUser.set(userId, new Set(normalizedMessageIds));
-  });
-};
+const pendingReadReceiptStore = chatRuntimeState.pendingReadReceipts;
+const pendingReadReceiptIdsByUser = pendingReadReceiptStore.value;
 
 const getPendingMessageIdsForUser = (userId: string) => {
   let messageIds = pendingReadReceiptIdsByUser.get(userId);
@@ -82,7 +25,7 @@ export const queuePendingReadReceiptMessageIds = (
   userId: string,
   messageIds: string[]
 ) => {
-  hydratePendingReadReceiptIds();
+  pendingReadReceiptStore.hydrate();
   if (!userId.trim()) {
     return false;
   }
@@ -104,8 +47,8 @@ export const queuePendingReadReceiptMessageIds = (
     return false;
   }
 
-  persistPendingReadReceiptIds();
-  notifyPendingReadReceiptListeners();
+  pendingReadReceiptStore.persist();
+  pendingReadReceiptStore.notify();
   return true;
 };
 
@@ -113,7 +56,7 @@ export const peekPendingReadReceiptMessageIds = (
   userId: string,
   limit = 200
 ) => {
-  hydratePendingReadReceiptIds();
+  pendingReadReceiptStore.hydrate();
   if (!userId.trim()) {
     return [];
   }
@@ -125,7 +68,7 @@ export const ackPendingReadReceiptMessageIds = (
   userId: string,
   messageIds: string[]
 ) => {
-  hydratePendingReadReceiptIds();
+  pendingReadReceiptStore.hydrate();
   if (!userId.trim()) {
     return false;
   }
@@ -146,13 +89,13 @@ export const ackPendingReadReceiptMessageIds = (
   }
 
   pruneEmptyPendingReadReceiptUsers();
-  persistPendingReadReceiptIds();
-  notifyPendingReadReceiptListeners();
+  pendingReadReceiptStore.persist();
+  pendingReadReceiptStore.notify();
   return true;
 };
 
 export const hasPendingReadReceiptMessageIds = (userId?: string | null) => {
-  hydratePendingReadReceiptIds();
+  pendingReadReceiptStore.hydrate();
   if (!userId) {
     return [...pendingReadReceiptIdsByUser.values()].some(
       messageIds => messageIds.size > 0
@@ -163,16 +106,11 @@ export const hasPendingReadReceiptMessageIds = (userId?: string | null) => {
 };
 
 export const subscribePendingReadReceiptQueue = (listener: () => void) => {
-  hydratePendingReadReceiptIds();
-  pendingReadReceiptListeners.add(listener);
-
-  return () => {
-    pendingReadReceiptListeners.delete(listener);
-  };
+  return pendingReadReceiptStore.subscribe(listener);
 };
 
 export const resetPendingReadReceiptMessageIds = (userId?: string | null) => {
-  hydratePendingReadReceiptIds();
+  pendingReadReceiptStore.hydrate();
 
   if (userId) {
     if (!pendingReadReceiptIdsByUser.delete(userId)) {
@@ -185,6 +123,6 @@ export const resetPendingReadReceiptMessageIds = (userId?: string | null) => {
   }
 
   pruneEmptyPendingReadReceiptUsers();
-  persistPendingReadReceiptIds();
-  notifyPendingReadReceiptListeners();
+  pendingReadReceiptStore.persist();
+  pendingReadReceiptStore.notify();
 };

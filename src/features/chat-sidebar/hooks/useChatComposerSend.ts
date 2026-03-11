@@ -1,14 +1,14 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { StorageService } from '@/services/api/storage.service';
 import type {
   PendingComposerFile,
   ChatSidebarPanelTargetUser,
   PendingSendRegistration,
   PendingComposerAttachment,
 } from '../types';
-import { CHAT_IMAGE_BUCKET, CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import {
   chatSidebarMessagesGateway,
   type ChatMessage,
@@ -225,7 +225,7 @@ export const useChatComposerSend = ({
           stableKey,
         }),
         uploadAsset: async () =>
-          StorageService.uploadFile(CHAT_IMAGE_BUCKET, file, imagePath),
+          chatSidebarAssetsGateway.uploadImage(file, imagePath),
         createPersistedMessage: async () =>
           chatSidebarMessagesGateway.createMessage({
             receiver_id: targetUser.id,
@@ -302,8 +302,7 @@ export const useChatComposerSend = ({
           stableKey,
         }),
         uploadAsset: async () =>
-          StorageService.uploadRawFile(
-            CHAT_IMAGE_BUCKET,
+          chatSidebarAssetsGateway.uploadAttachment(
             pendingFile.file,
             filePath,
             pendingFile.mimeType || undefined

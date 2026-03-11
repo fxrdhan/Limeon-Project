@@ -4,7 +4,6 @@ import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { MAX_MESSAGE_CHARS } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import { useChatMessagesModel } from '../hooks/useChatMessagesModel';
 import type { PdfMessagePreview } from '../hooks/useMessagePdfPreviews';
 import type {
   ComposerPendingFileKind,
@@ -338,16 +337,8 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
   );
 };
 
-const MessagesPaneWithControllerModel = () => {
-  const model = useChatMessagesModel();
-  return <MessagesPaneContent model={model} />;
-};
-
-const MessagesPane = ({ model }: { model?: MessagesPaneModel }) =>
-  model ? (
-    <MessagesPaneContent model={model} />
-  ) : (
-    <MessagesPaneWithControllerModel />
-  );
+const MessagesPane = ({ model }: { model: MessagesPaneModel }) => (
+  <MessagesPaneContent model={model} />
+);
 
 export default MessagesPane;

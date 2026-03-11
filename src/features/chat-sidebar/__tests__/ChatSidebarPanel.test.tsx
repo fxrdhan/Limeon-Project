@@ -142,19 +142,13 @@ vi.mock('../hooks/useChatViewport', () => ({
   }),
 }));
 
-vi.mock('../components/ChatHeader', async () => {
-  const { useChatHeaderModel } = await vi.importActual<
-    typeof import('../hooks/useChatHeaderModel')
-  >('../hooks/useChatHeaderModel');
-
+vi.mock('../components/ChatHeader', () => {
   return {
-    default: function MockChatHeader() {
-      const model = useChatHeaderModel() as unknown as Record<
-        string,
-        unknown
-      > & {
-        onClose: () => void;
-      };
+    default: function MockChatHeader({
+      model,
+    }: {
+      model: Record<string, unknown> & { onClose: () => void };
+    }) {
       renderedChildProps.header = model;
       return (
         <button onClick={model.onClose} type="button">
@@ -165,34 +159,26 @@ vi.mock('../components/ChatHeader', async () => {
   };
 });
 
-vi.mock('../components/MessagesPane', async () => {
-  const { useChatMessagesModel } = await vi.importActual<
-    typeof import('../hooks/useChatMessagesModel')
-  >('../hooks/useChatMessagesModel');
-
+vi.mock('../components/MessagesPane', () => {
   return {
-    default: function MockMessagesPane() {
-      const model = useChatMessagesModel() as unknown as Record<
-        string,
-        unknown
-      >;
+    default: function MockMessagesPane({
+      model,
+    }: {
+      model: Record<string, unknown>;
+    }) {
       renderedChildProps.messages = model;
       return <div>messages pane</div>;
     },
   };
 });
 
-vi.mock('../components/ComposerPanel', async () => {
-  const { useChatComposerModel } = await vi.importActual<
-    typeof import('../hooks/useChatComposerModel')
-  >('../hooks/useChatComposerModel');
-
+vi.mock('../components/ComposerPanel', () => {
   return {
-    default: function MockComposerPanel() {
-      const model = useChatComposerModel() as unknown as Record<
-        string,
-        unknown
-      >;
+    default: function MockComposerPanel({
+      model,
+    }: {
+      model: Record<string, unknown>;
+    }) {
       renderedChildProps.composer = model;
       return <div>composer panel</div>;
     },

@@ -127,11 +127,8 @@ Tanggung jawab:
   - `useChatInteractionModes`
   - `useChatViewport`
   - `useChatBulkDelete`
-- membentuk view model lewat:
-  - `useChatHeaderModel`
-  - `useChatMessagesModel`
-  - `useChatComposerModel`
-- membentuk prop object untuk:
+- membentuk `headerModel`, `messagesModel`, dan `composerModel` langsung di dalam controller
+- mengembalikan model yang sudah sempit untuk:
   - `ChatHeader`
   - `MessagesPane`
   - `ComposerPanel`
@@ -398,28 +395,26 @@ Fungsi:
 
 ### 7.1 Gateway
 
-File: `src/features/chat-sidebar/data/chatSidebarGateway.ts`
+File:
 
-Gateway ini membungkus:
+- `src/features/chat-sidebar/data/chatSidebarGateway.ts`
+- `src/features/chat-sidebar/data/chatSidebarAssetsGateway.ts`
 
-- `chatService`
-- `StorageService`
-- `realtimeService`
+Gateway dipisah jadi dua boundary:
 
-Method yang diekspos gateway saat ini:
+- `chatSidebarGateway`
+  - message RPC
+  - presence RPC
+  - cleanup / Edge Function bridge
+- `chatSidebarAssetsGateway`
+  - upload image
+  - upload document / audio
+  - upload PDF preview PNG
+  - download asset
+  - signed URL
+  - delete asset
 
-- `fetchConversationMessages`
-- `createMessage`
-- `updateMessage`
-- `deleteMessage`
-- `deleteMessageThread`
-- `markMessageIdsAsDelivered`
-- `markMessageIdsAsRead`
-- `getUserPresence`
-- `createRealtimeChannel`
-- `removeRealtimeChannel`
-- `uploadImage`
-- `uploadAttachment`
+Dengan pemisahan ini, hook dan util chat sidebar tidak lagi memanggil `StorageService` secara langsung.
 
 ### 7.2 Services
 
@@ -444,10 +439,7 @@ Method:
 
 File: `src/services/api/storage.service.ts`
 
-Method yang dipakai chat sidebar:
-
-- `uploadFile()` untuk image
-- `uploadRawFile()` untuk document/audio/PDF preview PNG
+`StorageService` tetap menjadi adapter Supabase Storage level aplikasi, tetapi untuk chat sidebar sekarang dipakai tidak langsung. Semua akses storage chat dibungkus lewat `chatSidebarAssetsGateway`.
 
 #### `realtimeService`
 

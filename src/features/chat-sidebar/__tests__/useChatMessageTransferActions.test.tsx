@@ -18,8 +18,11 @@ vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
 
-vi.mock('@/services/api/storage.service', () => ({
-  StorageService: mockGateway,
+vi.mock('../data/chatSidebarAssetsGateway', () => ({
+  chatSidebarAssetsGateway: {
+    downloadAsset: mockGateway.downloadFile,
+    createSignedAssetUrl: vi.fn(),
+  },
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -147,7 +150,6 @@ describe('useChatMessageTransferActions', () => {
     });
 
     expect(mockGateway.downloadFile).toHaveBeenCalledWith(
-      'chat',
       'documents/channel/stok.pdf'
     );
     expect(anchorClick).toHaveBeenCalledOnce();
@@ -200,7 +202,6 @@ describe('useChatMessageTransferActions', () => {
     });
 
     expect(mockGateway.downloadFile).toHaveBeenCalledWith(
-      'chat',
       'images/channel/stok.png'
     );
     expect(mockToast.promise).toHaveBeenCalledWith(
@@ -259,7 +260,6 @@ describe('useChatMessageTransferActions', () => {
 
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(mockGateway.downloadFile).toHaveBeenCalledWith(
-      'chat',
       'images/channel/stok.png'
     );
     expect(write).toHaveBeenCalledOnce();

@@ -11,8 +11,11 @@ const { mockStorageService } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/services/api/storage.service', () => ({
-  StorageService: mockStorageService,
+vi.mock('../data/chatSidebarAssetsGateway', () => ({
+  chatSidebarAssetsGateway: {
+    downloadAsset: mockStorageService.downloadFile,
+    createSignedAssetUrl: vi.fn(),
+  },
 }));
 
 describe('message-file utils', () => {
@@ -35,7 +38,6 @@ describe('message-file utils', () => {
     );
 
     expect(mockStorageService.downloadFile).toHaveBeenCalledWith(
-      'chat',
       'documents/channel/stok.pdf'
     );
     expect(pdfBlob).toBeInstanceOf(Blob);

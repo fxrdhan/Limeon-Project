@@ -1,6 +1,5 @@
-import { CHAT_IMAGE_BUCKET } from '../constants';
-import { StorageService } from '@/services/api/storage.service';
 import type { ComposerPendingFileKind } from '../types';
+import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import {
   buildPdfPreviewStoragePath,
   extractChatStoragePath,
@@ -141,10 +140,7 @@ export const fetchChatFileBlobWithFallback = async (
   if (!storagePath) return null;
 
   try {
-    const data = await StorageService.downloadFile(
-      CHAT_IMAGE_BUCKET,
-      storagePath
-    );
+    const data = await chatSidebarAssetsGateway.downloadAsset(storagePath);
 
     if (
       !normalizedForcedMimeType ||
@@ -191,8 +187,7 @@ export const resolveChatAssetUrlWithExpiry = async (
   }
 
   try {
-    const signedUrl = await StorageService.createSignedUrl(
-      CHAT_IMAGE_BUCKET,
+    const signedUrl = await chatSidebarAssetsGateway.createSignedAssetUrl(
       storagePath,
       expiresInSeconds
     );
