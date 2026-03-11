@@ -7,6 +7,8 @@ import {
   type ChatFilePreviewUpdateInput,
   type ConversationMessagesPage,
   type ConversationSearchContextOptions,
+  type ConversationSearchMessagesOptions,
+  type ConversationSearchMessagesPage,
   type CreateChatMessageInput,
   type EditChatMessageTextInput,
   type UserPresenceUpdateInput,
@@ -17,6 +19,7 @@ export type {
   CreateChatMessageInput,
   UserPresence,
   ConversationMessagesPage,
+  ConversationSearchMessagesPage,
   DeleteMessageThreadAndCleanupResult,
   DeleteMessageThreadsAndCleanupResult,
   CleanupStoragePathsResult,
@@ -66,11 +69,15 @@ export const chatSidebarMessagesGateway = {
       data: normalizeConversationMessagesPage(result.data),
     };
   },
-  searchConversationMessages(targetUserId: string, query: string, limit = 200) {
+  searchConversationMessages(
+    targetUserId: string,
+    query: string,
+    options?: ConversationSearchMessagesOptions
+  ): Promise<ServiceResponse<ConversationSearchMessagesPage>> {
     return chatMessagesService.searchConversationMessages(
       targetUserId,
       query,
-      limit
+      options
     );
   },
   fetchConversationMessageContext(

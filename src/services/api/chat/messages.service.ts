@@ -7,6 +7,8 @@ import {
   type ChatFilePreviewUpdateInput,
   type ConversationMessagesPage,
   type ConversationSearchContextOptions,
+  type ConversationSearchMessagesOptions,
+  type ConversationSearchMessagesPage,
   type CreateChatMessageInput,
   type EditChatMessageTextInput,
   type UndeliveredIncomingMessageIdsPage,
@@ -93,24 +95,46 @@ export const chatMessagesService = {
   async searchConversationMessages(
     targetUserId: string,
     query: string,
-    limit = 200
-  ): Promise<ServiceResponse<ChatMessage[]>> {
+    options?: ConversationSearchMessagesOptions
+  ): Promise<ServiceResponse<ConversationSearchMessagesPage>> {
     const normalizedQuery = query.trim();
     if (!normalizedQuery) {
-      return { data: [], error: null };
+      return {
+        data: {
+          messages: [],
+          hasMore: false,
+        },
+        error: null,
+      };
     }
 
     try {
+      const pageSize = Math.max(1, options?.limit ?? 200);
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.searchMessages,
-        buildSearchChatMessagesRpcArgs(targetUserId, normalizedQuery, limit)
+        buildSearchChatMessagesRpcArgs(targetUserId, normalizedQuery, {
+          ...options,
+          limit: pageSize + 1,
+        })
       );
 
       if (error) {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ChatMessage[], error: null };
+      const matchedMessages = ((data || []) as ChatMessage[]).slice(
+        0,
+        pageSize
+      );
+      const hasMore = (data?.length ?? 0) > pageSize;
+
+      return {
+        data: {
+          messages: matchedMessages,
+          hasMore,
+        },
+        error: null,
+      };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }

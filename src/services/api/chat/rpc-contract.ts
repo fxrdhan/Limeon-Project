@@ -18,6 +18,7 @@ import type {
 import type {
   ChatFilePreviewUpdateInput,
   ConversationSearchContextOptions,
+  ConversationSearchMessagesOptions,
   CreateChatMessageInput,
   EditChatMessageTextInput,
   UserPresenceUpdateInput,
@@ -64,11 +65,13 @@ export const buildGetChatMessageByIdRpcArgs = (
 export const buildSearchChatMessagesRpcArgs = (
   targetUserId: string,
   query: string,
-  limit: number
+  options?: ConversationSearchMessagesOptions
 ): SearchChatMessagesRpcArgs => ({
   p_target_user_id: targetUserId,
   p_query: query,
-  p_limit: limit,
+  p_limit: options?.limit,
+  p_after_created_at: options?.afterCreatedAt ?? null,
+  p_after_id: options?.afterId ?? null,
 });
 
 export const buildFetchChatMessageContextRpcArgs = (

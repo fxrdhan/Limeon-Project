@@ -190,9 +190,19 @@ describe('chatService', () => {
         id: 'message-1',
         created_at: '2026-03-10T08:00:00.000Z',
       },
+      {
+        id: 'message-2',
+        created_at: '2026-03-10T08:01:00.000Z',
+      },
     ];
     mockRpc.mockResolvedValueOnce({
-      data: matchedMessages,
+      data: [
+        ...matchedMessages,
+        {
+          id: 'message-3',
+          created_at: '2026-03-10T08:02:00.000Z',
+        },
+      ],
       error: null,
     });
 
@@ -201,16 +211,25 @@ describe('chatService', () => {
     const result = await chatService.searchConversationMessages(
       'user-b',
       'stok',
-      150
+      {
+        limit: 2,
+        afterCreatedAt: '2026-03-10T07:59:00.000Z',
+        afterId: 'message-0',
+      }
     );
 
     expect(mockRpc).toHaveBeenCalledWith('search_chat_messages', {
       p_target_user_id: 'user-b',
       p_query: 'stok',
-      p_limit: 150,
+      p_limit: 3,
+      p_after_created_at: '2026-03-10T07:59:00.000Z',
+      p_after_id: 'message-0',
     });
     expect(result).toEqual({
-      data: matchedMessages,
+      data: {
+        messages: matchedMessages,
+        hasMore: true,
+      },
       error: null,
     });
   });

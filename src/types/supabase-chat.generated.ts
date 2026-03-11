@@ -1,4 +1,4 @@
-// Generated from the Supabase chat schema on 2026-03-10.
+// Generated from the Supabase chat schema on 2026-03-11.
 // Refresh this file from Supabase whenever the chat contract changes.
 
 export interface ChatDatabase {
@@ -218,6 +218,8 @@ export interface ChatDatabase {
       };
       search_chat_messages: {
         Args: {
+          p_after_created_at?: string | null;
+          p_after_id?: string | null;
           p_channel_id?: string | null;
           p_limit?: number | null;
           p_query?: string | null;

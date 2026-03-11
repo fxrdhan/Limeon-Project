@@ -158,4 +158,50 @@ describe('ChatHeader', () => {
     expect(screen.getByText('Error')).toBeTruthy();
     expect(screen.queryByText('0/0')).toBeNull();
   });
+
+  it('shows that additional search results are available beyond the loaded window', () => {
+    render(
+      <ChatHeader
+        model={{
+          targetUser: {
+            id: 'user-b',
+            name: 'Gudang',
+            email: 'gudang@example.com',
+            profilephoto: null,
+          },
+          displayTargetPhotoUrl: null,
+          isTargetOnline: false,
+          targetUserPresence: null,
+          targetUserPresenceError: null,
+          isSearchMode: true,
+          searchQuery: 'stok',
+          searchState: 'found',
+          searchResultCount: 200,
+          activeSearchResultIndex: 0,
+          canNavigateSearchUp: false,
+          canNavigateSearchDown: true,
+          hasMoreSearchResults: true,
+          isSelectionMode: false,
+          selectedMessageCount: 0,
+          canDeleteSelectedMessages: false,
+          searchInputRef: { current: null },
+          onEnterSearchMode: vi.fn(),
+          onExitSearchMode: vi.fn(),
+          onEnterSelectionMode: vi.fn(),
+          onExitSelectionMode: vi.fn(),
+          onSearchQueryChange: vi.fn(),
+          onNavigateSearchUp: vi.fn(),
+          onNavigateSearchDown: vi.fn(),
+          onFocusSearchInput: vi.fn(),
+          onCopySelectedMessages: vi.fn(),
+          onDeleteSelectedMessages: vi.fn(),
+          onClose: vi.fn(),
+          getInitials: name => name.slice(0, 2).toUpperCase(),
+          getInitialsColor: () => 'bg-slate-500',
+        }}
+      />
+    );
+
+    expect(screen.getByText('1/200+')).toBeTruthy();
+  });
 });

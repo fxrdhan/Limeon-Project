@@ -22,6 +22,13 @@ interface UseChatMessageSearchModeProps {
   targetUser?: ChatSidebarPanelTargetUser;
 }
 
+interface SearchCursor {
+  afterCreatedAt: string;
+  afterId: string;
+}
+
+const CHAT_MESSAGE_SEARCH_PAGE_SIZE = 200;
+
 export const useChatMessageSearchMode = ({
   isOpen,
   currentChannelId,
@@ -34,6 +41,9 @@ export const useChatMessageSearchMode = ({
   const activeSearchRequestIdRef = useRef(0);
   const activeSearchContextRequestIdRef = useRef(0);
   const loadingSearchContextMessageIdRef = useRef<string | null>(null);
+  const searchMatchedMessageIdsRef = useRef<string[]>([]);
+  const searchCursorRef = useRef<SearchCursor | null>(null);
+  const isLoadingMoreSearchResultsRef = useRef(false);
   const [isMessageSearchMode, setIsMessageSearchMode] = useState(false);
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const [searchMatchedMessageIds, setSearchMatchedMessageIds] = useState<
@@ -45,36 +55,151 @@ export const useChatMessageSearchMode = ({
   const [searchNavigationTick, setSearchNavigationTick] = useState(0);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasMoreSearchResults, setHasMoreSearchResults] = useState(false);
   const normalizedMessageSearchQuery = messageSearchQuery.trim().toLowerCase();
   const userId = user?.id ?? null;
   const targetUserId = targetUser?.id ?? null;
 
   useEffect(() => {
-    if (isOpen) return;
+    searchMatchedMessageIdsRef.current = searchMatchedMessageIds;
+  }, [searchMatchedMessageIds]);
+
+  const resetSearchResults = useCallback(() => {
     activeSearchRequestIdRef.current += 1;
     activeSearchContextRequestIdRef.current += 1;
     loadingSearchContextMessageIdRef.current = null;
-    setIsMessageSearchMode(false);
-    setMessageSearchQuery('');
+    searchCursorRef.current = null;
+    isLoadingMoreSearchResultsRef.current = false;
     setSearchMatchedMessageIds([]);
     setActiveSearchMessageId(null);
     setSearchNavigationTick(0);
     setIsSearchLoading(false);
     setSearchError(null);
-  }, [isOpen]);
+    setHasMoreSearchResults(false);
+  }, []);
+
+  const updateSearchCursor = useCallback(
+    (matchedMessages: ChatMessage[], nextHasMoreSearchResults: boolean) => {
+      const lastMatchedMessage =
+        matchedMessages[matchedMessages.length - 1] ?? null;
+
+      if (!nextHasMoreSearchResults || !lastMatchedMessage) {
+        searchCursorRef.current = null;
+        setHasMoreSearchResults(false);
+        return;
+      }
+
+      searchCursorRef.current = {
+        afterCreatedAt: lastMatchedMessage.created_at,
+        afterId: lastMatchedMessage.id,
+      };
+      setHasMoreSearchResults(true);
+    },
+    []
+  );
+
+  const loadMoreSearchMatches = useCallback(
+    async ({
+      selectNextResult = false,
+    }: {
+      selectNextResult?: boolean;
+    } = {}) => {
+      if (
+        !normalizedMessageSearchQuery ||
+        !userId ||
+        !targetUserId ||
+        !currentChannelId ||
+        !hasMoreSearchResults ||
+        isLoadingMoreSearchResultsRef.current
+      ) {
+        return false;
+      }
+
+      const searchCursor = searchCursorRef.current;
+      if (!searchCursor) {
+        setHasMoreSearchResults(false);
+        return false;
+      }
+
+      const requestId = activeSearchRequestIdRef.current;
+      isLoadingMoreSearchResultsRef.current = true;
+
+      try {
+        const { data: matchedMessagesPage, error } =
+          await chatSidebarMessagesGateway.searchConversationMessages(
+            targetUserId,
+            normalizedMessageSearchQuery,
+            {
+              afterCreatedAt: searchCursor.afterCreatedAt,
+              afterId: searchCursor.afterId,
+              limit: CHAT_MESSAGE_SEARCH_PAGE_SIZE,
+            }
+          );
+
+        if (activeSearchRequestIdRef.current !== requestId) {
+          return false;
+        }
+
+        if (error || !matchedMessagesPage) {
+          if (error) {
+            console.error('Error loading more conversation matches:', error);
+          }
+          return false;
+        }
+
+        updateSearchCursor(
+          matchedMessagesPage.messages,
+          matchedMessagesPage.hasMore
+        );
+
+        const existingMessageIds = new Set(searchMatchedMessageIdsRef.current);
+        const appendedMatchIds = matchedMessagesPage.messages
+          .map(messageItem => messageItem.id)
+          .filter(messageId => !existingMessageIds.has(messageId));
+
+        if (appendedMatchIds.length === 0) {
+          return false;
+        }
+
+        setSearchMatchedMessageIds(previousMessageIds => [
+          ...previousMessageIds,
+          ...appendedMatchIds,
+        ]);
+
+        if (selectNextResult) {
+          setActiveSearchMessageId(appendedMatchIds[0] ?? null);
+          setSearchNavigationTick(previousTick => previousTick + 1);
+        }
+
+        return true;
+      } finally {
+        if (activeSearchRequestIdRef.current === requestId) {
+          isLoadingMoreSearchResultsRef.current = false;
+        }
+      }
+    },
+    [
+      currentChannelId,
+      hasMoreSearchResults,
+      normalizedMessageSearchQuery,
+      targetUserId,
+      updateSearchCursor,
+      userId,
+    ]
+  );
 
   useEffect(() => {
-    activeSearchRequestIdRef.current += 1;
-    activeSearchContextRequestIdRef.current += 1;
-    loadingSearchContextMessageIdRef.current = null;
+    if (isOpen) return;
+    resetSearchResults();
     setIsMessageSearchMode(false);
     setMessageSearchQuery('');
-    setSearchMatchedMessageIds([]);
-    setActiveSearchMessageId(null);
-    setSearchNavigationTick(0);
-    setIsSearchLoading(false);
-    setSearchError(null);
-  }, [currentChannelId]);
+  }, [isOpen, resetSearchResults]);
+
+  useEffect(() => {
+    resetSearchResults();
+    setIsMessageSearchMode(false);
+    setMessageSearchQuery('');
+  }, [currentChannelId, resetSearchResults]);
 
   useEffect(() => {
     if (!isMessageSearchMode) return;
@@ -97,11 +222,7 @@ export const useChatMessageSearchMode = ({
     loadingSearchContextMessageIdRef.current = null;
 
     if (!normalizedMessageSearchQuery) {
-      activeSearchRequestIdRef.current += 1;
-      setSearchMatchedMessageIds([]);
-      setActiveSearchMessageId(null);
-      setIsSearchLoading(false);
-      setSearchError(null);
+      resetSearchResults();
       return;
     }
 
@@ -110,39 +231,51 @@ export const useChatMessageSearchMode = ({
       setActiveSearchMessageId(null);
       setIsSearchLoading(false);
       setSearchError(null);
+      setHasMoreSearchResults(false);
       return;
     }
 
     const requestId = activeSearchRequestIdRef.current + 1;
     activeSearchRequestIdRef.current = requestId;
+    searchCursorRef.current = null;
+    isLoadingMoreSearchResultsRef.current = false;
     setIsSearchLoading(true);
     setSearchError(null);
+    setHasMoreSearchResults(false);
 
     const searchTimerId = window.setTimeout(() => {
       void (async () => {
-        const { data: matchedMessages, error } =
+        const { data: matchedMessagesPage, error } =
           await chatSidebarMessagesGateway.searchConversationMessages(
             targetUserId,
-            normalizedMessageSearchQuery
+            normalizedMessageSearchQuery,
+            {
+              limit: CHAT_MESSAGE_SEARCH_PAGE_SIZE,
+            }
           );
 
         if (activeSearchRequestIdRef.current !== requestId) {
           return;
         }
 
-        if (error) {
+        if (error || !matchedMessagesPage) {
           console.error('Error searching conversation messages:', error);
           setSearchMatchedMessageIds([]);
           setActiveSearchMessageId(null);
+          setHasMoreSearchResults(false);
           setIsSearchLoading(false);
           setSearchError('Gagal mencari pesan');
           return;
         }
 
-        const nextMatchedMessageIds = (matchedMessages || []).map(
+        const nextMatchedMessageIds = matchedMessagesPage.messages.map(
           messageItem => messageItem.id
         );
 
+        updateSearchCursor(
+          matchedMessagesPage.messages,
+          matchedMessagesPage.hasMore
+        );
         setSearchMatchedMessageIds(nextMatchedMessageIds);
         setSearchError(null);
         setActiveSearchMessageId(currentMessageId => {
@@ -166,7 +299,9 @@ export const useChatMessageSearchMode = ({
     currentChannelId,
     isMessageSearchMode,
     normalizedMessageSearchQuery,
+    resetSearchResults,
     targetUserId,
+    updateSearchCursor,
     userId,
   ]);
 
@@ -233,40 +368,57 @@ export const useChatMessageSearchMode = ({
     isMessageSearchMode,
     isOpen,
     messages,
+    mergeSearchContextMessages,
     normalizedMessageSearchQuery,
     targetUserId,
     userId,
-    mergeSearchContextMessages,
   ]);
 
   const navigateToSearchResult = useCallback(
     (direction: 'up' | 'down') => {
       if (searchMatchedMessageIds.length === 0) return;
 
-      setActiveSearchMessageId(currentMessageId => {
-        const currentIndex =
-          currentMessageId === null
-            ? -1
-            : searchMatchedMessageIds.findIndex(
-                messageId => messageId === currentMessageId
-              );
-        const fallbackIndex =
-          direction === 'up' ? searchMatchedMessageIds.length - 1 : 0;
-        const safeCurrentIndex =
-          currentIndex >= 0 ? currentIndex : fallbackIndex;
+      const currentIndex =
+        activeSearchMessageId === null
+          ? -1
+          : searchMatchedMessageIds.findIndex(
+              messageId => messageId === activeSearchMessageId
+            );
+
+      if (
+        direction === 'down' &&
+        currentIndex === searchMatchedMessageIds.length - 1 &&
+        hasMoreSearchResults
+      ) {
+        void loadMoreSearchMatches({
+          selectNextResult: true,
+        });
+        return;
+      }
+
+      setActiveSearchMessageId(() => {
+        if (currentIndex < 0) {
+          return direction === 'up'
+            ? (searchMatchedMessageIds[searchMatchedMessageIds.length - 1] ??
+                null)
+            : (searchMatchedMessageIds[0] ?? null);
+        }
+
         const nextIndex =
           direction === 'up'
-            ? Math.max(0, safeCurrentIndex - 1)
-            : Math.min(
-                searchMatchedMessageIds.length - 1,
-                safeCurrentIndex + 1
-              );
+            ? Math.max(0, currentIndex - 1)
+            : Math.min(searchMatchedMessageIds.length - 1, currentIndex + 1);
 
-        return searchMatchedMessageIds[nextIndex];
+        return searchMatchedMessageIds[nextIndex] ?? null;
       });
       setSearchNavigationTick(previousTick => previousTick + 1);
     },
-    [searchMatchedMessageIds]
+    [
+      activeSearchMessageId,
+      hasMoreSearchResults,
+      loadMoreSearchMatches,
+      searchMatchedMessageIds,
+    ]
   );
 
   const handleEnterMessageSearchMode = useCallback(() => {
@@ -274,17 +426,10 @@ export const useChatMessageSearchMode = ({
   }, []);
 
   const handleExitMessageSearchMode = useCallback(() => {
-    activeSearchRequestIdRef.current += 1;
-    activeSearchContextRequestIdRef.current += 1;
-    loadingSearchContextMessageIdRef.current = null;
+    resetSearchResults();
     setIsMessageSearchMode(false);
     setMessageSearchQuery('');
-    setSearchMatchedMessageIds([]);
-    setActiveSearchMessageId(null);
-    setSearchNavigationTick(0);
-    setIsSearchLoading(false);
-    setSearchError(null);
-  }, []);
+  }, [resetSearchResults]);
 
   const handleFocusSearchInput = useCallback(() => {
     if (!isMessageSearchMode) return;
@@ -308,10 +453,12 @@ export const useChatMessageSearchMode = ({
   const activeSearchResultIndex = searchMatchedMessageIds.findIndex(
     messageId => messageId === activeSearchMessageId
   );
-  const canNavigateSearchUp = activeSearchResultIndex > 0;
+  const canNavigateSearchUp =
+    searchMatchedMessageIds.length > 0 && activeSearchResultIndex !== 0;
   const canNavigateSearchDown =
-    activeSearchResultIndex >= 0 &&
-    activeSearchResultIndex < searchMatchedMessageIds.length - 1;
+    searchMatchedMessageIds.length > 0 &&
+    (activeSearchResultIndex < searchMatchedMessageIds.length - 1 ||
+      hasMoreSearchResults);
   const messageSearchState: SearchState = !normalizedMessageSearchQuery
     ? SEARCH_STATES.IDLE
     : searchError
@@ -338,6 +485,7 @@ export const useChatMessageSearchMode = ({
     activeSearchResultIndex,
     canNavigateSearchUp,
     canNavigateSearchDown,
+    hasMoreSearchResults,
     messageSearchState,
     handleEnterMessageSearchMode,
     handleExitMessageSearchMode,

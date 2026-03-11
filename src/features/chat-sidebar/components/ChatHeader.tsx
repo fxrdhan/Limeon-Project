@@ -26,6 +26,7 @@ export interface ChatHeaderModel {
   activeSearchResultIndex: number;
   canNavigateSearchUp: boolean;
   canNavigateSearchDown: boolean;
+  hasMoreSearchResults?: boolean;
   isSelectionMode: boolean;
   selectedMessageCount: number;
   canDeleteSelectedMessages: boolean;
@@ -59,6 +60,7 @@ const ChatHeaderContent = ({ model }: { model: ChatHeaderModel }) => {
     activeSearchResultIndex,
     canNavigateSearchUp,
     canNavigateSearchDown,
+    hasMoreSearchResults = false,
     isSelectionMode,
     selectedMessageCount,
     canDeleteSelectedMessages,
@@ -137,7 +139,9 @@ const ChatHeaderContent = ({ model }: { model: ChatHeaderModel }) => {
   const searchResultPositionLabel =
     searchResultCount === 0
       ? '0/0'
-      : `${activeSearchResultIndex + 1}/${searchResultCount}`;
+      : `${activeSearchResultIndex + 1}/${searchResultCount}${
+          hasMoreSearchResults ? '+' : ''
+        }`;
 
   return (
     <div className="px-3 pt-4 pb-2.5">

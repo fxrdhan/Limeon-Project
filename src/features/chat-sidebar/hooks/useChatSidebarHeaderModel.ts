@@ -19,6 +19,7 @@ type HeaderInteractionState = Pick<
   | 'activeSearchResultIndex'
   | 'canNavigateSearchUp'
   | 'canNavigateSearchDown'
+  | 'hasMoreSearchResults'
   | 'isSelectionMode'
   | 'selectedVisibleMessages'
   | 'canDeleteSelectedMessages'
@@ -65,6 +66,7 @@ export const useChatSidebarHeaderModel = ({
       activeSearchResultIndex: Math.max(interaction.activeSearchResultIndex, 0),
       canNavigateSearchUp: interaction.canNavigateSearchUp,
       canNavigateSearchDown: interaction.canNavigateSearchDown,
+      hasMoreSearchResults: interaction.hasMoreSearchResults,
       isSelectionMode: interaction.isSelectionMode,
       selectedMessageCount: interaction.selectedVisibleMessages.length,
       canDeleteSelectedMessages: interaction.canDeleteSelectedMessages,
@@ -91,6 +93,7 @@ export const useChatSidebarHeaderModel = ({
       interaction.canDeleteSelectedMessages,
       interaction.canNavigateSearchDown,
       interaction.canNavigateSearchUp,
+      interaction.hasMoreSearchResults,
       interaction.handleCopySelectedMessages,
       interaction.handleEnterMessageSearchMode,
       interaction.handleEnterMessageSelectionMode,

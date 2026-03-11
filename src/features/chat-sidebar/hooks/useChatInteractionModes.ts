@@ -211,6 +211,7 @@ export const useChatInteractionModes = ({
     activeSearchResultIndex: search.activeSearchResultIndex,
     canNavigateSearchUp: search.canNavigateSearchUp,
     canNavigateSearchDown: search.canNavigateSearchDown,
+    hasMoreSearchResults: search.hasMoreSearchResults,
     messageSearchState: search.messageSearchState,
     selectableMessageIdSet,
     selectedVisibleMessages,

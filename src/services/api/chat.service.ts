@@ -11,6 +11,8 @@ export type {
   RetryChatCleanupFailuresResult,
   UserPresenceUpdateInput,
   ConversationMessagesPage,
+  ConversationSearchMessagesOptions,
+  ConversationSearchMessagesPage,
   UndeliveredIncomingMessageIdsPage,
   ConversationSearchContextOptions,
 } from './chat/types';

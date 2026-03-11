@@ -65,7 +65,10 @@ describe('useChatInteractionModes', () => {
       },
     });
     mockSearchConversationMessages.mockResolvedValue({
-      data: [],
+      data: {
+        messages: [],
+        hasMore: false,
+      },
       error: null,
     });
     mockFetchConversationMessageContext.mockResolvedValue({
@@ -113,7 +116,10 @@ describe('useChatInteractionModes', () => {
     );
 
     mockSearchConversationMessages.mockResolvedValueOnce({
-      data: [messages[0], messages[1], messages[3]],
+      data: {
+        messages: [messages[0], messages[1], messages[3]],
+        hasMore: false,
+      },
       error: null,
     });
 
@@ -204,13 +210,16 @@ describe('useChatInteractionModes', () => {
     );
 
     mockSearchConversationMessages.mockResolvedValueOnce({
-      data: [
-        buildMessage({
-          id: 'image-1',
-          message: 'https://example.com/image.png',
-          message_type: 'image',
-        }),
-      ],
+      data: {
+        messages: [
+          buildMessage({
+            id: 'image-1',
+            message: 'https://example.com/image.png',
+            message_type: 'image',
+          }),
+        ],
+        hasMore: false,
+      },
       error: null,
     });
 

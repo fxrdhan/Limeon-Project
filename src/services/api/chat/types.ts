@@ -105,6 +105,17 @@ export interface ConversationMessagesPage {
   hasMore: boolean;
 }
 
+export interface ConversationSearchMessagesOptions {
+  afterCreatedAt?: string | null;
+  afterId?: string | null;
+  limit?: number;
+}
+
+export interface ConversationSearchMessagesPage {
+  messages: ChatMessage[];
+  hasMore: boolean;
+}
+
 export interface UndeliveredIncomingMessageIdsPage {
   messageIds: string[];
   hasMore: boolean;
