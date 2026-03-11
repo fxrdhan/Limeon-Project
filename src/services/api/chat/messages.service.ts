@@ -12,11 +12,13 @@ import {
   type UndeliveredIncomingMessageIdsPage,
 } from './types';
 import {
+  buildGetChatMessageByIdRpcArgs,
   buildCreateChatMessageRpcArgs,
   buildDeleteChatMessageThreadRpcArgs,
   buildEditChatMessageTextRpcArgs,
   buildFetchChatMessageContextRpcArgs,
   buildFetchChatMessagesPageRpcArgs,
+  buildListUndeliveredIncomingMessageIdsRpcArgs,
   buildMarkChatMessageIdsAsDeliveredRpcArgs,
   buildMarkChatMessageIdsAsReadRpcArgs,
   buildSearchChatMessagesRpcArgs,
@@ -27,11 +29,10 @@ import {
 export const chatMessagesService = {
   async getMessageById(id: string): Promise<ServiceResponse<ChatMessage>> {
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.getMessageById,
+        buildGetChatMessageByIdRpcArgs(id)
+      );
 
       if (error) {
         return { data: null, error };
@@ -238,7 +239,7 @@ export const chatMessagesService = {
   },
 
   async listUndeliveredIncomingMessageIds(
-    receiverId: string,
+    _receiverId: string,
     options?: {
       limit?: number;
       offset?: number;
@@ -246,35 +247,26 @@ export const chatMessagesService = {
   ): Promise<ServiceResponse<UndeliveredIncomingMessageIdsPage>> {
     try {
       const pageSize = Math.max(1, options?.limit ?? 200);
-      const offset = Math.max(0, options?.offset ?? 0);
-      const { data, error, count } = await supabase
-        .from('chat_messages')
-        .select('id', { count: 'exact' })
-        .eq('receiver_id', receiverId)
-        .eq('is_delivered', false)
-        .order('created_at', {
-          ascending: true,
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.listUndeliveredIncomingMessageIds,
+        buildListUndeliveredIncomingMessageIdsRpcArgs({
+          ...options,
+          limit: pageSize + 1,
         })
-        .order('id', {
-          ascending: true,
-        })
-        .range(offset, offset + pageSize - 1);
+      );
 
       if (error) {
         return { data: null, error };
       }
 
-      const orderedMessageIds = (data || [])
-        .map(record => record.id)
-        .filter((messageId): messageId is string => Boolean(messageId));
+      const orderedMessageIds = ((data || []) as string[])
+        .filter((messageId): messageId is string => Boolean(messageId))
+        .slice(0, pageSize);
 
       return {
         data: {
           messageIds: orderedMessageIds,
-          hasMore:
-            typeof count === 'number'
-              ? offset + orderedMessageIds.length < count
-              : orderedMessageIds.length === pageSize,
+          hasMore: ((data || []) as string[]).length > pageSize,
         },
         error: null,
       };

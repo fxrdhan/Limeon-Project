@@ -33,10 +33,28 @@ export type FetchChatMessageContextRpcArgs =
 export type FetchChatMessageContextRpcReturn =
   ChatFunctionReturn<'fetch_chat_message_context'>;
 
+export type GetChatMessageByIdRpcArgs =
+  ChatFunctionArgs<'get_chat_message_by_id'>;
+export type GetChatMessageByIdRpcReturn =
+  ChatFunctionReturn<'get_chat_message_by_id'>;
+
+export type GetUserPresenceRpcArgs = ChatFunctionArgs<'get_user_presence'>;
+export type GetUserPresenceRpcReturn = ChatFunctionReturn<'get_user_presence'>;
+
 export type FetchChatMessagesPageRpcArgs =
   ChatFunctionArgs<'fetch_chat_messages_page'>;
 export type FetchChatMessagesPageRpcReturn =
   ChatFunctionReturn<'fetch_chat_messages_page'>;
+
+export type ListActiveUserPresenceSinceRpcArgs =
+  ChatFunctionArgs<'list_active_user_presence_since'>;
+export type ListActiveUserPresenceSinceRpcReturn =
+  ChatFunctionReturn<'list_active_user_presence_since'>;
+
+export type ListUndeliveredIncomingMessageIdsRpcArgs =
+  ChatFunctionArgs<'list_undelivered_incoming_message_ids'>;
+export type ListUndeliveredIncomingMessageIdsRpcReturn =
+  ChatFunctionReturn<'list_undelivered_incoming_message_ids'>;
 
 export type MarkChatMessageIdsAsDeliveredRpcArgs =
   ChatFunctionArgs<'mark_chat_message_ids_as_delivered'>;

@@ -4,6 +4,10 @@ import type {
   EditChatMessageTextRpcArgs,
   FetchChatMessageContextRpcArgs,
   FetchChatMessagesPageRpcArgs,
+  GetChatMessageByIdRpcArgs,
+  GetUserPresenceRpcArgs,
+  ListActiveUserPresenceSinceRpcArgs,
+  ListUndeliveredIncomingMessageIdsRpcArgs,
   MarkChatMessageIdsAsDeliveredRpcArgs,
   MarkChatMessageIdsAsReadRpcArgs,
   SearchChatMessagesRpcArgs,
@@ -25,6 +29,10 @@ export const CHAT_RPC_NAMES = {
   editMessageText: 'edit_chat_message_text',
   fetchMessageContext: 'fetch_chat_message_context',
   fetchMessagesPage: 'fetch_chat_messages_page',
+  getMessageById: 'get_chat_message_by_id',
+  getUserPresence: 'get_user_presence',
+  listActiveUserPresenceSince: 'list_active_user_presence_since',
+  listUndeliveredIncomingMessageIds: 'list_undelivered_incoming_message_ids',
   markMessageIdsAsDelivered: 'mark_chat_message_ids_as_delivered',
   markMessageIdsAsRead: 'mark_chat_message_ids_as_read',
   searchMessages: 'search_chat_messages',
@@ -45,6 +53,12 @@ export const buildFetchChatMessagesPageRpcArgs = (
   p_before_created_at: options?.beforeCreatedAt ?? null,
   p_before_id: options?.beforeId ?? null,
   p_limit: options?.limit,
+});
+
+export const buildGetChatMessageByIdRpcArgs = (
+  messageId: string
+): GetChatMessageByIdRpcArgs => ({
+  p_message_id: messageId,
 });
 
 export const buildSearchChatMessagesRpcArgs = (
@@ -115,10 +129,24 @@ export const buildMarkChatMessageIdsAsReadRpcArgs = (
   p_message_ids: messageIds,
 });
 
+export const buildListUndeliveredIncomingMessageIdsRpcArgs = (options?: {
+  limit?: number;
+  offset?: number;
+}): ListUndeliveredIncomingMessageIdsRpcArgs => ({
+  p_limit: options?.limit,
+  p_offset: options?.offset ?? 0,
+});
+
 export const buildDeleteChatMessageThreadRpcArgs = (
   id: string
 ): DeleteChatMessageThreadRpcArgs => ({
   p_message_id: id,
+});
+
+export const buildGetUserPresenceRpcArgs = (
+  userId: string
+): GetUserPresenceRpcArgs => ({
+  p_user_id: userId,
 });
 
 export const buildUpsertUserPresenceRpcArgs = (
@@ -139,4 +167,10 @@ export const buildSyncUserPresenceOnExitRpcArgs = (
   p_is_online:
     typeof payload.is_online === 'boolean' ? payload.is_online : null,
   p_last_seen: payload.last_seen ?? null,
+});
+
+export const buildListActiveUserPresenceSinceRpcArgs = (
+  since: string
+): ListActiveUserPresenceSinceRpcArgs => ({
+  p_since: since,
 });

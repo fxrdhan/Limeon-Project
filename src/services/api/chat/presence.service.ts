@@ -3,6 +3,8 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type { UserPresence, UserPresenceUpdateInput } from './types';
 import {
+  buildGetUserPresenceRpcArgs,
+  buildListActiveUserPresenceSinceRpcArgs,
   buildSyncUserPresenceOnExitRpcArgs,
   buildUpsertUserPresenceRpcArgs,
   CHAT_RPC_NAMES,
@@ -38,11 +40,10 @@ export const chatPresenceService = {
     userId: string
   ): Promise<ServiceResponse<UserPresence>> {
     try {
-      const { data, error } = await supabase
-        .from('user_presence')
-        .select('user_id, is_online, last_seen, updated_at')
-        .eq('user_id', userId)
-        .single();
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.getUserPresence,
+        buildGetUserPresenceRpcArgs(userId)
+      );
 
       if (error) {
         return { data: null, error };
@@ -96,11 +97,10 @@ export const chatPresenceService = {
     since: string
   ): Promise<ServiceResponse<UserPresence[]>> {
     try {
-      const { data, error } = await supabase
-        .from('user_presence')
-        .select('user_id, is_online, last_seen, updated_at')
-        .eq('is_online', true)
-        .gte('last_seen', since);
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.listActiveUserPresenceSince,
+        buildListActiveUserPresenceSinceRpcArgs(since)
+      );
 
       if (error) {
         return { data: null, error };

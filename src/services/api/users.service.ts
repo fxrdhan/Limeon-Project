@@ -47,28 +47,29 @@ export class UsersService {
     const pageSize = Math.max(1, limit);
 
     try {
-      const { data, error, count } = await supabase
-        .from('users')
-        .select('id, name, email, profilephoto', { count: 'exact' })
-        .order('name', { ascending: true })
-        .range(offset, offset + pageSize - 1);
+      const { data, error } = await supabase.rpc('list_chat_directory_users', {
+        p_limit: pageSize + 1,
+        p_offset: Math.max(0, offset),
+      });
 
       if (error) {
         return { data: null, error };
       }
 
-      const users: OnlineUser[] = (data || []).map(user => ({
-        ...user,
-        online_at: new Date().toISOString(),
-      }));
+      const directoryRows = (data || []) as Array<
+        Pick<OnlineUser, 'id' | 'name' | 'email' | 'profilephoto'>
+      >;
+      const users: OnlineUser[] = directoryRows
+        .slice(0, pageSize)
+        .map(user => ({
+          ...user,
+          online_at: new Date().toISOString(),
+        }));
 
       return {
         data: {
           users,
-          hasMore:
-            typeof count === 'number'
-              ? offset + users.length < count
-              : users.length === pageSize,
+          hasMore: directoryRows.length > pageSize,
         },
         error: null,
       };

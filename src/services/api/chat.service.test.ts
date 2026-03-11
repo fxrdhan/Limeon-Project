@@ -87,6 +87,29 @@ describe('chatService', () => {
     });
   });
 
+  it('loads a single chat message through the dedicated rpc', async () => {
+    const message = {
+      id: 'message-1',
+      message: 'hello',
+    };
+    mockRpc.mockResolvedValueOnce({
+      data: message,
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.getMessageById('message-1');
+
+    expect(mockRpc).toHaveBeenCalledWith('get_chat_message_by_id', {
+      p_message_id: 'message-1',
+    });
+    expect(result).toEqual({
+      data: message,
+      error: null,
+    });
+  });
+
   it('fetches conversation pages through the deterministic pagination rpc', async () => {
     const rpcMessages = [
       {
@@ -325,31 +348,36 @@ describe('chatService', () => {
     });
   });
 
-  it('pages undelivered incoming message ids instead of loading them unbounded', async () => {
-    const mockRange = vi.fn().mockResolvedValue({
-      data: [{ id: 'message-1' }, { id: 'message-2' }],
+  it('loads presence snapshots through the dedicated rpc', async () => {
+    const presence = {
+      user_id: 'user-a',
+      is_online: true,
+      last_seen: '2026-03-09T10:00:00.000Z',
+      updated_at: '2026-03-09T10:00:00.000Z',
+    };
+    mockRpc.mockResolvedValueOnce({
+      data: presence,
       error: null,
-      count: 7,
     });
-    const mockOrderById = vi.fn().mockReturnValue({
-      range: mockRange,
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.getUserPresence('user-a');
+
+    expect(mockRpc).toHaveBeenCalledWith('get_user_presence', {
+      p_user_id: 'user-a',
     });
-    const mockOrderByCreatedAt = vi.fn().mockReturnValue({
-      order: mockOrderById,
+    expect(result).toEqual({
+      data: presence,
+      error: null,
     });
-    mockFrom.mockReturnValueOnce({
-      select: mockSelect,
+  });
+
+  it('pages undelivered incoming message ids through the dedicated rpc', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: ['message-1', 'message-2', 'message-3'],
+      error: null,
     });
-    mockSelect.mockReturnValueOnce({
-      eq: mockEq,
-    });
-    mockEq
-      .mockReturnValueOnce({
-        eq: mockEq,
-      })
-      .mockReturnValueOnce({
-        order: mockOrderByCreatedAt,
-      });
 
     const { chatService } = await import('./chat.service');
 
@@ -361,7 +389,13 @@ describe('chatService', () => {
       }
     );
 
-    expect(mockRange).toHaveBeenCalledWith(4, 5);
+    expect(mockRpc).toHaveBeenCalledWith(
+      'list_undelivered_incoming_message_ids',
+      {
+        p_limit: 3,
+        p_offset: 4,
+      }
+    );
     expect(result).toEqual({
       data: {
         messageIds: ['message-1', 'message-2'],

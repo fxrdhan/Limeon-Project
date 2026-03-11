@@ -182,6 +182,22 @@ export interface ChatDatabase {
         };
         Returns: ChatDatabase['public']['Tables']['chat_messages']['Row'][];
       };
+      get_chat_message_by_id: {
+        Args: { p_message_id: string };
+        Returns: ChatDatabase['public']['Tables']['chat_messages']['Row'];
+      };
+      get_user_presence: {
+        Args: { p_user_id: string };
+        Returns: ChatDatabase['public']['Tables']['user_presence']['Row'];
+      };
+      list_active_user_presence_since: {
+        Args: { p_since: string };
+        Returns: ChatDatabase['public']['Tables']['user_presence']['Row'][];
+      };
+      list_undelivered_incoming_message_ids: {
+        Args: { p_limit?: number | null; p_offset?: number | null };
+        Returns: string[];
+      };
       fetch_chat_messages_page: {
         Args: {
           p_before_created_at?: string | null;

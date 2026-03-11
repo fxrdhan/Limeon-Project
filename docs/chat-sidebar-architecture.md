@@ -24,11 +24,24 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
   - `public.chat_messages`
   - `public.user_presence`
   - RPC:
+    - `get_chat_message_by_id`
+    - `get_user_presence`
+    - `list_active_user_presence_since`
+    - `list_chat_directory_users`
+    - `list_undelivered_incoming_message_ids`
+    - `create_chat_message`
+    - `fetch_chat_messages_page`
+    - `fetch_chat_message_context`
+    - `search_chat_messages`
+    - `edit_chat_message_text`
+    - `update_chat_file_preview_metadata`
     - `mark_chat_messages_as_read`
     - `mark_chat_messages_as_delivered`
     - `mark_chat_message_ids_as_read`
     - `mark_chat_message_ids_as_delivered`
     - `delete_chat_message_thread`
+    - `sync_user_presence_on_exit`
+    - `upsert_user_presence`
 
 ## 2) Entry Points
 
@@ -114,6 +127,10 @@ Tanggung jawab:
   - `useChatInteractionModes`
   - `useChatViewport`
   - `useChatBulkDelete`
+- membentuk view model lewat:
+  - `useChatHeaderModel`
+  - `useChatMessagesModel`
+  - `useChatComposerModel`
 - membentuk prop object untuk:
   - `ChatHeader`
   - `MessagesPane`

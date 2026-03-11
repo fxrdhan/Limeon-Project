@@ -18,32 +18,6 @@ const syncRealtimeAuthToken = (accessToken?: string | null) => {
   }
 };
 
-// Connection health monitoring
-let connectionHealthCheck: NodeJS.Timeout | null = null;
-
-// Monitor connection health and attempt reconnection if needed
-const startConnectionHealthCheck = () => {
-  if (connectionHealthCheck) return;
-
-  connectionHealthCheck = setInterval(async () => {
-    try {
-      // Lightweight REST probe to catch connectivity issues without pulling rows.
-      const { error } = await supabase
-        .from('users')
-        .select('id', { head: true })
-        .limit(1);
-      if (error && error.message.includes('network')) {
-        console.warn(
-          '🔍 Network issue detected, realtime may need reconnection'
-        );
-      }
-    } catch (err) {
-      console.warn('🔍 Connection health check failed:', err);
-    }
-  }, 60000); // Check every minute
-};
-
-// Handle page visibility changes for better reconnection
 if (typeof window !== 'undefined') {
   void supabase.auth
     .getSession()
@@ -57,24 +31,6 @@ if (typeof window !== 'undefined') {
   supabase.auth.onAuthStateChange((_event, session) => {
     syncRealtimeAuthToken(session?.access_token ?? null);
   });
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-      // Page became visible - good time to check connections
-      setTimeout(() => {
-        startConnectionHealthCheck();
-      }, 1000);
-    } else {
-      // Page hidden - pause health checks to save resources
-      if (connectionHealthCheck) {
-        clearInterval(connectionHealthCheck);
-        connectionHealthCheck = null;
-      }
-    }
-  });
-
-  // Start health check when page loads
-  startConnectionHealthCheck();
 }
 
 // Global cleanup function for development / HMR
@@ -89,10 +45,6 @@ const hot = hmrOverride === null ? null : (hmrOverride ?? import.meta.hot);
 if (hot) {
   hot.dispose(() => {
     try {
-      if (connectionHealthCheck) {
-        clearInterval(connectionHealthCheck);
-        connectionHealthCheck = null;
-      }
       void supabase.removeAllChannels();
     } catch (error) {
       console.warn('Error cleaning up Supabase channels:', error);
