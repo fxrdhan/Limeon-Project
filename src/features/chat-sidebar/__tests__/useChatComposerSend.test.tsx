@@ -480,13 +480,13 @@ describe('useChatComposerSend', () => {
     expect(mockQueuePersistedPdfPreview).toHaveBeenCalledWith({
       message: expect.objectContaining({
         id: 'server-file-2',
+        sender_id: 'user-a',
         file_name: 'stok.pdf',
         file_mime_type: 'application/pdf',
         file_storage_path: expect.stringMatching(
           /^documents\/channel-1\/user-a_document_.*\.pdf$/
         ),
       }),
-      file: expect.any(File),
     });
   });
 

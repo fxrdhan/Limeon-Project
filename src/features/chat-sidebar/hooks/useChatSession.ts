@@ -111,6 +111,7 @@ export const useChatSession = ({
   const { markMessageIdsAsDelivered, markMessageIdsAsRead } =
     useChatSessionReceipts({
       applyMessageUpdate,
+      currentUserId: user?.id,
       isSessionTokenActive,
       receiptScopeResetKey:
         isOpen && user && targetUser && currentChannelId

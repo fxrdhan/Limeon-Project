@@ -6,13 +6,19 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 const { mockGateway } = vi.hoisted(() => ({
   mockGateway: {
     markMessageIdsAsDelivered: vi.fn(),
-    markMessageIdsAsRead: vi.fn(),
+  },
+}));
+const { mockPendingReadReceipts } = vi.hoisted(() => ({
+  mockPendingReadReceipts: {
+    queuePendingReadReceiptMessageIds: vi.fn(),
   },
 }));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: mockGateway,
 }));
+
+vi.mock('../utils/pending-read-receipts', () => mockPendingReadReceipts);
 
 const buildMessage = (overrides: {
   id: string;
@@ -124,18 +130,14 @@ describe('useChatSessionReceipts', () => {
     );
   });
 
-  it('drops queued retries when the receipt scope changes', async () => {
+  it('queues read receipts outside the scope-bound mutation queue', async () => {
     const applyMessageUpdate = vi.fn();
-
-    mockGateway.markMessageIdsAsRead.mockResolvedValue({
-      data: null,
-      error: { message: 'temporary failure' },
-    });
 
     const { result, rerender } = renderHook(
       ({ receiptScopeResetKey }: { receiptScopeResetKey: string | null }) =>
         useChatSessionReceipts({
           applyMessageUpdate,
+          currentUserId: 'user-a',
           isSessionTokenActive: () => true,
           receiptScopeResetKey,
         }),
@@ -150,7 +152,14 @@ describe('useChatSessionReceipts', () => {
       await result.current.markMessageIdsAsRead(['message-2']);
     });
 
-    expect(mockGateway.markMessageIdsAsRead).toHaveBeenCalledTimes(1);
+    expect(
+      mockPendingReadReceipts.queuePendingReadReceiptMessageIds
+    ).toHaveBeenCalledWith('user-a', ['message-2']);
+    expect(applyMessageUpdate).toHaveBeenCalledWith({
+      id: 'message-2',
+      is_read: true,
+      is_delivered: true,
+    });
 
     rerender({
       receiptScopeResetKey: 'scope-2',
@@ -162,7 +171,8 @@ describe('useChatSessionReceipts', () => {
       await Promise.resolve();
     });
 
-    expect(mockGateway.markMessageIdsAsRead).toHaveBeenCalledTimes(1);
-    expect(applyMessageUpdate).not.toHaveBeenCalled();
+    expect(
+      mockPendingReadReceipts.queuePendingReadReceiptMessageIds
+    ).toHaveBeenCalledTimes(1);
   });
 });

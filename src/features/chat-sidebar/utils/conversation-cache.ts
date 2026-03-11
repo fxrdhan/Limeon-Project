@@ -2,6 +2,7 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import {
   CHAT_CONVERSATION_CACHE_MAX_AGE_MS,
   CHAT_CONVERSATION_CACHE_MAX_ENTRIES,
+  CHAT_CONVERSATION_CACHE_MAX_MESSAGES,
 } from '../constants';
 
 export type ConversationCacheEntry = {
@@ -33,8 +34,13 @@ export const setConversationCacheEntry = (
   hasOlderMessages: boolean,
   cache: Map<string, ConversationCacheEntry> = sharedConversationCache
 ) => {
+  const boundedMessages =
+    messages.length > CHAT_CONVERSATION_CACHE_MAX_MESSAGES
+      ? messages.slice(-CHAT_CONVERSATION_CACHE_MAX_MESSAGES)
+      : messages;
+
   cache.set(channelId, {
-    messages: messages.map(messageItem => ({ ...messageItem })),
+    messages: boundedMessages.map(messageItem => ({ ...messageItem })),
     hasOlderMessages,
     cachedAt: Date.now(),
   });

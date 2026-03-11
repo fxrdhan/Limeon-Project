@@ -1,7 +1,10 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect } from 'react';
 import type { UserDetails } from '@/types/database';
-import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
+import {
+  CHAT_CONVERSATION_CACHE_MAX_MESSAGES,
+  CHAT_CONVERSATION_PAGE_SIZE,
+} from '../constants';
 import {
   chatSidebarMessagesGateway,
   type ChatMessage,
@@ -131,6 +134,15 @@ export const useChatConversationInitialLoad = ({
       const cachedConversation =
         getFreshConversationCacheEntry(currentChannelId);
       const hasCachedConversation = Boolean(cachedConversation);
+      const cachedPersistedMessages = cachedConversation?.messages || [];
+      const refreshPageSize = Math.max(
+        CHAT_CONVERSATION_PAGE_SIZE,
+        cachedPersistedMessages.length
+      );
+      const boundedRefreshPageSize = Math.min(
+        refreshPageSize,
+        CHAT_CONVERSATION_CACHE_MAX_MESSAGES
+      );
 
       if (cachedConversation) {
         applyActiveConversationSnapshot(cachedConversation.messages);
@@ -155,7 +167,7 @@ export const useChatConversationInitialLoad = ({
           await chatSidebarMessagesGateway.fetchConversationMessages(
             targetUser.id,
             {
-              limit: CHAT_CONVERSATION_PAGE_SIZE,
+              limit: boundedRefreshPageSize,
             }
           );
 
@@ -173,7 +185,6 @@ export const useChatConversationInitialLoad = ({
           return;
         }
 
-        const cachedConversationMessages = cachedConversation?.messages || [];
         const transformedMessages = hasCachedConversation
           ? mapConversationMessagesForDisplay(existingMessagesPage.messages, {
               currentUserId: user.id,
@@ -186,14 +197,12 @@ export const useChatConversationInitialLoad = ({
           return;
         }
 
-        const shouldPreserveCachedOlderMessages =
-          cachedConversationMessages.length > transformedMessages.length;
         const mergedPersistedMessages = hasCachedConversation
           ? mergeLatestConversationPageWithExisting({
-              previousMessages: cachedConversationMessages,
+              previousMessages: cachedPersistedMessages,
               latestMessages: transformedMessages,
               currentChannelId,
-              preserveOlderPersistedMessages: shouldPreserveCachedOlderMessages,
+              preserveOlderPersistedMessages: false,
             }).filter(messageItem => !messageItem.id.startsWith('temp_'))
           : transformedMessages;
 
@@ -203,7 +212,7 @@ export const useChatConversationInitialLoad = ({
               previousMessages,
               latestMessages: transformedMessages,
               currentChannelId,
-              preserveOlderPersistedMessages: shouldPreserveCachedOlderMessages,
+              preserveOlderPersistedMessages: false,
             })
           );
         }
@@ -235,10 +244,7 @@ export const useChatConversationInitialLoad = ({
           activeSearchContextMessageIds.delete(messageItem.id);
         });
 
-        const nextHasOlderMessages =
-          shouldPreserveCachedOlderMessages && cachedConversation
-            ? cachedConversation.hasOlderMessages
-            : existingMessagesPage.hasMore;
+        const nextHasOlderMessages = existingMessagesPage.hasMore;
 
         setConversationCacheEntry(
           currentChannelId,

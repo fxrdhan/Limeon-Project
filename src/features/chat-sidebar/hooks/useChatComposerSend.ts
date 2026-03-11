@@ -338,11 +338,11 @@ export const useChatComposerSend = ({
               queuePersistedPdfPreview({
                 message: {
                   ...realMessage,
+                  sender_id: user.id,
                   file_name: pendingFile.fileName,
                   file_mime_type: pendingFile.mimeType,
                   file_storage_path: realMessage.file_storage_path || filePath,
                 },
-                file: pendingFile.file,
               });
             }
           : undefined,
