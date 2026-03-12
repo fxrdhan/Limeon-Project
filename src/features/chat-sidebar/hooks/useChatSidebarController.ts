@@ -1,7 +1,9 @@
 import { useAuthStore } from '@/store/authStore';
-import { useChatComposerModel } from './useChatComposerModel';
-import { useChatHeaderModel } from './useChatHeaderModel';
-import { useChatMessagesModel } from './useChatMessagesModel';
+import {
+  buildChatHeaderModel,
+  buildComposerPanelModel,
+  buildMessagesPaneModel,
+} from '../modelBuilders';
 import { computeDmChannelId } from '../utils/channel';
 import type { ChatSidebarPanelProps } from '../types';
 import { useChatSidebarRuntimeState } from './useChatSidebarRuntimeState';
@@ -30,7 +32,7 @@ export const useChatSidebarController = ({
     displayTargetPhotoUrl,
   });
 
-  const headerModel = useChatHeaderModel({
+  const headerModel = buildChatHeaderModel({
     targetUser: runtime.targetUser,
     displayTargetPhotoUrl: runtime.displayTargetPhotoUrl,
     isTargetOnline: runtime.session.isTargetOnline,
@@ -63,7 +65,7 @@ export const useChatSidebarController = ({
     getInitialsColor: runtime.actions.getInitialsColor,
   });
 
-  const messagesModel = useChatMessagesModel({
+  const messagesModel = buildMessagesPaneModel({
     state: {
       loading: runtime.session.loading,
       loadError: runtime.session.loadError,
@@ -142,7 +144,7 @@ export const useChatSidebarController = ({
     },
   });
 
-  const composerModel = useChatComposerModel({
+  const composerModel = buildComposerPanelModel({
     state: {
       message: runtime.composer.message,
       editingMessagePreview: runtime.composer.editingMessagePreview,
