@@ -7,6 +7,12 @@ import type {
   DeleteMessageThreadsAndCleanupResult,
   RetryChatCleanupFailuresResult,
 } from './types';
+import type {
+  CleanupStoragePathsRequest,
+  DeleteMessageThreadAndCleanupRequest,
+  DeleteMessageThreadsAndCleanupRequest,
+  RetryChatCleanupFailuresRequest,
+} from '../../../../shared/chatFunctionContracts';
 
 const normalizeStoragePaths = (
   storagePaths: Array<string | null | undefined>
@@ -25,14 +31,15 @@ export const chatCleanupService = {
     id: string
   ): Promise<ServiceResponse<DeleteMessageThreadAndCleanupResult>> {
     try {
+      const request: DeleteMessageThreadAndCleanupRequest = {
+        action: 'delete_thread',
+        messageId: id,
+      };
       const { data, error } =
         await supabase.functions.invoke<DeleteMessageThreadAndCleanupResult>(
           'chat-cleanup',
           {
-            body: {
-              action: 'delete_thread',
-              messageId: id,
-            },
+            body: request,
           }
         );
 
@@ -83,14 +90,15 @@ export const chatCleanupService = {
     }
 
     try {
+      const request: DeleteMessageThreadsAndCleanupRequest = {
+        action: 'delete_threads',
+        messageIds: normalizedMessageIds,
+      };
       const { data, error } =
         await supabase.functions.invoke<DeleteMessageThreadsAndCleanupResult>(
           'chat-cleanup',
           {
-            body: {
-              action: 'delete_threads',
-              messageIds: normalizedMessageIds,
-            },
+            body: request,
           }
         );
 
@@ -136,14 +144,15 @@ export const chatCleanupService = {
     }
 
     try {
+      const request: CleanupStoragePathsRequest = {
+        action: 'cleanup_storage',
+        storagePaths: normalizedStoragePaths,
+      };
       const { data, error } =
         await supabase.functions.invoke<CleanupStoragePathsResult>(
           'chat-cleanup',
           {
-            body: {
-              action: 'cleanup_storage',
-              storagePaths: normalizedStoragePaths,
-            },
+            body: request,
           }
         );
 
@@ -172,13 +181,14 @@ export const chatCleanupService = {
     ServiceResponse<RetryChatCleanupFailuresResult>
   > {
     try {
+      const request: RetryChatCleanupFailuresRequest = {
+        action: 'retry_failures',
+      };
       const { data, error } =
         await supabase.functions.invoke<RetryChatCleanupFailuresResult>(
           'chat-cleanup',
           {
-            body: {
-              action: 'retry_failures',
-            },
+            body: request,
           }
         );
 

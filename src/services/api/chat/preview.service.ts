@@ -3,6 +3,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type {
   PersistChatPdfPreviewInput,
+  PersistChatPdfPreviewResponse,
   PersistChatPdfPreviewResult,
 } from './types';
 import { normalizeChatMessage } from './normalizers';
@@ -13,7 +14,7 @@ export const chatPreviewService = {
   ): Promise<ServiceResponse<PersistChatPdfPreviewResult>> {
     try {
       const { data, error } =
-        await supabase.functions.invoke<PersistChatPdfPreviewResult>(
+        await supabase.functions.invoke<PersistChatPdfPreviewResponse>(
           'chat-pdf-preview',
           {
             body: payload,

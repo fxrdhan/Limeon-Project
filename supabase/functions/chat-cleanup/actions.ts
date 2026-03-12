@@ -3,12 +3,15 @@ import {
   isOwnedChatPath,
   resolveChatMessageStoragePaths,
 } from "../../../shared/chatStoragePaths.ts";
+import type {
+  CleanupStoragePathsResponse,
+  DeleteMessageThreadAndCleanupResponse,
+  DeleteMessageThreadsAndCleanupResponse,
+  RetryChatCleanupFailuresResponse,
+  ChatCleanupAction,
+} from "../../../shared/chatFunctionContracts.ts";
 
-export type CleanupAction =
-  | "delete_thread"
-  | "delete_threads"
-  | "cleanup_storage"
-  | "retry_failures";
+export type CleanupAction = ChatCleanupAction;
 export type CleanupFailureStage = "delete_thread" | "cleanup_storage";
 
 export interface ChatCleanupFailureRecord {
@@ -155,7 +158,7 @@ export const deleteThreadAndCleanup = async ({
     body: {
       deletedMessageIds: normalizeDeletedMessageIds(deletedMessageIds),
       failedStoragePaths,
-    },
+    } satisfies DeleteMessageThreadAndCleanupResponse,
   };
 };
 
@@ -244,7 +247,7 @@ export const deleteThreadsAndCleanup = async ({
       failedTargetMessageIds,
       cleanupWarningTargetMessageIds,
       failedStoragePaths: normalizeStoragePaths(failedStoragePaths),
-    },
+    } satisfies DeleteMessageThreadsAndCleanupResponse,
   };
 };
 
@@ -290,7 +293,7 @@ export const cleanupStoragePaths = async ({
 
   return {
     status: 200,
-    body: { failedStoragePaths },
+    body: { failedStoragePaths } satisfies CleanupStoragePathsResponse,
   };
 };
 
@@ -363,6 +366,6 @@ export const retryCleanupFailures = async ({
       resolvedCount,
       remainingCount,
       skippedCount,
-    },
+    } satisfies RetryChatCleanupFailuresResponse,
   };
 };

@@ -1,26 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import type { ChatCleanupRequestPayload } from "../../../shared/chatFunctionContracts.ts";
 import {
   cleanupStoragePaths,
   deleteThreadAndCleanup,
   deleteThreadsAndCleanup,
   normalizeStoragePaths,
-  partitionOwnedChatPaths,
   retryCleanupFailures,
-  type CleanupAction,
   type ChatCleanupRepository,
 } from "./actions.ts";
 
 const CHAT_BUCKET = "chat";
 const STORAGE_DELETE_MAX_ATTEMPTS = 3;
 const STORAGE_DELETE_RETRY_DELAY_MS = 180;
-
-interface ChatCleanupRequest {
-  action?: CleanupAction;
-  messageId?: string;
-  messageIds?: string[];
-  storagePaths?: string[];
-}
 
 const buildCorsHeaders = (req: Request) => {
   const requestOrigin = req.headers.get("Origin");
@@ -287,7 +279,7 @@ Deno.serve(async req => {
     return json(req, 401, { error: "Unauthorized" });
   }
 
-  let payload: ChatCleanupRequest;
+  let payload: ChatCleanupRequestPayload;
   try {
     payload = await req.json();
   } catch {

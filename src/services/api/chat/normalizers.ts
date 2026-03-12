@@ -99,6 +99,19 @@ export const normalizeChatMessages = (
     return normalizedMessage ? [normalizedMessage] : [];
   });
 
+export const normalizeRealtimeChatMessage = (
+  message: Partial<ChatMessageRow> | null | undefined
+) => normalizeChatMessage(message);
+
+export const extractRealtimeChatMessageId = (
+  message: Pick<Partial<ChatMessageRow>, 'id'> | null | undefined
+) => {
+  const messageId = message?.id;
+  return typeof messageId === 'string' && messageId.length > 0
+    ? messageId
+    : null;
+};
+
 export const normalizeUserPresence = (
   presence: Partial<UserPresenceRow> | null | undefined
 ): UserPresence | null => {

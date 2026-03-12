@@ -3,6 +3,10 @@ import { useEffect, useRef } from 'react';
 import type { UserDetails } from '@/types/database';
 import { realtimeService } from '@/services/realtime/realtime.service';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import {
+  extractRealtimeChatMessageId,
+  normalizeRealtimeChatMessage,
+} from '@/services/api/chat/normalizers';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
@@ -122,7 +126,7 @@ export const useChatConversationRealtime = ({
         filter: `channel_id=eq.${currentChannelId}`,
       },
       payload => {
-        const insertedMessage = payload.new as ChatMessage;
+        const insertedMessage = normalizeRealtimeChatMessage(payload.new);
         if (!insertedMessage?.id) {
           return;
         }
@@ -162,7 +166,7 @@ export const useChatConversationRealtime = ({
         filter: `channel_id=eq.${currentChannelId}`,
       },
       payload => {
-        const updatedMessage = payload.new as ChatMessage;
+        const updatedMessage = normalizeRealtimeChatMessage(payload.new);
         if (!updatedMessage?.id) return;
         const mappedUpdatedMessage =
           mapMessageForActiveConversation(updatedMessage);
@@ -187,8 +191,7 @@ export const useChatConversationRealtime = ({
         filter: `channel_id=eq.${currentChannelId}`,
       },
       payload => {
-        const deletedMessage = payload.old as Partial<ChatMessage> | undefined;
-        const deletedMessageId = deletedMessage?.id;
+        const deletedMessageId = extractRealtimeChatMessageId(payload.old);
         if (!deletedMessageId) return;
 
         if (isInitialConversationLoadPendingRef.current) {

@@ -4,6 +4,15 @@ import type {
   UserPresenceRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
+import type {
+  ChatPdfPreviewRequest as SharedChatPdfPreviewRequest,
+  ChatPdfPreviewResponse as SharedChatPdfPreviewResponse,
+  ChatPdfPreviewStatus,
+  CleanupStoragePathsResponse as SharedCleanupStoragePathsResult,
+  DeleteMessageThreadAndCleanupResponse as SharedDeleteMessageThreadAndCleanupResult,
+  DeleteMessageThreadsAndCleanupResponse as SharedDeleteMessageThreadsAndCleanupResult,
+  RetryChatCleanupFailuresResponse as SharedRetryChatCleanupFailuresResult,
+} from '../../../../shared/chatFunctionContracts';
 
 export const DEFAULT_CHAT_MESSAGES_PAGE_SIZE = 50;
 
@@ -78,32 +87,20 @@ export interface EditChatMessageTextInput {
 export interface ChatFilePreviewUpdateInput {
   file_preview_url?: string | null;
   file_preview_page_count?: number | null;
-  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
+  file_preview_status?: ChatPdfPreviewStatus | null;
   file_preview_error?: string | null;
 }
 
-export interface DeleteMessageThreadAndCleanupResult {
-  deletedMessageIds: string[];
-  failedStoragePaths: string[];
-}
+export type DeleteMessageThreadAndCleanupResult =
+  SharedDeleteMessageThreadAndCleanupResult;
 
-export interface DeleteMessageThreadsAndCleanupResult {
-  deletedMessageIds: string[];
-  deletedTargetMessageIds: string[];
-  failedTargetMessageIds: string[];
-  cleanupWarningTargetMessageIds: string[];
-  failedStoragePaths: string[];
-}
+export type DeleteMessageThreadsAndCleanupResult =
+  SharedDeleteMessageThreadsAndCleanupResult;
 
-export interface CleanupStoragePathsResult {
-  failedStoragePaths: string[];
-}
+export type CleanupStoragePathsResult = SharedCleanupStoragePathsResult;
 
-export interface RetryChatCleanupFailuresResult {
-  resolvedCount: number;
-  remainingCount: number;
-  skippedCount: number;
-}
+export type RetryChatCleanupFailuresResult =
+  SharedRetryChatCleanupFailuresResult;
 
 export type UserPresenceUpdateInput = Omit<
   UserPresenceUpdateRow,
@@ -139,11 +136,9 @@ export interface ConversationSearchContextOptions {
   afterLimit?: number;
 }
 
-export interface PersistChatPdfPreviewInput {
-  message_id: string;
-  preview_png_base64: string;
-  page_count: number;
-}
+export type PersistChatPdfPreviewInput = SharedChatPdfPreviewRequest;
+
+export type PersistChatPdfPreviewResponse = SharedChatPdfPreviewResponse;
 
 export interface PersistChatPdfPreviewResult {
   message: ChatMessage;

@@ -2,6 +2,11 @@ import {
   buildPdfPreviewStoragePath,
   resolveFileExtension,
 } from "../../../shared/chatStoragePaths.ts";
+import type {
+  ChatPdfPreviewMessagePayload,
+  ChatPdfPreviewResponse,
+  ChatPdfPreviewStatus,
+} from "../../../shared/chatFunctionContracts.ts";
 
 interface ChatStoragePathRecord {
   message: string;
@@ -12,17 +17,10 @@ interface ChatStoragePathRecord {
   file_storage_path?: string | null;
 }
 
-export interface ChatPdfPreviewMessageRecord extends ChatStoragePathRecord {
-  id: string;
-  sender_id: string;
-  file_preview_status?: 'pending' | 'ready' | 'failed' | null;
-  file_preview_page_count?: number | null;
-  file_preview_error?: string | null;
-}
-
-export interface PersistPdfPreviewResultBody {
-  message: ChatPdfPreviewMessageRecord;
-  previewPersisted: boolean;
+export interface ChatPdfPreviewMessageRecord
+  extends ChatStoragePathRecord,
+    ChatPdfPreviewMessagePayload {
+  file_preview_status?: ChatPdfPreviewStatus | null;
 }
 
 export interface ChatPdfPreviewRepository {
@@ -145,7 +143,7 @@ export const persistPdfPreview = async ({
       body: {
         message,
         previewPersisted: true,
-      } satisfies PersistPdfPreviewResultBody,
+      } satisfies ChatPdfPreviewResponse,
     };
   }
 
@@ -204,7 +202,7 @@ export const persistPdfPreview = async ({
           body: {
             message: failedResult.message,
             previewPersisted: false,
-          } satisfies PersistPdfPreviewResultBody,
+          } satisfies ChatPdfPreviewResponse,
         };
       }
 
@@ -222,7 +220,7 @@ export const persistPdfPreview = async ({
       body: {
         message: readyResult.message,
         previewPersisted: true,
-      } satisfies PersistPdfPreviewResultBody,
+      } satisfies ChatPdfPreviewResponse,
     };
   } catch (error) {
     await repository.deletePreviewAsset(previewStoragePath);
@@ -240,7 +238,7 @@ export const persistPdfPreview = async ({
         body: {
           message: failedResult.message,
           previewPersisted: false,
-        } satisfies PersistPdfPreviewResultBody,
+        } satisfies ChatPdfPreviewResponse,
       };
     }
 

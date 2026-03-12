@@ -1,17 +1,12 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import type { ChatPdfPreviewRequestPayload } from '../../../shared/chatFunctionContracts.ts';
 import {
   persistPdfPreview,
   type ChatPdfPreviewRepository,
 } from './actions.ts';
 
 const CHAT_BUCKET = 'chat';
-
-interface ChatPdfPreviewRequest {
-  message_id?: string;
-  preview_png_base64?: string;
-  page_count?: number;
-}
 
 const buildCorsHeaders = (req: Request) => {
   const requestOrigin = req.headers.get('Origin');
@@ -166,7 +161,7 @@ Deno.serve(async req => {
     return json(req, 401, { error: 'Unauthorized' });
   }
 
-  let payload: ChatPdfPreviewRequest;
+  let payload: ChatPdfPreviewRequestPayload;
   try {
     payload = await req.json();
   } catch {
