@@ -5,6 +5,7 @@ import type {
   PersistChatPdfPreviewInput,
   PersistChatPdfPreviewResult,
 } from './types';
+import { normalizeChatMessage } from './normalizers';
 
 export const chatPreviewService = {
   async persistPdfPreview(
@@ -24,7 +25,12 @@ export const chatPreviewService = {
       }
 
       return {
-        data: data ?? null,
+        data: data?.message
+          ? {
+              message: normalizeChatMessage(data.message)!,
+              previewPersisted: Boolean(data.previewPersisted),
+            }
+          : null,
         error: null,
       };
     } catch (error) {

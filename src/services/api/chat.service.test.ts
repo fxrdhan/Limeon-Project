@@ -34,6 +34,45 @@ vi.mock('@/lib/supabase', () => ({
   supabaseUrl: 'https://example.supabase.co',
 }));
 
+const buildRpcMessage = (
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => ({
+  id: 'message-1',
+  sender_id: 'user-a',
+  receiver_id: 'user-b',
+  channel_id: 'dm_user-a_user-b',
+  message: 'halo',
+  message_type: 'text',
+  created_at: '2026-03-09T10:00:00.000Z',
+  updated_at: '2026-03-09T10:00:00.000Z',
+  is_read: false,
+  is_delivered: false,
+  reply_to_id: null,
+  message_relation_kind: null,
+  file_name: null,
+  file_kind: undefined,
+  file_mime_type: null,
+  file_size: null,
+  file_storage_path: null,
+  file_preview_url: null,
+  file_preview_page_count: null,
+  file_preview_status: null,
+  file_preview_error: null,
+  ...overrides,
+});
+
+const buildRpcPresence = (
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => ({
+  id: 'presence-1',
+  user_id: 'user-a',
+  is_online: true,
+  last_seen: '2026-03-09T10:00:00.000Z',
+  last_chat_opened: null,
+  updated_at: '2026-03-09T10:00:00.000Z',
+  ...overrides,
+});
+
 describe('chatService', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -61,10 +100,10 @@ describe('chatService', () => {
   });
 
   it('edits text messages through the dedicated rpc', async () => {
-    const updatedMessage = {
+    const updatedMessage = buildRpcMessage({
       id: 'message-1',
       message: 'edited caption',
-    };
+    });
     mockRpc.mockResolvedValueOnce({
       data: updatedMessage,
       error: null,
@@ -88,10 +127,10 @@ describe('chatService', () => {
   });
 
   it('loads a single chat message through the dedicated rpc', async () => {
-    const message = {
+    const message = buildRpcMessage({
       id: 'message-1',
       message: 'hello',
-    };
+    });
     mockRpc.mockResolvedValueOnce({
       data: message,
       error: null,
@@ -112,14 +151,14 @@ describe('chatService', () => {
 
   it('fetches conversation pages through the deterministic pagination rpc', async () => {
     const rpcMessages = [
-      {
+      buildRpcMessage({
         id: 'message-3',
         created_at: '2026-03-09T10:02:00.000Z',
-      },
-      {
+      }),
+      buildRpcMessage({
         id: 'message-2',
         created_at: '2026-03-09T10:01:00.000Z',
-      },
+      }),
     ];
     mockRpc.mockResolvedValueOnce({
       data: rpcMessages,
@@ -150,13 +189,17 @@ describe('chatService', () => {
   });
 
   it('updates file preview metadata through the dedicated rpc', async () => {
-    const updatedMessage = {
+    const updatedMessage = buildRpcMessage({
       id: 'file-1',
+      message: 'documents/dm_user-a_user-b/report.pdf',
+      message_type: 'file',
+      file_name: 'report.pdf',
+      file_storage_path: 'documents/dm_user-a_user-b/report.pdf',
       file_preview_status: 'ready',
       file_preview_url: 'previews/channel/file.png',
       file_preview_page_count: 2,
       file_preview_error: null,
-    };
+    });
     mockRpc.mockResolvedValueOnce({
       data: updatedMessage,
       error: null,
@@ -186,22 +229,22 @@ describe('chatService', () => {
 
   it('searches conversation matches through the dedicated rpc', async () => {
     const matchedMessages = [
-      {
+      buildRpcMessage({
         id: 'message-1',
         created_at: '2026-03-10T08:00:00.000Z',
-      },
-      {
+      }),
+      buildRpcMessage({
         id: 'message-2',
         created_at: '2026-03-10T08:01:00.000Z',
-      },
+      }),
     ];
     mockRpc.mockResolvedValueOnce({
       data: [
         ...matchedMessages,
-        {
+        buildRpcMessage({
           id: 'message-3',
           created_at: '2026-03-10T08:02:00.000Z',
-        },
+        }),
       ],
       error: null,
     });
@@ -236,14 +279,14 @@ describe('chatService', () => {
 
   it('loads a search context window through the dedicated rpc', async () => {
     const contextMessages = [
-      {
+      buildRpcMessage({
         id: 'message-10',
         created_at: '2026-03-10T08:00:00.000Z',
-      },
-      {
+      }),
+      buildRpcMessage({
         id: 'message-11',
         created_at: '2026-03-10T08:01:00.000Z',
-      },
+      }),
     ];
     mockRpc.mockResolvedValueOnce({
       data: contextMessages,
@@ -375,12 +418,10 @@ describe('chatService', () => {
 
   it('upserts presence through the dedicated rpc', async () => {
     mockRpc.mockResolvedValueOnce({
-      data: {
+      data: buildRpcPresence({
         user_id: 'user-a',
         is_online: true,
-        last_seen: '2026-03-09T10:00:00.000Z',
-        updated_at: '2026-03-09T10:00:00.000Z',
-      },
+      }),
       error: null,
     });
 
@@ -396,23 +437,19 @@ describe('chatService', () => {
       p_last_chat_opened: null,
     });
     expect(result).toEqual({
-      data: {
+      data: buildRpcPresence({
         user_id: 'user-a',
         is_online: true,
-        last_seen: '2026-03-09T10:00:00.000Z',
-        updated_at: '2026-03-09T10:00:00.000Z',
-      },
+      }),
       error: null,
     });
   });
 
   it('loads presence snapshots through the dedicated rpc', async () => {
-    const presence = {
+    const presence = buildRpcPresence({
       user_id: 'user-a',
       is_online: true,
-      last_seen: '2026-03-09T10:00:00.000Z',
-      updated_at: '2026-03-09T10:00:00.000Z',
-    };
+    });
     mockRpc.mockResolvedValueOnce({
       data: presence,
       error: null,
@@ -462,11 +499,10 @@ describe('chatService', () => {
 
   it('normalizes standard presence sync behind the rpc-based helper', async () => {
     mockRpc.mockResolvedValueOnce({
-      data: {
+      data: buildRpcPresence({
         user_id: 'user-a',
         is_online: false,
-        last_seen: '2026-03-09T10:00:00.000Z',
-      },
+      }),
       error: null,
     });
 
@@ -522,11 +558,11 @@ describe('chatService', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(null, { status: 204 }));
     mockRpc.mockResolvedValueOnce({
-      data: {
+      data: buildRpcPresence({
         user_id: 'user-a',
         is_online: false,
         last_seen: '2026-03-10T12:00:00.000Z',
-      },
+      }),
       error: null,
     });
 
@@ -586,12 +622,16 @@ describe('chatService', () => {
   });
 
   it('persists pdf preview metadata through the chat preview edge function', async () => {
-    const updatedMessage = {
+    const updatedMessage = buildRpcMessage({
       id: 'file-1',
+      message: 'documents/dm_user-a_user-b/file-1.pdf',
+      message_type: 'file',
+      file_name: 'file-1.pdf',
+      file_storage_path: 'documents/dm_user-a_user-b/file-1.pdf',
       file_preview_status: 'ready',
       file_preview_url: 'previews/channel/file-1.png',
       file_preview_page_count: 3,
-    };
+    });
     mockInvoke.mockResolvedValueOnce({
       data: {
         message: updatedMessage,

@@ -27,6 +27,7 @@ import {
   buildUpdateChatFilePreviewMetadataRpcArgs,
   CHAT_RPC_NAMES,
 } from './rpc-contract';
+import { normalizeChatMessage, normalizeChatMessages } from './normalizers';
 
 export const chatMessagesService = {
   async getMessageById(id: string): Promise<ServiceResponse<ChatMessage>> {
@@ -41,7 +42,7 @@ export const chatMessagesService = {
       }
 
       return {
-        data: data ? (data as ChatMessage) : null,
+        data: normalizeChatMessage(data),
         error: null,
       };
     } catch (error) {
@@ -74,11 +75,9 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      const orderedMessages = ((data || []) as ChatMessage[]).slice(
-        0,
-        pageSize
-      );
-      const hasMore = (data?.length ?? 0) > pageSize;
+      const normalizedMessages = normalizeChatMessages(data || []);
+      const orderedMessages = normalizedMessages.slice(0, pageSize);
+      const hasMore = normalizedMessages.length > pageSize;
 
       return {
         data: {
@@ -122,11 +121,9 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      const matchedMessages = ((data || []) as ChatMessage[]).slice(
-        0,
-        pageSize
-      );
-      const hasMore = (data?.length ?? 0) > pageSize;
+      const normalizedMessages = normalizeChatMessages(data || []);
+      const matchedMessages = normalizedMessages.slice(0, pageSize);
+      const hasMore = normalizedMessages.length > pageSize;
 
       return {
         data: {
@@ -155,7 +152,7 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ChatMessage[], error: null };
+      return { data: normalizeChatMessages(data || []), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -174,7 +171,7 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      return { data: data as ChatMessage, error: null };
+      return { data: normalizeChatMessage(data), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -194,7 +191,7 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      return { data: data as ChatMessage, error: null };
+      return { data: normalizeChatMessage(data), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -214,7 +211,7 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      return { data: data as ChatMessage, error: null };
+      return { data: normalizeChatMessage(data), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -235,7 +232,7 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ChatMessage[], error: null };
+      return { data: normalizeChatMessages(data || []), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -256,7 +253,7 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ChatMessage[], error: null };
+      return { data: normalizeChatMessages(data || []), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }

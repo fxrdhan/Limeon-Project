@@ -1,46 +1,53 @@
 import type {
   ChatMessageInsertRow,
   ChatMessageRow,
+  UserPresenceRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
 
 export const DEFAULT_CHAT_MESSAGES_PAGE_SIZE = 50;
 
-export type ChatMessage = Pick<
+export type ChatMessageType = 'text' | 'image' | 'file';
+export type ChatFileKind = 'audio' | 'document';
+export type ChatMessageRelationKind = 'attachment_caption';
+
+type ChatMessageCoreFields = Pick<
   ChatMessageRow,
   'id' | 'sender_id' | 'receiver_id' | 'channel_id' | 'message' | 'reply_to_id'
-> &
-  Partial<
-    Pick<
-      ChatMessageRow,
-      | 'file_mime_type'
-      | 'file_name'
-      | 'file_preview_error'
-      | 'file_preview_page_count'
-      | 'file_preview_status'
-      | 'file_preview_url'
-      | 'file_size'
-      | 'file_storage_path'
-    >
-  > & {
+>;
+
+type ChatMessageOptionalMetadata = Partial<
+  Pick<
+    ChatMessageRow,
+    | 'file_mime_type'
+    | 'file_name'
+    | 'file_preview_error'
+    | 'file_preview_page_count'
+    | 'file_preview_status'
+    | 'file_preview_url'
+    | 'file_size'
+    | 'file_storage_path'
+    | 'is_delivered'
+  >
+>;
+
+export type ChatMessage = ChatMessageCoreFields &
+  ChatMessageOptionalMetadata & {
     created_at: string;
     updated_at: string;
     is_read: boolean;
-    is_delivered?: boolean;
-    message_relation_kind?: 'attachment_caption' | null;
-    message_type: 'text' | 'image' | 'file';
-    file_kind?: 'audio' | 'document';
+    message_type: ChatMessageType;
+    message_relation_kind?: ChatMessageRelationKind | null;
+    file_kind?: ChatFileKind;
     sender_name?: string;
     receiver_name?: string;
     stableKey?: string;
   };
 
-export interface UserPresence {
-  user_id: string;
+export type UserPresence = Omit<UserPresenceRow, 'is_online' | 'last_seen'> & {
   is_online: boolean;
   last_seen: string;
-  updated_at?: string | null;
-}
+};
 
 export interface PresenceSyncResult {
   errorMessage: string | null;

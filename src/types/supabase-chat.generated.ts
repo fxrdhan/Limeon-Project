@@ -7,7 +7,7 @@ export interface ChatDatabase {
       chat_messages: {
         Row: {
           channel_id: string;
-          created_at: string | null;
+          created_at: string;
           file_kind: string | null;
           file_mime_type: string | null;
           file_name: string | null;
@@ -19,18 +19,18 @@ export interface ChatDatabase {
           file_storage_path: string | null;
           id: string;
           is_delivered: boolean;
-          is_read: boolean | null;
+          is_read: boolean;
           message: string;
           message_relation_kind: string | null;
-          message_type: string | null;
+          message_type: string;
           receiver_id: string;
           reply_to_id: string | null;
           sender_id: string;
-          updated_at: string | null;
+          updated_at: string;
         };
         Insert: {
           channel_id: string;
-          created_at?: string | null;
+          created_at?: string;
           file_kind?: string | null;
           file_mime_type?: string | null;
           file_name?: string | null;
@@ -42,18 +42,18 @@ export interface ChatDatabase {
           file_storage_path?: string | null;
           id?: string;
           is_delivered?: boolean;
-          is_read?: boolean | null;
+          is_read?: boolean;
           message: string;
           message_relation_kind?: string | null;
-          message_type?: string | null;
+          message_type?: string;
           receiver_id: string;
           reply_to_id?: string | null;
           sender_id: string;
-          updated_at?: string | null;
+          updated_at?: string;
         };
         Update: {
           channel_id?: string;
-          created_at?: string | null;
+          created_at?: string;
           file_kind?: string | null;
           file_mime_type?: string | null;
           file_name?: string | null;
@@ -65,14 +65,14 @@ export interface ChatDatabase {
           file_storage_path?: string | null;
           id?: string;
           is_delivered?: boolean;
-          is_read?: boolean | null;
+          is_read?: boolean;
           message?: string;
           message_relation_kind?: string | null;
-          message_type?: string | null;
+          message_type?: string;
           receiver_id?: string;
           reply_to_id?: string | null;
           sender_id?: string;
-          updated_at?: string | null;
+          updated_at?: string;
         };
       };
       chat_storage_cleanup_failures: {
@@ -116,25 +116,25 @@ export interface ChatDatabase {
       user_presence: {
         Row: {
           id: string;
-          is_online: boolean | null;
+          is_online: boolean;
           last_chat_opened: string | null;
-          last_seen: string | null;
+          last_seen: string;
           updated_at: string | null;
           user_id: string;
         };
         Insert: {
           id?: string;
-          is_online?: boolean | null;
+          is_online?: boolean;
           last_chat_opened?: string | null;
-          last_seen?: string | null;
+          last_seen?: string;
           updated_at?: string | null;
           user_id: string;
         };
         Update: {
           id?: string;
-          is_online?: boolean | null;
+          is_online?: boolean;
           last_chat_opened?: string | null;
-          last_seen?: string | null;
+          last_seen?: string;
           updated_at?: string | null;
           user_id?: string;
         };

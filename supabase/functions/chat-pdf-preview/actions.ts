@@ -1,3 +1,8 @@
+import {
+  buildPdfPreviewStoragePath,
+  resolveFileExtension,
+} from "../../../shared/chatStoragePaths.ts";
+
 interface ChatStoragePathRecord {
   message: string;
   message_type: string | null;
@@ -54,42 +59,6 @@ const normalizePreviewError = (error: unknown) => {
   }
 
   return error.message.trim().slice(0, 200);
-};
-
-const resolveFileExtension = (
-  fileName: string | null,
-  fileUrl: string | null,
-  mimeType?: string | null
-) => {
-  const rawSource = fileName || fileUrl || '';
-  const sourceWithoutQuery = rawSource.split(/[?#]/)[0];
-  const directExtension = sourceWithoutQuery
-    .split('.')
-    .pop()
-    ?.trim()
-    .toLowerCase();
-
-  if (directExtension) {
-    return directExtension;
-  }
-
-  const mimeSubtype = mimeType?.split('/')[1]?.split('+')[0]?.toLowerCase();
-  if (!mimeSubtype) return '';
-
-  if (mimeSubtype === 'jpeg') return 'jpg';
-  if (mimeSubtype === 'png') return 'png';
-  if (mimeSubtype === 'pdf') return 'pdf';
-
-  return '';
-};
-
-const buildPdfPreviewStoragePath = (filePath: string) => {
-  const normalizedPath = filePath.replace(/^documents\//, 'previews/');
-  if (/\.[^./]+$/.test(normalizedPath)) {
-    return normalizedPath.replace(/\.[^./]+$/, '.png');
-  }
-
-  return `${normalizedPath}.png`;
 };
 
 const isPdfPreviewableMessage = (message: ChatPdfPreviewMessageRecord) => {

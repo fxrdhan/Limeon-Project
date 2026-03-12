@@ -13,6 +13,10 @@ import {
   buildUpsertUserPresenceRpcArgs,
   CHAT_RPC_NAMES,
 } from './rpc-contract';
+import {
+  normalizeUserPresence,
+  normalizeUserPresenceList,
+} from './normalizers';
 
 const USER_PRESENCE_EXIT_RPC = CHAT_RPC_NAMES.syncUserPresenceOnExit;
 
@@ -33,7 +37,7 @@ const syncUserPresenceExitRpc = async (
       return { data: null, error };
     }
 
-    return { data: data as UserPresence, error: null };
+    return { data: normalizeUserPresence(data), error: null };
   } catch (error) {
     return { data: null, error: error as PostgrestError };
   }
@@ -53,7 +57,7 @@ export const chatPresenceService = {
         return { data: null, error };
       }
 
-      return { data: data as UserPresence, error: null };
+      return { data: normalizeUserPresence(data), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -73,7 +77,7 @@ export const chatPresenceService = {
         return { data: null, error };
       }
 
-      return { data: data as UserPresence, error: null };
+      return { data: normalizeUserPresence(data), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
@@ -122,7 +126,7 @@ export const chatPresenceService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as UserPresence[], error: null };
+      return { data: normalizeUserPresenceList(data || []), error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
