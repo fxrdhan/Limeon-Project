@@ -10,7 +10,9 @@ const { mockGateway } = vi.hoisted(() => ({
 }));
 const { mockPendingReadReceipts } = vi.hoisted(() => ({
   mockPendingReadReceipts: {
-    queuePendingReadReceiptMessageIds: vi.fn(),
+    queueReadReceiptMessageIdsForSync: vi.fn(
+      (_: string, messageIds: string[]) => messageIds
+    ),
   },
 }));
 
@@ -18,7 +20,7 @@ vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: mockGateway,
 }));
 
-vi.mock('../utils/pending-read-receipts', () => mockPendingReadReceipts);
+vi.mock('../utils/read-receipt-sync', () => mockPendingReadReceipts);
 
 const buildMessage = (overrides: {
   id: string;
@@ -153,7 +155,7 @@ describe('useChatSessionReceipts', () => {
     });
 
     expect(
-      mockPendingReadReceipts.queuePendingReadReceiptMessageIds
+      mockPendingReadReceipts.queueReadReceiptMessageIdsForSync
     ).toHaveBeenCalledWith('user-a', ['message-2']);
     expect(applyMessageUpdate).toHaveBeenCalledWith({
       id: 'message-2',
@@ -172,7 +174,7 @@ describe('useChatSessionReceipts', () => {
     });
 
     expect(
-      mockPendingReadReceipts.queuePendingReadReceiptMessageIds
+      mockPendingReadReceipts.queueReadReceiptMessageIdsForSync
     ).toHaveBeenCalledTimes(1);
   });
 });

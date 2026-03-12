@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { chatSidebarMessagesGateway } from '../data/chatSidebarGateway';
 import {
-  ackPendingReadReceiptMessageIds,
-  hasPendingReadReceiptMessageIds,
-  peekPendingReadReceiptMessageIds,
+  flushPendingReadReceiptBatch,
+  getPendingReadReceiptBatch,
+  sendPendingReadReceiptKeepalive,
   subscribePendingReadReceiptQueue,
-} from '../utils/pending-read-receipts';
+} from '../utils/read-receipt-sync';
 
 const READ_RECEIPT_BATCH_SIZE = 200;
 const READ_RECEIPT_BATCH_WINDOW_MS = 90;
@@ -76,7 +76,7 @@ export const useChatRuntimeReadReceipts = () => {
       return;
     }
 
-    const pendingMessageIds = peekPendingReadReceiptMessageIds(
+    const pendingMessageIds = getPendingReadReceiptBatch(
       user.id,
       READ_RECEIPT_BATCH_SIZE
     );
@@ -89,13 +89,15 @@ export const useChatRuntimeReadReceipts = () => {
     clearRetryTimer();
 
     try {
-      const { error } =
-        await chatSidebarMessagesGateway.markMessageIdsAsRead(
-          pendingMessageIds
-        );
+      const result = await flushPendingReadReceiptBatch({
+        userId: user.id,
+        limit: READ_RECEIPT_BATCH_SIZE,
+        submitBatch: messageIds =>
+          chatSidebarMessagesGateway.markMessageIdsAsRead(messageIds),
+      });
 
-      if (error) {
-        console.error('Error syncing pending read receipts:', error);
+      if (result.status === 'retry') {
+        console.error('Error syncing pending read receipts:', result.error);
         toast.error(
           'Sinkronisasi status baca chat tertunda. Akan dicoba lagi otomatis.',
           {
@@ -106,9 +108,7 @@ export const useChatRuntimeReadReceipts = () => {
         return;
       }
 
-      ackPendingReadReceiptMessageIds(user.id, pendingMessageIds);
-
-      if (hasPendingReadReceiptMessageIds(user.id)) {
+      if (result.status === 'synced' && result.hasMore) {
         schedulePendingReadReceiptFlush(0);
         return;
       }
@@ -139,18 +139,15 @@ export const useChatRuntimeReadReceipts = () => {
       return false;
     }
 
-    const pendingMessageIds = peekPendingReadReceiptMessageIds(
-      user.id,
-      READ_RECEIPT_BATCH_SIZE
-    );
-    if (pendingMessageIds.length === 0) {
-      return false;
-    }
-
-    return chatSidebarMessagesGateway.sendReadReceiptKeepalive(
-      pendingMessageIds,
-      accessTokenRef.current
-    );
+    return sendPendingReadReceiptKeepalive({
+      userId: user.id,
+      limit: READ_RECEIPT_BATCH_SIZE,
+      sendKeepalive: messageIds =>
+        chatSidebarMessagesGateway.sendReadReceiptKeepalive(
+          messageIds,
+          accessTokenRef.current
+        ),
+    });
   }, [user?.id]);
 
   useEffect(() => {
@@ -166,7 +163,7 @@ export const useChatRuntimeReadReceipts = () => {
       schedulePendingReadReceiptFlush();
     });
 
-    if (hasPendingReadReceiptMessageIds(user.id)) {
+    if (getPendingReadReceiptBatch(user.id, 1).length > 0) {
       schedulePendingReadReceiptFlush(0);
     }
 

@@ -1,7 +1,11 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
-import type { UserPresence, UserPresenceUpdateInput } from './types';
+import type {
+  PresenceSyncResult,
+  UserPresence,
+  UserPresenceUpdateInput,
+} from './types';
 import {
   buildGetUserPresenceRpcArgs,
   buildListActiveUserPresenceSinceRpcArgs,
@@ -75,7 +79,10 @@ export const chatPresenceService = {
     }
   },
 
-  async syncUserPresenceOnlineState(userId: string, isOnline: boolean) {
+  async syncUserPresenceOnlineState(
+    userId: string,
+    isOnline: boolean
+  ): Promise<PresenceSyncResult> {
     try {
       const { error } = await chatPresenceService.upsertUserPresence(userId, {
         is_online: isOnline,
@@ -83,13 +90,22 @@ export const chatPresenceService = {
 
       if (error) {
         console.error('Failed to sync user presence state:', error);
-        return false;
+        return {
+          ok: false,
+          errorMessage: 'Gagal menyinkronkan status online ke server.',
+        };
       }
 
-      return true;
+      return {
+        ok: true,
+        errorMessage: null,
+      };
     } catch (error) {
       console.error('Caught error syncing user presence state:', error);
-      return false;
+      return {
+        ok: false,
+        errorMessage: 'Gagal menyinkronkan status online ke server.',
+      };
     }
   },
 

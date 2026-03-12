@@ -84,12 +84,13 @@ export const useChatRuntime = () => {
 
       clearScheduledRetry();
       if (hadPendingCleanupFailuresRef.current && data.resolvedCount > 0) {
-        toast.success(
-          'Cleanup lampiran chat yang tertunda berhasil diselesaikan.',
-          {
-            id: CHAT_CLEANUP_RUNTIME_TOAST_ID,
-          }
-        );
+        const successMessage =
+          data.skippedCount > 0
+            ? 'Retry cleanup lampiran chat selesai. Item yang tidak bisa dihapus otomatis sudah dikeluarkan dari antrean.'
+            : 'Cleanup lampiran chat yang tertunda berhasil diselesaikan.';
+        toast.success(successMessage, {
+          id: CHAT_CLEANUP_RUNTIME_TOAST_ID,
+        });
       } else {
         toast.dismiss(CHAT_CLEANUP_RUNTIME_TOAST_ID);
       }

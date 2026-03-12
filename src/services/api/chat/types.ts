@@ -42,6 +42,11 @@ export interface UserPresence {
   updated_at?: string | null;
 }
 
+export interface PresenceSyncResult {
+  errorMessage: string | null;
+  ok: boolean;
+}
+
 export type ChatMessageInsertInput = Omit<
   ChatMessageInsertRow,
   'message_relation_kind' | 'message_type' | 'file_kind'
@@ -90,6 +95,7 @@ export interface CleanupStoragePathsResult {
 export interface RetryChatCleanupFailuresResult {
   resolvedCount: number;
   remainingCount: number;
+  skippedCount: number;
 }
 
 export type UserPresenceUpdateInput = Omit<

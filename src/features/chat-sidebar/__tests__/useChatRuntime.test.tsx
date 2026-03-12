@@ -48,6 +48,7 @@ describe('useChatRuntime', () => {
       data: {
         resolvedCount: 0,
         remainingCount: 0,
+        skippedCount: 0,
       },
       error: null,
     });
@@ -84,6 +85,7 @@ describe('useChatRuntime', () => {
         data: {
           resolvedCount: 0,
           remainingCount: 2,
+          skippedCount: 0,
         },
         error: null,
       })
@@ -91,6 +93,7 @@ describe('useChatRuntime', () => {
         data: {
           resolvedCount: 2,
           remainingCount: 0,
+          skippedCount: 0,
         },
         error: null,
       });
@@ -127,5 +130,41 @@ describe('useChatRuntime', () => {
         id: 'chat-cleanup-runtime-warning',
       }
     );
+  });
+
+  it('stops retrying when cleanup failures are reclassified as non-retryable', async () => {
+    mockRetryChatCleanupFailures.mockResolvedValueOnce({
+      data: {
+        resolvedCount: 1,
+        remainingCount: 0,
+        skippedCount: 1,
+      },
+      error: null,
+    });
+
+    authState.user = {
+      id: 'user-a',
+    };
+
+    const { useChatRuntime } = await import('../hooks/useChatRuntime');
+    renderHook(() => useChatRuntime());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(mockToast.success).not.toHaveBeenCalled();
+    expect(mockToast.dismiss).toHaveBeenCalledWith(
+      'chat-cleanup-runtime-warning'
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+      await Promise.resolve();
+    });
+
+    expect(mockRetryChatCleanupFailures).toHaveBeenCalledTimes(1);
   });
 });

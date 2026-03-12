@@ -73,6 +73,11 @@ describe('usePresence', () => {
       channel: null,
       onlineUsers: 0,
       onlineUsersList: [],
+      presenceSyncHealth: {
+        status: 'idle',
+        errorMessage: null,
+        lastSyncedAt: null,
+      },
     });
 
     presenceStateByKey = {
@@ -98,7 +103,10 @@ describe('usePresence', () => {
       access_token: 'presence-access-token',
     };
 
-    mockChatService.syncUserPresenceOnlineState.mockResolvedValue(true);
+    mockChatService.syncUserPresenceOnlineState.mockResolvedValue({
+      ok: true,
+      errorMessage: null,
+    });
     mockChatService.syncUserPresenceOnPageExit.mockReturnValue(true);
 
     const mockChannel = {
@@ -274,6 +282,25 @@ describe('usePresence', () => {
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       value: 'visible',
+    });
+
+    unmount();
+  });
+
+  it('stores degraded sync health when presence writes fail', async () => {
+    mockChatService.syncUserPresenceOnlineState.mockResolvedValue({
+      ok: false,
+      errorMessage: 'Gagal menyinkronkan status online ke server.',
+    });
+
+    const { unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(usePresenceStore.getState().presenceSyncHealth).toEqual({
+      status: 'degraded',
+      errorMessage: 'Gagal menyinkronkan status online ke server.',
+      lastSyncedAt: null,
     });
 
     unmount();

@@ -477,11 +477,43 @@ describe('chatService', () => {
       false
     );
 
-    expect(didSync).toBe(true);
+    expect(didSync).toEqual({
+      ok: true,
+      errorMessage: null,
+    });
     expect(mockRpc).toHaveBeenCalledWith('upsert_user_presence', {
       p_user_id: 'user-a',
       p_is_online: false,
       p_last_chat_opened: null,
+    });
+  });
+
+  it('normalizes cleanup retry results and keeps skipped cleanup failures out of the retry loop', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      data: {
+        resolvedCount: 2,
+        remainingCount: 0,
+        skippedCount: 1,
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.retryChatCleanupFailures();
+
+    expect(mockInvoke).toHaveBeenCalledWith('chat-cleanup', {
+      body: {
+        action: 'retry_failures',
+      },
+    });
+    expect(result).toEqual({
+      data: {
+        resolvedCount: 2,
+        remainingCount: 0,
+        skippedCount: 1,
+      },
+      error: null,
     });
   });
 

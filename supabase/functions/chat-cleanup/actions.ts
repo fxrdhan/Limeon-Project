@@ -41,7 +41,8 @@ export interface ChatCleanupRepository {
   updateCleanupFailureAttempt: (
     failureId: string,
     attempts: number,
-    lastError: string
+    lastError: string,
+    storagePaths?: string[]
   ) => Promise<void>;
 }
 
@@ -139,16 +140,13 @@ export const deleteThreadAndCleanup = async ({
     ...deletedOwnedStoragePaths,
   ]);
 
-  if (failedStoragePaths.length > 0) {
+  if (deletedOwnedStoragePaths.length > 0) {
     await repository.recordCleanupFailure({
       requestedBy: userId,
       messageId: normalizedMessageId,
       failureStage: "delete_thread",
-      storagePaths: failedStoragePaths,
-      lastError:
-        foreignStoragePaths.length > 0
-          ? "Skipped chat storage cleanup for path(s) that do not belong to the sender"
-          : "Failed to fully clean up chat storage after deleting a thread",
+      storagePaths: deletedOwnedStoragePaths,
+      lastError: "Failed to fully clean up chat storage after deleting a thread",
     });
   }
 
@@ -316,24 +314,37 @@ export const retryCleanupFailures = async ({
 
   let resolvedCount = 0;
   let remainingCount = failures.length;
+  let skippedCount = 0;
 
   for (const failure of failures) {
     const { ownedStoragePaths, foreignStoragePaths } = partitionOwnedChatPaths(
       failure.storage_paths ?? [],
       userId
     );
+    const hasForeignStoragePaths = foreignStoragePaths.length > 0;
+
+    if (ownedStoragePaths.length === 0) {
+      resolvedCount += 1;
+      remainingCount -= 1;
+      if (hasForeignStoragePaths) {
+        skippedCount += 1;
+      }
+      await repository.resolveCleanupFailure(failure.id);
+      continue;
+    }
+
     const retriedOwnedStoragePaths =
       ownedStoragePaths.length > 0
         ? await repository.deleteStoragePaths(ownedStoragePaths)
         : [];
-    const failedStoragePaths = normalizeStoragePaths([
-      ...foreignStoragePaths,
-      ...retriedOwnedStoragePaths,
-    ]);
+    const failedStoragePaths = normalizeStoragePaths(retriedOwnedStoragePaths);
 
     if (failedStoragePaths.length === 0) {
       resolvedCount += 1;
       remainingCount -= 1;
+      if (hasForeignStoragePaths) {
+        skippedCount += 1;
+      }
       await repository.resolveCleanupFailure(failure.id);
       continue;
     }
@@ -341,9 +352,8 @@ export const retryCleanupFailures = async ({
     await repository.updateCleanupFailureAttempt(
       failure.id,
       (failure.attempts ?? 0) + 1,
-      foreignStoragePaths.length > 0
-        ? "Skipped chat storage cleanup for path(s) that do not belong to the sender"
-        : "Failed to fully clean up chat storage during retry"
+      "Failed to fully clean up chat storage during retry",
+      failedStoragePaths
     );
   }
 
@@ -352,6 +362,7 @@ export const retryCleanupFailures = async ({
     body: {
       resolvedCount,
       remainingCount,
+      skippedCount,
     },
   };
 };

@@ -1,6 +1,7 @@
 export type {
   ChatMessage,
   UserPresence,
+  PresenceSyncResult,
   ChatMessageInsertInput,
   CreateChatMessageInput,
   EditChatMessageTextInput,

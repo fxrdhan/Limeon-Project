@@ -6,6 +6,11 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
   channel: null,
   onlineUsers: 0,
   onlineUsersList: [],
+  presenceSyncHealth: {
+    status: 'idle',
+    errorMessage: null,
+    lastSyncedAt: null,
+  },
   setChannel: (channel: RealtimeChannel | null) => {
     set({ channel });
   },
@@ -21,5 +26,18 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
   },
   setOnlineUsersList: (users: OnlineUser[]) => {
     set({ onlineUsersList: users });
+  },
+  setPresenceSyncHealth: health => {
+    const currentHealth = get().presenceSyncHealth;
+
+    if (
+      currentHealth.status === health.status &&
+      currentHealth.errorMessage === health.errorMessage &&
+      currentHealth.lastSyncedAt === health.lastSyncedAt
+    ) {
+      return;
+    }
+
+    set({ presenceSyncHealth: health });
   },
 }));

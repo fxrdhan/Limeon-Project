@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { chatPresenceService } from '@/services/api/chat.service';
+import { usePresenceStore } from '@/store/presenceStore';
 import { PRESENCE_HEARTBEAT_MS } from './presenceStatus';
 
 interface UsePresenceLifecycleProps {
@@ -11,8 +12,32 @@ export const usePresenceLifecycle = ({
   userId,
   accessToken,
 }: UsePresenceLifecycleProps) => {
+  const setPresenceSyncHealth = usePresenceStore(
+    state => state.setPresenceSyncHealth
+  );
   const sessionTokenRef = useRef<string | null>(accessToken ?? null);
   const hasHandledPageExitRef = useRef(false);
+
+  const syncPresenceOnlineState = useCallback(
+    async (isOnline: boolean) => {
+      if (!userId) {
+        return false;
+      }
+
+      const result = await chatPresenceService.syncUserPresenceOnlineState(
+        userId,
+        isOnline
+      );
+      setPresenceSyncHealth({
+        status: result.ok ? 'healthy' : 'degraded',
+        errorMessage: result.errorMessage,
+        lastSyncedAt: result.ok ? new Date().toISOString() : null,
+      });
+
+      return result.ok;
+    },
+    [setPresenceSyncHealth, userId]
+  );
 
   useEffect(() => {
     sessionTokenRef.current = accessToken ?? null;
@@ -21,11 +46,16 @@ export const usePresenceLifecycle = ({
   useEffect(() => {
     if (!userId) {
       hasHandledPageExitRef.current = false;
+      setPresenceSyncHealth({
+        status: 'idle',
+        errorMessage: null,
+        lastSyncedAt: null,
+      });
       return;
     }
 
     hasHandledPageExitRef.current = false;
-    void chatPresenceService.syncUserPresenceOnlineState(userId, true);
+    void syncPresenceOnlineState(true);
 
     const handleVisibilityChange = () => {
       if (!userId || document.visibilityState !== 'visible') {
@@ -33,7 +63,7 @@ export const usePresenceLifecycle = ({
       }
 
       hasHandledPageExitRef.current = false;
-      void chatPresenceService.syncUserPresenceOnlineState(userId, true);
+      void syncPresenceOnlineState(true);
     };
 
     const handlePageExit = () => {
@@ -68,7 +98,7 @@ export const usePresenceLifecycle = ({
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('unload', handlePageExit);
     };
-  }, [userId]);
+  }, [setPresenceSyncHealth, syncPresenceOnlineState, userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -76,9 +106,9 @@ export const usePresenceLifecycle = ({
     }
 
     const heartbeat = setInterval(() => {
-      void chatPresenceService.syncUserPresenceOnlineState(userId, true);
+      void syncPresenceOnlineState(true);
     }, PRESENCE_HEARTBEAT_MS);
 
     return () => clearInterval(heartbeat);
-  }, [userId]);
+  }, [syncPresenceOnlineState, userId]);
 };

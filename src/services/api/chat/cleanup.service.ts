@@ -192,6 +192,8 @@ export const chatCleanupService = {
             typeof data?.resolvedCount === 'number' ? data.resolvedCount : 0,
           remainingCount:
             typeof data?.remainingCount === 'number' ? data.remainingCount : 0,
+          skippedCount:
+            typeof data?.skippedCount === 'number' ? data.skippedCount : 0,
         },
         error: null,
       };

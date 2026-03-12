@@ -3,7 +3,7 @@ import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
-import { queuePendingReadReceiptMessageIds } from '../utils/pending-read-receipts';
+import { queueReadReceiptMessageIdsForSync } from '../utils/read-receipt-sync';
 import { useChatReceiptMutationQueue } from './useChatReceiptMutationQueue';
 
 const RECEIPT_RETRY_DELAY_MS = 1_200;
@@ -64,7 +64,9 @@ export const useChatSessionReceipts = ({
 
   const markMessageIdsAsRead = useCallback(
     async (messageIds: string[], sessionToken?: number) => {
-      const normalizedMessageIds = [...new Set(messageIds)].filter(Boolean);
+      const normalizedMessageIds = [...new Set(messageIds)]
+        .map(messageId => messageId.trim())
+        .filter(Boolean);
       if (normalizedMessageIds.length === 0) {
         return;
       }
@@ -84,7 +86,7 @@ export const useChatSessionReceipts = ({
         });
       });
       if (currentUserId) {
-        queuePendingReadReceiptMessageIds(currentUserId, normalizedMessageIds);
+        queueReadReceiptMessageIdsForSync(currentUserId, normalizedMessageIds);
       }
     },
     [applyMessageUpdate, currentUserId, isSessionTokenActive]

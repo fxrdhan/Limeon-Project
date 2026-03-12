@@ -149,13 +149,18 @@ const updateStoredCleanupFailureAttempt = async (
   adminClient: ReturnType<typeof createClient>,
   failureId: string,
   attempts: number,
-  lastError: string
+  lastError: string,
+  storagePaths?: string[]
 ) => {
+  const normalizedStoragePaths = storagePaths
+    ? normalizeStoragePaths(storagePaths)
+    : null;
   const { error } = await adminClient
     .from("chat_storage_cleanup_failures")
     .update({
       attempts,
       last_error: lastError,
+      storage_paths: normalizedStoragePaths ?? undefined,
       updated_at: new Date().toISOString(),
     })
     .eq("id", failureId);
@@ -223,12 +228,18 @@ const createChatCleanupRepository = ({
   async resolveCleanupFailure(failureId) {
     await resolveStoredCleanupFailure(adminClient, failureId);
   },
-  async updateCleanupFailureAttempt(failureId, attempts, lastError) {
+  async updateCleanupFailureAttempt(
+    failureId,
+    attempts,
+    lastError,
+    storagePaths
+  ) {
     await updateStoredCleanupFailureAttempt(
       adminClient,
       failureId,
       attempts,
-      lastError
+      lastError,
+      storagePaths
     );
   },
 });

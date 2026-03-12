@@ -30,6 +30,9 @@ export const useChatSessionPresence = ({
   const hasPresenceRosterChannel = usePresenceStore(
     state => state.channel !== null
   );
+  const presenceSyncHealth = usePresenceStore(
+    state => state.presenceSyncHealth
+  );
   const isTargetOnlineInRoster = usePresenceStore(state =>
     targetUser
       ? state.onlineUsersList.some(
@@ -130,9 +133,17 @@ export const useChatSessionPresence = ({
         })()
       : false;
 
+  const resolvedTargetUserPresenceError =
+    targetUserPresenceError ??
+    (presenceSyncHealth.status === 'degraded' &&
+    !isTargetOnline &&
+    !targetUserPresence?.last_seen
+      ? 'Status presence mungkin terlambat'
+      : null);
+
   return {
     isTargetOnline,
     targetUserPresence,
-    targetUserPresenceError,
+    targetUserPresenceError: resolvedTargetUserPresenceError,
   };
 };

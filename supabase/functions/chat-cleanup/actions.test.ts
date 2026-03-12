@@ -85,7 +85,7 @@ describe("chat-cleanup actions", () => {
     expect(repository.recordCleanupFailure).not.toHaveBeenCalled();
   });
 
-  it("records a cleanup failure when a deleted thread includes foreign storage paths", async () => {
+  it("does not persist retryable cleanup failures for foreign storage paths that cannot be retried", async () => {
     const repository = createRepository({
       parentMessage: buildParentMessage({
         file_preview_url:
@@ -106,14 +106,7 @@ describe("chat-cleanup actions", () => {
         failedStoragePaths: ["previews/channel/user-2_report.png"],
       },
     });
-    expect(repository.recordCleanupFailure).toHaveBeenCalledWith({
-      requestedBy: USER_ID,
-      messageId: "message-1",
-      failureStage: "delete_thread",
-      storagePaths: ["previews/channel/user-2_report.png"],
-      lastError:
-        "Skipped chat storage cleanup for path(s) that do not belong to the sender",
-    });
+    expect(repository.recordCleanupFailure).not.toHaveBeenCalled();
   });
 
   it("deletes multiple threads in one request and preserves partial failures", async () => {
@@ -215,7 +208,7 @@ describe("chat-cleanup actions", () => {
     });
   });
 
-  it("resolves successful retries and updates the remaining failures", async () => {
+  it("resolves successful retries and drops foreign-only failures from the retry queue", async () => {
     const repository = createRepository({
       failures: [
         {
@@ -243,15 +236,13 @@ describe("chat-cleanup actions", () => {
     expect(result).toEqual({
       status: 200,
       body: {
-        resolvedCount: 1,
-        remainingCount: 1,
+        resolvedCount: 2,
+        remainingCount: 0,
+        skippedCount: 1,
       },
     });
     expect(repository.resolveCleanupFailure).toHaveBeenCalledWith("failure-1");
-    expect(repository.updateCleanupFailureAttempt).toHaveBeenCalledWith(
-      "failure-2",
-      3,
-      "Skipped chat storage cleanup for path(s) that do not belong to the sender"
-    );
+    expect(repository.resolveCleanupFailure).toHaveBeenCalledWith("failure-2");
+    expect(repository.updateCleanupFailureAttempt).not.toHaveBeenCalled();
   });
 });
