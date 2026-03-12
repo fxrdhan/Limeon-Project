@@ -81,7 +81,7 @@ describe('useChatComposer', () => {
     );
   });
 
-  it('resets composer-scoped state when switching to another channel', async () => {
+  it('mereset state composer ketika berpindah ke channel lain', async () => {
     const focusMessageComposer = vi.fn();
     const closeMessageMenu = vi.fn();
     const scheduleScrollMessagesToBottom = vi.fn();
@@ -122,12 +122,11 @@ describe('useChatComposer', () => {
       result.current.queueComposerImage(
         new File(['image'], 'stok.png', { type: 'image/png' })
       );
-      result.current.handleEditMessage(currentMessage);
     });
 
     await waitFor(() => {
-      expect(result.current.message).toBe('draft edit');
-      expect(result.current.editingMessageId).toBe('message-1');
+      expect(result.current.message).toBe('draft belum terkirim');
+      expect(result.current.editingMessageId).toBeNull();
       expect(result.current.pendingComposerAttachments).toHaveLength(1);
     });
 

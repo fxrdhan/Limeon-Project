@@ -165,6 +165,93 @@ describe('useChatComposerActions', () => {
     );
   });
 
+  it('menolak masuk mode edit saat masih ada lampiran draft', async () => {
+    const closeMessageMenu = vi.fn();
+    const clearPendingComposerAttachments = vi.fn();
+    const focusMessageComposer = vi.fn();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([
+        buildMessage({
+          id: 'message-1',
+          message: 'before edit',
+          sender_name: 'Admin',
+          receiver_name: 'Gudang',
+        }),
+      ]);
+      const [message, setMessage] = useState('draft caption');
+      const [editingMessageId, setEditingMessageId] = useState<string | null>(
+        null
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const actions = useChatComposerActions({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        messages,
+        setMessages,
+        message,
+        setMessage,
+        editingMessageId,
+        setEditingMessageId,
+        pendingComposerAttachments: [
+          {
+            id: 'pending-image-1',
+            file: new File(['image'], 'stok.png', { type: 'image/png' }),
+            fileName: 'stok.png',
+            fileTypeLabel: 'PNG',
+            fileKind: 'image',
+            mimeType: 'image/png',
+            previewUrl: 'blob:preview',
+            pdfCoverUrl: null,
+          },
+        ],
+        clearPendingComposerAttachments,
+        restorePendingComposerAttachments: vi.fn(),
+        closeMessageMenu,
+        focusMessageComposer,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+      });
+
+      return {
+        ...actions,
+        message,
+        editingMessageId,
+      };
+    });
+
+    act(() => {
+      result.current.handleEditMessage(
+        buildMessage({
+          id: 'message-1',
+          message: 'before edit',
+          sender_name: 'Admin',
+          receiver_name: 'Gudang',
+        })
+      );
+    });
+
+    expect(result.current.message).toBe('draft caption');
+    expect(result.current.editingMessageId).toBeNull();
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+    expect(clearPendingComposerAttachments).not.toHaveBeenCalled();
+    expect(focusMessageComposer).not.toHaveBeenCalled();
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Selesaikan atau hapus lampiran draft sebelum mengedit pesan',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+  });
+
   it('preserves a newer draft when an edit request fails after the user keeps typing', async () => {
     let resolveUpdateMessage:
       | ((value: { data: null; error: Error }) => void)

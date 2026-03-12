@@ -165,6 +165,17 @@ export const useChatComposerActions = ({
 
   const handleEditMessage = useCallback(
     (targetMessage: ChatMessage) => {
+      if (pendingComposerAttachments.length > 0) {
+        closeMessageMenu();
+        toast.error(
+          'Selesaikan atau hapus lampiran draft sebelum mengedit pesan',
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+        return;
+      }
+
       if (targetMessage.id.startsWith('temp_')) {
         closeMessageMenu();
         toast.error('Pesan yang masih dikirim belum bisa diedit', {
@@ -173,7 +184,6 @@ export const useChatComposerActions = ({
         return;
       }
 
-      clearPendingComposerAttachments();
       setEditingMessageId(targetMessage.id);
       setMessage(targetMessage.message);
       closeMessageMenu();
@@ -181,9 +191,9 @@ export const useChatComposerActions = ({
       setTimeout(focusMessageComposer, 60);
     },
     [
-      clearPendingComposerAttachments,
       closeMessageMenu,
       focusMessageComposer,
+      pendingComposerAttachments.length,
       setEditingMessageId,
       setMessage,
     ]
