@@ -44,6 +44,12 @@ describe('useChatMessageSearchMode', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    mockChatSidebarMessagesGateway.fetchConversationMessageContext.mockResolvedValue(
+      {
+        data: [],
+        error: null,
+      }
+    );
   });
 
   afterEach(() => {
@@ -219,5 +225,75 @@ describe('useChatMessageSearchMode', () => {
     ]);
     expect(result.current.activeSearchMessageId).toBe('message-3');
     expect(result.current.hasMoreSearchResults).toBe(false);
+  });
+
+  it('wraps to the first search result after reaching the last loaded match', async () => {
+    const searchableMessages = [
+      {
+        id: 'message-1',
+        created_at: '2026-03-10T08:00:00.000Z',
+      },
+      {
+        id: 'message-2',
+        created_at: '2026-03-10T08:01:00.000Z',
+      },
+    ];
+
+    mockChatSidebarMessagesGateway.searchConversationMessages.mockResolvedValue(
+      {
+        data: {
+          messages: searchableMessages,
+          hasMore: false,
+        },
+        error: null,
+      }
+    );
+
+    const { result } = renderHook(() =>
+      useChatMessageSearchMode({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: searchableMessages,
+        mergeSearchContextMessages: vi.fn(),
+        user: {
+          id: 'user-a',
+          name: 'Admin',
+        },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+        },
+      })
+    );
+
+    act(() => {
+      result.current.handleEnterMessageSearchMode();
+      result.current.handleMessageSearchQueryChange('stok');
+    });
+
+    await flushTimersAndPromises();
+
+    expect(result.current.activeSearchMessageId).toBe('message-1');
+    expect(result.current.canNavigateSearchDown).toBe(true);
+    expect(result.current.canNavigateSearchUp).toBe(true);
+
+    act(() => {
+      result.current.handleNavigateSearchDown();
+    });
+
+    expect(result.current.activeSearchMessageId).toBe('message-2');
+
+    act(() => {
+      result.current.handleNavigateSearchDown();
+    });
+
+    expect(result.current.activeSearchMessageId).toBe('message-1');
+
+    act(() => {
+      result.current.handleNavigateSearchUp();
+    });
+
+    expect(result.current.activeSearchMessageId).toBe('message-2');
   });
 });

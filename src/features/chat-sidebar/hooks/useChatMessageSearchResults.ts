@@ -274,7 +274,8 @@ export const useChatMessageSearchResults = ({
 
   const navigateToSearchResult = useCallback(
     (direction: 'up' | 'down') => {
-      if (searchMatchedMessageIds.length === 0) return;
+      const matchedMessageCount = searchMatchedMessageIds.length;
+      if (matchedMessageCount === 0) return;
 
       const currentIndex =
         activeSearchMessageId === null
@@ -297,15 +298,14 @@ export const useChatMessageSearchResults = ({
       setActiveSearchMessageId(() => {
         if (currentIndex < 0) {
           return direction === 'up'
-            ? (searchMatchedMessageIds[searchMatchedMessageIds.length - 1] ??
-                null)
+            ? (searchMatchedMessageIds[matchedMessageCount - 1] ?? null)
             : (searchMatchedMessageIds[0] ?? null);
         }
 
         const nextIndex =
           direction === 'up'
-            ? Math.max(0, currentIndex - 1)
-            : Math.min(searchMatchedMessageIds.length - 1, currentIndex + 1);
+            ? (currentIndex - 1 + matchedMessageCount) % matchedMessageCount
+            : (currentIndex + 1) % matchedMessageCount;
 
         return searchMatchedMessageIds[nextIndex] ?? null;
       });
@@ -334,12 +334,8 @@ export const useChatMessageSearchResults = ({
   const activeSearchResultIndex = searchMatchedMessageIds.findIndex(
     messageId => messageId === activeSearchMessageId
   );
-  const canNavigateSearchUp =
-    searchMatchedMessageIds.length > 0 && activeSearchResultIndex !== 0;
-  const canNavigateSearchDown =
-    searchMatchedMessageIds.length > 0 &&
-    (activeSearchResultIndex < searchMatchedMessageIds.length - 1 ||
-      hasMoreSearchResults);
+  const canNavigateSearchUp = searchMatchedMessageIds.length > 0;
+  const canNavigateSearchDown = searchMatchedMessageIds.length > 0;
   const messageSearchState: SearchState = !normalizedMessageSearchQuery
     ? SEARCH_STATES.IDLE
     : searchError
