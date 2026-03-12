@@ -2,12 +2,13 @@
 
 - Remember is that Bun as the runtime environment in this project.
 - Always use Exa MCP to search for information on the web and scrape pages.
-- Always use Supabase MCP if you need table definitions, triggers, and so on.
+- Always use Supabase MCP if you need understanding this project databases.
 
 # Guidelines:
 
-- Always run 'npx oxlint [filenames path] --fix && npx tsc -b --noEmit' after editing/adding complex line in code files.
+- Run 'npx oxlint [filenames path] --fix && npx tsc -b --noEmit' after editing/adding complex line in code files.
 - When creating Git commits, use git-commit skills.
+- Vitest in this project is on 4.1.x. Prefer `bun test:run:agent` or `bun test:agent` when running tests. Use `bun test:run` for regular local terminal output.
 
 # Code Exploration
 
