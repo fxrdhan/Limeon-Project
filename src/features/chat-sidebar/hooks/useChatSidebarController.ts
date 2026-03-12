@@ -416,7 +416,7 @@ export const useChatSidebarController = ({
       handleToggleImageActionsMenu,
     },
     viewport: {
-      focusEditingTargetMessage,
+      onFocusEditingTargetMessage: focusEditingTargetMessage,
     },
     refs,
   });

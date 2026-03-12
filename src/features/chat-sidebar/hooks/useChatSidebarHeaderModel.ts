@@ -1,39 +1,38 @@
 import { useMemo } from 'react';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
 import type { ChatHeaderModel } from '../components/ChatHeader';
+import type { UserPresence } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import { useChatInteractionModes } from './useChatInteractionModes';
-import { useChatSession } from './useChatSession';
 
-type HeaderSessionState = Pick<
-  ReturnType<typeof useChatSession>,
-  'isTargetOnline' | 'targetUserPresence' | 'targetUserPresenceError'
->;
+interface HeaderSessionState {
+  isTargetOnline: boolean;
+  targetUserPresence: UserPresence | null;
+  targetUserPresenceError: string | null;
+}
 
-type HeaderInteractionState = Pick<
-  ReturnType<typeof useChatInteractionModes>,
-  | 'isMessageSearchMode'
-  | 'messageSearchQuery'
-  | 'messageSearchState'
-  | 'searchMatchedMessageIds'
-  | 'activeSearchResultIndex'
-  | 'canNavigateSearchUp'
-  | 'canNavigateSearchDown'
-  | 'hasMoreSearchResults'
-  | 'isSelectionMode'
-  | 'selectedVisibleMessages'
-  | 'canDeleteSelectedMessages'
-  | 'searchInputRef'
-  | 'handleEnterMessageSearchMode'
-  | 'handleExitMessageSearchMode'
-  | 'handleEnterMessageSelectionMode'
-  | 'handleExitMessageSelectionMode'
-  | 'handleMessageSearchQueryChange'
-  | 'handleNavigateSearchUp'
-  | 'handleNavigateSearchDown'
-  | 'handleFocusSearchInput'
-  | 'handleCopySelectedMessages'
->;
+interface HeaderInteractionState {
+  isMessageSearchMode: boolean;
+  messageSearchQuery: string;
+  messageSearchState: ChatHeaderModel['searchState'];
+  searchMatchedMessageIds: string[];
+  activeSearchResultIndex: number;
+  canNavigateSearchUp: boolean;
+  canNavigateSearchDown: boolean;
+  hasMoreSearchResults: boolean;
+  isSelectionMode: boolean;
+  selectedVisibleMessages: Array<unknown>;
+  canDeleteSelectedMessages: boolean;
+  searchInputRef: ChatHeaderModel['searchInputRef'];
+  handleEnterMessageSearchMode: () => void;
+  handleExitMessageSearchMode: () => void;
+  handleEnterMessageSelectionMode: () => void;
+  handleExitMessageSelectionMode: () => void;
+  handleMessageSearchQueryChange: (value: string) => void;
+  handleNavigateSearchUp: () => void;
+  handleNavigateSearchDown: () => void;
+  handleFocusSearchInput: () => void;
+  handleCopySelectedMessages: () => void;
+}
 
 interface UseChatSidebarHeaderModelProps {
   targetUser?: ChatSidebarPanelTargetUser;

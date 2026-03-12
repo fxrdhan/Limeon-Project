@@ -1,70 +1,68 @@
 import { useMemo } from 'react';
+import type { RefObject } from 'react';
 import type { ComposerPanelModel } from '../components/ComposerPanel';
-import { useChatComposer } from './useChatComposer';
-import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
-import { useChatSidebarRefs } from './useChatSidebarRefs';
-import { useChatViewport } from './useChatViewport';
 
-type ComposerState = Pick<
-  ReturnType<typeof useChatComposer>,
-  | 'message'
-  | 'editingMessagePreview'
-  | 'messageInputHeight'
-  | 'isMessageInputMultiline'
-  | 'isSendSuccessGlowVisible'
-  | 'isAttachModalOpen'
-  | 'pendingComposerAttachments'
-  | 'previewComposerImageAttachment'
-  | 'isComposerImageExpanded'
-  | 'isComposerImageExpandedVisible'
-  | 'attachButtonRef'
-  | 'attachModalRef'
-  | 'imageInputRef'
-  | 'documentInputRef'
-  | 'audioInputRef'
-  | 'setMessage'
-  | 'handleKeyPress'
-  | 'handleComposerPaste'
-  | 'handleSendMessage'
-  | 'handleAttachButtonClick'
-  | 'handleAttachImageClick'
-  | 'handleAttachDocumentClick'
-  | 'handleAttachAudioClick'
-  | 'handleImageFileChange'
-  | 'handleDocumentFileChange'
-  | 'handleAudioFileChange'
-  | 'handleCancelEditMessage'
-  | 'openComposerImagePreview'
-  | 'closeComposerImagePreview'
-  | 'removePendingComposerAttachment'
-  | 'queueComposerImage'
->;
+type ComposerState = {
+  message: string;
+  editingMessagePreview: string | null;
+  messageInputHeight: number;
+  isMessageInputMultiline: boolean;
+  isSendSuccessGlowVisible: boolean;
+  isAttachModalOpen: boolean;
+  pendingComposerAttachments: ComposerPanelModel['pendingComposerAttachments'];
+  previewComposerImageAttachment: ComposerPanelModel['previewComposerImageAttachment'];
+  isComposerImageExpanded: boolean;
+  isComposerImageExpandedVisible: boolean;
+  attachButtonRef: RefObject<HTMLButtonElement | null>;
+  attachModalRef: RefObject<HTMLDivElement | null>;
+  imageInputRef: RefObject<HTMLInputElement | null>;
+  documentInputRef: RefObject<HTMLInputElement | null>;
+  audioInputRef: RefObject<HTMLInputElement | null>;
+  setMessage: (nextMessage: string) => void;
+  handleKeyPress: ComposerPanelModel['onKeyDown'];
+  handleComposerPaste: ComposerPanelModel['onPaste'];
+  handleSendMessage: ComposerPanelModel['onSendMessage'];
+  handleAttachButtonClick: ComposerPanelModel['onAttachButtonClick'];
+  handleAttachImageClick: ComposerPanelModel['onAttachImageClick'];
+  handleAttachDocumentClick: ComposerPanelModel['onAttachDocumentClick'];
+  handleAttachAudioClick: ComposerPanelModel['onAttachAudioClick'];
+  handleImageFileChange: ComposerPanelModel['onImageFileChange'];
+  handleDocumentFileChange: ComposerPanelModel['onDocumentFileChange'];
+  handleAudioFileChange: ComposerPanelModel['onAudioFileChange'];
+  handleCancelEditMessage: ComposerPanelModel['onCancelEditMessage'];
+  openComposerImagePreview: ComposerPanelModel['onOpenComposerImagePreview'];
+  closeComposerImagePreview: ComposerPanelModel['onCloseComposerImagePreview'];
+  removePendingComposerAttachment: ComposerPanelModel['onRemovePendingComposerAttachment'];
+  queueComposerImage: ComposerPanelModel['onQueueComposerImage'];
+};
 
-type ComposerPreviewState = Pick<
-  ReturnType<typeof useChatSidebarPreviewState>,
-  | 'openImageActionsAttachmentId'
-  | 'imageActionsMenuPosition'
-  | 'composerDocumentPreviewUrl'
-  | 'composerDocumentPreviewName'
-  | 'isComposerDocumentPreviewVisible'
-  | 'imageActionsButtonRef'
-  | 'imageActionsMenuRef'
-  | 'imageActions'
-  | 'closeComposerDocumentPreview'
-  | 'openDocumentAttachmentInPortal'
-  | 'handleToggleImageActionsMenu'
->;
+interface ComposerPreviewState {
+  openImageActionsAttachmentId: string | null;
+  imageActionsMenuPosition: ComposerPanelModel['imageActionsMenuPosition'];
+  composerDocumentPreviewUrl: string | null;
+  composerDocumentPreviewName: string;
+  isComposerDocumentPreviewVisible: boolean;
+  imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
+  imageActionsMenuRef: RefObject<HTMLDivElement | null>;
+  imageActions: ComposerPanelModel['imageActions'];
+  closeComposerDocumentPreview: () => void;
+  openDocumentAttachmentInPortal: ComposerPanelModel['onOpenDocumentAttachmentInPortal'];
+  handleToggleImageActionsMenu: ComposerPanelModel['onToggleImageActionsMenu'];
+}
 
 type ComposerViewportState = Pick<
-  ReturnType<typeof useChatViewport>,
-  'focusEditingTargetMessage'
+  ComposerPanelModel,
+  'onFocusEditingTargetMessage'
 >;
 
 interface UseChatSidebarComposerModelProps {
   composer: ComposerState;
   previewState: ComposerPreviewState;
   viewport: ComposerViewportState;
-  refs: ReturnType<typeof useChatSidebarRefs>;
+  refs: {
+    messageInputRef: RefObject<HTMLTextAreaElement | null>;
+    composerContainerRef: RefObject<HTMLDivElement | null>;
+  };
 }
 
 export const useChatSidebarComposerModel = ({
@@ -113,7 +111,7 @@ export const useChatSidebarComposerModel = ({
       onDocumentFileChange: composer.handleDocumentFileChange,
       onAudioFileChange: composer.handleAudioFileChange,
       onCancelEditMessage: composer.handleCancelEditMessage,
-      onFocusEditingTargetMessage: viewport.focusEditingTargetMessage,
+      onFocusEditingTargetMessage: viewport.onFocusEditingTargetMessage,
       onOpenComposerImagePreview: composer.openComposerImagePreview,
       onCloseComposerImagePreview: composer.closeComposerImagePreview,
       onRemovePendingComposerAttachment:
@@ -169,6 +167,6 @@ export const useChatSidebarComposerModel = ({
       previewState.openImageActionsAttachmentId,
       refs.composerContainerRef,
       refs.messageInputRef,
-      viewport.focusEditingTargetMessage,
+      viewport.onFocusEditingTargetMessage,
     ]
   );

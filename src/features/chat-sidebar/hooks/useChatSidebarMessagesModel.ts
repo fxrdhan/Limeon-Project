@@ -1,83 +1,73 @@
 import { useMemo } from 'react';
+import type { RefObject, MutableRefObject } from 'react';
 import type { MessagesPaneModel } from '../components/MessagesPane';
 import {
   getAttachmentFileKind,
   getAttachmentFileName,
 } from '../utils/attachment';
-import { useChatComposer } from './useChatComposer';
-import { useChatInteractionModes } from './useChatInteractionModes';
-import { useChatSession } from './useChatSession';
-import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
-import { useChatSidebarRefs } from './useChatSidebarRefs';
-import { useChatViewport } from './useChatViewport';
 
-type MessagesSessionState = Pick<
-  ReturnType<typeof useChatSession>,
-  | 'loading'
-  | 'loadError'
-  | 'messages'
-  | 'hasOlderMessages'
-  | 'isLoadingOlderMessages'
-  | 'olderMessagesError'
-  | 'loadOlderMessages'
-  | 'retryLoadMessages'
->;
+interface MessagesSessionState {
+  loading: boolean;
+  loadError: string | null;
+  messages: MessagesPaneModel['messages'];
+  hasOlderMessages: boolean;
+  isLoadingOlderMessages: boolean;
+  olderMessagesError: string | null;
+  loadOlderMessages: () => void;
+  retryLoadMessages: () => void;
+}
 
-type MessagesInteractionState = Pick<
-  ReturnType<typeof useChatInteractionModes>,
-  | 'normalizedMessageSearchQuery'
-  | 'isMessageSearchMode'
-  | 'searchMatchedMessageIdSet'
-  | 'activeSearchMessageId'
-  | 'isSelectionMode'
-  | 'selectedMessageIds'
-  | 'handleToggleMessageSelection'
->;
+interface MessagesInteractionState {
+  normalizedMessageSearchQuery: string;
+  isMessageSearchMode: boolean;
+  searchMatchedMessageIdSet: Set<string>;
+  activeSearchMessageId: string | null;
+  isSelectionMode: boolean;
+  selectedMessageIds: Set<string>;
+  handleToggleMessageSelection: (messageId: string) => void;
+}
 
-type MessagesComposerState = Pick<
-  ReturnType<typeof useChatComposer>,
-  | 'messageInputHeight'
-  | 'composerContextualOffset'
-  | 'handleEditMessage'
-  | 'handleCopyMessage'
-  | 'handleDownloadMessage'
-  | 'handleDeleteMessage'
->;
+interface MessagesComposerState {
+  messageInputHeight: number;
+  composerContextualOffset: number;
+  handleEditMessage: MessagesPaneModel['handleEditMessage'];
+  handleCopyMessage: MessagesPaneModel['handleCopyMessage'];
+  handleDownloadMessage: MessagesPaneModel['handleDownloadMessage'];
+  handleDeleteMessage: MessagesPaneModel['handleDeleteMessage'];
+}
 
-type MessagesViewportState = Pick<
-  ReturnType<typeof useChatViewport>,
-  | 'isAtBottom'
-  | 'hasNewMessages'
-  | 'composerContainerHeight'
-  | 'openMenuMessageId'
-  | 'menuPlacement'
-  | 'menuSideAnchor'
-  | 'shouldAnimateMenuOpen'
-  | 'menuTransitionSourceId'
-  | 'menuOffsetX'
-  | 'flashingMessageId'
-  | 'isFlashHighlightVisible'
-  | 'closeMessageMenu'
-  | 'scrollToBottom'
->;
+interface MessagesViewportState {
+  isAtBottom: boolean;
+  hasNewMessages: boolean;
+  composerContainerHeight: number;
+  openMenuMessageId: string | null;
+  menuPlacement: MessagesPaneModel['menuPlacement'];
+  menuSideAnchor: MessagesPaneModel['menuSideAnchor'];
+  shouldAnimateMenuOpen: boolean;
+  menuTransitionSourceId: string | null;
+  menuOffsetX: number;
+  flashingMessageId: string | null;
+  isFlashHighlightVisible: boolean;
+  closeMessageMenu: () => void;
+  scrollToBottom: () => void;
+}
 
-type MessagesPreviewState = Pick<
-  ReturnType<typeof useChatSidebarPreviewState>,
-  | 'captionMessagesByAttachmentId'
-  | 'captionMessageIds'
-  | 'getImageMessageUrl'
-  | 'getPdfMessagePreview'
-  | 'documentPreviewUrl'
-  | 'documentPreviewName'
-  | 'isDocumentPreviewVisible'
-  | 'closeDocumentPreview'
-  | 'imagePreviewUrl'
-  | 'imagePreviewName'
-  | 'isImagePreviewVisible'
-  | 'closeImagePreview'
-  | 'openImageInPortal'
-  | 'openDocumentInPortal'
->;
+interface MessagesPreviewState {
+  captionMessagesByAttachmentId: MessagesPaneModel['captionMessagesByAttachmentId'];
+  captionMessageIds: MessagesPaneModel['captionMessageIds'];
+  getImageMessageUrl: MessagesPaneModel['getImageMessageUrl'];
+  getPdfMessagePreview: MessagesPaneModel['getPdfMessagePreview'];
+  documentPreviewUrl: string | null;
+  documentPreviewName: string;
+  isDocumentPreviewVisible: boolean;
+  closeDocumentPreview: () => void;
+  imagePreviewUrl: string | null;
+  imagePreviewName: string;
+  isImagePreviewVisible: boolean;
+  closeImagePreview: () => void;
+  openImageInPortal: MessagesPaneModel['openImageInPortal'];
+  openDocumentInPortal: MessagesPaneModel['openDocumentInPortal'];
+}
 
 interface UseChatSidebarMessagesModelProps {
   user?: {
@@ -89,7 +79,15 @@ interface UseChatSidebarMessagesModelProps {
   composer: MessagesComposerState;
   viewport: MessagesViewportState;
   previewState: MessagesPreviewState;
-  refs: ReturnType<typeof useChatSidebarRefs>;
+  refs: {
+    expandedMessageIds: Set<string>;
+    messagesContainerRef: RefObject<HTMLDivElement | null>;
+    messagesEndRef: RefObject<HTMLDivElement | null>;
+    messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
+    initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
+    initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
+    handleToggleExpand: (messageId: string) => void;
+  };
   toggleMessageMenu: (
     anchor: HTMLElement,
     messageId: string,
