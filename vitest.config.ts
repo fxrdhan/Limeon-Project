@@ -9,19 +9,24 @@ const nonRuntimeCoverageFiles = JSON.parse(
     'utf8'
   )
 ) as string[];
+const isAIAgent = Boolean(process.env.AI_AGENT);
+const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+const reporters = isAIAgent
+  ? isGitHubActions
+    ? ['agent', 'github-actions']
+    : ['agent']
+  : undefined;
 
 export default defineConfig({
-  // @ts-expect-error - Plugin type mismatch between Vite and Vitest's bundled Vite
   plugins: [react()],
   test: {
+    ...(reporters ? { reporters } : {}),
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     exclude: [...configDefaults.exclude, 'playwright/**', 'test-results/**'],
     coverage: {
       provider: 'v8',
-      // @ts-expect-error -- supported by vitest runtime; mismatched in bundled types.
-      all: true,
       reporter: ['text', 'json', 'html', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [

@@ -19,6 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:strict": "vitest run --coverage --exclude src/test/all-modules-coverage.test.ts && bun scripts/check-coverage-100.mjs",
     "coverage:check": "bun scripts/check-coverage-100.mjs",
+    "test:agent": "AI_AGENT=codex vitest",
+    "test:run:agent": "AI_AGENT=codex vitest run --passWithNoTests",
     "coverage:non-runtime:refresh": "bun scripts/coverage/generate-non-runtime-files.mjs",
     "test:coverage:open": "bun test:coverage && open coverage/index.html",
     "test:run": "vitest run --passWithNoTests",
@@ -97,9 +99,9 @@
     "@types/pg": "^8.18.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "6.0.0-beta.0",
-    "@vitest/coverage-v8": "^4.0.18",
-    "@vitest/ui": "^4.0.18",
+    "@vitejs/plugin-react": "6.0.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/ui": "^4.1.0",
     "baseline-browser-mapping": "^2.10.0",
     "concurrently": "^9.2.1",
     "dotenv": "^17.3.1",
@@ -119,8 +121,8 @@
     "ts-to-zod": "^5.1.0",
     "typescript": "^5.9.3",
     "typescript-language-server": "^5.1.3",
-    "vite": "8.0.0-beta.16",
+    "vite": "8.0.0",
     "vite-plugin-compression": "^0.5.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   }
 }
