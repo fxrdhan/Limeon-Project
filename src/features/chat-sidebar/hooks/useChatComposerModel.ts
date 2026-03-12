@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
 import type { ComposerPanelModel } from '../models';
 
-export const useChatComposerModel = (model: ComposerPanelModel) => model;
+export const useChatComposerModel = (
+  model: ComposerPanelModel
+): ComposerPanelModel => useMemo(() => model, [model]);

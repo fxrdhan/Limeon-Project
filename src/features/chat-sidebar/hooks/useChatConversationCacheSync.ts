@@ -1,7 +1,7 @@
 import type { MutableRefObject } from 'react';
 import { useEffect } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import { setConversationCacheEntry } from '../utils/conversation-cache';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 interface UseChatConversationCacheSyncProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ export const useChatConversationCacheSync = ({
         !excludedMessageIds?.has(messageItem.id)
     );
 
-    setConversationCacheEntry(
+    chatRuntimeCache.conversation.setEntry(
       currentChannelId,
       persistedMessages,
       hasOlderMessages

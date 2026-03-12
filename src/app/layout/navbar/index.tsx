@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
-import { usePresenceRoster } from '@/hooks/presence/usePresenceRoster';
+import { useChatSidebarLauncher } from '@/features/chat-sidebar/hooks/useChatSidebarLauncher';
 import { motion, AnimatePresence } from 'motion/react';
 import { TbMessageDots } from 'react-icons/tb';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
@@ -12,9 +11,6 @@ import AvatarStack from '@/components/shared/avatar-stack';
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
-  const toggleChatForUser = useChatSidebarStore(
-    state => state.toggleChatForUser
-  );
   const [showPortal, setShowPortal] = useState(false);
   const {
     displayOnlineUsers,
@@ -26,7 +22,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     hasMoreDirectoryUsers,
     retryLoadDirectory,
     loadMoreDirectoryUsers,
-  } = usePresenceRoster(showPortal);
+    openChatForUser,
+  } = useChatSidebarLauncher(showPortal);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const portalTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -77,11 +74,11 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   }, [closePortal, openPortal, showPortal]);
 
   const handleChatOpen = useCallback(
-    (targetUser: Parameters<typeof toggleChatForUser>[0]) => {
+    (targetUser: Parameters<typeof openChatForUser>[0]) => {
       closePortal();
-      toggleChatForUser(targetUser);
+      openChatForUser(targetUser);
     },
-    [closePortal, toggleChatForUser]
+    [closePortal, openChatForUser]
   );
 
   useEffect(() => {

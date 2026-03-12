@@ -1,10 +1,4 @@
-import {
-  ackPendingReadReceiptMessageIds,
-  hasPendingReadReceiptMessageIds,
-  peekPendingReadReceiptMessageIds,
-  queuePendingReadReceiptMessageIds,
-  subscribePendingReadReceiptQueue,
-} from './pending-read-receipts';
+import { chatRuntimeCache } from './chatRuntimeCache';
 
 const normalizeReadReceiptMessageIds = (messageIds: string[]) =>
   [...new Set(messageIds)].map(messageId => messageId.trim()).filter(Boolean);
@@ -19,7 +13,7 @@ export const queueReadReceiptMessageIdsForSync = (
     return [];
   }
 
-  queuePendingReadReceiptMessageIds(userId, normalizedMessageIds);
+  chatRuntimeCache.readReceipts.queueMessageIds(userId, normalizedMessageIds);
   return normalizedMessageIds;
 };
 
@@ -28,7 +22,7 @@ export const getPendingReadReceiptBatch = (userId: string, limit = 200) => {
     return [];
   }
 
-  return peekPendingReadReceiptMessageIds(userId, limit);
+  return chatRuntimeCache.readReceipts.peekMessageIds(userId, limit);
 };
 
 interface FlushPendingReadReceiptBatchResult {
@@ -38,7 +32,8 @@ interface FlushPendingReadReceiptBatchResult {
   status: 'empty' | 'retry' | 'synced';
 }
 
-export { subscribePendingReadReceiptQueue };
+export const subscribePendingReadReceiptQueue = (listener: () => void) =>
+  chatRuntimeCache.readReceipts.subscribe(listener);
 
 export const flushPendingReadReceiptBatch = async ({
   userId,
@@ -71,11 +66,11 @@ export const flushPendingReadReceiptBatch = async ({
     };
   }
 
-  ackPendingReadReceiptMessageIds(userId, pendingMessageIds);
+  chatRuntimeCache.readReceipts.ackMessageIds(userId, pendingMessageIds);
 
   return {
     error: null,
-    hasMore: hasPendingReadReceiptMessageIds(userId),
+    hasMore: chatRuntimeCache.readReceipts.hasPendingMessageIds(userId),
     messageIds: pendingMessageIds,
     status: 'synced',
   };

@@ -46,9 +46,8 @@ export interface SendAttachmentOptions {
     localPreviewUrl: string;
     timestamp: string;
   }) => ChatMessage;
-  uploadAsset: () => Promise<{ path: string; publicUrl: string }>;
+  uploadAsset: () => Promise<{ path: string }>;
   createPersistedMessage: (
-    publicUrl: string,
     uploadedPath: string
   ) => Promise<{ data: ChatMessage | null; error: unknown }>;
   mapPersistedMessage: (
@@ -112,11 +111,9 @@ export const persistAttachmentMessage = async ({
 > & {
   stableKey: string;
 }): Promise<PersistedAttachmentResult> => {
-  const { path: uploadedStoragePath, publicUrl } = await uploadAsset();
-  const { data: persistedMessage, error } = await createPersistedMessage(
-    publicUrl,
-    uploadedStoragePath
-  );
+  const { path: uploadedStoragePath } = await uploadAsset();
+  const { data: persistedMessage, error } =
+    await createPersistedMessage(uploadedStoragePath);
 
   if (error || !persistedMessage) {
     return {

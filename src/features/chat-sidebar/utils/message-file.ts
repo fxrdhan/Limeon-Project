@@ -6,12 +6,7 @@ import {
   resolveChatMessageStoragePaths,
   resolveFileExtension,
 } from '../../../../shared/chatStoragePaths';
-import {
-  getSignedChatAssetUrlCacheEntry,
-  pruneExpiredSignedChatAssetUrls,
-  resetSignedChatAssetUrlCache as resetSignedChatAssetUrlCacheStore,
-  setSignedChatAssetUrlCacheEntry,
-} from './signed-chat-asset-url-cache';
+import { chatRuntimeCache } from './chatRuntimeCache';
 
 export {
   buildPdfPreviewStoragePath,
@@ -144,8 +139,8 @@ export const resolveChatAssetUrlWithExpiry = async (
     return null;
   }
 
-  pruneExpiredSignedChatAssetUrls();
-  const cachedSignedUrl = getSignedChatAssetUrlCacheEntry(storagePath);
+  chatRuntimeCache.signedAssets.pruneExpired();
+  const cachedSignedUrl = chatRuntimeCache.signedAssets.getEntry(storagePath);
   if (cachedSignedUrl) {
     return {
       url: cachedSignedUrl.signedUrl,
@@ -160,7 +155,7 @@ export const resolveChatAssetUrlWithExpiry = async (
     );
 
     const expiresAt = Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS;
-    setSignedChatAssetUrlCacheEntry(storagePath, signedUrl, expiresAt);
+    chatRuntimeCache.signedAssets.setEntry(storagePath, signedUrl, expiresAt);
 
     return {
       url: signedUrl,
@@ -233,5 +228,5 @@ export const isImageFileExtensionOrMime = (
   mimeType?.toLowerCase().startsWith('image/') === true;
 
 export const resetSignedChatAssetUrlCache = () => {
-  resetSignedChatAssetUrlCacheStore();
+  chatRuntimeCache.signedAssets.reset();
 };

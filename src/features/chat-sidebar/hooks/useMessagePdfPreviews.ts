@@ -1,11 +1,9 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  getCachedPdfMessagePreview,
-  pruneCachedPdfMessagePreviews,
-  setCachedPdfMessagePreview,
+  chatRuntimeCache,
   type PdfMessagePreviewCacheEntry,
-} from '../utils/pdf-message-preview-cache';
+} from '../utils/chatRuntimeCache';
 import {
   buildPdfMessagePreviewCacheKey,
   isPdfPreviewableMessage,
@@ -91,7 +89,7 @@ export const useMessagePdfPreviews = ({
           continue;
         }
 
-        const cachedPreview = getCachedPdfMessagePreview(cacheKey);
+        const cachedPreview = chatRuntimeCache.pdfPreviews.get(cacheKey);
         if (cachedPreview) {
           nextPreviews[message.id] = cachedPreview;
           hasChanges = true;
@@ -134,7 +132,7 @@ export const useMessagePdfPreviews = ({
       pdfPreviewRenderingIdsRef.current.delete(messageId);
     }
 
-    pruneCachedPdfMessagePreviews(activePdfMessageIds);
+    chatRuntimeCache.pdfPreviews.pruneInactiveMessageIds(activePdfMessageIds);
   }, [
     clearPdfPreviewRetryTimer,
     getAttachmentFileKind,
@@ -154,7 +152,7 @@ export const useMessagePdfPreviews = ({
 
       const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
       if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-      if (getCachedPdfMessagePreview(cacheKey)) return false;
+      if (chatRuntimeCache.pdfPreviews.get(cacheKey)) return false;
       if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
       if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
       if (
@@ -173,7 +171,7 @@ export const useMessagePdfPreviews = ({
       pendingMessage: ChatMessage,
       nextPreview: PdfMessagePreview
     ) => {
-      setCachedPdfMessagePreview(pendingMessage.id, nextPreview);
+      chatRuntimeCache.pdfPreviews.set(pendingMessage.id, nextPreview);
       pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
       clearPdfPreviewRetryTimer(pendingMessage.id);
       setPdfMessagePreviews(previousPreviews => ({
@@ -246,7 +244,7 @@ export const useMessagePdfPreviews = ({
         return localPreview;
       }
 
-      return cacheKey ? getCachedPdfMessagePreview(cacheKey) : undefined;
+      return cacheKey ? chatRuntimeCache.pdfPreviews.get(cacheKey) : undefined;
     },
   };
 };

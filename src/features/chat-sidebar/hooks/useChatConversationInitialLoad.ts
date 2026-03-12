@@ -10,10 +10,7 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
-import {
-  getFreshConversationCacheEntry,
-  setConversationCacheEntry,
-} from '../utils/conversation-cache';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import {
   applyConversationSnapshot,
   mergeLatestConversationPageWithExisting,
@@ -132,7 +129,7 @@ export const useChatConversationInitialLoad = ({
 
     const loadMessages = async () => {
       const cachedConversation =
-        getFreshConversationCacheEntry(currentChannelId);
+        chatRuntimeCache.conversation.getFreshEntry(currentChannelId);
       const hasCachedConversation = Boolean(cachedConversation);
       const cachedPersistedMessages = cachedConversation?.messages || [];
       const refreshPageSize = Math.max(
@@ -246,7 +243,7 @@ export const useChatConversationInitialLoad = ({
 
         const nextHasOlderMessages = existingMessagesPage.hasMore;
 
-        setConversationCacheEntry(
+        chatRuntimeCache.conversation.setEntry(
           currentChannelId,
           latestPersistedMessages,
           nextHasOlderMessages

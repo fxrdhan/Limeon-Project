@@ -1,9 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  queuePendingReadReceiptMessageIds,
-  resetPendingReadReceiptMessageIds,
-} from '../utils/pending-read-receipts';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 const { authState, mockMarkMessageIdsAsRead, mockSendReadReceiptKeepalive } =
   vi.hoisted(() => ({
@@ -34,7 +31,7 @@ describe('useChatRuntimeReadReceipts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    resetPendingReadReceiptMessageIds();
+    chatRuntimeCache.readReceipts.reset();
     mockMarkMessageIdsAsRead.mockResolvedValue({
       data: [],
       error: null,
@@ -49,7 +46,7 @@ describe('useChatRuntimeReadReceipts', () => {
   });
 
   afterEach(() => {
-    resetPendingReadReceiptMessageIds();
+    chatRuntimeCache.readReceipts.reset();
   });
 
   it('sends pending read receipts through the keepalive path on page exit', async () => {
@@ -58,7 +55,10 @@ describe('useChatRuntimeReadReceipts', () => {
 
     renderHook(() => useChatRuntimeReadReceipts());
 
-    queuePendingReadReceiptMessageIds('user-a', ['message-1', 'message-2']);
+    chatRuntimeCache.readReceipts.queueMessageIds('user-a', [
+      'message-1',
+      'message-2',
+    ]);
 
     await act(async () => {
       const pageHideEvent = new Event('pagehide');

@@ -201,7 +201,6 @@ describe('useChatComposerSend', () => {
   it('rolls back the persisted attachment thread when caption insert fails', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
-      publicUrl: 'https://example.com/stok.pdf',
     });
     mockGateway.createMessage
       .mockResolvedValueOnce({
@@ -345,7 +344,6 @@ describe('useChatComposerSend', () => {
   it('surfaces a cleanup warning when an uncommitted uploaded file cannot be deleted', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
-      publicUrl: 'https://example.com/stok.pdf',
     });
     mockGateway.createMessage.mockResolvedValue({
       data: null,
@@ -453,7 +451,6 @@ describe('useChatComposerSend', () => {
   it('persists pdf preview metadata during the send pipeline', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
-      publicUrl: 'https://example.com/stok.pdf',
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
@@ -735,7 +732,6 @@ describe('useChatComposerSend', () => {
 
     mockGateway.uploadImage.mockResolvedValue({
       path: 'images/channel/chat.png',
-      publicUrl: 'https://example.com/chat.png',
     });
     mockGateway.createMessage.mockImplementation(
       () =>

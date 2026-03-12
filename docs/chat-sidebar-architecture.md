@@ -14,6 +14,8 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
   - `src/store/pageFocusBlockStore.ts`
 - Feature:
   - `src/features/chat-sidebar/*`
+  - `src/features/chat-sidebar/hooks/useChatSidebarHost.ts`
+  - `src/features/chat-sidebar/hooks/useChatSidebarLauncher.ts`
   - `src/features/chat-sidebar/hooks/useChatIncomingDeliveries.ts`
 - Data access:
   - `src/features/chat-sidebar/data/chatSidebarGateway.ts`
@@ -47,9 +49,10 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
 
 ### 2.1 Open Flow
 
-- `Navbar` mengambil roster online dari `usePresenceRoster()`.
-- Klik user di portal navbar memanggil `useChatSidebarStore().toggleChatForUser(targetUser)`.
-- `MainLayout` membaca `isOpen`, `targetUser`, dan `closeChat` dari `chatSidebarStore`.
+- `Navbar` mengambil roster online dan aksi buka chat dari `useChatSidebarLauncher()`.
+- Klik user di portal navbar memanggil `openChatForUser(targetUser)`.
+- `useChatSidebarLauncher()` tetap memakai `chatSidebarStore` sebagai owner shell state, tetapi boundary yang dikonsumsi navbar sekarang berada di feature chat sidebar.
+- `MainLayout` membaca `isOpen`, `targetUser`, dan `closeChat` dari `useChatSidebarHost()`.
 - `MainLayout` merender `ChatSidebar` di sisi kanan layout.
 - `ChatSidebar` menyimpan `persistedTargetUser` agar panel tetap punya target user selama animasi close.
 - `ChatSidebar` merender `ChatSidebarPanel` (`src/features/chat-sidebar/index.tsx`) saat:
@@ -60,7 +63,7 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
 
 - `ChatHeader` memanggil `onClose`.
 - `useChatSidebarController` langsung memanggil `chatSidebarStore.closeChat()`.
-- `MainLayout` meng-set `pageFocusBlockStore.isBlocked` mengikuti status open chat sidebar.
+- `useChatSidebarHost()` meng-set `pageFocusBlockStore.isBlocked` mengikuti status open chat sidebar.
 
 ## 3) Global State Ownership
 
@@ -108,7 +111,11 @@ File: `src/features/chat-sidebar/index.tsx`
 - `ComposerPanel`
 - `Toaster`
 
-Seluruh orkestrasi runtime dibangun di `useChatSidebarController()`.
+Seluruh orkestrasi runtime panel dibangun di `useChatSidebarController()`,
+tetapi lifecycle host sekarang dibatasi oleh dua entry hook feature:
+
+- `useChatSidebarHost()` untuk wiring layout/runtime global
+- `useChatSidebarLauncher()` untuk wiring launcher/navbar
 
 ## 5) Hook Responsibilities
 
@@ -120,20 +127,30 @@ Tanggung jawab:
 
 - membuat ref DOM utama
 - membuat `currentChannelId` dari dua user dengan `generateChannelId()`
-- compose hook:
-  - `useTargetProfilePhoto`
-  - `useChatSession`
-  - `useChatComposer`
-  - `useChatInteractionModes`
-  - `useChatViewport`
-  - `useChatBulkDelete`
-- membentuk `headerModel`, `messagesModel`, dan `composerModel` langsung di dalam controller
+- memanggil `useTargetProfilePhoto()`
+- mendelegasikan orkestrasi runtime panel ke `useChatSidebarRuntimeState()`
+- membentuk `headerModel`, `messagesModel`, dan `composerModel` dari runtime state
 - mengembalikan model yang sudah sempit untuk:
   - `ChatHeader`
   - `MessagesPane`
   - `ComposerPanel`
 
-Hook ini tidak menyimpan global store sendiri selain state lokal `expandedMessageIds`.
+Hook ini tidak lagi menjadi owner utama semua wiring runtime panel. State lokal
+`expandedMessageIds` tetap dimiliki oleh `useChatSidebarRefs()`.
+
+### 5.1.a `useChatSidebarRuntimeState`
+
+File: `src/features/chat-sidebar/hooks/useChatSidebarRuntimeState.ts`
+
+Tanggung jawab:
+
+- compose `useChatSession`
+- compose `useChatComposer`
+- compose `useChatInteractionModes`
+- compose `useChatViewport`
+- compose `useChatSidebarPreviewState`
+- sink callback ref untuk menu close / scroll-to-bottom
+- expose runtime objects yang dipakai controller untuk membentuk view model
 
 ### 5.2 `useChatSession`
 
@@ -177,8 +194,28 @@ File: `src/features/chat-sidebar/hooks/useChatIncomingDeliveries.ts`
 Tanggung jawab:
 
 - subscribe incoming inserts untuk delivery receipt via channel `incoming_messages_<userId>`
-- berjalan di level `MainLayout`, tidak bergantung pada chat sidebar sedang open
+- berjalan di level `useChatSidebarHost()` melalui `useChatRuntime()`, tidak bergantung pada chat sidebar sedang open
 - mark incoming message sebagai delivered via RPC per-ID
+
+### 5.4.a `useChatSidebarHost`
+
+File: `src/features/chat-sidebar/hooks/useChatSidebarHost.ts`
+
+Tanggung jawab:
+
+- mount `usePresence()`
+- mount `useChatRuntime()`
+- expose shell state (`isOpen`, `targetUser`, `closeChat`)
+- sinkronisasi `pageFocusBlockStore` dengan shell state chat sidebar
+
+### 5.4.b `useChatSidebarLauncher`
+
+File: `src/features/chat-sidebar/hooks/useChatSidebarLauncher.ts`
+
+Tanggung jawab:
+
+- combine `usePresenceRoster()` dengan aksi launcher chat sidebar
+- memberi boundary feature-specific untuk `Navbar`
 
 ### 5.5 `useChatSessionReceipts`
 

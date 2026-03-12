@@ -85,6 +85,9 @@ Tujuan: `src/components/` hanya berisi komponen lintas fitur.
 - Feature merender komponen internalnya sendiri.
 - Chat sidebar di-compose dari `src/app/layout/main/index.tsx` ->
   `src/app/layout/chat-sidebar/index.tsx` -> `src/features/chat-sidebar/index.tsx`.
+- Runtime host/sidebar launcher untuk feature chat sekarang dipusatkan di:
+  - `src/features/chat-sidebar/hooks/useChatSidebarHost.ts`
+  - `src/features/chat-sidebar/hooks/useChatSidebarLauncher.ts`
 - Dokumentasi implementasi chat sidebar saat ini ada di
   `docs/chat-sidebar-architecture.md`.
 

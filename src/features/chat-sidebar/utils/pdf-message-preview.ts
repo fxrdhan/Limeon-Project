@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import type { PdfMessagePreviewCacheEntry } from './pdf-message-preview-cache';
+import type { PdfMessagePreviewCacheEntry } from './chatRuntimeCache';
 import {
   fetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback,

@@ -3,10 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from '@/app/layout/navbar';
 import Sidebar from '@/app/layout/sidebar';
 import ChatSidebar from '@/app/layout/chat-sidebar';
-import { usePresence } from '@/hooks/presence/usePresence';
-import { useChatRuntime } from '@/features/chat-sidebar/hooks/useChatRuntime';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
-import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
+import { useChatSidebarHost } from '@/features/chat-sidebar/hooks/useChatSidebarHost';
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -19,12 +16,11 @@ const MainLayout = () => {
     },
     []
   );
-  usePresence();
-  useChatRuntime();
-  const isChatSidebarOpen = useChatSidebarStore(state => state.isOpen);
-  const chatTargetUser = useChatSidebarStore(state => state.targetUser);
-  const closeChatSidebar = useChatSidebarStore(state => state.closeChat);
-  const setPageFocusBlocked = usePageFocusBlockStore(state => state.setBlocked);
+  const {
+    isOpen: isChatSidebarOpen,
+    targetUser: chatTargetUser,
+    closeChat: closeChatSidebar,
+  } = useChatSidebarHost();
 
   const expandSidebar = useCallback(() => {
     if (!isLocked) {
@@ -69,16 +65,6 @@ const MainLayout = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [setIsLocked, setSidebarCollapsed]);
-
-  useEffect(() => {
-    setPageFocusBlocked(isChatSidebarOpen);
-  }, [isChatSidebarOpen, setPageFocusBlocked]);
-
-  useEffect(() => {
-    return () => {
-      setPageFocusBlocked(false);
-    };
-  }, [setPageFocusBlocked]);
 
   return (
     <div className="flex h-screen bg-slate-100 text-slate-800 relative">

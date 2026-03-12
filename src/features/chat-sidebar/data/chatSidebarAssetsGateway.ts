@@ -1,30 +1,49 @@
 import { StorageService } from '@/services/api/storage.service';
-import type { UploadResult } from '@/services/api/storage.service';
 import { CHAT_IMAGE_BUCKET } from '../constants';
 
+export interface ChatSidebarAssetUploadResult {
+  path: string;
+}
+
 export const chatSidebarAssetsGateway = {
-  uploadImage(file: File, storagePath: string): Promise<UploadResult> {
-    return StorageService.uploadFile(CHAT_IMAGE_BUCKET, file, storagePath);
+  async uploadImage(
+    file: File,
+    storagePath: string
+  ): Promise<ChatSidebarAssetUploadResult> {
+    const { path } = await StorageService.uploadFile(
+      CHAT_IMAGE_BUCKET,
+      file,
+      storagePath
+    );
+
+    return { path };
   },
-  uploadAttachment(
+  async uploadAttachment(
     file: File,
     storagePath: string,
     contentType?: string
-  ): Promise<UploadResult> {
-    return StorageService.uploadRawFile(
+  ): Promise<ChatSidebarAssetUploadResult> {
+    const { path } = await StorageService.uploadRawFile(
       CHAT_IMAGE_BUCKET,
       file,
       storagePath,
       contentType
     );
+
+    return { path };
   },
-  uploadPdfPreview(file: File, storagePath: string): Promise<UploadResult> {
-    return StorageService.uploadRawFile(
+  async uploadPdfPreview(
+    file: File,
+    storagePath: string
+  ): Promise<ChatSidebarAssetUploadResult> {
+    const { path } = await StorageService.uploadRawFile(
       CHAT_IMAGE_BUCKET,
       file,
       storagePath,
       'image/png'
     );
+
+    return { path };
   },
   deleteAsset(storagePath: string): Promise<void> {
     return StorageService.deleteFile(CHAT_IMAGE_BUCKET, storagePath);

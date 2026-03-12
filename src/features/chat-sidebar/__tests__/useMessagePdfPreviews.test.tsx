@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
-import { resetCachedPdfMessagePreviews } from '../utils/pdf-message-preview-cache';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 const {
   mockFetchChatFileBlobWithFallback,
@@ -58,7 +58,7 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 describe('useMessagePdfPreviews', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetCachedPdfMessagePreviews();
+    chatRuntimeCache.pdfPreviews.reset();
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);
     mockRenderPdfPreviewDataUrl.mockResolvedValue(null);
   });

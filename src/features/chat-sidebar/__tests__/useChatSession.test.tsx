@@ -3,10 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { UserDetails } from '../../../types/database';
 import { useChatSession } from '../hooks/useChatSession';
-import {
-  getFreshConversationCacheEntry,
-  resetConversationCache,
-} from '../utils/conversation-cache';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { usePresenceStore } from '../../../store/presenceStore';
 
 const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
@@ -121,7 +118,7 @@ describe('useChatSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    resetConversationCache();
+    chatRuntimeCache.conversation.reset();
     createdChannels.length = 0;
     usePresenceStore.setState({
       channel: null,
@@ -419,7 +416,9 @@ describe('useChatSession', () => {
     });
 
     await waitFor(() => {
-      expect(getFreshConversationCacheEntry('channel-1')?.messages).toEqual([
+      expect(
+        chatRuntimeCache.conversation.getFreshEntry('channel-1')?.messages
+      ).toEqual([
         expect.objectContaining({
           id: 'latest-message',
         }),
