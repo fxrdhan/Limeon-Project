@@ -217,7 +217,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       }}
       className={`relative flex w-full ${
         isCurrentUser ? 'justify-end' : 'justify-start'
-      } ${isMenuOpen ? 'z-50' : isMenuTransitionSource ? 'z-40' : 'z-0'} ${
+      } ${isMenuOpen ? 'z-10' : isMenuTransitionSource ? 'z-[9]' : 'z-0'} ${
         !isSelectionMode &&
         openMenuMessageId &&
         openMenuMessageId !== message.id

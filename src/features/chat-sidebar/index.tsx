@@ -67,7 +67,7 @@ const ChatSidebarPanel = memo(
         />
 
         <div className="relative h-full flex flex-col">
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
             <div
               aria-hidden="true"
               className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-white via-white/92 via-white/72 to-transparent transition-opacity duration-300 ease-in-out ${
