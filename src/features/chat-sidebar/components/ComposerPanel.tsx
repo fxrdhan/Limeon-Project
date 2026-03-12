@@ -182,7 +182,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 onChange={event => actions.onMessageChange(event.target.value)}
                 onKeyDown={actions.onKeyDown}
                 onPaste={actions.onPaste}
-                placeholder="Type a message..."
+                placeholder="Tulis pesan..."
                 rows={1}
                 style={{ height: `${state.messageInputHeight}px` }}
                 className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -197,7 +197,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 type="button"
                 ref={refs.attachButtonRef}
                 onClick={actions.onAttachButtonClick}
-                aria-label="Attach file"
+                aria-label="Lampirkan file"
                 aria-expanded={attachments.isAttachModalOpen}
                 aria-haspopup="dialog"
                 className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 cursor-pointer ${
@@ -219,7 +219,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 type="button"
                 onClick={actions.onSendMessage}
-                aria-label="Send message"
+                aria-label="Kirim pesan"
                 className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
                   state.isMessageInputMultiline
                     ? 'col-start-3 row-start-2'
@@ -259,7 +259,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 <motion.div
                   ref={refs.attachModalRef}
                   role="dialog"
-                  aria-label="Attach file"
+                  aria-label="Lampirkan file"
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.95 }}

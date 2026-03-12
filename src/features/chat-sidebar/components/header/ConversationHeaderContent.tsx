@@ -78,7 +78,7 @@ const ConversationHeaderContent = ({
             </span>
           ) : targetUserPresence?.last_seen ? (
             <span className="text-xs text-slate-400">
-              Last seen {formatLastSeen(targetUserPresence.last_seen)}
+              Terakhir aktif {formatLastSeen(targetUserPresence.last_seen)}
             </span>
           ) : null}
         </div>
@@ -88,8 +88,8 @@ const ConversationHeaderContent = ({
           <button
             ref={optionsButtonRef}
             type="button"
-            aria-label="Chat options"
-            title="Chat options"
+            aria-label="Opsi chat"
+            title="Opsi chat"
             aria-haspopup="menu"
             aria-expanded={isOptionsMenuOpen}
             className={floatingIconButtonClass}
@@ -116,8 +116,8 @@ const ConversationHeaderContent = ({
         </div>
         <button
           onClick={onClose}
-          aria-label="Collapse chat sidebar"
-          title="Collapse chat sidebar"
+          aria-label="Tutup sidebar chat"
+          title="Tutup sidebar chat"
           className={floatingIconButtonClass}
         >
           <TbLayoutSidebarRightCollapse size={20} />

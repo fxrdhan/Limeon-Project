@@ -65,8 +65,8 @@ const SelectionHeaderContent = ({
     </button>
     <button
       onClick={onClose}
-      aria-label="Collapse chat sidebar"
-      title="Collapse chat sidebar"
+      aria-label="Tutup sidebar chat"
+      title="Tutup sidebar chat"
       className={floatingIconButtonClass}
     >
       <TbLayoutSidebarRightCollapse size={20} />

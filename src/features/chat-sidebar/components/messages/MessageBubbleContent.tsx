@@ -48,7 +48,7 @@ export const MessageBubbleContent = ({
     resolvedMessageUrl ? (
       <img
         src={resolvedMessageUrl}
-        alt="Chat attachment"
+        alt="Lampiran chat"
         className={`block max-h-72 w-auto max-w-full object-cover ${
           hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
         }`}
@@ -61,7 +61,7 @@ export const MessageBubbleContent = ({
           hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
         }`}
       >
-        Loading image...
+        Memuat gambar...
       </div>
     )
   ) : isPdfFileMessage ? (
@@ -125,7 +125,7 @@ export const MessageBubbleContent = ({
               }
             }}
           >
-            Read more
+            Baca selengkapnya
           </span>
         </>
       ) : isExpanded ? (
@@ -147,7 +147,7 @@ export const MessageBubbleContent = ({
             }
           }}
         >
-          Read less
+          Ringkas
         </span>
       ) : null}
     </>

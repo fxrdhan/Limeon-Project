@@ -76,7 +76,7 @@ const SearchHeaderContent = ({
   };
 
   const searchResultLabel =
-    searchState === 'error' ? 'Error' : searchResultPositionLabel;
+    searchState === 'error' ? 'Gagal' : searchResultPositionLabel;
 
   return (
     <div className="flex w-full items-center gap-2.5">
@@ -142,8 +142,8 @@ const SearchHeaderContent = ({
         </button>
         <button
           onClick={onClose}
-          aria-label="Collapse chat sidebar"
-          title="Collapse chat sidebar"
+          aria-label="Tutup sidebar chat"
+          title="Tutup sidebar chat"
           className={floatingIconButtonClass}
         >
           <TbLayoutSidebarRightCollapse size={20} />

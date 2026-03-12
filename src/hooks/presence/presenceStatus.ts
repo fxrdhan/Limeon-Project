@@ -43,14 +43,14 @@ export const formatLastSeen = (lastSeen: string): string => {
     (now.getTime() - lastSeenDate.getTime()) / (1000 * 60)
   );
 
-  if (diffInMinutes < 1) return 'Just now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 1) return 'baru saja';
+  if (diffInMinutes < 60) return `${diffInMinutes} mnt lalu`;
 
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInHours < 24) return `${diffInHours} jam lalu`;
 
   const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays}d ago`;
+  if (diffInDays < 7) return `${diffInDays} hari lalu`;
 
   return lastSeenDate.toLocaleDateString();
 };

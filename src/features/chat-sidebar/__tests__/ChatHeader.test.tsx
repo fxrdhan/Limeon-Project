@@ -60,7 +60,7 @@ describe('ChatHeader', () => {
     );
 
     expect(screen.getByText('Online')).toBeTruthy();
-    expect(screen.queryByText(/Last seen/i)).toBeNull();
+    expect(screen.queryByText(/Terakhir aktif/i)).toBeNull();
   });
 
   it('falls back to last seen for stale presence updates', () => {
@@ -109,7 +109,7 @@ describe('ChatHeader', () => {
       />
     );
 
-    expect(screen.getByText(/Last seen/i)).toBeTruthy();
+    expect(screen.getByText(/Terakhir aktif/i)).toBeTruthy();
     expect(screen.queryByText('Online')).toBeNull();
   });
 
@@ -155,7 +155,7 @@ describe('ChatHeader', () => {
       />
     );
 
-    expect(screen.getByText('Error')).toBeTruthy();
+    expect(screen.getByText('Gagal')).toBeTruthy();
     expect(screen.queryByText('0/0')).toBeNull();
   });
 

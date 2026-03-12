@@ -196,8 +196,8 @@ describe('ChatSidebarPanel integration', () => {
 
     expect(screen.getByText('Gudang')).toBeTruthy();
     expect(screen.getByText('Online')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Type a message...')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Attach file' })).toBeTruthy();
+    expect(screen.getByPlaceholderText('Tulis pesan...')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Lampirkan file' })).toBeTruthy();
   });
 
   it('closes through the real header action', () => {
@@ -216,9 +216,7 @@ describe('ChatSidebarPanel integration', () => {
       />
     );
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Collapse chat sidebar' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Tutup sidebar chat' }));
 
     expect(onClose).toHaveBeenCalledOnce();
   });

@@ -24,7 +24,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
       >
         {state.loading && state.messages.length === 0 ? (
           <div className="flex justify-center items-center py-8">
-            <div className="text-slate-400 text-sm">Loading messages...</div>
+            <div className="text-slate-400 text-sm">Memuat percakapan...</div>
           </div>
         ) : state.loadError && state.messages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
@@ -64,8 +64,8 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-default disabled:opacity-60"
                 >
                   {state.isLoadingOlderMessages
-                    ? 'Loading older messages...'
-                    : 'Load older messages'}
+                    ? 'Memuat pesan sebelumnya...'
+                    : 'Muat pesan sebelumnya'}
                 </button>
                 {state.olderMessagesError ? (
                   <p className="text-[11px] text-rose-600">
