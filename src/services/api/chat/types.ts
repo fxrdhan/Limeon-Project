@@ -125,3 +125,14 @@ export interface ConversationSearchContextOptions {
   beforeLimit?: number;
   afterLimit?: number;
 }
+
+export interface PersistChatPdfPreviewInput {
+  message_id: string;
+  preview_png_base64: string;
+  page_count: number;
+}
+
+export interface PersistChatPdfPreviewResult {
+  message: ChatMessage;
+  previewPersisted: boolean;
+}

@@ -12,6 +12,7 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
     createMessage: vi.fn(),
     deleteMessageThread: vi.fn(),
     deleteMessageThreadAndCleanup: vi.fn(),
+    persistPdfPreview: vi.fn(),
     uploadImage: vi.fn(),
     uploadAttachment: vi.fn(),
     cleanupStoragePaths: vi.fn(),
@@ -21,9 +22,11 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
     success: vi.fn(),
   },
 }));
-const { mockQueuePersistedPdfPreview } = vi.hoisted(() => ({
-  mockQueuePersistedPdfPreview: vi.fn(),
-}));
+const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
+  vi.hoisted(() => ({
+    mockCreatePdfPreviewUploadArtifact: vi.fn(),
+    mockReadBlobAsDataUrl: vi.fn(),
+  }));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
@@ -35,6 +38,9 @@ vi.mock('@/services/api/chat.service', () => ({
     deleteMessageThreadAndCleanup: mockGateway.deleteMessageThreadAndCleanup,
     cleanupStoragePaths: mockGateway.cleanupStoragePaths,
   },
+  chatPreviewService: {
+    persistPdfPreview: mockGateway.persistPdfPreview,
+  },
 }));
 
 vi.mock('../data/chatSidebarAssetsGateway', () => ({
@@ -44,9 +50,15 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
   },
 }));
 
-vi.mock('../utils/pdf-preview-persistence', () => ({
-  queuePersistedPdfPreview: mockQueuePersistedPdfPreview,
-}));
+vi.mock('../utils/pdf-message-preview', async () => {
+  const actual = await vi.importActual('../utils/pdf-message-preview');
+
+  return {
+    ...actual,
+    createPdfPreviewUploadArtifact: mockCreatePdfPreviewUploadArtifact,
+    readBlobAsDataUrl: mockReadBlobAsDataUrl,
+  };
+});
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -161,7 +173,29 @@ describe('useChatComposerSend', () => {
       },
       error: null,
     });
-    mockQueuePersistedPdfPreview.mockReturnValue(true);
+    mockCreatePdfPreviewUploadArtifact.mockResolvedValue({
+      previewFile: new File(['preview'], 'server-file-preview.png', {
+        type: 'image/png',
+      }),
+      pageCount: 2,
+    });
+    mockReadBlobAsDataUrl.mockResolvedValue(
+      'data:image/png;base64,cHJldmlldw=='
+    );
+    mockGateway.persistPdfPreview.mockImplementation(
+      async ({ message_id }: { message_id: string }) => ({
+        data: {
+          previewPersisted: true,
+          message: buildMessage({
+            id: message_id,
+            file_preview_status: 'ready',
+            file_preview_url: 'previews/channel/server-file-preview.png',
+            file_preview_page_count: 2,
+          }),
+        },
+        error: null,
+      })
+    );
   });
 
   it('rolls back the persisted attachment thread when caption insert fails', async () => {
@@ -416,7 +450,7 @@ describe('useChatComposerSend', () => {
     expect(pendingEntries.size).toBe(0);
   });
 
-  it('keeps pdf preview persistence out of the send pipeline', async () => {
+  it('persists pdf preview metadata during the send pipeline', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
       publicUrl: 'https://example.com/stok.pdf',
@@ -474,20 +508,22 @@ describe('useChatComposerSend', () => {
 
     expect(mockGateway.uploadAttachment).toHaveBeenCalledTimes(1);
     expect(mockGateway.cleanupStoragePaths).not.toHaveBeenCalled();
-    expect(result.current.messages[0]?.file_preview_status).toBeUndefined();
-    expect(result.current.messages[0]?.file_preview_error).toBeUndefined();
-    expect(mockQueuePersistedPdfPreview).toHaveBeenCalledTimes(1);
-    expect(mockQueuePersistedPdfPreview).toHaveBeenCalledWith({
-      message: expect.objectContaining({
-        id: 'server-file-2',
-        sender_id: 'user-a',
-        file_name: 'stok.pdf',
-        file_mime_type: 'application/pdf',
-        file_storage_path: expect.stringMatching(
-          /^documents\/channel-1\/user-a_document_.*\.pdf$/
-        ),
-      }),
+    expect(mockCreatePdfPreviewUploadArtifact).toHaveBeenCalledTimes(1);
+    expect(mockCreatePdfPreviewUploadArtifact).toHaveBeenCalledWith(
+      expect.any(File),
+      'server-file-2'
+    );
+    expect(mockGateway.persistPdfPreview).toHaveBeenCalledTimes(1);
+    expect(mockGateway.persistPdfPreview).toHaveBeenCalledWith({
+      message_id: 'server-file-2',
+      preview_png_base64: 'cHJldmlldw==',
+      page_count: 2,
     });
+    expect(result.current.messages[0]?.file_preview_status).toBe('ready');
+    expect(result.current.messages[0]?.file_preview_url).toBe(
+      'previews/channel/server-file-preview.png'
+    );
+    expect(result.current.messages[0]?.file_preview_page_count).toBe(2);
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {

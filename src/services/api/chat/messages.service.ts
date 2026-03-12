@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import {
@@ -259,6 +259,46 @@ export const chatMessagesService = {
       return { data: (data || []) as ChatMessage[], error: null };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
+    }
+  },
+
+  sendReadReceiptKeepalive(messageIds: string[], accessToken?: string | null) {
+    const normalizedMessageIds = [...new Set(messageIds)].filter(Boolean);
+    if (
+      typeof window === 'undefined' ||
+      typeof fetch !== 'function' ||
+      normalizedMessageIds.length === 0 ||
+      !accessToken
+    ) {
+      return false;
+    }
+
+    try {
+      void fetch(
+        new URL(
+          `${supabaseUrl}/rest/v1/rpc/${CHAT_RPC_NAMES.markMessageIdsAsRead}`
+        ).toString(),
+        {
+          method: 'POST',
+          headers: {
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            p_message_ids: normalizedMessageIds,
+          }),
+          keepalive: true,
+        }
+      ).catch(error => {
+        console.error('Keepalive read receipt sync failed:', error);
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error starting keepalive read receipt sync:', error);
+      return false;
     }
   },
 

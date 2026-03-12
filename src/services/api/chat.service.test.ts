@@ -526,4 +526,69 @@ describe('chatService', () => {
     });
     fetchSpy.mockRestore();
   });
+
+  it('starts keepalive read receipt sync through the rpc endpoint', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+
+    const { chatService } = await import('./chat.service');
+
+    const didStartKeepalive = chatService.sendReadReceiptKeepalive(
+      ['message-1', 'message-2', 'message-1'],
+      'access-token'
+    );
+
+    expect(didStartKeepalive).toBe(true);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://example.supabase.co/rest/v1/rpc/mark_chat_message_ids_as_read',
+      expect.objectContaining({
+        method: 'POST',
+        keepalive: true,
+        body: JSON.stringify({
+          p_message_ids: ['message-1', 'message-2'],
+        }),
+      })
+    );
+    fetchSpy.mockRestore();
+  });
+
+  it('persists pdf preview metadata through the chat preview edge function', async () => {
+    const updatedMessage = {
+      id: 'file-1',
+      file_preview_status: 'ready',
+      file_preview_url: 'previews/channel/file-1.png',
+      file_preview_page_count: 3,
+    };
+    mockInvoke.mockResolvedValueOnce({
+      data: {
+        message: updatedMessage,
+        previewPersisted: true,
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.persistPdfPreview({
+      message_id: 'file-1',
+      preview_png_base64: 'cHJldmlldw==',
+      page_count: 3,
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('chat-pdf-preview', {
+      body: {
+        message_id: 'file-1',
+        preview_png_base64: 'cHJldmlldw==',
+        page_count: 3,
+      },
+    });
+    expect(result).toEqual({
+      data: {
+        message: updatedMessage,
+        previewPersisted: true,
+      },
+      error: null,
+    });
+  });
 });

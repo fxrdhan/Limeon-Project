@@ -3,7 +3,6 @@ import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { chatSidebarCleanupGateway } from '../data/chatSidebarGateway';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
-import { useChatRuntimePdfPreviews } from './useChatRuntimePdfPreviews';
 import { useChatRuntimeReadReceipts } from './useChatRuntimeReadReceipts';
 
 const CHAT_CLEANUP_RUNTIME_TOAST_ID = 'chat-cleanup-runtime-warning';
@@ -16,7 +15,6 @@ export const useChatRuntime = () => {
 
   useChatIncomingDeliveries();
   useChatRuntimeReadReceipts();
-  useChatRuntimePdfPreviews();
 
   useEffect(() => {
     const clearScheduledRetry = () => {

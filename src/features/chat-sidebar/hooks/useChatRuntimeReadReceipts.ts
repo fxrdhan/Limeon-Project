@@ -15,13 +15,18 @@ const READ_RECEIPT_RETRY_DELAY_MS = 1_200;
 const CHAT_READ_SYNC_TOAST_ID = 'chat-read-sync-warning';
 
 export const useChatRuntimeReadReceipts = () => {
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
   const flushTimeoutRef = useRef<number | null>(null);
   const retryTimeoutRef = useRef<number | null>(null);
   const isFlushInFlightRef = useRef(false);
+  const accessTokenRef = useRef<string | null>(session?.access_token ?? null);
   const flushPendingReadReceiptsRef = useRef<() => Promise<void>>(
     async () => {}
   );
+
+  useEffect(() => {
+    accessTokenRef.current = session?.access_token ?? null;
+  }, [session?.access_token]);
 
   const clearFlushTimer = useCallback(() => {
     if (flushTimeoutRef.current === null) {
@@ -129,6 +134,25 @@ export const useChatRuntimeReadReceipts = () => {
   ]);
   flushPendingReadReceiptsRef.current = flushPendingReadReceipts;
 
+  const flushPendingReadReceiptsKeepalive = useCallback(() => {
+    if (!user?.id) {
+      return false;
+    }
+
+    const pendingMessageIds = peekPendingReadReceiptMessageIds(
+      user.id,
+      READ_RECEIPT_BATCH_SIZE
+    );
+    if (pendingMessageIds.length === 0) {
+      return false;
+    }
+
+    return chatSidebarMessagesGateway.sendReadReceiptKeepalive(
+      pendingMessageIds,
+      accessTokenRef.current
+    );
+  }, [user?.id]);
+
   useEffect(() => {
     if (!user?.id) {
       clearFlushTimer();
@@ -158,4 +182,38 @@ export const useChatRuntimeReadReceipts = () => {
     schedulePendingReadReceiptFlush,
     user?.id,
   ]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushPendingReadReceiptsKeepalive();
+      }
+    };
+
+    const handlePageExit = () => {
+      flushPendingReadReceiptsKeepalive();
+    };
+
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (!event.persisted) {
+        handlePageExit();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handlePageExit);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('unload', handlePageExit);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handlePageExit);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('unload', handlePageExit);
+    };
+  }, [flushPendingReadReceiptsKeepalive, user?.id]);
 };

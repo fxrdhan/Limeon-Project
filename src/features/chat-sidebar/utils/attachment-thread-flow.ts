@@ -61,7 +61,7 @@ export interface SendAttachmentOptions {
     stableKey: string,
     uploadedPath: string,
     conversationScopeKey: string | null
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 interface AttachmentThreadFlowContext {
@@ -420,7 +420,7 @@ export const sendAttachmentThread = async (
     }
 
     if (uploadedStoragePath) {
-      onAfterCommit?.(
+      await onAfterCommit?.(
         realMessage,
         stableKey,
         uploadedStoragePath,

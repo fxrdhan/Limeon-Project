@@ -3,6 +3,7 @@ import {
   chatCleanupService,
   chatMessagesService,
   chatPresenceService,
+  chatPreviewService,
   type ChatMessage,
   type ChatFilePreviewUpdateInput,
   type ConversationMessagesPage,
@@ -11,6 +12,7 @@ import {
   type ConversationSearchMessagesPage,
   type CreateChatMessageInput,
   type EditChatMessageTextInput,
+  type PersistChatPdfPreviewInput,
   type UserPresenceUpdateInput,
 } from '@/services/api/chat.service';
 
@@ -25,6 +27,8 @@ export type {
   CleanupStoragePathsResult,
   RetryChatCleanupFailuresResult,
   UndeliveredIncomingMessageIdsPage,
+  PersistChatPdfPreviewInput,
+  PersistChatPdfPreviewResult,
 } from '@/services/api/chat.service';
 
 export type { RealtimeChannel } from '@supabase/supabase-js';
@@ -106,6 +110,12 @@ export const chatSidebarMessagesGateway = {
   markMessageIdsAsRead(messageIds: string[]) {
     return chatMessagesService.markMessageIdsAsRead(messageIds);
   },
+  sendReadReceiptKeepalive(messageIds: string[], accessToken?: string | null) {
+    return chatMessagesService.sendReadReceiptKeepalive(
+      messageIds,
+      accessToken
+    );
+  },
   listUndeliveredIncomingMessageIds(
     options?: Parameters<
       typeof chatMessagesService.listUndeliveredIncomingMessageIds
@@ -156,5 +166,11 @@ export const chatSidebarPresenceGateway = {
       accessToken,
       timestamp
     );
+  },
+};
+
+export const chatSidebarPreviewGateway = {
+  persistPdfPreview(payload: PersistChatPdfPreviewInput) {
+    return chatPreviewService.persistPdfPreview(payload);
   },
 };

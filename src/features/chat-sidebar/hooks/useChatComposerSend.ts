@@ -11,14 +11,18 @@ import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import {
   chatSidebarMessagesGateway,
+  chatSidebarPreviewGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
-import { queuePersistedPdfPreview } from '../utils/pdf-preview-persistence';
 import { resolveFileExtension } from '../utils/message-file';
 import { sendAttachmentThread } from '../utils/attachment-thread-flow';
+import {
+  createPdfPreviewUploadArtifact,
+  readBlobAsDataUrl,
+} from '../utils/pdf-message-preview';
 import { sendTextChatMessage } from '../utils/text-message-send';
 
 interface ChatComposerSendMutationScope {
@@ -105,6 +109,88 @@ export const useChatComposerSend = ({
       pendingFile.mimeType.toLowerCase().includes('pdf')
     );
   }, []);
+
+  const syncPersistedPdfPreview = useCallback(
+    async ({
+      realMessage,
+      pendingFile,
+    }: {
+      realMessage: ChatMessage;
+      pendingFile: PendingComposerFile;
+    }) => {
+      try {
+        const renderedPreview = await createPdfPreviewUploadArtifact(
+          pendingFile.file,
+          realMessage.id
+        );
+
+        if (!renderedPreview) {
+          if (isCurrentConversationScopeActive()) {
+            toast.error('Pesan terkirim, tetapi preview PDF gagal disiapkan', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+          }
+          return;
+        }
+
+        const previewDataUrl = await readBlobAsDataUrl(
+          renderedPreview.previewFile
+        );
+        const previewPngBase64 = previewDataUrl.split(',')[1] ?? '';
+        const { data, error } =
+          await chatSidebarPreviewGateway.persistPdfPreview({
+            message_id: realMessage.id,
+            preview_png_base64: previewPngBase64,
+            page_count: renderedPreview.pageCount,
+          });
+
+        if (error || !data?.message) {
+          console.error('Failed to persist chat PDF preview:', error);
+          if (isCurrentConversationScopeActive()) {
+            toast.error(
+              'Pesan terkirim, tetapi metadata preview PDF gagal disimpan',
+              {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              }
+            );
+          }
+          return;
+        }
+
+        runInCurrentConversationScope(() => {
+          setMessages(previousMessages =>
+            previousMessages.map(previousMessage =>
+              previousMessage.id === realMessage.id
+                ? {
+                    ...previousMessage,
+                    ...data.message,
+                    stableKey: previousMessage.stableKey,
+                  }
+                : previousMessage
+            )
+          );
+        });
+
+        if (!data.previewPersisted && isCurrentConversationScopeActive()) {
+          toast.error('Pesan terkirim, tetapi preview PDF tidak tersedia', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
+      } catch (error) {
+        console.error('Error syncing persisted PDF preview:', error);
+        if (isCurrentConversationScopeActive()) {
+          toast.error('Pesan terkirim, tetapi preview PDF gagal diproses', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
+      }
+    },
+    [
+      isCurrentConversationScopeActive,
+      runInCurrentConversationScope,
+      setMessages,
+    ]
+  );
 
   const cleanupUncommittedStorageFiles = useCallback(
     async (
@@ -333,15 +419,16 @@ export const useChatComposerSend = ({
             stableKey
           ),
         onAfterCommit: shouldPersistPdfPreview
-          ? realMessage => {
-              queuePersistedPdfPreview({
-                message: {
+          ? async realMessage => {
+              await syncPersistedPdfPreview({
+                realMessage: {
                   ...realMessage,
                   sender_id: user.id,
                   file_name: pendingFile.fileName,
                   file_mime_type: pendingFile.mimeType,
                   file_storage_path: realMessage.file_storage_path || filePath,
                 },
+                pendingFile,
               });
             }
           : undefined,
@@ -351,6 +438,7 @@ export const useChatComposerSend = ({
       currentChannelId,
       isPdfPendingFile,
       sendAttachmentMessage,
+      syncPersistedPdfPreview,
       targetUser,
       user,
     ]
