@@ -87,4 +87,41 @@ describe('messageItemUtils', () => {
       message: 'blob:resolved-image',
     });
   });
+
+  it('opens image messages using the resolved preview url when available', async () => {
+    const openImageInPortal = vi.fn().mockResolvedValue(undefined);
+    const imageMessage = buildMessage({
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
+    });
+    const actions = buildMessageMenuActions({
+      message: imageMessage,
+      resolvedMessageUrl: 'blob:resolved-image',
+      isCurrentUser: true,
+      isImageMessage: true,
+      isFileMessage: false,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: 'Lampiran.png',
+      openImageInPortal,
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage: vi.fn(),
+      handleCopyMessage: vi.fn().mockResolvedValue(undefined),
+      handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    await actions.find(action => action.label === 'Buka')?.onClick();
+
+    expect(openImageInPortal).toHaveBeenCalledWith(
+      {
+        ...imageMessage,
+        message: 'blob:resolved-image',
+      },
+      'Lampiran.png'
+    );
+  });
 });

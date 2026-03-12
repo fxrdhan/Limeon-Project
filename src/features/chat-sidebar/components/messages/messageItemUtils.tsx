@@ -139,7 +139,15 @@ export const buildMessageMenuActions = ({
       icon: <TbEye className="h-4 w-4" />,
       onClick: () => {
         if (isImageMessage || isImageFileMessage) {
-          void openImageInPortal(message, fileName || 'Gambar');
+          void openImageInPortal(
+            resolvedMessageUrl
+              ? {
+                  ...message,
+                  message: resolvedMessageUrl,
+                }
+              : message,
+            fileName || 'Gambar'
+          );
           return;
         }
         if (isFileMessage && fileKind === 'document' && isPdfFileMessage) {

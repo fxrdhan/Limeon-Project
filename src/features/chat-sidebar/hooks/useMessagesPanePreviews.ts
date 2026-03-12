@@ -138,6 +138,17 @@ export const useMessagesPanePreviews = () => {
               };
             }
 
+            const resolvedAssetUrl = await resolveChatAssetUrl(
+              message.message,
+              message.file_storage_path
+            );
+            if (resolvedAssetUrl) {
+              return {
+                previewUrl: resolvedAssetUrl,
+                revokeOnClose: false,
+              };
+            }
+
             if (!forcePdfMime) {
               try {
                 const fileBlob = await fetchChatFileBlobWithFallback(
