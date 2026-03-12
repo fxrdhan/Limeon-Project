@@ -1,29 +1,14 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, useRef } from 'react';
-import toast from 'react-hot-toast';
+import { type ChatMessage } from '../data/chatSidebarGateway';
+import { useChatAttachmentSend } from './useChatAttachmentSend';
+import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
+import { sendTextChatMessage } from '../utils/text-message-send';
 import type {
-  PendingComposerFile,
   ChatSidebarPanelTargetUser,
   PendingSendRegistration,
   PendingComposerAttachment,
 } from '../types';
-import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
-import {
-  chatSidebarMessagesGateway,
-  chatSidebarPreviewGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
-import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
-import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
-import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
-import { resolveFileExtension } from '../utils/message-file';
-import { sendAttachmentThread } from '../utils/attachment-thread-flow';
-import {
-  createPdfPreviewUploadArtifact,
-  readBlobAsDataUrl,
-} from '../utils/pdf-message-preview';
-import { sendTextChatMessage } from '../utils/text-message-send';
 
 interface ChatComposerSendMutationScope {
   conversationScopeKey: string | null;
@@ -78,375 +63,35 @@ export const useChatComposerSend = ({
   const isSendingRef = useRef(false);
   const {
     isCurrentConversationScopeActive,
-    isConversationScopeActive,
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
-    conversationScopeKey,
   } = mutationScope;
-  const {
-    deleteUploadedStorageFilesOrThrow,
-    rollbackPersistedAttachmentThread,
-    releasePendingPreviewUrl,
-  } = useChatAttachmentCleanup({
+  const { isPdfPendingFile, syncPersistedPdfPreview } = useChatPdfPreviewSync({
     setMessages,
-    pendingImagePreviewUrlsRef,
-    isConversationScopeActive,
+    isCurrentConversationScopeActive,
+    runInCurrentConversationScope,
   });
-
-  const isPdfPendingFile = useCallback((pendingFile: PendingComposerFile) => {
-    if (pendingFile.fileKind !== 'document') {
-      return false;
-    }
-
-    const fileExtension = resolveFileExtension(
-      pendingFile.fileName,
-      pendingFile.file.name,
-      pendingFile.mimeType
-    );
-
-    return (
-      fileExtension === 'pdf' ||
-      pendingFile.mimeType.toLowerCase().includes('pdf')
-    );
-  }, []);
-
-  const syncPersistedPdfPreview = useCallback(
-    async ({
-      realMessage,
-      pendingFile,
-    }: {
-      realMessage: ChatMessage;
-      pendingFile: PendingComposerFile;
-    }) => {
-      try {
-        const renderedPreview = await createPdfPreviewUploadArtifact(
-          pendingFile.file,
-          realMessage.id
-        );
-
-        if (!renderedPreview) {
-          if (isCurrentConversationScopeActive()) {
-            toast.error('Pesan terkirim, tetapi preview PDF gagal disiapkan', {
-              toasterId: CHAT_SIDEBAR_TOASTER_ID,
-            });
-          }
-          return;
-        }
-
-        const previewDataUrl = await readBlobAsDataUrl(
-          renderedPreview.previewFile
-        );
-        const previewPngBase64 = previewDataUrl.split(',')[1] ?? '';
-        const { data, error } =
-          await chatSidebarPreviewGateway.persistPdfPreview({
-            message_id: realMessage.id,
-            preview_png_base64: previewPngBase64,
-            page_count: renderedPreview.pageCount,
-          });
-
-        if (error || !data?.message) {
-          console.error('Failed to persist chat PDF preview:', error);
-          if (isCurrentConversationScopeActive()) {
-            toast.error(
-              'Pesan terkirim, tetapi metadata preview PDF gagal disimpan',
-              {
-                toasterId: CHAT_SIDEBAR_TOASTER_ID,
-              }
-            );
-          }
-          return;
-        }
-
-        runInCurrentConversationScope(() => {
-          setMessages(previousMessages =>
-            previousMessages.map(previousMessage =>
-              previousMessage.id === realMessage.id
-                ? {
-                    ...previousMessage,
-                    ...data.message,
-                    stableKey: previousMessage.stableKey,
-                  }
-                : previousMessage
-            )
-          );
-        });
-
-        if (!data.previewPersisted && isCurrentConversationScopeActive()) {
-          toast.error('Pesan terkirim, tetapi preview PDF tidak tersedia', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-        }
-      } catch (error) {
-        console.error('Error syncing persisted PDF preview:', error);
-        if (isCurrentConversationScopeActive()) {
-          toast.error('Pesan terkirim, tetapi preview PDF gagal diproses', {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-        }
-      }
-    },
-    [
-      isCurrentConversationScopeActive,
-      runInCurrentConversationScope,
-      setMessages,
-    ]
-  );
-
-  const cleanupUncommittedStorageFiles = useCallback(
-    async (
-      storagePaths: Array<string | null | undefined>,
-      options?: {
-        toastMessage?: string;
-        shouldToast?: boolean;
-      }
-    ) => {
-      try {
-        await deleteUploadedStorageFilesOrThrow(storagePaths);
-        return true;
-      } catch (cleanupError) {
-        console.error('Error cleaning up uncommitted chat attachment:', {
-          cleanupError,
-          storagePaths,
-        });
-
-        if (
-          options?.shouldToast &&
-          options.toastMessage &&
-          isCurrentConversationScopeActive()
-        ) {
-          toast.error(options.toastMessage, {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          });
-        }
-
-        return false;
-      }
-    },
-    [deleteUploadedStorageFilesOrThrow, isCurrentConversationScopeActive]
-  );
-
-  const sendAttachmentMessage = useCallback(
-    async (options: Parameters<typeof sendAttachmentThread>[1]) =>
-      sendAttachmentThread(
-        {
-          user,
-          targetUser,
-          currentChannelId,
-          editingMessageId,
-          setMessages,
-          scheduleScrollMessagesToBottom,
-          triggerSendSuccessGlow,
-          pendingImagePreviewUrlsRef,
-          registerPendingSend,
-          conversationScopeKey,
-          isCurrentConversationScopeActive,
-          reconcileCurrentConversationMessages,
-          runInCurrentConversationScope,
-          cleanupUncommittedStorageFiles,
-          rollbackPersistedAttachmentThread,
-          releasePendingPreviewUrl,
-        },
-        options
-      ),
-    [
-      cleanupUncommittedStorageFiles,
-      conversationScopeKey,
-      currentChannelId,
-      editingMessageId,
-      isCurrentConversationScopeActive,
-      pendingImagePreviewUrlsRef,
-      reconcileCurrentConversationMessages,
-      registerPendingSend,
-      releasePendingPreviewUrl,
-      rollbackPersistedAttachmentThread,
-      runInCurrentConversationScope,
-      scheduleScrollMessagesToBottom,
-      setMessages,
-      targetUser,
-      triggerSendSuccessGlow,
-      user,
-    ]
-  );
-
-  const sendImageMessage = useCallback(
-    async (file: File, captionText?: string): Promise<string | null> => {
-      if (!file.type.startsWith('image/')) {
-        toast.error('File harus berupa gambar', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-        return null;
-      }
-
-      if (!user || !targetUser || !currentChannelId) {
-        return null;
-      }
-
-      const imagePath = buildChatImagePath(currentChannelId, user.id, file);
-
-      return sendAttachmentMessage({
-        tempIdPrefix: 'temp_image',
-        stableKeySuffix: 'image',
-        file,
-        captionText,
-        sendFailureToast: 'Gagal mengirim gambar',
-        captionFailureToast: 'Gagal mengirim deskripsi lampiran',
-        buildOptimisticMessage: ({
-          tempId,
-          stableKey,
-          localPreviewUrl,
-          timestamp,
-        }) => ({
-          id: tempId,
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: localPreviewUrl,
-          message_type: 'image',
-          created_at: timestamp,
-          updated_at: timestamp,
-          is_read: false,
-          reply_to_id: null,
-          sender_name: user.name || 'You',
-          receiver_name: targetUser.name || 'Unknown',
-          stableKey,
-        }),
-        uploadAsset: async () =>
-          chatSidebarAssetsGateway.uploadImage(file, imagePath),
-        createPersistedMessage: async () =>
-          chatSidebarMessagesGateway.createMessage({
-            receiver_id: targetUser.id,
-            message: imagePath,
-            message_type: 'image',
-            file_storage_path: imagePath,
-          }),
-        mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
-          mapPersistedMessageForDisplay(
-            {
-              ...persistedMessage,
-              file_storage_path: imagePath,
-            },
-            user,
-            targetUser,
-            stableKey
-          ),
-      });
-    },
-    [currentChannelId, sendAttachmentMessage, targetUser, user]
-  );
-
-  const sendFileMessage = useCallback(
-    async (
-      pendingFile: PendingComposerFile,
-      captionText?: string
-    ): Promise<string | null> => {
-      if (!user || !targetUser || !currentChannelId) {
-        return null;
-      }
-
-      const filePath = buildChatFilePath(
-        currentChannelId,
-        user.id,
-        pendingFile.file,
-        pendingFile.fileKind
-      );
-      const sendFailureToast =
-        pendingFile.fileKind === 'audio'
-          ? 'Gagal mengirim audio'
-          : 'Gagal mengirim dokumen';
-      const shouldPersistPdfPreview = isPdfPendingFile(pendingFile);
-
-      return sendAttachmentMessage({
-        tempIdPrefix: 'temp_file',
-        stableKeySuffix: 'file',
-        file: pendingFile.file,
-        captionText,
-        sendFailureToast,
-        captionFailureToast: 'Gagal mengirim deskripsi lampiran',
-        buildOptimisticMessage: ({
-          tempId,
-          stableKey,
-          localPreviewUrl,
-          timestamp,
-        }) => ({
-          id: tempId,
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          channel_id: currentChannelId,
-          message: localPreviewUrl,
-          message_type: 'file',
-          file_name: pendingFile.fileName,
-          file_kind: pendingFile.fileKind,
-          file_mime_type: pendingFile.mimeType,
-          file_size: pendingFile.file.size,
-          file_storage_path: filePath,
-          created_at: timestamp,
-          updated_at: timestamp,
-          is_read: false,
-          reply_to_id: null,
-          sender_name: user.name || 'You',
-          receiver_name: targetUser.name || 'Unknown',
-          stableKey,
-        }),
-        uploadAsset: async () =>
-          chatSidebarAssetsGateway.uploadAttachment(
-            pendingFile.file,
-            filePath,
-            pendingFile.mimeType || undefined
-          ),
-        createPersistedMessage: async () =>
-          chatSidebarMessagesGateway.createMessage({
-            receiver_id: targetUser.id,
-            message: filePath,
-            message_type: 'file',
-            file_name: pendingFile.fileName,
-            file_kind: pendingFile.fileKind,
-            file_mime_type: pendingFile.mimeType,
-            file_size: pendingFile.file.size,
-            file_storage_path: filePath,
-          }),
-        mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
-          mapPersistedMessageForDisplay(
-            {
-              ...persistedMessage,
-              file_name: pendingFile.fileName,
-              file_kind: pendingFile.fileKind,
-              file_mime_type: pendingFile.mimeType,
-              file_size: pendingFile.file.size,
-              file_storage_path: filePath,
-            },
-            user,
-            targetUser,
-            stableKey
-          ),
-        onAfterCommit: shouldPersistPdfPreview
-          ? async realMessage => {
-              await syncPersistedPdfPreview({
-                realMessage: {
-                  ...realMessage,
-                  sender_id: user.id,
-                  file_name: pendingFile.fileName,
-                  file_mime_type: pendingFile.mimeType,
-                  file_storage_path: realMessage.file_storage_path || filePath,
-                },
-                pendingFile,
-              });
-            }
-          : undefined,
-      });
-    },
-    [
-      currentChannelId,
-      isPdfPendingFile,
-      sendAttachmentMessage,
-      syncPersistedPdfPreview,
-      targetUser,
-      user,
-    ]
-  );
+  const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
+    user,
+    targetUser,
+    currentChannelId,
+    editingMessageId,
+    setMessages,
+    scheduleScrollMessagesToBottom,
+    triggerSendSuccessGlow,
+    pendingImagePreviewUrlsRef,
+    registerPendingSend,
+    mutationScope,
+    isPdfPendingFile,
+    syncPersistedPdfPreview,
+  });
 
   const sendTextMessage = useCallback(
     async (messageText: string, replyToId?: string | null) => {
-      if (!user || !targetUser || !currentChannelId) return false;
+      if (!user || !targetUser || !currentChannelId) {
+        return false;
+      }
+
       return sendTextChatMessage({
         user,
         targetUser,
@@ -467,8 +112,8 @@ export const useChatComposerSend = ({
       currentChannelId,
       isCurrentConversationScopeActive,
       reconcileCurrentConversationMessages,
-      runInCurrentConversationScope,
       registerPendingSend,
+      runInCurrentConversationScope,
       scheduleScrollMessagesToBottom,
       setMessage,
       setMessages,
@@ -490,16 +135,20 @@ export const useChatComposerSend = ({
     const attachmentsToSend = [...pendingComposerAttachments];
     const messageText = message.trim();
 
-    if (!hasPendingAttachments && !messageText) return;
+    if (!hasPendingAttachments && !messageText) {
+      return;
+    }
 
     isSendingRef.current = true;
 
     try {
       const shouldAttachCaption =
         hasPendingAttachments && messageText.length > 0;
+
       if (shouldAttachCaption) {
         setMessage('');
       }
+
       if (hasPendingAttachments) {
         clearPendingComposerAttachments();
       }
@@ -537,9 +186,11 @@ export const useChatComposerSend = ({
               attachmentsToSend.slice(attachmentIndex)
             );
           }
+
           if (shouldAttachCaption && isCurrentConversationScopeActive()) {
             setMessage(messageText);
           }
+
           return;
         }
       }
@@ -552,16 +203,16 @@ export const useChatComposerSend = ({
     }
   }, [
     clearPendingComposerAttachments,
+    currentChannelId,
     editingMessageId,
+    isCurrentConversationScopeActive,
     message,
     pendingComposerAttachments,
     restorePendingComposerAttachments,
     sendFileMessage,
     sendImageMessage,
     sendTextMessage,
-    currentChannelId,
     setMessage,
-    isCurrentConversationScopeActive,
     targetUser,
     user,
   ]);

@@ -4,16 +4,13 @@ import {
   CHAT_CONVERSATION_CACHE_MAX_MESSAGES,
 } from '../constants';
 import {
-  chatRuntimeState,
+  conversationCacheStore,
   type ConversationCacheEntry,
 } from './chatRuntimeState';
 
 export const getFreshConversationCacheEntry = (
   channelId: string,
-  cache: Map<
-    string,
-    ConversationCacheEntry
-  > = chatRuntimeState.conversationCache
+  cache: Map<string, ConversationCacheEntry> = conversationCacheStore
 ) => {
   const cachedEntry = cache.get(channelId);
   if (!cachedEntry) return null;
@@ -30,10 +27,7 @@ export const setConversationCacheEntry = (
   channelId: string,
   messages: ConversationCacheEntry['messages'],
   hasOlderMessages: boolean,
-  cache: Map<
-    string,
-    ConversationCacheEntry
-  > = chatRuntimeState.conversationCache
+  cache: Map<string, ConversationCacheEntry> = conversationCacheStore
 ) => {
   const boundedMessages =
     messages.length > CHAT_CONVERSATION_CACHE_MAX_MESSAGES
@@ -57,10 +51,7 @@ export const setConversationCacheEntry = (
 };
 
 export const resetConversationCache = (
-  cache: Map<
-    string,
-    ConversationCacheEntry
-  > = chatRuntimeState.conversationCache
+  cache: Map<string, ConversationCacheEntry> = conversationCacheStore
 ) => {
   cache.clear();
 };

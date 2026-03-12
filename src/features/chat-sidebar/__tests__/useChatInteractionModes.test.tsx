@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
+import { getAttachmentCaptionData } from '../utils/message-derivations';
 
 const { mockSearchConversationMessages, mockFetchConversationMessageContext } =
   vi.hoisted(() => ({
@@ -101,6 +102,7 @@ describe('useChatInteractionModes', () => {
         isOpen: true,
         currentChannelId: 'channel-1',
         messages,
+        captionData: getAttachmentCaptionData(messages),
         mergeSearchContextMessages: vi.fn(),
         user: { id: 'user-a', name: 'Admin' },
         targetUser: {
@@ -147,26 +149,28 @@ describe('useChatInteractionModes', () => {
 
   it('copies selected visible messages and resets search when channel changes', async () => {
     const closeMessageMenu = vi.fn();
+    const selectionMessages = [
+      buildMessage({
+        id: 'image-1',
+        message: 'https://example.com/image.png',
+        message_type: 'image',
+        sender_name: 'Admin',
+      }),
+      buildMessage({
+        id: 'caption-1',
+        message: 'Rak depan',
+        reply_to_id: 'image-1',
+        message_relation_kind: 'attachment_caption',
+        sender_name: 'Admin',
+      }),
+    ];
     const { result, rerender } = renderHook(
       ({ channelId }: { channelId: string }) =>
         useChatInteractionModes({
           isOpen: true,
           currentChannelId: channelId,
-          messages: [
-            buildMessage({
-              id: 'image-1',
-              message: 'https://example.com/image.png',
-              message_type: 'image',
-              sender_name: 'Admin',
-            }),
-            buildMessage({
-              id: 'caption-1',
-              message: 'Rak depan',
-              reply_to_id: 'image-1',
-              message_relation_kind: 'attachment_caption',
-              sender_name: 'Admin',
-            }),
-          ],
+          messages: selectionMessages,
+          captionData: getAttachmentCaptionData(selectionMessages),
           mergeSearchContextMessages: vi.fn(),
           user: { id: 'user-a', name: 'Admin' },
           targetUser: {

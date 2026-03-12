@@ -6,7 +6,12 @@ import {
   resolveChatMessageStoragePaths,
   resolveFileExtension,
 } from '../../../../shared/chatStoragePaths';
-import { chatRuntimeState } from './chatRuntimeState';
+import {
+  getSignedChatAssetUrlCacheEntry,
+  pruneExpiredSignedChatAssetUrls,
+  resetSignedChatAssetUrlCache as resetSignedChatAssetUrlCacheStore,
+  setSignedChatAssetUrlCacheEntry,
+} from './signed-chat-asset-url-cache';
 
 export {
   buildPdfPreviewStoragePath,
@@ -53,44 +58,6 @@ export const isDirectChatAssetUrl = (url: string) =>
   /^(https?:\/\/|blob:|data:|\/)/i.test(url);
 
 export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
-export const SIGNED_CHAT_ASSET_URL_CACHE_MAX_ENTRIES = 128;
-const signedChatAssetUrlCache = chatRuntimeState.signedChatAssetUrls;
-
-const pruneExpiredSignedChatAssetUrls = (now = Date.now()) => {
-  for (const [storagePath, cachedEntry] of signedChatAssetUrlCache) {
-    if (cachedEntry.expiresAt > now) {
-      continue;
-    }
-
-    signedChatAssetUrlCache.delete(storagePath);
-  }
-};
-
-const setSignedChatAssetUrlCacheEntry = (
-  storagePath: string,
-  signedUrl: string,
-  expiresAt: number
-) => {
-  if (signedChatAssetUrlCache.has(storagePath)) {
-    signedChatAssetUrlCache.delete(storagePath);
-  }
-
-  signedChatAssetUrlCache.set(storagePath, {
-    signedUrl,
-    expiresAt,
-  });
-
-  while (
-    signedChatAssetUrlCache.size > SIGNED_CHAT_ASSET_URL_CACHE_MAX_ENTRIES
-  ) {
-    const oldestStoragePath = signedChatAssetUrlCache.keys().next().value;
-    if (!oldestStoragePath) {
-      break;
-    }
-
-    signedChatAssetUrlCache.delete(oldestStoragePath);
-  }
-};
 
 export const fetchChatFileBlobWithFallback = async (
   url: string,
@@ -178,8 +145,8 @@ export const resolveChatAssetUrlWithExpiry = async (
   }
 
   pruneExpiredSignedChatAssetUrls();
-  const cachedSignedUrl = signedChatAssetUrlCache.get(storagePath);
-  if (cachedSignedUrl && cachedSignedUrl.expiresAt > Date.now()) {
+  const cachedSignedUrl = getSignedChatAssetUrlCacheEntry(storagePath);
+  if (cachedSignedUrl) {
     return {
       url: cachedSignedUrl.signedUrl,
       expiresAt: cachedSignedUrl.expiresAt,
@@ -266,5 +233,5 @@ export const isImageFileExtensionOrMime = (
   mimeType?.toLowerCase().startsWith('image/') === true;
 
 export const resetSignedChatAssetUrlCache = () => {
-  signedChatAssetUrlCache.clear();
+  resetSignedChatAssetUrlCacheStore();
 };

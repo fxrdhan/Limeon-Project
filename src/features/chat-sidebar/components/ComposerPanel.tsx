@@ -1,14 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
-import {
-  type ChangeEvent,
-  type ClipboardEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent,
-  type RefObject,
-} from 'react';
 import { createPortal } from 'react-dom';
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
-import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
   TbArrowUp,
@@ -30,115 +22,13 @@ import {
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
-import type { PendingComposerAttachment } from '../types';
+import type { ComposerPanelModel } from '../models';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
 import ComposerEditBanner from './composer/ComposerEditBanner';
 
-export interface ComposerPanelModel {
-  message: string;
-  editingMessagePreview: string | null;
-  messageInputHeight: number;
-  isMessageInputMultiline: boolean;
-  isSendSuccessGlowVisible: boolean;
-  isAttachModalOpen: boolean;
-  pendingComposerAttachments: PendingComposerAttachment[];
-  previewComposerImageAttachment: PendingComposerAttachment | undefined;
-  isComposerImageExpanded: boolean;
-  isComposerImageExpandedVisible: boolean;
-  messageInputRef: RefObject<HTMLTextAreaElement | null>;
-  composerContainerRef: RefObject<HTMLDivElement | null>;
-  attachButtonRef: RefObject<HTMLButtonElement | null>;
-  attachModalRef: RefObject<HTMLDivElement | null>;
-  imageInputRef: RefObject<HTMLInputElement | null>;
-  documentInputRef: RefObject<HTMLInputElement | null>;
-  audioInputRef: RefObject<HTMLInputElement | null>;
-  openImageActionsAttachmentId: string | null;
-  imageActionsMenuPosition: {
-    top: number;
-    left: number;
-  } | null;
-  composerDocumentPreviewUrl: string | null;
-  composerDocumentPreviewName: string;
-  isComposerDocumentPreviewVisible: boolean;
-  imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
-  imageActionsMenuRef: RefObject<HTMLDivElement | null>;
-  imageActions: PopupMenuAction[];
-  onMessageChange: (nextMessage: string) => void;
-  onKeyDown: (e: ReactKeyboardEvent) => void;
-  onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
-  onSendMessage: () => void;
-  onAttachButtonClick: () => void;
-  onAttachImageClick: (replaceAttachmentId?: string) => void;
-  onAttachDocumentClick: (replaceAttachmentId?: string) => void;
-  onAttachAudioClick: () => void;
-  onImageFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onDocumentFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onAudioFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onCancelEditMessage: () => void;
-  onFocusEditingTargetMessage: () => void;
-  onOpenComposerImagePreview: (attachmentId: string) => void;
-  onCloseComposerImagePreview: () => void;
-  onRemovePendingComposerAttachment: (attachmentId: string) => void;
-  onQueueComposerImage: (file: File, replaceAttachmentId?: string) => boolean;
-  onCloseComposerDocumentPreview: () => void;
-  onOpenDocumentAttachmentInPortal: (
-    attachment: PendingComposerAttachment
-  ) => void;
-  onToggleImageActionsMenu: (
-    event: MouseEvent<HTMLButtonElement>,
-    attachmentId: string
-  ) => void;
-}
-
 const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
-  const {
-    message,
-    editingMessagePreview,
-    messageInputHeight,
-    isMessageInputMultiline,
-    isSendSuccessGlowVisible,
-    isAttachModalOpen,
-    pendingComposerAttachments,
-    previewComposerImageAttachment,
-    isComposerImageExpanded,
-    isComposerImageExpandedVisible,
-    messageInputRef,
-    composerContainerRef,
-    attachButtonRef,
-    attachModalRef,
-    imageInputRef,
-    documentInputRef,
-    audioInputRef,
-    openImageActionsAttachmentId,
-    imageActionsMenuPosition,
-    composerDocumentPreviewUrl,
-    composerDocumentPreviewName,
-    isComposerDocumentPreviewVisible,
-    imageActionsButtonRef,
-    imageActionsMenuRef,
-    imageActions,
-    onMessageChange,
-    onKeyDown,
-    onPaste,
-    onSendMessage,
-    onAttachButtonClick,
-    onAttachImageClick,
-    onAttachDocumentClick,
-    onAttachAudioClick,
-    onImageFileChange,
-    onDocumentFileChange,
-    onAudioFileChange,
-    onCancelEditMessage,
-    onFocusEditingTargetMessage,
-    onOpenComposerImagePreview,
-    onCloseComposerImagePreview,
-    onRemovePendingComposerAttachment,
-    onQueueComposerImage,
-    onCloseComposerDocumentPreview,
-    onOpenDocumentAttachmentInPortal,
-    onToggleImageActionsMenu,
-  } = model;
+  const { state, attachments, documentPreview, refs, actions } = model;
 
   const contextualPanelTransition = {
     duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
@@ -158,14 +48,14 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
       />
 
       <div
-        ref={composerContainerRef}
+        ref={refs.composerContainerRef}
         className="absolute bottom-2 left-0 right-0 px-3 pb-4"
       >
         <motion.div
           layout
           initial={false}
           animate={
-            isSendSuccessGlowVisible
+            state.isSendSuccessGlowVisible
               ? {
                   borderColor: [
                     COMPOSER_BASE_BORDER_COLOR,
@@ -192,7 +82,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 }
           }
           transition={
-            isSendSuccessGlowVisible
+            state.isSendSuccessGlowVisible
               ? {
                   layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
                   duration: SEND_SUCCESS_GLOW_DURATION / 1000,
@@ -213,52 +103,60 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
             className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
           >
             <AnimatePresence initial={false} mode="popLayout">
-              {editingMessagePreview ? (
+              {state.editingMessagePreview ? (
                 <ComposerEditBanner
-                  editingMessagePreview={editingMessagePreview}
-                  onCancelEditMessage={onCancelEditMessage}
-                  onFocusEditingTargetMessage={onFocusEditingTargetMessage}
+                  editingMessagePreview={state.editingMessagePreview}
+                  onCancelEditMessage={actions.onCancelEditMessage}
+                  onFocusEditingTargetMessage={
+                    actions.onFocusEditingTargetMessage
+                  }
                   transition={contextualPanelTransition}
                 />
               ) : null}
             </AnimatePresence>
 
             <AnimatePresence initial={false} mode="popLayout">
-              {pendingComposerAttachments.length > 0 ? (
+              {attachments.pendingComposerAttachments.length > 0 ? (
                 <ComposerAttachmentPreviewList
-                  attachments={pendingComposerAttachments}
-                  openImageActionsAttachmentId={openImageActionsAttachmentId}
-                  imageActionsButtonRef={imageActionsButtonRef}
+                  attachments={attachments.pendingComposerAttachments}
+                  openImageActionsAttachmentId={
+                    attachments.openImageActionsAttachmentId
+                  }
+                  imageActionsButtonRef={refs.imageActionsButtonRef}
                   transition={contextualPanelTransition}
-                  onOpenComposerImagePreview={onOpenComposerImagePreview}
-                  onOpenDocumentAttachment={onOpenDocumentAttachmentInPortal}
-                  onToggleImageActionsMenu={onToggleImageActionsMenu}
+                  onOpenComposerImagePreview={
+                    actions.onOpenComposerImagePreview
+                  }
+                  onOpenDocumentAttachment={
+                    actions.onOpenDocumentAttachmentInPortal
+                  }
+                  onToggleImageActionsMenu={actions.onToggleImageActionsMenu}
                   onRemovePendingComposerAttachment={
-                    onRemovePendingComposerAttachment
+                    actions.onRemovePendingComposerAttachment
                   }
                 />
               ) : null}
             </AnimatePresence>
 
             {typeof document !== 'undefined' &&
-            openImageActionsAttachmentId &&
-            imageActionsMenuPosition
+            attachments.openImageActionsAttachmentId &&
+            attachments.imageActionsMenuPosition
               ? createPortal(
                   <PopupMenuPopover
                     isOpen
                     className="fixed z-[120] origin-top-right"
                     style={{
-                      top: imageActionsMenuPosition.top,
-                      left: imageActionsMenuPosition.left,
+                      top: attachments.imageActionsMenuPosition.top,
+                      left: attachments.imageActionsMenuPosition.left,
                     }}
                   >
                     <div
-                      ref={imageActionsMenuRef}
+                      ref={refs.imageActionsMenuRef}
                       onClick={event => event.stopPropagation()}
                       role="presentation"
                     >
                       <PopupMenuContent
-                        actions={imageActions}
+                        actions={attachments.imageActions}
                         minWidthClassName="min-w-[132px]"
                       />
                     </div>
@@ -271,7 +169,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
               layout
               transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
               className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
-                isMessageInputMultiline
+                state.isMessageInputMultiline
                   ? 'grid-rows-[auto_auto] gap-y-1 items-end'
                   : 'grid-rows-[auto] gap-y-0 items-center'
               }`}
@@ -279,16 +177,16 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
               <motion.textarea
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                ref={messageInputRef}
-                value={message}
-                onChange={event => onMessageChange(event.target.value)}
-                onKeyDown={onKeyDown}
-                onPaste={onPaste}
+                ref={refs.messageInputRef}
+                value={state.message}
+                onChange={event => actions.onMessageChange(event.target.value)}
+                onKeyDown={actions.onKeyDown}
+                onPaste={actions.onPaste}
                 placeholder="Type a message..."
                 rows={1}
-                style={{ height: `${messageInputHeight}px` }}
+                style={{ height: `${state.messageInputHeight}px` }}
                 className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isMessageInputMultiline
+                  state.isMessageInputMultiline
                     ? 'col-span-3 row-start-1 self-start'
                     : 'col-start-2 row-start-1 self-center'
                 }`}
@@ -297,19 +195,19 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 type="button"
-                ref={attachButtonRef}
-                onClick={onAttachButtonClick}
+                ref={refs.attachButtonRef}
+                onClick={actions.onAttachButtonClick}
                 aria-label="Attach file"
-                aria-expanded={isAttachModalOpen}
+                aria-expanded={attachments.isAttachModalOpen}
                 aria-haspopup="dialog"
                 className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 cursor-pointer ${
-                  isMessageInputMultiline
+                  state.isMessageInputMultiline
                     ? 'col-start-1 row-start-2'
                     : 'col-start-1 row-start-1'
                 }`}
               >
                 <motion.span
-                  animate={{ rotate: isAttachModalOpen ? 45 : 0 }}
+                  animate={{ rotate: attachments.isAttachModalOpen ? 45 : 0 }}
                   transition={{ duration: 0.16, ease: 'easeOut' }}
                   className="flex items-center justify-center"
                 >
@@ -320,10 +218,10 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 type="button"
-                onClick={onSendMessage}
+                onClick={actions.onSendMessage}
                 aria-label="Send message"
                 className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
-                  isMessageInputMultiline
+                  state.isMessageInputMultiline
                     ? 'col-start-3 row-start-2'
                     : 'col-start-3 row-start-1'
                 }`}
@@ -331,35 +229,35 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 <TbArrowUp size={20} className="text-white" />
               </motion.button>
               <input
-                ref={imageInputRef}
+                ref={refs.imageInputRef}
                 type="file"
                 accept="image/*"
                 multiple
                 className="hidden"
-                onChange={onImageFileChange}
+                onChange={actions.onImageFileChange}
               />
               <input
-                ref={documentInputRef}
+                ref={refs.documentInputRef}
                 type="file"
                 accept="*/*"
                 multiple
                 className="hidden"
-                onChange={onDocumentFileChange}
+                onChange={actions.onDocumentFileChange}
               />
               <input
-                ref={audioInputRef}
+                ref={refs.audioInputRef}
                 type="file"
                 accept="audio/*"
                 multiple
                 className="hidden"
-                onChange={onAudioFileChange}
+                onChange={actions.onAudioFileChange}
               />
             </motion.div>
 
             <AnimatePresence>
-              {isAttachModalOpen ? (
+              {attachments.isAttachModalOpen ? (
                 <motion.div
-                  ref={attachModalRef}
+                  ref={refs.attachModalRef}
                   role="dialog"
                   aria-label="Attach file"
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
@@ -370,7 +268,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 >
                   <button
                     type="button"
-                    onClick={() => onAttachImageClick()}
+                    onClick={() => actions.onAttachImageClick()}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbPhoto className="h-4 w-4 text-slate-500" />
@@ -378,7 +276,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => onAttachDocumentClick()}
+                    onClick={() => actions.onAttachDocumentClick()}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbFileDescription className="h-4 w-4 text-slate-500" />
@@ -386,7 +284,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   </button>
                   <button
                     type="button"
-                    onClick={onAttachAudioClick}
+                    onClick={actions.onAttachAudioClick}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbMusic className="h-4 w-4 text-slate-500" />
@@ -401,10 +299,11 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
 
       <ImageExpandPreview
         isOpen={Boolean(
-          previewComposerImageAttachment && isComposerImageExpanded
+          attachments.previewComposerImageAttachment &&
+          attachments.isComposerImageExpanded
         )}
-        isVisible={isComposerImageExpandedVisible}
-        onClose={onCloseComposerImagePreview}
+        isVisible={attachments.isComposerImageExpandedVisible}
+        onClose={actions.onCloseComposerImagePreview}
         backdropClassName="z-[70] px-4 py-6"
         contentClassName="max-h-[92vh] max-w-[92vw] p-0"
         backdropRole="button"
@@ -413,32 +312,35 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
         onBackdropKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            onCloseComposerImagePreview();
+            actions.onCloseComposerImagePreview();
           }
         }}
       >
-        {previewComposerImageAttachment ? (
+        {attachments.previewComposerImageAttachment ? (
           <ImageUploader
             id="chat-composer-image-preview"
             shape="rounded"
             hasImage={true}
-            onPopupClose={onCloseComposerImagePreview}
+            onPopupClose={actions.onCloseComposerImagePreview}
             className="max-h-[92vh] max-w-[92vw]"
             popupTrigger="click"
             onImageUpload={async file => {
-              onCloseComposerImagePreview();
-              onQueueComposerImage(file, previewComposerImageAttachment.id);
+              actions.onCloseComposerImagePreview();
+              actions.onQueueComposerImage(
+                file,
+                attachments.previewComposerImageAttachment!.id
+              );
             }}
             onImageDelete={async () => {
-              onRemovePendingComposerAttachment(
-                previewComposerImageAttachment.id
+              actions.onRemovePendingComposerAttachment(
+                attachments.previewComposerImageAttachment!.id
               );
             }}
             validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
           >
             <img
-              src={previewComposerImageAttachment.previewUrl ?? ''}
-              alt={previewComposerImageAttachment.fileName}
+              src={attachments.previewComposerImageAttachment.previewUrl ?? ''}
+              alt={attachments.previewComposerImageAttachment.fileName}
               className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
               draggable={false}
             />
@@ -447,11 +349,11 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
       </ImageExpandPreview>
 
       <DocumentPreviewPortal
-        isOpen={Boolean(composerDocumentPreviewUrl)}
-        isVisible={isComposerDocumentPreviewVisible}
-        previewUrl={composerDocumentPreviewUrl}
-        previewName={composerDocumentPreviewName}
-        onClose={onCloseComposerDocumentPreview}
+        isOpen={Boolean(documentPreview.composerDocumentPreviewUrl)}
+        isVisible={documentPreview.isComposerDocumentPreviewVisible}
+        previewUrl={documentPreview.composerDocumentPreviewUrl}
+        previewName={documentPreview.composerDocumentPreviewName}
+        onClose={actions.onCloseComposerDocumentPreview}
         backdropClassName="z-[72] px-4 py-6"
         iframeTitle="Preview dokumen composer"
       />

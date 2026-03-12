@@ -504,17 +504,19 @@ describe('useChatSession', () => {
         })
       );
 
-      await waitFor(() => {
-        expect(result.current.isTargetOnline).toBe(true);
+      await act(async () => {
+        await Promise.resolve();
       });
+      expect(result.current.isTargetOnline).toBe(true);
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(15_100);
       });
 
-      await waitFor(() => {
-        expect(result.current.isTargetOnline).toBe(false);
+      await act(async () => {
+        await Promise.resolve();
       });
+      expect(result.current.isTargetOnline).toBe(false);
     } finally {
       vi.useRealTimers();
     }
@@ -582,9 +584,10 @@ describe('useChatSession', () => {
       channelId: 'channel-2',
     });
 
-    await waitFor(() => {
-      expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(2);
 
     await act(async () => {
       resolveFirstPresenceRequest?.({
@@ -597,9 +600,10 @@ describe('useChatSession', () => {
       });
     });
 
-    await waitFor(() => {
-      expect(result.current.targetUserPresence).toBeNull();
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(result.current.targetUserPresence).toBeNull();
   });
 
   it('keeps user-scoped realtime channels stable while switching conversations', async () => {
@@ -645,9 +649,10 @@ describe('useChatSession', () => {
       channelId: 'channel-2',
     });
 
-    await waitFor(() => {
-      expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
 
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)

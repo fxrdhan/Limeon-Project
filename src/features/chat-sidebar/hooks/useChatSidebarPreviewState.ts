@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerAttachment } from '../types';
-import { getAttachmentCaptionData } from '../utils/message-derivations';
+import type { AttachmentCaptionData } from '../utils/message-derivations';
 import { useComposerAttachmentPreview } from './useComposerAttachmentPreview';
 import { useMessageImagePreviews } from './useMessageImagePreviews';
 import { useMessagePdfPreviews } from './useMessagePdfPreviews';
@@ -16,6 +15,7 @@ interface UseChatSidebarPreviewStateProps {
   openComposerImagePreview: (attachmentId: string) => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (targetMessage: ChatMessage) => 'audio' | 'document';
+  captionData: AttachmentCaptionData;
 }
 
 export const useChatSidebarPreviewState = ({
@@ -27,6 +27,7 @@ export const useChatSidebarPreviewState = ({
   openComposerImagePreview,
   getAttachmentFileName,
   getAttachmentFileKind,
+  captionData,
 }: UseChatSidebarPreviewStateProps) => {
   const panePreviews = useMessagesPanePreviews();
   const { getImageMessageUrl } = useMessageImagePreviews({ messages });
@@ -35,10 +36,6 @@ export const useChatSidebarPreviewState = ({
     getAttachmentFileName,
     getAttachmentFileKind,
   });
-  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
-    () => getAttachmentCaptionData(messages),
-    [messages]
-  );
   const composerAttachmentPreview = useComposerAttachmentPreview({
     pendingComposerAttachments,
     onAttachImageClick: handleAttachImageClick,
@@ -52,7 +49,7 @@ export const useChatSidebarPreviewState = ({
     ...composerAttachmentPreview,
     getImageMessageUrl,
     getPdfMessagePreview,
-    captionMessagesByAttachmentId,
-    captionMessageIds,
+    captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
+    captionMessageIds: captionData.captionMessageIds,
   };
 };

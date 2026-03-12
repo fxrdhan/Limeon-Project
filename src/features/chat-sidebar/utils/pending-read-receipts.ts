@@ -1,6 +1,6 @@
-import { chatRuntimeState } from './chatRuntimeState';
+import { pendingReadReceiptsStore } from './chatRuntimeState';
 
-const pendingReadReceiptStore = chatRuntimeState.pendingReadReceipts;
+const pendingReadReceiptStore = pendingReadReceiptsStore;
 const pendingReadReceiptIdsByUser = pendingReadReceiptStore.value;
 
 const getPendingMessageIdsForUser = (userId: string) => {

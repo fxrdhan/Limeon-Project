@@ -37,12 +37,17 @@ vi.mock('../hooks/useChatSession', () => ({
     messages: [],
     setMessages: vi.fn(),
     loading: false,
+    loadError: null,
     isTargetOnline: false,
     targetUserPresence: null,
-    broadcastNewMessage: vi.fn(),
-    broadcastUpdatedMessage: vi.fn(),
-    broadcastDeletedMessage: vi.fn(),
+    targetUserPresenceError: null,
     markMessageIdsAsRead: vi.fn(),
+    hasOlderMessages: false,
+    isLoadingOlderMessages: false,
+    olderMessagesError: null,
+    loadOlderMessages: vi.fn(),
+    retryLoadMessages: vi.fn(),
+    mergeSearchContextMessages: vi.fn(),
   }),
 }));
 
@@ -243,17 +248,25 @@ describe('ChatSidebarPanel', () => {
     );
     expect(renderedChildProps.messages).toEqual(
       expect.objectContaining({
-        loading: false,
-        messages: [],
-        showScrollToBottom: false,
-        isSelectionMode: false,
+        state: expect.objectContaining({
+          loading: false,
+          messages: [],
+          showScrollToBottom: false,
+        }),
+        interaction: expect.objectContaining({
+          isSelectionMode: false,
+        }),
       })
     );
     expect(renderedChildProps.composer).toEqual(
       expect.objectContaining({
-        message: '',
-        isAttachModalOpen: false,
-        isMessageInputMultiline: false,
+        state: expect.objectContaining({
+          message: '',
+          isMessageInputMultiline: false,
+        }),
+        attachments: expect.objectContaining({
+          isAttachModalOpen: false,
+        }),
       })
     );
   });

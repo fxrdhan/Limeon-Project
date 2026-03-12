@@ -1,6 +1,6 @@
 import { PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES } from '../constants';
 import {
-  chatRuntimeState,
+  pdfMessagePreviewStore,
   type PdfMessagePreviewCacheEntry,
 } from './chatRuntimeState';
 
@@ -9,7 +9,7 @@ export type { PdfMessagePreviewCacheEntry } from './chatRuntimeState';
 const {
   cache: pdfMessagePreviewCache,
   keysByMessageId: pdfMessagePreviewCacheKeysByMessageId,
-} = chatRuntimeState.pdfMessagePreviews;
+} = pdfMessagePreviewStore;
 
 const removeCachedPreviewByKey = (cacheKey: string) => {
   pdfMessagePreviewCache.delete(cacheKey);

@@ -4,10 +4,10 @@ import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
-  getAttachmentCaptionData,
   getSelectableMessageIdSet,
   getSelectedVisibleMessages,
   serializeSelectedMessages,
+  type AttachmentCaptionData,
 } from '../utils/message-derivations';
 import { useChatMessageSearchMode } from './useChatMessageSearchMode';
 
@@ -21,6 +21,7 @@ interface UseChatInteractionModesProps {
     name: string;
   } | null;
   targetUser?: ChatSidebarPanelTargetUser;
+  captionData: AttachmentCaptionData;
   closeMessageMenu: () => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
 }
@@ -32,6 +33,7 @@ export const useChatInteractionModes = ({
   mergeSearchContextMessages,
   user,
   targetUser,
+  captionData,
   closeMessageMenu,
   getAttachmentFileName,
 }: UseChatInteractionModesProps) => {
@@ -48,10 +50,7 @@ export const useChatInteractionModes = ({
     targetUser,
   });
 
-  const { captionMessagesByAttachmentId, captionMessageIds } = useMemo(
-    () => getAttachmentCaptionData(messages),
-    [messages]
-  );
+  const { captionMessagesByAttachmentId, captionMessageIds } = captionData;
   const selectableMessageIdSet = useMemo(
     () => getSelectableMessageIdSet(messages, captionMessageIds),
     [captionMessageIds, messages]

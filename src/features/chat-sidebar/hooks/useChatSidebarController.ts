@@ -1,6 +1,8 @@
 import { useAuthStore } from '@/store/authStore';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
 import { useCallback } from 'react';
+import { useChatComposerModel } from './useChatComposerModel';
+import { useChatHeaderModel } from './useChatHeaderModel';
 import type { ChatSidebarPanelProps } from '../types';
 import {
   getAttachmentFileKind,
@@ -8,8 +10,10 @@ import {
 } from '../utils/attachment';
 import { computeDmChannelId } from '../utils/channel';
 import { useChatBulkDelete } from './useChatBulkDelete';
+import { useChatCaptionData } from './useChatCaptionData';
 import { useChatComposer } from './useChatComposer';
 import { useChatInteractionModes } from './useChatInteractionModes';
+import { useChatMessagesModel } from './useChatMessagesModel';
 import { useChatSession } from './useChatSession';
 import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
 import { useChatSidebarRefs } from './useChatSidebarRefs';
@@ -115,6 +119,8 @@ export const useChatSidebarController = ({
     handleKeyPress,
   } = composer;
 
+  const captionData = useChatCaptionData(messages);
+
   const interaction = useChatInteractionModes({
     isOpen,
     currentChannelId,
@@ -122,6 +128,7 @@ export const useChatSidebarController = ({
     mergeSearchContextMessages,
     user,
     targetUser,
+    captionData,
     closeMessageMenu: refs.closeMessageMenu,
     getAttachmentFileName,
   });
@@ -241,6 +248,7 @@ export const useChatSidebarController = ({
     openComposerImagePreview,
     getAttachmentFileName,
     getAttachmentFileKind,
+    captionData,
   });
 
   const toggleMessageMenu = useCallback(
@@ -267,7 +275,7 @@ export const useChatSidebarController = ({
     onClose();
   }, [onClose]);
 
-  const headerModel = {
+  const headerModel = useChatHeaderModel({
     targetUser,
     displayTargetPhotoUrl,
     isTargetOnline,
@@ -298,117 +306,139 @@ export const useChatSidebarController = ({
     onClose: handleClose,
     getInitials,
     getInitialsColor,
-  };
+  });
 
-  const messagesModel = {
-    loading,
-    loadError,
-    messages,
-    user,
-    normalizedSearchQuery: normalizedMessageSearchQuery,
-    messageInputHeight,
-    composerContextualOffset,
-    composerContainerHeight,
-    openMenuMessageId,
-    menuPlacement,
-    menuSideAnchor,
-    shouldAnimateMenuOpen,
-    menuTransitionSourceId,
-    menuOffsetX,
-    expandedMessageIds: refs.expandedMessageIds,
-    flashingMessageId,
-    isFlashHighlightVisible,
-    isSelectionMode,
-    selectedMessageIds,
-    searchMatchedMessageIds: isMessageSearchMode
-      ? searchMatchedMessageIdSet
-      : new Set<string>(),
-    activeSearchMessageId: isMessageSearchMode ? activeSearchMessageId : null,
-    showScrollToBottom: hasNewMessages || !isAtBottom,
-    hasOlderMessages,
-    isLoadingOlderMessages,
-    olderMessagesError,
-    messagesContainerRef: refs.messagesContainerRef,
-    messagesEndRef: refs.messagesEndRef,
-    messageBubbleRefs: refs.messageBubbleRefs,
-    initialMessageAnimationKeysRef: refs.initialMessageAnimationKeysRef,
-    initialOpenJumpAnimationKeysRef: refs.initialOpenJumpAnimationKeysRef,
-    captionMessagesByAttachmentId,
-    captionMessageIds,
-    closeMessageMenu: closeViewportMessageMenu,
-    toggleMessageMenu,
-    handleToggleExpand: refs.handleToggleExpand,
-    handleEditMessage,
-    handleCopyMessage,
-    handleDownloadMessage,
-    handleDeleteMessage,
-    onToggleMessageSelection: handleToggleMessageSelection,
-    getAttachmentFileName,
-    getAttachmentFileKind,
-    getImageMessageUrl,
-    getPdfMessagePreview,
-    documentPreviewUrl,
-    documentPreviewName,
-    isDocumentPreviewVisible,
-    closeDocumentPreview,
-    imagePreviewUrl,
-    imagePreviewName,
-    isImagePreviewVisible,
-    closeImagePreview,
-    openImageInPortal,
-    openDocumentInPortal,
-    onScrollToBottom: scrollToBottom,
-    onLoadOlderMessages: loadOlderMessages,
-    onRetryLoadMessages: retryLoadMessages,
-  };
+  const messagesModel = useChatMessagesModel({
+    state: {
+      loading,
+      loadError,
+      messages,
+      user,
+      normalizedSearchQuery: normalizedMessageSearchQuery,
+      messageInputHeight,
+      composerContextualOffset,
+      composerContainerHeight,
+      showScrollToBottom: hasNewMessages || !isAtBottom,
+      hasOlderMessages,
+      isLoadingOlderMessages,
+      olderMessagesError,
+    },
+    menu: {
+      openMessageId: openMenuMessageId,
+      placement: menuPlacement,
+      sideAnchor: menuSideAnchor,
+      shouldAnimateOpen: shouldAnimateMenuOpen,
+      transitionSourceId: menuTransitionSourceId,
+      offsetX: menuOffsetX,
+      close: closeViewportMessageMenu,
+      toggle: toggleMessageMenu,
+    },
+    interaction: {
+      isSelectionMode,
+      selectedMessageIds,
+      searchMatchedMessageIds: isMessageSearchMode
+        ? searchMatchedMessageIdSet
+        : new Set<string>(),
+      activeSearchMessageId: isMessageSearchMode ? activeSearchMessageId : null,
+      expandedMessageIds: refs.expandedMessageIds,
+      flashingMessageId,
+      isFlashHighlightVisible,
+      onToggleMessageSelection: handleToggleMessageSelection,
+      onToggleExpand: refs.handleToggleExpand,
+    },
+    refs: {
+      messagesContainerRef: refs.messagesContainerRef,
+      messagesEndRef: refs.messagesEndRef,
+      messageBubbleRefs: refs.messageBubbleRefs,
+      initialMessageAnimationKeysRef: refs.initialMessageAnimationKeysRef,
+      initialOpenJumpAnimationKeysRef: refs.initialOpenJumpAnimationKeysRef,
+    },
+    previews: {
+      captionMessagesByAttachmentId,
+      captionMessageIds,
+      getAttachmentFileName,
+      getAttachmentFileKind,
+      getImageMessageUrl,
+      getPdfMessagePreview,
+      documentPreviewUrl,
+      documentPreviewName,
+      isDocumentPreviewVisible,
+      closeDocumentPreview,
+      imagePreviewUrl,
+      imagePreviewName,
+      isImagePreviewVisible,
+      closeImagePreview,
+      openImageInPortal,
+      openDocumentInPortal,
+    },
+    actions: {
+      handleEditMessage,
+      handleCopyMessage,
+      handleDownloadMessage,
+      handleDeleteMessage,
+      onScrollToBottom: scrollToBottom,
+      onLoadOlderMessages: loadOlderMessages,
+      onRetryLoadMessages: retryLoadMessages,
+    },
+  });
 
-  const composerModel = {
-    message,
-    editingMessagePreview,
-    messageInputHeight,
-    isMessageInputMultiline,
-    isSendSuccessGlowVisible,
-    isAttachModalOpen,
-    pendingComposerAttachments,
-    previewComposerImageAttachment,
-    isComposerImageExpanded,
-    isComposerImageExpandedVisible,
-    messageInputRef: refs.messageInputRef,
-    composerContainerRef: refs.composerContainerRef,
-    attachButtonRef,
-    attachModalRef,
-    imageInputRef,
-    documentInputRef,
-    audioInputRef,
-    openImageActionsAttachmentId,
-    imageActionsMenuPosition,
-    composerDocumentPreviewUrl,
-    composerDocumentPreviewName,
-    isComposerDocumentPreviewVisible,
-    imageActionsButtonRef,
-    imageActionsMenuRef,
-    imageActions,
-    onMessageChange: setMessage,
-    onKeyDown: handleKeyPress,
-    onPaste: handleComposerPaste,
-    onSendMessage: handleSendMessage,
-    onAttachButtonClick: handleAttachButtonClick,
-    onAttachImageClick: handleAttachImageClick,
-    onAttachDocumentClick: handleAttachDocumentClick,
-    onAttachAudioClick: handleAttachAudioClick,
-    onImageFileChange: handleImageFileChange,
-    onDocumentFileChange: handleDocumentFileChange,
-    onAudioFileChange: handleAudioFileChange,
-    onCancelEditMessage: handleCancelEditMessage,
-    onFocusEditingTargetMessage: focusEditingTargetMessage,
-    onOpenComposerImagePreview: openComposerImagePreview,
-    onCloseComposerImagePreview: closeComposerImagePreview,
-    onRemovePendingComposerAttachment: removePendingComposerAttachment,
-    onQueueComposerImage: queueComposerImage,
-    onCloseComposerDocumentPreview: closeComposerDocumentPreview,
-    onOpenDocumentAttachmentInPortal: openDocumentAttachmentInPortal,
-    onToggleImageActionsMenu: handleToggleImageActionsMenu,
-  };
+  const composerModel = useChatComposerModel({
+    state: {
+      message,
+      editingMessagePreview,
+      messageInputHeight,
+      isMessageInputMultiline,
+      isSendSuccessGlowVisible,
+    },
+    attachments: {
+      isAttachModalOpen,
+      pendingComposerAttachments,
+      previewComposerImageAttachment,
+      isComposerImageExpanded,
+      isComposerImageExpandedVisible,
+      openImageActionsAttachmentId,
+      imageActionsMenuPosition,
+      imageActions,
+    },
+    documentPreview: {
+      composerDocumentPreviewUrl,
+      composerDocumentPreviewName,
+      isComposerDocumentPreviewVisible,
+    },
+    refs: {
+      messageInputRef: refs.messageInputRef,
+      composerContainerRef: refs.composerContainerRef,
+      attachButtonRef,
+      attachModalRef,
+      imageInputRef,
+      documentInputRef,
+      audioInputRef,
+      imageActionsButtonRef,
+      imageActionsMenuRef,
+    },
+    actions: {
+      onMessageChange: setMessage,
+      onKeyDown: handleKeyPress,
+      onPaste: handleComposerPaste,
+      onSendMessage: handleSendMessage,
+      onAttachButtonClick: handleAttachButtonClick,
+      onAttachImageClick: handleAttachImageClick,
+      onAttachDocumentClick: handleAttachDocumentClick,
+      onAttachAudioClick: handleAttachAudioClick,
+      onImageFileChange: handleImageFileChange,
+      onDocumentFileChange: handleDocumentFileChange,
+      onAudioFileChange: handleAudioFileChange,
+      onCancelEditMessage: handleCancelEditMessage,
+      onFocusEditingTargetMessage: focusEditingTargetMessage,
+      onOpenComposerImagePreview: openComposerImagePreview,
+      onCloseComposerImagePreview: closeComposerImagePreview,
+      onRemovePendingComposerAttachment: removePendingComposerAttachment,
+      onQueueComposerImage: queueComposerImage,
+      onCloseComposerDocumentPreview: closeComposerDocumentPreview,
+      onOpenDocumentAttachmentInPortal: openDocumentAttachmentInPortal,
+      onToggleImageActionsMenu: handleToggleImageActionsMenu,
+    },
+  });
 
   return {
     headerModel,

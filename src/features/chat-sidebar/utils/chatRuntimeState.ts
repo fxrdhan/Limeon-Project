@@ -91,46 +91,50 @@ function createRuntimePersistentStore<T>({
   };
 }
 
-export const chatRuntimeState = {
-  conversationCache: new Map<string, ConversationCacheEntry>(),
-  pendingReadReceipts: createRuntimePersistentStore({
-    storageKey: 'chat-pending-read-receipts',
-    storage: 'local',
-    initialValue: () => new Map<string, Set<string>>(),
-    serialize: value =>
-      Object.fromEntries(
-        [...value.entries()].map(([userId, messageIds]) => [
-          userId,
-          [...messageIds],
-        ])
-      ),
-    deserialize: (payload, value) => {
-      if (!payload || typeof payload !== 'object') {
+export const conversationCacheStore = new Map<string, ConversationCacheEntry>();
+
+export const pendingReadReceiptsStore = createRuntimePersistentStore({
+  storageKey: 'chat-pending-read-receipts',
+  storage: 'local',
+  initialValue: () => new Map<string, Set<string>>(),
+  serialize: value =>
+    Object.fromEntries(
+      [...value.entries()].map(([userId, messageIds]) => [
+        userId,
+        [...messageIds],
+      ])
+    ),
+  deserialize: (payload, value) => {
+    if (!payload || typeof payload !== 'object') {
+      return;
+    }
+
+    Object.entries(payload).forEach(([userId, rawMessageIds]) => {
+      if (!userId.trim() || !Array.isArray(rawMessageIds)) {
         return;
       }
 
-      Object.entries(payload).forEach(([userId, rawMessageIds]) => {
-        if (!userId.trim() || !Array.isArray(rawMessageIds)) {
-          return;
-        }
+      const normalizedMessageIds = rawMessageIds.filter(
+        (messageId): messageId is string =>
+          typeof messageId === 'string' && messageId.trim().length > 0
+      );
+      if (normalizedMessageIds.length === 0) {
+        return;
+      }
 
-        const normalizedMessageIds = rawMessageIds.filter(
-          (messageId): messageId is string =>
-            typeof messageId === 'string' && messageId.trim().length > 0
-        );
-        if (normalizedMessageIds.length === 0) {
-          return;
-        }
-
-        value.set(userId, new Set(normalizedMessageIds));
-      });
-    },
-  }),
-  signedChatAssetUrls: new Map<string, SignedChatAssetUrlCacheEntry>(),
-  pdfMessagePreviews: {
-    cache: new Map<string, PdfMessagePreviewCacheEntry>(),
-    keysByMessageId: new Map<string, string>(),
+      value.set(userId, new Set(normalizedMessageIds));
+    });
   },
+});
+
+export const signedChatAssetUrlStore = new Map<
+  string,
+  SignedChatAssetUrlCacheEntry
+>();
+
+export const pdfMessagePreviewStore = {
+  cache: new Map<string, PdfMessagePreviewCacheEntry>(),
+  keysByMessageId: new Map<string, string>(),
 };
 
 const getRuntimeStorage = (storage: 'session' | 'local') => {
