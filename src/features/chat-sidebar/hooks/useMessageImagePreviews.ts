@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import {
   fetchChatFileBlobWithFallback,
+  isImageFileExtensionOrMime,
   isDirectChatAssetUrl,
+  resolveFileExtension,
   resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
 
@@ -15,6 +17,29 @@ interface ImageMessagePreviewEntry {
   expiresAt: number | null;
   isObjectUrl: boolean;
 }
+
+const isImagePreviewableMessage = (
+  message: Pick<
+    ChatMessage,
+    'message_type' | 'message' | 'file_name' | 'file_mime_type'
+  >
+) => {
+  if (message.message_type === 'image') {
+    return true;
+  }
+
+  if (message.message_type !== 'file') {
+    return false;
+  }
+
+  const fileExtension = resolveFileExtension(
+    message.file_name ?? null,
+    message.message,
+    message.file_mime_type
+  );
+
+  return isImageFileExtensionOrMime(fileExtension, message.file_mime_type);
+};
 
 export const useMessageImagePreviews = ({
   messages,
@@ -119,7 +144,7 @@ export const useMessageImagePreviews = ({
 
     const activeImageMessageIds = new Set(
       messages
-        .filter(messageItem => messageItem.message_type === 'image')
+        .filter(messageItem => isImagePreviewableMessage(messageItem))
         .map(messageItem => messageItem.id)
     );
 
@@ -150,7 +175,7 @@ export const useMessageImagePreviews = ({
     });
 
     const pendingImageMessages = messages.filter(messageItem => {
-      if (messageItem.message_type !== 'image') {
+      if (!isImagePreviewableMessage(messageItem)) {
         return false;
       }
 
@@ -323,8 +348,13 @@ export const useMessageImagePreviews = ({
   }, []);
 
   const getImageMessageUrl = useCallback(
-    (message: Pick<ChatMessage, 'id' | 'message' | 'message_type'>) => {
-      if (message.message_type !== 'image') {
+    (
+      message: Pick<
+        ChatMessage,
+        'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+      >
+    ) => {
+      if (!isImagePreviewableMessage(message)) {
         return null;
       }
 

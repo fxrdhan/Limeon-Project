@@ -85,9 +85,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                   model={{
                     message: messageItem,
                     resolvedMessageUrl:
-                      messageItem.message_type === 'image'
-                        ? previews.getImageMessageUrl(messageItem)
-                        : messageItem.message,
+                      previews.getImageMessageUrl(messageItem),
                     userId: state.user?.id,
                     isSelectionMode: interaction.isSelectionMode,
                     isSelected: interaction.selectedMessageIds.has(

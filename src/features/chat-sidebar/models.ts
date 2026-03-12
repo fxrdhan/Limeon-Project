@@ -112,7 +112,10 @@ export interface MessagesPaneModel {
       targetMessage: ChatMessage
     ) => ComposerPendingFileKind;
     getImageMessageUrl: (
-      message: Pick<ChatMessage, 'id' | 'message' | 'message_type'>
+      message: Pick<
+        ChatMessage,
+        'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+      >
     ) => string | null;
     getPdfMessagePreview: (
       message: ChatMessage,

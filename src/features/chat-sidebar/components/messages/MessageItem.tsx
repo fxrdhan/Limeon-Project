@@ -119,6 +119,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     isActiveSearchMatch,
     isImageMessage,
     isFileMessage,
+    isImageFileMessage,
     fileName,
     fileSecondaryLabel,
     isPdfFileMessage,
@@ -241,7 +242,13 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
             : 'flex max-w-xs flex-col items-start'
         }`}
       >
-        <div className={isFileMessage ? 'relative w-full' : 'relative'}>
+        <div
+          className={
+            isFileMessage && !isImageFileMessage
+              ? 'relative w-full'
+              : 'relative'
+          }
+        >
           {isSelectionMode ? (
             <span
               className={`pointer-events-none absolute -top-1.5 ${
@@ -316,6 +323,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               resolvedMessageUrl={resolvedMessageUrl}
               isImageMessage={isImageMessage}
               isFileMessage={isFileMessage}
+              isImageFileMessage={isImageFileMessage}
               isPdfFileMessage={isPdfFileMessage}
               hasAttachmentCaption={hasAttachmentCaption}
               fileName={fileName}

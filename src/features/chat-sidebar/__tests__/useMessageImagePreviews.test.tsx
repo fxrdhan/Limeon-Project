@@ -9,12 +9,17 @@ const { mockResolveChatAssetUrlWithExpiry, mockFetchChatFileBlobWithFallback } =
     mockFetchChatFileBlobWithFallback: vi.fn(),
   }));
 
-vi.mock('../utils/message-file', () => ({
-  fetchChatFileBlobWithFallback: mockFetchChatFileBlobWithFallback,
-  isDirectChatAssetUrl: (url: string) =>
-    /^(https?:\/\/|blob:|data:|\/)/i.test(url),
-  resolveChatAssetUrlWithExpiry: mockResolveChatAssetUrlWithExpiry,
-}));
+vi.mock('../utils/message-file', async importOriginal => {
+  const actual = await importOriginal<typeof import('../utils/message-file')>();
+
+  return {
+    ...actual,
+    fetchChatFileBlobWithFallback: mockFetchChatFileBlobWithFallback,
+    isDirectChatAssetUrl: (url: string) =>
+      /^(https?:\/\/|blob:|data:|\/)/i.test(url),
+    resolveChatAssetUrlWithExpiry: mockResolveChatAssetUrlWithExpiry,
+  };
+});
 
 describe('useMessageImagePreviews', () => {
   beforeEach(() => {
@@ -124,5 +129,41 @@ describe('useMessageImagePreviews', () => {
       'https://example.com/signed-image-retry'
     );
     expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(2);
+  });
+
+  it('resolves preview urls for image files sent as document attachments', async () => {
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValueOnce({
+      url: 'https://example.com/signed-image-file',
+      expiresAt: Date.now() + 90_000,
+    });
+
+    const messages: ChatMessage[] = [
+      {
+        id: 'file-image-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        channel_id: 'dm_user-a_user-b',
+        message: 'documents/channel/screenshot.png',
+        created_at: '2026-03-10T10:00:00.000Z',
+        updated_at: '2026-03-10T10:00:00.000Z',
+        is_read: false,
+        message_type: 'file',
+        file_name: 'screenshot.png',
+        file_mime_type: 'image/png',
+        file_storage_path: 'documents/channel/screenshot.png',
+      },
+    ];
+
+    const { result } = renderHook(() => useMessageImagePreviews({ messages }));
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
+      'https://example.com/signed-image-file'
+    );
+    expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(1);
   });
 });

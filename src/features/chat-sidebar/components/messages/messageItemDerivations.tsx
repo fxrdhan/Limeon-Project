@@ -65,6 +65,7 @@ export interface MessageItemDerivations {
   isActiveSearchMatch: boolean;
   isImageMessage: boolean;
   isFileMessage: boolean;
+  isImageFileMessage: boolean;
   fileName: string | null;
   fileSecondaryLabel: string | null;
   isPdfFileMessage: boolean;
@@ -169,6 +170,7 @@ export const buildMessageItemDerivations = ({
     isFileMessage &&
     !isAudioFileMessage &&
     isImageFileExtensionOrMime(fileExtension, message.file_mime_type);
+  const isSquareImageMessage = isImageMessage || isImageFileMessage;
   const persistedPdfPreviewUrl = isPdfFileMessage
     ? (() => {
         const previewUrl = message.file_preview_url?.trim() || null;
@@ -209,19 +211,19 @@ export const buildMessageItemDerivations = ({
     !isExpanded &&
     message.message.length > maxMessageChars;
   const bubbleWrapperClass = isFileMessage
-    ? 'block w-full'
-    : isImageMessage
-      ? 'inline-flex flex-col align-top'
+    ? isSquareImageMessage
+      ? 'inline-flex w-64 max-w-full flex-col align-top'
+      : 'block w-full'
+    : isSquareImageMessage
+      ? 'inline-flex w-64 max-w-full flex-col align-top'
       : 'inline-block';
-  const bubbleSpacingClass = isImageMessage
-    ? hasAttachmentCaption
-      ? 'px-2 py-2'
-      : 'p-0 overflow-hidden'
+  const bubbleSpacingClass = isSquareImageMessage
+    ? 'px-2 py-2'
     : isFileMessage
       ? 'px-2 py-2'
       : 'px-3 py-2';
   const bubbleTypographyClass =
-    isImageMessage || isFileMessage
+    isSquareImageMessage || isFileMessage
       ? ''
       : 'text-sm whitespace-pre-wrap break-words';
   const collapsedSearchSnippet = buildCollapsedSearchSnippet(
@@ -271,6 +273,7 @@ export const buildMessageItemDerivations = ({
     isActiveSearchMatch,
     isImageMessage,
     isFileMessage,
+    isImageFileMessage,
     fileName,
     fileSecondaryLabel,
     isPdfFileMessage,

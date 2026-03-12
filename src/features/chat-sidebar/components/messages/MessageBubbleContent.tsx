@@ -7,6 +7,7 @@ interface MessageBubbleContentProps {
   resolvedMessageUrl: string | null;
   isImageMessage: boolean;
   isFileMessage: boolean;
+  isImageFileMessage: boolean;
   isPdfFileMessage: boolean;
   hasAttachmentCaption: boolean;
   fileName: string | null;
@@ -28,6 +29,7 @@ export const MessageBubbleContent = ({
   resolvedMessageUrl,
   isImageMessage,
   isFileMessage,
+  isImageFileMessage,
   isPdfFileMessage,
   hasAttachmentCaption,
   fileName,
@@ -44,26 +46,26 @@ export const MessageBubbleContent = ({
   isFlashingTarget,
   onToggleExpand,
 }: MessageBubbleContentProps) => {
-  const mainContent = isImageMessage ? (
-    resolvedMessageUrl ? (
-      <img
-        src={resolvedMessageUrl}
-        alt="Lampiran chat"
-        className={`block max-h-72 w-auto max-w-full object-cover ${
-          hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
-        }`}
-        loading="lazy"
-        draggable={false}
-      />
-    ) : (
-      <div
-        className={`flex h-40 w-56 items-center justify-center bg-slate-100 text-sm text-slate-400 ${
-          hasAttachmentCaption ? 'rounded-lg' : 'rounded-[inherit]'
-        }`}
-      >
-        Memuat gambar...
+  const isSquareImageAttachment = isImageMessage || isImageFileMessage;
+
+  const mainContent = isSquareImageAttachment ? (
+    <div className="w-full overflow-hidden rounded-xl bg-slate-100">
+      <div className="aspect-square w-full overflow-hidden">
+        {resolvedMessageUrl ? (
+          <img
+            src={resolvedMessageUrl}
+            alt={fileName ? `Preview ${fileName}` : 'Preview lampiran chat'}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            draggable={false}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm text-slate-400">
+            Memuat gambar...
+          </div>
+        )}
       </div>
-    )
+    </div>
   ) : isPdfFileMessage ? (
     <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
       <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">
