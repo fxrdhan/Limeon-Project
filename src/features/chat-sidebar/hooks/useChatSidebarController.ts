@@ -1,9 +1,4 @@
 import { useAuthStore } from '@/store/authStore';
-import {
-  buildChatHeaderModel,
-  buildComposerPanelModel,
-  buildMessagesPaneModel,
-} from '../modelBuilders';
 import { computeDmChannelId } from '../utils/channel';
 import type { ChatSidebarPanelProps } from '../types';
 import { useChatSidebarRuntimeState } from './useChatSidebarRuntimeState';
@@ -32,7 +27,7 @@ export const useChatSidebarController = ({
     displayTargetPhotoUrl,
   });
 
-  const headerModel = buildChatHeaderModel({
+  const headerModel = {
     targetUser: runtime.targetUser,
     displayTargetPhotoUrl: runtime.displayTargetPhotoUrl,
     isTargetOnline: runtime.session.isTargetOnline,
@@ -42,7 +37,6 @@ export const useChatSidebarController = ({
     searchQuery: runtime.interaction.messageSearchQuery,
     searchState: runtime.interaction.messageSearchState,
     searchResultCount: runtime.interaction.searchMatchedMessageIds.length,
-    activeSearchResultIndex: runtime.interaction.activeSearchResultIndex,
     canNavigateSearchUp: runtime.interaction.canNavigateSearchUp,
     canNavigateSearchDown: runtime.interaction.canNavigateSearchDown,
     hasMoreSearchResults: runtime.interaction.hasMoreSearchResults,
@@ -63,9 +57,13 @@ export const useChatSidebarController = ({
     onClose: runtime.actions.handleClose,
     getInitials: runtime.actions.getInitials,
     getInitialsColor: runtime.actions.getInitialsColor,
-  });
+    activeSearchResultIndex: Math.max(
+      runtime.interaction.activeSearchResultIndex,
+      0
+    ),
+  };
 
-  const messagesModel = buildMessagesPaneModel({
+  const messagesModel = {
     state: {
       loading: runtime.session.loading,
       loadError: runtime.session.loadError,
@@ -134,17 +132,17 @@ export const useChatSidebarController = ({
       openDocumentInPortal: runtime.previews.openDocumentInPortal,
     },
     actions: {
-      handleEditMessage: runtime.composer.handleEditMessage,
-      handleCopyMessage: runtime.composer.handleCopyMessage,
-      handleDownloadMessage: runtime.composer.handleDownloadMessage,
-      handleDeleteMessage: runtime.composer.handleDeleteMessage,
+      handleEditMessage: runtime.mutations.handleEditMessage,
+      handleCopyMessage: runtime.mutations.handleCopyMessage,
+      handleDownloadMessage: runtime.mutations.handleDownloadMessage,
+      handleDeleteMessage: runtime.mutations.handleDeleteMessage,
       onScrollToBottom: runtime.viewport.scrollToBottom,
       onLoadOlderMessages: runtime.session.loadOlderMessages,
       onRetryLoadMessages: runtime.session.retryLoadMessages,
     },
-  });
+  };
 
-  const composerModel = buildComposerPanelModel({
+  const composerModel = {
     state: {
       message: runtime.composer.message,
       editingMessagePreview: runtime.composer.editingMessagePreview,
@@ -184,9 +182,9 @@ export const useChatSidebarController = ({
     },
     actions: {
       onMessageChange: runtime.composer.setMessage,
-      onKeyDown: runtime.composer.handleKeyPress,
+      onKeyDown: runtime.mutations.handleKeyPress,
       onPaste: runtime.composer.handleComposerPaste,
-      onSendMessage: runtime.composer.handleSendMessage,
+      onSendMessage: runtime.mutations.handleSendMessage,
       onAttachButtonClick: runtime.composer.handleAttachButtonClick,
       onAttachImageClick: runtime.composer.handleAttachImageClick,
       onAttachDocumentClick: runtime.composer.handleAttachDocumentClick,
@@ -194,7 +192,7 @@ export const useChatSidebarController = ({
       onImageFileChange: runtime.composer.handleImageFileChange,
       onDocumentFileChange: runtime.composer.handleDocumentFileChange,
       onAudioFileChange: runtime.composer.handleAudioFileChange,
-      onCancelEditMessage: runtime.composer.handleCancelEditMessage,
+      onCancelEditMessage: runtime.mutations.handleCancelEditMessage,
       onFocusEditingTargetMessage: runtime.viewport.focusEditingTargetMessage,
       onOpenComposerImagePreview: runtime.composer.openComposerImagePreview,
       onCloseComposerImagePreview: runtime.composer.closeComposerImagePreview,
@@ -207,7 +205,7 @@ export const useChatSidebarController = ({
         runtime.previews.openDocumentAttachmentInPortal,
       onToggleImageActionsMenu: runtime.previews.handleToggleImageActionsMenu,
     },
-  });
+  };
 
   return {
     headerModel,

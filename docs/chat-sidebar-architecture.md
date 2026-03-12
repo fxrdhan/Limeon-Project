@@ -146,11 +146,15 @@ Tanggung jawab:
 
 - compose `useChatSession`
 - compose `useChatComposer`
+- compose `useChatConversationMutations`
 - compose `useChatInteractionModes`
 - compose `useChatViewport`
 - compose `useChatSidebarPreviewState`
 - sink callback ref untuk menu close / scroll-to-bottom
 - expose runtime objects yang dipakai controller untuk membentuk view model
+- menjaga pemisahan ownership:
+  - draft / attachment UI di `useChatComposer`
+  - send / edit / delete / transfer message di `useChatConversationMutations`
 
 ### 5.2 `useChatSession`
 
@@ -243,7 +247,9 @@ Tanggung jawab:
 - contextual offset untuk composer banner / attachment preview
 - compose:
   - `useChatComposerAttachments`
-  - `useChatComposerActions`
+
+Hook ini sekarang fokus pada state dan interaksi UI composer saja.
+Mutasi percakapan dipindahkan keluar dari composer.
 
 ### 5.7 `useChatComposerAttachments`
 
@@ -262,9 +268,9 @@ Attachment limit:
 
 - maksimum `5` attachment per send (`MAX_PENDING_COMPOSER_ATTACHMENTS`)
 
-### 5.8 `useChatComposerActions`
+### 5.8 `useChatConversationMutations`
 
-File: `src/features/chat-sidebar/hooks/useChatComposerActions.ts`
+File: `src/features/chat-sidebar/hooks/useChatConversationMutations.ts`
 
 Tanggung jawab:
 
@@ -273,12 +279,17 @@ Tanggung jawab:
 - copy message/image via hook transfer terpisah
 - download file via hook transfer terpisah
 - delegasi send ke `useChatComposerSend`
+- own `useChatMutationScope()` untuk memastikan efek async tidak bocor ke conversation yang sudah tidak aktif
 
 Delete path untuk persisted message:
 
 - memanggil edge function `chat-cleanup` dengan action `delete_thread`
 - edge function menjalankan RPC `delete_chat_message_thread`
 - cleanup storage gagal dicatat di `chat_storage_cleanup_failures`
+
+Catatan kompatibilitas internal:
+
+- `useChatComposerActions.ts` tetap ada sebagai alias tipis ke hook ini untuk kebutuhan test / import lama, tetapi production runtime memakai `useChatConversationMutations()` langsung.
 
 ### 5.9 `useChatComposerSend`
 

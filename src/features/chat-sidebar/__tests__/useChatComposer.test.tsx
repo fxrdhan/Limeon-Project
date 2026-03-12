@@ -4,20 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposer } from '../hooks/useChatComposer';
 
-const { mockToast, mockUseChatComposerActions } = vi.hoisted(() => ({
+const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     error: vi.fn(),
     success: vi.fn(),
   },
-  mockUseChatComposerActions: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
-}));
-
-vi.mock('../hooks/useChatComposerActions', () => ({
-  useChatComposerActions: mockUseChatComposerActions,
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -57,34 +52,10 @@ describe('useChatComposer', () => {
         revokeObjectURL: vi.fn(),
       })
     );
-    mockUseChatComposerActions.mockImplementation(
-      ({ setEditingMessageId, setMessage }) => ({
-        handleSendMessage: vi.fn(),
-        handleKeyPress: vi.fn(),
-        handleEditMessage: (targetMessage: ChatMessage) => {
-          setEditingMessageId(targetMessage.id);
-          setMessage(targetMessage.message);
-        },
-        handleCopyMessage: vi.fn(),
-        handleDownloadMessage: vi.fn(),
-        handleDeleteMessage: vi.fn().mockResolvedValue(true),
-        handleDeleteMessages: vi.fn().mockResolvedValue({
-          deletedTargetMessageIds: [],
-          failedTargetMessageIds: [],
-          cleanupWarningTargetMessageIds: [],
-        }),
-        handleCancelEditMessage: () => {
-          setEditingMessageId(null);
-          setMessage('');
-        },
-      })
-    );
   });
 
   it('mereset state composer ketika berpindah ke channel lain', async () => {
-    const focusMessageComposer = vi.fn();
     const closeMessageMenu = vi.fn();
-    const scheduleScrollMessagesToBottom = vi.fn();
     const currentMessage = buildMessage({
       id: 'message-1',
       message: 'draft edit',
@@ -96,20 +67,10 @@ describe('useChatComposer', () => {
 
         return useChatComposer({
           isOpen: true,
-          user: { id: 'user-a', name: 'Admin' },
-          targetUser: {
-            id: 'user-b',
-            name: 'Gudang',
-            email: 'gudang@example.com',
-            profilephoto: null,
-          },
           currentChannelId: channelId,
           messages: [currentMessage],
-          setMessages: vi.fn(),
           closeMessageMenu,
-          scheduleScrollMessagesToBottom,
           messageInputRef,
-          focusMessageComposer,
         });
       },
       {

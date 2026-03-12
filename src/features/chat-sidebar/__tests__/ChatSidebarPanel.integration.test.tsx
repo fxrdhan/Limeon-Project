@@ -76,6 +76,7 @@ vi.mock('../hooks/useChatComposer', () => ({
     message: '',
     setMessage: vi.fn(),
     editingMessageId: null,
+    setEditingMessageId: vi.fn(),
     messageInputHeight: 40,
     isMessageInputMultiline: false,
     isSendSuccessGlowVisible: false,
@@ -91,9 +92,8 @@ vi.mock('../hooks/useChatComposer', () => ({
     imageInputRef: { current: null },
     documentInputRef: { current: null },
     audioInputRef: { current: null },
-    handleKeyPress: vi.fn(),
+    pendingImagePreviewUrlsRef: { current: new Map<string, string>() },
     handleComposerPaste: vi.fn(),
-    handleSendMessage: vi.fn(),
     handleAttachButtonClick: vi.fn(),
     handleAttachImageClick: vi.fn(),
     handleAttachDocumentClick: vi.fn(),
@@ -101,16 +101,26 @@ vi.mock('../hooks/useChatComposer', () => ({
     handleImageFileChange: vi.fn(),
     handleDocumentFileChange: vi.fn(),
     handleAudioFileChange: vi.fn(),
-    handleCancelEditMessage: vi.fn(),
     openComposerImagePreview: vi.fn(),
     closeComposerImagePreview: vi.fn(),
     removePendingComposerAttachment: vi.fn(),
+    clearPendingComposerAttachments: vi.fn(),
     queueComposerImage: vi.fn(() => true),
+    restorePendingComposerAttachments: vi.fn(),
+    triggerSendSuccessGlow: vi.fn(),
+  }),
+}));
+
+vi.mock('../hooks/useChatConversationMutations', () => ({
+  useChatConversationMutations: () => ({
     handleEditMessage: vi.fn(),
-    handleCopyMessage: vi.fn(),
-    handleDownloadMessage: vi.fn(),
     handleDeleteMessage: vi.fn(),
     handleDeleteMessages: vi.fn(),
+    handleCancelEditMessage: vi.fn(),
+    handleCopyMessage: vi.fn(),
+    handleDownloadMessage: vi.fn(),
+    handleSendMessage: vi.fn(),
+    handleKeyPress: vi.fn(),
   }),
 }));
 

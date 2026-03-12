@@ -1,4 +1,4 @@
-import type { Dispatch, RefObject, SetStateAction } from 'react';
+import type { RefObject } from 'react';
 import {
   useCallback,
   useEffect,
@@ -14,38 +14,23 @@ import {
   SEND_SUCCESS_GLOW_DURATION,
   SEND_SUCCESS_GLOW_RESET_BUFFER,
 } from '../constants';
-import { useChatComposerActions } from './useChatComposerActions';
 import { useChatComposerAttachments } from './useChatComposerAttachments';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import type { ChatSidebarPanelTargetUser } from '../types';
 
 interface UseChatComposerProps {
   isOpen: boolean;
-  user: {
-    id: string;
-    name: string;
-  } | null;
-  targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   messages: ChatMessage[];
-  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   closeMessageMenu: () => void;
-  scheduleScrollMessagesToBottom: () => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
-  focusMessageComposer: () => void;
 }
 
 export const useChatComposer = ({
   isOpen,
-  user,
-  targetUser,
   currentChannelId,
   messages,
-  setMessages,
   closeMessageMenu,
-  scheduleScrollMessagesToBottom,
   messageInputRef,
-  focusMessageComposer,
 }: UseChatComposerProps) => {
   const [message, setMessage] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -234,30 +219,11 @@ export const useChatComposer = ({
     );
   }, [isTargetMultiline]);
 
-  const actions = useChatComposerActions({
-    user,
-    targetUser,
-    currentChannelId,
-    messages,
-    setMessages,
-    message,
-    setMessage,
-    editingMessageId,
-    setEditingMessageId,
-    pendingComposerAttachments,
-    clearPendingComposerAttachments,
-    restorePendingComposerAttachments,
-    closeMessageMenu,
-    focusMessageComposer,
-    scheduleScrollMessagesToBottom,
-    triggerSendSuccessGlow,
-    pendingImagePreviewUrlsRef,
-  });
-
   return {
     message,
     setMessage,
     editingMessageId,
+    setEditingMessageId,
     messageInputHeight,
     isMessageInputMultiline,
     isSendSuccessGlowVisible,
@@ -273,6 +239,7 @@ export const useChatComposer = ({
     imageInputRef,
     documentInputRef,
     audioInputRef,
+    pendingImagePreviewUrlsRef,
     closeAttachModal,
     handleAttachButtonClick,
     handleAttachImageClick,
@@ -285,8 +252,9 @@ export const useChatComposer = ({
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,
+    clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
-    ...actions,
+    triggerSendSuccessGlow,
   };
 };

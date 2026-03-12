@@ -9,6 +9,7 @@ import {
 import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatCaptionData } from './useChatCaptionData';
 import { useChatComposer } from './useChatComposer';
+import { useChatConversationMutations } from './useChatConversationMutations';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatSession } from './useChatSession';
 import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
@@ -51,15 +52,31 @@ export const useChatSidebarRuntimeState = ({
 
   const composer = useChatComposer({
     isOpen,
+    currentChannelId,
+    messages: session.messages,
+    closeMessageMenu: refs.closeMessageMenu,
+    messageInputRef: refs.messageInputRef,
+  });
+
+  const mutations = useChatConversationMutations({
     user,
     targetUser,
     currentChannelId,
     messages: session.messages,
     setMessages: session.setMessages,
+    message: composer.message,
+    setMessage: composer.setMessage,
+    editingMessageId: composer.editingMessageId,
+    setEditingMessageId: composer.setEditingMessageId,
+    pendingComposerAttachments: composer.pendingComposerAttachments,
+    clearPendingComposerAttachments: composer.clearPendingComposerAttachments,
+    restorePendingComposerAttachments:
+      composer.restorePendingComposerAttachments,
     closeMessageMenu: refs.closeMessageMenu,
-    scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
-    messageInputRef: refs.messageInputRef,
     focusMessageComposer,
+    scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
+    triggerSendSuccessGlow: composer.triggerSendSuccessGlow,
+    pendingImagePreviewUrlsRef: composer.pendingImagePreviewUrlsRef,
   });
 
   const captionData = useChatCaptionData(session.messages);
@@ -135,7 +152,7 @@ export const useChatSidebarRuntimeState = ({
     user,
     selectedVisibleMessages: interaction.selectedVisibleMessages,
     setSelectedMessageIds: interaction.setSelectedMessageIds,
-    deleteMessages: composer.handleDeleteMessages,
+    deleteMessages: mutations.handleDeleteMessages,
   });
 
   const handleClose = useCallback(() => {
@@ -148,6 +165,7 @@ export const useChatSidebarRuntimeState = ({
     displayTargetPhotoUrl,
     session,
     composer,
+    mutations,
     interaction,
     viewport,
     previews,
