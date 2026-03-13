@@ -5,7 +5,12 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { MENU_GAP, MENU_HEIGHT, MENU_WIDTH } from '../constants';
+import {
+  CHAT_HEADER_OVERLAY_HEIGHT,
+  MENU_GAP,
+  MENU_HEIGHT,
+  MENU_WIDTH,
+} from '../constants';
 import type { MenuPlacement, MenuSideAnchor } from '../types';
 
 type VisibleBounds = {
@@ -33,8 +38,37 @@ export const useChatViewportMenu = ({
     string | null
   >(null);
   const [menuOffsetX, setMenuOffsetX] = useState(0);
+  const [menuViewportTick, setMenuViewportTick] = useState(0);
 
   const menuTransitionSourceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingMenuRepositionAnimationFrameRef = useRef<number | null>(null);
+  const openMenuAnchorRef = useRef<HTMLElement | null>(null);
+  const openMenuPreferredSideRef = useRef<'left' | 'right'>('left');
+
+  const cancelNextFrame = useCallback((frameId: number) => {
+    const cancelAnimationFrameFn =
+      typeof window !== 'undefined' &&
+      typeof window.cancelAnimationFrame === 'function'
+        ? window.cancelAnimationFrame.bind(window)
+        : typeof globalThis.cancelAnimationFrame === 'function'
+          ? globalThis.cancelAnimationFrame.bind(globalThis)
+          : window.clearTimeout.bind(window);
+
+    cancelAnimationFrameFn(frameId);
+  }, []);
+
+  const requestNextFrame = useCallback((callback: FrameRequestCallback) => {
+    const requestAnimationFrameFn =
+      typeof window !== 'undefined' &&
+      typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : typeof globalThis.requestAnimationFrame === 'function'
+          ? globalThis.requestAnimationFrame.bind(globalThis)
+          : (fallbackCallback: FrameRequestCallback) =>
+              window.setTimeout(() => fallbackCallback(Date.now()), 16);
+
+    return requestAnimationFrameFn(callback);
+  }, []);
 
   const getMenuLayout = useCallback(
     (
@@ -54,6 +88,13 @@ export const useChatViewportMenu = ({
       const spaceRight = containerRect.right - anchorRect.right;
       const spaceAbove = anchorRect.top - containerRect.top;
       const spaceBelow = visibleBottom - anchorRect.bottom;
+      const isAnchorNearHeaderOverlay =
+        anchorRect.top < containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT;
+
+      if (isAnchorNearHeaderOverlay && spaceBelow > spaceAbove) {
+        return { placement: 'up', sideAnchor: 'middle' };
+      }
+
       const hasTopAnchoredSideRoom =
         spaceBelow >= MENU_HEIGHT - anchorRect.height + MENU_GAP;
       const hasBottomAnchoredSideRoom =
@@ -111,11 +152,64 @@ export const useChatViewportMenu = ({
       clearTimeout(menuTransitionSourceTimeoutRef.current);
       menuTransitionSourceTimeoutRef.current = null;
     }
+    if (pendingMenuRepositionAnimationFrameRef.current !== null) {
+      cancelNextFrame(pendingMenuRepositionAnimationFrameRef.current);
+      pendingMenuRepositionAnimationFrameRef.current = null;
+    }
+    openMenuAnchorRef.current = null;
     setOpenMenuMessageId(null);
     setMenuTransitionSourceId(null);
     setMenuOffsetX(0);
     setShouldAnimateMenuOpen(true);
-  }, []);
+  }, [cancelNextFrame]);
+
+  const syncOpenMenuLayout = useCallback(
+    (anchor: HTMLElement, preferredSide: 'left' | 'right') => {
+      const anchorRect = anchor.getBoundingClientRect();
+      const nextMenuLayout = getMenuLayout(anchorRect, preferredSide);
+
+      setMenuPlacement(previousPlacement =>
+        previousPlacement === nextMenuLayout.placement
+          ? previousPlacement
+          : nextMenuLayout.placement
+      );
+      setMenuSideAnchor(previousSideAnchor =>
+        previousSideAnchor === nextMenuLayout.sideAnchor
+          ? previousSideAnchor
+          : nextMenuLayout.sideAnchor
+      );
+      setMenuOffsetX(0);
+      setMenuViewportTick(previousTick => previousTick + 1);
+    },
+    [getMenuLayout]
+  );
+
+  const requestOpenMenuReposition = useCallback(() => {
+    if (pendingMenuRepositionAnimationFrameRef.current !== null) {
+      return;
+    }
+
+    pendingMenuRepositionAnimationFrameRef.current = requestNextFrame(() => {
+      pendingMenuRepositionAnimationFrameRef.current = null;
+
+      if (!openMenuMessageId) {
+        return;
+      }
+
+      const anchor = openMenuAnchorRef.current;
+      if (!anchor || !anchor.isConnected) {
+        closeMessageMenu();
+        return;
+      }
+
+      syncOpenMenuLayout(anchor, openMenuPreferredSideRef.current);
+    });
+  }, [
+    closeMessageMenu,
+    openMenuMessageId,
+    requestNextFrame,
+    syncOpenMenuLayout,
+  ]);
 
   const toggleMessageMenu = useCallback(
     (
@@ -137,7 +231,13 @@ export const useChatViewportMenu = ({
         clearTimeout(menuTransitionSourceTimeoutRef.current);
         menuTransitionSourceTimeoutRef.current = null;
       }
+      if (pendingMenuRepositionAnimationFrameRef.current !== null) {
+        cancelNextFrame(pendingMenuRepositionAnimationFrameRef.current);
+        pendingMenuRepositionAnimationFrameRef.current = null;
+      }
 
+      openMenuAnchorRef.current = anchor;
+      openMenuPreferredSideRef.current = preferredSide;
       setMenuOffsetX(0);
       setMenuPlacement(nextMenuLayout.placement);
       setMenuSideAnchor(nextMenuLayout.sideAnchor);
@@ -155,7 +255,7 @@ export const useChatViewportMenu = ({
       setShouldAnimateMenuOpen(!isSwitchingMenuMessage);
       setOpenMenuMessageId(messageId);
     },
-    [closeMessageMenu, getMenuLayout, openMenuMessageId]
+    [cancelNextFrame, closeMessageMenu, getMenuLayout, openMenuMessageId]
   );
 
   const ensureMenuFullyVisible = useCallback(
@@ -216,7 +316,33 @@ export const useChatViewportMenu = ({
     menuPlacement,
     menuSideAnchor,
     openMenuMessageId,
+    menuViewportTick,
   ]);
+
+  useLayoutEffect(() => {
+    if (!openMenuMessageId) {
+      return;
+    }
+
+    const container = messagesContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleViewportChange = () => {
+      requestOpenMenuReposition();
+    };
+
+    container.addEventListener('scroll', handleViewportChange, {
+      passive: true,
+    });
+    window.addEventListener('resize', handleViewportChange);
+
+    return () => {
+      container.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
+    };
+  }, [messagesContainerRef, openMenuMessageId, requestOpenMenuReposition]);
 
   useLayoutEffect(() => {
     return () => {
@@ -224,8 +350,12 @@ export const useChatViewportMenu = ({
         clearTimeout(menuTransitionSourceTimeoutRef.current);
         menuTransitionSourceTimeoutRef.current = null;
       }
+      if (pendingMenuRepositionAnimationFrameRef.current !== null) {
+        cancelNextFrame(pendingMenuRepositionAnimationFrameRef.current);
+        pendingMenuRepositionAnimationFrameRef.current = null;
+      }
     };
-  }, []);
+  }, [cancelNextFrame]);
 
   return {
     openMenuMessageId,
