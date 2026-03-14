@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 describe('pdf-message-preview-cache', () => {

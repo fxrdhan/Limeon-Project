@@ -1,79 +1,79 @@
 [
   {
     "label": "dev",
-    "command": "yarn dev",
+    "command": "bun run dev",
     "use_new_terminal": true,
     "tags": ["dev"]
   },
   {
     "label": "dev:vite",
-    "command": "yarn dev:vite",
+    "command": "bun run dev:vite",
     "use_new_terminal": true,
     "tags": ["dev"]
   },
   {
     "label": "build",
-    "command": "yarn build",
+    "command": "bun run build",
     "use_new_terminal": false,
     "tags": ["build"]
   },
   {
     "label": "preview",
-    "command": "yarn preview",
+    "command": "bun run preview",
     "use_new_terminal": true,
     "tags": ["dev"]
   },
   {
     "label": "test",
-    "command": "yarn test:run",
+    "command": "bun run test:run",
     "use_new_terminal": false,
     "tags": ["test"]
   },
   {
     "label": "test:watch",
-    "command": "yarn test:watch",
+    "command": "bun run test:watch",
     "use_new_terminal": true,
     "tags": ["test"]
   },
   {
     "label": "test:ui",
-    "command": "yarn test:ui",
+    "command": "bun run test:ui",
     "use_new_terminal": true,
     "tags": ["test"]
   },
   {
     "label": "test:coverage",
-    "command": "yarn test:coverage",
+    "command": "bun run test:coverage",
     "use_new_terminal": false,
     "tags": ["test"]
   },
   {
     "label": "lint",
-    "command": "yarn lint",
+    "command": "bun run lint",
     "use_new_terminal": false,
     "tags": ["lint"]
   },
   {
     "label": "format",
-    "command": "yarn format",
+    "command": "bun run format",
     "use_new_terminal": false,
     "tags": ["format"]
   },
   {
     "label": "format:check",
-    "command": "yarn format:check",
+    "command": "bun run format:check",
     "use_new_terminal": false,
     "tags": ["format"]
   },
   {
     "label": "tailwind:watch",
-    "command": "yarn tailwind:watch",
+    "command": "bun run tailwind:watch",
     "use_new_terminal": true,
     "tags": ["dev"]
   },
   {
     "label": "tailwind:build",
-    "command": "yarn tailwind:build",
+    "command": "bun run tailwind:build",
     "use_new_terminal": false,
     "tags": ["build"]
   }

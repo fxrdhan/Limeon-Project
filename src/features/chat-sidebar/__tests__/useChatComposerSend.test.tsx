@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useEffect, useRef, useState } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import type { PendingComposerAttachment } from '../types';
 import { useChatComposerSend } from '../hooks/useChatComposerSend';

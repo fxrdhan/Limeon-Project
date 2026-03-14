@@ -1,6 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { useState } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import { useChatMessageUpdateAction } from '../hooks/useChatMessageUpdateAction';
 
 const { mockChatSidebarMessagesGateway, mockToast } = vi.hoisted(() => ({

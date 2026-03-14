@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const COVERAGE_FILE = path.resolve('coverage/coverage-final.json');
-const NON_RUNTIME_FILE = path.resolve('scripts/coverage/non-runtime-files.json');
+const NON_RUNTIME_FILE = path.resolve(
+  'scripts/coverage/non-runtime-files.json'
+);
 
 const isCoveredSourceFile = filePath => {
   if (!filePath.startsWith('src/')) return false;
@@ -26,7 +28,7 @@ const percent = (covered, total) => {
 
 if (!fs.existsSync(COVERAGE_FILE)) {
   console.error('Coverage file not found:', COVERAGE_FILE);
-  console.error('Run: bunx vitest run --coverage');
+  console.error('Run: bun run test:coverage');
   process.exit(1);
 }
 

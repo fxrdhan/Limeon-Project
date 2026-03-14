@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import type { MessageItemModel } from '../components/messages/MessageItem';
 import { areMessageItemPropsEqual } from '../components/messages/messageItemMemo';
 

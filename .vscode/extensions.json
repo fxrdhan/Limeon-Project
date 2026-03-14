@@ -4,6 +4,7 @@
 
   "recommendations": [
     // Essential
+    "VoidZero.vite-plus-extension-pack",
     "oxc.oxc-vscode",
     "dbaeumer.vscode-eslint",
     "bradlc.vscode-tailwindcss",

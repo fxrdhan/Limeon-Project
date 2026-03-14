@@ -10,7 +10,11 @@
       "@types/*": ["./src/types/*"],
       "@assets/*": ["./src/assets/*"]
     },
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom/vitest"],
+    "types": [
+      "node",
+      "vite-plus/test/globals",
+      "@testing-library/jest-dom/vitest"
+    ],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
     "useDefineForClassFields": true,

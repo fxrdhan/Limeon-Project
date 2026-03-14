@@ -1,9 +1,26 @@
+import fs from 'fs';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig } from 'vite';
+import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite-plus';
+import { configDefaults } from 'vite-plus/test/config';
 import viteCompression from 'vite-plugin-compression';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const nonRuntimeCoverageFiles = JSON.parse(
+  fs.readFileSync(
+    path.resolve(__dirname, 'scripts/coverage/non-runtime-files.json'),
+    'utf8'
+  )
+) as string[];
+const isAIAgent = Boolean(process.env.AI_AGENT);
+const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+const reporters = isAIAgent
+  ? isGitHubActions
+    ? ['agent', 'github-actions']
+    : ['agent']
+  : undefined;
 const isAnalyze = process.env.ANALYZE === 'true';
 
 // https://vite.dev/config/
@@ -31,10 +48,92 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@services': path.resolve(__dirname, './src/services'),
+      '@store': path.resolve(__dirname, './src/store'),
+      '@types': path.resolve(__dirname, './src/types'),
+      '@assets': path.resolve(__dirname, './src/assets'),
     },
   },
   server: {
     host: true, // Expose to network
+  },
+  test: {
+    ...(reporters ? { reporters } : {}),
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    exclude: [...configDefaults.exclude, 'playwright/**', 'test-results/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'node_modules/',
+        'src/test/**',
+        'src/schemas/generated/**',
+        'src/**/__tests__/**',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/*.spec.ts',
+        '**/*.spec.tsx',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/mockData/**',
+        'src/playwright/**',
+        'dist/',
+        ...nonRuntimeCoverageFiles,
+      ],
+      thresholds: {
+        lines: 15,
+        functions: 12,
+        branches: 9,
+        statements: 15,
+      },
+    },
+  },
+  lint: {
+    ignorePatterns: ['dist/**', 'build/**', 'coverage/**', 'src/output.css'],
+  },
+  fmt: {
+    semi: true,
+    trailingComma: 'es5',
+    singleQuote: true,
+    printWidth: 80,
+    tabWidth: 2,
+    useTabs: false,
+    bracketSpacing: true,
+    bracketSameLine: false,
+    arrowParens: 'avoid',
+    endOfLine: 'lf',
+    sortPackageJson: false,
+    ignorePatterns: [
+      'node_modules/',
+      '.yarn/',
+      'dist/',
+      'build/',
+      '.next/',
+      'out/',
+      '*.min.js',
+      '*.min.css',
+      'src/output.css',
+      '.git/',
+      '.env',
+      '.env.local',
+      '.env.development.local',
+      '.env.test.local',
+      '.env.production.local',
+      'bun.lock',
+      'package-lock.json',
+      'yarn.lock',
+      'pnpm-lock.yaml',
+      'supabase/',
+      '.DS_Store',
+      '*.log',
+      '*.cache',
+    ],
   },
   build: {
     rollupOptions: {

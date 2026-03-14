@@ -4,7 +4,7 @@
  * Reusable test helpers to reduce redundancy across test files
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 /**
  * Test helper for validating empty/whitespace field validation

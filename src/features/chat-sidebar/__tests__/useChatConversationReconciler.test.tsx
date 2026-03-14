@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { useState } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { useChatConversationReconciler } from '../hooks/useChatConversationReconciler';
 
