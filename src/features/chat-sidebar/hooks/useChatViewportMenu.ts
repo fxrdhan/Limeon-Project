@@ -23,6 +23,16 @@ interface UseChatViewportMenuProps {
   messagesContainerRef: RefObject<HTMLDivElement | null>;
 }
 
+const isAnchorVisibleWithinViewport = (
+  bounds: VisibleBounds,
+  anchorRect: DOMRect
+) => {
+  const minVisibleTop = bounds.containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT;
+  const maxVisibleBottom = bounds.visibleBottom;
+
+  return anchorRect.bottom > minVisibleTop && anchorRect.top < maxVisibleBottom;
+};
+
 export const useChatViewportMenu = ({
   getVisibleMessagesBounds,
   messagesContainerRef,
@@ -166,6 +176,13 @@ export const useChatViewportMenu = ({
   const syncOpenMenuLayout = useCallback(
     (anchor: HTMLElement, preferredSide: 'left' | 'right') => {
       const anchorRect = anchor.getBoundingClientRect();
+      const bounds = getVisibleMessagesBounds();
+
+      if (bounds && !isAnchorVisibleWithinViewport(bounds, anchorRect)) {
+        closeMessageMenu();
+        return;
+      }
+
       const nextMenuLayout = getMenuLayout(anchorRect, preferredSide);
 
       setMenuPlacement(previousPlacement =>
@@ -181,7 +198,7 @@ export const useChatViewportMenu = ({
       setMenuOffsetX(0);
       setMenuViewportTick(previousTick => previousTick + 1);
     },
-    [getMenuLayout]
+    [closeMessageMenu, getMenuLayout, getVisibleMessagesBounds]
   );
 
   const requestOpenMenuReposition = useCallback(() => {
@@ -272,22 +289,17 @@ export const useChatViewportMenu = ({
       const bounds = getVisibleMessagesBounds();
       if (!bounds) return;
 
-      const { containerRect, visibleBottom } = bounds;
+      const anchor = openMenuAnchorRef.current;
+      if (anchor) {
+        const anchorRect = anchor.getBoundingClientRect();
+        if (!isAnchorVisibleWithinViewport(bounds, anchorRect)) {
+          closeMessageMenu();
+          return;
+        }
+      }
+
+      const { containerRect } = bounds;
       const menuRect = menuElement.getBoundingClientRect();
-
-      let scrollOffset = 0;
-      if (menuRect.top < containerRect.top) {
-        scrollOffset = menuRect.top - containerRect.top - MENU_GAP;
-      } else if (menuRect.bottom > visibleBottom) {
-        scrollOffset = menuRect.bottom - visibleBottom + MENU_GAP;
-      }
-
-      if (scrollOffset !== 0) {
-        container.scrollTo({
-          top: container.scrollTop + scrollOffset,
-          behavior: 'auto',
-        });
-      }
 
       const minMenuLeft = containerRect.left + MENU_GAP;
       const maxMenuRight = containerRect.right - MENU_GAP;
@@ -304,7 +316,7 @@ export const useChatViewportMenu = ({
           : nextOffsetX
       );
     },
-    [getVisibleMessagesBounds, messagesContainerRef]
+    [closeMessageMenu, getVisibleMessagesBounds, messagesContainerRef]
   );
 
   useLayoutEffect(() => {

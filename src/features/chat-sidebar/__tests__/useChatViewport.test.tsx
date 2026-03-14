@@ -61,7 +61,8 @@ describe('useChatViewport', () => {
       value: 120,
       writable: true,
     });
-    messagesContainer.scrollTo = vi.fn();
+    const scrollToSpy = vi.fn();
+    messagesContainer.scrollTo = scrollToSpy;
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
@@ -167,7 +168,8 @@ describe('useChatViewport', () => {
       value: 120,
       writable: true,
     });
-    messagesContainer.scrollTo = vi.fn();
+    const scrollToSpy = vi.fn();
+    messagesContainer.scrollTo = scrollToSpy;
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
@@ -258,7 +260,8 @@ describe('useChatViewport', () => {
       value: 120,
       writable: true,
     });
-    messagesContainer.scrollTo = vi.fn();
+    const scrollToSpy = vi.fn();
+    messagesContainer.scrollTo = scrollToSpy;
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
@@ -349,7 +352,8 @@ describe('useChatViewport', () => {
       value: 120,
       writable: true,
     });
-    messagesContainer.scrollTo = vi.fn();
+    const scrollToSpy = vi.fn();
+    messagesContainer.scrollTo = scrollToSpy;
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
@@ -445,7 +449,8 @@ describe('useChatViewport', () => {
       value: 120,
       writable: true,
     });
-    messagesContainer.scrollTo = vi.fn();
+    const scrollToSpy = vi.fn();
+    messagesContainer.scrollTo = scrollToSpy;
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
@@ -513,6 +518,7 @@ describe('useChatViewport', () => {
     });
 
     expect(result.current.menuPlacement).toBe('up');
+    expect(scrollToSpy).not.toHaveBeenCalled();
 
     act(() => {
       anchorTop = 240;
@@ -522,6 +528,114 @@ describe('useChatViewport', () => {
     });
 
     expect(result.current.menuPlacement).toBe('left');
+    expect(scrollToSpy).not.toHaveBeenCalled();
+
+    messagesContainer.remove();
+  });
+
+  it('closes the message menu when its anchor scrolls out of the visible viewport', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+
+    let anchorTop = 220;
+    let anchorBottom = 316;
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(anchor);
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 120,
+      writable: true,
+    });
+    messagesContainer.scrollTo = vi.fn();
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+    anchor.getBoundingClientRect = () =>
+      ({
+        top: anchorTop,
+        bottom: anchorBottom,
+        left: 156,
+        right: 284,
+        width: 128,
+        height: anchorBottom - anchorTop,
+        x: 156,
+        y: anchorTop,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const { result } = renderHook(() =>
+      useChatViewport({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        messagesCount: 0,
+        loading: false,
+        messageInputHeight: 22,
+        composerContextualOffset: 0,
+        isMessageInputMultiline: false,
+        pendingComposerAttachmentsCount: 0,
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        editingMessageId: null,
+        focusMessageComposer: vi.fn(),
+        markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+        messagesContainerRef,
+        messagesEndRef,
+        composerContainerRef,
+        chatHeaderContainerRef,
+        messageBubbleRefs,
+      })
+    );
+
+    act(() => {
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
+    });
+
+    expect(result.current.openMenuMessageId).toBe('message-1');
+
+    act(() => {
+      anchorTop = 12;
+      anchorBottom = 108;
+      messagesContainer.dispatchEvent(new Event('scroll'));
+      vi.runAllTimers();
+    });
+
+    expect(result.current.openMenuMessageId).toBeNull();
 
     messagesContainer.remove();
   });
