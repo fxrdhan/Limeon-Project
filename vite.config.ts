@@ -5,7 +5,6 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite-plus';
 import { configDefaults } from 'vite-plus/test/config';
-import viteCompression from 'vite-plugin-compression';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nonRuntimeCoverageFiles = JSON.parse(
@@ -27,12 +26,6 @@ const isAnalyze = process.env.ANALYZE === 'true';
 export default defineConfig({
   plugins: [
     react(),
-    // Brotli compression - best compression ratio for modern browsers
-    viteCompression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-      threshold: 1024, // Only compress files > 1KB
-    }),
     ...(isAnalyze
       ? [
           // Bundle analyzer - generates stats.html after build
