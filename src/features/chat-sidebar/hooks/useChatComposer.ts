@@ -171,13 +171,18 @@ export const useChatComposer = ({
         messageInputHeight !== nextHeight;
       if (shouldAnimateHeight) {
         textarea.style.height = `${currentHeight}px`;
-        messageInputHeightRafRef.current = requestAnimationFrame(() => {
-          const currentTextarea = messageInputRef.current;
-          if (currentTextarea) {
-            currentTextarea.style.height = `${nextHeight}px`;
-          }
-          messageInputHeightRafRef.current = null;
-        });
+        if (nextHeight < currentHeight) {
+          void textarea.offsetHeight;
+          textarea.style.height = `${nextHeight}px`;
+        } else {
+          messageInputHeightRafRef.current = requestAnimationFrame(() => {
+            const currentTextarea = messageInputRef.current;
+            if (currentTextarea) {
+              currentTextarea.style.height = `${nextHeight}px`;
+            }
+            messageInputHeightRafRef.current = null;
+          });
+        }
       } else {
         textarea.style.height = `${nextHeight}px`;
       }
