@@ -1269,4 +1269,102 @@ describe('useChatComposerSend', () => {
       })
     );
   });
+
+  it('converts a google drive pdf url draft into a document attachment send', async () => {
+    mockGateway.uploadAttachment.mockResolvedValue({
+      path: 'documents/channel-1/user-a_document_embedded.pdf',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-file-drive',
+        message: 'documents/channel-1/user-a_document_embedded.pdf',
+        message_type: 'file',
+        file_name: 'invoice.pdf',
+        file_kind: 'document',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel-1/user-a_document_embedded.pdf',
+      }),
+      error: null,
+    });
+    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+      data: {
+        blob: new Blob(['%PDF-1.4\n1 0 obj\n<</Title (Job Desk Minggu 4)>>'], {
+          type: 'application/octet-stream',
+        }),
+        contentDisposition: null,
+        contentType: 'application/octet-stream',
+        sourceUrl:
+          'https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH',
+      },
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState(
+        'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(mockRemoteAssetService.fetchRemoteAsset).toHaveBeenCalledWith(
+      'https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH',
+      {
+        fileNameSourceUrl:
+          'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
+      }
+    );
+
+    await waitFor(() => {
+      expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
+        expect.any(File),
+        expect.stringMatching(
+          /^documents\/channel-1\/user-a_document_.+\.pdf$/
+        ),
+        'application/pdf'
+      );
+    });
+
+    expect(mockGateway.uploadImage).not.toHaveBeenCalled();
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        receiver_id: 'user-b',
+        message_type: 'file',
+        file_name: 'Job Desk Minggu 4.pdf',
+        file_kind: 'document',
+        file_mime_type: 'application/pdf',
+        file_storage_path: expect.stringMatching(
+          /^documents\/channel-1\/user-a_document_.+\.pdf$/
+        ),
+      })
+    );
+  });
 });

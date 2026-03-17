@@ -40,6 +40,9 @@ const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
   webp: 'image/webp',
 };
 const PDF_MIME_TYPE = 'application/pdf';
+const GOOGLE_DRIVE_HOSTNAMES = new Set(['drive.google.com']);
+const PDF_SIGNATURE = '%PDF-';
+const PDF_TITLE_PATTERN = /\/Title\s*\((.*?)\)/s;
 
 const normalizeMimeType = (mimeType?: string | null) =>
   mimeType?.split(';')[0]?.trim().toLowerCase() || '';
@@ -98,9 +101,65 @@ const resolveEmbeddedExtension = (
   return resolveFileExtension(null, null, mimeType);
 };
 
+const extractGoogleDriveFileId = (url: string) => {
+  try {
+    const parsedUrl = new URL(url);
+    const normalizedHostname = parsedUrl.hostname.toLowerCase();
+    if (!GOOGLE_DRIVE_HOSTNAMES.has(normalizedHostname)) {
+      return null;
+    }
+
+    const pathFileIdMatch = parsedUrl.pathname.match(/^\/file\/d\/([^/]+)/i);
+    if (pathFileIdMatch?.[1]) {
+      return pathFileIdMatch[1];
+    }
+
+    const searchFileId = parsedUrl.searchParams.get('id');
+    if (
+      searchFileId &&
+      (parsedUrl.pathname === '/open' || parsedUrl.pathname === '/uc')
+    ) {
+      return searchFileId;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const isKnownEmbeddedRemoteAssetUrl = (url: string) =>
+  extractGoogleDriveFileId(url) !== null;
+
 const hasSupportedDirectAssetExtension = (url: string) => {
   const extension = resolveEmbeddedExtension(null, url, '');
   return extension === 'pdf' || isImageFileExtensionOrMime(extension);
+};
+
+const isSupportedEmbeddedAssetCandidateUrl = (url: string) =>
+  hasSupportedDirectAssetExtension(url) || isKnownEmbeddedRemoteAssetUrl(url);
+
+const normalizeEmbeddedRemoteAssetUrl = (url: string) => {
+  const googleDriveFileId = extractGoogleDriveFileId(url);
+  if (!googleDriveFileId) {
+    return url;
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const normalizedUrl = new URL('https://drive.google.com/uc');
+    normalizedUrl.searchParams.set('export', 'download');
+    normalizedUrl.searchParams.set('id', googleDriveFileId);
+
+    const resourceKey = parsedUrl.searchParams.get('resourcekey');
+    if (resourceKey) {
+      normalizedUrl.searchParams.set('resourcekey', resourceKey);
+    }
+
+    return normalizedUrl.toString();
+  } catch {
+    return url;
+  }
 };
 
 const sanitizeFileName = (fileName: string) =>
@@ -222,13 +281,51 @@ const resolveFileMetadata = ({
   return null;
 };
 
+const sniffPdfMimeTypeFromBlob = async (blob: Blob) => {
+  try {
+    const headerText = await blob.slice(0, PDF_SIGNATURE.length).text();
+    return headerText === PDF_SIGNATURE ? PDF_MIME_TYPE : null;
+  } catch {
+    return null;
+  }
+};
+
+const extractPdfTitleFileNameFromBlob = async (blob: Blob) => {
+  try {
+    const previewText = await blob.slice(0, 16_384).text();
+    const rawTitle = previewText.match(PDF_TITLE_PATTERN)?.[1];
+    if (!rawTitle) {
+      return null;
+    }
+
+    const normalizedTitle = sanitizeFileName(
+      rawTitle
+        .replace(/\\([\\()])/g, '$1')
+        .replace(/\\n/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
+    if (!normalizedTitle) {
+      return null;
+    }
+
+    return normalizedTitle.toLowerCase().endsWith('.pdf')
+      ? normalizedTitle
+      : `${normalizedTitle}.pdf`;
+  } catch {
+    return null;
+  }
+};
+
 const buildEmbeddedFileName = ({
+  fileNameHint,
   url,
   contentDisposition,
   mimeType,
   fileKind,
   extension,
 }: {
+  fileNameHint?: string | null;
   url: string;
   contentDisposition?: string | null;
   mimeType: string;
@@ -236,6 +333,7 @@ const buildEmbeddedFileName = ({
   extension: string;
 }) => {
   const preferredName =
+    fileNameHint ||
     extractFileNameFromContentDisposition(contentDisposition) ||
     extractFileNameFromUrl(url);
   const resolvedExtension =
@@ -263,7 +361,7 @@ const extractEmbeddedComposerMarkdownLink = (normalizedText: string) => {
   if (!markdownLinkUrl) return null;
 
   const resolvedUrl = resolveComposerEmbeddedUrl(markdownLinkUrl);
-  if (!resolvedUrl || !hasSupportedDirectAssetExtension(resolvedUrl)) {
+  if (!resolvedUrl || !isSupportedEmbeddedAssetCandidateUrl(resolvedUrl)) {
     return null;
   }
 
@@ -280,7 +378,7 @@ export const extractEmbeddedComposerLinkFromMessageText = (
   if (!normalizedText) return null;
 
   const directUrl = resolveComposerEmbeddedUrl(normalizedText);
-  if (directUrl && hasSupportedDirectAssetExtension(directUrl)) {
+  if (directUrl && isSupportedEmbeddedAssetCandidateUrl(directUrl)) {
     return {
       source: 'direct-url',
       url: directUrl,
@@ -322,7 +420,12 @@ export const extractEmbeddedComposerLinkFromClipboard = ({
 export const fetchEmbeddedComposerRemoteFile = async (
   url: string
 ): Promise<EmbeddedComposerRemoteFile | null> => {
-  const remoteAsset = (await chatRemoteAssetService.fetchRemoteAsset(url)).data;
+  const normalizedUrl = normalizeEmbeddedRemoteAssetUrl(url);
+  const remoteAsset = (
+    await chatRemoteAssetService.fetchRemoteAsset(normalizedUrl, {
+      fileNameSourceUrl: url,
+    })
+  ).data;
   if (!remoteAsset) {
     return null;
   }
@@ -337,14 +440,35 @@ export const fetchEmbeddedComposerRemoteFile = async (
     return null;
   }
 
+  const sniffedPdfMimeType = await sniffPdfMimeTypeFromBlob(remoteAsset.blob);
+  const resolvedMimeType =
+    responseMimeType === 'application/octet-stream'
+      ? sniffedPdfMimeType || responseMimeType
+      : responseMimeType || sniffedPdfMimeType || '';
+  const pdfTitleFileName =
+    resolvedMimeType === PDF_MIME_TYPE
+      ? await extractPdfTitleFileNameFromBlob(remoteAsset.blob)
+      : null;
+  const resolvedFileNameHint = remoteAsset.fileNameHint || pdfTitleFileName;
   const provisionalFileName =
+    resolvedFileNameHint ||
     extractFileNameFromContentDisposition(remoteAsset.contentDisposition) ||
     extractFileNameFromUrl(remoteAsset.sourceUrl);
-  const fileMetadata = resolveFileMetadata({
-    url: remoteAsset.sourceUrl,
-    fileName: provisionalFileName,
-    mimeType: responseMimeType,
-  });
+  const fileMetadata =
+    resolveFileMetadata({
+      url: remoteAsset.sourceUrl,
+      fileName: provisionalFileName,
+      mimeType: resolvedMimeType,
+    }) ||
+    ((resolvedMimeType === 'application/octet-stream' ||
+      isKnownEmbeddedRemoteAssetUrl(url)) &&
+    sniffedPdfMimeType === PDF_MIME_TYPE
+      ? {
+          extension: 'pdf',
+          fileKind: 'document' as const,
+          mimeType: PDF_MIME_TYPE,
+        }
+      : null);
   if (!fileMetadata) {
     return null;
   }
@@ -354,6 +478,7 @@ export const fetchEmbeddedComposerRemoteFile = async (
       ? remoteAsset.blob
       : new Blob([remoteAsset.blob], { type: fileMetadata.mimeType });
   const fileName = buildEmbeddedFileName({
+    fileNameHint: resolvedFileNameHint,
     url: remoteAsset.sourceUrl,
     contentDisposition: remoteAsset.contentDisposition,
     mimeType: fileMetadata.mimeType,

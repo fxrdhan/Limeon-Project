@@ -241,4 +241,83 @@ describe('useChatComposerAttachments', () => {
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
   });
+
+  it('converts a pasted google drive pdf url into a queued document attachment', async () => {
+    const closeMessageMenu = vi.fn();
+    const preventDefault = vi.fn();
+    let resolveRemoteAsset:
+      | ((value: {
+          file: File;
+          fileKind: 'document';
+          sourceUrl: string;
+        }) => void)
+      | undefined;
+    mockFetchEmbeddedComposerRemoteFile.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveRemoteAsset = resolve;
+        })
+    );
+
+    const { result } = renderHook(() =>
+      useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu,
+        messageInputRef: { current: null },
+      })
+    );
+
+    act(() => {
+      result.current.handleComposerPaste({
+        preventDefault,
+        clipboardData: {
+          items: [],
+          getData: (format: string) =>
+            format === 'text/plain'
+              ? 'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
+              : '',
+        },
+      } as unknown as ReactClipboardEvent<HTMLTextAreaElement>);
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.loadingComposerAttachments).toEqual([
+      expect.objectContaining({
+        fileName: 'view',
+        status: 'loading',
+      }),
+    ]);
+    expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(true);
+    expect(result.current.pendingComposerAttachments).toHaveLength(0);
+
+    await act(async () => {
+      resolveRemoteAsset?.({
+        file: new File(['pdf'], 'invoice.pdf', {
+          type: 'application/pdf',
+        }),
+        fileKind: 'document',
+        sourceUrl:
+          'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+      expect(result.current.pendingComposerAttachments[0]).toEqual(
+        expect.objectContaining({
+          fileKind: 'document',
+          fileName: 'invoice.pdf',
+          mimeType: 'application/pdf',
+          previewUrl: null,
+        })
+      );
+    });
+
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
 });

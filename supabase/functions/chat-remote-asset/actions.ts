@@ -2,6 +2,7 @@ import type { ChatRemoteAssetRequestPayload } from "../../../shared/chatFunction
 
 const SUPPORTED_URL_PROTOCOLS = new Set(["http:", "https:"]);
 const BLOCKED_HOSTNAMES = new Set(["localhost", "0.0.0.0", "127.0.0.1", "::1"]);
+const GOOGLE_DRIVE_TITLE_SUFFIX_PATTERN = /\s*-\s*Google Drive\s*$/i;
 
 const normalizeHostname = (hostname: string) =>
   hostname.replace(/^\[|\]$/g, "").trim().toLowerCase();
@@ -115,4 +116,33 @@ export const isHtmlLikeRemoteAssetMimeType = (mimeType?: string | null) => {
     normalizedMimeType.startsWith("text/html") ||
     normalizedMimeType.startsWith("application/xhtml+xml")
   );
+};
+
+const normalizeRemoteHtmlTitle = (value: string) =>
+  value.replace(GOOGLE_DRIVE_TITLE_SUFFIX_PATTERN, "").trim();
+
+export const extractRemoteHtmlTitle = (html: string) => {
+  const ogTitleMatch = html.match(
+    /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/i
+  );
+  if (ogTitleMatch?.[1]) {
+    const normalizedTitle = normalizeRemoteHtmlTitle(ogTitleMatch[1]);
+    return normalizedTitle || null;
+  }
+
+  const itemPropNameMatch = html.match(
+    /<meta[^>]+itemprop=["']name["'][^>]+content=["']([^"']+)["'][^>]*>/i
+  );
+  if (itemPropNameMatch?.[1]) {
+    const normalizedTitle = normalizeRemoteHtmlTitle(itemPropNameMatch[1]);
+    return normalizedTitle || null;
+  }
+
+  const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+  if (!titleMatch?.[1]) {
+    return null;
+  }
+
+  const normalizedTitle = normalizeRemoteHtmlTitle(titleMatch[1]);
+  return normalizedTitle || null;
 };

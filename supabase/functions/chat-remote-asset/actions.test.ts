@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  extractRemoteHtmlTitle,
   isHtmlLikeRemoteAssetMimeType,
   resolveChatRemoteAssetUrl,
 } from "./actions.ts";
@@ -56,5 +57,18 @@ describe("chat-remote-asset actions", () => {
     expect(isHtmlLikeRemoteAssetMimeType("application/xhtml+xml")).toBe(true);
     expect(isHtmlLikeRemoteAssetMimeType("image/png")).toBe(false);
     expect(isHtmlLikeRemoteAssetMimeType("application/pdf")).toBe(false);
+  });
+
+  it("extracts a readable title from google drive html", () => {
+    const html = `
+      <html>
+        <head>
+          <meta property="og:title" content="Job Desk Minggu 4.pdf" />
+          <title>Job Desk Minggu 4.pdf - Google Drive</title>
+        </head>
+      </html>
+    `;
+
+    expect(extractRemoteHtmlTitle(html)).toBe("Job Desk Minggu 4.pdf");
   });
 });

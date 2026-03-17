@@ -104,8 +104,10 @@ export interface ChatPdfPreviewResponse {
 
 export interface ChatRemoteAssetRequest {
   url: string;
+  fileNameSourceUrl?: string;
 }
 
 export interface ChatRemoteAssetRequestPayload {
   url?: string;
+  fileNameSourceUrl?: string;
 }

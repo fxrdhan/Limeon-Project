@@ -7,6 +7,7 @@ export interface ChatRemoteAssetResult {
   blob: Blob;
   contentDisposition: string | null;
   contentType: string;
+  fileNameHint: string | null;
   sourceUrl: string;
 }
 
@@ -14,10 +15,16 @@ const normalizeHeaderValue = (value?: string | null) => value?.trim() || '';
 
 export const chatRemoteAssetService = {
   async fetchRemoteAsset(
-    url: string
+    url: string,
+    options?: { fileNameSourceUrl?: string | null }
   ): Promise<ServiceResponse<ChatRemoteAssetResult>> {
     try {
-      const request: ChatRemoteAssetRequest = { url };
+      const request: ChatRemoteAssetRequest = {
+        url,
+        ...(options?.fileNameSourceUrl
+          ? { fileNameSourceUrl: options.fileNameSourceUrl }
+          : {}),
+      };
       const { data, error, response } = await supabase.functions.invoke<Blob>(
         'chat-remote-asset',
         {
@@ -51,6 +58,10 @@ export const chatRemoteAssetService = {
           contentDisposition:
             response?.headers.get('content-disposition') ?? null,
           contentType,
+          fileNameHint:
+            normalizeHeaderValue(
+              response?.headers.get('x-chat-remote-file-name')
+            ) || null,
           sourceUrl,
         },
         error: null,

@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import type { ChatRemoteAssetRequestPayload } from "../../../shared/chatFunctionContracts.ts";
 import {
+  extractRemoteHtmlTitle,
   isHtmlLikeRemoteAssetMimeType,
   resolveChatRemoteAssetUrl,
 } from "./actions.ts";
@@ -17,7 +18,7 @@ const buildCorsHeaders = (req: Request) => {
       "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Expose-Headers":
-      "Content-Disposition, X-Chat-Remote-Content-Type, X-Chat-Remote-Source-Url",
+      "Content-Disposition, X-Chat-Remote-Content-Type, X-Chat-Remote-Source-Url, X-Chat-Remote-File-Name",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -85,6 +86,18 @@ Deno.serve(async req => {
     });
   }
 
+  const resolvedFileNameSourceRequest = payload.fileNameSourceUrl?.trim()
+    ? resolveChatRemoteAssetUrl({
+        url: payload.fileNameSourceUrl,
+      })
+    : null;
+  if (resolvedFileNameSourceRequest && !resolvedFileNameSourceRequest.url) {
+    return json(req, resolvedFileNameSourceRequest.status, {
+      error:
+        resolvedFileNameSourceRequest.error ?? "Invalid remote asset title URL",
+    });
+  }
+
   let remoteResponse: Response;
   try {
     remoteResponse = await fetch(resolvedAssetRequest.url, {
@@ -117,6 +130,32 @@ Deno.serve(async req => {
   }
 
   const contentDisposition = remoteResponse.headers.get("content-disposition");
+  let fileNameHint: string | null = null;
+
+  if (
+    !contentDisposition &&
+    resolvedFileNameSourceRequest?.url &&
+    resolvedFileNameSourceRequest.url !== resolvedAssetRequest.url
+  ) {
+    try {
+      const titleResponse = await fetch(resolvedFileNameSourceRequest.url, {
+        headers: {
+          Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
+        },
+        redirect: "follow",
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (titleResponse.ok) {
+        const titleResponseType = titleResponse.headers.get("content-type");
+        if (isHtmlLikeRemoteAssetMimeType(titleResponseType)) {
+          fileNameHint = extractRemoteHtmlTitle(await titleResponse.text());
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to resolve remote asset title", error);
+    }
+  }
 
   return new Response(remoteResponse.body, {
     status: 200,
@@ -126,6 +165,7 @@ Deno.serve(async req => {
       ...(contentDisposition
         ? { "Content-Disposition": contentDisposition }
         : {}),
+      ...(fileNameHint ? { "X-Chat-Remote-File-Name": fileNameHint } : {}),
       "X-Chat-Remote-Content-Type": remoteContentType ?? "",
       "X-Chat-Remote-Source-Url":
         remoteResponse.url || resolvedAssetRequest.url,
