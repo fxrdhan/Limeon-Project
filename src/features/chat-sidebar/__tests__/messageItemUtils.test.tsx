@@ -124,4 +124,42 @@ describe('messageItemUtils', () => {
       'Lampiran.png'
     );
   });
+
+  it('shows download for image messages and downloads the original attachment', async () => {
+    const handleDownloadMessage = vi.fn().mockResolvedValue(undefined);
+    const imageMessage = buildMessage({
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
+    });
+    const actions = buildMessageMenuActions({
+      message: imageMessage,
+      resolvedMessageUrl: 'blob:resolved-image',
+      isCurrentUser: true,
+      isImageMessage: true,
+      isFileMessage: false,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: 'Lampiran.png',
+      openImageInPortal: vi.fn(),
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage: vi.fn(),
+      handleCopyMessage: vi.fn().mockResolvedValue(undefined),
+      handleDownloadMessage,
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    expect(actions.map(action => action.label)).toEqual([
+      'Buka',
+      'Download',
+      'Salin',
+      'Hapus',
+    ]);
+
+    await actions.find(action => action.label === 'Download')?.onClick();
+
+    expect(handleDownloadMessage).toHaveBeenCalledWith(imageMessage);
+  });
 });

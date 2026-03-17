@@ -167,7 +167,7 @@ export const buildMessageMenuActions = ({
     });
   }
 
-  if (isFileMessage) {
+  if (isImageMessage || isFileMessage) {
     menuActions.splice(1, 0, {
       label: 'Download',
       icon: <TbDownload className="h-4 w-4" />,
