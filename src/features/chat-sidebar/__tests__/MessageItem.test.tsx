@@ -72,4 +72,24 @@ describe('MessageItem', () => {
     expect(bubbleColumn?.className).toContain('min-w-0');
     expect(bubble.getAttribute('style')).toContain('overflow-wrap: anywhere;');
   });
+
+  it('uses a slate full-row highlight for selected messages without changing bubble tone', () => {
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          isSelectionMode: true,
+          isSelected: true,
+        })}
+      />
+    );
+
+    const row = container.firstElementChild as HTMLElement | null;
+    const bubble = screen.getByRole('button');
+
+    expect(row?.className).toContain('-mx-3');
+    expect(row?.className).toContain('bg-slate-200');
+    expect(bubble.className).toContain('bg-emerald-200');
+    expect(bubble.className).toContain('text-slate-900');
+    expect(container.querySelector('.rounded-full.border')).toBeNull();
+  });
 });

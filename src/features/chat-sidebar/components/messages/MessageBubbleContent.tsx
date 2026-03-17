@@ -21,7 +21,7 @@ interface MessageBubbleContentProps {
   hasTrailingEllipsis: boolean;
   isMessageLong: boolean;
   isExpanded: boolean;
-  isFlashingTarget: boolean;
+  isHighlightedBubble: boolean;
   onToggleExpand: () => void;
 }
 
@@ -43,7 +43,7 @@ export const MessageBubbleContent = ({
   hasTrailingEllipsis,
   isMessageLong,
   isExpanded,
-  isFlashingTarget,
+  isHighlightedBubble,
   onToggleExpand,
 }: MessageBubbleContentProps) => {
   const isSquareImageAttachment = isImageMessage || isImageFileMessage;
@@ -111,7 +111,7 @@ export const MessageBubbleContent = ({
           {hasTrailingEllipsis ? <span>... </span> : null}
           <span
             className={`font-medium ${
-              isFlashingTarget ? 'text-white/95' : 'text-primary'
+              isHighlightedBubble ? 'text-white/95' : 'text-primary'
             }`}
             role="button"
             tabIndex={0}
@@ -133,7 +133,7 @@ export const MessageBubbleContent = ({
       ) : isExpanded ? (
         <span
           className={`block font-medium ${
-            isFlashingTarget ? 'text-white/95' : 'text-primary'
+            isHighlightedBubble ? 'text-white/95' : 'text-primary'
           }`}
           role="button"
           tabIndex={0}
@@ -161,7 +161,7 @@ export const MessageBubbleContent = ({
       {hasAttachmentCaption ? (
         <p
           className={`mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed ${
-            isFlashingTarget ? 'text-white' : 'text-slate-800'
+            isHighlightedBubble ? 'text-white' : 'text-slate-800'
           }`}
           style={{
             overflowWrap: 'anywhere',

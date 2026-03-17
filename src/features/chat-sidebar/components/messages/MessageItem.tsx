@@ -1,6 +1,5 @@
 import { motion } from 'motion/react';
 import { memo } from 'react';
-import { TbCheck } from 'react-icons/tb';
 import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
@@ -226,8 +225,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       } ${
         isSelectionMode
           ? isSelected
-            ? 'cursor-pointer rounded-lg bg-slate-100/75 px-2 py-1'
-            : 'cursor-pointer rounded-lg px-2 py-1 hover:bg-slate-100/60'
+            ? 'cursor-pointer -mx-3 bg-slate-200 px-5 py-1'
+            : 'cursor-pointer -mx-3 px-5 py-1 hover:bg-slate-100'
           : ''
       }`}
       onClick={() => {
@@ -238,8 +237,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       <div
         className={`${
           isCurrentUser
-            ? 'flex min-w-0 max-w-xs flex-col items-end'
-            : 'flex min-w-0 max-w-xs flex-col items-start'
+            ? 'relative z-[1] flex min-w-0 max-w-xs flex-col items-end'
+            : 'relative z-[1] flex min-w-0 max-w-xs flex-col items-start'
         }`}
       >
         <div
@@ -249,19 +248,6 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               : 'relative min-w-0 max-w-full'
           }
         >
-          {isSelectionMode ? (
-            <span
-              className={`pointer-events-none absolute -top-1.5 ${
-                isCurrentUser ? '-left-1.5' : '-right-1.5'
-              } z-10 inline-flex h-5 w-5 items-center justify-center rounded-full border text-xs ${
-                isSelected
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-slate-300 bg-white text-slate-400'
-              }`}
-            >
-              {isSelected ? <TbCheck className="h-3.5 w-3.5" /> : null}
-            </span>
-          ) : null}
           <div
             ref={bubbleElement => {
               if (bubbleElement) {
@@ -341,7 +327,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               hasTrailingEllipsis={collapsedSearchSnippet.hasTrailingEllipsis}
               isMessageLong={isMessageLong}
               isExpanded={isExpanded}
-              isFlashingTarget={isFlashingTarget}
+              isHighlightedBubble={isFlashingTarget}
               onToggleExpand={() => handleToggleExpand(message.id)}
             />
           </div>

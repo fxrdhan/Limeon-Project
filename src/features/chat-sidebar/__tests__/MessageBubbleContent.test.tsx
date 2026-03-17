@@ -47,7 +47,7 @@ describe('MessageBubbleContent', () => {
         hasTrailingEllipsis={false}
         isMessageLong={false}
         isExpanded={false}
-        isFlashingTarget={false}
+        isHighlightedBubble={false}
         onToggleExpand={() => {}}
       />
     );
@@ -90,7 +90,7 @@ describe('MessageBubbleContent', () => {
           hasTrailingEllipsis={false}
           isMessageLong={false}
           isExpanded={false}
-          isFlashingTarget={false}
+          isHighlightedBubble={false}
           onToggleExpand={() => {}}
         />
       </div>
@@ -141,7 +141,7 @@ describe('MessageBubbleContent', () => {
         hasTrailingEllipsis={false}
         isMessageLong={false}
         isExpanded={false}
-        isFlashingTarget={false}
+        isHighlightedBubble={false}
         onToggleExpand={() => {}}
       />
     );
