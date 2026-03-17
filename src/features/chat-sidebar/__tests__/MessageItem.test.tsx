@@ -85,9 +85,11 @@ describe('MessageItem', () => {
 
     const row = container.firstElementChild as HTMLElement | null;
     const bubble = screen.getByRole('button');
+    const highlight = container.querySelector('[aria-hidden="true"]');
 
-    expect(row?.className).toContain('-mx-3');
-    expect(row?.className).toContain('bg-slate-200');
+    expect(row?.className).toContain('group');
+    expect(highlight?.className).toContain('-inset-x-3');
+    expect(highlight?.className).toContain('bg-slate-200');
     expect(bubble.className).toContain('bg-emerald-200');
     expect(bubble.className).toContain('text-slate-900');
     expect(container.querySelector('.rounded-full.border')).toBeNull();

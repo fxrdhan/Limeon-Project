@@ -222,18 +222,22 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         openMenuMessageId !== message.id
           ? 'blur-[2px] brightness-95'
           : ''
-      } ${
-        isSelectionMode
-          ? isSelected
-            ? 'cursor-pointer -mx-3 bg-slate-200 px-5 py-1'
-            : 'cursor-pointer -mx-3 px-5 py-1 hover:bg-slate-100'
-          : ''
-      }`}
+      } ${isSelectionMode ? 'group cursor-pointer' : ''}`}
       onClick={() => {
         if (!isSelectionMode) return;
         onToggleMessageSelection(message.id);
       }}
     >
+      {isSelectionMode ? (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-y-0 -inset-x-3 rounded-xl transition-colors duration-200 ease-out ${
+            isSelected
+              ? 'bg-slate-200'
+              : 'bg-transparent group-hover:bg-slate-100'
+          }`}
+        />
+      ) : null}
       <div
         className={`${
           isCurrentUser

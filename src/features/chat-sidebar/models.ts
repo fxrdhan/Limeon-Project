@@ -41,6 +41,7 @@ export interface ChatHeaderModel {
   onEnterSearchMode: () => void;
   onExitSearchMode: () => void;
   onEnterSelectionMode: () => void;
+  onClearSelectedMessages: () => void;
   onExitSelectionMode: () => void;
   onSearchQueryChange: (value: string) => void;
   onNavigateSearchUp: () => void;

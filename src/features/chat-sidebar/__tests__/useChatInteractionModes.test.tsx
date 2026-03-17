@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { createRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
@@ -79,6 +80,9 @@ describe('useChatInteractionModes', () => {
   });
 
   it('tracks search matches and navigates active search message', async () => {
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    messagesContainerRef.current = document.createElement('div');
+
     const messages = [
       buildMessage({ id: 'text-1', message: 'stok aman' }),
       buildMessage({
@@ -112,6 +116,7 @@ describe('useChatInteractionModes', () => {
           profilephoto: null,
         },
         closeMessageMenu: vi.fn(),
+        messagesContainerRef,
         getAttachmentFileName: messageItem =>
           messageItem.file_name || 'Lampiran',
       })
@@ -149,6 +154,19 @@ describe('useChatInteractionModes', () => {
 
   it('copies selected visible messages and resets search when channel changes', async () => {
     const closeMessageMenu = vi.fn();
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesContainer = document.createElement('div');
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 180,
+      writable: true,
+    });
+    const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+      messagesContainer.scrollTop = top ?? messagesContainer.scrollTop;
+    });
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    messagesContainerRef.current = messagesContainer;
     const selectionMessages = [
       buildMessage({
         id: 'image-1',
@@ -180,6 +198,7 @@ describe('useChatInteractionModes', () => {
             profilephoto: null,
           },
           closeMessageMenu,
+          messagesContainerRef,
           getAttachmentFileName: messageItem =>
             messageItem.file_name || 'Lampiran',
         }),
@@ -194,6 +213,11 @@ describe('useChatInteractionModes', () => {
 
     await waitFor(() => {
       expect(result.current.isSelectionMode).toBe(true);
+    });
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 180,
+      behavior: 'auto',
     });
 
     act(() => {
@@ -239,5 +263,68 @@ describe('useChatInteractionModes', () => {
       expect(result.current.messageSearchQuery).toBe('');
       expect(result.current.selectedMessageIds.size).toBe(0);
     });
+  });
+
+  it('clears the current selection without leaving selection mode', async () => {
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesContainer = document.createElement('div');
+    messagesContainer.scrollTo =
+      vi.fn() as unknown as typeof messagesContainer.scrollTo;
+    messagesContainerRef.current = messagesContainer;
+    const selectionMessages = [
+      buildMessage({
+        id: 'text-1',
+        message: 'stok aman',
+      }),
+      buildMessage({
+        id: 'text-2',
+        message: 'stok cadangan',
+      }),
+    ];
+
+    const { result } = renderHook(() =>
+      useChatInteractionModes({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: selectionMessages,
+        captionData: getAttachmentCaptionData(selectionMessages),
+        mergeSearchContextMessages: vi.fn(),
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        closeMessageMenu: vi.fn(),
+        messagesContainerRef,
+        getAttachmentFileName: messageItem =>
+          messageItem.file_name || 'Lampiran',
+      })
+    );
+
+    act(() => {
+      result.current.handleEnterMessageSelectionMode();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSelectionMode).toBe(true);
+    });
+
+    act(() => {
+      result.current.handleToggleMessageSelection('text-1');
+      result.current.handleToggleMessageSelection('text-2');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedMessageIds.size).toBe(2);
+    });
+
+    act(() => {
+      result.current.handleClearSelectedMessages();
+    });
+
+    expect(result.current.isSelectionMode).toBe(true);
+    expect(result.current.selectedMessageIds.size).toBe(0);
   });
 });

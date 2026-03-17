@@ -91,6 +91,7 @@ export const useChatSidebarRuntimeState = ({
     targetUser,
     captionData,
     closeMessageMenu: refs.closeMessageMenu,
+    messagesContainerRef: refs.messagesContainerRef,
     getAttachmentFileName,
   });
 

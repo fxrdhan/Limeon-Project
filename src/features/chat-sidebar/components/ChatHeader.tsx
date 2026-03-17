@@ -27,6 +27,7 @@ const ChatHeaderContent = ({ model }: { model: ChatHeaderModel }) => {
     onEnterSearchMode,
     onExitSearchMode,
     onEnterSelectionMode,
+    onClearSelectedMessages,
     onExitSelectionMode,
     onSearchQueryChange,
     onNavigateSearchUp,
@@ -110,6 +111,7 @@ const ChatHeaderContent = ({ model }: { model: ChatHeaderModel }) => {
           canDeleteSelectedMessages={canDeleteSelectedMessages}
           onCopySelectedMessages={onCopySelectedMessages}
           onDeleteSelectedMessages={onDeleteSelectedMessages}
+          onClearSelectedMessages={onClearSelectedMessages}
           onExitSelectionMode={onExitSelectionMode}
           onClose={onClose}
         />

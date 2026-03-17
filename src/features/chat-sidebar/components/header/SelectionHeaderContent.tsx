@@ -1,6 +1,7 @@
 import {
   TbCopy,
   TbLayoutSidebarRightCollapse,
+  TbSquareOff,
   TbTrash,
   TbX,
 } from 'react-icons/tb';
@@ -10,6 +11,7 @@ interface SelectionHeaderContentProps {
   canDeleteSelectedMessages: boolean;
   onCopySelectedMessages: () => void;
   onDeleteSelectedMessages: () => void;
+  onClearSelectedMessages: () => void;
   onExitSelectionMode: () => void;
   onClose: () => void;
 }
@@ -22,10 +24,21 @@ const SelectionHeaderContent = ({
   canDeleteSelectedMessages,
   onCopySelectedMessages,
   onDeleteSelectedMessages,
+  onClearSelectedMessages,
   onExitSelectionMode,
   onClose,
 }: SelectionHeaderContentProps) => (
   <div className="flex w-full items-center justify-end gap-2">
+    <button
+      type="button"
+      aria-label="Batalkan semua pilihan"
+      title="Batalkan semua pilihan"
+      className={floatingIconButtonClass}
+      onClick={onClearSelectedMessages}
+      disabled={selectedMessageCount === 0}
+    >
+      <TbSquareOff size={18} />
+    </button>
     <span
       className={`${floatingBlockClass} inline-flex h-9 min-w-20 items-center justify-center px-3 text-sm font-semibold text-slate-700`}
       aria-live="polite"

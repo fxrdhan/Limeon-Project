@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { RefObject } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
@@ -23,6 +31,7 @@ interface UseChatInteractionModesProps {
   targetUser?: ChatSidebarPanelTargetUser;
   captionData: AttachmentCaptionData;
   closeMessageMenu: () => void;
+  messagesContainerRef: RefObject<HTMLDivElement | null>;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
 }
 
@@ -35,12 +44,14 @@ export const useChatInteractionModes = ({
   targetUser,
   captionData,
   closeMessageMenu,
+  messagesContainerRef,
   getAttachmentFileName,
 }: UseChatInteractionModesProps) => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
     () => new Set()
   );
+  const selectionModeScrollTopRef = useRef<number | null>(null);
   const search = useChatMessageSearchMode({
     isOpen,
     currentChannelId,
@@ -75,12 +86,42 @@ export const useChatInteractionModes = ({
     if (isOpen) return;
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
+    selectionModeScrollTopRef.current = null;
   }, [isOpen]);
 
   useEffect(() => {
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
+    selectionModeScrollTopRef.current = null;
   }, [currentChannelId]);
+
+  useLayoutEffect(() => {
+    if (!isSelectionMode) {
+      selectionModeScrollTopRef.current = null;
+      return;
+    }
+
+    const targetScrollTop = selectionModeScrollTopRef.current;
+    const container = messagesContainerRef.current;
+    if (targetScrollTop === null || !container) {
+      return;
+    }
+
+    const rafId = requestAnimationFrame(() => {
+      const activeContainer = messagesContainerRef.current;
+      if (!activeContainer) return;
+
+      activeContainer.scrollTo({
+        top: targetScrollTop,
+        behavior: 'auto',
+      });
+      selectionModeScrollTopRef.current = null;
+    });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [isSelectionMode, messagesContainerRef]);
 
   useEffect(() => {
     setSelectedMessageIds(previousSelectedIds => {
@@ -109,14 +150,20 @@ export const useChatInteractionModes = ({
   }, [search]);
 
   const handleEnterMessageSelectionMode = useCallback(() => {
+    selectionModeScrollTopRef.current =
+      messagesContainerRef.current?.scrollTop ?? null;
     closeMessageMenu();
     search.handleExitMessageSearchMode();
     setSelectedMessageIds(new Set());
     setIsSelectionMode(true);
-  }, [closeMessageMenu, search]);
+  }, [closeMessageMenu, messagesContainerRef, search]);
 
   const handleExitMessageSelectionMode = useCallback(() => {
     setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
+  }, []);
+
+  const handleClearSelectedMessages = useCallback(() => {
     setSelectedMessageIds(new Set());
   }, []);
 
@@ -221,6 +268,7 @@ export const useChatInteractionModes = ({
     handleEnterMessageSearchMode,
     handleExitMessageSearchMode,
     handleEnterMessageSelectionMode,
+    handleClearSelectedMessages,
     handleExitMessageSelectionMode,
     handleToggleMessageSelection,
     handleFocusSearchInput,

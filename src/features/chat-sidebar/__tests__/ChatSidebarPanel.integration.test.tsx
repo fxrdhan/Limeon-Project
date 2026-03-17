@@ -162,6 +162,7 @@ vi.mock('../hooks/useChatInteractionModes', () => ({
     handleEnterMessageSearchMode: vi.fn(),
     handleExitMessageSearchMode: vi.fn(),
     handleEnterMessageSelectionMode: vi.fn(),
+    handleClearSelectedMessages: vi.fn(),
     handleExitMessageSelectionMode: vi.fn(),
     handleMessageSearchQueryChange: vi.fn(),
     handleNavigateSearchUp: vi.fn(),

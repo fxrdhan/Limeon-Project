@@ -47,6 +47,7 @@ export const useChatSidebarController = ({
     onEnterSearchMode: runtime.interaction.handleEnterMessageSearchMode,
     onExitSearchMode: runtime.interaction.handleExitMessageSearchMode,
     onEnterSelectionMode: runtime.interaction.handleEnterMessageSelectionMode,
+    onClearSelectedMessages: runtime.interaction.handleClearSelectedMessages,
     onExitSelectionMode: runtime.interaction.handleExitMessageSelectionMode,
     onSearchQueryChange: runtime.interaction.handleMessageSearchQueryChange,
     onNavigateSearchUp: runtime.interaction.handleNavigateSearchUp,
