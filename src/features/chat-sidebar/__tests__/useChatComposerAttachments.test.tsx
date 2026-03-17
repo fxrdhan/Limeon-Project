@@ -14,6 +14,9 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
     fetchRemoteAsset: vi.fn(),
   },
 }));
+const { mockFetchEmbeddedComposerRemoteFile } = vi.hoisted(() => ({
+  mockFetchEmbeddedComposerRemoteFile: vi.fn(),
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -22,6 +25,15 @@ vi.mock('react-hot-toast', () => ({
 vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
 }));
+
+vi.mock('../utils/composer-embedded-link', async () => {
+  const actual = await vi.importActual('../utils/composer-embedded-link');
+
+  return {
+    ...actual,
+    fetchEmbeddedComposerRemoteFile: mockFetchEmbeddedComposerRemoteFile,
+  };
+});
 
 describe('useChatComposerAttachments', () => {
   let revokeObjectURL: ReturnType<typeof vi.fn>;
@@ -50,6 +62,7 @@ describe('useChatComposerAttachments', () => {
       data: null,
       error: null,
     });
+    mockFetchEmbeddedComposerRemoteFile.mockResolvedValue(null);
   });
 
   it('revokes queued attachment preview urls on unmount', () => {
@@ -111,14 +124,10 @@ describe('useChatComposerAttachments', () => {
   it('converts pasted embedded image html into a queued image attachment', async () => {
     const closeMessageMenu = vi.fn();
     const preventDefault = vi.fn();
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
-      data: {
-        blob: new Blob(['image'], { type: 'image/png' }),
-        contentDisposition: null,
-        contentType: 'image/png',
-        sourceUrl: 'https://example.com/embed/receipt',
-      },
-      error: null,
+    mockFetchEmbeddedComposerRemoteFile.mockResolvedValue({
+      file: new File(['image'], 'receipt.png', { type: 'image/png' }),
+      fileKind: 'image',
+      sourceUrl: 'https://example.com/embed/receipt',
     });
 
     const { result } = renderHook(() =>
@@ -129,7 +138,7 @@ describe('useChatComposerAttachments', () => {
       })
     );
 
-    await act(async () => {
+    act(() => {
       result.current.handleComposerPaste({
         preventDefault,
         clipboardData: {
@@ -161,16 +170,15 @@ describe('useChatComposerAttachments', () => {
   it('converts a pasted direct image url into a queued image attachment', async () => {
     const closeMessageMenu = vi.fn();
     const preventDefault = vi.fn();
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
-      data: {
-        blob: new Blob(['image'], { type: 'image/jpeg' }),
-        contentDisposition: null,
-        contentType: 'image/jpeg',
-        sourceUrl:
-          'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg',
-      },
-      error: null,
-    });
+    let resolveRemoteAsset:
+      | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
+      | undefined;
+    mockFetchEmbeddedComposerRemoteFile.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveRemoteAsset = resolve;
+        })
+    );
 
     const { result } = renderHook(() =>
       useChatComposerAttachments({
@@ -180,7 +188,7 @@ describe('useChatComposerAttachments', () => {
       })
     );
 
-    await act(async () => {
+    act(() => {
       result.current.handleComposerPaste({
         preventDefault,
         clipboardData: {
@@ -191,6 +199,31 @@ describe('useChatComposerAttachments', () => {
               : '',
         },
       } as unknown as ReactClipboardEvent<HTMLTextAreaElement>);
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.loadingComposerAttachments).toEqual([
+      expect.objectContaining({
+        fileName: 'Ubuntu-25.10-Questing-Quokka.jpg',
+        status: 'loading',
+      }),
+    ]);
+    expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(true);
+    expect(result.current.pendingComposerAttachments).toHaveLength(0);
+
+    await act(async () => {
+      resolveRemoteAsset?.({
+        file: new File(['image'], 'Ubuntu-25.10-Questing-Quokka.jpg', {
+          type: 'image/jpeg',
+        }),
+        fileKind: 'image',
+        sourceUrl:
+          'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg',
+      });
+      await Promise.resolve();
     });
 
     await waitFor(() => {

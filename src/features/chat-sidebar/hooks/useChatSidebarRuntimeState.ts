@@ -72,6 +72,7 @@ export const useChatSidebarRuntimeState = ({
     clearPendingComposerAttachments: composer.clearPendingComposerAttachments,
     restorePendingComposerAttachments:
       composer.restorePendingComposerAttachments,
+    isComposerAttachmentLoading: composer.isLoadingEmbeddedComposerAttachments,
     closeMessageMenu: refs.closeMessageMenu,
     focusMessageComposer,
     scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
@@ -104,7 +105,9 @@ export const useChatSidebarRuntimeState = ({
     messageInputHeight: composer.messageInputHeight,
     composerContextualOffset: composer.composerContextualOffset,
     isMessageInputMultiline: composer.isMessageInputMultiline,
-    pendingComposerAttachmentsCount: composer.pendingComposerAttachments.length,
+    pendingComposerAttachmentsCount:
+      composer.pendingComposerAttachments.length +
+      composer.loadingComposerAttachments.length,
     normalizedMessageSearchQuery: interaction.normalizedMessageSearchQuery,
     isMessageSearchMode: interaction.isMessageSearchMode,
     activeSearchMessageId: interaction.activeSearchMessageId,

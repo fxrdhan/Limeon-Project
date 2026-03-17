@@ -40,6 +40,7 @@ interface UseChatConversationMutationsProps {
   restorePendingComposerAttachments: (
     attachments: PendingComposerAttachment[]
   ) => void;
+  isComposerAttachmentLoading: boolean;
   closeMessageMenu: () => void;
   focusMessageComposer: () => void;
   scheduleScrollMessagesToBottom: () => void;
@@ -78,6 +79,7 @@ export const useChatConversationMutations = ({
   pendingComposerAttachments,
   clearPendingComposerAttachments,
   restorePendingComposerAttachments,
+  isComposerAttachmentLoading,
   closeMessageMenu,
   focusMessageComposer,
   scheduleScrollMessagesToBottom,
@@ -165,7 +167,10 @@ export const useChatConversationMutations = ({
 
   const handleEditMessage = useCallback(
     (targetMessage: ChatMessage) => {
-      if (pendingComposerAttachments.length > 0) {
+      if (
+        pendingComposerAttachments.length > 0 ||
+        isComposerAttachmentLoading
+      ) {
         closeMessageMenu();
         toast.error(
           'Selesaikan atau hapus lampiran draft sebelum mengedit pesan',
@@ -193,6 +198,7 @@ export const useChatConversationMutations = ({
     [
       closeMessageMenu,
       focusMessageComposer,
+      isComposerAttachmentLoading,
       pendingComposerAttachments.length,
       setEditingMessageId,
       setMessage,
@@ -207,13 +213,22 @@ export const useChatConversationMutations = ({
   }, [closeMessageMenu, focusMessageComposer, setEditingMessageId, setMessage]);
 
   const handleSendMessage = useCallback(async () => {
+    if (isComposerAttachmentLoading) {
+      return;
+    }
+
     if (editingMessageId) {
       await handleUpdateMessage();
       return;
     }
 
     await send.handleSendMessage();
-  }, [editingMessageId, handleUpdateMessage, send]);
+  }, [
+    editingMessageId,
+    handleUpdateMessage,
+    isComposerAttachmentLoading,
+    send,
+  ]);
 
   const handleKeyPress = useCallback(
     (event: ReactKeyboardEvent) => {
@@ -223,10 +238,13 @@ export const useChatConversationMutations = ({
 
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
+        if (isComposerAttachmentLoading) {
+          return;
+        }
         void handleSendMessage();
       }
     },
-    [handleSendMessage]
+    [handleSendMessage, isComposerAttachmentLoading]
   );
 
   return {

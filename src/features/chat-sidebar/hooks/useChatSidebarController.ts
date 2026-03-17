@@ -149,10 +149,14 @@ export const useChatSidebarController = ({
       messageInputHeight: runtime.composer.messageInputHeight,
       isMessageInputMultiline: runtime.composer.isMessageInputMultiline,
       isSendSuccessGlowVisible: runtime.composer.isSendSuccessGlowVisible,
+      isSendDisabled: runtime.composer.isLoadingEmbeddedComposerAttachments,
     },
     attachments: {
       isAttachModalOpen: runtime.composer.isAttachModalOpen,
-      pendingComposerAttachments: runtime.composer.pendingComposerAttachments,
+      pendingComposerAttachments: [
+        ...runtime.composer.pendingComposerAttachments,
+        ...runtime.composer.loadingComposerAttachments,
+      ],
       previewComposerImageAttachment:
         runtime.composer.previewComposerImageAttachment,
       isComposerImageExpanded: runtime.composer.isComposerImageExpanded,

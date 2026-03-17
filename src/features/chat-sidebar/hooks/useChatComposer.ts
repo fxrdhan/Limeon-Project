@@ -55,6 +55,8 @@ export const useChatComposer = ({
   const {
     isAttachModalOpen,
     pendingComposerAttachments,
+    loadingComposerAttachments,
+    isLoadingEmbeddedComposerAttachments,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
@@ -95,7 +97,9 @@ export const useChatComposer = ({
           ?.message ?? null);
   const composerContextualOffset =
     (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0) +
-    (pendingComposerAttachments.length > 0 ? COMPOSER_IMAGE_PREVIEW_OFFSET : 0);
+    (pendingComposerAttachments.length + loadingComposerAttachments.length > 0
+      ? COMPOSER_IMAGE_PREVIEW_OFFSET
+      : 0);
 
   const triggerSendSuccessGlow = useCallback(() => {
     if (sendSuccessGlowTimeoutRef.current) {
@@ -234,6 +238,8 @@ export const useChatComposer = ({
     isSendSuccessGlowVisible,
     isAttachModalOpen,
     pendingComposerAttachments,
+    loadingComposerAttachments,
+    isLoadingEmbeddedComposerAttachments,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,

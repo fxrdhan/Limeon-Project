@@ -37,3 +37,14 @@ export type PendingComposerAttachment = {
   previewUrl: string | null;
   pdfCoverUrl: string | null;
 };
+
+export type LoadingComposerAttachment = {
+  id: string;
+  fileName: string;
+  sourceUrl: string;
+  status: 'loading';
+};
+
+export type ComposerAttachmentPreviewItem =
+  | PendingComposerAttachment
+  | LoadingComposerAttachment;

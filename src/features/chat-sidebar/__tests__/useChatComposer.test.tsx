@@ -10,10 +10,31 @@ const { mockToast } = vi.hoisted(() => ({
     success: vi.fn(),
   },
 }));
+const { mockRemoteAssetService } = vi.hoisted(() => ({
+  mockRemoteAssetService: {
+    fetchRemoteAsset: vi.fn(),
+  },
+}));
+const { mockFetchEmbeddedComposerRemoteFile } = vi.hoisted(() => ({
+  mockFetchEmbeddedComposerRemoteFile: vi.fn(),
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
+
+vi.mock('@/services/api/chat/remote-asset.service', () => ({
+  chatRemoteAssetService: mockRemoteAssetService,
+}));
+
+vi.mock('../utils/composer-embedded-link', async () => {
+  const actual = await vi.importActual('../utils/composer-embedded-link');
+
+  return {
+    ...actual,
+    fetchEmbeddedComposerRemoteFile: mockFetchEmbeddedComposerRemoteFile,
+  };
+});
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -52,6 +73,11 @@ describe('useChatComposer', () => {
         revokeObjectURL: vi.fn(),
       })
     );
+    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    mockFetchEmbeddedComposerRemoteFile.mockResolvedValue(null);
   });
 
   it('mereset state composer ketika berpindah ke channel lain', async () => {
@@ -98,5 +124,68 @@ describe('useChatComposer', () => {
       expect(result.current.editingMessageId).toBeNull();
       expect(result.current.pendingComposerAttachments).toHaveLength(0);
     });
+  });
+
+  it('menghapus loading attachment ketika channel berpindah saat konversi link masih berjalan', async () => {
+    let resolveRemoteAsset:
+      | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
+      | undefined;
+    mockFetchEmbeddedComposerRemoteFile.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveRemoteAsset = resolve;
+        })
+    );
+
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) => {
+        const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+        return useChatComposer({
+          isOpen: true,
+          currentChannelId: channelId,
+          messages: [],
+          closeMessageMenu: vi.fn(),
+          messageInputRef,
+        });
+      },
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    act(() => {
+      result.current.handleComposerPaste({
+        preventDefault: vi.fn(),
+        clipboardData: {
+          items: [],
+          getData: (format: string) =>
+            format === 'text/plain'
+              ? 'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
+              : '',
+        },
+      } as never);
+    });
+
+    rerender({ channelId: 'channel-2' });
+
+    await waitFor(() => {
+      expect(result.current.loadingComposerAttachments).toEqual([]);
+      expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(false);
+    });
+
+    await act(async () => {
+      resolveRemoteAsset?.({
+        file: new File(['image'], 'Ubuntu-25.10-Questing-Quokka.jpg', {
+          type: 'image/jpeg',
+        }),
+        fileKind: 'image',
+        sourceUrl:
+          'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg',
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.pendingComposerAttachments).toEqual([]);
   });
 });

@@ -13,6 +13,7 @@ import type { ChatMessage } from './data/chatSidebarGateway';
 import type { PdfMessagePreview } from './hooks/useMessagePdfPreviews';
 import type {
   ChatSidebarPanelTargetUser,
+  ComposerAttachmentPreviewItem,
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
@@ -160,10 +161,11 @@ export interface ComposerPanelModel {
     messageInputHeight: number;
     isMessageInputMultiline: boolean;
     isSendSuccessGlowVisible: boolean;
+    isSendDisabled: boolean;
   };
   attachments: {
     isAttachModalOpen: boolean;
-    pendingComposerAttachments: PendingComposerAttachment[];
+    pendingComposerAttachments: ComposerAttachmentPreviewItem[];
     previewComposerImageAttachment: PendingComposerAttachment | undefined;
     isComposerImageExpanded: boolean;
     isComposerImageExpandedVisible: boolean;

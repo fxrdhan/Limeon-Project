@@ -220,7 +220,12 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 type="button"
                 onClick={actions.onSendMessage}
                 aria-label="Kirim pesan"
-                className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end cursor-pointer whitespace-nowrap shrink-0 ${
+                disabled={state.isSendDisabled}
+                className={`h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center justify-self-end whitespace-nowrap shrink-0 transition-opacity ${
+                  state.isSendDisabled
+                    ? 'cursor-not-allowed opacity-55'
+                    : 'cursor-pointer'
+                } ${
                   state.isMessageInputMultiline
                     ? 'col-start-3 row-start-2'
                     : 'col-start-3 row-start-1'

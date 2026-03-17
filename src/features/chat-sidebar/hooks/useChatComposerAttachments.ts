@@ -11,8 +11,12 @@ import toast from 'react-hot-toast';
 import {
   CHAT_SIDEBAR_TOASTER_ID,
   COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
+  MAX_PENDING_COMPOSER_ATTACHMENTS,
 } from '../constants';
-import type { PendingComposerAttachment } from '../types';
+import type {
+  LoadingComposerAttachment,
+  PendingComposerAttachment,
+} from '../types';
 import {
   extractEmbeddedComposerLinkFromClipboard,
   fetchEmbeddedComposerRemoteFile,
@@ -60,6 +64,10 @@ export const useChatComposerAttachments = ({
     editingMessageId,
     messageInputRef,
   });
+  const [loadingComposerAttachments, setLoadingComposerAttachments] = useState<
+    LoadingComposerAttachment[]
+  >([]);
+  const loadingComposerAttachmentsRef = useRef<LoadingComposerAttachment[]>([]);
 
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
@@ -115,6 +123,81 @@ export const useChatComposerAttachments = ({
     setIsAttachModalOpen(true);
   }, [closeAttachModal, closeMessageMenu, isAttachModalOpen]);
 
+  const removeLoadingComposerAttachment = useCallback(
+    (attachmentId: string) => {
+      const nextAttachments = loadingComposerAttachmentsRef.current.filter(
+        attachment => attachment.id !== attachmentId
+      );
+      loadingComposerAttachmentsRef.current = nextAttachments;
+      setLoadingComposerAttachments(nextAttachments);
+    },
+    []
+  );
+
+  const buildLoadingComposerAttachment = useCallback(
+    (sourceUrl: string): LoadingComposerAttachment => {
+      let fileName = 'Media dari link';
+
+      try {
+        const parsedUrl = new URL(sourceUrl);
+        const rawFileName = parsedUrl.pathname.split('/').pop();
+        if (rawFileName) {
+          fileName = decodeURIComponent(rawFileName);
+        }
+      } catch {
+        // Ignore invalid URLs and keep fallback label.
+      }
+
+      return {
+        id: `loading_attachment_${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2, 8)}`,
+        fileName,
+        sourceUrl,
+        status: 'loading',
+      };
+    },
+    []
+  );
+
+  const queueLoadingComposerAttachment = useCallback(
+    (sourceUrl: string) => {
+      if (editingMessageId) {
+        toast.error('Selesaikan edit pesan terlebih dahulu', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return null;
+      }
+
+      const currentAttachmentCount =
+        pendingComposerAttachments.length + loadingComposerAttachments.length;
+      if (currentAttachmentCount >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
+        toast.error(
+          `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+        return null;
+      }
+
+      const loadingAttachment = buildLoadingComposerAttachment(sourceUrl);
+      const nextAttachments = [
+        ...loadingComposerAttachmentsRef.current,
+        loadingAttachment,
+      ];
+      loadingComposerAttachmentsRef.current = nextAttachments;
+      setLoadingComposerAttachments(nextAttachments);
+      return loadingAttachment;
+    },
+    [
+      buildLoadingComposerAttachment,
+      editingMessageId,
+      loadingComposerAttachments.length,
+      pendingComposerAttachments.length,
+    ]
+  );
+
   const removePendingComposerAttachment = useCallback(
     (attachmentId: string) => {
       removePendingComposerAttachmentFromQueue(attachmentId);
@@ -143,6 +226,8 @@ export const useChatComposerAttachments = ({
     setComposerImagePreviewAttachmentId(null);
     replaceComposerImageAttachmentIdRef.current = null;
     replaceComposerDocumentAttachmentIdRef.current = null;
+    loadingComposerAttachmentsRef.current = [];
+    setLoadingComposerAttachments([]);
     clearPendingComposerAttachmentsFromQueue();
   }, [clearPendingComposerAttachmentsFromQueue]);
 
@@ -194,6 +279,8 @@ export const useChatComposerAttachments = ({
       setComposerImagePreviewAttachmentId(null);
       replaceComposerImageAttachmentIdRef.current = null;
       replaceComposerDocumentAttachmentIdRef.current = null;
+      loadingComposerAttachmentsRef.current = [];
+      setLoadingComposerAttachments([]);
       restorePendingComposerAttachmentsFromQueue(attachments);
     },
     [restorePendingComposerAttachmentsFromQueue]
@@ -285,10 +372,22 @@ export const useChatComposerAttachments = ({
   );
 
   const queueEmbeddedComposerLink = useCallback(
-    async (embeddedLink: string) => {
+    async (
+      embeddedLink: string,
+      loadingAttachment: LoadingComposerAttachment
+    ) => {
       try {
         const embeddedRemoteFile =
           await fetchEmbeddedComposerRemoteFile(embeddedLink);
+        const isLoadingAttachmentActive =
+          loadingComposerAttachmentsRef.current.some(
+            attachment => attachment.id === loadingAttachment.id
+          );
+        if (!isLoadingAttachmentActive) {
+          return false;
+        }
+
+        removeLoadingComposerAttachment(loadingAttachment.id);
         if (!embeddedRemoteFile) {
           toast.error('Link harus mengarah ke gambar atau PDF yang valid', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -302,6 +401,7 @@ export const useChatComposerAttachments = ({
 
         return queueComposerFile(embeddedRemoteFile.file, 'document');
       } catch (error) {
+        removeLoadingComposerAttachment(loadingAttachment.id);
         console.error('Error queueing embedded composer link:', error);
         toast.error('Gagal mengambil file dari link', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -309,7 +409,7 @@ export const useChatComposerAttachments = ({
         return false;
       }
     },
-    [queueComposerFile, queueComposerImage]
+    [queueComposerFile, queueComposerImage, removeLoadingComposerAttachment]
   );
 
   const handleComposerPaste = useCallback(
@@ -337,12 +437,19 @@ export const useChatComposerAttachments = ({
       event.preventDefault();
       closeAttachModal();
       closeMessageMenu();
-      void queueEmbeddedComposerLink(embeddedLink.url);
+      const loadingAttachment = queueLoadingComposerAttachment(
+        embeddedLink.url
+      );
+      if (!loadingAttachment) {
+        return;
+      }
+      void queueEmbeddedComposerLink(embeddedLink.url, loadingAttachment);
     },
     [
       closeAttachModal,
       closeMessageMenu,
       queueComposerImage,
+      queueLoadingComposerAttachment,
       queueEmbeddedComposerLink,
     ]
   );
@@ -393,6 +500,8 @@ export const useChatComposerAttachments = ({
   return {
     isAttachModalOpen,
     pendingComposerAttachments,
+    loadingComposerAttachments,
+    isLoadingEmbeddedComposerAttachments: loadingComposerAttachments.length > 0,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,

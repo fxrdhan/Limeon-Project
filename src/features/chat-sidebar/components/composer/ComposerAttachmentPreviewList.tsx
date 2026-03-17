@@ -7,11 +7,14 @@ import {
   TbMusic,
   TbX,
 } from 'react-icons/tb';
-import type { PendingComposerAttachment } from '../../types';
+import type {
+  ComposerAttachmentPreviewItem,
+  PendingComposerAttachment,
+} from '../../types';
 import { resolveComposerAttachmentExtension } from '../../utils/composer-attachment';
 
 interface ComposerAttachmentPreviewListProps {
-  attachments: PendingComposerAttachment[];
+  attachments: ComposerAttachmentPreviewItem[];
   openImageActionsAttachmentId: string | null;
   imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
   transition: {
@@ -68,11 +71,31 @@ const ComposerAttachmentPreviewList = forwardRef<
       </div>
       <div className="flex flex-col gap-2 pr-1">
         {attachments.map(attachment => {
-          const isImageAttachment = attachment.fileKind === 'image';
-          const isAudioAttachment = attachment.fileKind === 'audio';
-          const isDocumentAttachment = attachment.fileKind === 'document';
+          if ('status' in attachment && attachment.status === 'loading') {
+            return (
+              <div
+                key={attachment.id}
+                className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
+                  <div className="h-11 w-11 shrink-0 animate-pulse rounded-lg bg-slate-200" />
+                  <div className="min-w-0 flex-1">
+                    <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
+                    <div className="mt-1 h-3 w-14 animate-pulse rounded bg-slate-200" />
+                  </div>
+                </div>
+                <div className="h-7 w-7 shrink-0 animate-pulse rounded-lg bg-slate-200" />
+              </div>
+            );
+          }
+
+          const resolvedAttachment = attachment as PendingComposerAttachment;
+          const isImageAttachment = resolvedAttachment.fileKind === 'image';
+          const isAudioAttachment = resolvedAttachment.fileKind === 'audio';
+          const isDocumentAttachment =
+            resolvedAttachment.fileKind === 'document';
           const attachmentExtension =
-            resolveComposerAttachmentExtension(attachment);
+            resolveComposerAttachmentExtension(resolvedAttachment);
           const isJpgDocumentAttachment =
             attachmentExtension === 'jpg' || attachmentExtension === 'jpeg';
           const isPngDocumentAttachment = attachmentExtension === 'png';
@@ -99,8 +122,8 @@ const ComposerAttachmentPreviewList = forwardRef<
                   }}
                 >
                   <img
-                    src={attachment.previewUrl ?? ''}
-                    alt={attachment.fileName}
+                    src={resolvedAttachment.previewUrl ?? ''}
+                    alt={resolvedAttachment.fileName}
                     className="h-11 w-11 rounded-lg object-cover"
                     draggable={false}
                   />
@@ -109,7 +132,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {attachment.fileName}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {attachment.fileTypeLabel}
+                      {resolvedAttachment.fileTypeLabel}
                     </p>
                   </div>
                 </div>
@@ -119,19 +142,19 @@ const ComposerAttachmentPreviewList = forwardRef<
                   tabIndex={0}
                   className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
                   onClick={() => {
-                    onOpenDocumentAttachment(attachment);
+                    onOpenDocumentAttachment(resolvedAttachment);
                   }}
                   onKeyDown={event => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
-                      onOpenDocumentAttachment(attachment);
+                      onOpenDocumentAttachment(resolvedAttachment);
                     }
                   }}
                 >
-                  {attachment.pdfCoverUrl ? (
+                  {resolvedAttachment.pdfCoverUrl ? (
                     <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
                       <img
-                        src={attachment.pdfCoverUrl}
+                        src={resolvedAttachment.pdfCoverUrl}
                         alt="PDF cover preview"
                         className="h-full w-full object-cover"
                         draggable={false}
@@ -148,8 +171,10 @@ const ComposerAttachmentPreviewList = forwardRef<
                   ) : (
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
                       {(
-                        attachment.fileName.split('.').pop()?.toUpperCase() ||
-                        attachment.fileTypeLabel
+                        resolvedAttachment.fileName
+                          .split('.')
+                          .pop()
+                          ?.toUpperCase() || resolvedAttachment.fileTypeLabel
                       ).slice(0, 4)}
                     </div>
                   )}
@@ -158,7 +183,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {attachment.fileName}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {attachment.fileTypeLabel}
+                      {resolvedAttachment.fileTypeLabel}
                     </p>
                   </div>
                 </div>
@@ -170,7 +195,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {attachment.fileName}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {attachment.fileTypeLabel}
+                      {resolvedAttachment.fileTypeLabel}
                     </p>
                   </div>
                 </div>

@@ -319,38 +319,10 @@ export const extractEmbeddedComposerLinkFromClipboard = ({
   return extractEmbeddedComposerLinkFromMessageText(text.trim());
 };
 
-const isSameOriginEmbeddedComposerUrl = (url: string) => {
-  if (typeof window === 'undefined') {
-    return true;
-  }
-
-  try {
-    return new URL(url).origin === window.location.origin;
-  } catch {
-    return false;
-  }
-};
-
 export const fetchEmbeddedComposerRemoteFile = async (
   url: string
 ): Promise<EmbeddedComposerRemoteFile | null> => {
-  const remoteAsset = isSameOriginEmbeddedComposerUrl(url)
-    ? await (async () => {
-        const response = await fetch(url);
-        if (!response.ok) {
-          return null;
-        }
-
-        const responseBlob = await response.blob();
-        return {
-          blob: responseBlob,
-          contentDisposition: response.headers.get('content-disposition'),
-          contentType:
-            response.headers.get('content-type') || responseBlob.type || '',
-          sourceUrl: response.url || url,
-        };
-      })()
-    : (await chatRemoteAssetService.fetchRemoteAsset(url)).data;
+  const remoteAsset = (await chatRemoteAssetService.fetchRemoteAsset(url)).data;
   if (!remoteAsset) {
     return null;
   }

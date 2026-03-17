@@ -10,6 +10,18 @@ import {
 } from 'vite-plus/test';
 import ChatSidebarPanel from '../index';
 
+const { mockComposerState } = vi.hoisted(() => ({
+  mockComposerState: {
+    loadingComposerAttachments: [] as Array<{
+      id: string;
+      fileName: string;
+      sourceUrl: string;
+      status: 'loading';
+    }>,
+    isLoadingEmbeddedComposerAttachments: false,
+  },
+}));
+
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   LayoutGroup: ({ children }: { children: React.ReactNode }) => children,
@@ -89,6 +101,9 @@ vi.mock('../hooks/useChatComposer', () => ({
     isSendSuccessGlowVisible: false,
     isAttachModalOpen: false,
     pendingComposerAttachments: [],
+    loadingComposerAttachments: mockComposerState.loadingComposerAttachments,
+    isLoadingEmbeddedComposerAttachments:
+      mockComposerState.isLoadingEmbeddedComposerAttachments,
     previewComposerImageAttachment: undefined,
     isComposerImageExpanded: false,
     isComposerImageExpandedVisible: false,
@@ -191,6 +206,8 @@ describe('ChatSidebarPanel integration', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'));
+    mockComposerState.loadingComposerAttachments = [];
+    mockComposerState.isLoadingEmbeddedComposerAttachments = false;
   });
 
   afterEach(() => {
@@ -215,6 +232,38 @@ describe('ChatSidebarPanel integration', () => {
     expect(screen.getByText('Online')).toBeTruthy();
     expect(screen.getByPlaceholderText('Tulis pesan...')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Lampirkan file' })).toBeTruthy();
+  });
+
+  it('disables send while a remote attachment is still converting', () => {
+    mockComposerState.loadingComposerAttachments = [
+      {
+        id: 'loading-1',
+        fileName: 'quokka.jpg',
+        sourceUrl:
+          'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg',
+        status: 'loading',
+      },
+    ];
+    mockComposerState.isLoadingEmbeddedComposerAttachments = true;
+
+    render(
+      <ChatSidebarPanel
+        isOpen
+        onClose={vi.fn()}
+        targetUser={{
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        }}
+      />
+    );
+
+    expect(
+      (screen.getByRole('button', { name: 'Kirim pesan' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+    expect(screen.getByText('Lampiran 1/5')).toBeTruthy();
   });
 
   it('closes through the real header action', () => {

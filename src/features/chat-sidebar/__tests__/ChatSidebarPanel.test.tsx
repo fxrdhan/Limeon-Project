@@ -62,6 +62,8 @@ vi.mock('../hooks/useChatComposer', () => ({
     isSendSuccessGlowVisible: false,
     isAttachModalOpen: false,
     pendingComposerAttachments: [],
+    loadingComposerAttachments: [],
+    isLoadingEmbeddedComposerAttachments: false,
     previewComposerImageAttachment: undefined,
     isComposerImageExpanded: false,
     isComposerImageExpandedVisible: false,
