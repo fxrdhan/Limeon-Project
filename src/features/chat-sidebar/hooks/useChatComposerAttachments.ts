@@ -7,8 +7,16 @@ import {
   type ClipboardEvent,
   type RefObject,
 } from 'react';
-import { COMPOSER_IMAGE_PREVIEW_EXIT_DURATION } from '../constants';
+import toast from 'react-hot-toast';
+import {
+  CHAT_SIDEBAR_TOASTER_ID,
+  COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
+} from '../constants';
 import type { PendingComposerAttachment } from '../types';
+import {
+  extractEmbeddedComposerLinkFromClipboard,
+  fetchEmbeddedComposerRemoteFile,
+} from '../utils/composer-embedded-link';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 
 interface UseChatComposerAttachmentsProps {
@@ -276,22 +284,67 @@ export const useChatComposerAttachments = ({
     [queueComposerFile]
   );
 
+  const queueEmbeddedComposerLink = useCallback(
+    async (embeddedLink: string) => {
+      try {
+        const embeddedRemoteFile =
+          await fetchEmbeddedComposerRemoteFile(embeddedLink);
+        if (!embeddedRemoteFile) {
+          toast.error('Link harus mengarah ke gambar atau PDF yang valid', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+          return false;
+        }
+
+        if (embeddedRemoteFile.fileKind === 'image') {
+          return queueComposerImage(embeddedRemoteFile.file);
+        }
+
+        return queueComposerFile(embeddedRemoteFile.file, 'document');
+      } catch (error) {
+        console.error('Error queueing embedded composer link:', error);
+        toast.error('Gagal mengambil file dari link', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return false;
+      }
+    },
+    [queueComposerFile, queueComposerImage]
+  );
+
   const handleComposerPaste = useCallback(
     (event: ClipboardEvent<HTMLTextAreaElement>) => {
       const imageItem = Array.from(event.clipboardData.items).find(item =>
         item.type.startsWith('image/')
       );
-      if (!imageItem) return;
+      if (imageItem) {
+        const imageFile = imageItem.getAsFile();
+        if (!imageFile) return;
 
-      const imageFile = imageItem.getAsFile();
-      if (!imageFile) return;
+        event.preventDefault();
+        closeAttachModal();
+        closeMessageMenu();
+        queueComposerImage(imageFile);
+        return;
+      }
+
+      const embeddedLink = extractEmbeddedComposerLinkFromClipboard({
+        html: event.clipboardData.getData('text/html'),
+        text: event.clipboardData.getData('text/plain'),
+      });
+      if (!embeddedLink) return;
 
       event.preventDefault();
       closeAttachModal();
       closeMessageMenu();
-      queueComposerImage(imageFile);
+      void queueEmbeddedComposerLink(embeddedLink.url);
     },
-    [closeAttachModal, closeMessageMenu, queueComposerImage]
+    [
+      closeAttachModal,
+      closeMessageMenu,
+      queueComposerImage,
+      queueEmbeddedComposerLink,
+    ]
   );
 
   useEffect(() => {

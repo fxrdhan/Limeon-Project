@@ -1,6 +1,13 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
+import {
+  extractEmbeddedComposerLinkFromMessageText,
+  fetchEmbeddedComposerRemoteFile,
+} from '../utils/composer-embedded-link';
+import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
 import { sendTextChatMessage } from '../utils/text-message-send';
@@ -123,6 +130,73 @@ export const useChatComposerSend = ({
     ]
   );
 
+  const sendEmbeddedLinkMessage = useCallback(
+    async (embeddedLink: string, originalMessageText: string) => {
+      setMessage('');
+
+      try {
+        const embeddedRemoteFile =
+          await fetchEmbeddedComposerRemoteFile(embeddedLink);
+        if (!embeddedRemoteFile) {
+          if (isCurrentConversationScopeActive()) {
+            setMessage(currentMessage =>
+              currentMessage.length === 0 ? originalMessageText : currentMessage
+            );
+            toast.error('Link harus mengarah ke gambar atau PDF yang valid', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+          }
+          return false;
+        }
+
+        const didSend =
+          embeddedRemoteFile.fileKind === 'image'
+            ? await sendImageMessage(embeddedRemoteFile.file)
+            : await sendFileMessage(
+                (() => {
+                  const pendingAttachment = buildPendingFileComposerAttachment(
+                    embeddedRemoteFile.file,
+                    'document'
+                  );
+
+                  return {
+                    file: pendingAttachment.file,
+                    fileName: pendingAttachment.fileName,
+                    fileTypeLabel: pendingAttachment.fileTypeLabel,
+                    fileKind: 'document' as const,
+                    mimeType: pendingAttachment.mimeType,
+                  };
+                })()
+              );
+
+        if (!didSend && isCurrentConversationScopeActive()) {
+          setMessage(currentMessage =>
+            currentMessage.length === 0 ? originalMessageText : currentMessage
+          );
+        }
+
+        return Boolean(didSend);
+      } catch (error) {
+        console.error('Error sending embedded composer link:', error);
+        if (isCurrentConversationScopeActive()) {
+          setMessage(currentMessage =>
+            currentMessage.length === 0 ? originalMessageText : currentMessage
+          );
+          toast.error('Gagal mengambil file dari link', {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
+        return false;
+      }
+    },
+    [
+      isCurrentConversationScopeActive,
+      sendFileMessage,
+      sendImageMessage,
+      setMessage,
+    ]
+  );
+
   const handleSendMessage = useCallback(async () => {
     if (editingMessageId || isSendingRef.current) {
       return;
@@ -134,6 +208,9 @@ export const useChatComposerSend = ({
     const hasPendingAttachments = pendingComposerAttachments.length > 0;
     const attachmentsToSend = [...pendingComposerAttachments];
     const messageText = message.trim();
+    const embeddedLink = hasPendingAttachments
+      ? null
+      : extractEmbeddedComposerLinkFromMessageText(messageText);
 
     if (!hasPendingAttachments && !messageText) {
       return;
@@ -142,6 +219,11 @@ export const useChatComposerSend = ({
     isSendingRef.current = true;
 
     try {
+      if (embeddedLink) {
+        await sendEmbeddedLinkMessage(embeddedLink.url, messageText);
+        return;
+      }
+
       const shouldAttachCaption =
         hasPendingAttachments && messageText.length > 0;
 
@@ -209,6 +291,7 @@ export const useChatComposerSend = ({
     message,
     pendingComposerAttachments,
     restorePendingComposerAttachments,
+    sendEmbeddedLinkMessage,
     sendFileMessage,
     sendImageMessage,
     sendTextMessage,

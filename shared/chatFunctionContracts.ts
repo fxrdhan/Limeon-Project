@@ -101,3 +101,11 @@ export interface ChatPdfPreviewResponse {
   message: ChatPdfPreviewMessagePayload;
   previewPersisted: boolean;
 }
+
+export interface ChatRemoteAssetRequest {
+  url: string;
+}
+
+export interface ChatRemoteAssetRequestPayload {
+  url?: string;
+}

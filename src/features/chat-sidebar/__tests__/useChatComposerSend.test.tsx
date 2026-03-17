@@ -27,6 +27,11 @@ const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
     mockCreatePdfPreviewUploadArtifact: vi.fn(),
     mockReadBlobAsDataUrl: vi.fn(),
   }));
+const { mockRemoteAssetService } = vi.hoisted(() => ({
+  mockRemoteAssetService: {
+    fetchRemoteAsset: vi.fn(),
+  },
+}));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
@@ -48,6 +53,10 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
     uploadImage: mockGateway.uploadImage,
     uploadAttachment: mockGateway.uploadAttachment,
   },
+}));
+
+vi.mock('@/services/api/chat/remote-asset.service', () => ({
+  chatRemoteAssetService: mockRemoteAssetService,
 }));
 
 vi.mock('../utils/pdf-message-preview', async () => {
@@ -182,6 +191,10 @@ describe('useChatComposerSend', () => {
     mockReadBlobAsDataUrl.mockResolvedValue(
       'data:image/png;base64,cHJldmlldw=='
     );
+    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+      data: null,
+      error: null,
+    });
     mockGateway.persistPdfPreview.mockImplementation(
       async ({ message_id }: { message_id: string }) => ({
         data: {
@@ -1087,5 +1100,173 @@ describe('useChatComposerSend', () => {
     expect(mockToast.error).toHaveBeenCalledWith('Gagal mengirim pesan', {
       toasterId: 'chat-sidebar-toaster',
     });
+  });
+
+  it('converts a pasted image url draft into an image attachment send', async () => {
+    mockGateway.uploadImage.mockResolvedValue({
+      path: 'images/channel-1/user-a_image_embedded.png',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-image-embedded',
+        message: 'images/channel-1/user-a_image_embedded.png',
+        message_type: 'image',
+        file_name: undefined,
+        file_kind: undefined,
+        file_mime_type: 'image/png',
+        file_storage_path: 'images/channel-1/user-a_image_embedded.png',
+      }),
+      error: null,
+    });
+    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+      data: {
+        blob: new Blob(['image'], { type: 'image/png' }),
+        contentDisposition: null,
+        contentType: 'image/png',
+        sourceUrl: 'https://example.com/embed/receipt.png',
+      },
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState(
+        'https://example.com/embed/receipt.png'
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    await waitFor(() => {
+      expect(mockGateway.uploadImage).toHaveBeenCalledWith(
+        expect.any(File),
+        expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/)
+      );
+    });
+
+    expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        receiver_id: 'user-b',
+        message_type: 'image',
+        file_storage_path: expect.stringMatching(
+          /^images\/channel-1\/user-a_image_.+\.png$/
+        ),
+      })
+    );
+  });
+
+  it('converts a pdf embed draft into a document attachment send', async () => {
+    mockGateway.uploadAttachment.mockResolvedValue({
+      path: 'documents/channel-1/user-a_document_embedded.pdf',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-file-embedded',
+        message: 'documents/channel-1/user-a_document_embedded.pdf',
+        message_type: 'file',
+        file_name: 'invoice.pdf',
+        file_kind: 'document',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel-1/user-a_document_embedded.pdf',
+      }),
+      error: null,
+    });
+    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+      data: {
+        blob: new Blob(['pdf'], { type: 'application/pdf' }),
+        contentDisposition: 'attachment; filename="invoice.pdf"',
+        contentType: 'application/pdf',
+        sourceUrl: 'https://example.com/embed/invoice',
+      },
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState(
+        '<iframe src="https://example.com/embed/invoice"></iframe>'
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    await waitFor(() => {
+      expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
+        expect.any(File),
+        expect.stringMatching(
+          /^documents\/channel-1\/user-a_document_.+\.pdf$/
+        ),
+        'application/pdf'
+      );
+    });
+
+    expect(mockGateway.uploadImage).not.toHaveBeenCalled();
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        receiver_id: 'user-b',
+        message_type: 'file',
+        file_name: 'invoice.pdf',
+        file_kind: 'document',
+        file_mime_type: 'application/pdf',
+        file_storage_path: expect.stringMatching(
+          /^documents\/channel-1\/user-a_document_.+\.pdf$/
+        ),
+      })
+    );
   });
 });
