@@ -238,15 +238,15 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       <div
         className={`${
           isCurrentUser
-            ? 'flex max-w-xs flex-col items-end'
-            : 'flex max-w-xs flex-col items-start'
+            ? 'flex min-w-0 max-w-xs flex-col items-end'
+            : 'flex min-w-0 max-w-xs flex-col items-start'
         }`}
       >
         <div
           className={
             isFileMessage && !isImageFileMessage
-              ? 'relative w-full'
-              : 'relative'
+              ? 'relative min-w-0 w-full max-w-full'
+              : 'relative min-w-0 max-w-full'
           }
         >
           {isSelectionMode ? (
@@ -285,6 +285,10 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               [isCurrentUser
                 ? 'borderBottomRightRadius'
                 : 'borderBottomLeftRadius']: '2px',
+              overflowWrap:
+                !isImageMessage && !isFileMessage ? 'anywhere' : undefined,
+              wordBreak:
+                !isImageMessage && !isFileMessage ? 'break-word' : undefined,
             }}
             onClick={event => {
               if (isSelectionMode) return;

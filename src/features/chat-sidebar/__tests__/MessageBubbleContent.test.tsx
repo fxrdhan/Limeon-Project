@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vite-plus/test';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { MessageBubbleContent } from '../components/messages/MessageBubbleContent';
+import { renderHighlightedText } from '../utils/message-search';
 
 const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -56,5 +57,95 @@ describe('MessageBubbleContent', () => {
     expect(image.className).toContain('object-cover');
     expect(image.parentElement?.className).toContain('aspect-square');
     expect(screen.getByText('Catatan stok')).toBeTruthy();
+  });
+
+  it('renders text message urls as hyperlinks that open in a new tab', () => {
+    const url =
+      'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing';
+    const parentClick = vi.fn();
+
+    render(
+      <div role="button" tabIndex={-1} onClick={parentClick}>
+        <MessageBubbleContent
+          message={buildMessage({
+            message: url,
+            message_type: 'text',
+          })}
+          resolvedMessageUrl={null}
+          isImageMessage={false}
+          isFileMessage={false}
+          isImageFileMessage={false}
+          isPdfFileMessage={false}
+          hasAttachmentCaption={false}
+          fileName={null}
+          fileSecondaryLabel={null}
+          fileIcon={<span />}
+          resolvedPdfPreviewUrl={null}
+          pdfMetaLabel={null}
+          highlightedMessage={renderHighlightedText(url, '', {
+            linkify: true,
+          })}
+          highlightedCaption=""
+          hasLeadingEllipsis={false}
+          hasTrailingEllipsis={false}
+          isMessageLong={false}
+          isExpanded={false}
+          isFlashingTarget={false}
+          onToggleExpand={() => {}}
+        />
+      </div>
+    );
+
+    const link = screen.getByRole('link', { name: url });
+
+    expect(link.getAttribute('href')).toBe(url);
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link.style.textDecoration).toBe('none');
+
+    fireEvent.mouseEnter(link);
+
+    expect(link.style.textDecoration).toBe('underline');
+
+    fireEvent.click(link);
+
+    expect(parentClick).not.toHaveBeenCalled();
+
+    fireEvent.mouseLeave(link);
+
+    expect(link.style.textDecoration).toBe('none');
+  });
+
+  it('renders attachment caption urls as hyperlinks', () => {
+    const url = 'https://example.com/report';
+
+    render(
+      <MessageBubbleContent
+        message={buildMessage()}
+        resolvedMessageUrl="https://example.com/screenshot.png"
+        isImageMessage={false}
+        isFileMessage={true}
+        isImageFileMessage={true}
+        isPdfFileMessage={false}
+        hasAttachmentCaption={true}
+        fileName="Screenshot.png"
+        fileSecondaryLabel="PNG"
+        fileIcon={<span />}
+        resolvedPdfPreviewUrl={null}
+        pdfMetaLabel={null}
+        highlightedMessage="documents/channel/screenshot.png"
+        highlightedCaption={renderHighlightedText(url, '', {
+          linkify: true,
+        })}
+        hasLeadingEllipsis={false}
+        hasTrailingEllipsis={false}
+        isMessageLong={false}
+        isExpanded={false}
+        isFlashingTarget={false}
+        onToggleExpand={() => {}}
+      />
+    );
+
+    expect(screen.getByRole('link', { name: url })).toBeTruthy();
   });
 });

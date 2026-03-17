@@ -216,7 +216,7 @@ export const buildMessageItemDerivations = ({
       : 'block w-full'
     : isSquareImageMessage
       ? 'inline-flex w-64 max-w-full flex-col align-top'
-      : 'inline-block';
+      : 'block min-w-0 w-fit max-w-full';
   const bubbleSpacingClass = isSquareImageMessage
     ? 'px-2 py-2'
     : isFileMessage
@@ -225,7 +225,7 @@ export const buildMessageItemDerivations = ({
   const bubbleTypographyClass =
     isSquareImageMessage || isFileMessage
       ? ''
-      : 'text-sm whitespace-pre-wrap break-words';
+      : 'min-w-0 text-sm whitespace-pre-wrap break-words';
   const collapsedSearchSnippet = buildCollapsedSearchSnippet(
     message.message,
     normalizedSearchQuery,
@@ -236,11 +236,13 @@ export const buildMessageItemDerivations = ({
     : message.message;
   const highlightedMessage = renderHighlightedText(
     displayMessage,
-    normalizedSearchQuery
+    normalizedSearchQuery,
+    { linkify: !isMessageLong }
   );
   const highlightedCaption = renderHighlightedText(
     attachmentCaptionText,
-    normalizedSearchQuery
+    normalizedSearchQuery,
+    { linkify: true }
   );
   const menuActions = buildMessageMenuActions({
     message,

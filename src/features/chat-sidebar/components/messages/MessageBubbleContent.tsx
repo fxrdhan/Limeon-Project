@@ -163,6 +163,10 @@ export const MessageBubbleContent = ({
           className={`mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed ${
             isFlashingTarget ? 'text-white' : 'text-slate-800'
           }`}
+          style={{
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
+          }}
         >
           {highlightedCaption}
         </p>
