@@ -13,7 +13,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
   );
 
   return (
-    <>
+    <div className="relative flex min-h-0 flex-1 flex-col">
       <div
         ref={refs.messagesContainerRef}
         className="flex-1 overflow-x-hidden overflow-y-auto px-3 pt-20 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
@@ -144,6 +144,8 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                     handleEditMessage: actions.handleEditMessage,
                     handleCopyMessage: actions.handleCopyMessage,
                     handleDownloadMessage: actions.handleDownloadMessage,
+                    handleOpenForwardMessagePicker:
+                      actions.handleOpenForwardMessagePicker,
                     handleDeleteMessage: actions.handleDeleteMessage,
                     getAttachmentFileName: previews.getAttachmentFileName,
                     getAttachmentFileKind: previews.getAttachmentFileKind,
@@ -208,7 +210,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
         backdropClassName="z-[80] px-4 py-6"
         iframeTitle="Preview dokumen"
       />
-    </>
+    </div>
   );
 };
 

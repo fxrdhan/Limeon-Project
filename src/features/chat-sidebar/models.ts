@@ -1,5 +1,6 @@
 import type { SearchState } from '@/components/search-bar/constants';
 import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
+import type { OnlineUser } from '@/types';
 import type {
   ChangeEvent,
   ClipboardEvent,
@@ -148,10 +149,27 @@ export interface MessagesPaneModel {
     handleEditMessage: (targetMessage: ChatMessage) => void;
     handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
     handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+    handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
     handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
     onScrollToBottom: () => void;
     onLoadOlderMessages: () => void;
     onRetryLoadMessages: () => void;
+  };
+  forwarding: {
+    isOpen: boolean;
+    targetMessage: ChatMessage | null;
+    captionMessage: ChatMessage | null;
+    availableUsers: OnlineUser[];
+    selectedRecipientIds: Set<string>;
+    isDirectoryLoading: boolean;
+    directoryError: string | null;
+    hasMoreDirectoryUsers: boolean;
+    isSubmitting: boolean;
+    onClose: () => void;
+    onToggleRecipient: (userId: string) => void;
+    onRetryLoadDirectory: () => void;
+    onLoadMoreDirectoryUsers: () => void;
+    onSubmit: () => Promise<void>;
   };
 }
 

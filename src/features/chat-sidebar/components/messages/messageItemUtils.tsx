@@ -15,6 +15,7 @@ import {
   TbFileUnknown,
   TbMusic,
   TbPencil,
+  TbShare3,
   TbTrash,
 } from 'react-icons/tb';
 import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
@@ -96,6 +97,7 @@ interface BuildMessageMenuActionsProps {
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
 }
 
@@ -114,6 +116,7 @@ export const buildMessageMenuActions = ({
   handleEditMessage,
   handleCopyMessage,
   handleDownloadMessage,
+  handleOpenForwardMessagePicker,
   handleDeleteMessage,
 }: BuildMessageMenuActionsProps): PopupMenuAction[] => {
   const menuActions: PopupMenuAction[] = [
@@ -132,6 +135,14 @@ export const buildMessageMenuActions = ({
       },
     },
   ];
+
+  if (!message.id.startsWith('temp_')) {
+    menuActions.push({
+      label: 'Teruskan',
+      icon: <TbShare3 className="h-4 w-4" />,
+      onClick: () => handleOpenForwardMessagePicker(message),
+    });
+  }
 
   if (isImageMessage || isFileMessage) {
     menuActions.unshift({

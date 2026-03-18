@@ -51,6 +51,7 @@ export interface MessageItemModel {
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (
@@ -104,6 +105,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     handleEditMessage,
     handleCopyMessage,
     handleDownloadMessage,
+    handleOpenForwardMessagePicker,
     handleDeleteMessage,
     getAttachmentFileName,
     getAttachmentFileKind,
@@ -164,6 +166,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     handleEditMessage,
     handleCopyMessage,
     handleDownloadMessage,
+    handleOpenForwardMessagePicker,
     handleDeleteMessage,
   });
   const animationKey = message.stableKey || message.id;

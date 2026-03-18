@@ -49,6 +49,7 @@ interface BuildMessageItemDerivationsParams {
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
 }
 
@@ -111,6 +112,7 @@ export const buildMessageItemDerivations = ({
   handleEditMessage,
   handleCopyMessage,
   handleDownloadMessage,
+  handleOpenForwardMessagePicker,
   handleDeleteMessage,
 }: BuildMessageItemDerivationsParams): MessageItemDerivations => {
   const isCurrentUser = message.sender_id === userId;
@@ -259,6 +261,7 @@ export const buildMessageItemDerivations = ({
     handleEditMessage,
     handleCopyMessage,
     handleDownloadMessage,
+    handleOpenForwardMessagePicker,
     handleDeleteMessage,
   });
 

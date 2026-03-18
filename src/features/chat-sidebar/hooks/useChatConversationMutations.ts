@@ -17,6 +17,7 @@ import { useChatMessageTransferActions } from './useChatMessageTransferActions';
 import { useChatMutationScope } from './useChatMutationScope';
 import { useChatMessageUpdateAction } from './useChatMessageUpdateAction';
 import { useChatMessageDeleteAction } from './useChatMessageDeleteAction';
+import { useChatMessageForwardAction } from './useChatMessageForwardAction';
 
 type PendingSendRegistryRef = MutableRefObject<
   Map<string, { cancelled: boolean }>
@@ -132,6 +133,13 @@ export const useChatConversationMutations = ({
     useChatMessageTransferActions({
       closeMessageMenu,
     });
+  const forward = useChatMessageForwardAction({
+    user,
+    targetUser,
+    messages,
+    closeMessageMenu,
+    reconcileCurrentConversationMessages,
+  });
 
   const { handleUpdateMessage } = useChatMessageUpdateAction({
     user,
@@ -254,6 +262,21 @@ export const useChatConversationMutations = ({
     handleCancelEditMessage,
     handleCopyMessage,
     handleDownloadMessage,
+    handleOpenForwardMessagePicker: forward.openForwardPicker,
+    isForwardPickerOpen: forward.isForwardPickerOpen,
+    forwardTargetMessage: forward.forwardTargetMessage,
+    forwardCaptionMessage: forward.forwardCaptionMessage,
+    availableForwardRecipients: forward.availableForwardRecipients,
+    selectedForwardRecipientIds: forward.selectedForwardRecipientIds,
+    isForwardDirectoryLoading: forward.isForwardDirectoryLoading,
+    forwardDirectoryError: forward.forwardDirectoryError,
+    hasMoreForwardDirectoryUsers: forward.hasMoreForwardDirectoryUsers,
+    isSubmittingForwardMessage: forward.isSubmittingForwardMessage,
+    handleCloseForwardMessagePicker: forward.closeForwardPicker,
+    handleToggleForwardRecipient: forward.toggleForwardRecipient,
+    handleRetryLoadForwardDirectory: forward.retryLoadForwardDirectory,
+    handleLoadMoreForwardDirectoryUsers: forward.loadMoreForwardDirectoryUsers,
+    handleSubmitForwardMessage: forward.submitForwardMessage,
     handleSendMessage,
     handleKeyPress,
   };

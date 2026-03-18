@@ -136,10 +136,29 @@ export const useChatSidebarController = ({
       handleEditMessage: runtime.mutations.handleEditMessage,
       handleCopyMessage: runtime.mutations.handleCopyMessage,
       handleDownloadMessage: runtime.mutations.handleDownloadMessage,
+      handleOpenForwardMessagePicker:
+        runtime.mutations.handleOpenForwardMessagePicker,
       handleDeleteMessage: runtime.mutations.handleDeleteMessage,
       onScrollToBottom: runtime.viewport.scrollToBottom,
       onLoadOlderMessages: runtime.session.loadOlderMessages,
       onRetryLoadMessages: runtime.session.retryLoadMessages,
+    },
+    forwarding: {
+      isOpen: runtime.mutations.isForwardPickerOpen,
+      targetMessage: runtime.mutations.forwardTargetMessage,
+      captionMessage: runtime.mutations.forwardCaptionMessage,
+      availableUsers: runtime.mutations.availableForwardRecipients,
+      selectedRecipientIds: runtime.mutations.selectedForwardRecipientIds,
+      isDirectoryLoading: runtime.mutations.isForwardDirectoryLoading,
+      directoryError: runtime.mutations.forwardDirectoryError,
+      hasMoreDirectoryUsers: runtime.mutations.hasMoreForwardDirectoryUsers,
+      isSubmitting: runtime.mutations.isSubmittingForwardMessage,
+      onClose: runtime.mutations.handleCloseForwardMessagePicker,
+      onToggleRecipient: runtime.mutations.handleToggleForwardRecipient,
+      onRetryLoadDirectory: runtime.mutations.handleRetryLoadForwardDirectory,
+      onLoadMoreDirectoryUsers:
+        runtime.mutations.handleLoadMoreForwardDirectoryUsers,
+      onSubmit: runtime.mutations.handleSubmitForwardMessage,
     },
   };
 

@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import ChatHeader from './components/ChatHeader';
 import ComposerPanel from './components/ComposerPanel';
 import MessagesPane from './components/MessagesPane';
+import MessageForwardPicker from './components/messages/MessageForwardPicker';
 import { CHAT_SIDEBAR_TOASTER_ID } from './constants';
 import { useChatSidebarController } from './hooks/useChatSidebarController';
 import type { ChatSidebarPanelProps } from './types';
@@ -87,6 +88,7 @@ const ChatSidebarPanel = memo(
           </div>
 
           <ComposerPanel model={composerModel} />
+          <MessageForwardPicker model={messagesModel.forwarding} />
         </div>
       </motion.div>
     );

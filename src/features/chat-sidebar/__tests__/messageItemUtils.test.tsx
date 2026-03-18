@@ -47,6 +47,7 @@ describe('messageItemUtils', () => {
       handleEditMessage: vi.fn(),
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker: vi.fn(),
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
@@ -76,6 +77,7 @@ describe('messageItemUtils', () => {
       handleEditMessage: vi.fn(),
       handleCopyMessage,
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker: vi.fn(),
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
@@ -111,6 +113,7 @@ describe('messageItemUtils', () => {
       handleEditMessage: vi.fn(),
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker: vi.fn(),
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
@@ -148,6 +151,7 @@ describe('messageItemUtils', () => {
       handleEditMessage: vi.fn(),
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage,
+      handleOpenForwardMessagePicker: vi.fn(),
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
@@ -155,11 +159,44 @@ describe('messageItemUtils', () => {
       'Buka',
       'Download',
       'Salin',
+      'Teruskan',
       'Hapus',
     ]);
 
     await actions.find(action => action.label === 'Download')?.onClick();
 
     expect(handleDownloadMessage).toHaveBeenCalledWith(imageMessage);
+  });
+
+  it('adds a forward action for persisted text messages', async () => {
+    const handleOpenForwardMessagePicker = vi.fn();
+    const textMessage = buildMessage({
+      id: 'message-99',
+      message: 'teruskan ini',
+      message_type: 'text',
+    });
+    const actions = buildMessageMenuActions({
+      message: textMessage,
+      isCurrentUser: false,
+      isImageMessage: false,
+      isFileMessage: false,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: null,
+      openImageInPortal: vi.fn(),
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage: vi.fn(),
+      handleCopyMessage: vi.fn().mockResolvedValue(undefined),
+      handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker,
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    expect(actions.map(action => action.label)).toEqual(['Salin', 'Teruskan']);
+
+    await actions.find(action => action.label === 'Teruskan')?.onClick();
+
+    expect(handleOpenForwardMessagePicker).toHaveBeenCalledWith(textMessage);
   });
 });

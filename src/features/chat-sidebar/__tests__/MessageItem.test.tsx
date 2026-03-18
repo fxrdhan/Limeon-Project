@@ -53,6 +53,7 @@ const createModel = (
   handleEditMessage: () => {},
   handleCopyMessage: async () => {},
   handleDownloadMessage: async () => {},
+  handleOpenForwardMessagePicker: () => {},
   handleDeleteMessage: async () => true,
   getAttachmentFileName: () => '',
   getAttachmentFileKind: () => 'document',
