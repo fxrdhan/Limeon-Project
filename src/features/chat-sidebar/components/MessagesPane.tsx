@@ -8,12 +8,15 @@ import MessageItem from './messages/MessageItem';
 
 const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
   const { state, menu, interaction, refs, previews, actions } = model;
+  const visibleMessages = state.messages.filter(
+    messageItem => !previews.captionMessageIds.has(messageItem.id)
+  );
 
   return (
     <>
       <div
         ref={refs.messagesContainerRef}
-        className="flex-1 overflow-x-hidden px-3 pt-20 overflow-y-auto space-y-3 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+        className="flex-1 overflow-x-hidden overflow-y-auto px-3 pt-20 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{
           overflowAnchor: 'none',
           paddingBottom:
@@ -74,10 +77,24 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                 ) : null}
               </div>
             ) : null}
-            {state.messages.map(messageItem => {
-              if (previews.captionMessageIds.has(messageItem.id)) {
-                return null;
-              }
+            {visibleMessages.map((messageItem, index) => {
+              const previousMessage =
+                index > 0 ? visibleMessages[index - 1] : null;
+              const nextMessage =
+                index < visibleMessages.length - 1
+                  ? visibleMessages[index + 1]
+                  : null;
+              const currentMessageDate = new Date(
+                messageItem.created_at
+              ).toDateString();
+              const isGroupedWithPrevious =
+                previousMessage?.sender_id === messageItem.sender_id &&
+                new Date(previousMessage.created_at).toDateString() ===
+                  currentMessageDate;
+              const isGroupedWithNext =
+                nextMessage?.sender_id === messageItem.sender_id &&
+                new Date(nextMessage.created_at).toDateString() ===
+                  currentMessageDate;
 
               return (
                 <MessageItem
@@ -87,6 +104,9 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                     resolvedMessageUrl:
                       previews.getImageMessageUrl(messageItem),
                     userId: state.user?.id,
+                    isGroupedWithPrevious,
+                    isGroupedWithNext,
+                    isFirstVisibleMessage: index === 0,
                     isSelectionMode: interaction.isSelectionMode,
                     isSelected: interaction.selectedMessageIds.has(
                       messageItem.id

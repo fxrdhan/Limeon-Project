@@ -25,6 +25,9 @@ const createModel = (
   message: baseMessage,
   resolvedMessageUrl: null,
   userId: 'user-a',
+  isGroupedWithPrevious: false,
+  isGroupedWithNext: false,
+  isFirstVisibleMessage: true,
   isSelectionMode: false,
   isSelected: false,
   openMenuMessageId: null,
@@ -93,5 +96,25 @@ describe('MessageItem', () => {
     expect(bubble.className).toContain('bg-emerald-200');
     expect(bubble.className).toContain('text-slate-900');
     expect(container.querySelector('.rounded-full.border')).toBeNull();
+  });
+
+  it('removes the outgoing tail and tightens spacing for grouped messages', () => {
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          isGroupedWithPrevious: true,
+          isGroupedWithNext: true,
+          isFirstVisibleMessage: false,
+        })}
+      />
+    );
+
+    const row = container.firstElementChild as HTMLElement | null;
+    const bubble = screen.getByRole('button');
+
+    expect(row?.className).toContain('mt-1');
+    expect(bubble.className).toContain('rounded-tr-md');
+    expect(bubble.className).toContain('rounded-br-md');
+    expect(bubble.className).not.toContain('rounded-br-[2px]');
   });
 });

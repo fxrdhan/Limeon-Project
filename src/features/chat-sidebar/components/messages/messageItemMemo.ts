@@ -35,6 +35,9 @@ export const areMessageItemPropsEqual = (
     previousModel.message === nextModel.message &&
     previousModel.resolvedMessageUrl === nextModel.resolvedMessageUrl &&
     previousModel.userId === nextModel.userId &&
+    previousModel.isGroupedWithPrevious === nextModel.isGroupedWithPrevious &&
+    previousModel.isGroupedWithNext === nextModel.isGroupedWithNext &&
+    previousModel.isFirstVisibleMessage === nextModel.isFirstVisibleMessage &&
     previousModel.isSelectionMode === nextModel.isSelectionMode &&
     previousModel.isSelected === nextModel.isSelected &&
     previousHasOpenMenu === nextHasOpenMenu &&

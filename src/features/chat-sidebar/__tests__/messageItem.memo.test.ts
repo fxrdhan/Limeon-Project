@@ -22,6 +22,9 @@ const createModel = (
   message: baseMessage,
   resolvedMessageUrl: null,
   userId: 'user-a',
+  isGroupedWithPrevious: false,
+  isGroupedWithNext: false,
+  isFirstVisibleMessage: true,
   isSelectionMode: false,
   isSelected: false,
   openMenuMessageId: null,
@@ -80,6 +83,15 @@ describe('areMessageItemPropsEqual', () => {
     const nextModel = createModel({
       resolvedMessageUrl: 'https://example.com/image.png',
     });
+
+    expect(
+      areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
+    ).toBe(false);
+  });
+
+  it('detects when grouped bubble layout changes for the current item', () => {
+    const previousModel = createModel({ isGroupedWithNext: false });
+    const nextModel = createModel({ isGroupedWithNext: true });
 
     expect(
       areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })

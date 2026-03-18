@@ -19,6 +19,9 @@ export interface MessageItemModel {
   message: ChatMessage;
   resolvedMessageUrl: string | null;
   userId?: string;
+  isGroupedWithPrevious: boolean;
+  isGroupedWithNext: boolean;
+  isFirstVisibleMessage: boolean;
   isSelectionMode: boolean;
   isSelected: boolean;
   openMenuMessageId: string | null;
@@ -73,6 +76,9 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     message,
     resolvedMessageUrl,
     userId,
+    isGroupedWithPrevious,
+    isGroupedWithNext,
+    isFirstVisibleMessage,
     isSelectionMode,
     isSelected,
     openMenuMessageId,
@@ -190,6 +196,18 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     menuPlacement,
     menuSideAnchor
   );
+  const rowSpacingClass = isFirstVisibleMessage
+    ? ''
+    : isGroupedWithPrevious
+      ? 'mt-1'
+      : 'mt-3';
+  const bubbleShapeClass = isCurrentUser
+    ? `rounded-tl-xl rounded-bl-xl ${
+        isGroupedWithPrevious ? 'rounded-tr-md' : 'rounded-tr-xl'
+      } ${isGroupedWithNext ? 'rounded-br-md' : 'rounded-br-[2px]'}`
+    : `rounded-tr-xl rounded-br-xl ${
+        isGroupedWithPrevious ? 'rounded-tl-md' : 'rounded-tl-xl'
+      } ${isGroupedWithNext ? 'rounded-bl-md' : 'rounded-bl-[2px]'}`;
 
   return (
     <motion.div
@@ -216,7 +234,9 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       }}
       className={`relative flex w-full ${
         isCurrentUser ? 'justify-end' : 'justify-start'
-      } ${isMenuOpen ? 'z-10' : isMenuTransitionSource ? 'z-[9]' : 'z-0'} ${
+      } ${rowSpacingClass} ${
+        isMenuOpen ? 'z-10' : isMenuTransitionSource ? 'z-[9]' : 'z-0'
+      } ${
         !isSelectionMode &&
         openMenuMessageId &&
         openMenuMessageId !== message.id
@@ -261,9 +281,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               }
             }}
             className={`${bubbleWrapperClass} max-w-full ${bubbleSpacingClass} ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
-              isCurrentUser
-                ? 'rounded-tl-xl rounded-tr-xl rounded-bl-xl'
-                : 'rounded-tl-xl rounded-tr-xl rounded-br-xl'
+              bubbleShapeClass
             } ${
               isActiveSearchMatch
                 ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
@@ -272,9 +290,6 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
                   : ''
             } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
             style={{
-              [isCurrentUser
-                ? 'borderBottomRightRadius'
-                : 'borderBottomLeftRadius']: '2px',
               overflowWrap:
                 !isImageMessage && !isFileMessage ? 'anywhere' : undefined,
               wordBreak:
