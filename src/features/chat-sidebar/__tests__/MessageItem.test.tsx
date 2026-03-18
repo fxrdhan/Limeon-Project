@@ -95,6 +95,10 @@ describe('MessageItem', () => {
     expect(highlight?.className).toContain('bg-slate-200');
     expect(bubble.className).toContain('bg-emerald-200');
     expect(bubble.className).toContain('text-slate-900');
+    expect(
+      screen.getByRole('link', { name: baseMessage.message }).parentElement
+        ?.className
+    ).toContain('pointer-events-none');
     expect(container.querySelector('.rounded-full.border')).toBeNull();
   });
 

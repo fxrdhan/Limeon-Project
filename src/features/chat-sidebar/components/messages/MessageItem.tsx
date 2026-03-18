@@ -330,6 +330,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
             <MessageBubbleContent
               message={message}
               resolvedMessageUrl={resolvedMessageUrl}
+              isSelectionMode={isSelectionMode}
               isImageMessage={isImageMessage}
               isFileMessage={isFileMessage}
               isImageFileMessage={isImageFileMessage}

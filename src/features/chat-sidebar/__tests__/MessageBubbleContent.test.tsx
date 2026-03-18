@@ -31,6 +31,7 @@ describe('MessageBubbleContent', () => {
       <MessageBubbleContent
         message={buildMessage()}
         resolvedMessageUrl="https://example.com/screenshot.png"
+        isSelectionMode={false}
         isImageMessage={false}
         isFileMessage={true}
         isImageFileMessage={true}
@@ -72,6 +73,7 @@ describe('MessageBubbleContent', () => {
             message_type: 'text',
           })}
           resolvedMessageUrl={null}
+          isSelectionMode={false}
           isImageMessage={false}
           isFileMessage={false}
           isImageFileMessage={false}
@@ -123,6 +125,7 @@ describe('MessageBubbleContent', () => {
       <MessageBubbleContent
         message={buildMessage()}
         resolvedMessageUrl="https://example.com/screenshot.png"
+        isSelectionMode={false}
         isImageMessage={false}
         isFileMessage={true}
         isImageFileMessage={true}
@@ -147,5 +150,44 @@ describe('MessageBubbleContent', () => {
     );
 
     expect(screen.getByRole('link', { name: url })).toBeTruthy();
+  });
+
+  it('disables bubble content pointer interactions in selection mode', () => {
+    const url = 'https://example.com/report';
+
+    render(
+      <MessageBubbleContent
+        message={buildMessage({
+          message: url,
+          message_type: 'text',
+        })}
+        resolvedMessageUrl={null}
+        isSelectionMode={true}
+        isImageMessage={false}
+        isFileMessage={false}
+        isImageFileMessage={false}
+        isPdfFileMessage={false}
+        hasAttachmentCaption={false}
+        fileName={null}
+        fileSecondaryLabel={null}
+        fileIcon={<span />}
+        resolvedPdfPreviewUrl={null}
+        pdfMetaLabel={null}
+        highlightedMessage={renderHighlightedText(url, '', {
+          linkify: true,
+        })}
+        highlightedCaption=""
+        hasLeadingEllipsis={false}
+        hasTrailingEllipsis={false}
+        isMessageLong={false}
+        isExpanded={false}
+        isHighlightedBubble={false}
+        onToggleExpand={() => {}}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: url });
+
+    expect(link.parentElement?.className).toContain('pointer-events-none');
   });
 });

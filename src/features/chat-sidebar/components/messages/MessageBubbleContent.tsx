@@ -5,6 +5,7 @@ import type { ChatMessage } from '../../data/chatSidebarGateway';
 interface MessageBubbleContentProps {
   message: ChatMessage;
   resolvedMessageUrl: string | null;
+  isSelectionMode: boolean;
   isImageMessage: boolean;
   isFileMessage: boolean;
   isImageFileMessage: boolean;
@@ -27,6 +28,7 @@ interface MessageBubbleContentProps {
 
 export const MessageBubbleContent = ({
   resolvedMessageUrl,
+  isSelectionMode,
   isImageMessage,
   isFileMessage,
   isImageFileMessage,
@@ -156,7 +158,7 @@ export const MessageBubbleContent = ({
   );
 
   return (
-    <>
+    <div className={isSelectionMode ? 'pointer-events-none' : undefined}>
       {mainContent}
       {hasAttachmentCaption ? (
         <p
@@ -171,6 +173,6 @@ export const MessageBubbleContent = ({
           {highlightedCaption}
         </p>
       ) : null}
-    </>
+    </div>
   );
 };
