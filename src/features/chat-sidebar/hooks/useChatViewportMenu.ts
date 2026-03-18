@@ -52,6 +52,7 @@ export const useChatViewportMenu = ({
 
   const menuTransitionSourceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingMenuRepositionAnimationFrameRef = useRef<number | null>(null);
+  const menuOpenScrollAnimationFrameRef = useRef<number | null>(null);
   const openMenuAnchorRef = useRef<HTMLElement | null>(null);
   const openMenuPreferredSideRef = useRef<'left' | 'right'>('left');
 
@@ -157,7 +158,56 @@ export const useChatViewportMenu = ({
     [getVisibleMessagesBounds]
   );
 
+  const cancelMenuOpenScrollAnimation = useCallback(() => {
+    if (menuOpenScrollAnimationFrameRef.current === null) {
+      return;
+    }
+
+    cancelNextFrame(menuOpenScrollAnimationFrameRef.current);
+    menuOpenScrollAnimationFrameRef.current = null;
+  }, [cancelNextFrame]);
+
+  const animateMenuOpenScroll = useCallback(
+    (container: HTMLDivElement, targetScrollTop: number) => {
+      const startScrollTop = container.scrollTop;
+      const distance = targetScrollTop - startScrollTop;
+
+      if (Math.abs(distance) < 0.5) {
+        container.scrollTop = targetScrollTop;
+        return;
+      }
+
+      cancelMenuOpenScrollAnimation();
+
+      const totalFrames = Math.min(
+        18,
+        Math.max(8, Math.round(Math.abs(distance) / 18))
+      );
+      let currentFrame = 0;
+
+      const step = () => {
+        currentFrame += 1;
+        const progress = currentFrame / totalFrames;
+        const easedProgress = 1 - (1 - progress) ** 4;
+
+        container.scrollTop = startScrollTop + distance * easedProgress;
+
+        if (currentFrame < totalFrames) {
+          menuOpenScrollAnimationFrameRef.current = requestNextFrame(step);
+          return;
+        }
+
+        container.scrollTop = targetScrollTop;
+        menuOpenScrollAnimationFrameRef.current = null;
+      };
+
+      menuOpenScrollAnimationFrameRef.current = requestNextFrame(step);
+    },
+    [cancelMenuOpenScrollAnimation, requestNextFrame]
+  );
+
   const closeMessageMenu = useCallback(() => {
+    cancelMenuOpenScrollAnimation();
     if (menuTransitionSourceTimeoutRef.current) {
       clearTimeout(menuTransitionSourceTimeoutRef.current);
       menuTransitionSourceTimeoutRef.current = null;
@@ -171,7 +221,7 @@ export const useChatViewportMenu = ({
     setMenuTransitionSourceId(null);
     setMenuOffsetX(0);
     setShouldAnimateMenuOpen(true);
-  }, [cancelNextFrame]);
+  }, [cancelMenuOpenScrollAnimation, cancelNextFrame]);
 
   const syncOpenMenuLayout = useCallback(
     (anchor: HTMLElement, preferredSide: 'left' | 'right') => {
@@ -199,6 +249,43 @@ export const useChatViewportMenu = ({
       setMenuViewportTick(previousTick => previousTick + 1);
     },
     [closeMessageMenu, getMenuLayout, getVisibleMessagesBounds]
+  );
+
+  const ensureAnchorVisibleForMenuOpen = useCallback(
+    (anchorRect: DOMRect) => {
+      const container = messagesContainerRef.current;
+      const bounds = getVisibleMessagesBounds();
+      if (!container || !bounds) {
+        return;
+      }
+
+      const minVisibleTop =
+        bounds.containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
+      const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
+
+      let scrollOffset = 0;
+      if (anchorRect.top < minVisibleTop) {
+        scrollOffset = anchorRect.top - minVisibleTop;
+      } else if (anchorRect.bottom > maxVisibleBottom) {
+        scrollOffset = anchorRect.bottom - maxVisibleBottom;
+      }
+
+      if (Math.abs(scrollOffset) < 0.5) {
+        return;
+      }
+
+      const nextScrollTop = Math.min(
+        Math.max(container.scrollTop + scrollOffset, 0),
+        Math.max(0, container.scrollHeight - container.clientHeight)
+      );
+
+      if (Math.abs(nextScrollTop - container.scrollTop) < 0.5) {
+        return;
+      }
+
+      animateMenuOpenScroll(container, nextScrollTop);
+    },
+    [animateMenuOpenScroll, getVisibleMessagesBounds, messagesContainerRef]
   );
 
   const requestOpenMenuReposition = useCallback(() => {
@@ -244,6 +331,8 @@ export const useChatViewportMenu = ({
       const isSwitchingMenuMessage =
         openMenuMessageId !== null && openMenuMessageId !== messageId;
 
+      ensureAnchorVisibleForMenuOpen(anchorRect);
+
       if (menuTransitionSourceTimeoutRef.current) {
         clearTimeout(menuTransitionSourceTimeoutRef.current);
         menuTransitionSourceTimeoutRef.current = null;
@@ -272,7 +361,13 @@ export const useChatViewportMenu = ({
       setShouldAnimateMenuOpen(!isSwitchingMenuMessage);
       setOpenMenuMessageId(messageId);
     },
-    [cancelNextFrame, closeMessageMenu, getMenuLayout, openMenuMessageId]
+    [
+      cancelNextFrame,
+      closeMessageMenu,
+      ensureAnchorVisibleForMenuOpen,
+      getMenuLayout,
+      openMenuMessageId,
+    ]
   );
 
   const ensureMenuFullyVisible = useCallback(
@@ -365,6 +460,10 @@ export const useChatViewportMenu = ({
       if (pendingMenuRepositionAnimationFrameRef.current !== null) {
         cancelNextFrame(pendingMenuRepositionAnimationFrameRef.current);
         pendingMenuRepositionAnimationFrameRef.current = null;
+      }
+      if (menuOpenScrollAnimationFrameRef.current !== null) {
+        cancelNextFrame(menuOpenScrollAnimationFrameRef.current);
+        menuOpenScrollAnimationFrameRef.current = null;
       }
     };
   }, [cancelNextFrame]);
