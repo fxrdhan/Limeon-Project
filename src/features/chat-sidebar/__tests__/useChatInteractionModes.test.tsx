@@ -15,11 +15,22 @@ const { mockResolveCopyableChatAssetUrl } = vi.hoisted(() => ({
   mockResolveCopyableChatAssetUrl: vi.fn(),
 }));
 
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    error: vi.fn(),
+    promise: vi.fn(),
+  },
+}));
+
 vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
     searchConversationMessages: mockSearchConversationMessages,
     fetchConversationMessageContext: mockFetchConversationMessageContext,
   },
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: mockToast,
 }));
 
 vi.mock('../utils/message-file', async importOriginal => {
@@ -63,6 +74,7 @@ describe('useChatInteractionModes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockToast.promise.mockImplementation(async promise => await promise);
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback
     ) => {
@@ -253,10 +265,19 @@ describe('useChatInteractionModes', () => {
     });
 
     expect(closeMessageMenu).toHaveBeenCalledOnce();
+    expect(mockToast.promise).toHaveBeenCalledWith(
+      expect.any(Promise),
+      expect.objectContaining({
+        loading: 'Menyalin pesan...',
+        success: expect.any(Function),
+        error: expect.any(Function),
+      }),
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
     expect(clipboardWriteText).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Admin: https://signed.example.com/chat/image.png'
-      )
+      expect.stringContaining('Admin: signed.example.com/chat/image.png')
     );
 
     mockSearchConversationMessages.mockResolvedValueOnce({

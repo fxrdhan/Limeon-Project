@@ -168,11 +168,7 @@ describe('message-derivations', () => {
       getAttachmentFileName: messageItem => messageItem.file_name || 'Lampiran',
     });
 
-    expect(serialized).toContain(
-      'Admin: https://signed.example.com/chat/image.png'
-    );
-    expect(serialized).toContain(
-      'Gudang: https://signed.example.com/chat/invoice.pdf'
-    );
+    expect(serialized).toContain('Admin: signed.example.com/chat/image.png');
+    expect(serialized).toContain('Gudang: signed.example.com/chat/invoice.pdf');
   });
 });

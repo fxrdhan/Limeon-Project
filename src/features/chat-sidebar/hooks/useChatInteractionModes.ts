@@ -19,6 +19,13 @@ import {
 } from '../utils/message-derivations';
 import { useChatMessageSearchMode } from './useChatMessageSearchMode';
 
+class EmptySelectedMessagesCopyError extends Error {
+  constructor() {
+    super('Tidak ada isi pesan untuk disalin');
+    this.name = 'EmptySelectedMessagesCopyError';
+  }
+}
+
 interface UseChatInteractionModesProps {
   isOpen: boolean;
   currentChannelId: string | null;
@@ -203,36 +210,44 @@ export const useChatInteractionModes = ({
       return;
     }
 
-    const serializedMessages = await serializeSelectedMessages(
-      selectedVisibleMessages,
-      {
-        captionMessagesByAttachmentId,
-        currentUser: user,
-        targetUser,
-        getAttachmentFileName,
-      }
-    );
-
-    if (!serializedMessages) {
-      toast.error('Tidak ada isi pesan untuk disalin', {
-        toasterId: CHAT_SIDEBAR_TOASTER_ID,
-      });
-      return;
-    }
-
     try {
-      await navigator.clipboard.writeText(serializedMessages);
-      toast.success(
-        `${selectedVisibleMessages.length} pesan berhasil disalin`,
+      await toast.promise(
+        (async () => {
+          const serializedMessages = await serializeSelectedMessages(
+            selectedVisibleMessages,
+            {
+              captionMessagesByAttachmentId,
+              currentUser: user,
+              targetUser,
+              getAttachmentFileName,
+            }
+          );
+
+          if (!serializedMessages) {
+            throw new EmptySelectedMessagesCopyError();
+          }
+
+          await navigator.clipboard.writeText(serializedMessages);
+          return selectedVisibleMessages.length;
+        })(),
+        {
+          loading: 'Menyalin pesan...',
+          success: copiedCount => `${copiedCount} pesan berhasil disalin`,
+          error: error =>
+            error instanceof EmptySelectedMessagesCopyError
+              ? 'Tidak ada isi pesan untuk disalin'
+              : 'Gagal menyalin pesan terpilih',
+        },
         {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         }
       );
     } catch (error) {
+      if (error instanceof EmptySelectedMessagesCopyError) {
+        return;
+      }
+
       console.error('Error copying selected messages:', error);
-      toast.error('Gagal menyalin pesan terpilih', {
-        toasterId: CHAT_SIDEBAR_TOASTER_ID,
-      });
     }
   }, [
     captionMessagesByAttachmentId,

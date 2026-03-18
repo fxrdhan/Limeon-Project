@@ -16,6 +16,9 @@ export interface MessageActorLike {
   name?: string;
 }
 
+const stripCopiedUrlProtocol = (value: string) =>
+  value.replace(/^https?:\/\//i, '');
+
 export const getAttachmentCaptionData = (
   messages: ChatMessage[]
 ): AttachmentCaptionData => {
@@ -178,11 +181,14 @@ export const serializeSelectedMessages = async (
           messageItem.message_type === 'image'
             ? '[Gambar]'
             : `[File: ${options.getAttachmentFileName(messageItem)}]`;
+        const copyableAttachmentUrl = resolvedAttachmentUrl
+          ? stripCopiedUrlProtocol(resolvedAttachmentUrl)
+          : null;
         const messageBody =
           messageItem.message_type === 'text'
             ? messageItem.message
-            : shouldCopyAttachmentUrl && resolvedAttachmentUrl
-              ? resolvedAttachmentUrl
+            : shouldCopyAttachmentUrl && copyableAttachmentUrl
+              ? copyableAttachmentUrl
               : attachmentCaption || attachmentLabel;
 
         return `[${formatSerializedMessageTimestamp(messageItem.created_at)}] ${senderLabel}: ${messageBody}`;
