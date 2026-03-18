@@ -206,6 +206,9 @@ jobs:
 
       - name: Run tests with coverage
         run: bun test:coverage
+        env:
+          VITE_SUPABASE_URL: https://example.com
+          VITE_SUPABASE_ANON_KEY: dummy
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
