@@ -2,12 +2,50 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { useChatSidebarLauncher } from '@/features/chat-sidebar/hooks/useChatSidebarLauncher';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useIsPresent } from 'motion/react';
 import { TbMessageDots } from 'react-icons/tb';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
 import DateTimeDisplay from './live-datetime';
 import Profile from '@/components/profile';
 import AvatarStack from '@/components/shared/avatar-stack';
+
+interface OnlineUsersPortalProps {
+  portalContainerRef: React.RefObject<HTMLDivElement | null>;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  children: React.ReactNode;
+}
+
+const OnlineUsersPortal = ({
+  portalContainerRef,
+  onMouseEnter,
+  onMouseLeave,
+  children,
+}: OnlineUsersPortalProps) => {
+  const isPresent = useIsPresent();
+
+  return (
+    <div
+      ref={portalContainerRef}
+      role="dialog"
+      aria-label="Daftar pengguna online"
+      className="absolute top-full left-1/2 z-50 mt-2 min-w-64 -translate-x-1/2 transform"
+      onMouseEnter={isPresent ? onMouseEnter : undefined}
+      onMouseLeave={isPresent ? onMouseLeave : undefined}
+      style={{ pointerEvents: isPresent ? 'auto' : 'none' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg"
+      >
+        <div className="space-y-1">{children}</div>
+      </motion.div>
+    </div>
+  );
+};
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user } = useAuthStore();
@@ -234,169 +272,154 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
             <AnimatePresence>
               {showPortal && (
-                <div
-                  ref={portalContainerRef}
-                  role="dialog"
-                  aria-label="Daftar pengguna online"
-                  className="absolute top-full left-1/2 z-50 mt-2 min-w-64 -translate-x-1/2 transform"
+                <OnlineUsersPortal
+                  portalContainerRef={portalContainerRef}
                   onMouseEnter={schedulePortalOpen}
                   onMouseLeave={schedulePortalClose}
                 >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className="absolute inset-0 bg-white rounded-xl shadow-lg border border-slate-200"
-                  />
+                  {isDirectoryLoading && portalOrderedUsers.length === 0 ? (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+                      Memuat daftar pengguna...
+                    </div>
+                  ) : null}
+                  {directoryError ? (
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                      <span>{directoryError}</span>
+                      <button
+                        type="button"
+                        onClick={retryLoadDirectory}
+                        className="rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                      >
+                        Coba lagi
+                      </button>
+                    </div>
+                  ) : null}
+                  {portalOrderedUsers.map(portalUser => {
+                    const isOnline = onlineUserIds.has(portalUser.id);
 
-                  <div className="relative p-3">
-                    <div className="space-y-1">
-                      {isDirectoryLoading && portalOrderedUsers.length === 0 ? (
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
-                          Memuat daftar pengguna...
-                        </div>
-                      ) : null}
-                      {directoryError ? (
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                          <span>{directoryError}</span>
-                          <button
-                            type="button"
-                            onClick={retryLoadDirectory}
-                            className="rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
-                          >
-                            Coba lagi
-                          </button>
-                        </div>
-                      ) : null}
-                      {portalOrderedUsers.map(portalUser => {
-                        const isOnline = onlineUserIds.has(portalUser.id);
-
-                        return (
-                          <div
-                            key={portalUser.id}
-                            className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
-                              portalUser.id !== user?.id
-                                ? 'cursor-pointer hover:bg-emerald-50'
-                                : 'cursor-default hover:bg-slate-50'
-                            }`}
-                            onMouseEnter={() => setHoveredUser(portalUser.id)}
-                            onMouseLeave={() => setHoveredUser(null)}
-                            onClick={
-                              portalUser.id !== user?.id
-                                ? () => handleChatOpen(portalUser)
-                                : undefined
-                            }
-                            onKeyDown={event => {
-                              if (
-                                portalUser.id !== user?.id &&
-                                (event.key === 'Enter' || event.key === ' ')
-                              ) {
-                                event.preventDefault();
-                                handleChatOpen(portalUser);
-                              }
+                    return (
+                      <div
+                        key={portalUser.id}
+                        className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
+                          portalUser.id !== user?.id
+                            ? 'cursor-pointer hover:bg-emerald-50'
+                            : 'cursor-default hover:bg-slate-50'
+                        }`}
+                        onMouseEnter={() => setHoveredUser(portalUser.id)}
+                        onMouseLeave={() => setHoveredUser(null)}
+                        onClick={
+                          portalUser.id !== user?.id
+                            ? () => handleChatOpen(portalUser)
+                            : undefined
+                        }
+                        onKeyDown={event => {
+                          if (
+                            portalUser.id !== user?.id &&
+                            (event.key === 'Enter' || event.key === ' ')
+                          ) {
+                            event.preventDefault();
+                            handleChatOpen(portalUser);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        {/* User Info Group */}
+                        <div className="relative flex items-center">
+                          {/* Avatar in portal */}
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{
+                              opacity: isOnline ? 1 : 0.5,
+                              scale: 1.25,
                             }}
-                            role="button"
-                            tabIndex={0}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{
+                              duration: 0.2,
+                              ease: 'easeOut',
+                            }}
+                            className={`relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden ${isOnline ? '' : 'opacity-50'}`}
+                            title={`${portalUser.name} - ${isOnline ? 'Online' : 'Offline'}`}
                           >
-                            {/* User Info Group */}
-                            <div className="relative flex items-center">
-                              {/* Avatar in portal */}
+                            {portalUser.profilephoto ? (
+                              <img
+                                src={portalUser.profilephoto}
+                                alt={portalUser.name}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                draggable={false}
+                              />
+                            ) : (
+                              <div
+                                className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
+                              >
+                                {getInitials(portalUser.name)}
+                              </div>
+                            )}
+                          </motion.div>
+
+                          {/* User Info */}
+                          <motion.div
+                            className="w-36 min-w-0 ml-3 overflow-hidden"
+                            initial={{ opacity: 1 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                          >
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm font-medium text-slate-900 truncate">
+                                {portalUser.name}
+                              </p>
+                              {portalUser.id === user?.id && (
+                                <span className="flex items-center gap-1 text-xs">
+                                  <span className="w-3 h-px bg-slate-400 translate-y-0.5"></span>
+                                  <span className="text-primary font-medium">
+                                    You
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 truncate">
+                              {portalUser.email}
+                            </p>
+                          </motion.div>
+                        </div>
+
+                        {/* Chat Icon Indicator - only visible on hover */}
+                        <AnimatePresence>
+                          {portalUser.id !== user?.id &&
+                            hoveredUser === portalUser.id && (
                               <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{
-                                  opacity: isOnline ? 1 : 0.5,
-                                  scale: 1.25,
-                                }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
                                 transition={{
-                                  duration: 0.2,
+                                  duration: 0.15,
                                   ease: 'easeOut',
                                 }}
-                                className={`relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden ${isOnline ? '' : 'opacity-50'}`}
-                                title={`${portalUser.name} - ${isOnline ? 'Online' : 'Offline'}`}
+                                className="absolute top-3 right-3 text-emerald-600"
+                                title="Click to chat with this user"
                               >
-                                {portalUser.profilephoto ? (
-                                  <img
-                                    src={portalUser.profilephoto}
-                                    alt={portalUser.name}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    draggable={false}
-                                  />
-                                ) : (
-                                  <div
-                                    className={`w-full h-full flex items-center justify-center text-white font-medium text-sm ${getInitialsColor(portalUser.id)}`}
-                                  >
-                                    {getInitials(portalUser.name)}
-                                  </div>
-                                )}
+                                <TbMessageDots size={18} />
                               </motion.div>
-
-                              {/* User Info */}
-                              <motion.div
-                                className="w-36 min-w-0 ml-3 overflow-hidden"
-                                initial={{ opacity: 1 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.25, ease: 'easeOut' }}
-                              >
-                                <div className="flex items-center gap-1">
-                                  <p className="text-sm font-medium text-slate-900 truncate">
-                                    {portalUser.name}
-                                  </p>
-                                  {portalUser.id === user?.id && (
-                                    <span className="flex items-center gap-1 text-xs">
-                                      <span className="w-3 h-px bg-slate-400 translate-y-0.5"></span>
-                                      <span className="text-primary font-medium">
-                                        You
-                                      </span>
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-slate-500 truncate">
-                                  {portalUser.email}
-                                </p>
-                              </motion.div>
-                            </div>
-
-                            {/* Chat Icon Indicator - only visible on hover */}
-                            <AnimatePresence>
-                              {portalUser.id !== user?.id &&
-                                hoveredUser === portalUser.id && (
-                                  <motion.div
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    transition={{
-                                      duration: 0.15,
-                                      ease: 'easeOut',
-                                    }}
-                                    className="absolute top-3 right-3 text-emerald-600"
-                                    title="Click to chat with this user"
-                                  >
-                                    <TbMessageDots size={18} />
-                                  </motion.div>
-                                )}
-                            </AnimatePresence>
-                          </div>
-                        );
-                      })}
-                      {hasMoreDirectoryUsers && !directoryError ? (
-                        <button
-                          type="button"
-                          onClick={loadMoreDirectoryUsers}
-                          disabled={isDirectoryLoading}
-                          className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
-                        >
-                          {isDirectoryLoading
-                            ? 'Memuat pengguna...'
-                            : 'Muat lebih banyak'}
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+                            )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                  {hasMoreDirectoryUsers && !directoryError ? (
+                    <button
+                      type="button"
+                      onClick={loadMoreDirectoryUsers}
+                      disabled={isDirectoryLoading}
+                      className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
+                    >
+                      {isDirectoryLoading
+                        ? 'Memuat pengguna...'
+                        : 'Muat lebih banyak'}
+                    </button>
+                  ) : null}
+                </OnlineUsersPortal>
               )}
             </AnimatePresence>
           </div>
