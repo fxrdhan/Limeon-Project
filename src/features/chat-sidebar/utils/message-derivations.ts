@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { getAttachmentFileName } from './attachment';
+import { resolveChatAssetUrl, resolveFileExtension } from './message-file';
 import { isAttachmentCaptionMessage } from './message-relations';
 
 export type AttachmentCaptionData = {
@@ -130,7 +131,7 @@ const formatSerializedMessageTimestamp = (timestamp: string) => {
   return `${day}/${month}, ${hour}.${minute}`;
 };
 
-export const serializeSelectedMessages = (
+export const serializeSelectedMessages = async (
   selectedMessages: ChatMessage[],
   options: {
     captionMessagesByAttachmentId: Map<string, ChatMessage>;
@@ -139,26 +140,51 @@ export const serializeSelectedMessages = (
     getAttachmentFileName: (targetMessage: ChatMessage) => string;
   }
 ) =>
-  selectedMessages
-    .map(messageItem => {
-      const senderLabel =
-        messageItem.sender_name ||
-        (messageItem.sender_id === options.currentUser?.id
-          ? options.currentUser?.name || 'You'
-          : options.targetUser?.name || 'Unknown');
-      const attachmentCaption = options.captionMessagesByAttachmentId
-        .get(messageItem.id)
-        ?.message?.trim();
-      const attachmentLabel =
-        messageItem.message_type === 'image'
-          ? '[Gambar]'
-          : `[File: ${options.getAttachmentFileName(messageItem)}]`;
-      const messageBody =
-        messageItem.message_type === 'text'
-          ? messageItem.message
-          : attachmentCaption || attachmentLabel;
+  (
+    await Promise.all(
+      selectedMessages.map(async messageItem => {
+        const senderLabel =
+          messageItem.sender_name ||
+          (messageItem.sender_id === options.currentUser?.id
+            ? options.currentUser?.name || 'You'
+            : options.targetUser?.name || 'Unknown');
+        const attachmentCaption = options.captionMessagesByAttachmentId
+          .get(messageItem.id)
+          ?.message?.trim();
+        const fileExtension =
+          messageItem.message_type === 'file'
+            ? resolveFileExtension(
+                messageItem.file_name ?? null,
+                messageItem.message,
+                messageItem.file_mime_type
+              )
+            : '';
+        const isPdfAttachment =
+          messageItem.message_type === 'file' &&
+          (fileExtension === 'pdf' ||
+            messageItem.file_mime_type?.toLowerCase().includes('pdf') === true);
+        const shouldCopyAttachmentUrl =
+          messageItem.message_type === 'image' || isPdfAttachment;
+        const resolvedAttachmentUrl = shouldCopyAttachmentUrl
+          ? await resolveChatAssetUrl(
+              messageItem.message,
+              messageItem.file_storage_path
+            )
+          : null;
+        const attachmentLabel =
+          messageItem.message_type === 'image'
+            ? '[Gambar]'
+            : `[File: ${options.getAttachmentFileName(messageItem)}]`;
+        const messageBody =
+          messageItem.message_type === 'text'
+            ? messageItem.message
+            : shouldCopyAttachmentUrl && resolvedAttachmentUrl
+              ? resolvedAttachmentUrl
+              : attachmentCaption || attachmentLabel;
 
-      return `[${formatSerializedMessageTimestamp(messageItem.created_at)}] ${senderLabel}: ${messageBody}`;
-    })
+        return `[${formatSerializedMessageTimestamp(messageItem.created_at)}] ${senderLabel}: ${messageBody}`;
+      })
+    )
+  )
     .join('\n')
     .trim();

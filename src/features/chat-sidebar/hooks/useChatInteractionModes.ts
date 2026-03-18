@@ -203,7 +203,7 @@ export const useChatInteractionModes = ({
       return;
     }
 
-    const serializedMessages = serializeSelectedMessages(
+    const serializedMessages = await serializeSelectedMessages(
       selectedVisibleMessages,
       {
         captionMessagesByAttachmentId,

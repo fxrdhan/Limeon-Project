@@ -11,12 +11,25 @@ const { mockSearchConversationMessages, mockFetchConversationMessageContext } =
     mockFetchConversationMessageContext: vi.fn(),
   }));
 
+const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
+  mockResolveChatAssetUrl: vi.fn(),
+}));
+
 vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
     searchConversationMessages: mockSearchConversationMessages,
     fetchConversationMessageContext: mockFetchConversationMessageContext,
   },
 }));
+
+vi.mock('../utils/message-file', async importOriginal => {
+  const actual = await importOriginal<typeof import('../utils/message-file')>();
+
+  return {
+    ...actual,
+    resolveChatAssetUrl: mockResolveChatAssetUrl,
+  };
+});
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -76,6 +89,13 @@ describe('useChatInteractionModes', () => {
     mockFetchConversationMessageContext.mockResolvedValue({
       data: [],
       error: null,
+    });
+    mockResolveChatAssetUrl.mockImplementation(async (url: string) => {
+      if (url.includes('image.png')) {
+        return 'https://signed.example.com/chat/image.png';
+      }
+
+      return null;
     });
   });
 
@@ -234,7 +254,9 @@ describe('useChatInteractionModes', () => {
 
     expect(closeMessageMenu).toHaveBeenCalledOnce();
     expect(clipboardWriteText).toHaveBeenCalledWith(
-      expect.stringContaining('Admin: Rak depan')
+      expect.stringContaining(
+        'Admin: https://signed.example.com/chat/image.png'
+      )
     );
 
     mockSearchConversationMessages.mockResolvedValueOnce({

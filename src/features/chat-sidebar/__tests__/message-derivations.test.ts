@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import {
   getAttachmentCaptionData,
@@ -7,6 +7,19 @@ import {
   getSelectedVisibleMessages,
   serializeSelectedMessages,
 } from '../utils/message-derivations';
+
+const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
+  mockResolveChatAssetUrl: vi.fn(),
+}));
+
+vi.mock('../utils/message-file', async importOriginal => {
+  const actual = await importOriginal<typeof import('../utils/message-file')>();
+
+  return {
+    ...actual,
+    resolveChatAssetUrl: mockResolveChatAssetUrl,
+  };
+});
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -94,11 +107,14 @@ describe('message-derivations', () => {
     expect(selectableIds.has('text-1')).toBe(true);
   });
 
-  it('serializes selected messages with sender labels and attachment captions', () => {
+  it('serializes selected messages with public URLs for images and pdf attachments', async () => {
     const imageMessage = buildMessage({
       id: 'image-1',
-      message: 'https://example.com/image.png',
+      message:
+        'images/dm_18babd2b-1621-4b8f-bb2c-e4de266d8a55_3dc5f797-4bd0-4c68-895a-cbce61d01000/18babd2b-1621-4b8f-bb2c-e4de266d8a55_image_b3d1c672-290b-4ffa-8ce8-d45f6b0d7126.png',
       message_type: 'image',
+      file_storage_path:
+        'images/dm_18babd2b-1621-4b8f-bb2c-e4de266d8a55_3dc5f797-4bd0-4c68-895a-cbce61d01000/18babd2b-1621-4b8f-bb2c-e4de266d8a55_image_b3d1c672-290b-4ffa-8ce8-d45f6b0d7126.png',
       sender_name: 'Admin',
     });
     const captionMessage = buildMessage({
@@ -110,14 +126,29 @@ describe('message-derivations', () => {
     });
     const fileMessage = buildMessage({
       id: 'file-1',
-      message: 'https://example.com/invoice.pdf',
+      message:
+        'documents/dm_18babd2b-1621-4b8f-bb2c-e4de266d8a55_3dc5f797-4bd0-4c68-895a-cbce61d01000/18babd2b-1621-4b8f-bb2c-e4de266d8a55_document_8e9ed594-2828-4816-a236-960b9c2a45ba.pdf',
       message_type: 'file',
       file_name: 'invoice.pdf',
       file_kind: 'document',
+      file_storage_path:
+        'documents/dm_18babd2b-1621-4b8f-bb2c-e4de266d8a55_3dc5f797-4bd0-4c68-895a-cbce61d01000/18babd2b-1621-4b8f-bb2c-e4de266d8a55_document_8e9ed594-2828-4816-a236-960b9c2a45ba.pdf',
       sender_id: 'user-b',
       sender_name: 'Gudang',
       created_at: '2026-03-06T10:00:00.000Z',
       updated_at: '2026-03-06T10:00:00.000Z',
+    });
+
+    mockResolveChatAssetUrl.mockImplementation(async (url: string) => {
+      if (url.includes('_image_') || url.includes('image.png')) {
+        return 'https://signed.example.com/chat/image.png';
+      }
+
+      if (url.includes('_document_') || url.includes('invoice.pdf')) {
+        return 'https://signed.example.com/chat/invoice.pdf';
+      }
+
+      return null;
     });
 
     const captionData = getAttachmentCaptionData([
@@ -130,14 +161,18 @@ describe('message-derivations', () => {
       captionData.captionMessageIds,
       new Set(['image-1', 'file-1'])
     );
-    const serialized = serializeSelectedMessages(selectedMessages, {
+    const serialized = await serializeSelectedMessages(selectedMessages, {
       captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
       currentUser: { id: 'user-a', name: 'Admin' },
       targetUser: { id: 'user-b', name: 'Gudang' },
       getAttachmentFileName: messageItem => messageItem.file_name || 'Lampiran',
     });
 
-    expect(serialized).toContain('Admin: Rak depan');
-    expect(serialized).toContain('Gudang: [File: invoice.pdf]');
+    expect(serialized).toContain(
+      'Admin: https://signed.example.com/chat/image.png'
+    );
+    expect(serialized).toContain(
+      'Gudang: https://signed.example.com/chat/invoice.pdf'
+    );
   });
 });
