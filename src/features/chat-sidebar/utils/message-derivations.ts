@@ -1,6 +1,9 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { getAttachmentFileName } from './attachment';
-import { resolveChatAssetUrl, resolveFileExtension } from './message-file';
+import {
+  resolveCopyableChatAssetUrl,
+  resolveFileExtension,
+} from './message-file';
 import { isAttachmentCaptionMessage } from './message-relations';
 
 export type AttachmentCaptionData = {
@@ -166,7 +169,7 @@ export const serializeSelectedMessages = async (
         const shouldCopyAttachmentUrl =
           messageItem.message_type === 'image' || isPdfAttachment;
         const resolvedAttachmentUrl = shouldCopyAttachmentUrl
-          ? await resolveChatAssetUrl(
+          ? await resolveCopyableChatAssetUrl(
               messageItem.message,
               messageItem.file_storage_path
             )

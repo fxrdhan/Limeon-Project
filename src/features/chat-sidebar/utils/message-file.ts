@@ -1,5 +1,6 @@
 import type { ComposerPendingFileKind } from '../types';
 import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
+import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
 import {
   buildPdfPreviewStoragePath,
   extractChatStoragePath,
@@ -178,6 +179,32 @@ export const resolveChatAssetUrl = async (
   );
 
   return resolvedAsset?.url ?? null;
+};
+
+export const resolveCopyableChatAssetUrl = async (
+  url: string,
+  storagePathHint?: string | null
+) => {
+  const normalizedUrl = url.trim();
+  const storagePath =
+    storagePathHint?.trim() ||
+    extractChatStoragePath(normalizedUrl) ||
+    (!isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null);
+
+  if (!storagePath) {
+    return normalizedUrl || null;
+  }
+
+  const sharedLinkResult =
+    await chatSidebarShareGateway.createSharedLink(storagePath);
+  if (sharedLinkResult.data?.shortUrl) {
+    return sharedLinkResult.data.shortUrl;
+  }
+
+  return (
+    (await resolveChatAssetUrl(normalizedUrl || storagePath, storagePath)) ??
+    (isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null)
+  );
 };
 
 export const openChatFileInNewTab = async (

@@ -8,8 +8,8 @@ import {
   serializeSelectedMessages,
 } from '../utils/message-derivations';
 
-const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
-  mockResolveChatAssetUrl: vi.fn(),
+const { mockResolveCopyableChatAssetUrl } = vi.hoisted(() => ({
+  mockResolveCopyableChatAssetUrl: vi.fn(),
 }));
 
 vi.mock('../utils/message-file', async importOriginal => {
@@ -17,7 +17,7 @@ vi.mock('../utils/message-file', async importOriginal => {
 
   return {
     ...actual,
-    resolveChatAssetUrl: mockResolveChatAssetUrl,
+    resolveCopyableChatAssetUrl: mockResolveCopyableChatAssetUrl,
   };
 });
 
@@ -139,7 +139,7 @@ describe('message-derivations', () => {
       updated_at: '2026-03-06T10:00:00.000Z',
     });
 
-    mockResolveChatAssetUrl.mockImplementation(async (url: string) => {
+    mockResolveCopyableChatAssetUrl.mockImplementation(async (url: string) => {
       if (url.includes('_image_') || url.includes('image.png')) {
         return 'https://signed.example.com/chat/image.png';
       }

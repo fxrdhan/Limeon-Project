@@ -1,6 +1,7 @@
 import type { ServiceResponse } from '@/services/api/base.service';
 import {
   chatCleanupService,
+  chatLinkService,
   chatMessagesService,
   chatPresenceService,
   chatPreviewService,
@@ -13,6 +14,7 @@ import {
   type CreateChatMessageInput,
   type EditChatMessageTextInput,
   type PersistChatPdfPreviewInput,
+  type ChatSharedLinkResult,
   type UserPresenceUpdateInput,
 } from '@/services/api/chat.service';
 
@@ -29,6 +31,7 @@ export type {
   UndeliveredIncomingMessageIdsPage,
   PersistChatPdfPreviewInput,
   PersistChatPdfPreviewResult,
+  ChatSharedLinkResult,
 } from '@/services/api/chat.service';
 
 export type { RealtimeChannel } from '@supabase/supabase-js';
@@ -172,5 +175,13 @@ export const chatSidebarPresenceGateway = {
 export const chatSidebarPreviewGateway = {
   persistPdfPreview(payload: PersistChatPdfPreviewInput) {
     return chatPreviewService.persistPdfPreview(payload);
+  },
+};
+
+export const chatSidebarShareGateway = {
+  createSharedLink(
+    storagePath: string
+  ): Promise<ServiceResponse<ChatSharedLinkResult>> {
+    return chatLinkService.createSharedLink(storagePath);
   },
 };

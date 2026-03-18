@@ -11,8 +11,8 @@ const { mockSearchConversationMessages, mockFetchConversationMessageContext } =
     mockFetchConversationMessageContext: vi.fn(),
   }));
 
-const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
-  mockResolveChatAssetUrl: vi.fn(),
+const { mockResolveCopyableChatAssetUrl } = vi.hoisted(() => ({
+  mockResolveCopyableChatAssetUrl: vi.fn(),
 }));
 
 vi.mock('@/services/api/chat.service', () => ({
@@ -27,7 +27,7 @@ vi.mock('../utils/message-file', async importOriginal => {
 
   return {
     ...actual,
-    resolveChatAssetUrl: mockResolveChatAssetUrl,
+    resolveCopyableChatAssetUrl: mockResolveCopyableChatAssetUrl,
   };
 });
 
@@ -90,7 +90,7 @@ describe('useChatInteractionModes', () => {
       data: [],
       error: null,
     });
-    mockResolveChatAssetUrl.mockImplementation(async (url: string) => {
+    mockResolveCopyableChatAssetUrl.mockImplementation(async (url: string) => {
       if (url.includes('image.png')) {
         return 'https://signed.example.com/chat/image.png';
       }
