@@ -22,6 +22,9 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
 const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
   mockFetchAttachmentComposerRemoteFile: vi.fn(),
 }));
+const { mockValidateAttachmentComposerLink } = vi.hoisted(() => ({
+  mockValidateAttachmentComposerLink: vi.fn(),
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -37,6 +40,7 @@ vi.mock('../utils/composer-attachment-link', async () => {
   return {
     ...actual,
     fetchAttachmentComposerRemoteFile: mockFetchAttachmentComposerRemoteFile,
+    validateAttachmentComposerLink: mockValidateAttachmentComposerLink,
   };
 });
 
@@ -103,6 +107,7 @@ describe('useChatComposerAttachments', () => {
       error: null,
     });
     mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
+    mockValidateAttachmentComposerLink.mockResolvedValue(true);
   });
 
   it('revokes queued attachment preview urls on unmount', () => {
@@ -210,8 +215,91 @@ describe('useChatComposerAttachments', () => {
     expect(result.current.pendingComposerAttachments).toEqual([]);
     expect(result.current.loadingComposerAttachments).toEqual([]);
     expect(mockFetchAttachmentComposerRemoteFile).not.toHaveBeenCalled();
+    expect(mockValidateAttachmentComposerLink).toHaveBeenCalledWith(
+      'https://example.com/attachment/receipt'
+    );
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a pasted generic link as a plain composer link when background validation rejects attachment support', async () => {
+    mockValidateAttachmentComposerLink.mockResolvedValue(false);
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'github.com',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('github.com');
+    });
+
+    await waitFor(() => {
+      expect(mockValidateAttachmentComposerLink).toHaveBeenCalledWith(
+        'https://github.com/'
+      );
+    });
+
+    expect(result.current.hoverableAttachmentCandidates).toEqual([]);
+    expect(result.current.hoverableAttachmentUrl).toBeNull();
+  });
+
+  it('promotes a pasted generic link into an attachment candidate after background validation succeeds', async () => {
+    mockValidateAttachmentComposerLink.mockResolvedValue(true);
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'github.com',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('github.com');
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(1);
+      expect(result.current.hoverableAttachmentCandidates[0]).toEqual(
+        expect.objectContaining({
+          url: 'https://github.com/',
+          pastedText: 'github.com',
+          rangeStart: 0,
+          rangeEnd: 10,
+        })
+      );
+    });
   });
 
   it('keeps the pasted link as raw url when the user chooses URL', async () => {

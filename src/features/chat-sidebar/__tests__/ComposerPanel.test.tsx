@@ -323,4 +323,60 @@ describe('ComposerPanel', () => {
     expect(screen.queryByRole('button', { name: 'URL' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Attachment' })).toBeNull();
   });
+
+  it('keeps the hovered link node stable when paste-as actions become available', () => {
+    const initialModel = buildComposerModel();
+    initialModel.state.message = 'github.com';
+    initialModel.attachments.hoverableAttachmentCandidates = [];
+    initialModel.attachments.attachmentPastePromptUrl = 'https://github.com/';
+
+    const { rerender } = render(<ComposerPanel model={initialModel} />);
+
+    const initialLink = screen.getByRole('link', {
+      name: 'github.com',
+    });
+    Object.defineProperty(initialLink, 'getBoundingClientRect', {
+      value: () => ({
+        x: 24,
+        y: 48,
+        width: 120,
+        height: 20,
+        top: 48,
+        right: 144,
+        bottom: 68,
+        left: 24,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent.mouseEnter(initialLink);
+
+    expect(screen.queryByText('Tempel sebagai')).toBeNull();
+
+    const upgradedModel = buildComposerModel();
+    upgradedModel.state.message = 'github.com';
+    upgradedModel.attachments.attachmentPastePromptUrl = 'https://github.com/';
+    upgradedModel.attachments.isAttachmentPastePromptAttachmentCandidate = true;
+    upgradedModel.attachments.hoverableAttachmentCandidates = [
+      {
+        id: 'candidate-github',
+        url: 'https://github.com/',
+        pastedText: 'github.com',
+        rangeStart: 0,
+        rangeEnd: 10,
+      },
+    ];
+
+    rerender(<ComposerPanel model={upgradedModel} />);
+
+    const upgradedLink = screen.getByRole('link', {
+      name: 'github.com',
+    });
+
+    expect(upgradedLink.getAttribute('href')).toBe('https://github.com/');
+    expect(screen.getByText('Aksi')).toBeTruthy();
+    expect(screen.getByText('Tempel sebagai')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
+  });
 });

@@ -22,8 +22,9 @@ import type {
   PendingComposerAttachment,
 } from '../types';
 import {
-  extractAttachmentComposerLinkFromClipboard,
+  extractComposerLinkFromClipboard,
   fetchAttachmentComposerRemoteFile,
+  validateAttachmentComposerLink,
 } from '../utils/composer-attachment-link';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 import type { ComposerPromptableLink } from '../models';
@@ -47,6 +48,7 @@ interface AttachmentPastePromptState {
 
 interface PastedAttachmentCandidate {
   id: string;
+  pastedText: string;
   url: string;
 }
 
@@ -106,6 +108,7 @@ export const useChatComposerAttachments = ({
     PastedAttachmentCandidate[]
   >([]);
   const [rawAttachmentUrl, setRawAttachmentUrl] = useState<string | null>(null);
+  const attachmentPasteValidationScopeRef = useRef(0);
 
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
@@ -116,19 +119,19 @@ export const useChatComposerAttachments = ({
     let searchStart = 0;
 
     return pastedAttachmentCandidates.flatMap(candidate => {
-      const rangeStart = message.indexOf(candidate.url, searchStart);
+      const rangeStart = message.indexOf(candidate.pastedText, searchStart);
       if (rangeStart < 0) {
         return [];
       }
 
-      const rangeEnd = rangeStart + candidate.url.length;
+      const rangeEnd = rangeStart + candidate.pastedText.length;
       searchStart = rangeEnd;
 
       return [
         {
           id: candidate.id,
           url: candidate.url,
-          pastedText: candidate.url,
+          pastedText: candidate.pastedText,
           rangeStart,
           rangeEnd,
         } satisfies HoverableAttachmentCandidate,
@@ -192,6 +195,7 @@ export const useChatComposerAttachments = ({
   );
 
   const clearAttachmentPasteState = useCallback(() => {
+    attachmentPasteValidationScopeRef.current += 1;
     setAttachmentPastePrompt(null);
     setPastedAttachmentCandidates([]);
     setRawAttachmentUrl(null);
@@ -530,28 +534,19 @@ export const useChatComposerAttachments = ({
         return;
       }
 
-      const attachmentLink = extractAttachmentComposerLinkFromClipboard({
+      const pastedLink = extractComposerLinkFromClipboard({
         html: event.clipboardData.getData('text/html'),
         text: event.clipboardData.getData('text/plain'),
       });
-      if (!attachmentLink) return;
+      if (!pastedLink) return;
 
       event.preventDefault();
       closeAttachModal();
       closeMessageMenu();
-      setPastedAttachmentCandidates(currentCandidates => [
-        ...currentCandidates,
-        {
-          id: `attachment_link_candidate_${Date.now()}_${Math.random()
-            .toString(36)
-            .slice(2, 8)}`,
-          url: attachmentLink.url,
-        },
-      ]);
       setRawAttachmentUrl(null);
 
       const textarea = event.currentTarget;
-      const pastedText = attachmentLink.url;
+      const pastedText = pastedLink.pastedText;
       const rangeStart = textarea.selectionStart ?? textarea.value.length;
       const rangeEnd = textarea.selectionEnd ?? rangeStart;
       const nextMessage =
@@ -563,11 +558,62 @@ export const useChatComposerAttachments = ({
       setAttachmentPastePrompt(null);
       setMessage(nextMessage);
       focusComposerSelection(insertedRangeEnd);
+
+      const candidateId = `attachment_link_candidate_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      const validationScope = attachmentPasteValidationScopeRef.current;
+
+      void (async () => {
+        const isAttachmentCandidate = await validateAttachmentComposerLink(
+          pastedLink.url
+        );
+        if (
+          !isAttachmentCandidate ||
+          validationScope !== attachmentPasteValidationScopeRef.current
+        ) {
+          return;
+        }
+
+        setPastedAttachmentCandidates(currentCandidates => {
+          if (
+            currentCandidates.some(candidate => candidate.id === candidateId)
+          ) {
+            return currentCandidates;
+          }
+
+          return [
+            ...currentCandidates,
+            {
+              id: candidateId,
+              pastedText,
+              url: pastedLink.url,
+            },
+          ];
+        });
+        setAttachmentPastePrompt(currentPrompt => {
+          if (
+            !currentPrompt ||
+            currentPrompt.url !== pastedLink.url ||
+            currentPrompt.pastedText !== pastedText ||
+            currentPrompt.rangeStart !== rangeStart ||
+            currentPrompt.rangeEnd !== insertedRangeEnd
+          ) {
+            return currentPrompt;
+          }
+
+          return {
+            ...currentPrompt,
+            id: candidateId,
+            isAttachmentCandidate: true,
+          };
+        });
+      })();
     },
     [
+      clearAttachmentPasteState,
       closeAttachModal,
       closeMessageMenu,
-      clearAttachmentPasteState,
       focusComposerSelection,
       queueComposerImage,
       setMessage,
@@ -715,6 +761,7 @@ export const useChatComposerAttachments = ({
             0,
             {
               id: promptState.id,
+              pastedText: promptState.pastedText,
               url: promptState.url,
             }
           );

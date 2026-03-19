@@ -3,6 +3,7 @@ import {
   resolveFileExtension,
 } from './message-file';
 import { chatRemoteAssetService } from '@/services/api/chat/remote-asset.service';
+import { findMessageLinks } from './message-search';
 
 export interface AttachmentComposerLinkMatch {
   source: 'direct-url' | 'html-attachment' | 'markdown-attachment';
@@ -13,6 +14,11 @@ export interface AttachmentComposerRemoteFile {
   file: File;
   fileKind: 'image' | 'document';
   sourceUrl: string;
+}
+
+export interface ComposerClipboardLinkMatch {
+  pastedText: string;
+  url: string;
 }
 
 const SUPPORTED_URL_PROTOCOLS = new Set(['http:', 'https:']);
@@ -480,6 +486,56 @@ export const extractAttachmentComposerLinkFromClipboard = ({
   return extractAttachmentComposerLinkFromMessageText(text.trim());
 };
 
+export const extractComposerLinkFromMessageText = (
+  rawText: string
+): ComposerClipboardLinkMatch | null => {
+  const normalizedText = rawText.trim();
+  if (!normalizedText) return null;
+
+  const attachmentLink =
+    extractAttachmentComposerLinkFromMessageText(normalizedText);
+  if (attachmentLink) {
+    return {
+      pastedText: attachmentLink.url,
+      url: attachmentLink.url,
+    };
+  }
+
+  const [messageLink] = findMessageLinks(normalizedText);
+  if (
+    !messageLink ||
+    messageLink.rangeStart !== 0 ||
+    messageLink.rangeEnd !== normalizedText.length
+  ) {
+    return null;
+  }
+
+  return {
+    pastedText: messageLink.text,
+    url: messageLink.href,
+  };
+};
+
+export const extractComposerLinkFromClipboard = ({
+  text,
+  html,
+}: {
+  text: string;
+  html: string;
+}): ComposerClipboardLinkMatch | null => {
+  const attachmentHtmlUrl = html.trim()
+    ? extractUrlFromHtmlFragment(html)
+    : null;
+  if (attachmentHtmlUrl) {
+    return {
+      pastedText: attachmentHtmlUrl,
+      url: attachmentHtmlUrl,
+    };
+  }
+
+  return extractComposerLinkFromMessageText(text);
+};
+
 export const fetchAttachmentComposerRemoteFile = async (
   url: string
 ): Promise<AttachmentComposerRemoteFile | null> => {
@@ -559,4 +615,12 @@ export const fetchAttachmentComposerRemoteFile = async (
     fileKind: fileMetadata.fileKind,
     sourceUrl: remoteAsset.sourceUrl,
   };
+};
+
+export const validateAttachmentComposerLink = async (url: string) => {
+  try {
+    return (await fetchAttachmentComposerRemoteFile(url)) !== null;
+  } catch {
+    return false;
+  }
 };

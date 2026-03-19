@@ -96,7 +96,7 @@ const buildComposerLinkOverlaySegments = ({
     ...sortedCandidates.map(candidate => ({
       candidate,
       href: candidate.url,
-      key: candidate.id,
+      key: `link_${candidate.rangeStart}_${candidate.rangeEnd}`,
       rangeEnd: candidate.rangeEnd,
       rangeStart: candidate.rangeStart,
       text: message.slice(candidate.rangeStart, candidate.rangeEnd),
@@ -513,40 +513,51 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                             aria-hidden="true"
                           />
                         </button>
-                        {attachments.isAttachmentPastePromptAttachmentCandidate ? (
-                          <>
-                            <div className="mx-1 my-0.5 h-px bg-slate-200" />
-                            <div
-                              className={
-                                ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME
-                              }
+                        <AnimatePresence initial={false}>
+                          {attachments.isAttachmentPastePromptAttachmentCandidate ? (
+                            <motion.div
+                              key="attachment-paste-actions"
+                              initial={{ height: 0, opacity: 0, y: -4 }}
+                              animate={{ height: 'auto', opacity: 1, y: 0 }}
+                              exit={{ height: 0, opacity: 0, y: -4 }}
+                              transition={{ duration: 0.18, ease: 'easeOut' }}
+                              className="overflow-hidden"
                             >
-                              Tempel sebagai
-                            </div>
-                            <button
-                              type="button"
-                              onClick={actions.onUseAttachmentPasteAsUrl}
-                              className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                            >
-                              <span>URL</span>
-                              <TbLink
-                                className="ml-auto h-4 w-4 text-black"
-                                aria-hidden="true"
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={actions.onUseAttachmentPasteAsAttachment}
-                              className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                            >
-                              <span>Attachment</span>
-                              <TbPaperclip
-                                className="ml-auto h-4 w-4 text-black"
-                                aria-hidden="true"
-                              />
-                            </button>
-                          </>
-                        ) : null}
+                              <div className="mx-1 my-0.5 h-px bg-slate-200" />
+                              <div
+                                className={
+                                  ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME
+                                }
+                              >
+                                Tempel sebagai
+                              </div>
+                              <button
+                                type="button"
+                                onClick={actions.onUseAttachmentPasteAsUrl}
+                                className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                              >
+                                <span>URL</span>
+                                <TbLink
+                                  className="ml-auto h-4 w-4 text-black"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={
+                                  actions.onUseAttachmentPasteAsAttachment
+                                }
+                                className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                              >
+                                <span>Attachment</span>
+                                <TbPaperclip
+                                  className="ml-auto h-4 w-4 text-black"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            </motion.div>
+                          ) : null}
+                        </AnimatePresence>
                       </div>
                     </PopupMenuPopover>
                   </div>,

@@ -18,6 +18,9 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
 const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
   mockFetchAttachmentComposerRemoteFile: vi.fn(),
 }));
+const { mockValidateAttachmentComposerLink } = vi.hoisted(() => ({
+  mockValidateAttachmentComposerLink: vi.fn(),
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -33,6 +36,7 @@ vi.mock('../utils/composer-attachment-link', async () => {
   return {
     ...actual,
     fetchAttachmentComposerRemoteFile: mockFetchAttachmentComposerRemoteFile,
+    validateAttachmentComposerLink: mockValidateAttachmentComposerLink,
   };
 });
 
@@ -78,6 +82,7 @@ describe('useChatComposer', () => {
       error: null,
     });
     mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
+    mockValidateAttachmentComposerLink.mockResolvedValue(true);
   });
 
   it('mereset state composer ketika berpindah ke channel lain', async () => {
