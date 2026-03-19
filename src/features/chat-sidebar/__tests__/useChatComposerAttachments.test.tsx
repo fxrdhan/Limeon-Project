@@ -19,8 +19,8 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
     fetchRemoteAsset: vi.fn(),
   },
 }));
-const { mockFetchEmbeddedComposerRemoteFile } = vi.hoisted(() => ({
-  mockFetchEmbeddedComposerRemoteFile: vi.fn(),
+const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
+  mockFetchAttachmentComposerRemoteFile: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -31,12 +31,12 @@ vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
 }));
 
-vi.mock('../utils/composer-embedded-link', async () => {
-  const actual = await vi.importActual('../utils/composer-embedded-link');
+vi.mock('../utils/composer-attachment-link', async () => {
+  const actual = await vi.importActual('../utils/composer-attachment-link');
 
   return {
     ...actual,
-    fetchEmbeddedComposerRemoteFile: mockFetchEmbeddedComposerRemoteFile,
+    fetchAttachmentComposerRemoteFile: mockFetchAttachmentComposerRemoteFile,
   };
 });
 
@@ -101,7 +101,7 @@ describe('useChatComposerAttachments', () => {
       data: null,
       error: null,
     });
-    mockFetchEmbeddedComposerRemoteFile.mockResolvedValue(null);
+    mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
   });
 
   it('revokes queued attachment preview urls on unmount', () => {
@@ -168,7 +168,7 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
-  it('pastes an embedded link as raw url first and waits for the user choice', async () => {
+  it('pastes an attachment link as raw url first and waits for the user choice', async () => {
     const closeMessageMenu = vi.fn();
     const preventDefault = vi.fn();
 
@@ -188,7 +188,7 @@ describe('useChatComposerAttachments', () => {
     });
 
     const pasteEvent = buildComposerPasteEvent({
-      html: '<img src="https://example.com/embed/receipt" />',
+      html: '<img src="https://example.com/attachment/receipt" />',
       preventDefault,
     });
 
@@ -197,16 +197,18 @@ describe('useChatComposerAttachments', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.message).toBe('https://example.com/embed/receipt');
-      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
-        'https://example.com/embed/receipt'
+      expect(result.current.message).toBe(
+        'https://example.com/attachment/receipt'
+      );
+      expect(result.current.hoverableAttachmentUrl).toBe(
+        'https://example.com/attachment/receipt'
       );
     });
 
-    expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
     expect(result.current.pendingComposerAttachments).toEqual([]);
     expect(result.current.loadingComposerAttachments).toEqual([]);
-    expect(mockFetchEmbeddedComposerRemoteFile).not.toHaveBeenCalled();
+    expect(mockFetchAttachmentComposerRemoteFile).not.toHaveBeenCalled();
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
   });
@@ -231,44 +233,44 @@ describe('useChatComposerAttachments', () => {
     act(() => {
       result.current.handleComposerPaste(
         buildComposerPasteEvent({
-          text: 'https://example.com/embed/receipt.png',
+          text: 'https://example.com/attachment/receipt.png',
         })
       );
     });
 
     await waitFor(() => {
-      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
-        'https://example.com/embed/receipt.png'
+      expect(result.current.hoverableAttachmentUrl).toBe(
+        'https://example.com/attachment/receipt.png'
       );
     });
 
     act(() => {
-      result.current.openEmbeddedLinkPastePrompt();
+      result.current.openAttachmentPastePrompt();
     });
 
-    expect(result.current.embeddedLinkPastePromptUrl).toBe(
-      'https://example.com/embed/receipt.png'
+    expect(result.current.attachmentPastePromptUrl).toBe(
+      'https://example.com/attachment/receipt.png'
     );
 
     act(() => {
-      result.current.handleUseEmbeddedLinkPasteAsUrl();
+      result.current.handleUseAttachmentPasteAsUrl();
     });
 
     expect(result.current.message).toBe(
-      'https://example.com/embed/receipt.png'
+      'https://example.com/attachment/receipt.png'
     );
-    expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
-    expect(result.current.rawEmbeddedLinkUrl).toBe(
-      'https://example.com/embed/receipt.png'
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
+    expect(result.current.rawAttachmentUrl).toBe(
+      'https://example.com/attachment/receipt.png'
     );
     expect(result.current.pendingComposerAttachments).toEqual([]);
   });
 
-  it('queues a pasted direct image url as an attachment after the user chooses Embed', async () => {
+  it('queues a pasted direct image url as an attachment after the user chooses Attachment', async () => {
     let resolveRemoteAsset:
       | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
       | undefined;
-    mockFetchEmbeddedComposerRemoteFile.mockImplementation(
+    mockFetchAttachmentComposerRemoteFile.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveRemoteAsset = resolve;
@@ -303,31 +305,31 @@ describe('useChatComposerAttachments', () => {
       expect(result.current.message).toBe(
         'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
       );
-      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+      expect(result.current.hoverableAttachmentUrl).toBe(
         'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
       );
     });
 
     act(() => {
-      result.current.openEmbeddedLinkPastePrompt();
+      result.current.openAttachmentPastePrompt();
     });
 
-    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+    expect(result.current.attachmentPastePromptUrl).toBe(
       'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
     );
 
     act(() => {
-      result.current.handleUseEmbeddedLinkPasteAsEmbed();
+      result.current.handleUseAttachmentPasteAsAttachment();
     });
 
-    expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
     expect(result.current.loadingComposerAttachments).toEqual([
       expect.objectContaining({
         fileName: 'Ubuntu-25.10-Questing-Quokka.jpg',
         status: 'loading',
       }),
     ]);
-    expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(true);
+    expect(result.current.isLoadingAttachmentComposerAttachments).toBe(true);
     expect(result.current.message).toBe(
       'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
     );
@@ -358,7 +360,7 @@ describe('useChatComposerAttachments', () => {
     });
   });
 
-  it('queues a pasted google drive pdf url as a document after the user chooses Embed', async () => {
+  it('queues a pasted google drive pdf url as a document after the user chooses Attachment', async () => {
     let resolveRemoteAsset:
       | ((value: {
           file: File;
@@ -366,7 +368,7 @@ describe('useChatComposerAttachments', () => {
           sourceUrl: string;
         }) => void)
       | undefined;
-    mockFetchEmbeddedComposerRemoteFile.mockImplementation(
+    mockFetchAttachmentComposerRemoteFile.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveRemoteAsset = resolve;
@@ -397,21 +399,21 @@ describe('useChatComposerAttachments', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+      expect(result.current.hoverableAttachmentUrl).toBe(
         'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
       );
     });
 
     act(() => {
-      result.current.openEmbeddedLinkPastePrompt();
+      result.current.openAttachmentPastePrompt();
     });
 
-    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+    expect(result.current.attachmentPastePromptUrl).toBe(
       'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
     );
 
     act(() => {
-      result.current.handleUseEmbeddedLinkPasteAsEmbed();
+      result.current.handleUseAttachmentPasteAsAttachment();
     });
 
     expect(result.current.loadingComposerAttachments).toEqual([
@@ -448,7 +450,7 @@ describe('useChatComposerAttachments', () => {
     });
   });
 
-  it('treats a pasted chat shared link as an embedded link candidate', async () => {
+  it('treats a pasted chat shared link as an attachment link candidate', async () => {
     const { result } = renderHook(() => {
       const [message, setMessage] = useState('');
 
@@ -474,13 +476,13 @@ describe('useChatComposerAttachments', () => {
 
     await waitFor(() => {
       expect(result.current.message).toBe('https://shrtlink.works/bwdrrk3ugm');
-      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+      expect(result.current.hoverableAttachmentUrl).toBe(
         'https://shrtlink.works/bwdrrk3ugm'
       );
     });
   });
 
-  it('tracks multiple pasted embedded links in the same draft', async () => {
+  it('tracks multiple pasted attachment links in the same draft', async () => {
     const firstLink = 'https://shrtlink.works/bwdrrk3ugm';
     const secondLink =
       'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing';
@@ -513,7 +515,7 @@ describe('useChatComposerAttachments', () => {
 
     await waitFor(() => {
       expect(result.current.message).toBe(firstLink);
-      expect(result.current.hoverableEmbeddedLinkCandidates).toHaveLength(1);
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(1);
     });
 
     act(() => {
@@ -531,10 +533,10 @@ describe('useChatComposerAttachments', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.hoverableEmbeddedLinkCandidates).toHaveLength(2);
-      expect(result.current.hoverableEmbeddedLinkUrl).toBeNull();
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(2);
+      expect(result.current.hoverableAttachmentUrl).toBeNull();
       expect(
-        result.current.hoverableEmbeddedLinkCandidates.map(candidate => ({
+        result.current.hoverableAttachmentCandidates.map(candidate => ({
           url: candidate.url,
           rangeStart: candidate.rangeStart,
         }))

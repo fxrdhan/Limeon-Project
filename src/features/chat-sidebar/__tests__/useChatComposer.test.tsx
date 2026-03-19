@@ -15,8 +15,8 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
     fetchRemoteAsset: vi.fn(),
   },
 }));
-const { mockFetchEmbeddedComposerRemoteFile } = vi.hoisted(() => ({
-  mockFetchEmbeddedComposerRemoteFile: vi.fn(),
+const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
+  mockFetchAttachmentComposerRemoteFile: vi.fn(),
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -27,12 +27,12 @@ vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
 }));
 
-vi.mock('../utils/composer-embedded-link', async () => {
-  const actual = await vi.importActual('../utils/composer-embedded-link');
+vi.mock('../utils/composer-attachment-link', async () => {
+  const actual = await vi.importActual('../utils/composer-attachment-link');
 
   return {
     ...actual,
-    fetchEmbeddedComposerRemoteFile: mockFetchEmbeddedComposerRemoteFile,
+    fetchAttachmentComposerRemoteFile: mockFetchAttachmentComposerRemoteFile,
   };
 });
 
@@ -77,7 +77,7 @@ describe('useChatComposer', () => {
       data: null,
       error: null,
     });
-    mockFetchEmbeddedComposerRemoteFile.mockResolvedValue(null);
+    mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
   });
 
   it('mereset state composer ketika berpindah ke channel lain', async () => {
@@ -126,11 +126,11 @@ describe('useChatComposer', () => {
     });
   });
 
-  it('menghapus prompt paste dan loading attachment ketika channel berpindah saat konversi embed masih berjalan', async () => {
+  it('menghapus prompt paste dan loading attachment ketika channel berpindah saat konversi attachment masih berjalan', async () => {
     let resolveRemoteAsset:
       | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
       | undefined;
-    mockFetchEmbeddedComposerRemoteFile.mockImplementation(
+    mockFetchAttachmentComposerRemoteFile.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveRemoteAsset = resolve;
@@ -173,29 +173,29 @@ describe('useChatComposer', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+      expect(result.current.hoverableAttachmentUrl).toBe(
         'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
       );
     });
 
     act(() => {
-      result.current.openEmbeddedLinkPastePrompt();
+      result.current.openAttachmentPastePrompt();
     });
 
-    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+    expect(result.current.attachmentPastePromptUrl).toBe(
       'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
     );
 
     act(() => {
-      result.current.handleUseEmbeddedLinkPasteAsEmbed();
+      result.current.handleUseAttachmentPasteAsAttachment();
     });
 
     rerender({ channelId: 'channel-2' });
 
     await waitFor(() => {
       expect(result.current.loadingComposerAttachments).toEqual([]);
-      expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(false);
-      expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
+      expect(result.current.isLoadingAttachmentComposerAttachments).toBe(false);
+      expect(result.current.attachmentPastePromptUrl).toBeNull();
     });
 
     await act(async () => {

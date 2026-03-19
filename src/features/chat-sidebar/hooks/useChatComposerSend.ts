@@ -4,9 +4,9 @@ import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import {
-  extractEmbeddedComposerLinkFromMessageText,
-  fetchEmbeddedComposerRemoteFile,
-} from '../utils/composer-embedded-link';
+  extractAttachmentComposerLinkFromMessageText,
+  fetchAttachmentComposerRemoteFile,
+} from '../utils/composer-attachment-link';
 import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
@@ -37,7 +37,7 @@ interface UseChatComposerSendProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
-  rawEmbeddedLinkUrl: string | null;
+  rawAttachmentUrl: string | null;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
   restorePendingComposerAttachments: (
@@ -58,7 +58,7 @@ export const useChatComposerSend = ({
   message,
   setMessage,
   editingMessageId,
-  rawEmbeddedLinkUrl,
+  rawAttachmentUrl,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
   restorePendingComposerAttachments,
@@ -132,14 +132,14 @@ export const useChatComposerSend = ({
     ]
   );
 
-  const sendEmbeddedLinkMessage = useCallback(
-    async (embeddedLink: string, originalMessageText: string) => {
+  const sendAttachmentMessage = useCallback(
+    async (attachmentLink: string, originalMessageText: string) => {
       setMessage('');
 
       try {
-        const embeddedRemoteFile =
-          await fetchEmbeddedComposerRemoteFile(embeddedLink);
-        if (!embeddedRemoteFile) {
+        const attachmentRemoteFile =
+          await fetchAttachmentComposerRemoteFile(attachmentLink);
+        if (!attachmentRemoteFile) {
           if (isCurrentConversationScopeActive()) {
             setMessage(currentMessage =>
               currentMessage.length === 0 ? originalMessageText : currentMessage
@@ -152,12 +152,12 @@ export const useChatComposerSend = ({
         }
 
         const didSend =
-          embeddedRemoteFile.fileKind === 'image'
-            ? await sendImageMessage(embeddedRemoteFile.file)
+          attachmentRemoteFile.fileKind === 'image'
+            ? await sendImageMessage(attachmentRemoteFile.file)
             : await sendFileMessage(
                 (() => {
                   const pendingAttachment = buildPendingFileComposerAttachment(
-                    embeddedRemoteFile.file,
+                    attachmentRemoteFile.file,
                     'document'
                   );
 
@@ -179,7 +179,7 @@ export const useChatComposerSend = ({
 
         return Boolean(didSend);
       } catch (error) {
-        console.error('Error sending embedded composer link:', error);
+        console.error('Error sending attachment composer link:', error);
         if (isCurrentConversationScopeActive()) {
           setMessage(currentMessage =>
             currentMessage.length === 0 ? originalMessageText : currentMessage
@@ -210,12 +210,12 @@ export const useChatComposerSend = ({
     const hasPendingAttachments = pendingComposerAttachments.length > 0;
     const attachmentsToSend = [...pendingComposerAttachments];
     const messageText = message.trim();
-    const embeddedLink =
+    const attachmentLink =
       hasPendingAttachments ||
-      ((rawEmbeddedLinkUrl?.trim().length ?? 0) > 0 &&
-        rawEmbeddedLinkUrl?.trim() === messageText)
+      ((rawAttachmentUrl?.trim().length ?? 0) > 0 &&
+        rawAttachmentUrl?.trim() === messageText)
         ? null
-        : extractEmbeddedComposerLinkFromMessageText(messageText);
+        : extractAttachmentComposerLinkFromMessageText(messageText);
 
     if (!hasPendingAttachments && !messageText) {
       return;
@@ -224,8 +224,8 @@ export const useChatComposerSend = ({
     isSendingRef.current = true;
 
     try {
-      if (embeddedLink) {
-        await sendEmbeddedLinkMessage(embeddedLink.url, messageText);
+      if (attachmentLink) {
+        await sendAttachmentMessage(attachmentLink.url, messageText);
         return;
       }
 
@@ -295,9 +295,9 @@ export const useChatComposerSend = ({
     isCurrentConversationScopeActive,
     message,
     pendingComposerAttachments,
-    rawEmbeddedLinkUrl,
+    rawAttachmentUrl,
     restorePendingComposerAttachments,
-    sendEmbeddedLinkMessage,
+    sendAttachmentMessage,
     sendFileMessage,
     sendImageMessage,
     sendTextMessage,

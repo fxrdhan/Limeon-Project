@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useState,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
@@ -29,7 +30,7 @@ import {
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
 import type {
-  ComposerHoverableEmbeddedLinkCandidate,
+  ComposerHoverableAttachmentCandidate,
   ComposerPanelModel,
 } from '../models';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
@@ -37,16 +38,19 @@ import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewL
 import ComposerEditBanner from './composer/ComposerEditBanner';
 
 interface ComposerLinkOverlaySegment {
-  candidate: ComposerHoverableEmbeddedLinkCandidate | null;
+  candidate: ComposerHoverableAttachmentCandidate | null;
   key: string;
   text: string;
 }
+
+const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
+const ATTACHMENT_LINK_PROMPT_EDGE_MARGIN = 16;
 
 const buildComposerLinkOverlaySegments = ({
   candidates,
   message,
 }: {
-  candidates: ComposerHoverableEmbeddedLinkCandidate[];
+  candidates: ComposerHoverableAttachmentCandidate[];
   message: string;
 }) => {
   if (candidates.length === 0) {
@@ -90,30 +94,55 @@ const buildComposerLinkOverlaySegments = ({
 
 const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
   const { state, attachments, documentPreview, refs, actions } = model;
-  const embeddedLinkPromptCloseTimerRef = useRef<number | null>(null);
+  const attachmentPromptCloseTimerRef = useRef<number | null>(null);
+  const [attachmentPromptPosition, setAttachmentPromptPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const shouldRenderComposerLinkOverlay =
-    attachments.hoverableEmbeddedLinkCandidates.length > 0;
+    attachments.hoverableAttachmentCandidates.length > 0;
   const composerLinkOverlaySegments = buildComposerLinkOverlaySegments({
-    candidates: attachments.hoverableEmbeddedLinkCandidates,
+    candidates: attachments.hoverableAttachmentCandidates,
     message: state.message,
   });
 
-  const clearEmbeddedLinkPromptCloseTimer = useCallback(() => {
-    if (embeddedLinkPromptCloseTimerRef.current === null) return;
+  const clearAttachmentPromptCloseTimer = useCallback(() => {
+    if (attachmentPromptCloseTimerRef.current === null) return;
 
-    window.clearTimeout(embeddedLinkPromptCloseTimerRef.current);
-    embeddedLinkPromptCloseTimerRef.current = null;
+    window.clearTimeout(attachmentPromptCloseTimerRef.current);
+    attachmentPromptCloseTimerRef.current = null;
   }, []);
 
-  const scheduleEmbeddedLinkPromptClose = useCallback(() => {
-    clearEmbeddedLinkPromptCloseTimer();
-    embeddedLinkPromptCloseTimerRef.current = window.setTimeout(() => {
-      actions.onDismissEmbeddedLinkPastePrompt();
-      embeddedLinkPromptCloseTimerRef.current = null;
+  const scheduleAttachmentPromptClose = useCallback(() => {
+    clearAttachmentPromptCloseTimer();
+    attachmentPromptCloseTimerRef.current = window.setTimeout(() => {
+      actions.onDismissAttachmentPastePrompt();
+      setAttachmentPromptPosition(null);
+      attachmentPromptCloseTimerRef.current = null;
     }, 90);
-  }, [actions, clearEmbeddedLinkPromptCloseTimer]);
+  }, [actions, clearAttachmentPromptCloseTimer]);
 
-  const handleComposerLinkClick = useCallback(
+  const updateAttachmentPromptPosition = useCallback(
+    (anchorElement: HTMLAnchorElement) => {
+      const anchorRect = anchorElement.getBoundingClientRect();
+      const minLeft =
+        ATTACHMENT_LINK_PROMPT_EDGE_MARGIN +
+        ATTACHMENT_LINK_PROMPT_MIN_WIDTH / 2;
+      const maxLeft =
+        window.innerWidth -
+        ATTACHMENT_LINK_PROMPT_EDGE_MARGIN -
+        ATTACHMENT_LINK_PROMPT_MIN_WIDTH / 2;
+      const centeredLeft = anchorRect.left + anchorRect.width / 2;
+
+      setAttachmentPromptPosition({
+        top: Math.max(ATTACHMENT_LINK_PROMPT_EDGE_MARGIN, anchorRect.top),
+        left: Math.min(maxLeft, Math.max(minLeft, centeredLeft)),
+      });
+    },
+    []
+  );
+
+  const handleComposerAttachmentLinkClick = useCallback(
     (event: ReactMouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       refs.messageInputRef.current?.focus();
@@ -123,9 +152,14 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
 
   useEffect(() => {
     return () => {
-      clearEmbeddedLinkPromptCloseTimer();
+      clearAttachmentPromptCloseTimer();
     };
-  }, [clearEmbeddedLinkPromptCloseTimer]);
+  }, [clearAttachmentPromptCloseTimer]);
+
+  useEffect(() => {
+    if (attachments.attachmentPastePromptUrl) return;
+    setAttachmentPromptPosition(null);
+  }, [attachments.attachmentPastePromptUrl]);
 
   const contextualPanelTransition = {
     duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
@@ -262,42 +296,52 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 )
               : null}
 
-            <AnimatePresence>
-              {attachments.embeddedLinkPastePromptUrl ? (
-                <PopupMenuPopover
-                  isOpen
-                  className="absolute bottom-[calc(100%+10px)] left-0 z-20"
-                >
+            {typeof document !== 'undefined' &&
+            attachments.attachmentPastePromptUrl &&
+            attachmentPromptPosition
+              ? createPortal(
                   <div
-                    ref={refs.embeddedLinkPastePromptRef}
-                    className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-1 py-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
-                    onClick={event => event.stopPropagation()}
-                    onMouseEnter={clearEmbeddedLinkPromptCloseTimer}
-                    onMouseLeave={scheduleEmbeddedLinkPromptClose}
-                    role="dialog"
-                    aria-label="Pilih cara menempel link"
+                    className="fixed z-[120]"
+                    style={{
+                      top: attachmentPromptPosition.top,
+                      left: attachmentPromptPosition.left,
+                      transform: 'translate(-50%, calc(-100% - 10px))',
+                    }}
                   >
-                    <div className="px-3 pb-1.5 pt-2 text-[11px] font-medium uppercase tracking-[0.08em] text-slate-500">
-                      Tempel sebagai
-                    </div>
-                    <button
-                      type="button"
-                      onClick={actions.onUseEmbeddedLinkPasteAsUrl}
-                      className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
-                    >
-                      URL
-                    </button>
-                    <button
-                      type="button"
-                      onClick={actions.onUseEmbeddedLinkPasteAsEmbed}
-                      className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
-                    >
-                      Embed
-                    </button>
-                  </div>
-                </PopupMenuPopover>
-              ) : null}
-            </AnimatePresence>
+                    <PopupMenuPopover isOpen className="origin-bottom">
+                      <div
+                        ref={refs.attachmentPastePromptRef}
+                        className="rounded-xl border border-slate-200 bg-white px-1 py-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
+                        style={{ minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH }}
+                        onClick={event => event.stopPropagation()}
+                        onMouseEnter={clearAttachmentPromptCloseTimer}
+                        onMouseLeave={scheduleAttachmentPromptClose}
+                        role="dialog"
+                        aria-label="Tempel sebagai"
+                      >
+                        <div className="px-3 pb-1.5 pt-2 text-[11px] font-medium tracking-[0.03em] text-slate-500">
+                          Tempel sebagai
+                        </div>
+                        <button
+                          type="button"
+                          onClick={actions.onUseAttachmentPasteAsUrl}
+                          className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                          URL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={actions.onUseAttachmentPasteAsAttachment}
+                          className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                          Attachment
+                        </button>
+                      </div>
+                    </PopupMenuPopover>
+                  </div>,
+                  document.body
+                )
+              : null}
 
             <motion.div
               layout
@@ -325,14 +369,15 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                           key={segment.key}
                           href={segment.candidate.url}
                           className="pointer-events-auto cursor-pointer text-slate-900 underline-offset-2 transition-colors hover:text-sky-700 hover:underline"
-                          onClick={handleComposerLinkClick}
-                          onMouseEnter={() => {
-                            clearEmbeddedLinkPromptCloseTimer();
-                            actions.onOpenEmbeddedLinkPastePrompt(
+                          onClick={handleComposerAttachmentLinkClick}
+                          onMouseEnter={event => {
+                            clearAttachmentPromptCloseTimer();
+                            updateAttachmentPromptPosition(event.currentTarget);
+                            actions.onOpenAttachmentPastePrompt(
                               segment.candidate ?? undefined
                             );
                           }}
-                          onMouseLeave={scheduleEmbeddedLinkPromptClose}
+                          onMouseLeave={scheduleAttachmentPromptClose}
                         >
                           {segment.text}
                         </a>

@@ -67,13 +67,14 @@ export const useChatSidebarRuntimeState = ({
     message: composer.message,
     setMessage: composer.setMessage,
     editingMessageId: composer.editingMessageId,
-    rawEmbeddedLinkUrl: composer.rawEmbeddedLinkUrl,
+    rawAttachmentUrl: composer.rawAttachmentUrl,
     setEditingMessageId: composer.setEditingMessageId,
     pendingComposerAttachments: composer.pendingComposerAttachments,
     clearPendingComposerAttachments: composer.clearPendingComposerAttachments,
     restorePendingComposerAttachments:
       composer.restorePendingComposerAttachments,
-    isComposerAttachmentLoading: composer.isLoadingEmbeddedComposerAttachments,
+    isComposerAttachmentLoading:
+      composer.isLoadingAttachmentComposerAttachments,
     closeMessageMenu: refs.closeMessageMenu,
     focusMessageComposer,
     scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,

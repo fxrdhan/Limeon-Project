@@ -58,25 +58,25 @@ export const useChatComposer = ({
     isAttachModalOpen,
     pendingComposerAttachments,
     loadingComposerAttachments,
-    isLoadingEmbeddedComposerAttachments,
-    embeddedLinkPastePromptUrl,
-    hoverableEmbeddedLinkCandidates,
-    hoverableEmbeddedLinkUrl,
-    rawEmbeddedLinkUrl,
+    isLoadingAttachmentComposerAttachments,
+    attachmentPastePromptUrl,
+    hoverableAttachmentCandidates,
+    hoverableAttachmentUrl,
+    rawAttachmentUrl,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     attachButtonRef,
     attachModalRef,
-    embeddedLinkPastePromptRef,
+    attachmentPastePromptRef,
     imageInputRef,
     documentInputRef,
     audioInputRef,
     pendingImagePreviewUrlsRef,
     closeAttachModal,
-    clearEmbeddedLinkPasteState,
-    dismissEmbeddedLinkPastePrompt,
-    openEmbeddedLinkPastePrompt,
+    clearAttachmentPasteState,
+    dismissAttachmentPastePrompt,
+    openAttachmentPastePrompt,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,
@@ -85,8 +85,8 @@ export const useChatComposer = ({
     handleDocumentFileChange,
     handleAudioFileChange,
     handleComposerPaste,
-    handleUseEmbeddedLinkPasteAsUrl,
-    handleUseEmbeddedLinkPasteAsEmbed,
+    handleUseAttachmentPasteAsUrl,
+    handleUseAttachmentPasteAsAttachment,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,
@@ -133,23 +133,23 @@ export const useChatComposer = ({
     setEditingMessageId(null);
     inlineOverflowThresholdRef.current = null;
     setIsSendSuccessGlowVisible(false);
-    clearEmbeddedLinkPasteState();
+    clearAttachmentPasteState();
     clearPendingComposerAttachments();
   }, [
-    clearEmbeddedLinkPasteState,
+    clearAttachmentPasteState,
     clearPendingComposerAttachments,
     closeAttachModal,
   ]);
 
   const handleMessageChange = useCallback(
     (nextMessage: string) => {
-      if (embeddedLinkPastePromptUrl) {
-        dismissEmbeddedLinkPastePrompt();
+      if (attachmentPastePromptUrl) {
+        dismissAttachmentPastePrompt();
       }
 
       setMessage(nextMessage);
     },
-    [dismissEmbeddedLinkPastePrompt, embeddedLinkPastePromptUrl]
+    [attachmentPastePromptUrl, dismissAttachmentPastePrompt]
   );
 
   const resizeMessageInput = useCallback(
@@ -251,8 +251,8 @@ export const useChatComposer = ({
 
   useEffect(() => {
     if (message.length > 0) return;
-    clearEmbeddedLinkPasteState();
-  }, [clearEmbeddedLinkPasteState, message]);
+    clearAttachmentPasteState();
+  }, [clearAttachmentPasteState, message]);
 
   useLayoutEffect(() => {
     const nextMode = isTargetMultiline ? 'multiline' : 'inline';
@@ -272,11 +272,11 @@ export const useChatComposer = ({
     isAttachModalOpen,
     pendingComposerAttachments,
     loadingComposerAttachments,
-    isLoadingEmbeddedComposerAttachments,
-    embeddedLinkPastePromptUrl,
-    hoverableEmbeddedLinkCandidates,
-    hoverableEmbeddedLinkUrl,
-    rawEmbeddedLinkUrl,
+    isLoadingAttachmentComposerAttachments,
+    attachmentPastePromptUrl,
+    hoverableAttachmentCandidates,
+    hoverableAttachmentUrl,
+    rawAttachmentUrl,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
@@ -284,15 +284,15 @@ export const useChatComposer = ({
     composerContextualOffset,
     attachButtonRef,
     attachModalRef,
-    embeddedLinkPastePromptRef,
+    attachmentPastePromptRef,
     imageInputRef,
     documentInputRef,
     audioInputRef,
     pendingImagePreviewUrlsRef,
     closeAttachModal,
-    clearEmbeddedLinkPasteState,
-    dismissEmbeddedLinkPastePrompt,
-    openEmbeddedLinkPastePrompt,
+    clearAttachmentPasteState,
+    dismissAttachmentPastePrompt,
+    openAttachmentPastePrompt,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,
@@ -301,8 +301,8 @@ export const useChatComposer = ({
     handleDocumentFileChange,
     handleAudioFileChange,
     handleComposerPaste,
-    handleUseEmbeddedLinkPasteAsUrl,
-    handleUseEmbeddedLinkPasteAsEmbed,
+    handleUseAttachmentPasteAsUrl,
+    handleUseAttachmentPasteAsAttachment,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,

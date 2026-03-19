@@ -140,14 +140,14 @@ const createPendingSendRegistry = () => {
 
 const useComposerSendWithMutationScope = ({
   messages = [],
-  rawEmbeddedLinkUrl = null,
+  rawAttachmentUrl = null,
   ...props
 }: Omit<
   Parameters<typeof useChatComposerSend>[0],
-  'mutationScope' | 'rawEmbeddedLinkUrl'
+  'mutationScope' | 'rawAttachmentUrl'
 > & {
   messages?: ChatMessage[];
-  rawEmbeddedLinkUrl?: string | null;
+  rawAttachmentUrl?: string | null;
 }) => {
   const mutationScope = useChatMutationScope({
     user: props.user,
@@ -159,7 +159,7 @@ const useComposerSendWithMutationScope = ({
 
   return useChatComposerSend({
     ...props,
-    rawEmbeddedLinkUrl,
+    rawAttachmentUrl,
     mutationScope,
   });
 };
@@ -1110,17 +1110,17 @@ describe('useChatComposerSend', () => {
 
   it('converts a pasted image url draft into an image attachment send', async () => {
     mockGateway.uploadImage.mockResolvedValue({
-      path: 'images/channel-1/user-a_image_embedded.png',
+      path: 'images/channel-1/user-a_image_attachment.png',
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-image-embedded',
-        message: 'images/channel-1/user-a_image_embedded.png',
+        id: 'server-image-attachment',
+        message: 'images/channel-1/user-a_image_attachment.png',
         message_type: 'image',
         file_name: undefined,
         file_kind: undefined,
         file_mime_type: 'image/png',
-        file_storage_path: 'images/channel-1/user-a_image_embedded.png',
+        file_storage_path: 'images/channel-1/user-a_image_attachment.png',
       }),
       error: null,
     });
@@ -1129,7 +1129,7 @@ describe('useChatComposerSend', () => {
         blob: new Blob(['image'], { type: 'image/png' }),
         contentDisposition: null,
         contentType: 'image/png',
-        sourceUrl: 'https://example.com/embed/receipt.png',
+        sourceUrl: 'https://example.com/attachment/receipt.png',
       },
       error: null,
     });
@@ -1139,7 +1139,7 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        'https://example.com/embed/receipt.png'
+        'https://example.com/attachment/receipt.png'
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
@@ -1193,7 +1193,7 @@ describe('useChatComposerSend', () => {
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
         id: 'server-text-url',
-        message: 'https://example.com/embed/receipt.png',
+        message: 'https://example.com/attachment/receipt.png',
         message_type: 'text',
         file_name: undefined,
         file_kind: undefined,
@@ -1208,7 +1208,7 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        'https://example.com/embed/receipt.png'
+        'https://example.com/attachment/receipt.png'
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
@@ -1224,7 +1224,7 @@ describe('useChatComposerSend', () => {
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
-        rawEmbeddedLinkUrl: 'https://example.com/embed/receipt.png',
+        rawAttachmentUrl: 'https://example.com/attachment/receipt.png',
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -1246,25 +1246,25 @@ describe('useChatComposerSend', () => {
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         receiver_id: 'user-b',
-        message: 'https://example.com/embed/receipt.png',
+        message: 'https://example.com/attachment/receipt.png',
         message_type: 'text',
       })
     );
   });
 
-  it('converts a pdf embed draft into a document attachment send', async () => {
+  it('converts a pdf attachment draft into a document attachment send', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel-1/user-a_document_embedded.pdf',
+      path: 'documents/channel-1/user-a_document_attachment.pdf',
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-file-embedded',
-        message: 'documents/channel-1/user-a_document_embedded.pdf',
+        id: 'server-file-attachment',
+        message: 'documents/channel-1/user-a_document_attachment.pdf',
         message_type: 'file',
         file_name: 'invoice.pdf',
         file_kind: 'document',
         file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel-1/user-a_document_embedded.pdf',
+        file_storage_path: 'documents/channel-1/user-a_document_attachment.pdf',
       }),
       error: null,
     });
@@ -1273,7 +1273,7 @@ describe('useChatComposerSend', () => {
         blob: new Blob(['pdf'], { type: 'application/pdf' }),
         contentDisposition: 'attachment; filename="invoice.pdf"',
         contentType: 'application/pdf',
-        sourceUrl: 'https://example.com/embed/invoice',
+        sourceUrl: 'https://example.com/attachment/invoice',
       },
       error: null,
     });
@@ -1283,7 +1283,7 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        '<iframe src="https://example.com/embed/invoice"></iframe>'
+        '<iframe src="https://example.com/attachment/invoice"></iframe>'
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
@@ -1341,17 +1341,17 @@ describe('useChatComposerSend', () => {
 
   it('converts a google drive pdf url draft into a document attachment send', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel-1/user-a_document_embedded.pdf',
+      path: 'documents/channel-1/user-a_document_attachment.pdf',
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
         id: 'server-file-drive',
-        message: 'documents/channel-1/user-a_document_embedded.pdf',
+        message: 'documents/channel-1/user-a_document_attachment.pdf',
         message_type: 'file',
         file_name: 'invoice.pdf',
         file_kind: 'document',
         file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel-1/user-a_document_embedded.pdf',
+        file_storage_path: 'documents/channel-1/user-a_document_attachment.pdf',
       }),
       error: null,
     });

@@ -4,12 +4,12 @@ import {
 } from './message-file';
 import { chatRemoteAssetService } from '@/services/api/chat/remote-asset.service';
 
-export interface EmbeddedComposerLinkMatch {
-  source: 'direct-url' | 'html-embed' | 'markdown-embed';
+export interface AttachmentComposerLinkMatch {
+  source: 'direct-url' | 'html-attachment' | 'markdown-attachment';
   url: string;
 }
 
-export interface EmbeddedComposerRemoteFile {
+export interface AttachmentComposerRemoteFile {
   file: File;
   fileKind: 'image' | 'document';
   sourceUrl: string;
@@ -24,7 +24,7 @@ const MARKDOWN_IMAGE_PATTERN =
   /^!\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)$/i;
 const MARKDOWN_LINK_PATTERN =
   /^\[[^\]]+\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)$/i;
-const HTML_EMBED_PATTERNS = [
+const HTML_ATTACHMENT_PATTERNS = [
   /<(?:img|iframe|embed|source)\b[^>]*\bsrc=(['"])(.*?)\1/i,
   /<object\b[^>]*\bdata=(['"])(.*?)\1/i,
 ];
@@ -51,7 +51,7 @@ const normalizeMimeType = (mimeType?: string | null) =>
 const stripWrappingQuotes = (value: string) =>
   value.replace(/^['"]+|['"]+$/g, '').trim();
 
-const resolveComposerEmbeddedUrl = (rawValue: string) => {
+const resolveComposerAttachmentUrl = (rawValue: string) => {
   const normalizedValue = stripWrappingQuotes(rawValue);
   if (!normalizedValue) return null;
 
@@ -72,11 +72,11 @@ const resolveComposerEmbeddedUrl = (rawValue: string) => {
 };
 
 const extractUrlFromHtmlFragment = (html: string) => {
-  for (const pattern of HTML_EMBED_PATTERNS) {
-    const embeddedUrl = html.match(pattern)?.[2];
-    if (!embeddedUrl) continue;
+  for (const pattern of HTML_ATTACHMENT_PATTERNS) {
+    const attachmentUrl = html.match(pattern)?.[2];
+    if (!attachmentUrl) continue;
 
-    const resolvedUrl = resolveComposerEmbeddedUrl(embeddedUrl);
+    const resolvedUrl = resolveComposerAttachmentUrl(attachmentUrl);
     if (resolvedUrl) {
       return resolvedUrl;
     }
@@ -85,7 +85,7 @@ const extractUrlFromHtmlFragment = (html: string) => {
   return null;
 };
 
-const resolveEmbeddedExtension = (
+const resolveAttachmentExtension = (
   fileName: string | null,
   url: string,
   mimeType: string
@@ -143,18 +143,18 @@ const isChatSharedLinkUrl = (url: string) => {
   }
 };
 
-const isKnownEmbeddedRemoteAssetUrl = (url: string) =>
+const isKnownAttachmentRemoteAssetUrl = (url: string) =>
   extractGoogleDriveFileId(url) !== null || isChatSharedLinkUrl(url);
 
 const hasSupportedDirectAssetExtension = (url: string) => {
-  const extension = resolveEmbeddedExtension(null, url, '');
+  const extension = resolveAttachmentExtension(null, url, '');
   return extension === 'pdf' || isImageFileExtensionOrMime(extension);
 };
 
-const isSupportedEmbeddedAssetCandidateUrl = (url: string) =>
-  hasSupportedDirectAssetExtension(url) || isKnownEmbeddedRemoteAssetUrl(url);
+const isSupportedAttachmentAssetCandidateUrl = (url: string) =>
+  hasSupportedDirectAssetExtension(url) || isKnownAttachmentRemoteAssetUrl(url);
 
-const normalizeEmbeddedRemoteAssetUrl = (url: string) => {
+const normalizeAttachmentRemoteAssetUrl = (url: string) => {
   const googleDriveFileId = extractGoogleDriveFileId(url);
   if (!googleDriveFileId) {
     return url;
@@ -257,7 +257,7 @@ const resolveFileMetadata = ({
   fileName: string | null;
   mimeType: string;
 }) => {
-  const extension = resolveEmbeddedExtension(fileName, url, mimeType);
+  const extension = resolveAttachmentExtension(fileName, url, mimeType);
 
   if (mimeType === PDF_MIME_TYPE) {
     return {
@@ -332,7 +332,7 @@ const extractPdfTitleFileNameFromBlob = async (blob: Blob) => {
   }
 };
 
-const buildEmbeddedFileName = ({
+const buildAttachmentFileName = ({
   fileNameHint,
   url,
   contentDisposition,
@@ -352,21 +352,21 @@ const buildEmbeddedFileName = ({
     extractFileNameFromContentDisposition(contentDisposition) ||
     extractFileNameFromUrl(url);
   const resolvedExtension =
-    resolveEmbeddedExtension(preferredName, url, mimeType) || extension;
+    resolveAttachmentExtension(preferredName, url, mimeType) || extension;
   const baseName = stripFileExtension(preferredName || '');
   const fallbackBaseName =
-    fileKind === 'image' ? 'embedded-image' : 'embedded-document';
+    fileKind === 'image' ? 'attachment-image' : 'attachment-document';
 
   return `${baseName || fallbackBaseName}.${resolvedExtension}`;
 };
 
-const extractEmbeddedComposerMarkdownLink = (normalizedText: string) => {
+const extractAttachmentComposerMarkdownLink = (normalizedText: string) => {
   const markdownImageUrl = normalizedText.match(MARKDOWN_IMAGE_PATTERN)?.[1];
   if (markdownImageUrl) {
-    const resolvedUrl = resolveComposerEmbeddedUrl(markdownImageUrl);
+    const resolvedUrl = resolveComposerAttachmentUrl(markdownImageUrl);
     if (resolvedUrl) {
       return {
-        source: 'markdown-embed' as const,
+        source: 'markdown-attachment' as const,
         url: resolvedUrl,
       };
     }
@@ -375,67 +375,68 @@ const extractEmbeddedComposerMarkdownLink = (normalizedText: string) => {
   const markdownLinkUrl = normalizedText.match(MARKDOWN_LINK_PATTERN)?.[1];
   if (!markdownLinkUrl) return null;
 
-  const resolvedUrl = resolveComposerEmbeddedUrl(markdownLinkUrl);
-  if (!resolvedUrl || !isSupportedEmbeddedAssetCandidateUrl(resolvedUrl)) {
+  const resolvedUrl = resolveComposerAttachmentUrl(markdownLinkUrl);
+  if (!resolvedUrl || !isSupportedAttachmentAssetCandidateUrl(resolvedUrl)) {
     return null;
   }
 
   return {
-    source: 'markdown-embed' as const,
+    source: 'markdown-attachment' as const,
     url: resolvedUrl,
   };
 };
 
-export const extractEmbeddedComposerLinkFromMessageText = (
+export const extractAttachmentComposerLinkFromMessageText = (
   rawText: string
-): EmbeddedComposerLinkMatch | null => {
+): AttachmentComposerLinkMatch | null => {
   const normalizedText = rawText.trim();
   if (!normalizedText) return null;
 
-  const directUrl = resolveComposerEmbeddedUrl(normalizedText);
-  if (directUrl && isSupportedEmbeddedAssetCandidateUrl(directUrl)) {
+  const directUrl = resolveComposerAttachmentUrl(normalizedText);
+  if (directUrl && isSupportedAttachmentAssetCandidateUrl(directUrl)) {
     return {
       source: 'direct-url',
       url: directUrl,
     };
   }
 
-  const markdownEmbed = extractEmbeddedComposerMarkdownLink(normalizedText);
-  if (markdownEmbed) {
-    return markdownEmbed;
+  const markdownAttachment =
+    extractAttachmentComposerMarkdownLink(normalizedText);
+  if (markdownAttachment) {
+    return markdownAttachment;
   }
 
   const htmlUrl = extractUrlFromHtmlFragment(normalizedText);
   if (!htmlUrl) return null;
 
   return {
-    source: 'html-embed',
+    source: 'html-attachment',
     url: htmlUrl,
   };
 };
 
-export const extractEmbeddedComposerLinkFromClipboard = ({
+export const extractAttachmentComposerLinkFromClipboard = ({
   text,
   html,
 }: {
   text: string;
   html: string;
-}): EmbeddedComposerLinkMatch | null => {
+}): AttachmentComposerLinkMatch | null => {
   const htmlUrl = html.trim() ? extractUrlFromHtmlFragment(html) : null;
   if (htmlUrl) {
     return {
-      source: 'html-embed',
+      source: 'html-attachment',
       url: htmlUrl,
     };
   }
 
-  return extractEmbeddedComposerLinkFromMessageText(text.trim());
+  return extractAttachmentComposerLinkFromMessageText(text.trim());
 };
 
-export const fetchEmbeddedComposerRemoteFile = async (
+export const fetchAttachmentComposerRemoteFile = async (
   url: string
-): Promise<EmbeddedComposerRemoteFile | null> => {
-  const normalizedUrl = normalizeEmbeddedRemoteAssetUrl(url);
+): Promise<AttachmentComposerRemoteFile | null> => {
+  const normalizedUrl = normalizeAttachmentRemoteAssetUrl(url);
   const remoteAsset = (
     await chatRemoteAssetService.fetchRemoteAsset(normalizedUrl, {
       fileNameSourceUrl: url,
@@ -476,7 +477,7 @@ export const fetchEmbeddedComposerRemoteFile = async (
       mimeType: resolvedMimeType,
     }) ||
     ((resolvedMimeType === 'application/octet-stream' ||
-      isKnownEmbeddedRemoteAssetUrl(url)) &&
+      isKnownAttachmentRemoteAssetUrl(url)) &&
     sniffedPdfMimeType === PDF_MIME_TYPE
       ? {
           extension: 'pdf',
@@ -492,7 +493,7 @@ export const fetchEmbeddedComposerRemoteFile = async (
     remoteAsset.blob.type === fileMetadata.mimeType
       ? remoteAsset.blob
       : new Blob([remoteAsset.blob], { type: fileMetadata.mimeType });
-  const fileName = buildEmbeddedFileName({
+  const fileName = buildAttachmentFileName({
     fileNameHint: resolvedFileNameHint,
     url: remoteAsset.sourceUrl,
     contentDisposition: remoteAsset.contentDisposition,

@@ -169,14 +169,14 @@ export const useChatSidebarController = ({
       messageInputHeight: runtime.composer.messageInputHeight,
       isMessageInputMultiline: runtime.composer.isMessageInputMultiline,
       isSendSuccessGlowVisible: runtime.composer.isSendSuccessGlowVisible,
-      isSendDisabled: runtime.composer.isLoadingEmbeddedComposerAttachments,
+      isSendDisabled: runtime.composer.isLoadingAttachmentComposerAttachments,
     },
     attachments: {
       isAttachModalOpen: runtime.composer.isAttachModalOpen,
-      embeddedLinkPastePromptUrl: runtime.composer.embeddedLinkPastePromptUrl,
-      hoverableEmbeddedLinkCandidates:
-        runtime.composer.hoverableEmbeddedLinkCandidates,
-      hoverableEmbeddedLinkUrl: runtime.composer.hoverableEmbeddedLinkUrl,
+      attachmentPastePromptUrl: runtime.composer.attachmentPastePromptUrl,
+      hoverableAttachmentCandidates:
+        runtime.composer.hoverableAttachmentCandidates,
+      hoverableAttachmentUrl: runtime.composer.hoverableAttachmentUrl,
       pendingComposerAttachments: [
         ...runtime.composer.pendingComposerAttachments,
         ...runtime.composer.loadingComposerAttachments,
@@ -202,7 +202,7 @@ export const useChatSidebarController = ({
       composerContainerRef: refs.composerContainerRef,
       attachButtonRef: runtime.composer.attachButtonRef,
       attachModalRef: runtime.composer.attachModalRef,
-      embeddedLinkPastePromptRef: runtime.composer.embeddedLinkPastePromptRef,
+      attachmentPastePromptRef: runtime.composer.attachmentPastePromptRef,
       imageInputRef: runtime.composer.imageInputRef,
       documentInputRef: runtime.composer.documentInputRef,
       audioInputRef: runtime.composer.audioInputRef,
@@ -213,14 +213,12 @@ export const useChatSidebarController = ({
       onMessageChange: runtime.composer.handleMessageChange,
       onKeyDown: runtime.mutations.handleKeyPress,
       onPaste: runtime.composer.handleComposerPaste,
-      onDismissEmbeddedLinkPastePrompt:
-        runtime.composer.dismissEmbeddedLinkPastePrompt,
-      onOpenEmbeddedLinkPastePrompt:
-        runtime.composer.openEmbeddedLinkPastePrompt,
-      onUseEmbeddedLinkPasteAsUrl:
-        runtime.composer.handleUseEmbeddedLinkPasteAsUrl,
-      onUseEmbeddedLinkPasteAsEmbed:
-        runtime.composer.handleUseEmbeddedLinkPasteAsEmbed,
+      onDismissAttachmentPastePrompt:
+        runtime.composer.dismissAttachmentPastePrompt,
+      onOpenAttachmentPastePrompt: runtime.composer.openAttachmentPastePrompt,
+      onUseAttachmentPasteAsUrl: runtime.composer.handleUseAttachmentPasteAsUrl,
+      onUseAttachmentPasteAsAttachment:
+        runtime.composer.handleUseAttachmentPasteAsAttachment,
       onSendMessage: runtime.mutations.handleSendMessage,
       onAttachButtonClick: runtime.composer.handleAttachButtonClick,
       onAttachImageClick: runtime.composer.handleAttachImageClick,

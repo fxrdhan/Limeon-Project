@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import {
-  extractEmbeddedComposerLinkFromMessageText,
-  fetchEmbeddedComposerRemoteFile,
-} from '../utils/composer-embedded-link';
+  extractAttachmentComposerLinkFromMessageText,
+  fetchAttachmentComposerRemoteFile,
+} from '../utils/composer-attachment-link';
 
 const { mockRemoteAssetService } = vi.hoisted(() => ({
   mockRemoteAssetService: {
@@ -14,14 +14,14 @@ vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
 }));
 
-describe('composer-embedded-link', () => {
+describe('composer-attachment-link', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('recognizes chat shared links as embedded asset candidates', () => {
+  it('recognizes chat shared links as attachment asset candidates', () => {
     expect(
-      extractEmbeddedComposerLinkFromMessageText(
+      extractAttachmentComposerLinkFromMessageText(
         'https://shrtlink.works/bwdrrk3ugm'
       )
     ).toEqual({
@@ -44,7 +44,7 @@ describe('composer-embedded-link', () => {
       error: null,
     });
 
-    const result = await fetchEmbeddedComposerRemoteFile(
+    const result = await fetchAttachmentComposerRemoteFile(
       'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
     );
 

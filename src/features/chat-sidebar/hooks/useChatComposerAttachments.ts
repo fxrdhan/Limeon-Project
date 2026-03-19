@@ -21,9 +21,9 @@ import type {
   PendingComposerAttachment,
 } from '../types';
 import {
-  extractEmbeddedComposerLinkFromClipboard,
-  fetchEmbeddedComposerRemoteFile,
-} from '../utils/composer-embedded-link';
+  extractAttachmentComposerLinkFromClipboard,
+  fetchAttachmentComposerRemoteFile,
+} from '../utils/composer-attachment-link';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 
 interface UseChatComposerAttachmentsProps {
@@ -34,7 +34,7 @@ interface UseChatComposerAttachmentsProps {
   setMessage: Dispatch<SetStateAction<string>>;
 }
 
-interface EmbeddedLinkPastePromptState {
+interface AttachmentPastePromptState {
   id: string;
   url: string;
   pastedText: string;
@@ -42,12 +42,12 @@ interface EmbeddedLinkPastePromptState {
   rangeEnd: number;
 }
 
-interface PastedEmbeddedLinkCandidate {
+interface PastedAttachmentCandidate {
   id: string;
   url: string;
 }
 
-interface HoverableEmbeddedLinkCandidate extends EmbeddedLinkPastePromptState {}
+interface HoverableAttachmentCandidate extends AttachmentPastePromptState {}
 
 export const useChatComposerAttachments = ({
   editingMessageId,
@@ -67,7 +67,7 @@ export const useChatComposerAttachments = ({
 
   const attachButtonRef = useRef<HTMLButtonElement>(null);
   const attachModalRef = useRef<HTMLDivElement>(null);
-  const embeddedLinkPastePromptRef = useRef<HTMLDivElement>(null);
+  const attachmentPastePromptRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -91,23 +91,22 @@ export const useChatComposerAttachments = ({
     LoadingComposerAttachment[]
   >([]);
   const loadingComposerAttachmentsRef = useRef<LoadingComposerAttachment[]>([]);
-  const [embeddedLinkPastePrompt, setEmbeddedLinkPastePrompt] =
-    useState<EmbeddedLinkPastePromptState | null>(null);
-  const [pastedEmbeddedLinkCandidates, setPastedEmbeddedLinkCandidates] =
-    useState<PastedEmbeddedLinkCandidate[]>([]);
-  const [rawEmbeddedLinkUrl, setRawEmbeddedLinkUrl] = useState<string | null>(
-    null
-  );
+  const [attachmentPastePrompt, setAttachmentPastePrompt] =
+    useState<AttachmentPastePromptState | null>(null);
+  const [pastedAttachmentCandidates, setPastedAttachmentCandidates] = useState<
+    PastedAttachmentCandidate[]
+  >([]);
+  const [rawAttachmentUrl, setRawAttachmentUrl] = useState<string | null>(null);
 
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
       attachment.id === composerImagePreviewAttachmentId &&
       attachment.fileKind === 'image'
   );
-  const hoverableEmbeddedLinkCandidates = useMemo(() => {
+  const hoverableAttachmentCandidates = useMemo(() => {
     let searchStart = 0;
 
-    return pastedEmbeddedLinkCandidates.flatMap(candidate => {
+    return pastedAttachmentCandidates.flatMap(candidate => {
       const rangeStart = message.indexOf(candidate.url, searchStart);
       if (rangeStart < 0) {
         return [];
@@ -123,13 +122,13 @@ export const useChatComposerAttachments = ({
           pastedText: candidate.url,
           rangeStart,
           rangeEnd,
-        } satisfies HoverableEmbeddedLinkCandidate,
+        } satisfies HoverableAttachmentCandidate,
       ];
     });
-  }, [message, pastedEmbeddedLinkCandidates]);
-  const hoverableEmbeddedLinkUrl =
-    hoverableEmbeddedLinkCandidates.length === 1
-      ? (hoverableEmbeddedLinkCandidates[0]?.url ?? null)
+  }, [message, pastedAttachmentCandidates]);
+  const hoverableAttachmentUrl =
+    hoverableAttachmentCandidates.length === 1
+      ? (hoverableAttachmentCandidates[0]?.url ?? null)
       : null;
 
   useEffect(() => {
@@ -183,21 +182,21 @@ export const useChatComposerAttachments = ({
     [messageInputRef]
   );
 
-  const clearEmbeddedLinkPasteState = useCallback(() => {
-    setEmbeddedLinkPastePrompt(null);
-    setPastedEmbeddedLinkCandidates([]);
-    setRawEmbeddedLinkUrl(null);
+  const clearAttachmentPasteState = useCallback(() => {
+    setAttachmentPastePrompt(null);
+    setPastedAttachmentCandidates([]);
+    setRawAttachmentUrl(null);
   }, []);
 
-  const dismissEmbeddedLinkPastePrompt = useCallback(
+  const dismissAttachmentPastePrompt = useCallback(
     (preserveRawLink = false) => {
-      if (embeddedLinkPastePrompt && preserveRawLink) {
-        setRawEmbeddedLinkUrl(embeddedLinkPastePrompt.url);
+      if (attachmentPastePrompt && preserveRawLink) {
+        setRawAttachmentUrl(attachmentPastePrompt.url);
       }
 
-      setEmbeddedLinkPastePrompt(null);
+      setAttachmentPastePrompt(null);
     },
-    [embeddedLinkPastePrompt]
+    [attachmentPastePrompt]
   );
 
   const handleAttachButtonClick = useCallback(() => {
@@ -315,9 +314,9 @@ export const useChatComposerAttachments = ({
     replaceComposerDocumentAttachmentIdRef.current = null;
     loadingComposerAttachmentsRef.current = [];
     setLoadingComposerAttachments([]);
-    clearEmbeddedLinkPasteState();
+    clearAttachmentPasteState();
     clearPendingComposerAttachmentsFromQueue();
-  }, [clearEmbeddedLinkPasteState, clearPendingComposerAttachmentsFromQueue]);
+  }, [clearAttachmentPasteState, clearPendingComposerAttachmentsFromQueue]);
 
   const closeComposerImagePreview = useCallback(() => {
     setIsComposerImageExpandedVisible(false);
@@ -369,10 +368,10 @@ export const useChatComposerAttachments = ({
       replaceComposerDocumentAttachmentIdRef.current = null;
       loadingComposerAttachmentsRef.current = [];
       setLoadingComposerAttachments([]);
-      clearEmbeddedLinkPasteState();
+      clearAttachmentPasteState();
       restorePendingComposerAttachmentsFromQueue(attachments);
     },
-    [clearEmbeddedLinkPasteState, restorePendingComposerAttachmentsFromQueue]
+    [clearAttachmentPasteState, restorePendingComposerAttachmentsFromQueue]
   );
 
   const handleAttachImageClick = useCallback(
@@ -460,14 +459,14 @@ export const useChatComposerAttachments = ({
     [queueComposerFile]
   );
 
-  const queueEmbeddedComposerLink = useCallback(
+  const queueAttachmentComposerLink = useCallback(
     async (
-      embeddedLink: string,
+      attachmentLink: string,
       loadingAttachment: LoadingComposerAttachment
     ) => {
       try {
-        const embeddedRemoteFile =
-          await fetchEmbeddedComposerRemoteFile(embeddedLink);
+        const attachmentRemoteFile =
+          await fetchAttachmentComposerRemoteFile(attachmentLink);
         const isLoadingAttachmentActive =
           loadingComposerAttachmentsRef.current.some(
             attachment => attachment.id === loadingAttachment.id
@@ -477,21 +476,21 @@ export const useChatComposerAttachments = ({
         }
 
         removeLoadingComposerAttachment(loadingAttachment.id);
-        if (!embeddedRemoteFile) {
+        if (!attachmentRemoteFile) {
           toast.error('Link harus mengarah ke gambar atau PDF yang valid', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
           return false;
         }
 
-        if (embeddedRemoteFile.fileKind === 'image') {
-          return queueComposerImage(embeddedRemoteFile.file);
+        if (attachmentRemoteFile.fileKind === 'image') {
+          return queueComposerImage(attachmentRemoteFile.file);
         }
 
-        return queueComposerFile(embeddedRemoteFile.file, 'document');
+        return queueComposerFile(attachmentRemoteFile.file, 'document');
       } catch (error) {
         removeLoadingComposerAttachment(loadingAttachment.id);
-        console.error('Error queueing embedded composer link:', error);
+        console.error('Error queueing attachment composer link:', error);
         toast.error('Gagal mengambil file dari link', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
@@ -513,33 +512,33 @@ export const useChatComposerAttachments = ({
         event.preventDefault();
         closeAttachModal();
         closeMessageMenu();
-        clearEmbeddedLinkPasteState();
+        clearAttachmentPasteState();
         queueComposerImage(imageFile);
         return;
       }
 
-      const embeddedLink = extractEmbeddedComposerLinkFromClipboard({
+      const attachmentLink = extractAttachmentComposerLinkFromClipboard({
         html: event.clipboardData.getData('text/html'),
         text: event.clipboardData.getData('text/plain'),
       });
-      if (!embeddedLink) return;
+      if (!attachmentLink) return;
 
       event.preventDefault();
       closeAttachModal();
       closeMessageMenu();
-      setPastedEmbeddedLinkCandidates(currentCandidates => [
+      setPastedAttachmentCandidates(currentCandidates => [
         ...currentCandidates,
         {
-          id: `embedded_link_candidate_${Date.now()}_${Math.random()
+          id: `attachment_link_candidate_${Date.now()}_${Math.random()
             .toString(36)
             .slice(2, 8)}`,
-          url: embeddedLink.url,
+          url: attachmentLink.url,
         },
       ]);
-      setRawEmbeddedLinkUrl(null);
+      setRawAttachmentUrl(null);
 
       const textarea = event.currentTarget;
-      const pastedText = embeddedLink.url;
+      const pastedText = attachmentLink.url;
       const rangeStart = textarea.selectionStart ?? textarea.value.length;
       const rangeEnd = textarea.selectionEnd ?? rangeStart;
       const nextMessage =
@@ -548,40 +547,40 @@ export const useChatComposerAttachments = ({
         textarea.value.slice(rangeEnd);
       const insertedRangeEnd = rangeStart + pastedText.length;
 
-      setEmbeddedLinkPastePrompt(null);
+      setAttachmentPastePrompt(null);
       setMessage(nextMessage);
       focusComposerSelection(insertedRangeEnd);
     },
     [
       closeAttachModal,
       closeMessageMenu,
-      clearEmbeddedLinkPasteState,
+      clearAttachmentPasteState,
       focusComposerSelection,
       queueComposerImage,
       setMessage,
     ]
   );
 
-  const handleUseEmbeddedLinkPasteAsUrl = useCallback(() => {
-    if (!embeddedLinkPastePrompt) return;
+  const handleUseAttachmentPasteAsUrl = useCallback(() => {
+    if (!attachmentPastePrompt) return;
 
-    setRawEmbeddedLinkUrl(embeddedLinkPastePrompt.url);
-    dismissEmbeddedLinkPastePrompt();
-    focusComposerSelection(embeddedLinkPastePrompt.rangeEnd);
+    setRawAttachmentUrl(attachmentPastePrompt.url);
+    dismissAttachmentPastePrompt();
+    focusComposerSelection(attachmentPastePrompt.rangeEnd);
   }, [
-    embeddedLinkPastePrompt,
-    dismissEmbeddedLinkPastePrompt,
+    attachmentPastePrompt,
+    dismissAttachmentPastePrompt,
     focusComposerSelection,
   ]);
 
-  const handleUseEmbeddedLinkPasteAsEmbed = useCallback(() => {
-    if (!embeddedLinkPastePrompt) return;
+  const handleUseAttachmentPasteAsAttachment = useCallback(() => {
+    if (!attachmentPastePrompt) return;
 
-    const promptState = embeddedLinkPastePrompt;
+    const promptState = attachmentPastePrompt;
     const loadingAttachment = queueLoadingComposerAttachment(promptState.url);
 
-    setEmbeddedLinkPastePrompt(null);
-    setRawEmbeddedLinkUrl(null);
+    setAttachmentPastePrompt(null);
+    setRawAttachmentUrl(null);
 
     if (!loadingAttachment) {
       focusComposerSelection(promptState.rangeEnd);
@@ -589,7 +588,7 @@ export const useChatComposerAttachments = ({
     }
 
     void (async () => {
-      const didQueue = await queueEmbeddedComposerLink(
+      const didQueue = await queueAttachmentComposerLink(
         promptState.url,
         loadingAttachment
       );
@@ -611,28 +610,28 @@ export const useChatComposerAttachments = ({
           currentMessage.slice(promptState.rangeEnd)
         );
       });
-      setPastedEmbeddedLinkCandidates(currentCandidates =>
+      setPastedAttachmentCandidates(currentCandidates =>
         currentCandidates.filter(candidate => candidate.id !== promptState.id)
       );
     })();
   }, [
-    embeddedLinkPastePrompt,
+    attachmentPastePrompt,
     focusComposerSelection,
-    queueEmbeddedComposerLink,
+    queueAttachmentComposerLink,
     queueLoadingComposerAttachment,
     setMessage,
   ]);
 
-  const openEmbeddedLinkPastePrompt = useCallback(
-    (candidate?: HoverableEmbeddedLinkCandidate) => {
+  const openAttachmentPastePrompt = useCallback(
+    (candidate?: HoverableAttachmentCandidate) => {
       const resolvedCandidate =
         candidate ??
-        (hoverableEmbeddedLinkCandidates.length === 1
-          ? hoverableEmbeddedLinkCandidates[0]
+        (hoverableAttachmentCandidates.length === 1
+          ? hoverableAttachmentCandidates[0]
           : null);
       if (!resolvedCandidate) return;
 
-      setEmbeddedLinkPastePrompt({
+      setAttachmentPastePrompt({
         id: resolvedCandidate.id,
         url: resolvedCandidate.url,
         pastedText: resolvedCandidate.pastedText,
@@ -640,7 +639,7 @@ export const useChatComposerAttachments = ({
         rangeEnd: resolvedCandidate.rangeEnd,
       });
     },
-    [hoverableEmbeddedLinkCandidates]
+    [hoverableAttachmentCandidates]
   );
 
   useEffect(() => {
@@ -678,21 +677,21 @@ export const useChatComposerAttachments = ({
   }, [closeAttachModal, isAttachModalOpen]);
 
   useEffect(() => {
-    if (!embeddedLinkPastePrompt) return;
+    if (!attachmentPastePrompt) return;
 
     const handleMouseDown = (event: MouseEvent) => {
       const eventTarget = event.target;
       if (!(eventTarget instanceof Node)) return;
 
-      if (embeddedLinkPastePromptRef.current?.contains(eventTarget)) return;
+      if (attachmentPastePromptRef.current?.contains(eventTarget)) return;
       if (messageInputRef.current?.contains(eventTarget)) return;
 
-      dismissEmbeddedLinkPastePrompt(true);
+      dismissAttachmentPastePrompt(true);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        dismissEmbeddedLinkPastePrompt(true);
+        dismissAttachmentPastePrompt(true);
       }
     };
 
@@ -703,11 +702,7 @@ export const useChatComposerAttachments = ({
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [
-    dismissEmbeddedLinkPastePrompt,
-    embeddedLinkPastePrompt,
-    messageInputRef,
-  ]);
+  }, [dismissAttachmentPastePrompt, attachmentPastePrompt, messageInputRef]);
 
   useEffect(() => {
     return () => {
@@ -722,25 +717,26 @@ export const useChatComposerAttachments = ({
     isAttachModalOpen,
     pendingComposerAttachments,
     loadingComposerAttachments,
-    isLoadingEmbeddedComposerAttachments: loadingComposerAttachments.length > 0,
-    embeddedLinkPastePromptUrl: embeddedLinkPastePrompt?.url ?? null,
-    hoverableEmbeddedLinkCandidates,
-    hoverableEmbeddedLinkUrl,
-    rawEmbeddedLinkUrl,
+    isLoadingAttachmentComposerAttachments:
+      loadingComposerAttachments.length > 0,
+    attachmentPastePromptUrl: attachmentPastePrompt?.url ?? null,
+    hoverableAttachmentCandidates,
+    hoverableAttachmentUrl,
+    rawAttachmentUrl,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     attachButtonRef,
     attachModalRef,
-    embeddedLinkPastePromptRef,
+    attachmentPastePromptRef,
     imageInputRef,
     documentInputRef,
     audioInputRef,
     pendingImagePreviewUrlsRef,
     closeAttachModal,
-    clearEmbeddedLinkPasteState,
-    dismissEmbeddedLinkPastePrompt,
-    openEmbeddedLinkPastePrompt,
+    clearAttachmentPasteState,
+    dismissAttachmentPastePrompt,
+    openAttachmentPastePrompt,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,
@@ -749,8 +745,8 @@ export const useChatComposerAttachments = ({
     handleDocumentFileChange,
     handleAudioFileChange,
     handleComposerPaste,
-    handleUseEmbeddedLinkPasteAsUrl,
-    handleUseEmbeddedLinkPasteAsEmbed,
+    handleUseAttachmentPasteAsUrl,
+    handleUseAttachmentPasteAsAttachment,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,

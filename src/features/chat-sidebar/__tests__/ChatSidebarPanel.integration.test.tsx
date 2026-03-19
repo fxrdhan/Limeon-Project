@@ -18,7 +18,7 @@ const { mockComposerState } = vi.hoisted(() => ({
       sourceUrl: string;
       status: 'loading';
     }>,
-    isLoadingEmbeddedComposerAttachments: false,
+    isLoadingAttachmentComposerAttachments: false,
   },
 }));
 
@@ -100,14 +100,14 @@ vi.mock('../hooks/useChatComposer', () => ({
     isMessageInputMultiline: false,
     isSendSuccessGlowVisible: false,
     isAttachModalOpen: false,
-    embeddedLinkPastePromptUrl: null,
-    hoverableEmbeddedLinkCandidates: [],
-    hoverableEmbeddedLinkUrl: null,
-    rawEmbeddedLinkUrl: null,
+    attachmentPastePromptUrl: null,
+    hoverableAttachmentCandidates: [],
+    hoverableAttachmentUrl: null,
+    rawAttachmentUrl: null,
     pendingComposerAttachments: [],
     loadingComposerAttachments: mockComposerState.loadingComposerAttachments,
-    isLoadingEmbeddedComposerAttachments:
-      mockComposerState.isLoadingEmbeddedComposerAttachments,
+    isLoadingAttachmentComposerAttachments:
+      mockComposerState.isLoadingAttachmentComposerAttachments,
     previewComposerImageAttachment: undefined,
     isComposerImageExpanded: false,
     isComposerImageExpandedVisible: false,
@@ -115,14 +115,14 @@ vi.mock('../hooks/useChatComposer', () => ({
     composerContextualOffset: 0,
     attachButtonRef: { current: null },
     attachModalRef: { current: null },
-    embeddedLinkPastePromptRef: { current: null },
+    attachmentPastePromptRef: { current: null },
     imageInputRef: { current: null },
     documentInputRef: { current: null },
     audioInputRef: { current: null },
     pendingImagePreviewUrlsRef: { current: new Map<string, string>() },
-    clearEmbeddedLinkPasteState: vi.fn(),
-    dismissEmbeddedLinkPastePrompt: vi.fn(),
-    openEmbeddedLinkPastePrompt: vi.fn(),
+    clearAttachmentPasteState: vi.fn(),
+    dismissAttachmentPastePrompt: vi.fn(),
+    openAttachmentPastePrompt: vi.fn(),
     handleComposerPaste: vi.fn(),
     handleMessageChange: vi.fn(),
     handleAttachButtonClick: vi.fn(),
@@ -132,8 +132,8 @@ vi.mock('../hooks/useChatComposer', () => ({
     handleImageFileChange: vi.fn(),
     handleDocumentFileChange: vi.fn(),
     handleAudioFileChange: vi.fn(),
-    handleUseEmbeddedLinkPasteAsUrl: vi.fn(),
-    handleUseEmbeddedLinkPasteAsEmbed: vi.fn(),
+    handleUseAttachmentPasteAsUrl: vi.fn(),
+    handleUseAttachmentPasteAsAttachment: vi.fn(),
     openComposerImagePreview: vi.fn(),
     closeComposerImagePreview: vi.fn(),
     removePendingComposerAttachment: vi.fn(),
@@ -234,7 +234,7 @@ describe('ChatSidebarPanel integration', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'));
     mockComposerState.loadingComposerAttachments = [];
-    mockComposerState.isLoadingEmbeddedComposerAttachments = false;
+    mockComposerState.isLoadingAttachmentComposerAttachments = false;
   });
 
   afterEach(() => {
@@ -271,7 +271,7 @@ describe('ChatSidebarPanel integration', () => {
         status: 'loading',
       },
     ];
-    mockComposerState.isLoadingEmbeddedComposerAttachments = true;
+    mockComposerState.isLoadingAttachmentComposerAttachments = true;
 
     render(
       <ChatSidebarPanel

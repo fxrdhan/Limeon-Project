@@ -35,7 +35,7 @@ interface UseChatConversationMutationsProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
-  rawEmbeddedLinkUrl: string | null;
+  rawAttachmentUrl?: string | null;
   setEditingMessageId: Dispatch<SetStateAction<string | null>>;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
@@ -77,7 +77,7 @@ export const useChatConversationMutations = ({
   message,
   setMessage,
   editingMessageId,
-  rawEmbeddedLinkUrl,
+  rawAttachmentUrl = null,
   setEditingMessageId,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
@@ -114,7 +114,7 @@ export const useChatConversationMutations = ({
     message,
     setMessage,
     editingMessageId,
-    rawEmbeddedLinkUrl,
+    rawAttachmentUrl,
     pendingComposerAttachments,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,

@@ -82,8 +82,8 @@ const buildComposerModel = (): ComposerPanelModel => ({
   },
   attachments: {
     isAttachModalOpen: false,
-    embeddedLinkPastePromptUrl: null,
-    hoverableEmbeddedLinkCandidates: [
+    attachmentPastePromptUrl: null,
+    hoverableAttachmentCandidates: [
       {
         id: 'candidate-1',
         url: 'https://shrtlink.works/bwdrrk3ugm',
@@ -100,7 +100,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
         rangeEnd: 120,
       },
     ],
-    hoverableEmbeddedLinkUrl: null,
+    hoverableAttachmentUrl: null,
     pendingComposerAttachments: [],
     previewComposerImageAttachment: undefined,
     isComposerImageExpanded: false,
@@ -119,7 +119,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
     composerContainerRef: { current: null },
     attachButtonRef: { current: null },
     attachModalRef: { current: null },
-    embeddedLinkPastePromptRef: { current: null },
+    attachmentPastePromptRef: { current: null },
     imageInputRef: { current: null },
     documentInputRef: { current: null },
     audioInputRef: { current: null },
@@ -130,10 +130,10 @@ const buildComposerModel = (): ComposerPanelModel => ({
     onMessageChange: vi.fn(),
     onKeyDown: vi.fn(),
     onPaste: vi.fn(),
-    onDismissEmbeddedLinkPastePrompt: vi.fn(),
-    onOpenEmbeddedLinkPastePrompt: vi.fn(),
-    onUseEmbeddedLinkPasteAsUrl: vi.fn(),
-    onUseEmbeddedLinkPasteAsEmbed: vi.fn(),
+    onDismissAttachmentPastePrompt: vi.fn(),
+    onOpenAttachmentPastePrompt: vi.fn(),
+    onUseAttachmentPasteAsUrl: vi.fn(),
+    onUseAttachmentPasteAsAttachment: vi.fn(),
     onSendMessage: vi.fn(),
     onAttachButtonClick: vi.fn(),
     onAttachImageClick: vi.fn(),
@@ -159,7 +159,7 @@ describe('ComposerPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('renders each hoverable embedded link as a separate inline anchor', () => {
+  it('renders each hoverable attachment link as a separate inline anchor', () => {
     const model = buildComposerModel();
 
     render(<ComposerPanel model={model} />);
@@ -175,8 +175,8 @@ describe('ComposerPanel', () => {
 
     fireEvent.mouseEnter(links[0]);
 
-    expect(model.actions.onOpenEmbeddedLinkPastePrompt).toHaveBeenCalledWith(
-      model.attachments.hoverableEmbeddedLinkCandidates[0]
+    expect(model.actions.onOpenAttachmentPastePrompt).toHaveBeenCalledWith(
+      model.attachments.hoverableAttachmentCandidates[0]
     );
   });
 });
