@@ -4,6 +4,9 @@ import PopupMenuContent, {
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { MenuPlacement } from '../../types';
 
+const CHAT_POPOVER_ICON_CLASS_NAME =
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
+
 interface MessageActionPopoverProps {
   isOpen: boolean;
   menuId: string;
@@ -94,6 +97,7 @@ export const MessageActionPopover = ({
       minWidthClassName="min-w-[120px]"
       enableArrowNavigation
       autoFocusFirstItem
+      iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
     />
   </PopupMenuPopover>
 );

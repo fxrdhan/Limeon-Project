@@ -26,6 +26,8 @@ interface ConversationHeaderContentProps {
 
 const floatingBlockClass = 'rounded-xl border border-slate-200/95 bg-white/95';
 const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
+const chatPopoverIconClassName =
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
 
 const ConversationHeaderContent = ({
   targetUser,
@@ -110,6 +112,7 @@ const ConversationHeaderContent = ({
               <PopupMenuContent
                 actions={optionsActions}
                 minWidthClassName="min-w-[140px]"
+                iconClassName={chatPopoverIconClassName}
               />
             </div>
           </PopupMenuPopover>

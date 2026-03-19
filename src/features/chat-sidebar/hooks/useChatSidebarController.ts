@@ -216,6 +216,9 @@ export const useChatSidebarController = ({
       onDismissAttachmentPastePrompt:
         runtime.composer.dismissAttachmentPastePrompt,
       onOpenAttachmentPastePrompt: runtime.composer.openAttachmentPastePrompt,
+      onEditAttachmentLink: runtime.composer.handleEditAttachmentLink,
+      onOpenAttachmentPastePromptLink:
+        runtime.composer.handleOpenAttachmentPastePromptLink,
       onUseAttachmentPasteAsUrl: runtime.composer.handleUseAttachmentPasteAsUrl,
       onUseAttachmentPasteAsAttachment:
         runtime.composer.handleUseAttachmentPasteAsAttachment,

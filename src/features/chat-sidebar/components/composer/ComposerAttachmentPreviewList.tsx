@@ -216,7 +216,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       event.stopPropagation();
                       onToggleImageActionsMenu(event, attachment.id);
                     }}
-                    className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                    className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-black transition-colors hover:bg-slate-200 hover:text-black"
                   >
                     <TbDotsVertical className="h-4 w-4" />
                   </button>
@@ -230,7 +230,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                   onClick={() => {
                     onRemovePendingComposerAttachment(attachment.id);
                   }}
-                  className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                  className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-black transition-colors hover:bg-slate-200 hover:text-black"
                 >
                   <TbX className="h-4 w-4" />
                 </button>

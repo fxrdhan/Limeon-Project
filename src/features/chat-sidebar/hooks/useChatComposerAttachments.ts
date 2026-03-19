@@ -16,6 +16,7 @@ import {
   COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
   MAX_PENDING_COMPOSER_ATTACHMENTS,
 } from '../constants';
+import { openInNewTab } from '../utils/message-file';
 import type {
   LoadingComposerAttachment,
   PendingComposerAttachment,
@@ -573,6 +574,30 @@ export const useChatComposerAttachments = ({
     focusComposerSelection,
   ]);
 
+  const handleEditAttachmentLink = useCallback(
+    (candidate: HoverableAttachmentCandidate) => {
+      setRawAttachmentUrl(candidate.url);
+      setAttachmentPastePrompt(null);
+      focusComposerSelection(candidate.rangeStart, candidate.rangeEnd);
+    },
+    [focusComposerSelection]
+  );
+
+  const handleOpenAttachmentPastePromptLink = useCallback(() => {
+    if (!attachmentPastePrompt) return;
+
+    openInNewTab(attachmentPastePrompt.url);
+    dismissAttachmentPastePrompt();
+    focusComposerSelection(
+      attachmentPastePrompt.rangeStart,
+      attachmentPastePrompt.rangeEnd
+    );
+  }, [
+    attachmentPastePrompt,
+    dismissAttachmentPastePrompt,
+    focusComposerSelection,
+  ]);
+
   const handleUseAttachmentPasteAsAttachment = useCallback(() => {
     if (!attachmentPastePrompt) return;
 
@@ -737,6 +762,8 @@ export const useChatComposerAttachments = ({
     clearAttachmentPasteState,
     dismissAttachmentPastePrompt,
     openAttachmentPastePrompt,
+    handleEditAttachmentLink,
+    handleOpenAttachmentPastePromptLink,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,

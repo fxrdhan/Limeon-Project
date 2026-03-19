@@ -132,6 +132,8 @@ const buildComposerModel = (): ComposerPanelModel => ({
     onPaste: vi.fn(),
     onDismissAttachmentPastePrompt: vi.fn(),
     onOpenAttachmentPastePrompt: vi.fn(),
+    onEditAttachmentLink: vi.fn(),
+    onOpenAttachmentPastePromptLink: vi.fn(),
     onUseAttachmentPasteAsUrl: vi.fn(),
     onUseAttachmentPasteAsAttachment: vi.fn(),
     onSendMessage: vi.fn(),
@@ -178,5 +180,54 @@ describe('ComposerPanel', () => {
     expect(model.actions.onOpenAttachmentPastePrompt).toHaveBeenCalledWith(
       model.attachments.hoverableAttachmentCandidates[0]
     );
+  });
+
+  it('uses click on inline url to switch into edit mode instead of navigating', () => {
+    const model = buildComposerModel();
+
+    render(<ComposerPanel model={model} />);
+
+    fireEvent.click(screen.getAllByRole('link')[0]!);
+
+    expect(model.actions.onEditAttachmentLink).toHaveBeenCalledWith(
+      model.attachments.hoverableAttachmentCandidates[0]
+    );
+  });
+
+  it('renders the attachment link popover with action and paste sections', () => {
+    const model = buildComposerModel();
+    model.attachments.attachmentPastePromptUrl =
+      'https://shrtlink.works/bwdrrk3ugm';
+
+    render(<ComposerPanel model={model} />);
+
+    const firstLink = screen.getAllByRole('link')[0]!;
+    Object.defineProperty(firstLink, 'getBoundingClientRect', {
+      value: () => ({
+        x: 24,
+        y: 48,
+        width: 120,
+        height: 20,
+        top: 48,
+        right: 144,
+        bottom: 68,
+        left: 24,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent.mouseEnter(firstLink);
+
+    expect(screen.getByText('Aksi')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
+    expect(screen.getByText('Tempel sebagai')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
+
+    expect(
+      model.actions.onOpenAttachmentPastePromptLink
+    ).toHaveBeenCalledOnce();
   });
 });

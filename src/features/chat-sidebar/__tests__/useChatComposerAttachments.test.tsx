@@ -79,6 +79,7 @@ describe('useChatComposerAttachments', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('open', vi.fn());
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback
     ) => {
@@ -264,6 +265,101 @@ describe('useChatComposerAttachments', () => {
       'https://example.com/attachment/receipt.png'
     );
     expect(result.current.pendingComposerAttachments).toEqual([]);
+  });
+
+  it('opens the pasted link from the popover action and closes the prompt', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://example.com/attachment/receipt.png',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentUrl).toBe(
+        'https://example.com/attachment/receipt.png'
+      );
+    });
+
+    act(() => {
+      result.current.openAttachmentPastePrompt();
+    });
+
+    act(() => {
+      result.current.handleOpenAttachmentPastePromptLink();
+    });
+
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://example.com/attachment/receipt.png',
+      '_blank',
+      'noopener,noreferrer'
+    );
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
+  });
+
+  it('focuses a pasted link as editable plain text when requested', async () => {
+    const messageInput = document.createElement('textarea');
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: messageInput },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://example.com/attachment/receipt.png',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(1);
+    });
+
+    messageInput.value = result.current.message;
+
+    act(() => {
+      result.current.handleEditAttachmentLink(
+        result.current.hoverableAttachmentCandidates[0]!
+      );
+    });
+
+    expect(result.current.rawAttachmentUrl).toBe(
+      'https://example.com/attachment/receipt.png'
+    );
+    expect(messageInput.selectionStart).toBe(0);
+    expect(messageInput.selectionEnd).toBe(
+      'https://example.com/attachment/receipt.png'.length
+    );
   });
 
   it('queues a pasted direct image url as an attachment after the user chooses Attachment', async () => {

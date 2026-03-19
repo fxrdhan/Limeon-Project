@@ -30,6 +30,8 @@ interface PopupMenuContentProps {
   useMenuItemRole?: boolean;
   initialPreselectedIndex?: number;
   onPreselectedIndexChange?: (index: number) => void;
+  iconClassName?: string;
+  dangerIconClassName?: string;
 }
 
 const resolveInitialActionIndex = ({
@@ -71,6 +73,8 @@ const PopupMenuContent = ({
   useMenuItemRole = true,
   initialPreselectedIndex,
   onPreselectedIndexChange,
+  iconClassName,
+  dangerIconClassName,
 }: PopupMenuContentProps) => {
   const actionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [focusedActionIndex, setFocusedActionIndex] = useState<number | null>(
@@ -177,8 +181,9 @@ const PopupMenuContent = ({
               : `!text-slate-700 ${POPUP_HOVER_BG_CLASS} hover:!text-slate-700`;
         const iconToneClassName =
           action.tone === 'danger'
-            ? ''
-            : '[&>svg]:text-slate-500 hover:[&>svg]:text-slate-500 data-[preselected=true]:[&>svg]:text-slate-500';
+            ? (dangerIconClassName ?? '')
+            : (iconClassName ??
+              '[&>svg]:text-slate-500 hover:[&>svg]:text-slate-500 data-[preselected=true]:[&>svg]:text-slate-500');
 
         return (
           <Button

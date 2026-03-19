@@ -10,9 +10,12 @@ import {
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
+  TbArrowUpRight,
   TbArrowUp,
   TbFileDescription,
+  TbLink,
   TbMusic,
+  TbPaperclip,
   TbPhoto,
   TbPlus,
 } from 'react-icons/tb';
@@ -45,6 +48,10 @@ interface ComposerLinkOverlaySegment {
 
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
 const ATTACHMENT_LINK_PROMPT_EDGE_MARGIN = 16;
+const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
+  'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100';
+const CHAT_POPOVER_ICON_CLASS_NAME =
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
 
 const buildComposerLinkOverlaySegments = ({
   candidates,
@@ -143,11 +150,14 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
   );
 
   const handleComposerAttachmentLinkClick = useCallback(
-    (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    (
+      event: ReactMouseEvent<HTMLAnchorElement>,
+      candidate: ComposerHoverableAttachmentCandidate
+    ) => {
       event.preventDefault();
-      refs.messageInputRef.current?.focus();
+      actions.onEditAttachmentLink(candidate);
     },
-    [refs.messageInputRef]
+    [actions]
   );
 
   useEffect(() => {
@@ -289,6 +299,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                       <PopupMenuContent
                         actions={attachments.imageActions}
                         minWidthClassName="min-w-[132px]"
+                        iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
                       />
                     </div>
                   </PopupMenuPopover>,
@@ -317,24 +328,47 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                         onMouseEnter={clearAttachmentPromptCloseTimer}
                         onMouseLeave={scheduleAttachmentPromptClose}
                         role="dialog"
-                        aria-label="Tempel sebagai"
+                        aria-label="Aksi link composer"
                       >
                         <div className="px-3 pb-1.5 pt-2 text-[11px] font-medium tracking-[0.03em] text-slate-500">
+                          Aksi
+                        </div>
+                        <button
+                          type="button"
+                          onClick={actions.onOpenAttachmentPastePromptLink}
+                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                        >
+                          <span>Buka</span>
+                          <TbArrowUpRight
+                            className="ml-auto h-4 w-4 text-black"
+                            aria-hidden="true"
+                          />
+                        </button>
+                        <div className="mx-1 my-1 h-px bg-slate-200" />
+                        <div className="px-3 pb-1.5 pt-1 text-[11px] font-medium tracking-[0.03em] text-slate-500">
                           Tempel sebagai
                         </div>
                         <button
                           type="button"
                           onClick={actions.onUseAttachmentPasteAsUrl}
-                          className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                         >
-                          URL
+                          <span>URL</span>
+                          <TbLink
+                            className="ml-auto h-4 w-4 text-black"
+                            aria-hidden="true"
+                          />
                         </button>
                         <button
                           type="button"
                           onClick={actions.onUseAttachmentPasteAsAttachment}
-                          className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                         >
-                          Attachment
+                          <span>Attachment</span>
+                          <TbPaperclip
+                            className="ml-auto h-4 w-4 text-black"
+                            aria-hidden="true"
+                          />
                         </button>
                       </div>
                     </PopupMenuPopover>
@@ -368,13 +402,21 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                         <a
                           key={segment.key}
                           href={segment.candidate.url}
-                          className="pointer-events-auto cursor-pointer text-slate-900 underline-offset-2 transition-colors hover:text-sky-700 hover:underline"
-                          onClick={handleComposerAttachmentLinkClick}
+                          className="pointer-events-auto cursor-text text-slate-900 underline-offset-2 transition-colors hover:text-sky-700 hover:underline"
+                          onMouseDown={event => {
+                            event.preventDefault();
+                          }}
+                          onClick={event =>
+                            handleComposerAttachmentLinkClick(
+                              event,
+                              segment.candidate!
+                            )
+                          }
                           onMouseEnter={event => {
                             clearAttachmentPromptCloseTimer();
                             updateAttachmentPromptPosition(event.currentTarget);
                             actions.onOpenAttachmentPastePrompt(
-                              segment.candidate ?? undefined
+                              segment.candidate!
                             );
                           }}
                           onMouseLeave={scheduleAttachmentPromptClose}
@@ -492,7 +534,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                     onClick={() => actions.onAttachImageClick()}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
-                    <TbPhoto className="h-4 w-4 text-slate-500" />
+                    <TbPhoto className="h-4 w-4 text-black" />
                     <span>Gambar</span>
                   </button>
                   <button
@@ -500,7 +542,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                     onClick={() => actions.onAttachDocumentClick()}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
-                    <TbFileDescription className="h-4 w-4 text-slate-500" />
+                    <TbFileDescription className="h-4 w-4 text-black" />
                     <span>Dokumen</span>
                   </button>
                   <button
@@ -508,7 +550,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                     onClick={actions.onAttachAudioClick}
                     className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
-                    <TbMusic className="h-4 w-4 text-slate-500" />
+                    <TbMusic className="h-4 w-4 text-black" />
                     <span>Audio</span>
                   </button>
                 </motion.div>

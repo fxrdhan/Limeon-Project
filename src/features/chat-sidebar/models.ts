@@ -231,6 +231,10 @@ export interface ComposerPanelModel {
     onOpenAttachmentPastePrompt: (
       candidate?: ComposerHoverableAttachmentCandidate
     ) => void;
+    onEditAttachmentLink: (
+      candidate: ComposerHoverableAttachmentCandidate
+    ) => void;
+    onOpenAttachmentPastePromptLink: () => void;
     onUseAttachmentPasteAsUrl: () => void;
     onUseAttachmentPasteAsAttachment: () => void;
     onSendMessage: () => void;
