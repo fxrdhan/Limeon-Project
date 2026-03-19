@@ -211,13 +211,11 @@ describe('useChatComposerAttachments', () => {
       );
     });
 
+    expect(mockValidateAttachmentComposerLink).not.toHaveBeenCalled();
     expect(result.current.attachmentPastePromptUrl).toBeNull();
     expect(result.current.pendingComposerAttachments).toEqual([]);
     expect(result.current.loadingComposerAttachments).toEqual([]);
     expect(mockFetchAttachmentComposerRemoteFile).not.toHaveBeenCalled();
-    expect(mockValidateAttachmentComposerLink).toHaveBeenCalledWith(
-      'https://example.com/attachment/receipt'
-    );
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
   });

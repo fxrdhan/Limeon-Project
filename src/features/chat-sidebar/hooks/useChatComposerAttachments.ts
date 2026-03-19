@@ -562,7 +562,21 @@ export const useChatComposerAttachments = ({
       const candidateId = `attachment_link_candidate_${Date.now()}_${Math.random()
         .toString(36)
         .slice(2, 8)}`;
+      const attachmentCandidate = {
+        id: candidateId,
+        pastedText,
+        url: pastedLink.url,
+      };
+      attachmentPasteValidationScopeRef.current += 1;
       const validationScope = attachmentPasteValidationScopeRef.current;
+
+      if (pastedLink.source === 'attachment') {
+        setPastedAttachmentCandidates(currentCandidates => [
+          ...currentCandidates,
+          attachmentCandidate,
+        ]);
+        return;
+      }
 
       void (async () => {
         const isAttachmentCandidate = await validateAttachmentComposerLink(
@@ -582,14 +596,7 @@ export const useChatComposerAttachments = ({
             return currentCandidates;
           }
 
-          return [
-            ...currentCandidates,
-            {
-              id: candidateId,
-              pastedText,
-              url: pastedLink.url,
-            },
-          ];
+          return [...currentCandidates, attachmentCandidate];
         });
         setAttachmentPastePrompt(currentPrompt => {
           if (

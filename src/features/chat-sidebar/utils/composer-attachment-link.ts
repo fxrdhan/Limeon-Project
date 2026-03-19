@@ -17,6 +17,7 @@ export interface AttachmentComposerRemoteFile {
 }
 
 export interface ComposerClipboardLinkMatch {
+  source: 'attachment' | 'generic';
   pastedText: string;
   url: string;
 }
@@ -496,6 +497,7 @@ export const extractComposerLinkFromMessageText = (
     extractAttachmentComposerLinkFromMessageText(normalizedText);
   if (attachmentLink) {
     return {
+      source: 'attachment',
       pastedText: attachmentLink.url,
       url: attachmentLink.url,
     };
@@ -511,6 +513,7 @@ export const extractComposerLinkFromMessageText = (
   }
 
   return {
+    source: 'generic',
     pastedText: messageLink.text,
     url: messageLink.href,
   };
@@ -528,6 +531,7 @@ export const extractComposerLinkFromClipboard = ({
     : null;
   if (attachmentHtmlUrl) {
     return {
+      source: 'attachment',
       pastedText: attachmentHtmlUrl,
       url: attachmentHtmlUrl,
     };
