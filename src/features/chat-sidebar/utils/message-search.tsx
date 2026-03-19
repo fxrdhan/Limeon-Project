@@ -8,8 +8,10 @@ import {
 
 const SEARCH_HIGHLIGHT_CLASS =
   'rounded-[4px] bg-amber-200 px-0.5 text-slate-900';
-const MESSAGE_LINK_PATTERN = /https?:\/\/[^\s<]+/gi;
+const MESSAGE_LINK_PATTERN =
+  /(?<![@\w/])(?:https?:\/\/[^\s<]+|www\.[^\s<]+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}(?::\d+)?(?:\/[^\s<]*|[?#][^\s<]+))/gi;
 const TRAILING_LINK_PUNCTUATION_PATTERN = /[),.!?;:]+$/;
+const MESSAGE_LINK_PROTOCOL_PATTERN = /^[a-z][a-z\d+.-]*:/i;
 const SUPPORTED_MESSAGE_LINK_PROTOCOLS = new Set(['http:', 'https:']);
 const MESSAGE_LINK_HOVER_COLOR = '#0369a1';
 
@@ -106,7 +108,9 @@ const splitTrailingLinkPunctuation = (value: string) => {
 
 const resolveMessageLink = (value: string) => {
   try {
-    const resolvedUrl = new URL(value);
+    const resolvedUrl = new URL(
+      MESSAGE_LINK_PROTOCOL_PATTERN.test(value) ? value : `https://${value}`
+    );
     if (!SUPPORTED_MESSAGE_LINK_PROTOCOLS.has(resolvedUrl.protocol)) {
       return null;
     }
