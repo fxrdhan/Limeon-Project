@@ -29,6 +29,13 @@ export interface ComposerHoverableAttachmentCandidate {
   rangeEnd: number;
 }
 
+export interface ComposerPromptableLink {
+  url: string;
+  pastedText: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
 export interface ChatHeaderModel {
   targetUser?: ChatSidebarPanelTargetUser;
   displayTargetPhotoUrl: string | null;
@@ -193,6 +200,7 @@ export interface ComposerPanelModel {
   attachments: {
     isAttachModalOpen: boolean;
     attachmentPastePromptUrl: string | null;
+    isAttachmentPastePromptAttachmentCandidate: boolean;
     hoverableAttachmentCandidates: ComposerHoverableAttachmentCandidate[];
     hoverableAttachmentUrl: string | null;
     pendingComposerAttachments: ComposerAttachmentPreviewItem[];
@@ -231,6 +239,7 @@ export interface ComposerPanelModel {
     onOpenAttachmentPastePrompt: (
       candidate?: ComposerHoverableAttachmentCandidate
     ) => void;
+    onOpenComposerLinkPrompt: (link: ComposerPromptableLink) => void;
     onEditAttachmentLink: (
       candidate: ComposerHoverableAttachmentCandidate,
       selection?: {

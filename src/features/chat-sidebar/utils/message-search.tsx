@@ -9,7 +9,7 @@ import {
 const SEARCH_HIGHLIGHT_CLASS =
   'rounded-[4px] bg-amber-200 px-0.5 text-slate-900';
 const MESSAGE_LINK_PATTERN =
-  /(?<![@\w/])(?:https?:\/\/[^\s<]+|www\.[^\s<]+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}(?::\d+)?(?:\/[^\s<]*|[?#][^\s<]+))/gi;
+  /(?<![@\w/])(?:https?:\/\/[^\s<]+|www\.[^\s<]+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}(?::\d+)?(?:\/[^\s<]*|[?#][^\s<]+)?)/gi;
 const TRAILING_LINK_PUNCTUATION_PATTERN = /[),.!?;:]+$/;
 const MESSAGE_LINK_PROTOCOL_PATTERN = /^[a-z][a-z\d+.-]*:/i;
 const SUPPORTED_MESSAGE_LINK_PROTOCOLS = new Set(['http:', 'https:']);
@@ -23,6 +23,13 @@ interface MessageTextSegment {
   type: 'text' | 'link';
   text: string;
   href?: string;
+}
+
+export interface MessageLinkMatch {
+  text: string;
+  href: string;
+  rangeStart: number;
+  rangeEnd: number;
 }
 
 const getSearchMatchIndex = (text: string, normalizedSearchQuery: string) => {
@@ -119,6 +126,30 @@ const resolveMessageLink = (value: string) => {
   } catch {
     return null;
   }
+};
+
+export const findMessageLinks = (text: string): MessageLinkMatch[] => {
+  const links: MessageLinkMatch[] = [];
+
+  for (const match of text.matchAll(MESSAGE_LINK_PATTERN)) {
+    const matchText = match[0];
+    const matchIndex = match.index ?? -1;
+
+    if (!matchText || matchIndex < 0) continue;
+
+    const { linkText } = splitTrailingLinkPunctuation(matchText);
+    const href = resolveMessageLink(linkText);
+    if (!href) continue;
+
+    links.push({
+      text: linkText,
+      href,
+      rangeStart: matchIndex,
+      rangeEnd: matchIndex + linkText.length,
+    });
+  }
+
+  return links;
 };
 
 const buildMessageTextSegments = (text: string): MessageTextSegment[] => {

@@ -33,6 +33,7 @@ import {
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
+import { findMessageLinks } from '../utils/message-search';
 import type {
   ComposerHoverableAttachmentCandidate,
   ComposerPanelModel,
@@ -43,7 +44,10 @@ import ComposerEditBanner from './composer/ComposerEditBanner';
 
 interface ComposerLinkOverlaySegment {
   candidate: ComposerHoverableAttachmentCandidate | null;
+  href: string | null;
   key: string;
+  rangeEnd?: number;
+  rangeStart?: number;
   text: string;
 }
 
@@ -67,37 +71,79 @@ const buildComposerLinkOverlaySegments = ({
   candidates: ComposerHoverableAttachmentCandidate[];
   message: string;
 }) => {
-  if (candidates.length === 0) {
-    return [];
-  }
-
   const sortedCandidates = [...candidates].sort(
     (leftCandidate, rightCandidate) =>
       leftCandidate.rangeStart - rightCandidate.rangeStart
   );
+  const messageLinks = findMessageLinks(message)
+    .filter(
+      messageLink =>
+        !sortedCandidates.some(
+          candidate =>
+            messageLink.rangeStart < candidate.rangeEnd &&
+            messageLink.rangeEnd > candidate.rangeStart
+        )
+    )
+    .map(messageLink => ({
+      candidate: null,
+      href: messageLink.href,
+      key: `link_${messageLink.rangeStart}_${messageLink.rangeEnd}`,
+      rangeEnd: messageLink.rangeEnd,
+      rangeStart: messageLink.rangeStart,
+      text: messageLink.text,
+    }));
+  const sortedOverlayLinks = [
+    ...sortedCandidates.map(candidate => ({
+      candidate,
+      href: candidate.url,
+      key: candidate.id,
+      rangeEnd: candidate.rangeEnd,
+      rangeStart: candidate.rangeStart,
+      text: message.slice(candidate.rangeStart, candidate.rangeEnd),
+    })),
+    ...messageLinks,
+  ].sort(
+    (leftLink, rightLink) =>
+      leftLink.rangeStart - rightLink.rangeStart ||
+      leftLink.rangeEnd - rightLink.rangeEnd
+  );
+
+  if (sortedOverlayLinks.length === 0) {
+    return [];
+  }
+
   const segments: ComposerLinkOverlaySegment[] = [];
   let currentIndex = 0;
 
-  for (const candidate of sortedCandidates) {
-    if (candidate.rangeStart > currentIndex) {
+  for (const overlayLink of sortedOverlayLinks) {
+    if (overlayLink.rangeEnd <= currentIndex) {
+      continue;
+    }
+
+    if (overlayLink.rangeStart > currentIndex) {
       segments.push({
         candidate: null,
-        key: `text_${currentIndex}_${candidate.rangeStart}`,
-        text: message.slice(currentIndex, candidate.rangeStart),
+        href: null,
+        key: `text_${currentIndex}_${overlayLink.rangeStart}`,
+        text: message.slice(currentIndex, overlayLink.rangeStart),
       });
     }
 
     segments.push({
-      candidate,
-      key: candidate.id,
-      text: message.slice(candidate.rangeStart, candidate.rangeEnd),
+      candidate: overlayLink.candidate,
+      href: overlayLink.href,
+      key: overlayLink.key,
+      rangeEnd: overlayLink.rangeEnd,
+      rangeStart: overlayLink.rangeStart,
+      text: message.slice(overlayLink.rangeStart, overlayLink.rangeEnd),
     });
-    currentIndex = candidate.rangeEnd;
+    currentIndex = overlayLink.rangeEnd;
   }
 
   if (currentIndex < message.length) {
     segments.push({
       candidate: null,
+      href: null,
       key: `text_${currentIndex}_${message.length}`,
       text: message.slice(currentIndex),
     });
@@ -149,12 +195,12 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
     top: number;
     left: number;
   } | null>(null);
-  const shouldRenderComposerLinkOverlay =
-    attachments.hoverableAttachmentCandidates.length > 0;
   const composerLinkOverlaySegments = buildComposerLinkOverlaySegments({
     candidates: attachments.hoverableAttachmentCandidates,
     message: state.message,
   });
+  const shouldRenderComposerLinkOverlay =
+    composerLinkOverlaySegments.length > 0;
 
   const clearAttachmentPromptCloseTimer = useCallback(() => {
     if (attachmentPromptCloseTimerRef.current === null) return;
@@ -226,6 +272,48 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
       });
     },
     [actions]
+  );
+
+  const focusComposerSelection = useCallback(
+    (selectionStart: number, selectionEnd = selectionStart) => {
+      requestAnimationFrame(() => {
+        const textarea = refs.messageInputRef.current;
+        if (!textarea) return;
+
+        textarea.focus();
+        textarea.setSelectionRange(selectionStart, selectionEnd);
+      });
+    },
+    [refs.messageInputRef]
+  );
+
+  const handleComposerPlainLinkMouseDown = useCallback(
+    (
+      event: ReactMouseEvent<HTMLAnchorElement>,
+      segment: ComposerLinkOverlaySegment
+    ) => {
+      if (segment.rangeStart === undefined) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const selectionOffset = getComposerLinkSelectionOffset(
+        event.currentTarget,
+        event.clientX,
+        event.clientY
+      );
+
+      focusComposerSelection(segment.rangeStart + selectionOffset);
+    },
+    [focusComposerSelection]
+  );
+
+  const handleComposerPlainLinkClick = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+    },
+    []
   );
 
   useEffect(() => {
@@ -425,34 +513,40 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                             aria-hidden="true"
                           />
                         </button>
-                        <div className="mx-1 my-0.5 h-px bg-slate-200" />
-                        <div
-                          className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}
-                        >
-                          Tempel sebagai
-                        </div>
-                        <button
-                          type="button"
-                          onClick={actions.onUseAttachmentPasteAsUrl}
-                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                        >
-                          <span>URL</span>
-                          <TbLink
-                            className="ml-auto h-4 w-4 text-black"
-                            aria-hidden="true"
-                          />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={actions.onUseAttachmentPasteAsAttachment}
-                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                        >
-                          <span>Attachment</span>
-                          <TbPaperclip
-                            className="ml-auto h-4 w-4 text-black"
-                            aria-hidden="true"
-                          />
-                        </button>
+                        {attachments.isAttachmentPastePromptAttachmentCandidate ? (
+                          <>
+                            <div className="mx-1 my-0.5 h-px bg-slate-200" />
+                            <div
+                              className={
+                                ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME
+                              }
+                            >
+                              Tempel sebagai
+                            </div>
+                            <button
+                              type="button"
+                              onClick={actions.onUseAttachmentPasteAsUrl}
+                              className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                            >
+                              <span>URL</span>
+                              <TbLink
+                                className="ml-auto h-4 w-4 text-black"
+                                aria-hidden="true"
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={actions.onUseAttachmentPasteAsAttachment}
+                              className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                            >
+                              <span>Attachment</span>
+                              <TbPaperclip
+                                className="ml-auto h-4 w-4 text-black"
+                                aria-hidden="true"
+                              />
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </PopupMenuPopover>
                   </div>,
@@ -481,30 +575,51 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 {shouldRenderComposerLinkOverlay ? (
                   <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden whitespace-pre-wrap break-words text-[15px] leading-[22px] text-slate-900">
                     {composerLinkOverlaySegments.map(segment =>
-                      segment.candidate ? (
+                      segment.href ? (
                         <a
                           key={segment.key}
-                          href={segment.candidate.url}
+                          href={segment.href}
                           className="pointer-events-auto cursor-text text-slate-900 underline-offset-2 transition-colors hover:text-sky-700 hover:underline"
                           onMouseDown={event =>
-                            handleComposerAttachmentLinkMouseDown(
-                              event,
-                              segment.candidate!
-                            )
+                            segment.candidate
+                              ? handleComposerAttachmentLinkMouseDown(
+                                  event,
+                                  segment.candidate
+                                )
+                              : handleComposerPlainLinkMouseDown(event, segment)
                           }
                           onClick={event =>
-                            handleComposerAttachmentLinkClick(
-                              event,
-                              segment.candidate!
-                            )
+                            segment.candidate
+                              ? handleComposerAttachmentLinkClick(
+                                  event,
+                                  segment.candidate
+                                )
+                              : handleComposerPlainLinkClick(event)
                           }
-                          onMouseEnter={event => {
-                            clearAttachmentPromptCloseTimer();
-                            updateAttachmentPromptPosition(event.currentTarget);
-                            actions.onOpenAttachmentPastePrompt(
-                              segment.candidate!
-                            );
-                          }}
+                          onMouseEnter={
+                            segment.candidate
+                              ? event => {
+                                  clearAttachmentPromptCloseTimer();
+                                  updateAttachmentPromptPosition(
+                                    event.currentTarget
+                                  );
+                                  actions.onOpenAttachmentPastePrompt(
+                                    segment.candidate!
+                                  );
+                                }
+                              : event => {
+                                  clearAttachmentPromptCloseTimer();
+                                  updateAttachmentPromptPosition(
+                                    event.currentTarget
+                                  );
+                                  actions.onOpenComposerLinkPrompt({
+                                    url: segment.href!,
+                                    pastedText: segment.text,
+                                    rangeStart: segment.rangeStart!,
+                                    rangeEnd: segment.rangeEnd!,
+                                  });
+                                }
+                          }
                           onMouseLeave={scheduleAttachmentPromptClose}
                         >
                           {segment.text}

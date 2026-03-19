@@ -428,6 +428,48 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
+  it('copies a generic composer link prompt without marking it as a raw attachment url', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const messageInput = document.createElement('textarea');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('github.com');
+
+      return useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu: vi.fn(),
+        messageInputRef: { current: messageInput },
+        message,
+        setMessage,
+      });
+    });
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: 'https://github.com/',
+        pastedText: 'github.com',
+        rangeStart: 0,
+        rangeEnd: 10,
+      });
+    });
+
+    messageInput.value = 'github.com';
+
+    await act(async () => {
+      await result.current.handleCopyAttachmentPastePromptLink();
+    });
+
+    expect(writeText).toHaveBeenCalledWith('https://github.com/');
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
+    expect(result.current.rawAttachmentUrl).toBeNull();
+    expect(messageInput.selectionStart).toBe(10);
+    expect(messageInput.selectionEnd).toBe(10);
+  });
+
   it('uses a collapsed selection when the composer provides a clicked caret position', async () => {
     const messageInput = document.createElement('textarea');
 

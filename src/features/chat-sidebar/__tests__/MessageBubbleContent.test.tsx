@@ -159,6 +159,45 @@ describe('MessageBubbleContent', () => {
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
+  it('renders bare domains without a path as hyperlinks', () => {
+    const url = 'github.com';
+
+    render(
+      <MessageBubbleContent
+        message={buildMessage({
+          message: url,
+          message_type: 'text',
+        })}
+        resolvedMessageUrl={null}
+        isSelectionMode={false}
+        isImageMessage={false}
+        isFileMessage={false}
+        isImageFileMessage={false}
+        isPdfFileMessage={false}
+        hasAttachmentCaption={false}
+        fileName={null}
+        fileSecondaryLabel={null}
+        fileIcon={<span />}
+        resolvedPdfPreviewUrl={null}
+        pdfMetaLabel={null}
+        highlightedMessage={renderHighlightedText(url, '', {
+          linkify: true,
+        })}
+        highlightedCaption=""
+        hasLeadingEllipsis={false}
+        hasTrailingEllipsis={false}
+        isMessageLong={false}
+        isExpanded={false}
+        isHighlightedBubble={false}
+        onToggleExpand={() => {}}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: url });
+
+    expect(link.getAttribute('href')).toBe(`https://${url}/`);
+  });
+
   it('renders attachment caption urls as hyperlinks', () => {
     const url = 'https://example.com/report';
 

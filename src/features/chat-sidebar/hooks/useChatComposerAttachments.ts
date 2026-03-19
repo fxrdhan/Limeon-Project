@@ -26,6 +26,7 @@ import {
   fetchAttachmentComposerRemoteFile,
 } from '../utils/composer-attachment-link';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
+import type { ComposerPromptableLink } from '../models';
 
 interface UseChatComposerAttachmentsProps {
   editingMessageId: string | null;
@@ -37,6 +38,7 @@ interface UseChatComposerAttachmentsProps {
 
 interface AttachmentPastePromptState {
   id: string;
+  isAttachmentCandidate: boolean;
   url: string;
   pastedText: string;
   rangeStart: number;
@@ -48,7 +50,13 @@ interface PastedAttachmentCandidate {
   url: string;
 }
 
-interface HoverableAttachmentCandidate extends AttachmentPastePromptState {}
+interface HoverableAttachmentCandidate {
+  id: string;
+  url: string;
+  pastedText: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
 
 export const useChatComposerAttachments = ({
   editingMessageId,
@@ -191,7 +199,11 @@ export const useChatComposerAttachments = ({
 
   const dismissAttachmentPastePrompt = useCallback(
     (preserveRawLink = false) => {
-      if (attachmentPastePrompt && preserveRawLink) {
+      if (
+        attachmentPastePrompt &&
+        attachmentPastePrompt.isAttachmentCandidate &&
+        preserveRawLink
+      ) {
         setRawAttachmentUrl(attachmentPastePrompt.url);
       }
 
@@ -563,7 +575,7 @@ export const useChatComposerAttachments = ({
   );
 
   const handleUseAttachmentPasteAsUrl = useCallback(() => {
-    if (!attachmentPastePrompt) return;
+    if (!attachmentPastePrompt?.isAttachmentCandidate) return;
 
     setRawAttachmentUrl(attachmentPastePrompt.url);
     dismissAttachmentPastePrompt();
@@ -628,7 +640,7 @@ export const useChatComposerAttachments = ({
   ]);
 
   const handleUseAttachmentPasteAsAttachment = useCallback(() => {
-    if (!attachmentPastePrompt) return;
+    if (!attachmentPastePrompt?.isAttachmentCandidate) return;
 
     const promptState = attachmentPastePrompt;
     const restoreCandidateIndex = pastedAttachmentCandidates.findIndex(
@@ -732,6 +744,7 @@ export const useChatComposerAttachments = ({
 
       setAttachmentPastePrompt({
         id: resolvedCandidate.id,
+        isAttachmentCandidate: true,
         url: resolvedCandidate.url,
         pastedText: resolvedCandidate.pastedText,
         rangeStart: resolvedCandidate.rangeStart,
@@ -740,6 +753,17 @@ export const useChatComposerAttachments = ({
     },
     [hoverableAttachmentCandidates]
   );
+
+  const openComposerLinkPrompt = useCallback((link: ComposerPromptableLink) => {
+    setAttachmentPastePrompt({
+      id: `composer_link_prompt_${link.rangeStart}_${link.rangeEnd}`,
+      isAttachmentCandidate: false,
+      url: link.url,
+      pastedText: link.pastedText,
+      rangeStart: link.rangeStart,
+      rangeEnd: link.rangeEnd,
+    });
+  }, []);
 
   useEffect(() => {
     if (!isAttachModalOpen) return;
@@ -819,6 +843,8 @@ export const useChatComposerAttachments = ({
     isLoadingAttachmentComposerAttachments:
       loadingComposerAttachments.length > 0,
     attachmentPastePromptUrl: attachmentPastePrompt?.url ?? null,
+    isAttachmentPastePromptAttachmentCandidate:
+      attachmentPastePrompt?.isAttachmentCandidate ?? false,
     hoverableAttachmentCandidates,
     hoverableAttachmentUrl,
     rawAttachmentUrl,
@@ -836,6 +862,7 @@ export const useChatComposerAttachments = ({
     clearAttachmentPasteState,
     dismissAttachmentPastePrompt,
     openAttachmentPastePrompt,
+    openComposerLinkPrompt,
     handleEditAttachmentLink,
     handleOpenAttachmentPastePromptLink,
     handleCopyAttachmentPastePromptLink,

@@ -174,6 +174,8 @@ export const useChatSidebarController = ({
     attachments: {
       isAttachModalOpen: runtime.composer.isAttachModalOpen,
       attachmentPastePromptUrl: runtime.composer.attachmentPastePromptUrl,
+      isAttachmentPastePromptAttachmentCandidate:
+        runtime.composer.isAttachmentPastePromptAttachmentCandidate,
       hoverableAttachmentCandidates:
         runtime.composer.hoverableAttachmentCandidates,
       hoverableAttachmentUrl: runtime.composer.hoverableAttachmentUrl,
@@ -216,6 +218,7 @@ export const useChatSidebarController = ({
       onDismissAttachmentPastePrompt:
         runtime.composer.dismissAttachmentPastePrompt,
       onOpenAttachmentPastePrompt: runtime.composer.openAttachmentPastePrompt,
+      onOpenComposerLinkPrompt: runtime.composer.openComposerLinkPrompt,
       onEditAttachmentLink: runtime.composer.handleEditAttachmentLink,
       onOpenAttachmentPastePromptLink:
         runtime.composer.handleOpenAttachmentPastePromptLink,

@@ -83,6 +83,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
   attachments: {
     isAttachModalOpen: false,
     attachmentPastePromptUrl: null,
+    isAttachmentPastePromptAttachmentCandidate: false,
     hoverableAttachmentCandidates: [
       {
         id: 'candidate-1',
@@ -132,6 +133,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
     onPaste: vi.fn(),
     onDismissAttachmentPastePrompt: vi.fn(),
     onOpenAttachmentPastePrompt: vi.fn(),
+    onOpenComposerLinkPrompt: vi.fn(),
     onEditAttachmentLink: vi.fn(),
     onOpenAttachmentPastePromptLink: vi.fn(),
     onCopyAttachmentPastePromptLink: vi.fn(),
@@ -222,6 +224,7 @@ describe('ComposerPanel', () => {
     const model = buildComposerModel();
     model.attachments.attachmentPastePromptUrl =
       'https://shrtlink.works/bwdrrk3ugm';
+    model.attachments.isAttachmentPastePromptAttachmentCandidate = true;
 
     render(<ComposerPanel model={model} />);
 
@@ -260,5 +263,64 @@ describe('ComposerPanel', () => {
     expect(
       model.actions.onCopyAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
+  });
+
+  it('renders plain message domains without a protocol as inline links', () => {
+    const model = buildComposerModel();
+    model.state.message = 'github.com';
+    model.attachments.hoverableAttachmentCandidates = [];
+
+    render(<ComposerPanel model={model} />);
+
+    const link = screen.getByRole('link', {
+      name: 'github.com',
+    });
+
+    expect(link.getAttribute('href')).toBe('https://github.com/');
+
+    fireEvent.mouseEnter(link);
+
+    expect(model.actions.onOpenComposerLinkPrompt).toHaveBeenCalledWith({
+      url: 'https://github.com/',
+      pastedText: 'github.com',
+      rangeStart: 0,
+      rangeEnd: 10,
+    });
+    expect(model.actions.onOpenAttachmentPastePrompt).not.toHaveBeenCalled();
+  });
+
+  it('renders the generic link popover without paste-as actions', () => {
+    const model = buildComposerModel();
+    model.state.message = 'github.com';
+    model.attachments.hoverableAttachmentCandidates = [];
+    model.attachments.attachmentPastePromptUrl = 'https://github.com/';
+
+    render(<ComposerPanel model={model} />);
+
+    const link = screen.getByRole('link', {
+      name: 'github.com',
+    });
+    Object.defineProperty(link, 'getBoundingClientRect', {
+      value: () => ({
+        x: 24,
+        y: 48,
+        width: 120,
+        height: 20,
+        top: 48,
+        right: 144,
+        bottom: 68,
+        left: 24,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent.mouseEnter(link);
+
+    expect(screen.getByText('Aksi')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
+    expect(screen.queryByText('Tempel sebagai')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'URL' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Attachment' })).toBeNull();
   });
 });
