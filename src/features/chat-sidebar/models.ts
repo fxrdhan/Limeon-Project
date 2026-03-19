@@ -21,6 +21,14 @@ import type {
   PendingComposerAttachment,
 } from './types';
 
+export interface ComposerHoverableEmbeddedLinkCandidate {
+  id: string;
+  url: string;
+  pastedText: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
 export interface ChatHeaderModel {
   targetUser?: ChatSidebarPanelTargetUser;
   displayTargetPhotoUrl: string | null;
@@ -184,6 +192,9 @@ export interface ComposerPanelModel {
   };
   attachments: {
     isAttachModalOpen: boolean;
+    embeddedLinkPastePromptUrl: string | null;
+    hoverableEmbeddedLinkCandidates: ComposerHoverableEmbeddedLinkCandidate[];
+    hoverableEmbeddedLinkUrl: string | null;
     pendingComposerAttachments: ComposerAttachmentPreviewItem[];
     previewComposerImageAttachment: PendingComposerAttachment | undefined;
     isComposerImageExpanded: boolean;
@@ -205,6 +216,7 @@ export interface ComposerPanelModel {
     composerContainerRef: RefObject<HTMLDivElement | null>;
     attachButtonRef: RefObject<HTMLButtonElement | null>;
     attachModalRef: RefObject<HTMLDivElement | null>;
+    embeddedLinkPastePromptRef: RefObject<HTMLDivElement | null>;
     imageInputRef: RefObject<HTMLInputElement | null>;
     documentInputRef: RefObject<HTMLInputElement | null>;
     audioInputRef: RefObject<HTMLInputElement | null>;
@@ -215,6 +227,12 @@ export interface ComposerPanelModel {
     onMessageChange: (nextMessage: string) => void;
     onKeyDown: (e: ReactKeyboardEvent) => void;
     onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
+    onDismissEmbeddedLinkPastePrompt: () => void;
+    onOpenEmbeddedLinkPastePrompt: (
+      candidate?: ComposerHoverableEmbeddedLinkCandidate
+    ) => void;
+    onUseEmbeddedLinkPasteAsUrl: () => void;
+    onUseEmbeddedLinkPasteAsEmbed: () => void;
     onSendMessage: () => void;
     onAttachButtonClick: () => void;
     onAttachImageClick: (replaceAttachmentId?: string) => void;

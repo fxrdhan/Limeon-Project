@@ -41,6 +41,7 @@ const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
 };
 const PDF_MIME_TYPE = 'application/pdf';
 const GOOGLE_DRIVE_HOSTNAMES = new Set(['drive.google.com']);
+const CHAT_SHARED_LINK_HOSTNAMES = new Set(['shrtlink.works']);
 const PDF_SIGNATURE = '%PDF-';
 const PDF_TITLE_PATTERN = /\/Title\s*\((.*?)\)/s;
 
@@ -128,8 +129,22 @@ const extractGoogleDriveFileId = (url: string) => {
   }
 };
 
+const isChatSharedLinkUrl = (url: string) => {
+  try {
+    const parsedUrl = new URL(url);
+    if (!CHAT_SHARED_LINK_HOSTNAMES.has(parsedUrl.hostname.toLowerCase())) {
+      return false;
+    }
+
+    const normalizedPath = parsedUrl.pathname.replace(/^\/+|\/+$/g, '');
+    return normalizedPath.length > 0 && !normalizedPath.startsWith('api/');
+  } catch {
+    return false;
+  }
+};
+
 const isKnownEmbeddedRemoteAssetUrl = (url: string) =>
-  extractGoogleDriveFileId(url) !== null;
+  extractGoogleDriveFileId(url) !== null || isChatSharedLinkUrl(url);
 
 const hasSupportedDirectAssetExtension = (url: string) => {
   const extension = resolveEmbeddedExtension(null, url, '');

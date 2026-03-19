@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { fetchEmbeddedComposerRemoteFile } from '../utils/composer-embedded-link';
+import {
+  extractEmbeddedComposerLinkFromMessageText,
+  fetchEmbeddedComposerRemoteFile,
+} from '../utils/composer-embedded-link';
 
 const { mockRemoteAssetService } = vi.hoisted(() => ({
   mockRemoteAssetService: {
@@ -14,6 +17,17 @@ vi.mock('@/services/api/chat/remote-asset.service', () => ({
 describe('composer-embedded-link', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('recognizes chat shared links as embedded asset candidates', () => {
+    expect(
+      extractEmbeddedComposerLinkFromMessageText(
+        'https://shrtlink.works/bwdrrk3ugm'
+      )
+    ).toEqual({
+      source: 'direct-url',
+      url: 'https://shrtlink.works/bwdrrk3ugm',
+    });
   });
 
   it('infers google drive pdf files from binary responses without filename headers', async () => {

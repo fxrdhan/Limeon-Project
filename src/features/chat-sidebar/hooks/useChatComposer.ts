@@ -51,22 +51,32 @@ export const useChatComposer = ({
     editingMessageId,
     closeMessageMenu,
     messageInputRef,
+    message,
+    setMessage,
   });
   const {
     isAttachModalOpen,
     pendingComposerAttachments,
     loadingComposerAttachments,
     isLoadingEmbeddedComposerAttachments,
+    embeddedLinkPastePromptUrl,
+    hoverableEmbeddedLinkCandidates,
+    hoverableEmbeddedLinkUrl,
+    rawEmbeddedLinkUrl,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     attachButtonRef,
     attachModalRef,
+    embeddedLinkPastePromptRef,
     imageInputRef,
     documentInputRef,
     audioInputRef,
     pendingImagePreviewUrlsRef,
     closeAttachModal,
+    clearEmbeddedLinkPasteState,
+    dismissEmbeddedLinkPastePrompt,
+    openEmbeddedLinkPastePrompt,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,
@@ -75,6 +85,8 @@ export const useChatComposer = ({
     handleDocumentFileChange,
     handleAudioFileChange,
     handleComposerPaste,
+    handleUseEmbeddedLinkPasteAsUrl,
+    handleUseEmbeddedLinkPasteAsEmbed,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,
@@ -121,8 +133,24 @@ export const useChatComposer = ({
     setEditingMessageId(null);
     inlineOverflowThresholdRef.current = null;
     setIsSendSuccessGlowVisible(false);
+    clearEmbeddedLinkPasteState();
     clearPendingComposerAttachments();
-  }, [clearPendingComposerAttachments, closeAttachModal]);
+  }, [
+    clearEmbeddedLinkPasteState,
+    clearPendingComposerAttachments,
+    closeAttachModal,
+  ]);
+
+  const handleMessageChange = useCallback(
+    (nextMessage: string) => {
+      if (embeddedLinkPastePromptUrl) {
+        dismissEmbeddedLinkPastePrompt();
+      }
+
+      setMessage(nextMessage);
+    },
+    [dismissEmbeddedLinkPastePrompt, embeddedLinkPastePromptUrl]
+  );
 
   const resizeMessageInput = useCallback(
     (value: string) => {
@@ -221,6 +249,11 @@ export const useChatComposer = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (message.length > 0) return;
+    clearEmbeddedLinkPasteState();
+  }, [clearEmbeddedLinkPasteState, message]);
+
   useLayoutEffect(() => {
     const nextMode = isTargetMultiline ? 'multiline' : 'inline';
     setComposerLayoutMode(previousMode =>
@@ -240,6 +273,10 @@ export const useChatComposer = ({
     pendingComposerAttachments,
     loadingComposerAttachments,
     isLoadingEmbeddedComposerAttachments,
+    embeddedLinkPastePromptUrl,
+    hoverableEmbeddedLinkCandidates,
+    hoverableEmbeddedLinkUrl,
+    rawEmbeddedLinkUrl,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
@@ -247,11 +284,15 @@ export const useChatComposer = ({
     composerContextualOffset,
     attachButtonRef,
     attachModalRef,
+    embeddedLinkPastePromptRef,
     imageInputRef,
     documentInputRef,
     audioInputRef,
     pendingImagePreviewUrlsRef,
     closeAttachModal,
+    clearEmbeddedLinkPasteState,
+    dismissEmbeddedLinkPastePrompt,
+    openEmbeddedLinkPastePrompt,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,
@@ -260,12 +301,15 @@ export const useChatComposer = ({
     handleDocumentFileChange,
     handleAudioFileChange,
     handleComposerPaste,
+    handleUseEmbeddedLinkPasteAsUrl,
+    handleUseEmbeddedLinkPasteAsEmbed,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
+    handleMessageChange,
     triggerSendSuccessGlow,
   };
 };

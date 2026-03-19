@@ -79,6 +79,7 @@ opencode.json
 
 # Playwright MCP snapshots (auto-generated logs)
 .playwright-mcp/
+.playwright-cli/
 
 # others
 image.png

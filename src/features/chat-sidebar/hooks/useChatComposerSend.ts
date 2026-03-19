@@ -37,6 +37,7 @@ interface UseChatComposerSendProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
+  rawEmbeddedLinkUrl: string | null;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
   restorePendingComposerAttachments: (
@@ -57,6 +58,7 @@ export const useChatComposerSend = ({
   message,
   setMessage,
   editingMessageId,
+  rawEmbeddedLinkUrl,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
   restorePendingComposerAttachments,
@@ -208,9 +210,12 @@ export const useChatComposerSend = ({
     const hasPendingAttachments = pendingComposerAttachments.length > 0;
     const attachmentsToSend = [...pendingComposerAttachments];
     const messageText = message.trim();
-    const embeddedLink = hasPendingAttachments
-      ? null
-      : extractEmbeddedComposerLinkFromMessageText(messageText);
+    const embeddedLink =
+      hasPendingAttachments ||
+      ((rawEmbeddedLinkUrl?.trim().length ?? 0) > 0 &&
+        rawEmbeddedLinkUrl?.trim() === messageText)
+        ? null
+        : extractEmbeddedComposerLinkFromMessageText(messageText);
 
     if (!hasPendingAttachments && !messageText) {
       return;
@@ -290,6 +295,7 @@ export const useChatComposerSend = ({
     isCurrentConversationScopeActive,
     message,
     pendingComposerAttachments,
+    rawEmbeddedLinkUrl,
     restorePendingComposerAttachments,
     sendEmbeddedLinkMessage,
     sendFileMessage,

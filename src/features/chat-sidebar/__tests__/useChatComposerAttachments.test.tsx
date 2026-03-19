@@ -1,5 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ClipboardEvent as ReactClipboardEvent } from 'react';
+import type {
+  ClipboardEvent as ReactClipboardEvent,
+  Dispatch,
+  SetStateAction,
+} from 'react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { useChatComposerAttachments } from '../hooks/useChatComposerAttachments';
 
@@ -35,6 +40,40 @@ vi.mock('../utils/composer-embedded-link', async () => {
   };
 });
 
+const buildComposerPasteEvent = ({
+  html = '',
+  text = '',
+  textareaValue = '',
+  selectionStart = textareaValue.length,
+  selectionEnd = selectionStart,
+  preventDefault = vi.fn(),
+}: {
+  html?: string;
+  text?: string;
+  textareaValue?: string;
+  selectionStart?: number;
+  selectionEnd?: number;
+  preventDefault?: ReturnType<typeof vi.fn>;
+}) => {
+  const textarea = document.createElement('textarea');
+  textarea.value = textareaValue;
+  textarea.selectionStart = selectionStart;
+  textarea.selectionEnd = selectionEnd;
+
+  return {
+    preventDefault,
+    currentTarget: textarea,
+    clipboardData: {
+      items: [],
+      getData: (format: string) => {
+        if (format === 'text/html') return html;
+        if (format === 'text/plain') return text;
+        return '';
+      },
+    },
+  } as unknown as ReactClipboardEvent<HTMLTextAreaElement>;
+};
+
 describe('useChatComposerAttachments', () => {
   let revokeObjectURL: ReturnType<typeof vi.fn>;
 
@@ -66,13 +105,17 @@ describe('useChatComposerAttachments', () => {
   });
 
   it('revokes queued attachment preview urls on unmount', () => {
-    const { result, unmount } = renderHook(() =>
-      useChatComposerAttachments({
+    const { result, unmount } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return useChatComposerAttachments({
         editingMessageId: null,
         closeMessageMenu: vi.fn(),
         messageInputRef: { current: null },
-      })
-    );
+        message,
+        setMessage,
+      });
+    });
 
     act(() => {
       result.current.queueComposerImage(
@@ -88,13 +131,17 @@ describe('useChatComposerAttachments', () => {
   });
 
   it('rebuilds image previews when restoring pending attachments', () => {
-    const { result } = renderHook(() =>
-      useChatComposerAttachments({
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return useChatComposerAttachments({
         editingMessageId: null,
         closeMessageMenu: vi.fn(),
         messageInputRef: { current: null },
-      })
-    );
+        message,
+        setMessage,
+      });
+    });
 
     const restoredAttachment = {
       id: 'pending-image-1',
@@ -121,55 +168,103 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
-  it('converts pasted embedded image html into a queued image attachment', async () => {
+  it('pastes an embedded link as raw url first and waits for the user choice', async () => {
     const closeMessageMenu = vi.fn();
     const preventDefault = vi.fn();
-    mockFetchEmbeddedComposerRemoteFile.mockResolvedValue({
-      file: new File(['image'], 'receipt.png', { type: 'image/png' }),
-      fileKind: 'image',
-      sourceUrl: 'https://example.com/embed/receipt',
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu,
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
     });
 
-    const { result } = renderHook(() =>
-      useChatComposerAttachments({
-        editingMessageId: null,
-        closeMessageMenu,
-        messageInputRef: { current: null },
-      })
-    );
+    const pasteEvent = buildComposerPasteEvent({
+      html: '<img src="https://example.com/embed/receipt" />',
+      preventDefault,
+    });
 
     act(() => {
-      result.current.handleComposerPaste({
-        preventDefault,
-        clipboardData: {
-          items: [],
-          getData: (format: string) =>
-            format === 'text/html'
-              ? '<img src="https://example.com/embed/receipt" />'
-              : '',
-        },
-      } as unknown as ReactClipboardEvent<HTMLTextAreaElement>);
+      result.current.handleComposerPaste(pasteEvent);
     });
 
     await waitFor(() => {
-      expect(result.current.pendingComposerAttachments).toHaveLength(1);
-      expect(result.current.pendingComposerAttachments[0]).toEqual(
-        expect.objectContaining({
-          fileKind: 'image',
-          fileName: 'receipt.png',
-          mimeType: 'image/png',
-          previewUrl: 'blob:queued-image-preview',
-        })
+      expect(result.current.message).toBe('https://example.com/embed/receipt');
+      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+        'https://example.com/embed/receipt'
       );
     });
 
+    expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
+    expect(result.current.pendingComposerAttachments).toEqual([]);
+    expect(result.current.loadingComposerAttachments).toEqual([]);
+    expect(mockFetchEmbeddedComposerRemoteFile).not.toHaveBeenCalled();
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
   });
 
-  it('converts a pasted direct image url into a queued image attachment', async () => {
-    const closeMessageMenu = vi.fn();
-    const preventDefault = vi.fn();
+  it('keeps the pasted link as raw url when the user chooses URL', async () => {
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        setMessage,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://example.com/embed/receipt.png',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+        'https://example.com/embed/receipt.png'
+      );
+    });
+
+    act(() => {
+      result.current.openEmbeddedLinkPastePrompt();
+    });
+
+    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+      'https://example.com/embed/receipt.png'
+    );
+
+    act(() => {
+      result.current.handleUseEmbeddedLinkPasteAsUrl();
+    });
+
+    expect(result.current.message).toBe(
+      'https://example.com/embed/receipt.png'
+    );
+    expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
+    expect(result.current.rawEmbeddedLinkUrl).toBe(
+      'https://example.com/embed/receipt.png'
+    );
+    expect(result.current.pendingComposerAttachments).toEqual([]);
+  });
+
+  it('queues a pasted direct image url as an attachment after the user chooses Embed', async () => {
     let resolveRemoteAsset:
       | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
       | undefined;
@@ -180,31 +275,52 @@ describe('useChatComposerAttachments', () => {
         })
     );
 
-    const { result } = renderHook(() =>
-      useChatComposerAttachments({
-        editingMessageId: null,
-        closeMessageMenu,
-        messageInputRef: { current: null },
-      })
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        setMessage,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe(
+        'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
+      );
+      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+        'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
+      );
+    });
+
+    act(() => {
+      result.current.openEmbeddedLinkPastePrompt();
+    });
+
+    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+      'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
     );
 
     act(() => {
-      result.current.handleComposerPaste({
-        preventDefault,
-        clipboardData: {
-          items: [],
-          getData: (format: string) =>
-            format === 'text/plain'
-              ? 'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
-              : '',
-        },
-      } as unknown as ReactClipboardEvent<HTMLTextAreaElement>);
+      result.current.handleUseEmbeddedLinkPasteAsEmbed();
     });
 
-    await act(async () => {
-      await Promise.resolve();
-    });
-
+    expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
     expect(result.current.loadingComposerAttachments).toEqual([
       expect.objectContaining({
         fileName: 'Ubuntu-25.10-Questing-Quokka.jpg',
@@ -212,7 +328,9 @@ describe('useChatComposerAttachments', () => {
       }),
     ]);
     expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(true);
-    expect(result.current.pendingComposerAttachments).toHaveLength(0);
+    expect(result.current.message).toBe(
+      'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
+    );
 
     await act(async () => {
       resolveRemoteAsset?.({
@@ -236,15 +354,11 @@ describe('useChatComposerAttachments', () => {
           previewUrl: 'blob:queued-image-preview',
         })
       );
+      expect(result.current.message).toBe('');
     });
-
-    expect(preventDefault).toHaveBeenCalledOnce();
-    expect(closeMessageMenu).toHaveBeenCalledOnce();
   });
 
-  it('converts a pasted google drive pdf url into a queued document attachment', async () => {
-    const closeMessageMenu = vi.fn();
-    const preventDefault = vi.fn();
+  it('queues a pasted google drive pdf url as a document after the user chooses Embed', async () => {
     let resolveRemoteAsset:
       | ((value: {
           file: File;
@@ -259,29 +373,45 @@ describe('useChatComposerAttachments', () => {
         })
     );
 
-    const { result } = renderHook(() =>
-      useChatComposerAttachments({
-        editingMessageId: null,
-        closeMessageMenu,
-        messageInputRef: { current: null },
-      })
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+        'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
+      );
+    });
+
+    act(() => {
+      result.current.openEmbeddedLinkPastePrompt();
+    });
+
+    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+      'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
     );
 
     act(() => {
-      result.current.handleComposerPaste({
-        preventDefault,
-        clipboardData: {
-          items: [],
-          getData: (format: string) =>
-            format === 'text/plain'
-              ? 'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
-              : '',
-        },
-      } as unknown as ReactClipboardEvent<HTMLTextAreaElement>);
-    });
-
-    await act(async () => {
-      await Promise.resolve();
+      result.current.handleUseEmbeddedLinkPasteAsEmbed();
     });
 
     expect(result.current.loadingComposerAttachments).toEqual([
@@ -290,7 +420,6 @@ describe('useChatComposerAttachments', () => {
         status: 'loading',
       }),
     ]);
-    expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(true);
     expect(result.current.pendingComposerAttachments).toHaveLength(0);
 
     await act(async () => {
@@ -315,9 +444,110 @@ describe('useChatComposerAttachments', () => {
           previewUrl: null,
         })
       );
+      expect(result.current.message).toBe('');
+    });
+  });
+
+  it('treats a pasted chat shared link as an embedded link candidate', async () => {
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
     });
 
-    expect(preventDefault).toHaveBeenCalledOnce();
-    expect(closeMessageMenu).toHaveBeenCalledOnce();
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://shrtlink.works/bwdrrk3ugm',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('https://shrtlink.works/bwdrrk3ugm');
+      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+        'https://shrtlink.works/bwdrrk3ugm'
+      );
+    });
+  });
+
+  it('tracks multiple pasted embedded links in the same draft', async () => {
+    const firstLink = 'https://shrtlink.works/bwdrrk3ugm';
+    const secondLink =
+      'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing';
+    const separator = ' dan ';
+    let setMessageRef: Dispatch<SetStateAction<string>> | null = null;
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+      setMessageRef = setMessage;
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: firstLink,
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe(firstLink);
+      expect(result.current.hoverableEmbeddedLinkCandidates).toHaveLength(1);
+    });
+
+    act(() => {
+      setMessageRef?.(`${result.current.message}${separator}`);
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: secondLink,
+          textareaValue: `${firstLink}${separator}`,
+          selectionStart: `${firstLink}${separator}`.length,
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableEmbeddedLinkCandidates).toHaveLength(2);
+      expect(result.current.hoverableEmbeddedLinkUrl).toBeNull();
+      expect(
+        result.current.hoverableEmbeddedLinkCandidates.map(candidate => ({
+          url: candidate.url,
+          rangeStart: candidate.rangeStart,
+        }))
+      ).toEqual([
+        {
+          url: firstLink,
+          rangeStart: 0,
+        },
+        {
+          url: secondLink,
+          rangeStart: `${firstLink}${separator}`.length,
+        },
+      ]);
+    });
   });
 });

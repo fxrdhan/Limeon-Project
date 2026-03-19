@@ -1,5 +1,11 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
@@ -22,13 +28,104 @@ import {
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
-import type { ComposerPanelModel } from '../models';
+import type {
+  ComposerHoverableEmbeddedLinkCandidate,
+  ComposerPanelModel,
+} from '../models';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
 import ComposerEditBanner from './composer/ComposerEditBanner';
 
+interface ComposerLinkOverlaySegment {
+  candidate: ComposerHoverableEmbeddedLinkCandidate | null;
+  key: string;
+  text: string;
+}
+
+const buildComposerLinkOverlaySegments = ({
+  candidates,
+  message,
+}: {
+  candidates: ComposerHoverableEmbeddedLinkCandidate[];
+  message: string;
+}) => {
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  const sortedCandidates = [...candidates].sort(
+    (leftCandidate, rightCandidate) =>
+      leftCandidate.rangeStart - rightCandidate.rangeStart
+  );
+  const segments: ComposerLinkOverlaySegment[] = [];
+  let currentIndex = 0;
+
+  for (const candidate of sortedCandidates) {
+    if (candidate.rangeStart > currentIndex) {
+      segments.push({
+        candidate: null,
+        key: `text_${currentIndex}_${candidate.rangeStart}`,
+        text: message.slice(currentIndex, candidate.rangeStart),
+      });
+    }
+
+    segments.push({
+      candidate,
+      key: candidate.id,
+      text: message.slice(candidate.rangeStart, candidate.rangeEnd),
+    });
+    currentIndex = candidate.rangeEnd;
+  }
+
+  if (currentIndex < message.length) {
+    segments.push({
+      candidate: null,
+      key: `text_${currentIndex}_${message.length}`,
+      text: message.slice(currentIndex),
+    });
+  }
+
+  return segments;
+};
+
 const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
   const { state, attachments, documentPreview, refs, actions } = model;
+  const embeddedLinkPromptCloseTimerRef = useRef<number | null>(null);
+  const shouldRenderComposerLinkOverlay =
+    attachments.hoverableEmbeddedLinkCandidates.length > 0;
+  const composerLinkOverlaySegments = buildComposerLinkOverlaySegments({
+    candidates: attachments.hoverableEmbeddedLinkCandidates,
+    message: state.message,
+  });
+
+  const clearEmbeddedLinkPromptCloseTimer = useCallback(() => {
+    if (embeddedLinkPromptCloseTimerRef.current === null) return;
+
+    window.clearTimeout(embeddedLinkPromptCloseTimerRef.current);
+    embeddedLinkPromptCloseTimerRef.current = null;
+  }, []);
+
+  const scheduleEmbeddedLinkPromptClose = useCallback(() => {
+    clearEmbeddedLinkPromptCloseTimer();
+    embeddedLinkPromptCloseTimerRef.current = window.setTimeout(() => {
+      actions.onDismissEmbeddedLinkPastePrompt();
+      embeddedLinkPromptCloseTimerRef.current = null;
+    }, 90);
+  }, [actions, clearEmbeddedLinkPromptCloseTimer]);
+
+  const handleComposerLinkClick = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      refs.messageInputRef.current?.focus();
+    },
+    [refs.messageInputRef]
+  );
+
+  useEffect(() => {
+    return () => {
+      clearEmbeddedLinkPromptCloseTimer();
+    };
+  }, [clearEmbeddedLinkPromptCloseTimer]);
 
   const contextualPanelTransition = {
     duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
@@ -165,6 +262,43 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 )
               : null}
 
+            <AnimatePresence>
+              {attachments.embeddedLinkPastePromptUrl ? (
+                <PopupMenuPopover
+                  isOpen
+                  className="absolute bottom-[calc(100%+10px)] left-0 z-20"
+                >
+                  <div
+                    ref={refs.embeddedLinkPastePromptRef}
+                    className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-1 py-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
+                    onClick={event => event.stopPropagation()}
+                    onMouseEnter={clearEmbeddedLinkPromptCloseTimer}
+                    onMouseLeave={scheduleEmbeddedLinkPromptClose}
+                    role="dialog"
+                    aria-label="Pilih cara menempel link"
+                  >
+                    <div className="px-3 pb-1.5 pt-2 text-[11px] font-medium uppercase tracking-[0.08em] text-slate-500">
+                      Tempel sebagai
+                    </div>
+                    <button
+                      type="button"
+                      onClick={actions.onUseEmbeddedLinkPasteAsUrl}
+                      className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                    >
+                      URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={actions.onUseEmbeddedLinkPasteAsEmbed}
+                      className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                    >
+                      Embed
+                    </button>
+                  </div>
+                </PopupMenuPopover>
+              ) : null}
+            </AnimatePresence>
+
             <motion.div
               layout
               transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
@@ -174,23 +308,60 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   : 'grid-rows-[auto] gap-y-0 items-center'
               }`}
             >
-              <motion.textarea
+              <motion.div
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                ref={refs.messageInputRef}
-                value={state.message}
-                onChange={event => actions.onMessageChange(event.target.value)}
-                onKeyDown={actions.onKeyDown}
-                onPaste={actions.onPaste}
-                placeholder="Tulis pesan..."
-                rows={1}
-                style={{ height: `${state.messageInputHeight}px` }}
-                className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`relative min-w-0 ${
                   state.isMessageInputMultiline
                     ? 'col-span-3 row-start-1 self-start'
                     : 'col-start-2 row-start-1 self-center'
                 }`}
-              />
+              >
+                {shouldRenderComposerLinkOverlay ? (
+                  <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden whitespace-pre-wrap break-words text-[15px] leading-[22px] text-slate-900">
+                    {composerLinkOverlaySegments.map(segment =>
+                      segment.candidate ? (
+                        <a
+                          key={segment.key}
+                          href={segment.candidate.url}
+                          className="pointer-events-auto cursor-pointer text-slate-900 underline-offset-2 transition-colors hover:text-sky-700 hover:underline"
+                          onClick={handleComposerLinkClick}
+                          onMouseEnter={() => {
+                            clearEmbeddedLinkPromptCloseTimer();
+                            actions.onOpenEmbeddedLinkPastePrompt(
+                              segment.candidate ?? undefined
+                            );
+                          }}
+                          onMouseLeave={scheduleEmbeddedLinkPromptClose}
+                        >
+                          {segment.text}
+                        </a>
+                      ) : (
+                        <span key={segment.key}>{segment.text}</span>
+                      )
+                    )}
+                  </div>
+                ) : null}
+                <motion.textarea
+                  layout="position"
+                  transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                  ref={refs.messageInputRef}
+                  value={state.message}
+                  onChange={event =>
+                    actions.onMessageChange(event.target.value)
+                  }
+                  onKeyDown={actions.onKeyDown}
+                  onPaste={actions.onPaste}
+                  placeholder="Tulis pesan..."
+                  rows={1}
+                  style={{ height: `${state.messageInputHeight}px` }}
+                  className={`w-full resize-none bg-transparent border-0 p-0 text-[15px] leading-[22px] placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    shouldRenderComposerLinkOverlay
+                      ? 'relative z-0 text-transparent caret-slate-900'
+                      : 'text-slate-900'
+                  }`}
+                />
+              </motion.div>
               <motion.button
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}

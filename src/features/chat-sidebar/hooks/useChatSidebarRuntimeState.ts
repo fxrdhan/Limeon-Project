@@ -67,6 +67,7 @@ export const useChatSidebarRuntimeState = ({
     message: composer.message,
     setMessage: composer.setMessage,
     editingMessageId: composer.editingMessageId,
+    rawEmbeddedLinkUrl: composer.rawEmbeddedLinkUrl,
     setEditingMessageId: composer.setEditingMessageId,
     pendingComposerAttachments: composer.pendingComposerAttachments,
     clearPendingComposerAttachments: composer.clearPendingComposerAttachments,

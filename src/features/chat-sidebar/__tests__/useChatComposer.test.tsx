@@ -126,7 +126,7 @@ describe('useChatComposer', () => {
     });
   });
 
-  it('menghapus loading attachment ketika channel berpindah saat konversi link masih berjalan', async () => {
+  it('menghapus prompt paste dan loading attachment ketika channel berpindah saat konversi embed masih berjalan', async () => {
     let resolveRemoteAsset:
       | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
       | undefined;
@@ -157,6 +157,11 @@ describe('useChatComposer', () => {
     act(() => {
       result.current.handleComposerPaste({
         preventDefault: vi.fn(),
+        currentTarget: Object.assign(document.createElement('textarea'), {
+          value: '',
+          selectionStart: 0,
+          selectionEnd: 0,
+        }),
         clipboardData: {
           items: [],
           getData: (format: string) =>
@@ -167,11 +172,30 @@ describe('useChatComposer', () => {
       } as never);
     });
 
+    await waitFor(() => {
+      expect(result.current.hoverableEmbeddedLinkUrl).toBe(
+        'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
+      );
+    });
+
+    act(() => {
+      result.current.openEmbeddedLinkPastePrompt();
+    });
+
+    expect(result.current.embeddedLinkPastePromptUrl).toBe(
+      'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
+    );
+
+    act(() => {
+      result.current.handleUseEmbeddedLinkPasteAsEmbed();
+    });
+
     rerender({ channelId: 'channel-2' });
 
     await waitFor(() => {
       expect(result.current.loadingComposerAttachments).toEqual([]);
       expect(result.current.isLoadingEmbeddedComposerAttachments).toBe(false);
+      expect(result.current.embeddedLinkPastePromptUrl).toBeNull();
     });
 
     await act(async () => {

@@ -140,9 +140,14 @@ const createPendingSendRegistry = () => {
 
 const useComposerSendWithMutationScope = ({
   messages = [],
+  rawEmbeddedLinkUrl = null,
   ...props
-}: Omit<Parameters<typeof useChatComposerSend>[0], 'mutationScope'> & {
+}: Omit<
+  Parameters<typeof useChatComposerSend>[0],
+  'mutationScope' | 'rawEmbeddedLinkUrl'
+> & {
   messages?: ChatMessage[];
+  rawEmbeddedLinkUrl?: string | null;
 }) => {
   const mutationScope = useChatMutationScope({
     user: props.user,
@@ -154,6 +159,7 @@ const useComposerSendWithMutationScope = ({
 
   return useChatComposerSend({
     ...props,
+    rawEmbeddedLinkUrl,
     mutationScope,
   });
 };
@@ -1179,6 +1185,69 @@ describe('useChatComposerSend', () => {
         file_storage_path: expect.stringMatching(
           /^images\/channel-1\/user-a_image_.+\.png$/
         ),
+      })
+    );
+  });
+
+  it('sends a pasted image url as plain text when the draft is marked to stay raw', async () => {
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-text-url',
+        message: 'https://example.com/embed/receipt.png',
+        message_type: 'text',
+        file_name: undefined,
+        file_kind: undefined,
+        file_mime_type: undefined,
+        file_storage_path: undefined,
+      }),
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState(
+        'https://example.com/embed/receipt.png'
+      );
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        rawEmbeddedLinkUrl: 'https://example.com/embed/receipt.png',
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(mockRemoteAssetService.fetchRemoteAsset).not.toHaveBeenCalled();
+    expect(mockGateway.uploadImage).not.toHaveBeenCalled();
+    expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        receiver_id: 'user-b',
+        message: 'https://example.com/embed/receipt.png',
+        message_type: 'text',
       })
     );
   });

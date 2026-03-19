@@ -1,11 +1,14 @@
 import {
+  type Dispatch,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type ClipboardEvent,
   type RefObject,
+  type SetStateAction,
 } from 'react';
 import toast from 'react-hot-toast';
 import {
@@ -27,12 +30,31 @@ interface UseChatComposerAttachmentsProps {
   editingMessageId: string | null;
   closeMessageMenu: () => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
+  message: string;
+  setMessage: Dispatch<SetStateAction<string>>;
 }
+
+interface EmbeddedLinkPastePromptState {
+  id: string;
+  url: string;
+  pastedText: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
+interface PastedEmbeddedLinkCandidate {
+  id: string;
+  url: string;
+}
+
+interface HoverableEmbeddedLinkCandidate extends EmbeddedLinkPastePromptState {}
 
 export const useChatComposerAttachments = ({
   editingMessageId,
   closeMessageMenu,
   messageInputRef,
+  message,
+  setMessage,
 }: UseChatComposerAttachmentsProps) => {
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [
@@ -45,6 +67,7 @@ export const useChatComposerAttachments = ({
 
   const attachButtonRef = useRef<HTMLButtonElement>(null);
   const attachModalRef = useRef<HTMLDivElement>(null);
+  const embeddedLinkPastePromptRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -68,12 +91,46 @@ export const useChatComposerAttachments = ({
     LoadingComposerAttachment[]
   >([]);
   const loadingComposerAttachmentsRef = useRef<LoadingComposerAttachment[]>([]);
+  const [embeddedLinkPastePrompt, setEmbeddedLinkPastePrompt] =
+    useState<EmbeddedLinkPastePromptState | null>(null);
+  const [pastedEmbeddedLinkCandidates, setPastedEmbeddedLinkCandidates] =
+    useState<PastedEmbeddedLinkCandidate[]>([]);
+  const [rawEmbeddedLinkUrl, setRawEmbeddedLinkUrl] = useState<string | null>(
+    null
+  );
 
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
       attachment.id === composerImagePreviewAttachmentId &&
       attachment.fileKind === 'image'
   );
+  const hoverableEmbeddedLinkCandidates = useMemo(() => {
+    let searchStart = 0;
+
+    return pastedEmbeddedLinkCandidates.flatMap(candidate => {
+      const rangeStart = message.indexOf(candidate.url, searchStart);
+      if (rangeStart < 0) {
+        return [];
+      }
+
+      const rangeEnd = rangeStart + candidate.url.length;
+      searchStart = rangeEnd;
+
+      return [
+        {
+          id: candidate.id,
+          url: candidate.url,
+          pastedText: candidate.url,
+          rangeStart,
+          rangeEnd,
+        } satisfies HoverableEmbeddedLinkCandidate,
+      ];
+    });
+  }, [message, pastedEmbeddedLinkCandidates]);
+  const hoverableEmbeddedLinkUrl =
+    hoverableEmbeddedLinkCandidates.length === 1
+      ? (hoverableEmbeddedLinkCandidates[0]?.url ?? null)
+      : null;
 
   useEffect(() => {
     if (previewComposerImageAttachment || !isComposerImageExpanded) return;
@@ -112,6 +169,36 @@ export const useChatComposerAttachments = ({
   const closeAttachModal = useCallback(() => {
     setIsAttachModalOpen(false);
   }, []);
+
+  const focusComposerSelection = useCallback(
+    (selectionStart: number, selectionEnd = selectionStart) => {
+      requestAnimationFrame(() => {
+        const textarea = messageInputRef.current;
+        if (!textarea) return;
+
+        textarea.focus();
+        textarea.setSelectionRange(selectionStart, selectionEnd);
+      });
+    },
+    [messageInputRef]
+  );
+
+  const clearEmbeddedLinkPasteState = useCallback(() => {
+    setEmbeddedLinkPastePrompt(null);
+    setPastedEmbeddedLinkCandidates([]);
+    setRawEmbeddedLinkUrl(null);
+  }, []);
+
+  const dismissEmbeddedLinkPastePrompt = useCallback(
+    (preserveRawLink = false) => {
+      if (embeddedLinkPastePrompt && preserveRawLink) {
+        setRawEmbeddedLinkUrl(embeddedLinkPastePrompt.url);
+      }
+
+      setEmbeddedLinkPastePrompt(null);
+    },
+    [embeddedLinkPastePrompt]
+  );
 
   const handleAttachButtonClick = useCallback(() => {
     if (isAttachModalOpen) {
@@ -228,8 +315,9 @@ export const useChatComposerAttachments = ({
     replaceComposerDocumentAttachmentIdRef.current = null;
     loadingComposerAttachmentsRef.current = [];
     setLoadingComposerAttachments([]);
+    clearEmbeddedLinkPasteState();
     clearPendingComposerAttachmentsFromQueue();
-  }, [clearPendingComposerAttachmentsFromQueue]);
+  }, [clearEmbeddedLinkPasteState, clearPendingComposerAttachmentsFromQueue]);
 
   const closeComposerImagePreview = useCallback(() => {
     setIsComposerImageExpandedVisible(false);
@@ -281,9 +369,10 @@ export const useChatComposerAttachments = ({
       replaceComposerDocumentAttachmentIdRef.current = null;
       loadingComposerAttachmentsRef.current = [];
       setLoadingComposerAttachments([]);
+      clearEmbeddedLinkPasteState();
       restorePendingComposerAttachmentsFromQueue(attachments);
     },
-    [restorePendingComposerAttachmentsFromQueue]
+    [clearEmbeddedLinkPasteState, restorePendingComposerAttachmentsFromQueue]
   );
 
   const handleAttachImageClick = useCallback(
@@ -424,6 +513,7 @@ export const useChatComposerAttachments = ({
         event.preventDefault();
         closeAttachModal();
         closeMessageMenu();
+        clearEmbeddedLinkPasteState();
         queueComposerImage(imageFile);
         return;
       }
@@ -437,21 +527,120 @@ export const useChatComposerAttachments = ({
       event.preventDefault();
       closeAttachModal();
       closeMessageMenu();
-      const loadingAttachment = queueLoadingComposerAttachment(
-        embeddedLink.url
-      );
-      if (!loadingAttachment) {
-        return;
-      }
-      void queueEmbeddedComposerLink(embeddedLink.url, loadingAttachment);
+      setPastedEmbeddedLinkCandidates(currentCandidates => [
+        ...currentCandidates,
+        {
+          id: `embedded_link_candidate_${Date.now()}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}`,
+          url: embeddedLink.url,
+        },
+      ]);
+      setRawEmbeddedLinkUrl(null);
+
+      const textarea = event.currentTarget;
+      const pastedText = embeddedLink.url;
+      const rangeStart = textarea.selectionStart ?? textarea.value.length;
+      const rangeEnd = textarea.selectionEnd ?? rangeStart;
+      const nextMessage =
+        textarea.value.slice(0, rangeStart) +
+        pastedText +
+        textarea.value.slice(rangeEnd);
+      const insertedRangeEnd = rangeStart + pastedText.length;
+
+      setEmbeddedLinkPastePrompt(null);
+      setMessage(nextMessage);
+      focusComposerSelection(insertedRangeEnd);
     },
     [
       closeAttachModal,
       closeMessageMenu,
+      clearEmbeddedLinkPasteState,
+      focusComposerSelection,
       queueComposerImage,
-      queueLoadingComposerAttachment,
-      queueEmbeddedComposerLink,
+      setMessage,
     ]
+  );
+
+  const handleUseEmbeddedLinkPasteAsUrl = useCallback(() => {
+    if (!embeddedLinkPastePrompt) return;
+
+    setRawEmbeddedLinkUrl(embeddedLinkPastePrompt.url);
+    dismissEmbeddedLinkPastePrompt();
+    focusComposerSelection(embeddedLinkPastePrompt.rangeEnd);
+  }, [
+    embeddedLinkPastePrompt,
+    dismissEmbeddedLinkPastePrompt,
+    focusComposerSelection,
+  ]);
+
+  const handleUseEmbeddedLinkPasteAsEmbed = useCallback(() => {
+    if (!embeddedLinkPastePrompt) return;
+
+    const promptState = embeddedLinkPastePrompt;
+    const loadingAttachment = queueLoadingComposerAttachment(promptState.url);
+
+    setEmbeddedLinkPastePrompt(null);
+    setRawEmbeddedLinkUrl(null);
+
+    if (!loadingAttachment) {
+      focusComposerSelection(promptState.rangeEnd);
+      return;
+    }
+
+    void (async () => {
+      const didQueue = await queueEmbeddedComposerLink(
+        promptState.url,
+        loadingAttachment
+      );
+      if (!didQueue) {
+        return;
+      }
+
+      setMessage(currentMessage => {
+        const pastedSegment = currentMessage.slice(
+          promptState.rangeStart,
+          promptState.rangeEnd
+        );
+        if (pastedSegment !== promptState.pastedText) {
+          return currentMessage;
+        }
+
+        return (
+          currentMessage.slice(0, promptState.rangeStart) +
+          currentMessage.slice(promptState.rangeEnd)
+        );
+      });
+      setPastedEmbeddedLinkCandidates(currentCandidates =>
+        currentCandidates.filter(candidate => candidate.id !== promptState.id)
+      );
+    })();
+  }, [
+    embeddedLinkPastePrompt,
+    focusComposerSelection,
+    queueEmbeddedComposerLink,
+    queueLoadingComposerAttachment,
+    setMessage,
+  ]);
+
+  const openEmbeddedLinkPastePrompt = useCallback(
+    (candidate?: HoverableEmbeddedLinkCandidate) => {
+      const resolvedCandidate =
+        candidate ??
+        (hoverableEmbeddedLinkCandidates.length === 1
+          ? hoverableEmbeddedLinkCandidates[0]
+          : null);
+      if (!resolvedCandidate) return;
+
+      setEmbeddedLinkPastePrompt({
+        id: resolvedCandidate.id,
+        url: resolvedCandidate.url,
+        pastedText: resolvedCandidate.pastedText,
+        rangeStart: resolvedCandidate.rangeStart,
+        rangeEnd: resolvedCandidate.rangeEnd,
+      });
+    },
+    [hoverableEmbeddedLinkCandidates]
   );
 
   useEffect(() => {
@@ -489,6 +678,38 @@ export const useChatComposerAttachments = ({
   }, [closeAttachModal, isAttachModalOpen]);
 
   useEffect(() => {
+    if (!embeddedLinkPastePrompt) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const eventTarget = event.target;
+      if (!(eventTarget instanceof Node)) return;
+
+      if (embeddedLinkPastePromptRef.current?.contains(eventTarget)) return;
+      if (messageInputRef.current?.contains(eventTarget)) return;
+
+      dismissEmbeddedLinkPastePrompt(true);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        dismissEmbeddedLinkPastePrompt(true);
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    dismissEmbeddedLinkPastePrompt,
+    embeddedLinkPastePrompt,
+    messageInputRef,
+  ]);
+
+  useEffect(() => {
     return () => {
       if (composerImagePreviewCloseTimerRef.current) {
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
@@ -502,16 +723,24 @@ export const useChatComposerAttachments = ({
     pendingComposerAttachments,
     loadingComposerAttachments,
     isLoadingEmbeddedComposerAttachments: loadingComposerAttachments.length > 0,
+    embeddedLinkPastePromptUrl: embeddedLinkPastePrompt?.url ?? null,
+    hoverableEmbeddedLinkCandidates,
+    hoverableEmbeddedLinkUrl,
+    rawEmbeddedLinkUrl,
     previewComposerImageAttachment,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     attachButtonRef,
     attachModalRef,
+    embeddedLinkPastePromptRef,
     imageInputRef,
     documentInputRef,
     audioInputRef,
     pendingImagePreviewUrlsRef,
     closeAttachModal,
+    clearEmbeddedLinkPasteState,
+    dismissEmbeddedLinkPastePrompt,
+    openEmbeddedLinkPastePrompt,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,
@@ -520,6 +749,8 @@ export const useChatComposerAttachments = ({
     handleDocumentFileChange,
     handleAudioFileChange,
     handleComposerPaste,
+    handleUseEmbeddedLinkPasteAsUrl,
+    handleUseEmbeddedLinkPasteAsEmbed,
     openComposerImagePreview,
     closeComposerImagePreview,
     removePendingComposerAttachment,

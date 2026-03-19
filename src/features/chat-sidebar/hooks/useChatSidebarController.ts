@@ -173,6 +173,10 @@ export const useChatSidebarController = ({
     },
     attachments: {
       isAttachModalOpen: runtime.composer.isAttachModalOpen,
+      embeddedLinkPastePromptUrl: runtime.composer.embeddedLinkPastePromptUrl,
+      hoverableEmbeddedLinkCandidates:
+        runtime.composer.hoverableEmbeddedLinkCandidates,
+      hoverableEmbeddedLinkUrl: runtime.composer.hoverableEmbeddedLinkUrl,
       pendingComposerAttachments: [
         ...runtime.composer.pendingComposerAttachments,
         ...runtime.composer.loadingComposerAttachments,
@@ -198,6 +202,7 @@ export const useChatSidebarController = ({
       composerContainerRef: refs.composerContainerRef,
       attachButtonRef: runtime.composer.attachButtonRef,
       attachModalRef: runtime.composer.attachModalRef,
+      embeddedLinkPastePromptRef: runtime.composer.embeddedLinkPastePromptRef,
       imageInputRef: runtime.composer.imageInputRef,
       documentInputRef: runtime.composer.documentInputRef,
       audioInputRef: runtime.composer.audioInputRef,
@@ -205,9 +210,17 @@ export const useChatSidebarController = ({
       imageActionsMenuRef: runtime.previews.imageActionsMenuRef,
     },
     actions: {
-      onMessageChange: runtime.composer.setMessage,
+      onMessageChange: runtime.composer.handleMessageChange,
       onKeyDown: runtime.mutations.handleKeyPress,
       onPaste: runtime.composer.handleComposerPaste,
+      onDismissEmbeddedLinkPastePrompt:
+        runtime.composer.dismissEmbeddedLinkPastePrompt,
+      onOpenEmbeddedLinkPastePrompt:
+        runtime.composer.openEmbeddedLinkPastePrompt,
+      onUseEmbeddedLinkPasteAsUrl:
+        runtime.composer.handleUseEmbeddedLinkPasteAsUrl,
+      onUseEmbeddedLinkPasteAsEmbed:
+        runtime.composer.handleUseEmbeddedLinkPasteAsEmbed,
       onSendMessage: runtime.mutations.handleSendMessage,
       onAttachButtonClick: runtime.composer.handleAttachButtonClick,
       onAttachImageClick: runtime.composer.handleAttachImageClick,
