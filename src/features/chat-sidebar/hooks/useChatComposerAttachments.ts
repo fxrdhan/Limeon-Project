@@ -575,10 +575,19 @@ export const useChatComposerAttachments = ({
   ]);
 
   const handleEditAttachmentLink = useCallback(
-    (candidate: HoverableAttachmentCandidate) => {
+    (
+      candidate: HoverableAttachmentCandidate,
+      selection?: {
+        selectionStart: number;
+        selectionEnd?: number;
+      }
+    ) => {
       setRawAttachmentUrl(candidate.url);
       setAttachmentPastePrompt(null);
-      focusComposerSelection(candidate.rangeStart, candidate.rangeEnd);
+      focusComposerSelection(
+        selection?.selectionStart ?? candidate.rangeStart,
+        selection?.selectionEnd ?? candidate.rangeEnd
+      );
     },
     [focusComposerSelection]
   );
@@ -598,10 +607,36 @@ export const useChatComposerAttachments = ({
     focusComposerSelection,
   ]);
 
+  const handleCopyAttachmentPastePromptLink = useCallback(async () => {
+    if (!attachmentPastePrompt) return;
+
+    try {
+      await navigator.clipboard.writeText(attachmentPastePrompt.url);
+      toast.success('Link berhasil disalin', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+    } catch (error) {
+      console.error('Error copying attachment composer link:', error);
+      toast.error('Gagal menyalin link', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+    }
+
+    dismissAttachmentPastePrompt();
+    focusComposerSelection(attachmentPastePrompt.rangeEnd);
+  }, [
+    attachmentPastePrompt,
+    dismissAttachmentPastePrompt,
+    focusComposerSelection,
+  ]);
+
   const handleUseAttachmentPasteAsAttachment = useCallback(() => {
     if (!attachmentPastePrompt) return;
 
     const promptState = attachmentPastePrompt;
+    const restoreCandidateIndex = pastedAttachmentCandidates.findIndex(
+      candidate => candidate.id === promptState.id
+    );
     const loadingAttachment = queueLoadingComposerAttachment(promptState.url);
 
     setAttachmentPastePrompt(null);
@@ -612,36 +647,78 @@ export const useChatComposerAttachments = ({
       return;
     }
 
+    setMessage(currentMessage => {
+      const pastedSegment = currentMessage.slice(
+        promptState.rangeStart,
+        promptState.rangeEnd
+      );
+      if (pastedSegment !== promptState.pastedText) {
+        return currentMessage;
+      }
+
+      return (
+        currentMessage.slice(0, promptState.rangeStart) +
+        currentMessage.slice(promptState.rangeEnd)
+      );
+    });
+    setPastedAttachmentCandidates(currentCandidates =>
+      currentCandidates.filter(candidate => candidate.id !== promptState.id)
+    );
+    focusComposerSelection(promptState.rangeStart);
+
     void (async () => {
       const didQueue = await queueAttachmentComposerLink(
         promptState.url,
         loadingAttachment
       );
       if (!didQueue) {
+        setMessage(currentMessage => {
+          const safeRangeStart = Math.min(
+            promptState.rangeStart,
+            currentMessage.length
+          );
+          const currentSegment = currentMessage.slice(
+            safeRangeStart,
+            safeRangeStart + promptState.pastedText.length
+          );
+          if (currentSegment === promptState.pastedText) {
+            return currentMessage;
+          }
+
+          return (
+            currentMessage.slice(0, safeRangeStart) +
+            promptState.pastedText +
+            currentMessage.slice(safeRangeStart)
+          );
+        });
+        setPastedAttachmentCandidates(currentCandidates => {
+          if (
+            currentCandidates.some(candidate => candidate.id === promptState.id)
+          ) {
+            return currentCandidates;
+          }
+
+          const nextCandidates = [...currentCandidates];
+          nextCandidates.splice(
+            restoreCandidateIndex < 0
+              ? currentCandidates.length
+              : Math.min(restoreCandidateIndex, currentCandidates.length),
+            0,
+            {
+              id: promptState.id,
+              url: promptState.url,
+            }
+          );
+          return nextCandidates;
+        });
+        focusComposerSelection(promptState.rangeEnd);
         return;
       }
-
-      setMessage(currentMessage => {
-        const pastedSegment = currentMessage.slice(
-          promptState.rangeStart,
-          promptState.rangeEnd
-        );
-        if (pastedSegment !== promptState.pastedText) {
-          return currentMessage;
-        }
-
-        return (
-          currentMessage.slice(0, promptState.rangeStart) +
-          currentMessage.slice(promptState.rangeEnd)
-        );
-      });
-      setPastedAttachmentCandidates(currentCandidates =>
-        currentCandidates.filter(candidate => candidate.id !== promptState.id)
-      );
     })();
   }, [
     attachmentPastePrompt,
     focusComposerSelection,
+    pastedAttachmentCandidates,
     queueAttachmentComposerLink,
     queueLoadingComposerAttachment,
     setMessage,
@@ -764,6 +841,7 @@ export const useChatComposerAttachments = ({
     openAttachmentPastePrompt,
     handleEditAttachmentLink,
     handleOpenAttachmentPastePromptLink,
+    handleCopyAttachmentPastePromptLink,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,

@@ -3,6 +3,8 @@ import type { ChatRemoteAssetRequestPayload } from "../../../shared/chatFunction
 const SUPPORTED_URL_PROTOCOLS = new Set(["http:", "https:"]);
 const BLOCKED_HOSTNAMES = new Set(["localhost", "0.0.0.0", "127.0.0.1", "::1"]);
 const GOOGLE_DRIVE_TITLE_SUFFIX_PATTERN = /\s*-\s*Google Drive\s*$/i;
+const REMOTE_ASSET_BROWSER_LIKE_USER_AGENT =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
 const normalizeHostname = (hostname: string) =>
   hostname.replace(/^\[|\]$/g, "").trim().toLowerCase();
@@ -117,6 +119,11 @@ export const isHtmlLikeRemoteAssetMimeType = (mimeType?: string | null) => {
     normalizedMimeType.startsWith("application/xhtml+xml")
   );
 };
+
+export const buildChatRemoteAssetRequestHeaders = (accept: string) => ({
+  Accept: accept,
+  "User-Agent": REMOTE_ASSET_BROWSER_LIKE_USER_AGENT,
+});
 
 const normalizeRemoteHtmlTitle = (value: string) =>
   value.replace(GOOGLE_DRIVE_TITLE_SUFFIX_PATTERN, "").trim();

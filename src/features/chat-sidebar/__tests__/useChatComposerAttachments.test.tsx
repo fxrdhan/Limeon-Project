@@ -362,6 +362,112 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
+  it('copies the prompt link to the clipboard without leaving the full link selected', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const messageInput = document.createElement('textarea');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu: vi.fn(),
+        messageInputRef: { current: messageInput },
+        message,
+        setMessage,
+      });
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://example.com/attachment/receipt.png',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.openAttachmentPastePrompt();
+    });
+
+    messageInput.value = 'https://example.com/attachment/receipt.png';
+
+    await act(async () => {
+      await result.current.handleCopyAttachmentPastePromptLink();
+    });
+
+    expect(writeText).toHaveBeenCalledWith(
+      'https://example.com/attachment/receipt.png'
+    );
+    expect(mockToast.success).toHaveBeenCalledWith('Link berhasil disalin', {
+      toasterId: 'chat-sidebar-toaster',
+    });
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
+    expect(messageInput.selectionStart).toBe(
+      'https://example.com/attachment/receipt.png'.length
+    );
+    expect(messageInput.selectionEnd).toBe(
+      'https://example.com/attachment/receipt.png'.length
+    );
+  });
+
+  it('uses a collapsed selection when the composer provides a clicked caret position', async () => {
+    const messageInput = document.createElement('textarea');
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: messageInput },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://example.com/attachment/receipt.png',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(1);
+    });
+
+    messageInput.value = result.current.message;
+
+    act(() => {
+      result.current.handleEditAttachmentLink(
+        result.current.hoverableAttachmentCandidates[0]!,
+        {
+          selectionStart: 8,
+          selectionEnd: 8,
+        }
+      );
+    });
+
+    expect(result.current.rawAttachmentUrl).toBe(
+      'https://example.com/attachment/receipt.png'
+    );
+    expect(messageInput.selectionStart).toBe(8);
+    expect(messageInput.selectionEnd).toBe(8);
+  });
+
   it('queues a pasted direct image url as an attachment after the user chooses Attachment', async () => {
     let resolveRemoteAsset:
       | ((value: { file: File; fileKind: 'image'; sourceUrl: string }) => void)
@@ -426,9 +532,8 @@ describe('useChatComposerAttachments', () => {
       }),
     ]);
     expect(result.current.isLoadingAttachmentComposerAttachments).toBe(true);
-    expect(result.current.message).toBe(
-      'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg'
-    );
+    expect(result.current.message).toBe('');
+    expect(result.current.hoverableAttachmentCandidates).toHaveLength(0);
 
     await act(async () => {
       resolveRemoteAsset?.({
@@ -519,6 +624,8 @@ describe('useChatComposerAttachments', () => {
       }),
     ]);
     expect(result.current.pendingComposerAttachments).toHaveLength(0);
+    expect(result.current.message).toBe('');
+    expect(result.current.hoverableAttachmentCandidates).toHaveLength(0);
 
     await act(async () => {
       resolveRemoteAsset?.({
@@ -544,6 +651,82 @@ describe('useChatComposerAttachments', () => {
       );
       expect(result.current.message).toBe('');
     });
+  });
+
+  it('restores the pasted link when loading the attachment from the url fails', async () => {
+    let resolveRemoteAsset: ((value: null) => void) | undefined;
+    mockFetchAttachmentComposerRemoteFile.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveRemoteAsset = resolve;
+        })
+    );
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'https://shrtlink.works/bwdrrk3ugm',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentUrl).toBe(
+        'https://shrtlink.works/bwdrrk3ugm'
+      );
+    });
+
+    act(() => {
+      result.current.openAttachmentPastePrompt();
+    });
+
+    act(() => {
+      result.current.handleUseAttachmentPasteAsAttachment();
+    });
+
+    expect(result.current.loadingComposerAttachments).toEqual([
+      expect.objectContaining({
+        fileName: 'bwdrrk3ugm',
+        status: 'loading',
+      }),
+    ]);
+    expect(result.current.message).toBe('');
+    expect(result.current.hoverableAttachmentCandidates).toHaveLength(0);
+
+    await act(async () => {
+      resolveRemoteAsset?.(null);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.loadingComposerAttachments).toHaveLength(0);
+      expect(result.current.message).toBe('https://shrtlink.works/bwdrrk3ugm');
+      expect(result.current.hoverableAttachmentUrl).toBe(
+        'https://shrtlink.works/bwdrrk3ugm'
+      );
+    });
+
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Link harus mengarah ke gambar atau PDF yang valid',
+      {
+        toasterId: 'chat-sidebar-toaster',
+      }
+    );
   });
 
   it('treats a pasted chat shared link as an attachment link candidate', async () => {

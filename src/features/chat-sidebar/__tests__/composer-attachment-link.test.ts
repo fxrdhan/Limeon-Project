@@ -65,4 +65,35 @@ describe('composer-attachment-link', () => {
     expect(result?.file.type).toBe('application/pdf');
     expect(result?.file.name).toBe('Job Desk Minggu 4.pdf');
   });
+
+  it('infers chat shared image files from binary responses without exposed metadata headers', async () => {
+    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+      data: {
+        blob: new Blob(
+          [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
+          {
+            type: 'application/octet-stream',
+          }
+        ),
+        contentDisposition: null,
+        contentType: 'application/octet-stream',
+        sourceUrl: 'https://shrtlink.works/bwdrrk3ugm',
+        fileNameHint: null,
+      },
+      error: null,
+    });
+
+    const result = await fetchAttachmentComposerRemoteFile(
+      'https://shrtlink.works/bwdrrk3ugm'
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        fileKind: 'image',
+        sourceUrl: 'https://shrtlink.works/bwdrrk3ugm',
+      })
+    );
+    expect(result?.file.type).toBe('image/png');
+    expect(result?.file.name).toBe('bwdrrk3ugm.png');
+  });
 });

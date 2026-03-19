@@ -232,9 +232,14 @@ export interface ComposerPanelModel {
       candidate?: ComposerHoverableAttachmentCandidate
     ) => void;
     onEditAttachmentLink: (
-      candidate: ComposerHoverableAttachmentCandidate
+      candidate: ComposerHoverableAttachmentCandidate,
+      selection?: {
+        selectionStart: number;
+        selectionEnd?: number;
+      }
     ) => void;
     onOpenAttachmentPastePromptLink: () => void;
+    onCopyAttachmentPastePromptLink: () => void;
     onUseAttachmentPasteAsUrl: () => void;
     onUseAttachmentPasteAsAttachment: () => void;
     onSendMessage: () => void;

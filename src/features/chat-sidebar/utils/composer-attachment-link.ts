@@ -44,6 +44,13 @@ const GOOGLE_DRIVE_HOSTNAMES = new Set(['drive.google.com']);
 const CHAT_SHARED_LINK_HOSTNAMES = new Set(['shrtlink.works']);
 const PDF_SIGNATURE = '%PDF-';
 const PDF_TITLE_PATTERN = /\/Title\s*\((.*?)\)/s;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47] as const;
+const JPEG_SIGNATURE = [0xff, 0xd8, 0xff] as const;
+const GIF87A_SIGNATURE = 'GIF87a';
+const GIF89A_SIGNATURE = 'GIF89a';
+const WEBP_RIFF_SIGNATURE = 'RIFF';
+const WEBP_SIGNATURE = 'WEBP';
+const BMP_SIGNATURE = 'BM';
 
 const normalizeMimeType = (mimeType?: string | null) =>
   mimeType?.split(';')[0]?.trim().toLowerCase() || '';
@@ -305,6 +312,46 @@ const sniffPdfMimeTypeFromBlob = async (blob: Blob) => {
   }
 };
 
+const sniffImageMimeTypeFromBlob = async (blob: Blob) => {
+  try {
+    const headerBytes = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
+    const headerText = new TextDecoder('ascii').decode(headerBytes);
+
+    const hasPrefix = (signature: readonly number[]) =>
+      signature.every((byte, index) => headerBytes[index] === byte);
+
+    if (hasPrefix(PNG_SIGNATURE)) {
+      return 'image/png';
+    }
+
+    if (hasPrefix(JPEG_SIGNATURE)) {
+      return 'image/jpeg';
+    }
+
+    if (
+      headerText.startsWith(GIF87A_SIGNATURE) ||
+      headerText.startsWith(GIF89A_SIGNATURE)
+    ) {
+      return 'image/gif';
+    }
+
+    if (
+      headerText.startsWith(WEBP_RIFF_SIGNATURE) &&
+      headerText.slice(8, 12) === WEBP_SIGNATURE
+    ) {
+      return 'image/webp';
+    }
+
+    if (headerText.startsWith(BMP_SIGNATURE)) {
+      return 'image/bmp';
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 const extractPdfTitleFileNameFromBlob = async (blob: Blob) => {
   try {
     const previewText = await blob.slice(0, 16_384).text();
@@ -457,10 +504,13 @@ export const fetchAttachmentComposerRemoteFile = async (
   }
 
   const sniffedPdfMimeType = await sniffPdfMimeTypeFromBlob(remoteAsset.blob);
+  const sniffedImageMimeType = await sniffImageMimeTypeFromBlob(
+    remoteAsset.blob
+  );
   const resolvedMimeType =
     responseMimeType === 'application/octet-stream'
-      ? sniffedPdfMimeType || responseMimeType
-      : responseMimeType || sniffedPdfMimeType || '';
+      ? sniffedPdfMimeType || sniffedImageMimeType || responseMimeType
+      : responseMimeType || sniffedPdfMimeType || sniffedImageMimeType || '';
   const pdfTitleFileName =
     resolvedMimeType === PDF_MIME_TYPE
       ? await extractPdfTitleFileNameFromBlob(remoteAsset.blob)

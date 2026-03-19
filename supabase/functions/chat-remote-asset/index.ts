@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import type { ChatRemoteAssetRequestPayload } from "../../../shared/chatFunctionContracts.ts";
 import {
+  buildChatRemoteAssetRequestHeaders,
   extractRemoteHtmlTitle,
   isHtmlLikeRemoteAssetMimeType,
   resolveChatRemoteAssetUrl,
@@ -101,9 +102,9 @@ Deno.serve(async req => {
   let remoteResponse: Response;
   try {
     remoteResponse = await fetch(resolvedAssetRequest.url, {
-      headers: {
-        Accept: "image/*,application/pdf,application/octet-stream;q=0.9,*/*;q=0.1",
-      },
+      headers: buildChatRemoteAssetRequestHeaders(
+        "image/*,application/pdf,application/octet-stream;q=0.9,*/*;q=0.1"
+      ),
       redirect: "follow",
       signal: AbortSignal.timeout(15_000),
     });
@@ -139,9 +140,9 @@ Deno.serve(async req => {
   ) {
     try {
       const titleResponse = await fetch(resolvedFileNameSourceRequest.url, {
-        headers: {
-          Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
-        },
+        headers: buildChatRemoteAssetRequestHeaders(
+          "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"
+        ),
         redirect: "follow",
         signal: AbortSignal.timeout(15_000),
       });

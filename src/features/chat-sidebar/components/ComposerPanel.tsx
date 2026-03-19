@@ -12,6 +12,7 @@ import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
   TbArrowUpRight,
   TbArrowUp,
+  TbCopy,
   TbFileDescription,
   TbLink,
   TbMusic,
@@ -46,10 +47,16 @@ interface ComposerLinkOverlaySegment {
   text: string;
 }
 
+type DocumentWithCaretRange = Document & {
+  caretRangeFromPoint?: (x: number, y: number) => Range | null;
+};
+
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
 const ATTACHMENT_LINK_PROMPT_EDGE_MARGIN = 16;
 const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
-  'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100';
+  'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors hover:bg-slate-100';
+const ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME =
+  'px-2.5 pb-1 pt-1.5 text-[11px] font-medium tracking-[0.03em] text-slate-500';
 const CHAT_POPOVER_ICON_CLASS_NAME =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
 
@@ -97,6 +104,42 @@ const buildComposerLinkOverlaySegments = ({
   }
 
   return segments;
+};
+
+const getComposerLinkSelectionOffset = (
+  anchorElement: HTMLAnchorElement,
+  clientX: number,
+  clientY: number
+) => {
+  if (typeof document === 'undefined') {
+    return anchorElement.textContent?.length ?? 0;
+  }
+
+  const maxOffset = anchorElement.textContent?.length ?? 0;
+  const buildOffsetFromRange = (targetNode: Node, targetOffset: number) => {
+    const range = document.createRange();
+    range.setStart(anchorElement, 0);
+    range.setEnd(targetNode, targetOffset);
+    return Math.max(0, Math.min(maxOffset, range.toString().length));
+  };
+
+  const caretPosition = document.caretPositionFromPoint?.(clientX, clientY);
+  if (caretPosition && anchorElement.contains(caretPosition.offsetNode)) {
+    return buildOffsetFromRange(caretPosition.offsetNode, caretPosition.offset);
+  }
+
+  const caretRange = (document as DocumentWithCaretRange).caretRangeFromPoint?.(
+    clientX,
+    clientY
+  );
+  if (caretRange && anchorElement.contains(caretRange.startContainer)) {
+    return buildOffsetFromRange(
+      caretRange.startContainer,
+      caretRange.startOffset
+    );
+  }
+
+  return maxOffset;
 };
 
 const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
@@ -155,7 +198,32 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
       candidate: ComposerHoverableAttachmentCandidate
     ) => {
       event.preventDefault();
+      if (event.detail !== 0) {
+        return;
+      }
+
       actions.onEditAttachmentLink(candidate);
+    },
+    [actions]
+  );
+
+  const handleComposerAttachmentLinkMouseDown = useCallback(
+    (
+      event: ReactMouseEvent<HTMLAnchorElement>,
+      candidate: ComposerHoverableAttachmentCandidate
+    ) => {
+      event.preventDefault();
+
+      const selectionOffset = getComposerLinkSelectionOffset(
+        event.currentTarget,
+        event.clientX,
+        event.clientY
+      );
+
+      actions.onEditAttachmentLink(candidate, {
+        selectionStart: candidate.rangeStart + selectionOffset,
+        selectionEnd: candidate.rangeStart + selectionOffset,
+      });
     },
     [actions]
   );
@@ -322,7 +390,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                     <PopupMenuPopover isOpen className="origin-bottom">
                       <div
                         ref={refs.attachmentPastePromptRef}
-                        className="rounded-xl border border-slate-200 bg-white px-1 py-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
+                        className="rounded-xl border border-slate-200 bg-white px-0.5 py-0.5 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
                         style={{ minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH }}
                         onClick={event => event.stopPropagation()}
                         onMouseEnter={clearAttachmentPromptCloseTimer}
@@ -330,7 +398,9 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                         role="dialog"
                         aria-label="Aksi link composer"
                       >
-                        <div className="px-3 pb-1.5 pt-2 text-[11px] font-medium tracking-[0.03em] text-slate-500">
+                        <div
+                          className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}
+                        >
                           Aksi
                         </div>
                         <button
@@ -344,8 +414,21 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                             aria-hidden="true"
                           />
                         </button>
-                        <div className="mx-1 my-1 h-px bg-slate-200" />
-                        <div className="px-3 pb-1.5 pt-1 text-[11px] font-medium tracking-[0.03em] text-slate-500">
+                        <button
+                          type="button"
+                          onClick={actions.onCopyAttachmentPastePromptLink}
+                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                        >
+                          <span>Salin</span>
+                          <TbCopy
+                            className="ml-auto h-4 w-4 text-black"
+                            aria-hidden="true"
+                          />
+                        </button>
+                        <div className="mx-1 my-0.5 h-px bg-slate-200" />
+                        <div
+                          className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}
+                        >
                           Tempel sebagai
                         </div>
                         <button
@@ -403,9 +486,12 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                           key={segment.key}
                           href={segment.candidate.url}
                           className="pointer-events-auto cursor-text text-slate-900 underline-offset-2 transition-colors hover:text-sky-700 hover:underline"
-                          onMouseDown={event => {
-                            event.preventDefault();
-                          }}
+                          onMouseDown={event =>
+                            handleComposerAttachmentLinkMouseDown(
+                              event,
+                              segment.candidate!
+                            )
+                          }
                           onClick={event =>
                             handleComposerAttachmentLinkClick(
                               event,

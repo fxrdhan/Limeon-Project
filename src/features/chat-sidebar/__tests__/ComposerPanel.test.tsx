@@ -134,6 +134,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
     onOpenAttachmentPastePrompt: vi.fn(),
     onEditAttachmentLink: vi.fn(),
     onOpenAttachmentPastePromptLink: vi.fn(),
+    onCopyAttachmentPastePromptLink: vi.fn(),
     onUseAttachmentPasteAsUrl: vi.fn(),
     onUseAttachmentPasteAsAttachment: vi.fn(),
     onSendMessage: vi.fn(),
@@ -182,16 +183,39 @@ describe('ComposerPanel', () => {
     );
   });
 
-  it('uses click on inline url to switch into edit mode instead of navigating', () => {
+  it('places the caret at the clicked inline url position', () => {
     const model = buildComposerModel();
 
     render(<ComposerPanel model={model} />);
 
-    fireEvent.click(screen.getAllByRole('link')[0]!);
+    const firstLink = screen.getAllByRole('link')[0]!;
+    const textNode = firstLink.firstChild;
+    expect(textNode).toBeTruthy();
+
+    Object.defineProperty(document, 'caretPositionFromPoint', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(document, 'caretRangeFromPoint', {
+      configurable: true,
+      value: vi.fn(() => {
+        const range = document.createRange();
+        range.setStart(textNode!, 8);
+        return range;
+      }),
+    });
+
+    fireEvent.mouseDown(firstLink, { clientX: 16, clientY: 8 });
+    fireEvent.click(firstLink, { detail: 1 });
 
     expect(model.actions.onEditAttachmentLink).toHaveBeenCalledWith(
-      model.attachments.hoverableAttachmentCandidates[0]
+      model.attachments.hoverableAttachmentCandidates[0],
+      {
+        selectionStart: 8,
+        selectionEnd: 8,
+      }
     );
+    expect(model.actions.onEditAttachmentLink).toHaveBeenCalledTimes(1);
   });
 
   it('renders the attachment link popover with action and paste sections', () => {
@@ -220,6 +244,7 @@ describe('ComposerPanel', () => {
 
     expect(screen.getByText('Aksi')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
     expect(screen.getByText('Tempel sebagai')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
@@ -228,6 +253,12 @@ describe('ComposerPanel', () => {
 
     expect(
       model.actions.onOpenAttachmentPastePromptLink
+    ).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salin' }));
+
+    expect(
+      model.actions.onCopyAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
   });
 });
