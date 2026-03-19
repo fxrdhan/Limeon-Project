@@ -597,10 +597,7 @@ export const useChatComposerAttachments = ({
 
     openInNewTab(attachmentPastePrompt.url);
     dismissAttachmentPastePrompt();
-    focusComposerSelection(
-      attachmentPastePrompt.rangeStart,
-      attachmentPastePrompt.rangeEnd
-    );
+    focusComposerSelection(attachmentPastePrompt.rangeEnd);
   }, [
     attachmentPastePrompt,
     dismissAttachmentPastePrompt,

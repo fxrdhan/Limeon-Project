@@ -269,6 +269,7 @@ describe('useChatComposerAttachments', () => {
 
   it('opens the pasted link from the popover action and closes the prompt', async () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const messageInput = document.createElement('textarea');
 
     const { result } = renderHook(() => {
       const [message, setMessage] = useState('');
@@ -278,7 +279,7 @@ describe('useChatComposerAttachments', () => {
         ...useChatComposerAttachments({
           editingMessageId: null,
           closeMessageMenu: vi.fn(),
-          messageInputRef: { current: null },
+          messageInputRef: { current: messageInput },
           message,
           setMessage,
         }),
@@ -303,6 +304,8 @@ describe('useChatComposerAttachments', () => {
       result.current.openAttachmentPastePrompt();
     });
 
+    messageInput.value = 'https://example.com/attachment/receipt.png';
+
     act(() => {
       result.current.handleOpenAttachmentPastePromptLink();
     });
@@ -313,6 +316,12 @@ describe('useChatComposerAttachments', () => {
       'noopener,noreferrer'
     );
     expect(result.current.attachmentPastePromptUrl).toBeNull();
+    expect(messageInput.selectionStart).toBe(
+      'https://example.com/attachment/receipt.png'.length
+    );
+    expect(messageInput.selectionEnd).toBe(
+      'https://example.com/attachment/receipt.png'.length
+    );
   });
 
   it('focuses a pasted link as editable plain text when requested', async () => {
