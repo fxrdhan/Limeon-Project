@@ -103,10 +103,12 @@ describe('MessageBubbleContent', () => {
     expect(link.getAttribute('href')).toBe(url);
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link.style.color).toBe('rgb(37, 99, 235)');
     expect(link.style.textDecoration).toBe('none');
 
     fireEvent.mouseEnter(link);
 
+    expect(link.style.color).toBe('rgb(3, 105, 161)');
     expect(link.style.textDecoration).toBe('underline');
 
     fireEvent.click(link);
@@ -115,6 +117,7 @@ describe('MessageBubbleContent', () => {
 
     fireEvent.mouseLeave(link);
 
+    expect(link.style.color).toBe('rgb(37, 99, 235)');
     expect(link.style.textDecoration).toBe('none');
   });
 

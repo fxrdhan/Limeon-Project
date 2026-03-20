@@ -13,6 +13,7 @@ const MESSAGE_LINK_PATTERN =
 const TRAILING_LINK_PUNCTUATION_PATTERN = /[),.!?;:]+$/;
 const MESSAGE_LINK_PROTOCOL_PATTERN = /^[a-z][a-z\d+.-]*:/i;
 const SUPPORTED_MESSAGE_LINK_PROTOCOLS = new Set(['http:', 'https:']);
+const MESSAGE_LINK_DEFAULT_COLOR = '#2563eb';
 const MESSAGE_LINK_HOVER_COLOR = '#0369a1';
 
 interface RenderHighlightedTextOptions {
@@ -221,7 +222,9 @@ const setMessageLinkHoverState = (
   element: HTMLAnchorElement,
   isActive: boolean
 ) => {
-  element.style.color = isActive ? MESSAGE_LINK_HOVER_COLOR : 'inherit';
+  element.style.color = isActive
+    ? MESSAGE_LINK_HOVER_COLOR
+    : MESSAGE_LINK_DEFAULT_COLOR;
   element.style.textDecoration = isActive ? 'underline' : 'none';
 };
 
@@ -277,7 +280,7 @@ export const renderHighlightedText = (
             rel="noopener noreferrer"
             className="cursor-pointer"
             style={{
-              color: 'inherit',
+              color: MESSAGE_LINK_DEFAULT_COLOR,
               textDecoration: 'none',
               textUnderlineOffset: '2px',
               transition: 'color 150ms ease, text-decoration-color 150ms ease',
