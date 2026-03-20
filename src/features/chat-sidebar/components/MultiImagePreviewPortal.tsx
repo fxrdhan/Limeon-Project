@@ -52,18 +52,9 @@ const MultiImagePreviewPortal = ({
       }}
     >
       {activePreview ? (
-        <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl md:flex-row">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup preview gambar"
-            className="absolute right-4 top-4 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-slate-500 shadow-sm transition-colors hover:bg-white hover:text-slate-700"
-          >
-            <TbX className="h-5 w-5" />
-          </button>
-
-          <aside className="flex w-full shrink-0 border-b border-slate-200 bg-slate-50/95 md:w-[260px] md:border-b-0 md:border-r">
-            <div className="grid max-h-full flex-1 grid-cols-2 content-start gap-3 overflow-y-auto p-4">
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-slate-300 bg-white md:flex-row">
+          <aside className="flex w-full shrink-0 border-b border-slate-300 bg-white md:w-[320px] md:border-b-0 md:border-r">
+            <div className="grid max-h-full flex-1 grid-cols-2 content-start gap-4 overflow-y-auto p-4">
               {previewItems.map((previewItem, index) => {
                 const isActive = previewItem.id === activePreview.id;
 
@@ -76,8 +67,8 @@ const MultiImagePreviewPortal = ({
                     aria-pressed={isActive}
                     className={`group relative aspect-square overflow-hidden rounded-2xl border text-left transition-all ${
                       isActive
-                        ? 'border-primary shadow-[0_0_0_3px_rgba(14,165,233,0.16)]'
-                        : 'border-slate-200 hover:border-slate-300'
+                        ? 'border-primary'
+                        : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <img
@@ -92,23 +83,37 @@ const MultiImagePreviewPortal = ({
             </div>
           </aside>
 
-          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.16),_rgba(241,245,249,0.95)_55%,_rgba(226,232,240,0.9))] p-4 md:p-8">
-            <div className="absolute left-4 top-4 inline-flex max-w-[calc(100%-5rem)] items-center gap-2 rounded-full bg-white/92 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
-              <span>
-                {activePreviewIndex + 1} / {previewItems.length}
-              </span>
-              <span className="truncate text-slate-500">
-                {activePreview.previewName}
-              </span>
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+            <div className="flex h-14 items-center justify-between border-b border-slate-300 px-4">
+              <p
+                className="flex min-w-0 items-center gap-2 truncate text-base font-medium text-slate-600"
+                title={`${activePreviewIndex + 1}/${previewItems.length} | ${activePreview.previewName}`}
+              >
+                <span className="shrink-0">
+                  {activePreviewIndex + 1}/{previewItems.length}
+                </span>
+                <span className="shrink-0 text-slate-400">|</span>
+                <span className="truncate">{activePreview.previewName}</span>
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Tutup preview gambar"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              >
+                <TbX className="h-5 w-5" />
+              </button>
             </div>
 
-            <img
-              src={activePreview.previewUrl}
-              alt={activePreview.previewName || 'Preview gambar'}
-              className="max-h-full max-w-full rounded-[24px] object-contain shadow-[0_20px_50px_rgba(15,23,42,0.14)]"
-              draggable={false}
-            />
-          </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-white p-4 md:p-6">
+              <img
+                src={activePreview.previewUrl}
+                alt={activePreview.previewName || 'Preview gambar'}
+                className="max-h-full max-w-full object-contain"
+                draggable={false}
+              />
+            </div>
+          </section>
         </div>
       ) : null}
     </ImageExpandPreview>

@@ -249,7 +249,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
           <img
             src={previews.imagePreviewUrl}
             alt={previews.imagePreviewName || 'Preview gambar'}
-            className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
+            className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain"
             draggable={false}
           />
         ) : null}
