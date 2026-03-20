@@ -167,6 +167,8 @@ export const useChatComposerSend = ({
                     fileTypeLabel: pendingAttachment.fileTypeLabel,
                     fileKind: 'document' as const,
                     mimeType: pendingAttachment.mimeType,
+                    pdfCoverUrl: pendingAttachment.pdfCoverUrl,
+                    pdfPageCount: pendingAttachment.pdfPageCount,
                   };
                 })()
               );
@@ -263,6 +265,8 @@ export const useChatComposerSend = ({
                   fileTypeLabel: pendingAttachment.fileTypeLabel,
                   fileKind: pendingAttachment.fileKind,
                   mimeType: pendingAttachment.mimeType,
+                  pdfCoverUrl: pendingAttachment.pdfCoverUrl,
+                  pdfPageCount: pendingAttachment.pdfPageCount,
                 },
                 captionForAttachment
               );

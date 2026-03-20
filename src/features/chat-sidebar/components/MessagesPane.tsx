@@ -4,6 +4,7 @@ import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { MAX_MESSAGE_CHARS } from '../constants';
 import type { MessagesPaneModel } from '../models';
+import { buildMessageRenderItems } from '../utils/message-render-items';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MessageItem from './messages/MessageItem';
 
@@ -28,6 +29,13 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
   const visibleMessages = state.messages.filter(
     messageItem => !previews.captionMessageIds.has(messageItem.id)
   );
+  const renderItems = buildMessageRenderItems({
+    messages: visibleMessages,
+    captionMessagesByAttachmentId: previews.captionMessagesByAttachmentId,
+    getAttachmentFileKind: previews.getAttachmentFileKind,
+    enableDocumentBubbleGrouping:
+      !interaction.isSelectionMode && state.normalizedSearchQuery.length === 0,
+  });
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -94,12 +102,13 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                 ) : null}
               </div>
             ) : null}
-            {visibleMessages.map((messageItem, index) => {
+            {renderItems.map((renderItem, index) => {
+              const messageItem = renderItem.anchorMessage;
               const previousMessage =
-                index > 0 ? visibleMessages[index - 1] : null;
+                index > 0 ? renderItems[index - 1]?.anchorMessage : null;
               const nextMessage =
-                index < visibleMessages.length - 1
-                  ? visibleMessages[index + 1]
+                index < renderItems.length - 1
+                  ? renderItems[index + 1]?.anchorMessage
                   : null;
               const currentMessageDate = new Date(
                 messageItem.created_at
@@ -118,7 +127,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                   currentMessageDate;
 
               return (
-                <Fragment key={messageItem.stableKey || messageItem.id}>
+                <Fragment key={renderItem.key}>
                   {shouldRenderDateSeparator ? (
                     <div
                       className={`flex justify-center ${
@@ -164,10 +173,11 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                         refs.initialMessageAnimationKeysRef,
                       initialOpenJumpAnimationKeysRef:
                         refs.initialOpenJumpAnimationKeysRef,
-                      captionMessage:
-                        previews.captionMessagesByAttachmentId.get(
-                          messageItem.id
-                        ),
+                      captionMessage: renderItem.captionMessage,
+                      groupedDocumentMessages:
+                        renderItem.kind === 'document-group'
+                          ? renderItem.messages
+                          : undefined,
                       pdfMessagePreview: previews.getPdfMessagePreview(
                         messageItem,
                         previews.getAttachmentFileName(messageItem)
@@ -184,6 +194,8 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                       handleDeleteMessage: actions.handleDeleteMessage,
                       getAttachmentFileName: previews.getAttachmentFileName,
                       getAttachmentFileKind: previews.getAttachmentFileKind,
+                      getImageMessageUrl: previews.getImageMessageUrl,
+                      getPdfMessagePreview: previews.getPdfMessagePreview,
                       normalizedSearchQuery: state.normalizedSearchQuery,
                       openImageInPortal: previews.openImageInPortal,
                       openDocumentInPortal: previews.openDocumentInPortal,

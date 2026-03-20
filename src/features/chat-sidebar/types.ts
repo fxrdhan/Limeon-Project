@@ -23,6 +23,8 @@ export type PendingComposerFile = {
   fileTypeLabel: string;
   fileKind: ComposerPendingFileKind;
   mimeType: string;
+  pdfCoverUrl?: string | null;
+  pdfPageCount?: number | null;
 };
 
 export type PendingComposerAttachmentKind = 'image' | ComposerPendingFileKind;
@@ -36,6 +38,7 @@ export type PendingComposerAttachment = {
   mimeType: string;
   previewUrl: string | null;
   pdfCoverUrl: string | null;
+  pdfPageCount: number | null;
 };
 
 export type LoadingComposerAttachment = {

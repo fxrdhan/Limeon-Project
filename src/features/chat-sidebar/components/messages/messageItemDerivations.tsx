@@ -162,7 +162,8 @@ export const buildMessageItemDerivations = ({
   const fileFallbackLabel = isFileMessage
     ? formatFileFallbackLabel(fileExtension, fileKind)
     : null;
-  const fileSecondaryLabel = fileSizeLabel || fileFallbackLabel;
+  const fileSecondaryLabel =
+    [fileFallbackLabel, fileSizeLabel].filter(Boolean).join(' · ') || null;
   const isPdfFileMessage =
     isFileMessage &&
     !isAudioFileMessage &&

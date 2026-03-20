@@ -9,7 +9,9 @@ import {
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
+import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 import { sendAttachmentThread } from '../utils/attachment-thread-flow';
 import type {
   ChatSidebarPanelTargetUser,
@@ -155,6 +157,32 @@ export const useChatAttachmentSend = ({
     ]
   );
 
+  const seedLocalPdfPreviewCache = useCallback(
+    (message: ChatMessage, pendingFile: PendingComposerFile) => {
+      const pdfCoverUrl = pendingFile.pdfCoverUrl?.trim();
+      if (!isPdfPendingFile(pendingFile) || !pdfCoverUrl) {
+        return;
+      }
+
+      const cacheKey = buildPdfMessagePreviewCacheKey(
+        {
+          ...message,
+          file_name: message.file_name ?? pendingFile.fileName,
+          file_mime_type: message.file_mime_type ?? pendingFile.mimeType,
+          file_size: message.file_size ?? pendingFile.file.size,
+        },
+        pendingFile.fileName
+      );
+
+      chatRuntimeCache.pdfPreviews.set(message.id, {
+        cacheKey,
+        coverDataUrl: pdfCoverUrl,
+        pageCount: Math.max(pendingFile.pdfPageCount ?? 1, 1),
+      });
+    },
+    [isPdfPendingFile]
+  );
+
   const sendImageMessage = useCallback(
     async (file: File, captionText?: string): Promise<string | null> => {
       if (!file.type.startsWith('image/')) {
@@ -274,6 +302,9 @@ export const useChatAttachmentSend = ({
           receiver_name: targetUser.name || 'Unknown',
           stableKey,
         }),
+        onBeforeAppendOptimistic: optimisticMessage => {
+          seedLocalPdfPreviewCache(optimisticMessage, pendingFile);
+        },
         uploadAsset: async () =>
           chatSidebarAssetsGateway.uploadAttachment(
             pendingFile.file,
@@ -307,6 +338,7 @@ export const useChatAttachmentSend = ({
           ),
         onAfterCommit: shouldPersistPdfPreview
           ? async realMessage => {
+              seedLocalPdfPreviewCache(realMessage, pendingFile);
               await syncPersistedPdfPreview({
                 realMessage: {
                   ...realMessage,
@@ -318,12 +350,15 @@ export const useChatAttachmentSend = ({
                 pendingFile,
               });
             }
-          : undefined,
+          : async realMessage => {
+              seedLocalPdfPreviewCache(realMessage, pendingFile);
+            },
       });
     },
     [
       currentChannelId,
       isPdfPendingFile,
+      seedLocalPdfPreviewCache,
       sendAttachmentMessage,
       syncPersistedPdfPreview,
       targetUser,

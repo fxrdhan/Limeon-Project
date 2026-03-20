@@ -211,6 +211,7 @@ describe('useChatComposerActions', () => {
             mimeType: 'image/png',
             previewUrl: 'blob:preview',
             pdfCoverUrl: null,
+            pdfPageCount: null,
           },
         ],
         clearPendingComposerAttachments,

@@ -175,6 +175,7 @@ describe('useChatComposerAttachments', () => {
       mimeType: 'image/png',
       previewUrl: 'blob:stale-preview',
       pdfCoverUrl: null,
+      pdfPageCount: null,
     };
 
     act(() => {

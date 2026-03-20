@@ -68,6 +68,7 @@ export const useComposerPendingAttachments = ({
                 ? {
                     ...attachment,
                     pdfCoverUrl: renderedPreview.coverDataUrl,
+                    pdfPageCount: renderedPreview.pageCount,
                   }
                 : attachment
             )

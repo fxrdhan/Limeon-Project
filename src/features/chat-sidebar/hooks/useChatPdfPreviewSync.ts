@@ -7,6 +7,8 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import type { PendingComposerFile } from '../types';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 import { resolveFileExtension } from '../utils/message-file';
 import {
   createPdfPreviewUploadArtifact,
@@ -87,6 +89,20 @@ export const useChatPdfPreviewSync = ({
           }
           return;
         }
+
+        const nextMessage = {
+          ...realMessage,
+          ...data.message,
+        };
+        const cacheKey = buildPdfMessagePreviewCacheKey(
+          nextMessage,
+          nextMessage.file_name ?? pendingFile.fileName
+        );
+        chatRuntimeCache.pdfPreviews.set(nextMessage.id, {
+          cacheKey,
+          coverDataUrl: previewDataUrl,
+          pageCount: renderedPreview.pageCount,
+        });
 
         runInCurrentConversationScope(() => {
           setMessages(previousMessages =>

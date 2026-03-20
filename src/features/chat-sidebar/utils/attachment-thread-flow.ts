@@ -55,6 +55,7 @@ export interface SendAttachmentOptions {
     uploadedPath: string,
     stableKey: string
   ) => ChatMessage;
+  onBeforeAppendOptimistic?: (optimisticMessage: ChatMessage) => void;
   onAfterCommit?: (
     realMessage: ChatMessage,
     stableKey: string,
@@ -221,6 +222,7 @@ export const sendAttachmentThread = async (
     uploadAsset,
     createPersistedMessage,
     mapPersistedMessage,
+    onBeforeAppendOptimistic,
     onAfterCommit,
   }: SendAttachmentOptions
 ): Promise<string | null> => {
@@ -258,6 +260,7 @@ export const sendAttachmentThread = async (
   } = optimisticThread;
   const pendingSend = registerPendingSend(tempId);
   pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
+  onBeforeAppendOptimistic?.(optimisticThread.optimisticMessage);
 
   setMessages(previousMessages =>
     appendOptimisticAttachmentThread(previousMessages, optimisticThread)

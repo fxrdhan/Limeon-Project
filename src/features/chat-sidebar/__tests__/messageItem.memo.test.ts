@@ -54,6 +54,8 @@ const createModel = (
   handleDeleteMessage: async () => true,
   getAttachmentFileName: () => '',
   getAttachmentFileKind: () => 'document',
+  getImageMessageUrl: () => null,
+  getPdfMessagePreview: () => undefined,
   normalizedSearchQuery: '',
   openImageInPortal: async () => {},
   openDocumentInPortal: async () => {},
@@ -93,6 +95,23 @@ describe('areMessageItemPropsEqual', () => {
   it('detects when grouped bubble layout changes for the current item', () => {
     const previousModel = createModel({ isGroupedWithNext: false });
     const nextModel = createModel({ isGroupedWithNext: true });
+
+    expect(
+      areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
+    ).toBe(false);
+  });
+
+  it('detects when grouped document members change for the current item', () => {
+    const groupedDocumentMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'documents/channel/report.pdf',
+        message_type: 'file' as const,
+      },
+    ];
+    const previousModel = createModel();
+    const nextModel = createModel({ groupedDocumentMessages });
 
     expect(
       areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })

@@ -57,6 +57,8 @@ const createModel = (
   handleDeleteMessage: async () => true,
   getAttachmentFileName: () => '',
   getAttachmentFileKind: () => 'document',
+  getImageMessageUrl: () => null,
+  getPdfMessagePreview: () => undefined,
   normalizedSearchQuery: '',
   openImageInPortal: async () => {},
   openDocumentInPortal: async () => {},
@@ -132,5 +134,90 @@ describe('MessageItem', () => {
     expect(bubble.className).toContain('rounded-br-md');
     expect(bubble.className).not.toContain('rounded-tr-[2px]');
     expect(bubble.className).not.toContain('rounded-br-[2px]');
+  });
+
+  it('renders multiple document attachments in a single bubble without preview covers', () => {
+    const groupedMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'documents/channel/report.pdf',
+        message_type: 'file' as const,
+        file_name: 'Laporan.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/report.pdf',
+        file_kind: 'document' as const,
+      },
+      {
+        ...baseMessage,
+        id: 'file-2',
+        message: 'documents/channel/notes.docx',
+        message_type: 'file' as const,
+        file_name: 'Catatan.docx',
+        file_mime_type:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_storage_path: 'documents/channel/notes.docx',
+        file_kind: 'document' as const,
+      },
+    ];
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          groupedDocumentMessages: groupedMessages,
+          getAttachmentFileName: targetMessage => targetMessage.file_name || '',
+        })}
+      />
+    );
+
+    expect(screen.getByText('Laporan.pdf')).toBeTruthy();
+    expect(screen.getByText('Catatan.docx')).toBeTruthy();
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('renders a PDF cover thumbnail inside a grouped document bubble when preview data exists', () => {
+    const groupedMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'documents/channel/report.pdf',
+        message_type: 'file' as const,
+        file_name: 'Laporan.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/report.pdf',
+        file_kind: 'document' as const,
+      },
+      {
+        ...baseMessage,
+        id: 'file-2',
+        message: 'documents/channel/notes.pdf',
+        message_type: 'file' as const,
+        file_name: 'Catatan.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/notes.pdf',
+        file_kind: 'document' as const,
+      },
+    ];
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          groupedDocumentMessages: groupedMessages,
+          getAttachmentFileName: targetMessage => targetMessage.file_name || '',
+          getPdfMessagePreview: targetMessage =>
+            targetMessage.id === 'file-1'
+              ? {
+                  cacheKey: 'pdf-preview-1',
+                  coverDataUrl: 'data:image/png;base64,preview',
+                  pageCount: 2,
+                }
+              : undefined,
+        })}
+      />
+    );
+
+    expect(screen.getByAltText('PDF cover preview')).toBeTruthy();
   });
 });

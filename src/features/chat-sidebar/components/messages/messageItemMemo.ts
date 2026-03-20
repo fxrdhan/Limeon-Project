@@ -59,6 +59,8 @@ export const areMessageItemPropsEqual = (
       (nextModel.activeSearchMessageId === messageId) &&
     previousModel.maxMessageChars === nextModel.maxMessageChars &&
     previousModel.captionMessage === nextModel.captionMessage &&
+    previousModel.groupedDocumentMessages ===
+      nextModel.groupedDocumentMessages &&
     previousModel.normalizedSearchQuery === nextModel.normalizedSearchQuery &&
     previousModel.pdfMessagePreview?.coverDataUrl ===
       nextModel.pdfMessagePreview?.coverDataUrl &&

@@ -12,6 +12,7 @@ import type {
   PendingComposerAttachment,
 } from '../../types';
 import { resolveComposerAttachmentExtension } from '../../utils/composer-attachment';
+import { formatFileSize } from '../../utils/message-file';
 
 interface ComposerAttachmentPreviewListProps {
   attachments: ComposerAttachmentPreviewItem[];
@@ -100,6 +101,11 @@ const ComposerAttachmentPreviewList = forwardRef<
             attachmentExtension === 'jpg' || attachmentExtension === 'jpeg';
           const isPngDocumentAttachment = attachmentExtension === 'png';
           const isMenuOpen = openImageActionsAttachmentId === attachment.id;
+          const fileSizeLabel = formatFileSize(resolvedAttachment.file.size);
+          const fileSecondaryLabel =
+            [resolvedAttachment.fileTypeLabel, fileSizeLabel]
+              .filter(Boolean)
+              .join(' · ') || resolvedAttachment.fileTypeLabel;
 
           return (
             <div
@@ -132,7 +138,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {attachment.fileName}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {resolvedAttachment.fileTypeLabel}
+                      {fileSecondaryLabel}
                     </p>
                   </div>
                 </div>
@@ -183,7 +189,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {attachment.fileName}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {resolvedAttachment.fileTypeLabel}
+                      {fileSecondaryLabel}
                     </p>
                   </div>
                 </div>
@@ -195,7 +201,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {attachment.fileName}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {resolvedAttachment.fileTypeLabel}
+                      {fileSecondaryLabel}
                     </p>
                   </div>
                 </div>

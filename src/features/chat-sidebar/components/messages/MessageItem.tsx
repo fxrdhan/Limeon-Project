@@ -11,6 +11,7 @@ import type {
 import { MessageActionPopover } from './MessageActionPopover';
 import { MessageBubbleContent } from './MessageBubbleContent';
 import { MessageBubbleMeta } from './MessageBubbleMeta';
+import { MessageDocumentAttachmentGroupContent } from './MessageDocumentAttachmentGroupContent';
 import { getMessageMenuClasses } from './messageItemUtils';
 import { areMessageItemPropsEqual } from './messageItemMemo';
 import { buildMessageItemDerivations } from './messageItemDerivations';
@@ -41,6 +42,7 @@ export interface MessageItemModel {
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
   captionMessage?: ChatMessage;
+  groupedDocumentMessages?: ChatMessage[];
   pdfMessagePreview?: PdfMessagePreview;
   onToggleMessageSelection: (messageId: string) => void;
   toggleMessageMenu: (
@@ -58,6 +60,16 @@ export interface MessageItemModel {
   getAttachmentFileKind: (
     targetMessage: ChatMessage
   ) => ComposerPendingFileKind;
+  getImageMessageUrl: (
+    message: Pick<
+      ChatMessage,
+      'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+    >
+  ) => string | null;
+  getPdfMessagePreview: (
+    message: ChatMessage,
+    fileName: string | null
+  ) => PdfMessagePreview | undefined;
   normalizedSearchQuery: string;
   openImageInPortal: (
     message: Pick<
@@ -100,6 +112,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
     captionMessage,
+    groupedDocumentMessages,
     pdfMessagePreview,
     onToggleMessageSelection,
     toggleMessageMenu,
@@ -111,10 +124,13 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     handleDeleteMessage,
     getAttachmentFileName,
     getAttachmentFileKind,
+    getImageMessageUrl,
+    getPdfMessagePreview,
     normalizedSearchQuery,
     openImageInPortal,
     openDocumentInPortal,
   } = model;
+  const isDocumentAttachmentGroup = (groupedDocumentMessages?.length ?? 0) > 1;
   const {
     isCurrentUser,
     hasAttachmentCaption,
@@ -222,6 +238,88 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   const bubbleShapeClass = isCurrentUser
     ? `rounded-tl-xl rounded-bl-xl ${outgoingTopCornerClass} ${outgoingBottomCornerClass}`
     : `rounded-tr-xl rounded-br-xl ${incomingTopCornerClass} ${incomingBottomCornerClass}`;
+  const bubbleMessageIds = groupedDocumentMessages?.length
+    ? groupedDocumentMessages.map(messageItem => messageItem.id)
+    : [message.id];
+  const bubbleSharedProps = {
+    ref: (bubbleElement: HTMLDivElement | null) => {
+      bubbleMessageIds.forEach(messageId => {
+        if (bubbleElement) {
+          messageBubbleRefs.current.set(messageId, bubbleElement);
+        } else {
+          messageBubbleRefs.current.delete(messageId);
+        }
+      });
+    },
+    className: `${bubbleWrapperClass} max-w-full ${bubbleSpacingClass} ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
+      bubbleShapeClass
+    } ${
+      isActiveSearchMatch
+        ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
+        : isSearchMatch
+          ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
+          : ''
+    } ${
+      isDocumentAttachmentGroup ? 'cursor-default' : 'cursor-pointer'
+    } select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`,
+    style: {
+      overflowWrap:
+        !isImageMessage && !isFileMessage ? ('anywhere' as const) : undefined,
+      wordBreak:
+        !isImageMessage && !isFileMessage ? ('break-word' as const) : undefined,
+    },
+  };
+  const bubbleInnerContent = (
+    <>
+      <MessageBubbleMeta
+        isCurrentUser={isCurrentUser}
+        displayTime={displayTime}
+        isEdited={isEdited}
+        messageDeliveryStatus={messageDeliveryStatus}
+      />
+      {isDocumentAttachmentGroup && groupedDocumentMessages ? (
+        <MessageDocumentAttachmentGroupContent
+          messages={groupedDocumentMessages}
+          userId={userId}
+          captionMessage={captionMessage}
+          isHighlightedBubble={isFlashingTarget}
+          getAttachmentFileName={getAttachmentFileName}
+          getImageMessageUrl={getImageMessageUrl}
+          getPdfMessagePreview={getPdfMessagePreview}
+          openImageInPortal={openImageInPortal}
+          openDocumentInPortal={openDocumentInPortal}
+          handleCopyMessage={handleCopyMessage}
+          handleDownloadMessage={handleDownloadMessage}
+          handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
+          handleDeleteMessage={handleDeleteMessage}
+        />
+      ) : (
+        <MessageBubbleContent
+          message={message}
+          resolvedMessageUrl={resolvedMessageUrl}
+          isSelectionMode={isSelectionMode}
+          isImageMessage={isImageMessage}
+          isFileMessage={isFileMessage}
+          isImageFileMessage={isImageFileMessage}
+          isPdfFileMessage={isPdfFileMessage}
+          hasAttachmentCaption={hasAttachmentCaption}
+          fileName={fileName}
+          fileSecondaryLabel={fileSecondaryLabel}
+          fileIcon={fileIcon}
+          resolvedPdfPreviewUrl={resolvedPdfPreviewUrl}
+          pdfMetaLabel={pdfMetaLabel}
+          highlightedMessage={highlightedMessage}
+          highlightedCaption={highlightedCaption}
+          hasLeadingEllipsis={collapsedSearchSnippet.hasLeadingEllipsis}
+          hasTrailingEllipsis={collapsedSearchSnippet.hasTrailingEllipsis}
+          isMessageLong={isMessageLong}
+          isExpanded={isExpanded}
+          isHighlightedBubble={isFlashingTarget}
+          onToggleExpand={() => handleToggleExpand(message.id)}
+        />
+      )}
+    </>
+  );
 
   return (
     <motion.div
@@ -286,96 +384,53 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               : 'relative min-w-0 max-w-full'
           }
         >
-          <div
-            ref={bubbleElement => {
-              if (bubbleElement) {
-                messageBubbleRefs.current.set(message.id, bubbleElement);
-              } else {
-                messageBubbleRefs.current.delete(message.id);
-              }
-            }}
-            className={`${bubbleWrapperClass} max-w-full ${bubbleSpacingClass} ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
-              bubbleShapeClass
-            } ${
-              isActiveSearchMatch
-                ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
-                : isSearchMatch
-                  ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
-                  : ''
-            } cursor-pointer select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`}
-            style={{
-              overflowWrap:
-                !isImageMessage && !isFileMessage ? 'anywhere' : undefined,
-              wordBreak:
-                !isImageMessage && !isFileMessage ? 'break-word' : undefined,
-            }}
-            onClick={event => {
-              if (isSelectionMode) return;
-              event.stopPropagation();
-              toggleMessageMenu(
-                event.currentTarget,
-                message.id,
-                isCurrentUser ? 'left' : 'right'
-              );
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={event => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                if (isSelectionMode) {
-                  onToggleMessageSelection(message.id);
-                  return;
-                }
+          {isDocumentAttachmentGroup ? (
+            <div {...bubbleSharedProps}>{bubbleInnerContent}</div>
+          ) : (
+            <div
+              {...bubbleSharedProps}
+              onClick={event => {
+                if (isSelectionMode) return;
+                event.stopPropagation();
                 toggleMessageMenu(
                   event.currentTarget,
                   message.id,
                   isCurrentUser ? 'left' : 'right'
                 );
-              }
-            }}
-          >
-            <MessageBubbleMeta
-              isCurrentUser={isCurrentUser}
-              displayTime={displayTime}
-              isEdited={isEdited}
-              messageDeliveryStatus={messageDeliveryStatus}
-            />
-            <MessageBubbleContent
-              message={message}
-              resolvedMessageUrl={resolvedMessageUrl}
-              isSelectionMode={isSelectionMode}
-              isImageMessage={isImageMessage}
-              isFileMessage={isFileMessage}
-              isImageFileMessage={isImageFileMessage}
-              isPdfFileMessage={isPdfFileMessage}
-              hasAttachmentCaption={hasAttachmentCaption}
-              fileName={fileName}
-              fileSecondaryLabel={fileSecondaryLabel}
-              fileIcon={fileIcon}
-              resolvedPdfPreviewUrl={resolvedPdfPreviewUrl}
-              pdfMetaLabel={pdfMetaLabel}
-              highlightedMessage={highlightedMessage}
-              highlightedCaption={highlightedCaption}
-              hasLeadingEllipsis={collapsedSearchSnippet.hasLeadingEllipsis}
-              hasTrailingEllipsis={collapsedSearchSnippet.hasTrailingEllipsis}
-              isMessageLong={isMessageLong}
-              isExpanded={isExpanded}
-              isHighlightedBubble={isFlashingTarget}
-              onToggleExpand={() => handleToggleExpand(message.id)}
-            />
-          </div>
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  if (isSelectionMode) {
+                    onToggleMessageSelection(message.id);
+                    return;
+                  }
+                  toggleMessageMenu(
+                    event.currentTarget,
+                    message.id,
+                    isCurrentUser ? 'left' : 'right'
+                  );
+                }
+              }}
+            >
+              {bubbleInnerContent}
+            </div>
+          )}
 
-          <MessageActionPopover
-            isOpen={!isSelectionMode && isMenuOpen}
-            menuId={message.id}
-            shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-            menuPlacement={menuPlacement}
-            menuOffsetX={menuOffsetX}
-            sidePlacementClass={sidePlacementClass}
-            sideArrowAnchorClass={sideArrowAnchorClass}
-            actions={menuActions}
-          />
+          {isDocumentAttachmentGroup ? null : (
+            <MessageActionPopover
+              isOpen={!isSelectionMode && isMenuOpen}
+              menuId={message.id}
+              shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+              menuPlacement={menuPlacement}
+              menuOffsetX={menuOffsetX}
+              sidePlacementClass={sidePlacementClass}
+              sideArrowAnchorClass={sideArrowAnchorClass}
+              actions={menuActions}
+            />
+          )}
         </div>
       </div>
     </motion.div>

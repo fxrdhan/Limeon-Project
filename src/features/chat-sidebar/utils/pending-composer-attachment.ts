@@ -47,6 +47,7 @@ export const buildPendingImageComposerAttachment = (
   fileKind: 'image',
   mimeType: file.type,
   pdfCoverUrl: null,
+  pdfPageCount: null,
 });
 
 export const buildPendingFileComposerAttachment = (
@@ -64,6 +65,7 @@ export const buildPendingFileComposerAttachment = (
   mimeType: file.type,
   previewUrl: null,
   pdfCoverUrl: null,
+  pdfPageCount: null,
 });
 
 export const upsertPendingComposerAttachment = (

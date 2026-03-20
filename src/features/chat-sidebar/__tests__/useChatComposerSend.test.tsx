@@ -5,6 +5,8 @@ import type { ChatMessage } from '../../../services/api/chat.service';
 import type { PendingComposerAttachment } from '../types';
 import { useChatComposerSend } from '../hooks/useChatComposerSend';
 import { useChatMutationScope } from '../hooks/useChatMutationScope';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 
 const { mockGateway, mockToast } = vi.hoisted(() => ({
   mockGateway: {
@@ -114,6 +116,7 @@ const buildPendingAttachment = (
   mimeType: overrides.mimeType ?? 'application/pdf',
   previewUrl: overrides.previewUrl ?? 'blob:pending-preview',
   pdfCoverUrl: overrides.pdfCoverUrl ?? null,
+  pdfPageCount: overrides.pdfPageCount ?? null,
 });
 
 const createPendingSendRegistry = () => {
@@ -168,6 +171,7 @@ describe('useChatComposerSend', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatRuntimeCache.pdfPreviews.reset();
     vi.stubGlobal(
       'URL',
       Object.assign(URL, {
@@ -540,6 +544,119 @@ describe('useChatComposerSend', () => {
       'previews/channel/server-file-preview.png'
     );
     expect(result.current.messages[0]?.file_preview_page_count).toBe(2);
+  });
+
+  it('reuses the composer pdf cover in bubble cache before persisted preview metadata finishes', async () => {
+    mockGateway.uploadAttachment.mockResolvedValue({
+      path: 'documents/channel/stok.pdf',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-file-cache',
+        file_storage_path: 'documents/channel/stok.pdf',
+      }),
+      error: null,
+    });
+
+    let resolvePersistPdfPreview:
+      | ((value: {
+          data: {
+            previewPersisted: boolean;
+            message: ChatMessage;
+          };
+          error: null;
+        }) => void)
+      | undefined;
+
+    mockGateway.persistPdfPreview.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolvePersistPdfPreview = resolve;
+        })
+    );
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [
+          buildPendingAttachment({
+            pdfCoverUrl: 'data:image/png;base64,localcover',
+            pdfPageCount: 3,
+          }),
+        ],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+      };
+    });
+
+    let sendPromise: Promise<void> | undefined;
+
+    await act(async () => {
+      sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0]?.id).toBe('server-file-cache');
+    });
+
+    const realMessage = result.current.messages[0]!;
+    const cacheKey = buildPdfMessagePreviewCacheKey(
+      realMessage as Parameters<typeof buildPdfMessagePreviewCacheKey>[0],
+      realMessage.file_name ?? null
+    );
+
+    expect(chatRuntimeCache.pdfPreviews.get(cacheKey)).toEqual(
+      expect.objectContaining({
+        cacheKey,
+        coverDataUrl: 'data:image/png;base64,localcover',
+        pageCount: 3,
+      })
+    );
+
+    resolvePersistPdfPreview?.({
+      data: {
+        previewPersisted: true,
+        message: buildMessage({
+          id: 'server-file-cache',
+          file_preview_status: 'ready',
+          file_preview_url: 'previews/channel/server-file-cache.png',
+          file_preview_page_count: 2,
+        }),
+      },
+      error: null,
+    });
+
+    await act(async () => {
+      await sendPromise;
+    });
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {
