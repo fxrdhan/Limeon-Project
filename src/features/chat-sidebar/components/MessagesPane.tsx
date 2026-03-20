@@ -1,10 +1,27 @@
 import { LayoutGroup } from 'motion/react';
+import { Fragment } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { MAX_MESSAGE_CHARS } from '../constants';
 import type { MessagesPaneModel } from '../models';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MessageItem from './messages/MessageItem';
+
+const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+const formatMessageGroupDate = (value: string) => {
+  const parsedDate = new Date(value);
+
+  if (!Number.isFinite(parsedDate.getTime())) {
+    return value;
+  }
+
+  return CHAT_DATE_FORMATTER.format(parsedDate);
+};
 
 const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
   const { state, menu, interaction, refs, previews, actions } = model;
@@ -87,73 +104,92 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
               const currentMessageDate = new Date(
                 messageItem.created_at
               ).toDateString();
+              const previousMessageDate = previousMessage
+                ? new Date(previousMessage.created_at).toDateString()
+                : null;
+              const shouldRenderDateSeparator =
+                index === 0 || previousMessageDate !== currentMessageDate;
               const isGroupedWithPrevious =
                 previousMessage?.sender_id === messageItem.sender_id &&
-                new Date(previousMessage.created_at).toDateString() ===
-                  currentMessageDate;
+                previousMessageDate === currentMessageDate;
               const isGroupedWithNext =
                 nextMessage?.sender_id === messageItem.sender_id &&
                 new Date(nextMessage.created_at).toDateString() ===
                   currentMessageDate;
 
               return (
-                <MessageItem
-                  key={messageItem.stableKey || messageItem.id}
-                  model={{
-                    message: messageItem,
-                    resolvedMessageUrl:
-                      previews.getImageMessageUrl(messageItem),
-                    userId: state.user?.id,
-                    isGroupedWithPrevious,
-                    isGroupedWithNext,
-                    isFirstVisibleMessage: index === 0,
-                    isSelectionMode: interaction.isSelectionMode,
-                    isSelected: interaction.selectedMessageIds.has(
-                      messageItem.id
-                    ),
-                    openMenuMessageId: menu.openMessageId,
-                    menuPlacement: menu.placement,
-                    menuSideAnchor: menu.sideAnchor,
-                    shouldAnimateMenuOpen: menu.shouldAnimateOpen,
-                    menuTransitionSourceId: menu.transitionSourceId,
-                    menuOffsetX: menu.offsetX,
-                    expandedMessageIds: interaction.expandedMessageIds,
-                    flashingMessageId: interaction.flashingMessageId,
-                    isFlashHighlightVisible:
-                      interaction.isFlashHighlightVisible,
-                    searchMatchedMessageIds:
-                      interaction.searchMatchedMessageIds,
-                    activeSearchMessageId: interaction.activeSearchMessageId,
-                    maxMessageChars: MAX_MESSAGE_CHARS,
-                    messageBubbleRefs: refs.messageBubbleRefs,
-                    initialMessageAnimationKeysRef:
-                      refs.initialMessageAnimationKeysRef,
-                    initialOpenJumpAnimationKeysRef:
-                      refs.initialOpenJumpAnimationKeysRef,
-                    captionMessage: previews.captionMessagesByAttachmentId.get(
-                      messageItem.id
-                    ),
-                    pdfMessagePreview: previews.getPdfMessagePreview(
-                      messageItem,
-                      previews.getAttachmentFileName(messageItem)
-                    ),
-                    onToggleMessageSelection:
-                      interaction.onToggleMessageSelection,
-                    toggleMessageMenu: menu.toggle,
-                    handleToggleExpand: interaction.onToggleExpand,
-                    handleEditMessage: actions.handleEditMessage,
-                    handleCopyMessage: actions.handleCopyMessage,
-                    handleDownloadMessage: actions.handleDownloadMessage,
-                    handleOpenForwardMessagePicker:
-                      actions.handleOpenForwardMessagePicker,
-                    handleDeleteMessage: actions.handleDeleteMessage,
-                    getAttachmentFileName: previews.getAttachmentFileName,
-                    getAttachmentFileKind: previews.getAttachmentFileKind,
-                    normalizedSearchQuery: state.normalizedSearchQuery,
-                    openImageInPortal: previews.openImageInPortal,
-                    openDocumentInPortal: previews.openDocumentInPortal,
-                  }}
-                />
+                <Fragment key={messageItem.stableKey || messageItem.id}>
+                  {shouldRenderDateSeparator ? (
+                    <div
+                      className={`flex justify-center ${
+                        index === 0 ? 'pb-3' : 'py-3'
+                      }`}
+                    >
+                      <div className="inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm backdrop-blur-sm">
+                        {formatMessageGroupDate(messageItem.created_at)}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <MessageItem
+                    model={{
+                      message: messageItem,
+                      resolvedMessageUrl:
+                        previews.getImageMessageUrl(messageItem),
+                      userId: state.user?.id,
+                      isGroupedWithPrevious,
+                      isGroupedWithNext,
+                      isFirstVisibleMessage: index === 0,
+                      hasDateSeparatorBefore: shouldRenderDateSeparator,
+                      isSelectionMode: interaction.isSelectionMode,
+                      isSelected: interaction.selectedMessageIds.has(
+                        messageItem.id
+                      ),
+                      openMenuMessageId: menu.openMessageId,
+                      menuPlacement: menu.placement,
+                      menuSideAnchor: menu.sideAnchor,
+                      shouldAnimateMenuOpen: menu.shouldAnimateOpen,
+                      menuTransitionSourceId: menu.transitionSourceId,
+                      menuOffsetX: menu.offsetX,
+                      expandedMessageIds: interaction.expandedMessageIds,
+                      flashingMessageId: interaction.flashingMessageId,
+                      isFlashHighlightVisible:
+                        interaction.isFlashHighlightVisible,
+                      searchMatchedMessageIds:
+                        interaction.searchMatchedMessageIds,
+                      activeSearchMessageId: interaction.activeSearchMessageId,
+                      maxMessageChars: MAX_MESSAGE_CHARS,
+                      messageBubbleRefs: refs.messageBubbleRefs,
+                      initialMessageAnimationKeysRef:
+                        refs.initialMessageAnimationKeysRef,
+                      initialOpenJumpAnimationKeysRef:
+                        refs.initialOpenJumpAnimationKeysRef,
+                      captionMessage:
+                        previews.captionMessagesByAttachmentId.get(
+                          messageItem.id
+                        ),
+                      pdfMessagePreview: previews.getPdfMessagePreview(
+                        messageItem,
+                        previews.getAttachmentFileName(messageItem)
+                      ),
+                      onToggleMessageSelection:
+                        interaction.onToggleMessageSelection,
+                      toggleMessageMenu: menu.toggle,
+                      handleToggleExpand: interaction.onToggleExpand,
+                      handleEditMessage: actions.handleEditMessage,
+                      handleCopyMessage: actions.handleCopyMessage,
+                      handleDownloadMessage: actions.handleDownloadMessage,
+                      handleOpenForwardMessagePicker:
+                        actions.handleOpenForwardMessagePicker,
+                      handleDeleteMessage: actions.handleDeleteMessage,
+                      getAttachmentFileName: previews.getAttachmentFileName,
+                      getAttachmentFileKind: previews.getAttachmentFileKind,
+                      normalizedSearchQuery: state.normalizedSearchQuery,
+                      openImageInPortal: previews.openImageInPortal,
+                      openDocumentInPortal: previews.openDocumentInPortal,
+                    }}
+                  />
+                </Fragment>
               );
             })}
           </LayoutGroup>

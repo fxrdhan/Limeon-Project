@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import {
   extractAttachmentComposerLinkFromMessageText,
+  extractComposerLinkFromClipboard,
   fetchAttachmentComposerRemoteFile,
 } from '../utils/composer-attachment-link';
 
@@ -26,6 +27,19 @@ describe('composer-attachment-link', () => {
       )
     ).toEqual({
       source: 'direct-url',
+      url: 'https://shrtlink.works/bwdrrk3ugm',
+    });
+  });
+
+  it('keeps visible HTML anchor text when pasting a shared attachment link', () => {
+    expect(
+      extractComposerLinkFromClipboard({
+        text: '',
+        html: '<a href="https://shrtlink.works/bwdrrk3ugm">github.com</a>',
+      })
+    ).toEqual({
+      source: 'attachment',
+      pastedText: 'github.com',
       url: 'https://shrtlink.works/bwdrrk3ugm',
     });
   });

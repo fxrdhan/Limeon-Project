@@ -99,6 +99,52 @@ const extractUrlFromHtmlFragment = (html: string) => {
   return null;
 };
 
+const extractComposerLinkFromHtmlAnchor = (html: string) => {
+  const normalizedHtml = html.trim();
+  if (!normalizedHtml) return null;
+
+  if (typeof DOMParser !== 'undefined') {
+    const parsedDocument = new DOMParser().parseFromString(
+      normalizedHtml,
+      'text/html'
+    );
+    const anchorElement = parsedDocument.querySelector('a[href]');
+    const anchorHref = anchorElement?.getAttribute('href');
+    const resolvedUrl = anchorHref
+      ? resolveComposerAttachmentUrl(anchorHref)
+      : null;
+
+    if (resolvedUrl) {
+      return {
+        text: anchorElement?.textContent?.replace(/\s+/g, ' ').trim() || '',
+        url: resolvedUrl,
+      };
+    }
+  }
+
+  const anchorMatch = normalizedHtml.match(
+    /<a\b[^>]*\bhref=(['"])(.*?)\1[^>]*>(.*?)<\/a>/is
+  );
+  if (!anchorMatch?.[2]) {
+    return null;
+  }
+
+  const resolvedUrl = resolveComposerAttachmentUrl(anchorMatch[2]);
+  if (!resolvedUrl) {
+    return null;
+  }
+
+  const anchorText = anchorMatch[3]
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return {
+    text: anchorText,
+    url: resolvedUrl,
+  };
+};
+
 const resolveAttachmentExtension = (
   fileName: string | null,
   url: string,
@@ -534,6 +580,25 @@ export const extractComposerLinkFromClipboard = ({
       source: 'attachment',
       pastedText: attachmentHtmlUrl,
       url: attachmentHtmlUrl,
+    };
+  }
+
+  const htmlAnchorLink = html.trim()
+    ? extractComposerLinkFromHtmlAnchor(html)
+    : null;
+  if (htmlAnchorLink) {
+    const visibleLinkText = htmlAnchorLink.text.trim();
+    const parsedVisibleLink =
+      visibleLinkText.length > 0
+        ? extractComposerLinkFromMessageText(visibleLinkText)
+        : null;
+    const isAttachmentLink =
+      extractAttachmentComposerLinkFromMessageText(htmlAnchorLink.url) !== null;
+
+    return {
+      source: isAttachmentLink ? 'attachment' : 'generic',
+      pastedText: parsedVisibleLink?.pastedText || htmlAnchorLink.url,
+      url: htmlAnchorLink.url,
     };
   }
 

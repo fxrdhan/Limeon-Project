@@ -1,8 +1,19 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { MessageBubbleContent } from '../components/messages/MessageBubbleContent';
 import { renderHighlightedText } from '../utils/message-search';
+
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: mockToast,
+}));
 
 const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -26,6 +37,10 @@ const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
 });
 
 describe('MessageBubbleContent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders square covered image previews with captions in the same bubble', () => {
     render(
       <MessageBubbleContent
@@ -272,5 +287,62 @@ describe('MessageBubbleContent', () => {
     const link = screen.getByRole('link', { name: url });
 
     expect(link.parentElement?.className).toContain('pointer-events-none');
+  });
+
+  it('opens a custom context menu for bubble links and copies the visible link text', async () => {
+    const url = 'shrtnk.works/bwdrrk3ugm';
+    const writeText = vi.fn().mockResolvedValue(undefined);
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(
+      <MessageBubbleContent
+        message={buildMessage({
+          message: url,
+          message_type: 'text',
+        })}
+        resolvedMessageUrl={null}
+        isSelectionMode={false}
+        isImageMessage={false}
+        isFileMessage={false}
+        isImageFileMessage={false}
+        isPdfFileMessage={false}
+        hasAttachmentCaption={false}
+        fileName={null}
+        fileSecondaryLabel={null}
+        fileIcon={<span />}
+        resolvedPdfPreviewUrl={null}
+        pdfMetaLabel={null}
+        highlightedMessage={renderHighlightedText(url, '', {
+          linkify: true,
+        })}
+        highlightedCaption=""
+        hasLeadingEllipsis={false}
+        hasTrailingEllipsis={false}
+        isMessageLong={false}
+        isExpanded={false}
+        isHighlightedBubble={false}
+        onToggleExpand={() => {}}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: url });
+
+    fireEvent.contextMenu(link, { clientX: 80, clientY: 120 });
+
+    const copyButton = screen.getByRole('button', { name: 'Salin' });
+    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
+
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(url);
+      expect(mockToast.success).toHaveBeenCalledWith('Link berhasil disalin', {
+        toasterId: 'chat-sidebar-toaster',
+      });
+    });
   });
 });

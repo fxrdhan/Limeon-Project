@@ -22,6 +22,7 @@ export interface MessageItemModel {
   isGroupedWithPrevious: boolean;
   isGroupedWithNext: boolean;
   isFirstVisibleMessage: boolean;
+  hasDateSeparatorBefore?: boolean;
   isSelectionMode: boolean;
   isSelected: boolean;
   openMenuMessageId: string | null;
@@ -80,6 +81,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     isGroupedWithPrevious,
     isGroupedWithNext,
     isFirstVisibleMessage,
+    hasDateSeparatorBefore,
     isSelectionMode,
     isSelected,
     openMenuMessageId,
@@ -199,18 +201,27 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     menuPlacement,
     menuSideAnchor
   );
-  const rowSpacingClass = isFirstVisibleMessage
-    ? ''
-    : isGroupedWithPrevious
-      ? 'mt-1'
-      : 'mt-3';
+  const rowSpacingClass =
+    isFirstVisibleMessage || hasDateSeparatorBefore
+      ? ''
+      : isGroupedWithPrevious
+        ? 'mt-1'
+        : 'mt-3';
+  const outgoingTopCornerClass = isGroupedWithPrevious
+    ? 'rounded-tr-md'
+    : 'rounded-tr-[2px]';
+  const outgoingBottomCornerClass = isGroupedWithNext
+    ? 'rounded-br-md'
+    : 'rounded-br-xl';
+  const incomingTopCornerClass = isGroupedWithPrevious
+    ? 'rounded-tl-xl'
+    : 'rounded-tl-[2px]';
+  const incomingBottomCornerClass = isGroupedWithNext
+    ? 'rounded-bl-md'
+    : 'rounded-bl-xl';
   const bubbleShapeClass = isCurrentUser
-    ? `rounded-tl-xl rounded-bl-xl ${
-        isGroupedWithPrevious ? 'rounded-tr-md' : 'rounded-tr-xl'
-      } ${isGroupedWithNext ? 'rounded-br-md' : 'rounded-br-[2px]'}`
-    : `rounded-tr-xl rounded-br-xl ${
-        isGroupedWithPrevious ? 'rounded-tl-md' : 'rounded-tl-xl'
-      } ${isGroupedWithNext ? 'rounded-bl-md' : 'rounded-bl-[2px]'}`;
+    ? `rounded-tl-xl rounded-bl-xl ${outgoingTopCornerClass} ${outgoingBottomCornerClass}`
+    : `rounded-tr-xl rounded-br-xl ${incomingTopCornerClass} ${incomingBottomCornerClass}`;
 
   return (
     <motion.div

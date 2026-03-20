@@ -103,7 +103,17 @@ describe('MessageItem', () => {
     expect(container.querySelector('.rounded-full.border')).toBeNull();
   });
 
-  it('removes the outgoing tail and tightens spacing for grouped messages', () => {
+  it('moves the outgoing tail to the top-right corner for a standalone bubble', () => {
+    render(<MessageItem model={createModel()} />);
+
+    const bubble = screen.getByRole('button');
+
+    expect(bubble.className).toContain('rounded-tr-[2px]');
+    expect(bubble.className).toContain('rounded-br-xl');
+    expect(bubble.className).not.toContain('rounded-br-[2px]');
+  });
+
+  it('keeps grouped outgoing bubbles connected and uses a single tail at the group start', () => {
     const { container } = render(
       <MessageItem
         model={createModel({
@@ -120,6 +130,7 @@ describe('MessageItem', () => {
     expect(row?.className).toContain('mt-1');
     expect(bubble.className).toContain('rounded-tr-md');
     expect(bubble.className).toContain('rounded-br-md');
+    expect(bubble.className).not.toContain('rounded-tr-[2px]');
     expect(bubble.className).not.toContain('rounded-br-[2px]');
   });
 });

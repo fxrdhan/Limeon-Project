@@ -38,6 +38,7 @@ export const areMessageItemPropsEqual = (
     previousModel.isGroupedWithPrevious === nextModel.isGroupedWithPrevious &&
     previousModel.isGroupedWithNext === nextModel.isGroupedWithNext &&
     previousModel.isFirstVisibleMessage === nextModel.isFirstVisibleMessage &&
+    previousModel.hasDateSeparatorBefore === nextModel.hasDateSeparatorBefore &&
     previousModel.isSelectionMode === nextModel.isSelectionMode &&
     previousModel.isSelected === nextModel.isSelected &&
     previousHasOpenMenu === nextHasOpenMenu &&

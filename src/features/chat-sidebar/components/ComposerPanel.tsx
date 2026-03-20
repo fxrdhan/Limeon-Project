@@ -496,22 +496,22 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                           onClick={actions.onOpenAttachmentPastePromptLink}
                           className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                         >
-                          <span>Buka</span>
                           <TbArrowUpRight
-                            className="ml-auto h-4 w-4 text-black"
+                            className="h-4 w-4 text-black"
                             aria-hidden="true"
                           />
+                          <span>Buka</span>
                         </button>
                         <button
                           type="button"
                           onClick={actions.onCopyAttachmentPastePromptLink}
                           className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                         >
-                          <span>Salin</span>
                           <TbCopy
-                            className="ml-auto h-4 w-4 text-black"
+                            className="h-4 w-4 text-black"
                             aria-hidden="true"
                           />
+                          <span>Salin</span>
                         </button>
                         {attachments.isAttachmentPastePromptShortenable ? (
                           <button
@@ -519,11 +519,11 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                             onClick={actions.onShortenAttachmentPastePromptLink}
                             className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                           >
-                            <span>Shorten link</span>
                             <TbLink
-                              className="ml-auto h-4 w-4 text-black"
+                              className="h-4 w-4 text-black"
                               aria-hidden="true"
                             />
+                            <span>Shorten link</span>
                           </button>
                         ) : null}
                         <AnimatePresence initial={false}>
@@ -549,11 +549,11 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                                 onClick={actions.onUseAttachmentPasteAsUrl}
                                 className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                               >
-                                <span>URL</span>
                                 <TbLink
-                                  className="ml-auto h-4 w-4 text-black"
+                                  className="h-4 w-4 text-black"
                                   aria-hidden="true"
                                 />
+                                <span>URL</span>
                               </button>
                               <button
                                 type="button"
@@ -562,11 +562,11 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                                 }
                                 className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
                               >
-                                <span>Attachment</span>
                                 <TbPaperclip
-                                  className="ml-auto h-4 w-4 text-black"
+                                  className="h-4 w-4 text-black"
                                   aria-hidden="true"
                                 />
+                                <span>Attachment</span>
                               </button>
                             </motion.div>
                           ) : null}
