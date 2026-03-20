@@ -2,6 +2,7 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ComposerPendingFileKind } from '../types';
 
 const MULTI_DOCUMENT_BUBBLE_MAX_GAP_MS = 60_000;
+const MULTI_IMAGE_BUBBLE_MIN_MESSAGES = 4;
 
 export type MessageRenderItem =
   | {
@@ -17,6 +18,13 @@ export type MessageRenderItem =
       anchorMessage: ChatMessage;
       messages: ChatMessage[];
       captionMessage?: ChatMessage;
+    }
+  | {
+      kind: 'image-group';
+      key: string;
+      anchorMessage: ChatMessage;
+      messages: ChatMessage[];
+      captionMessage?: ChatMessage;
     };
 
 const isDocumentAttachmentMessage = (
@@ -25,6 +33,9 @@ const isDocumentAttachmentMessage = (
 ) =>
   message.message_type === 'file' &&
   getAttachmentFileKind(message) === 'document';
+
+const isImageAttachmentMessage = (message: ChatMessage) =>
+  message.message_type === 'image';
 
 const isSameCalendarDay = (left: ChatMessage, right: ChatMessage) =>
   new Date(left.created_at).toDateString() ===
@@ -44,6 +55,30 @@ const isWithinMultiDocumentBubbleGap = (
   return (
     Math.abs(rightTimestamp - leftTimestamp) <= MULTI_DOCUMENT_BUBBLE_MAX_GAP_MS
   );
+};
+
+const canAppendGroupedAttachmentMessage = (
+  lastGroupedMessage: ChatMessage,
+  nextMessage: ChatMessage,
+  captionMessagesByAttachmentId: Map<string, ChatMessage>
+) => {
+  if (lastGroupedMessage.sender_id !== nextMessage.sender_id) {
+    return false;
+  }
+
+  if (!isSameCalendarDay(lastGroupedMessage, nextMessage)) {
+    return false;
+  }
+
+  if (!isWithinMultiDocumentBubbleGap(lastGroupedMessage, nextMessage)) {
+    return false;
+  }
+
+  if (captionMessagesByAttachmentId.has(lastGroupedMessage.id)) {
+    return false;
+  }
+
+  return true;
 };
 
 export const buildMessageRenderItems = ({
@@ -74,6 +109,47 @@ export const buildMessageRenderItems = ({
   for (let index = 0; index < messages.length; index += 1) {
     const currentMessage = messages[index];
 
+    if (isImageAttachmentMessage(currentMessage)) {
+      const groupedMessages = [currentMessage];
+      let lastGroupedMessage = currentMessage;
+
+      while (index + groupedMessages.length < messages.length) {
+        const nextMessage = messages[index + groupedMessages.length];
+
+        if (!isImageAttachmentMessage(nextMessage)) {
+          break;
+        }
+
+        if (
+          !canAppendGroupedAttachmentMessage(
+            lastGroupedMessage,
+            nextMessage,
+            captionMessagesByAttachmentId
+          )
+        ) {
+          break;
+        }
+
+        groupedMessages.push(nextMessage);
+        lastGroupedMessage = nextMessage;
+      }
+
+      if (groupedMessages.length >= MULTI_IMAGE_BUBBLE_MIN_MESSAGES) {
+        const anchorMessage = groupedMessages[groupedMessages.length - 1];
+
+        renderItems.push({
+          kind: 'image-group',
+          key: anchorMessage.stableKey || anchorMessage.id,
+          anchorMessage,
+          messages: groupedMessages,
+          captionMessage: captionMessagesByAttachmentId.get(anchorMessage.id),
+        });
+
+        index += groupedMessages.length - 1;
+        continue;
+      }
+    }
+
     if (!isDocumentAttachmentMessage(currentMessage, getAttachmentFileKind)) {
       renderItems.push({
         kind: 'message',
@@ -95,19 +171,13 @@ export const buildMessageRenderItems = ({
         break;
       }
 
-      if (lastGroupedMessage.sender_id !== nextMessage.sender_id) {
-        break;
-      }
-
-      if (!isSameCalendarDay(lastGroupedMessage, nextMessage)) {
-        break;
-      }
-
-      if (!isWithinMultiDocumentBubbleGap(lastGroupedMessage, nextMessage)) {
-        break;
-      }
-
-      if (captionMessagesByAttachmentId.has(lastGroupedMessage.id)) {
+      if (
+        !canAppendGroupedAttachmentMessage(
+          lastGroupedMessage,
+          nextMessage,
+          captionMessagesByAttachmentId
+        )
+      ) {
         break;
       }
 

@@ -61,6 +61,7 @@ export const areMessageItemPropsEqual = (
     previousModel.captionMessage === nextModel.captionMessage &&
     previousModel.groupedDocumentMessages ===
       nextModel.groupedDocumentMessages &&
+    previousModel.groupedImageMessages === nextModel.groupedImageMessages &&
     previousModel.normalizedSearchQuery === nextModel.normalizedSearchQuery &&
     previousModel.pdfMessagePreview?.coverDataUrl ===
       nextModel.pdfMessagePreview?.coverDataUrl &&

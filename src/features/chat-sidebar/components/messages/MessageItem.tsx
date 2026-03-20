@@ -12,6 +12,7 @@ import { MessageActionPopover } from './MessageActionPopover';
 import { MessageBubbleContent } from './MessageBubbleContent';
 import { MessageBubbleMeta } from './MessageBubbleMeta';
 import { MessageDocumentAttachmentGroupContent } from './MessageDocumentAttachmentGroupContent';
+import { MessageImageAttachmentGroupContent } from './MessageImageAttachmentGroupContent';
 import { getMessageMenuClasses } from './messageItemUtils';
 import { areMessageItemPropsEqual } from './messageItemMemo';
 import { buildMessageItemDerivations } from './messageItemDerivations';
@@ -43,6 +44,7 @@ export interface MessageItemModel {
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
   captionMessage?: ChatMessage;
   groupedDocumentMessages?: ChatMessage[];
+  groupedImageMessages?: ChatMessage[];
   pdfMessagePreview?: PdfMessagePreview;
   onToggleMessageSelection: (messageId: string) => void;
   toggleMessageMenu: (
@@ -113,6 +115,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     initialOpenJumpAnimationKeysRef,
     captionMessage,
     groupedDocumentMessages,
+    groupedImageMessages,
     pdfMessagePreview,
     onToggleMessageSelection,
     toggleMessageMenu,
@@ -131,6 +134,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     openDocumentInPortal,
   } = model;
   const isDocumentAttachmentGroup = (groupedDocumentMessages?.length ?? 0) > 1;
+  const isImageAttachmentGroup = (groupedImageMessages?.length ?? 0) > 1;
+  const isAttachmentGroup = isDocumentAttachmentGroup || isImageAttachmentGroup;
   const {
     isCurrentUser,
     hasAttachmentCaption,
@@ -240,7 +245,9 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     : `rounded-tr-xl rounded-br-xl ${incomingTopCornerClass} ${incomingBottomCornerClass}`;
   const bubbleMessageIds = groupedDocumentMessages?.length
     ? groupedDocumentMessages.map(messageItem => messageItem.id)
-    : [message.id];
+    : groupedImageMessages?.length
+      ? groupedImageMessages.map(messageItem => messageItem.id)
+      : [message.id];
   const bubbleSharedProps = {
     ref: (bubbleElement: HTMLDivElement | null) => {
       bubbleMessageIds.forEach(messageId => {
@@ -260,9 +267,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
           : ''
     } ${
-      isDocumentAttachmentGroup
-        ? 'cursor-pointer overflow-visible'
-        : 'cursor-pointer'
+      isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'
     } select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`,
     style: {
       overflowWrap:
@@ -279,7 +284,26 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         isEdited={isEdited}
         messageDeliveryStatus={messageDeliveryStatus}
       />
-      {isDocumentAttachmentGroup && groupedDocumentMessages ? (
+      {isImageAttachmentGroup && groupedImageMessages ? (
+        <MessageImageAttachmentGroupContent
+          messages={groupedImageMessages}
+          userId={userId}
+          captionMessage={captionMessage}
+          isHighlightedBubble={isFlashingTarget}
+          openMenuMessageId={openMenuMessageId}
+          menuPlacement={menuPlacement}
+          menuSideAnchor={menuSideAnchor}
+          menuOffsetX={menuOffsetX}
+          shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+          toggleMessageMenu={toggleMessageMenu}
+          getImageMessageUrl={getImageMessageUrl}
+          openImageInPortal={openImageInPortal}
+          handleCopyMessage={handleCopyMessage}
+          handleDownloadMessage={handleDownloadMessage}
+          handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
+          handleDeleteMessage={handleDeleteMessage}
+        />
+      ) : isDocumentAttachmentGroup && groupedDocumentMessages ? (
         <MessageDocumentAttachmentGroupContent
           messages={groupedDocumentMessages}
           userId={userId}
@@ -392,7 +416,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               : 'relative min-w-0 max-w-full'
           }
         >
-          {isDocumentAttachmentGroup ? (
+          {isAttachmentGroup ? (
             <div {...bubbleSharedProps}>{bubbleInnerContent}</div>
           ) : (
             <div
@@ -427,7 +451,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
             </div>
           )}
 
-          {isDocumentAttachmentGroup ? null : (
+          {isAttachmentGroup ? null : (
             <MessageActionPopover
               isOpen={!isSelectionMode && isMenuOpen}
               menuId={message.id}

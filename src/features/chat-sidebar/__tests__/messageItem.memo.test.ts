@@ -44,6 +44,7 @@ const createModel = (
   initialOpenJumpAnimationKeysRef: { current: new Set() },
   captionMessage: undefined,
   pdfMessagePreview: undefined,
+  groupedImageMessages: undefined,
   onToggleMessageSelection: () => {},
   toggleMessageMenu: () => {},
   handleToggleExpand: () => {},
@@ -112,6 +113,23 @@ describe('areMessageItemPropsEqual', () => {
     ];
     const previousModel = createModel();
     const nextModel = createModel({ groupedDocumentMessages });
+
+    expect(
+      areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
+    ).toBe(false);
+  });
+
+  it('detects when grouped image members change for the current item', () => {
+    const groupedImageMessages = [
+      {
+        ...baseMessage,
+        id: 'image-1',
+        message: 'images/channel/chat.png',
+        message_type: 'image' as const,
+      },
+    ];
+    const previousModel = createModel();
+    const nextModel = createModel({ groupedImageMessages });
 
     expect(
       areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })

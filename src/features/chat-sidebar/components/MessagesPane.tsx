@@ -178,6 +178,10 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                         renderItem.kind === 'document-group'
                           ? renderItem.messages
                           : undefined,
+                      groupedImageMessages:
+                        renderItem.kind === 'image-group'
+                          ? renderItem.messages
+                          : undefined,
                       pdfMessagePreview: previews.getPdfMessagePreview(
                         messageItem,
                         previews.getAttachmentFileName(messageItem)

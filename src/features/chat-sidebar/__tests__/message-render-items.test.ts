@@ -23,6 +23,76 @@ const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
 });
 
 describe('buildMessageRenderItems', () => {
+  it('groups 4 consecutive image attachments into a single render item', () => {
+    const imageMessages = Array.from({ length: 4 }, (_, index) =>
+      buildMessage({
+        id: `image-${index + 1}`,
+        message: `images/channel/chat-${index + 1}.png`,
+        message_type: 'image',
+        file_name: `Chat-${index + 1}.png`,
+        file_kind: undefined,
+        file_mime_type: 'image/png',
+        file_storage_path: `images/channel/chat-${index + 1}.png`,
+        created_at: `2026-03-20T10:00:${String(index * 8).padStart(2, '0')}.000Z`,
+      })
+    );
+    const captionMessage = buildMessage({
+      id: 'caption-4',
+      message: 'Batch screenshot',
+      message_type: 'text',
+      file_name: undefined,
+      file_kind: undefined,
+      file_mime_type: undefined,
+      file_storage_path: undefined,
+      reply_to_id: 'image-4',
+      message_relation_kind: 'attachment_caption',
+    });
+
+    const renderItems = buildMessageRenderItems({
+      messages: imageMessages,
+      captionMessagesByAttachmentId: new Map([['image-4', captionMessage]]),
+      getAttachmentFileKind: () => 'document',
+      enableDocumentBubbleGrouping: true,
+    });
+
+    expect(renderItems).toHaveLength(1);
+    expect(renderItems[0]?.kind).toBe('image-group');
+    expect(renderItems[0]?.messages.map(message => message.id)).toEqual([
+      'image-1',
+      'image-2',
+      'image-3',
+      'image-4',
+    ]);
+    expect(renderItems[0]?.captionMessage?.id).toBe('caption-4');
+  });
+
+  it('keeps 3 consecutive image attachments as separate bubbles', () => {
+    const imageMessages = Array.from({ length: 3 }, (_, index) =>
+      buildMessage({
+        id: `image-${index + 1}`,
+        message: `images/channel/chat-${index + 1}.png`,
+        message_type: 'image',
+        file_name: `Chat-${index + 1}.png`,
+        file_kind: undefined,
+        file_mime_type: 'image/png',
+        file_storage_path: `images/channel/chat-${index + 1}.png`,
+        created_at: `2026-03-20T10:00:${String(index * 8).padStart(2, '0')}.000Z`,
+      })
+    );
+
+    const renderItems = buildMessageRenderItems({
+      messages: imageMessages,
+      captionMessagesByAttachmentId: new Map(),
+      getAttachmentFileKind: () => 'document',
+      enableDocumentBubbleGrouping: true,
+    });
+
+    expect(renderItems).toHaveLength(3);
+    expect(renderItems.every(renderItem => renderItem.kind === 'message')).toBe(
+      true
+    );
+  });
+
   it('groups consecutive document attachments into a single render item', () => {
     const firstMessage = buildMessage({
       id: 'file-1',

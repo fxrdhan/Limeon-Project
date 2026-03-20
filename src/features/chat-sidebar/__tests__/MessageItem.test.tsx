@@ -47,6 +47,7 @@ const createModel = (
   initialOpenJumpAnimationKeysRef: { current: new Set() },
   captionMessage: undefined,
   pdfMessagePreview: undefined,
+  groupedImageMessages: undefined,
   onToggleMessageSelection: () => {},
   toggleMessageMenu: () => {},
   handleToggleExpand: () => {},
@@ -174,6 +175,57 @@ describe('MessageItem', () => {
     expect(screen.getByText('Laporan.pdf')).toBeTruthy();
     expect(screen.getByText('Catatan.docx')).toBeTruthy();
     expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('renders 4 images in a grouped 2x2 bubble', () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+    }));
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          groupedImageMessages: groupedMessages,
+          getImageMessageUrl: targetMessage => targetMessage.message,
+        })}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-chat-image-group-grid]')
+    ).toBeTruthy();
+    expect(
+      container.querySelectorAll('[data-chat-image-group-tile-id]')
+    ).toHaveLength(4);
+  });
+
+  it('shows a +N overlay on the last tile when grouped images exceed 4', () => {
+    const groupedMessages = Array.from({ length: 6 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+    }));
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[5],
+          groupedImageMessages: groupedMessages,
+          getImageMessageUrl: targetMessage => targetMessage.message,
+        })}
+      />
+    );
+
+    expect(screen.getByText('+2')).toBeTruthy();
   });
 
   it('renders a PDF cover thumbnail inside a grouped document bubble when preview data exists', () => {
