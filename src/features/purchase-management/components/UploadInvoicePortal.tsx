@@ -439,7 +439,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.3 }}
-                          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm mb-4 flex items-center"
+                          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4 flex items-center"
                         >
                           <motion.svg
                             initial={{ rotate: 0 }}
@@ -643,7 +643,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           <motion.div
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="flex items-center p-3 pr-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="flex items-center p-3 pr-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
                             onClick={e => {
                               const target = e.target as HTMLElement;
                               const isRemoveButton = target.closest(
@@ -669,7 +669,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             {(() => {
                               const safeUrl = getSafeImageUrl(previewUrl);
                               return safeUrl ? (
-                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-lg border border-slate-200 shrink-0">
+                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-xl border border-slate-200 shrink-0">
                                   <img
                                     src={safeUrl}
                                     alt="Thumbnail"
@@ -677,7 +677,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                   />
                                 </div>
                               ) : (
-                                <div className="h-16 w-16 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+                                <div className="h-16 w-16 rounded-xl bg-slate-200 flex items-center justify-center shrink-0">
                                   <TbPhoto className="h-8 w-8 text-slate-400" />
                                 </div>
                               );
@@ -712,7 +712,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 e.stopPropagation();
                                 handleRemoveFile(e);
                               }}
-                              className="hover:text-red-600 hover:bg-red-50 text-slate-500 cursor-pointer relative z-30 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all duration-200 -mr-2"
+                              className="hover:text-red-600 hover:bg-red-50 text-slate-500 cursor-pointer relative z-30 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all duration-200 -mr-2"
                               aria-label="Hapus file"
                               type="button"
                               title="Hapus file"

@@ -319,7 +319,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   return (
     <div
-      className={`rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
+      className={`rounded-xl text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
       style={{
         ...shakeStyle,
@@ -403,7 +403,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                     isClearing.current = true;
                   }
                 }}
-                className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                className={`rounded-md p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
                   editIconVisible
                     ? 'opacity-100 translate-x-0'
                     : 'pointer-events-none opacity-0 -translate-x-1'
@@ -434,7 +434,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                   config.onClear?.();
                 }}
                 onMouseDown={e => e.stopPropagation()}
-                className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                className={`rounded-md p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
                   deleteIconVisible
                     ? 'opacity-100 translate-x-0'
                     : 'pointer-events-none opacity-0 -translate-x-1'
@@ -460,7 +460,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                   config.onInsert?.();
                 }}
                 onMouseDown={e => e.stopPropagation()}
-                className={`rounded-sm p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                className={`rounded-md p-0.5 ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
                   insertIconVisible
                     ? 'opacity-100 translate-x-0'
                     : 'pointer-events-none opacity-0 -translate-x-1'

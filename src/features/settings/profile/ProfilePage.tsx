@@ -151,10 +151,10 @@ const Profile = () => {
             type="text"
             value={editValues[field] || ''}
             onChange={e => handleChange(field, e.target.value)}
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-2 border rounded-xl"
           />
         ) : (
-          <div className="p-2 bg-slate-50 rounded-lg min-h-[40px]">
+          <div className="p-2 bg-slate-50 rounded-xl min-h-[40px]">
             {(profile && profile[field]) || (
               <span className="text-slate-400 italic">Tidak ada data</span>
             )}

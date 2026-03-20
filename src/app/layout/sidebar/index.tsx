@@ -172,7 +172,7 @@ const getMenuButtonClassName = ({
   collapsed: boolean;
   isActive: boolean;
 }) => {
-  return `w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0 cursor-pointer focus:outline-hidden active:outline-hidden rounded-lg ${
+  return `w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0 cursor-pointer focus:outline-hidden active:outline-hidden rounded-xl ${
     isActive
       ? collapsed
         ? 'text-primary font-medium'
@@ -444,7 +444,7 @@ const Sidebar = ({
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="h-10 w-10 min-w-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 min-w-8 bg-primary rounded-xl flex items-center justify-center shrink-0">
               <span className="text-white text-xl font-bold">P</span>
             </div>
             <h2
@@ -623,7 +623,7 @@ const Sidebar = ({
                                         e.preventDefault();
                                       }
                                     }}
-                                    className={`block px-6 py-3 text-sm rounded-lg transition-all duration-300 ease-in-out
+                                    className={`block px-6 py-3 text-sm rounded-xl transition-all duration-300 ease-in-out
                                                                 focus-visible:outline-hidden outline-hidden
                                                                 focus:outline-hidden active:outline-hidden
                                                                 ${

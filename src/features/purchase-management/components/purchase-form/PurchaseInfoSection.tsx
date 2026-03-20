@@ -89,7 +89,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <Calendar
             value={formData.date ? new Date(formData.date) : null}
             onChange={newDate => handleDateChange('date', newDate)}
-            inputClassName="w-full p-2.5 border rounded-lg text-sm"
+            inputClassName="w-full p-2.5 border rounded-xl text-sm"
             placeholder="Pilih tanggal pembelian"
             size="md"
           />
@@ -102,7 +102,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <Calendar
             value={formData.due_date ? new Date(formData.due_date) : null}
             onChange={newDate => handleDateChange('due_date', newDate)}
-            inputClassName="w-full p-2.5 border rounded-lg text-sm"
+            inputClassName="w-full p-2.5 border rounded-xl text-sm"
             minDate={formData.date ? new Date(formData.date) : undefined}
             placeholder="Pilih tanggal jatuh tempo"
             size="md"

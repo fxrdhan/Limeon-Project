@@ -280,7 +280,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 z-10">
+              <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 z-10">
                 <div className="flex items-center gap-3 mb-4">
                   <TbArrowBackUp className="w-6 h-6 text-blue-600" />
                   <h3 className="text-xl font-semibold">
@@ -295,7 +295,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                 <div className="space-y-3 mb-6">
                   {/* Soft Restore */}
                   <label
-                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
                       restoreMode === 'soft'
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-slate-200 hover:border-slate-300'
@@ -327,7 +327,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
 
                   {/* Hard Rollback */}
                   <label
-                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
                       restoreMode === 'hard'
                         ? 'border-red-500 bg-red-50'
                         : 'border-slate-200 hover:border-slate-300'

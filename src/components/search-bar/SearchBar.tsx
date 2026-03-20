@@ -67,7 +67,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
                 : visualSearchState === 'not-found'
                   ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_SOFT_CLASS}`
                   : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
-            } rounded-lg bg-white`}
+            } rounded-xl bg-white`}
             value={value}
             onChange={onChange}
             onKeyDown={onKeyDown}

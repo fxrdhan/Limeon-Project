@@ -108,7 +108,7 @@ const SmartInput = forwardRef<HTMLInputElement, SmartInputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(
-              'w-full px-3 py-2 border rounded-lg shadow-sm',
+              'w-full px-3 py-2 border rounded-xl shadow-sm',
               FORM_CONTROL_BORDER_DEFAULT_CLASS,
               FORM_CONTROL_FOCUS_CLASS,
               'placeholder-slate-400',

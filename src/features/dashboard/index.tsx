@@ -358,7 +358,7 @@ const DashboardNew = () => {
                 }) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
+                    className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-200"
                   >
                     <div>
                       <p className="font-medium text-slate-900">{item.name}</p>
@@ -413,7 +413,7 @@ const DashboardNew = () => {
                 }) => (
                   <div
                     key={`${transaction.type}-${transaction.id}`}
-                    className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg"
+                    className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl"
                   >
                     <div className="flex items-center gap-3">
                       <div

@@ -46,7 +46,7 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
       <div>
         <label className="block text-slate-700 mb-2">Kode</label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
+          className={`p-2.5 border rounded-xl px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isKodeDifferent
               ? getDiffBorderClass(compData.leftKode, compData.rightKode)
               : 'border-slate-300'
@@ -68,7 +68,7 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
       <div>
         <label className="block text-slate-700 mb-2">Nama {entityName}</label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
+          className={`p-2.5 border rounded-xl px-3 text-sm bg-slate-50 h-[2.5rem] flex items-center text-ellipsis overflow-hidden whitespace-nowrap ${
             compData.isNameDifferent
               ? getDiffBorderClass(compData.leftName, compData.rightName)
               : 'border-slate-300'
@@ -92,7 +92,7 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
           {entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
         </label>
         <div
-          className={`p-2.5 border rounded-lg px-3 text-sm bg-slate-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
+          className={`p-2.5 border rounded-xl px-3 text-sm bg-slate-50 min-h-[80px] max-h-[120px] overflow-y-auto ${
             compData.isDescriptionDifferent
               ? getDiffBorderClass(
                   compData.leftDescription,

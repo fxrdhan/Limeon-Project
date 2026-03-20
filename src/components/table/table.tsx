@@ -169,7 +169,7 @@ export const Table = memo(
               value={localValue}
               onChange={e => handleChange(e.target.value)}
               placeholder={`Search ${columnHeader.toLowerCase()}...`}
-              className={`w-full pl-8 pr-2 py-1 text-sm border rounded-lg ${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`}
+              className={`w-full pl-8 pr-2 py-1 text-sm border rounded-xl ${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`}
             />
           </div>
         );
@@ -211,7 +211,7 @@ export const Table = memo(
         <div
           ref={containerRef}
           className={classNames(
-            'w-full rounded-lg border-2 border-slate-200 overflow-hidden',
+            'w-full rounded-xl border-2 border-slate-200 overflow-hidden',
             className
           )}
           style={{
@@ -272,7 +272,7 @@ export const Table = memo(
       <div
         ref={containerRef}
         className={classNames(
-          'w-full overflow-hidden rounded-lg shadow-xs border-2 border-slate-200',
+          'w-full overflow-hidden rounded-xl shadow-xs border-2 border-slate-200',
           className
         )}
       >

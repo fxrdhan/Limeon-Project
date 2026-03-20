@@ -38,7 +38,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       <input
         ref={ref}
         type="text"
-        className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
+        className={`w-full py-2 text-sm border rounded-xl focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
           searchState === SEARCH_STATES.NOT_FOUND
             ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`
             : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`

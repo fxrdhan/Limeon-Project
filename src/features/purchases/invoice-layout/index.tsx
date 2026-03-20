@@ -42,7 +42,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           </div>
 
           <div className="w-1/2">
-            <div className="bg-slate-50 p-3 rounded-sm text-sm">
+            <div className="bg-slate-50 p-3 rounded-md text-sm">
               <div className="grid grid-cols-[auto_auto_1fr] mb-1">
                 <span className="text-left font-bold w-[100px]">
                   No. Faktur

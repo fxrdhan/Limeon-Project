@@ -213,7 +213,7 @@ const ViewPurchase = () => {
               </div>
 
               <div className="w-1/2">
-                <div className="bg-slate-50 p-3 rounded-sm text-sm">
+                <div className="bg-slate-50 p-3 rounded-md text-sm">
                   <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                     <span className="text-left font-bold">No. Faktur</span>
                     <span className="px-2">:</span>

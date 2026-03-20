@@ -9,7 +9,7 @@ const FormSection: React.FC<FormSectionProps> = ({
   return (
     <div
       className={classNames(
-        'border-2 border-slate-200 rounded-lg mb-6 overflow-hidden',
+        'border-2 border-slate-200 rounded-xl mb-6 overflow-hidden',
         className
       )}
     >

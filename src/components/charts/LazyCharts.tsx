@@ -20,7 +20,7 @@ const ChartRegistration = lazy(() =>
 );
 
 const ChartLoadingFallback = () => (
-  <div className="h-64 bg-slate-100 animate-pulse rounded-lg flex items-center justify-center">
+  <div className="h-64 bg-slate-100 animate-pulse rounded-xl flex items-center justify-center">
     <span className="text-slate-500">Loading chart...</span>
   </div>
 );

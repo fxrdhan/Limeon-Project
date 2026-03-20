@@ -188,7 +188,7 @@ export const ConfirmDialogComponent: React.FC = () => {
           leaveFrom="opacity-100 scale-100"
           leaveTo="opacity-0 scale-95"
         >
-          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+          <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
             <div id="dialog-title" className="text-lg font-semibold mb-2">
               {title}
             </div>

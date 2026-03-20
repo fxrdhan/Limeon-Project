@@ -108,7 +108,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
             handleChange(field.key, formattedDate as string | number | boolean);
           }}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
-          inputClassName="w-full p-2.5 border rounded-lg text-sm"
+          inputClassName="w-full p-2.5 border rounded-xl text-sm"
           size="md"
         />
       );
@@ -119,7 +119,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
         <textarea
           ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
           id={field.key}
-          className="text-sm w-full p-2 border border-slate-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
+          className="text-sm w-full p-2 border border-slate-300 rounded-xl focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
           value={String(fieldValue ?? '')}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             handleChange(field.key, e.target.value)
@@ -159,7 +159,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg">
+    <div className="bg-white rounded-xl">
       <div className="flex justify-between items-center mb-1">
         <label
           htmlFor={field.key}
@@ -173,7 +173,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       {isInEditMode ? (
         renderEditableField()
       ) : (
-        <div className="p-2 bg-slate-50 rounded-lg min-h-[40px] text-sm">
+        <div className="p-2 bg-slate-50 rounded-xl min-h-[40px] text-sm">
           {renderDisplayValue()}
         </div>
       )}

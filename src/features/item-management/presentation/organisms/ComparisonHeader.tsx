@@ -49,7 +49,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
     <div className="p-2.5 border-b-2 bg-slate-100 border-slate-200 rounded-t-xl">
       {isDualMode ? (
         /* Dual Mode Header */
-        <div className="rounded-lg p-2">
+        <div className="rounded-xl p-2">
           <div className="flex items-center justify-center gap-3 text-sm">
             <div className="flex flex-col items-center gap-1.5">
               <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
@@ -74,7 +74,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
         </div>
       ) : (
         /* Single Mode Header */
-        <div className="rounded-lg p-2">
+        <div className="rounded-xl p-2">
           <div className="flex items-center gap-3 text-sm">
             <span
               className={`text-xs px-2 py-1 rounded ${

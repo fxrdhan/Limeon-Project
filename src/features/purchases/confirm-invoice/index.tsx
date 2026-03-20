@@ -185,7 +185,7 @@ const ConfirmInvoicePage = () => {
       </CardHeader>
       <CardContent className="pt-6">
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm mb-4 flex items-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4 flex items-center">
             <svg
               className="h-5 w-5 mr-2 text-red-500"
               fill="currentColor"
@@ -214,7 +214,7 @@ const ConfirmInvoicePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <SectionTitle number="1" title="Informasi Perusahaan" />
-                <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="border rounded-xl p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderField('Nama', invoiceData.company_details?.name)}
                     {renderField(
@@ -226,7 +226,7 @@ const ConfirmInvoicePage = () => {
               </div>
               <div>
                 <SectionTitle number="2" title="Informasi Faktur" />
-                <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="border rounded-xl p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderField(
                       'No. Faktur',
@@ -246,7 +246,7 @@ const ConfirmInvoicePage = () => {
             </div>
             <div className="mb-6">
               <SectionTitle number="3" title="Informasi Pelanggan" />
-              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="border rounded-xl p-4 hover:shadow-md transition-shadow">
                 <div className="space-y-1 text-sm">
                   {renderField(
                     'Nama',
@@ -384,7 +384,7 @@ const ConfirmInvoicePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <SectionTitle number="5" title="Informasi Tambahan" />
-                <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="border rounded-xl p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderField(
                       'Diperiksa oleh',
@@ -395,7 +395,7 @@ const ConfirmInvoicePage = () => {
               </div>
               <div>
                 <SectionTitle number="6" title="Ringkasan Pembayaran" />
-                <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="border rounded-xl p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderCurrencyField(
                       'Total Harga',

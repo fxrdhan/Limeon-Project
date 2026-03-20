@@ -258,7 +258,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                   }`}
                 >
                   {resolvedPdfPreviewUrl ? (
-                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
                       <img
                         src={resolvedPdfPreviewUrl}
                         alt="PDF cover preview"

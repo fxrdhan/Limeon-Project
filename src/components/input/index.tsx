@@ -229,7 +229,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onKeyDown={handleKeyDown}
             onChange={handleChange}
             className={classNames(
-              'p-2.5 border rounded-lg',
+              'p-2.5 border rounded-xl',
               'px-3 text-sm font-medium text-slate-800',
               'text-ellipsis overflow-hidden whitespace-nowrap',
               'h-[2.5rem]',
@@ -264,7 +264,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               className={classNames(
                 'absolute bottom-full left-0 right-0 z-10 mb-1',
                 'p-2.5 px-3 text-sm font-medium text-slate-800',
-                'border rounded-lg bg-white/50 backdrop-blur-md',
+                'border rounded-xl bg-white/50 backdrop-blur-md',
                 'shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]',
                 'whitespace-pre-wrap break-words',
                 'min-h-[2.5rem] max-h-32 overflow-y-auto',

@@ -59,7 +59,7 @@ const ComposerEditBanner = forwardRef<HTMLDivElement, ComposerEditBannerProps>(
           event.stopPropagation();
           onCancelEditMessage();
         }}
-        className="group inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+        className="group inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
       >
         <TbPencil className="h-4 w-4 group-hover:hidden" />
         <TbX className="hidden h-4 w-4 group-hover:block" />

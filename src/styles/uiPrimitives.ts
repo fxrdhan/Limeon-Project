@@ -7,7 +7,7 @@ export const SECTION_HEADER_CLASS =
 export const COLLAPSIBLE_SECTION_HEADER_CLASS = `${SECTION_HEADER_CLASS} cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0`;
 
 export const POPOVER_SURFACE_CLASS =
-  'rounded-lg border border-slate-200 bg-white shadow-lg';
+  'rounded-xl border border-slate-200 bg-white shadow-lg';
 
 export const PORTAL_SURFACE_CLASS =
   'bg-white rounded-xl border border-slate-200 overflow-hidden';

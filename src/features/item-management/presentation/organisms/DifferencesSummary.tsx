@@ -198,7 +198,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
               <span className="text-sm text-green-700">
                 ✓{' '}
                 {isDualMode

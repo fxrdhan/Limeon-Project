@@ -46,7 +46,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
         >
           {/* Container with layout animation - resizes first, NO text animation */}
           <motion.div
-            className={`group pointer-events-auto transition-colors duration-150 rounded-lg p-4 min-w-[250px] max-w-[500px] w-max relative shadow-xl ${POPUP_SURFACE_CLASS} ${POPUP_HOVER_BG_CLASS}`}
+            className={`group pointer-events-auto transition-colors duration-150 rounded-xl p-4 min-w-[250px] max-w-[500px] w-max relative shadow-xl ${POPUP_SURFACE_CLASS} ${POPUP_HOVER_BG_CLASS}`}
             layout
             layoutId={`hover-detail-${data.id}`}
             transition={{

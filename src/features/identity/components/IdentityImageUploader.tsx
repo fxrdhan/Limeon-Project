@@ -85,7 +85,7 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={displayImageUrl}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200 transition duration-200 group-hover:brightness-95`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-xl border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
@@ -93,7 +93,7 @@ const IdentityImageUploader: React.FC = () => {
     if (mode === 'add') {
       return (
         <div
-          className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-slate-200 rounded-lg bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
+          className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
         >
           <div className="text-center p-4">
             <TbPhotoUp className="mx-auto h-8 w-8 text-slate-400" />
@@ -108,7 +108,7 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={defaultImageUrl}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200 transition duration-200 group-hover:brightness-95`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-xl border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
@@ -118,14 +118,14 @@ const IdentityImageUploader: React.FC = () => {
         <img
           src={imagePlaceholder}
           alt={String(localData?.name ?? 'Detail')}
-          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-lg border border-slate-200 transition duration-200 group-hover:brightness-95`}
+          className={`w-full h-auto ${aspectRatioClass} object-cover rounded-xl border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
 
     return (
       <div
-        className={`w-full ${aspectRatioClass} flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
+        className={`w-full ${aspectRatioClass} flex items-center justify-center border border-slate-200 rounded-xl bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
       >
         <div className="text-center p-4">
           <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">

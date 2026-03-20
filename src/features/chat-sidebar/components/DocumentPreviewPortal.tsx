@@ -47,7 +47,7 @@ const DocumentPreviewPortal = ({
               type="button"
               onClick={onClose}
               aria-label="Tutup preview dokumen"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
             >
               <TbX className="h-5 w-5" />
             </button>

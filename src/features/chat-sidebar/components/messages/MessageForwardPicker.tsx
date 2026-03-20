@@ -181,7 +181,7 @@ export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
                       </div>
 
                       <div
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold transition-colors ${
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border text-[11px] font-bold transition-colors ${
                           isSelected
                             ? 'border-emerald-500 bg-emerald-500 text-white'
                             : 'border-slate-300 bg-white text-transparent'

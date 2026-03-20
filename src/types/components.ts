@@ -204,7 +204,7 @@ export interface ImageUploaderProps {
   tabIndex?: number;
   loadingIcon?: React.ReactNode;
   defaultIcon?: React.ReactNode;
-  shape?: 'rounded' | 'rounded-sm' | 'square' | 'full';
+  shape?: 'rounded' | 'rounded-md' | 'square' | 'full';
   interaction?: 'menu' | 'direct';
   popupTrigger?: 'hover' | 'click';
   isPopupSuppressed?: boolean;

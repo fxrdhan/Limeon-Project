@@ -417,14 +417,14 @@ const Profile = () => {
                     <div className="p-2">
                       <button
                         onClick={() => setPortalOpen(false)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors duration-150 group"
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 rounded-xl transition-colors duration-150 group"
                       >
                         <TbSettings className="text-slate-400 group-hover:text-slate-600 transition-colors" />
                         <span>Pengaturan Profil</span>
                       </button>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-150 group"
                       >
                         <TbLogout className="text-red-500 group-hover:text-red-600 transition-colors" />
                         <span>Logout</span>

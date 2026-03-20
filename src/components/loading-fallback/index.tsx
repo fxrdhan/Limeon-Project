@@ -29,19 +29,19 @@ export const TableLoadingFallback = ({
       <div className="flex items-center mb-6">
         {showSearchBar && (
           <div className="grow mb-4">
-            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-xl" />
           </div>
         )}
         {showButton && (
           <div className="ml-4 mb-4">
-            <Skeleton className="h-10 w-40 rounded-lg" />
+            <Skeleton className="h-10 w-40 rounded-xl" />
           </div>
         )}
       </div>
 
       {/* Table skeleton */}
-      <div className="overflow-x-auto rounded-lg shadow-xs mb-6">
-        <table className="min-w-full w-full table-fixed bg-white rounded-lg overflow-hidden">
+      <div className="overflow-x-auto rounded-xl shadow-xs mb-6">
+        <table className="min-w-full w-full table-fixed bg-white rounded-xl overflow-hidden">
           <thead className="bg-slate-50 text-slate-700 border-b border-slate-200">
             <tr>
               {Array.from({ length: tableColumns }).map((_, index) => (
@@ -162,7 +162,7 @@ export const FormLoadingFallback = () => {
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="space-y-2">
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-xl" />
           </div>
         ))}
 

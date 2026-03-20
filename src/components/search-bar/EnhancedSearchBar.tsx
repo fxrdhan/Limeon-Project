@@ -3125,7 +3125,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
           <div
             ref={scrollAreaRef}
-            className={`relative flex-1 min-w-0 flex flex-nowrap items-center gap-1.5 p-1.5 min-h-[46px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-lg overflow-x-auto overflow-y-hidden scrollbar-hide ${
+            className={`relative flex-1 min-w-0 flex flex-nowrap items-center gap-1.5 p-1.5 min-h-[46px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-xl overflow-x-auto overflow-y-hidden scrollbar-hide ${
               shouldShowLeftIcon ? 'pl-1.5' : 'pl-9'
             } ${
               showInputError || searchState === 'not-found'

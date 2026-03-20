@@ -16,7 +16,7 @@ const ButtonSkeleton: React.FC<ButtonSkeletonProps> = ({
 }) => {
   return (
     <Skeleton
-      className={`rounded-lg ${className}`}
+      className={`rounded-xl ${className}`}
       width={width}
       height={height}
       animate={animate}

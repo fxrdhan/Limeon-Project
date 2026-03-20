@@ -97,7 +97,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         name={name}
         tabIndex={tabIndex}
         disabled={disabled}
-        className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border transition duration-200 ease-in-out ${
+        className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-xl border transition duration-200 ease-in-out ${
           isExpanded ? 'items-start' : 'items-center'
         } ${
           disabled

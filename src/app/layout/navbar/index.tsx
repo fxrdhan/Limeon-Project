@@ -252,7 +252,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
               aria-label="Buka daftar pengguna online"
               aria-expanded={showPortal}
               aria-haspopup="dialog"
-              className="flex items-center space-x-3 rounded-lg px-2 py-1 transition-colors hover:bg-slate-50"
+              className="flex items-center space-x-3 rounded-xl px-2 py-1 transition-colors hover:bg-slate-50"
               onMouseEnter={schedulePortalOpen}
               onMouseLeave={schedulePortalClose}
               onClick={handlePortalTriggerClick}
@@ -278,12 +278,12 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   onMouseLeave={schedulePortalClose}
                 >
                   {isDirectoryLoading && portalOrderedUsers.length === 0 ? (
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
                       Memuat daftar pengguna...
                     </div>
                   ) : null}
                   {directoryError ? (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                       <span>{directoryError}</span>
                       <button
                         type="button"
@@ -300,7 +300,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     return (
                       <div
                         key={portalUser.id}
-                        className={`relative px-4 py-3 mx-0 transition-colors rounded-lg w-full ${
+                        className={`relative px-4 py-3 mx-0 transition-colors rounded-xl w-full ${
                           portalUser.id !== user?.id
                             ? 'cursor-pointer hover:bg-emerald-50'
                             : 'cursor-default hover:bg-slate-50'
@@ -412,7 +412,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       type="button"
                       onClick={loadMoreDirectoryUsers}
                       disabled={isDirectoryLoading}
-                      className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
                     >
                       {isDirectoryLoading
                         ? 'Memuat pengguna...'

@@ -130,7 +130,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
       role="option"
       aria-selected={Boolean(isSelected)}
       type="button"
-      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
+      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-xl text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

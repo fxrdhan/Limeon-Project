@@ -146,7 +146,7 @@ const roleOptions: SlidingSelectorOption<UserRole>[] = [
 
 ### Shape Options
 
-- **`rounded`**: Standard rounded corners (`rounded-lg`)
+- **`rounded`**: Standard rounded corners (`rounded-xl`)
 - **`pill`**: Fully rounded pill shape (`rounded-full`)
 
 ## Animation System

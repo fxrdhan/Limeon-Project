@@ -68,14 +68,14 @@ const ComposerAttachmentPreviewList = forwardRef<
                 key={attachment.id}
                 className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
               >
-                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
-                  <div className="h-11 w-11 shrink-0 animate-pulse rounded-lg bg-slate-200" />
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
+                  <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-200" />
                   <div className="min-w-0 flex-1">
                     <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
                     <div className="mt-1 h-3 w-14 animate-pulse rounded bg-slate-200" />
                   </div>
                 </div>
-                <div className="h-7 w-7 shrink-0 animate-pulse rounded-lg bg-slate-200" />
+                <div className="h-7 w-7 shrink-0 animate-pulse rounded-xl bg-slate-200" />
               </div>
             );
           }
@@ -110,7 +110,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                   title="Aksi gambar"
                   aria-haspopup="menu"
                   aria-expanded={isMenuOpen}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
                   onClick={event => {
                     event.stopPropagation();
                     onToggleImageActionsMenu(event, attachment.id);
@@ -119,7 +119,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                   <img
                     src={resolvedAttachment.previewUrl ?? ''}
                     alt={resolvedAttachment.fileName}
-                    className="h-11 w-11 rounded-lg object-cover"
+                    className="h-11 w-11 rounded-xl object-cover"
                     draggable={false}
                   />
                   <div className="min-w-0 flex-1">
@@ -139,14 +139,14 @@ const ComposerAttachmentPreviewList = forwardRef<
                   title="Aksi dokumen"
                   aria-haspopup="menu"
                   aria-expanded={isMenuOpen}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
                   onClick={event => {
                     event.stopPropagation();
                     onToggleImageActionsMenu(event, attachment.id);
                   }}
                 >
                   {resolvedAttachment.pdfCoverUrl ? (
-                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
                       <img
                         src={resolvedAttachment.pdfCoverUrl}
                         alt="PDF cover preview"
@@ -155,15 +155,15 @@ const ComposerAttachmentPreviewList = forwardRef<
                       />
                     </div>
                   ) : isJpgDocumentAttachment ? (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
                       <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
                     </div>
                   ) : isPngDocumentAttachment ? (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
                       <TbFileTypePng className="h-5 w-5 text-slate-600" />
                     </div>
                   ) : (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
                       {(
                         resolvedAttachment.fileName
                           .split('.')
@@ -182,7 +182,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                   </div>
                 </button>
               ) : (
-                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
+                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
                   <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-800">
@@ -204,7 +204,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                   onClick={() => {
                     onRemovePendingComposerAttachment(attachment.id);
                   }}
-                  className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-black transition-colors hover:bg-slate-200 hover:text-black"
+                  className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-200 hover:text-black"
                 >
                   <TbX className="h-4 w-4" />
                 </button>

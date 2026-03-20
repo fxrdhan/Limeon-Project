@@ -156,7 +156,7 @@ export const MessageBubbleContent = ({
       </div>
     </div>
   ) : isPdfFileMessage ? (
-    <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
+    <div className="w-full overflow-hidden rounded-xl bg-white/65 text-slate-800">
       <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">
         {resolvedPdfPreviewUrl ? (
           <img
@@ -182,7 +182,7 @@ export const MessageBubbleContent = ({
       </div>
     </div>
   ) : isFileMessage ? (
-    <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
+    <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-xl bg-white/65 px-2 py-2 text-slate-800">
       {fileIcon}
       <div className="min-w-0 flex-1 overflow-hidden">
         <p className="block w-full truncate text-sm font-medium text-slate-800">

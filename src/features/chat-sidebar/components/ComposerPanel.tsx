@@ -58,7 +58,7 @@ type DocumentWithCaretRange = Document & {
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
 const ATTACHMENT_LINK_PROMPT_EDGE_MARGIN = 16;
 const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
-  'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors hover:bg-slate-100';
+  'flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors hover:bg-slate-100';
 const ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME =
   'px-2.5 pb-1 pt-1.5 text-[11px] font-medium tracking-[0.03em] text-slate-500';
 const CHAT_POPOVER_ICON_CLASS_NAME =
@@ -751,7 +751,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   <button
                     type="button"
                     onClick={() => actions.onAttachImageClick()}
-                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
+                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbPhoto className="h-4 w-4 text-black" />
                     <span>Gambar</span>
@@ -759,7 +759,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   <button
                     type="button"
                     onClick={() => actions.onAttachDocumentClick()}
-                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
+                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbFileDescription className="h-4 w-4 text-black" />
                     <span>Dokumen</span>
@@ -767,7 +767,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   <button
                     type="button"
                     onClick={actions.onAttachAudioClick}
-                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
+                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
                   >
                     <TbMusic className="h-4 w-4 text-black" />
                     <span>Audio</span>

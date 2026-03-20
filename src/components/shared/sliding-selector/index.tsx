@@ -74,8 +74,8 @@ const SIZE_CLASSES = {
 const SHAPE_CLASSES = {
   rounded: {
     container: 'rounded-xl',
-    button: 'rounded-lg',
-    background: 'rounded-lg',
+    button: 'rounded-xl',
+    background: 'rounded-xl',
   },
   pill: {
     container: 'rounded-full',

@@ -142,7 +142,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
       />
 
       <div
-        className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-lg ${bgColor} ${
+        className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-xl ${bgColor} ${
           isExpanded ? 'shadow-md' : ''
         } border border-slate-200 hover:border-slate-300`}
         onMouseEnter={() => onMouseEnter(item.id)}
@@ -229,7 +229,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
           }`}
         >
           {item.changed_fields && (
-            <div className="text-xs p-3 rounded-lg border transition-all duration-300 bg-slate-50 border-slate-200 text-slate-600">
+            <div className="text-xs p-3 rounded-xl border transition-all duration-300 bg-slate-50 border-slate-200 text-slate-600">
               <span className="font-medium">Changed fields:</span>{' '}
               {Object.keys(item.changed_fields).join(', ')}
             </div>

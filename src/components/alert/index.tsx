@@ -67,7 +67,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
         duration: 0.3,
       }}
       className={classNames(
-        'relative flex items-start p-4 mb-3 rounded-lg shadow-lg border w-full max-w-md overflow-hidden',
+        'relative flex items-start p-4 mb-3 rounded-xl shadow-lg border w-full max-w-md overflow-hidden',
         typeStyles[type]
       )}
     >
@@ -75,7 +75,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
       <div className="grow text-sm break-words">{message}</div>
       <button
         onClick={onClose}
-        className="ml-4 p-1 rounded-lg hover:bg-black/10 focus:outline-hidden focus:ring-2 focus:ring-current transition-colors text-inherit"
+        className="ml-4 p-1 rounded-xl hover:bg-black/10 focus:outline-hidden focus:ring-2 focus:ring-current transition-colors text-inherit"
         aria-label="Tutup notifikasi"
       >
         <TbX size={14} />

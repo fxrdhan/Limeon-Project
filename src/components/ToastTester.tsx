@@ -30,7 +30,7 @@ const ToastTester: React.FC = () => {
   return (
     <button
       onClick={triggerRandomToast}
-      className="fixed bottom-4 left-4 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-lg flex items-center gap-2 transition-colors z-50 cursor-pointer border border-blue-500"
+      className="fixed bottom-4 left-4 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl shadow-lg flex items-center gap-2 transition-colors z-50 cursor-pointer border border-blue-500"
       title="Random Toast Tester"
     >
       🎲<span>Trigger Toast</span>

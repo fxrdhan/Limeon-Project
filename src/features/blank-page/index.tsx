@@ -71,7 +71,7 @@ const ComingSoon = ({
         {showBackButton && (
           <button
             onClick={handleGoBack}
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-200 shadow-sm"
+            className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-200 shadow-sm"
           >
             <TbArrowLeft className="w-4 h-4" />
             <span>{backButtonText}</span>

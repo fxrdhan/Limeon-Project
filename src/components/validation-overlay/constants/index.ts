@@ -18,7 +18,7 @@ export const ICON_SIZE = 14;
 export const STYLES = {
   overlay: 'fixed z-[9999] pointer-events-none',
   container:
-    'bg-danger/75 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit',
+    'bg-danger/75 text-white text-sm px-3 py-2 rounded-xl shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit',
   icon: 'text-yellow-300 shrink-0',
   message: 'font-medium',
   arrow:

@@ -87,7 +87,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           </div>
 
           {this.props.showDetails && this.state.error && (
-            <details className="text-left bg-slate-50 p-4 rounded-lg">
+            <details className="text-left bg-slate-50 p-4 rounded-xl">
               <summary className="cursor-pointer font-medium text-slate-700 mb-2">
                 Detail Error (untuk Developer)
               </summary>
