@@ -59,6 +59,7 @@ const createModel = (
   getPdfMessagePreview: () => undefined,
   normalizedSearchQuery: '',
   openImageInPortal: async () => {},
+  openImageGroupInPortal: async () => {},
   openDocumentInPortal: async () => {},
   ...overrides,
 });

@@ -38,12 +38,14 @@ interface MessageImageAttachmentGroupContentProps {
       'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
     >
   ) => string | null;
-  openImageInPortal: (
-    message: Pick<
-      ChatMessage,
-      'message' | 'file_storage_path' | 'file_mime_type'
+  openImageGroupInPortal: (
+    messages: Array<
+      Pick<
+        ChatMessage,
+        'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_name'
+      >
     >,
-    previewName: string
+    initialMessageId?: string | null
   ) => Promise<void>;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
@@ -79,12 +81,19 @@ export const MessageImageAttachmentGroupContent = ({
   shouldAnimateMenuOpen,
   toggleMessageMenu,
   getImageMessageUrl,
-  openImageInPortal,
+  openImageGroupInPortal,
   handleCopyMessage,
   handleDownloadMessage,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
 }: MessageImageAttachmentGroupContentProps) => {
+  const groupPreviewMessages = messages.map(message => ({
+    id: message.id,
+    message: message.message,
+    file_storage_path: message.file_storage_path,
+    file_mime_type: message.file_mime_type,
+    file_name: message.file_name,
+  }));
   const isCurrentUserGroup = messages[0]?.sender_id === userId;
   const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(
     menuPlacement,
@@ -146,7 +155,9 @@ export const MessageImageAttachmentGroupContent = ({
       isPdfFileMessage: false,
       fileKind: 'document',
       fileName: previewName,
-      openImageInPortal,
+      openImageInPortal: async () => {
+        await openImageGroupInPortal(groupPreviewMessages, message.id);
+      },
       openDocumentInPortal: async () => {},
       handleEditMessage: () => {},
       handleCopyMessage,

@@ -129,7 +129,13 @@ export const useChatSidebarController = ({
       imagePreviewName: runtime.previews.imagePreviewName,
       isImagePreviewVisible: runtime.previews.isImagePreviewVisible,
       closeImagePreview: runtime.previews.closeImagePreview,
+      imageGroupPreviewItems: runtime.previews.imageGroupPreviewItems,
+      activeImageGroupPreviewId: runtime.previews.activeImageGroupPreviewId,
+      isImageGroupPreviewVisible: runtime.previews.isImageGroupPreviewVisible,
+      closeImageGroupPreview: runtime.previews.closeImageGroupPreview,
+      selectImageGroupPreviewItem: runtime.previews.selectImageGroupPreviewItem,
       openImageInPortal: runtime.previews.openImageInPortal,
+      openImageGroupInPortal: runtime.previews.openImageGroupInPortal,
       openDocumentInPortal: runtime.previews.openDocumentInPortal,
     },
     actions: {

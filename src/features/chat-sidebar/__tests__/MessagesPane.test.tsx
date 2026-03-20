@@ -15,6 +15,10 @@ vi.mock('../components/DocumentPreviewPortal', () => ({
   default: () => <div data-testid="document-preview-portal" />,
 }));
 
+vi.mock('../components/MultiImagePreviewPortal', () => ({
+  default: () => <div data-testid="multi-image-preview-portal" />,
+}));
+
 vi.mock('../components/messages/MessageItem', () => ({
   default: ({ model }: { model: { message: ChatMessage } }) => (
     <div data-testid={`message-item-${model.message.id}`}>
@@ -124,7 +128,13 @@ const createModel = (
     imagePreviewName: '',
     isImagePreviewVisible: false,
     closeImagePreview: vi.fn(),
+    imageGroupPreviewItems: [],
+    activeImageGroupPreviewId: null,
+    isImageGroupPreviewVisible: false,
+    closeImageGroupPreview: vi.fn(),
+    selectImageGroupPreviewItem: vi.fn(),
     openImageInPortal: vi.fn(async () => {}),
+    openImageGroupInPortal: vi.fn(async () => {}),
     openDocumentInPortal: vi.fn(async () => {}),
     ...overrides.previews,
   },

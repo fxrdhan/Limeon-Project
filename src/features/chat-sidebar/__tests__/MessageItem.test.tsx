@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vite-plus/test';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import MessageItem, {
   type MessageItemModel,
 } from '../components/messages/MessageItem';
@@ -62,6 +62,7 @@ const createModel = (
   getPdfMessagePreview: () => undefined,
   normalizedSearchQuery: '',
   openImageInPortal: async () => {},
+  openImageGroupInPortal: async () => {},
   openDocumentInPortal: async () => {},
   ...overrides,
 });
@@ -226,6 +227,53 @@ describe('MessageItem', () => {
     );
 
     expect(screen.getByText('+2')).toBeTruthy();
+  });
+
+  it('opens grouped images in the multi-image portal from the tile action menu', async () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `Chat-${index + 1}.png`,
+    }));
+    const openImageGroupInPortal = vi.fn(async () => {});
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          groupedImageMessages: groupedMessages,
+          openMenuMessageId: 'image-2',
+          getImageMessageUrl: targetMessage => targetMessage.message,
+          openImageGroupInPortal,
+        })}
+      />
+    );
+    expect(
+      container.querySelector('[data-chat-image-group-tile-id="image-2"]')
+    ).toBeTruthy();
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Buka' }));
+
+    expect(openImageGroupInPortal).toHaveBeenCalledTimes(1);
+    const firstCall = openImageGroupInPortal.mock.calls[0] as unknown as [
+      Array<{
+        id: string;
+        message: string;
+        file_storage_path?: string | null;
+        file_mime_type?: string | null;
+        file_name?: string | null;
+      }>,
+      string | null | undefined,
+    ];
+    expect(firstCall).toBeTruthy();
+    const previewMessages = firstCall[0];
+    const activeMessageId = firstCall[1];
+    expect(previewMessages).toHaveLength(4);
+    expect(activeMessageId).toBe('image-2');
   });
 
   it('renders a PDF cover thumbnail inside a grouped document bubble when preview data exists', () => {

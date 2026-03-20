@@ -6,6 +6,7 @@ import { MAX_MESSAGE_CHARS } from '../constants';
 import type { MessagesPaneModel } from '../models';
 import { buildMessageRenderItems } from '../utils/message-render-items';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
+import MultiImagePreviewPortal from './MultiImagePreviewPortal';
 import MessageItem from './messages/MessageItem';
 
 const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
@@ -202,6 +203,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                       getPdfMessagePreview: previews.getPdfMessagePreview,
                       normalizedSearchQuery: state.normalizedSearchQuery,
                       openImageInPortal: previews.openImageInPortal,
+                      openImageGroupInPortal: previews.openImageGroupInPortal,
                       openDocumentInPortal: previews.openDocumentInPortal,
                     }}
                   />
@@ -252,6 +254,16 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
           />
         ) : null}
       </ImageExpandPreview>
+
+      <MultiImagePreviewPortal
+        isOpen={previews.imageGroupPreviewItems.length > 0}
+        isVisible={previews.isImageGroupPreviewVisible}
+        previewItems={previews.imageGroupPreviewItems}
+        activePreviewId={previews.activeImageGroupPreviewId}
+        onSelectPreview={previews.selectImageGroupPreviewItem}
+        onClose={previews.closeImageGroupPreview}
+        backdropClassName="z-[80] px-4 py-6"
+      />
 
       <DocumentPreviewPortal
         isOpen={Boolean(previews.documentPreviewUrl)}

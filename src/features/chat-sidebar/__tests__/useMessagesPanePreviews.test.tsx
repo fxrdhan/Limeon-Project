@@ -90,6 +90,67 @@ describe('useMessagesPanePreviews', () => {
     expect(result.current.imagePreviewUrl).toBeNull();
   });
 
+  it('opens grouped image previews with the requested active item', async () => {
+    mockResolveChatAssetUrl
+      .mockResolvedValueOnce(
+        'https://example.com/storage/v1/object/sign/chat/images/channel/a.png'
+      )
+      .mockResolvedValueOnce(null);
+    mockFetchChatFileBlobWithFallback.mockResolvedValueOnce(
+      new Blob(['image-b'], { type: 'image/png' })
+    );
+    createObjectURLMock.mockReturnValueOnce('blob:chat-group-image-b');
+
+    const { result } = renderHook(() => useMessagesPanePreviews());
+
+    await act(async () => {
+      await result.current.openImageGroupInPortal(
+        [
+          {
+            id: 'image-a',
+            message: 'images/channel/a.png',
+            file_storage_path: 'images/channel/a.png',
+            file_mime_type: 'image/png',
+            file_name: 'A.png',
+          },
+          {
+            id: 'image-b',
+            message: 'images/channel/b.png',
+            file_storage_path: 'images/channel/b.png',
+            file_mime_type: 'image/png',
+            file_name: 'B.png',
+          },
+        ],
+        'image-b'
+      );
+    });
+
+    expect(result.current.imageGroupPreviewItems).toEqual([
+      {
+        id: 'image-a',
+        previewUrl:
+          'https://example.com/storage/v1/object/sign/chat/images/channel/a.png',
+        previewName: 'A.png',
+      },
+      {
+        id: 'image-b',
+        previewUrl: 'blob:chat-group-image-b',
+        previewName: 'B.png',
+      },
+    ]);
+    expect(result.current.activeImageGroupPreviewId).toBe('image-b');
+    expect(result.current.isImageGroupPreviewVisible).toBe(true);
+
+    act(() => {
+      result.current.closeImageGroupPreview();
+      vi.advanceTimersByTime(150);
+    });
+
+    expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:chat-group-image-b');
+    expect(result.current.imageGroupPreviewItems).toEqual([]);
+    expect(result.current.activeImageGroupPreviewId).toBeNull();
+  });
+
   it('opens document previews from a resolved signed asset url before downloading blobs', async () => {
     mockResolveChatAssetUrl.mockResolvedValue(
       'https://example.com/storage/v1/object/sign/chat/documents/channel/report.pdf'

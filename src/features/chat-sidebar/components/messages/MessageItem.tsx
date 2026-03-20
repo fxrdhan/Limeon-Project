@@ -80,6 +80,15 @@ export interface MessageItemModel {
     >,
     previewName: string
   ) => Promise<void>;
+  openImageGroupInPortal: (
+    messages: Array<
+      Pick<
+        ChatMessage,
+        'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_name'
+      >
+    >,
+    initialMessageId?: string | null
+  ) => Promise<void>;
   openDocumentInPortal: (
     message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
     previewName: string,
@@ -131,6 +140,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     getPdfMessagePreview,
     normalizedSearchQuery,
     openImageInPortal,
+    openImageGroupInPortal,
     openDocumentInPortal,
   } = model;
   const isDocumentAttachmentGroup = (groupedDocumentMessages?.length ?? 0) > 1;
@@ -297,7 +307,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           shouldAnimateMenuOpen={shouldAnimateMenuOpen}
           toggleMessageMenu={toggleMessageMenu}
           getImageMessageUrl={getImageMessageUrl}
-          openImageInPortal={openImageInPortal}
+          openImageGroupInPortal={openImageGroupInPortal}
           handleCopyMessage={handleCopyMessage}
           handleDownloadMessage={handleDownloadMessage}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
