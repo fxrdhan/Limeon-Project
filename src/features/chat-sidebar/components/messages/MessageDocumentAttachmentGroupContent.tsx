@@ -301,7 +301,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                 stiffness: 420,
                 damping: 34,
               }}
-              className="pointer-events-none fixed z-[140]"
+              className="pointer-events-none fixed z-[70]"
             >
               <div
                 className="relative h-full w-full pointer-events-auto"
