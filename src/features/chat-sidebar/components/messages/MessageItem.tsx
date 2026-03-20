@@ -260,7 +260,9 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
           : ''
     } ${
-      isDocumentAttachmentGroup ? 'cursor-default' : 'cursor-pointer'
+      isDocumentAttachmentGroup
+        ? 'cursor-pointer overflow-visible'
+        : 'cursor-pointer'
     } select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`,
     style: {
       overflowWrap:

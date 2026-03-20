@@ -421,12 +421,6 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   }
                   imageActionsButtonRef={refs.imageActionsButtonRef}
                   transition={contextualPanelTransition}
-                  onOpenComposerImagePreview={
-                    actions.onOpenComposerImagePreview
-                  }
-                  onOpenDocumentAttachment={
-                    actions.onOpenDocumentAttachmentInPortal
-                  }
                   onToggleImageActionsMenu={actions.onToggleImageActionsMenu}
                   onRemovePendingComposerAttachment={
                     actions.onRemovePendingComposerAttachment

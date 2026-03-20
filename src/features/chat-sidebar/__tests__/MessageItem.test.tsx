@@ -265,7 +265,7 @@ describe('MessageItem', () => {
     );
 
     expect(screen.getByRole('menuitem', { name: 'Buka' })).toBeTruthy();
-    expect(firstRow?.className).toContain('z-[2]');
+    expect(firstRow?.className).toContain('z-[80]');
     expect(firstRow?.className).not.toContain('blur-[2px]');
     expect(secondRow?.className).toContain('blur-[2px]');
   });

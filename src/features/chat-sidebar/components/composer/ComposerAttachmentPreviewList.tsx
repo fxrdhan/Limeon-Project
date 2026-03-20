@@ -1,12 +1,6 @@
 import { motion } from 'motion/react';
 import { forwardRef, type MouseEvent, type RefObject } from 'react';
-import {
-  TbDotsVertical,
-  TbFileTypeJpg,
-  TbFileTypePng,
-  TbMusic,
-  TbX,
-} from 'react-icons/tb';
+import { TbFileTypeJpg, TbFileTypePng, TbMusic, TbX } from 'react-icons/tb';
 import type {
   ComposerAttachmentPreviewItem,
   PendingComposerAttachment,
@@ -31,8 +25,6 @@ interface ComposerAttachmentPreviewListProps {
       duration: number;
     };
   };
-  onOpenComposerImagePreview: (attachmentId: string) => void;
-  onOpenDocumentAttachment: (attachment: PendingComposerAttachment) => void;
   onToggleImageActionsMenu: (
     event: MouseEvent<HTMLButtonElement>,
     attachmentId: string
@@ -50,8 +42,6 @@ const ComposerAttachmentPreviewList = forwardRef<
       openImageActionsAttachmentId,
       imageActionsButtonRef,
       transition,
-      onOpenComposerImagePreview,
-      onOpenDocumentAttachment,
       onToggleImageActionsMenu,
       onRemovePendingComposerAttachment,
     },
@@ -113,18 +103,17 @@ const ComposerAttachmentPreviewList = forwardRef<
               className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
             >
               {isImageAttachment ? (
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  ref={isMenuOpen ? imageActionsButtonRef : undefined}
+                  type="button"
+                  aria-label="Aksi gambar"
+                  title="Aksi gambar"
+                  aria-haspopup="menu"
+                  aria-expanded={isMenuOpen}
                   className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
-                  onClick={() => {
-                    onOpenComposerImagePreview(attachment.id);
-                  }}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onOpenComposerImagePreview(attachment.id);
-                    }
+                  onClick={event => {
+                    event.stopPropagation();
+                    onToggleImageActionsMenu(event, attachment.id);
                   }}
                 >
                   <img
@@ -141,20 +130,19 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {fileSecondaryLabel}
                     </p>
                   </div>
-                </div>
+                </button>
               ) : isDocumentAttachment ? (
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  ref={isMenuOpen ? imageActionsButtonRef : undefined}
+                  type="button"
+                  aria-label="Aksi dokumen"
+                  title="Aksi dokumen"
+                  aria-haspopup="menu"
+                  aria-expanded={isMenuOpen}
                   className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-slate-100/90"
-                  onClick={() => {
-                    onOpenDocumentAttachment(resolvedAttachment);
-                  }}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onOpenDocumentAttachment(resolvedAttachment);
-                    }
+                  onClick={event => {
+                    event.stopPropagation();
+                    onToggleImageActionsMenu(event, attachment.id);
                   }}
                 >
                   {resolvedAttachment.pdfCoverUrl ? (
@@ -192,7 +180,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       {fileSecondaryLabel}
                     </p>
                   </div>
-                </div>
+                </button>
               ) : (
                 <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg">
                   <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
@@ -207,27 +195,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                 </div>
               )}
 
-              {isImageAttachment || isDocumentAttachment ? (
-                <div className="relative shrink-0">
-                  <button
-                    ref={isMenuOpen ? imageActionsButtonRef : undefined}
-                    type="button"
-                    aria-label={
-                      isImageAttachment ? 'Aksi gambar' : 'Aksi dokumen'
-                    }
-                    title={isImageAttachment ? 'Aksi gambar' : 'Aksi dokumen'}
-                    aria-haspopup="menu"
-                    aria-expanded={isMenuOpen}
-                    onClick={event => {
-                      event.stopPropagation();
-                      onToggleImageActionsMenu(event, attachment.id);
-                    }}
-                    className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-black transition-colors hover:bg-slate-200 hover:text-black"
-                  >
-                    <TbDotsVertical className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
+              {isImageAttachment || isDocumentAttachment ? null : (
                 <button
                   type="button"
                   aria-label={
