@@ -117,4 +117,13 @@ describe('areMessageItemPropsEqual', () => {
       areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
     ).toBe(false);
   });
+
+  it('detects when menu blur state changes for the current item', () => {
+    const previousModel = createModel({ openMenuMessageId: null });
+    const nextModel = createModel({ openMenuMessageId: 'file-elsewhere' });
+
+    expect(
+      areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
+    ).toBe(false);
+  });
 });

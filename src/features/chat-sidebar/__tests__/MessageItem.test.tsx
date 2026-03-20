@@ -220,4 +220,67 @@ describe('MessageItem', () => {
 
     expect(screen.getByAltText('PDF cover preview')).toBeTruthy();
   });
+
+  it('keeps the active attachment menu visible in a grouped bubble', () => {
+    const groupedMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'documents/channel/report.pdf',
+        message_type: 'file' as const,
+        file_name: 'Laporan.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/report.pdf',
+        file_kind: 'document' as const,
+      },
+      {
+        ...baseMessage,
+        id: 'file-2',
+        message: 'documents/channel/notes.docx',
+        message_type: 'file' as const,
+        file_name: 'Catatan.docx',
+        file_mime_type:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_storage_path: 'documents/channel/notes.docx',
+        file_kind: 'document' as const,
+      },
+    ];
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          groupedDocumentMessages: groupedMessages,
+          openMenuMessageId: 'file-1',
+          getAttachmentFileName: targetMessage => targetMessage.file_name || '',
+        })}
+      />
+    );
+
+    const firstRow = container.querySelector(
+      '[data-chat-attachment-row-id="file-1"]'
+    );
+    const secondRow = container.querySelector(
+      '[data-chat-attachment-row-id="file-2"]'
+    );
+
+    expect(screen.getByRole('menuitem', { name: 'Buka' })).toBeTruthy();
+    expect(firstRow?.className).toContain('z-[2]');
+    expect(firstRow?.className).not.toContain('blur-[2px]');
+    expect(secondRow?.className).toContain('blur-[2px]');
+  });
+
+  it('blurs the whole row when another message menu is active elsewhere', () => {
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          openMenuMessageId: 'file-elsewhere',
+        })}
+      />
+    );
+
+    const row = container.firstElementChild as HTMLElement | null;
+
+    expect(row?.className).toContain('blur-[2px]');
+  });
 });

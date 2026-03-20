@@ -283,6 +283,12 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           userId={userId}
           captionMessage={captionMessage}
           isHighlightedBubble={isFlashingTarget}
+          openMenuMessageId={openMenuMessageId}
+          menuPlacement={menuPlacement}
+          menuSideAnchor={menuSideAnchor}
+          menuOffsetX={menuOffsetX}
+          shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+          toggleMessageMenu={toggleMessageMenu}
           getAttachmentFileName={getAttachmentFileName}
           getImageMessageUrl={getImageMessageUrl}
           getPdfMessagePreview={getPdfMessagePreview}
@@ -351,7 +357,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       } ${
         !isSelectionMode &&
         openMenuMessageId &&
-        openMenuMessageId !== message.id
+        !bubbleMessageIds.includes(openMenuMessageId)
           ? 'blur-[2px] brightness-95'
           : ''
       } ${isSelectionMode ? 'group cursor-pointer' : ''}`}
