@@ -240,45 +240,52 @@ export const useChatComposerSend = ({
 
       if (hasPendingAttachments) {
         clearPendingComposerAttachments();
-      }
+        const lastAttachmentIndex = attachmentsToSend.length - 1;
+        const attachmentResults = await Promise.all(
+          attachmentsToSend.map(async (pendingAttachment, attachmentIndex) => {
+            const captionForAttachment =
+              shouldAttachCaption && attachmentIndex === lastAttachmentIndex
+                ? messageText
+                : undefined;
+            const sentAttachmentMessageId =
+              pendingAttachment.fileKind === 'image'
+                ? await sendImageMessage(
+                    pendingAttachment.file,
+                    captionForAttachment
+                  )
+                : await sendFileMessage(
+                    {
+                      file: pendingAttachment.file,
+                      fileName: pendingAttachment.fileName,
+                      fileTypeLabel: pendingAttachment.fileTypeLabel,
+                      fileKind: pendingAttachment.fileKind,
+                      mimeType: pendingAttachment.mimeType,
+                      pdfCoverUrl: pendingAttachment.pdfCoverUrl,
+                      pdfPageCount: pendingAttachment.pdfPageCount,
+                    },
+                    captionForAttachment
+                  );
 
-      const lastAttachmentIndex = attachmentsToSend.length - 1;
+            return {
+              pendingAttachment,
+              sentAttachmentMessageId,
+            };
+          })
+        );
+        const failedAttachments = attachmentResults
+          .filter(attachmentResult => !attachmentResult.sentAttachmentMessageId)
+          .map(attachmentResult => attachmentResult.pendingAttachment);
 
-      for (const [
-        attachmentIndex,
-        pendingAttachment,
-      ] of attachmentsToSend.entries()) {
-        const captionForAttachment =
-          shouldAttachCaption && attachmentIndex === lastAttachmentIndex
-            ? messageText
-            : undefined;
-        const sentAttachmentMessageId =
-          pendingAttachment.fileKind === 'image'
-            ? await sendImageMessage(
-                pendingAttachment.file,
-                captionForAttachment
-              )
-            : await sendFileMessage(
-                {
-                  file: pendingAttachment.file,
-                  fileName: pendingAttachment.fileName,
-                  fileTypeLabel: pendingAttachment.fileTypeLabel,
-                  fileKind: pendingAttachment.fileKind,
-                  mimeType: pendingAttachment.mimeType,
-                  pdfCoverUrl: pendingAttachment.pdfCoverUrl,
-                  pdfPageCount: pendingAttachment.pdfPageCount,
-                },
-                captionForAttachment
-              );
-
-        if (!sentAttachmentMessageId) {
+        if (failedAttachments.length > 0) {
           if (isCurrentConversationScopeActive()) {
-            restorePendingComposerAttachments(
-              attachmentsToSend.slice(attachmentIndex)
-            );
+            restorePendingComposerAttachments(failedAttachments);
           }
 
-          if (shouldAttachCaption && isCurrentConversationScopeActive()) {
+          const didCaptionAttachmentFail =
+            shouldAttachCaption &&
+            !attachmentResults[lastAttachmentIndex]?.sentAttachmentMessageId;
+
+          if (didCaptionAttachmentFail && isCurrentConversationScopeActive()) {
             setMessage(messageText);
           }
 
