@@ -1,4 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import {
   extractAttachmentComposerLinkFromMessageText,
   extractComposerLinkFromClipboard,
@@ -20,6 +27,10 @@ describe('composer-attachment-link', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('recognizes chat shared links as attachment asset candidates', () => {
     expect(
       extractAttachmentComposerLinkFromMessageText(
@@ -36,6 +47,21 @@ describe('composer-attachment-link', () => {
       extractComposerLinkFromClipboard({
         text: '',
         html: '<a href="https://shrtlink.works/bwdrrk3ugm">github.com</a>',
+      })
+    ).toEqual({
+      source: 'attachment',
+      pastedText: 'github.com',
+      url: 'https://shrtlink.works/bwdrrk3ugm',
+    });
+  });
+
+  it('keeps visible HTML anchor text when DOMParser is unavailable', () => {
+    vi.stubGlobal('DOMParser', undefined);
+
+    expect(
+      extractComposerLinkFromClipboard({
+        text: '',
+        html: '<a href="https://shrtlink.works/bwdrrk3ugm"><strong>github.com</strong></a>',
       })
     ).toEqual({
       source: 'attachment',

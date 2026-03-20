@@ -99,6 +99,29 @@ const extractUrlFromHtmlFragment = (html: string) => {
   return null;
 };
 
+const extractVisibleTextFromHtml = (html: string) => {
+  let visibleText = '';
+  let isInsideTag = false;
+
+  for (const character of html) {
+    if (character === '<') {
+      isInsideTag = true;
+      continue;
+    }
+
+    if (character === '>') {
+      isInsideTag = false;
+      continue;
+    }
+
+    if (!isInsideTag) {
+      visibleText += character;
+    }
+  }
+
+  return visibleText.replace(/\s+/g, ' ').trim();
+};
+
 const extractComposerLinkFromHtmlAnchor = (html: string) => {
   const normalizedHtml = html.trim();
   if (!normalizedHtml) return null;
@@ -134,10 +157,7 @@ const extractComposerLinkFromHtmlAnchor = (html: string) => {
     return null;
   }
 
-  const anchorText = anchorMatch[3]
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const anchorText = extractVisibleTextFromHtml(anchorMatch[3]);
 
   return {
     text: anchorText,
