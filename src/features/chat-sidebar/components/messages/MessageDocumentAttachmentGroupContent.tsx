@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
@@ -237,6 +238,13 @@ export const MessageDocumentAttachmentGroupContent = ({
                   aria-expanded={isMenuOpen}
                   onClick={event => {
                     event.stopPropagation();
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setMenuAnchorPosition({
+                      top: rect.top,
+                      left: rect.left,
+                      width: rect.width,
+                      height: rect.height,
+                    });
                     toggleMessageMenu(
                       event.currentTarget,
                       message.id,
@@ -280,14 +288,20 @@ export const MessageDocumentAttachmentGroupContent = ({
       openGroupedMenuMessageId &&
       menuAnchorPosition
         ? createPortal(
-            <div
-              className="pointer-events-none fixed z-[140]"
-              style={{
+            <motion.div
+              initial={false}
+              animate={{
                 top: menuAnchorPosition.top,
                 left: menuAnchorPosition.left,
                 width: menuAnchorPosition.width,
                 height: menuAnchorPosition.height,
               }}
+              transition={{
+                type: 'spring',
+                stiffness: 420,
+                damping: 34,
+              }}
+              className="pointer-events-none fixed z-[140]"
             >
               <div
                 className="relative h-full w-full pointer-events-auto"
@@ -310,7 +324,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                   }
                 />
               </div>
-            </div>,
+            </motion.div>,
             document.body
           )
         : null}
