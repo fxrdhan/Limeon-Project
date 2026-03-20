@@ -57,9 +57,9 @@ describe('chatLinkService', () => {
 
     const { chatLinkService } = await import('./link.service');
 
-    const result = await chatLinkService.createSharedLink(
-      'images/channel/image.png'
-    );
+    const result = await chatLinkService.createSharedLink({
+      storagePath: 'images/channel/image.png',
+    });
 
     expect(fetch).toHaveBeenCalledWith('https://shrtlink.works/api/chat-link', {
       method: 'POST',
@@ -76,6 +76,7 @@ describe('chatLinkService', () => {
         slug: 'abc123xyzt',
         shortUrl: 'https://shrtlink.works/abc123xyzt',
         storagePath: 'images/channel/image.png',
+        targetUrl: null,
       },
       error: null,
     });
@@ -91,9 +92,9 @@ describe('chatLinkService', () => {
 
     const { chatLinkService } = await import('./link.service');
 
-    const result = await chatLinkService.createSharedLink(
-      'images/channel/image.png'
-    );
+    const result = await chatLinkService.createSharedLink({
+      storagePath: 'images/channel/image.png',
+    });
 
     expect(fetch).not.toHaveBeenCalled();
     expect(result).toEqual({
@@ -128,9 +129,9 @@ describe('chatLinkService', () => {
 
     const { chatLinkService } = await import('./link.service');
 
-    const result = await chatLinkService.createSharedLink(
-      'images/channel/image.png'
-    );
+    const result = await chatLinkService.createSharedLink({
+      storagePath: 'images/channel/image.png',
+    });
 
     expect(result).toEqual({
       data: null,
@@ -141,6 +142,58 @@ describe('chatLinkService', () => {
         message: 'Unauthorized',
         name: 'PostgrestError',
       },
+    });
+  });
+
+  it('creates a shared link for a generic target url', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+        },
+      },
+      error: null,
+    });
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          slug: 'link234xyz',
+          shortUrl: 'https://shrtlink.works/link234xyz',
+          targetUrl: 'https://www.kaggle.com/datasets/sample',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    );
+
+    const { chatLinkService } = await import('./link.service');
+
+    const result = await chatLinkService.createSharedLink({
+      targetUrl: 'https://www.kaggle.com/datasets/sample',
+    });
+
+    expect(fetch).toHaveBeenCalledWith('https://shrtlink.works/api/chat-link', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        Authorization: 'Bearer access-token-123',
+      },
+      body: JSON.stringify({
+        targetUrl: 'https://www.kaggle.com/datasets/sample',
+      }),
+    });
+    expect(result).toEqual({
+      data: {
+        slug: 'link234xyz',
+        shortUrl: 'https://shrtlink.works/link234xyz',
+        storagePath: null,
+        targetUrl: 'https://www.kaggle.com/datasets/sample',
+      },
+      error: null,
     });
   });
 });

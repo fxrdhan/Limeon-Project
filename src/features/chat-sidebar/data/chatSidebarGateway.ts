@@ -179,9 +179,10 @@ export const chatSidebarPreviewGateway = {
 };
 
 export const chatSidebarShareGateway = {
-  createSharedLink(
-    storagePath: string
-  ): Promise<ServiceResponse<ChatSharedLinkResult>> {
-    return chatLinkService.createSharedLink(storagePath);
+  createSharedLink(request: {
+    storagePath?: string;
+    targetUrl?: string;
+  }): Promise<ServiceResponse<ChatSharedLinkResult>> {
+    return chatLinkService.createSharedLink(request);
   },
 };

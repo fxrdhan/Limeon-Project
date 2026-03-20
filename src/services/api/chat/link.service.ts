@@ -24,12 +24,9 @@ const buildChatLinkError = (
 
 export const chatLinkService = {
   async createSharedLink(
-    storagePath: string
+    request: ChatSharedLinkCreateRequest
   ): Promise<ServiceResponse<ChatSharedLinkResponse>> {
     try {
-      const request: ChatSharedLinkCreateRequest = {
-        storagePath,
-      };
       const {
         data: { session },
         error: sessionError,
@@ -84,8 +81,7 @@ export const chatLinkService = {
 
       if (
         typeof payload?.slug !== 'string' ||
-        typeof payload.shortUrl !== 'string' ||
-        typeof payload.storagePath !== 'string'
+        typeof payload.shortUrl !== 'string'
       ) {
         return {
           data: null,
@@ -100,7 +96,12 @@ export const chatLinkService = {
         data: {
           slug: payload.slug,
           shortUrl: payload.shortUrl,
-          storagePath: payload.storagePath,
+          storagePath:
+            typeof payload.storagePath === 'string'
+              ? payload.storagePath
+              : null,
+          targetUrl:
+            typeof payload.targetUrl === 'string' ? payload.targetUrl : null,
         },
         error: null,
       };

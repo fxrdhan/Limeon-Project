@@ -201,6 +201,7 @@ export interface ComposerPanelModel {
     isAttachModalOpen: boolean;
     attachmentPastePromptUrl: string | null;
     isAttachmentPastePromptAttachmentCandidate: boolean;
+    isAttachmentPastePromptShortenable: boolean;
     hoverableAttachmentCandidates: ComposerHoverableAttachmentCandidate[];
     hoverableAttachmentUrl: string | null;
     pendingComposerAttachments: ComposerAttachmentPreviewItem[];
@@ -249,6 +250,7 @@ export interface ComposerPanelModel {
     ) => void;
     onOpenAttachmentPastePromptLink: () => void;
     onCopyAttachmentPastePromptLink: () => void;
+    onShortenAttachmentPastePromptLink: () => void;
     onUseAttachmentPasteAsUrl: () => void;
     onUseAttachmentPasteAsAttachment: () => void;
     onSendMessage: () => void;

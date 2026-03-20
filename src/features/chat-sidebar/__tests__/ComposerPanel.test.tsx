@@ -84,6 +84,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
     isAttachModalOpen: false,
     attachmentPastePromptUrl: null,
     isAttachmentPastePromptAttachmentCandidate: false,
+    isAttachmentPastePromptShortenable: false,
     hoverableAttachmentCandidates: [
       {
         id: 'candidate-1',
@@ -137,6 +138,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
     onEditAttachmentLink: vi.fn(),
     onOpenAttachmentPastePromptLink: vi.fn(),
     onCopyAttachmentPastePromptLink: vi.fn(),
+    onShortenAttachmentPastePromptLink: vi.fn(),
     onUseAttachmentPasteAsUrl: vi.fn(),
     onUseAttachmentPasteAsAttachment: vi.fn(),
     onSendMessage: vi.fn(),
@@ -225,6 +227,7 @@ describe('ComposerPanel', () => {
     model.attachments.attachmentPastePromptUrl =
       'https://shrtlink.works/bwdrrk3ugm';
     model.attachments.isAttachmentPastePromptAttachmentCandidate = true;
+    model.attachments.isAttachmentPastePromptShortenable = true;
 
     render(<ComposerPanel model={model} />);
 
@@ -248,6 +251,7 @@ describe('ComposerPanel', () => {
     expect(screen.getByText('Aksi')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Shorten link' })).toBeTruthy();
     expect(screen.getByText('Tempel sebagai')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
@@ -262,6 +266,12 @@ describe('ComposerPanel', () => {
 
     expect(
       model.actions.onCopyAttachmentPastePromptLink
+    ).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shorten link' }));
+
+    expect(
+      model.actions.onShortenAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
   });
 
@@ -294,6 +304,7 @@ describe('ComposerPanel', () => {
     model.state.message = 'github.com';
     model.attachments.hoverableAttachmentCandidates = [];
     model.attachments.attachmentPastePromptUrl = 'https://github.com/';
+    model.attachments.isAttachmentPastePromptShortenable = true;
 
     render(<ComposerPanel model={model} />);
 
@@ -319,9 +330,46 @@ describe('ComposerPanel', () => {
     expect(screen.getByText('Aksi')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Shorten link' })).toBeTruthy();
     expect(screen.queryByText('Tempel sebagai')).toBeNull();
     expect(screen.queryByRole('button', { name: 'URL' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Attachment' })).toBeNull();
+  });
+
+  it('renders the shorten action for direct chat asset links', () => {
+    const model = buildComposerModel();
+    model.state.message =
+      'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
+    model.attachments.hoverableAttachmentCandidates = [];
+    model.attachments.attachmentPastePromptUrl =
+      'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
+    model.attachments.isAttachmentPastePromptShortenable = true;
+
+    render(<ComposerPanel model={model} />);
+
+    const link = screen.getByRole('link', {
+      name: 'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc',
+    });
+    Object.defineProperty(link, 'getBoundingClientRect', {
+      value: () => ({
+        x: 24,
+        y: 48,
+        width: 120,
+        height: 20,
+        top: 48,
+        right: 144,
+        bottom: 68,
+        left: 24,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent.mouseEnter(link);
+    fireEvent.click(screen.getByRole('button', { name: 'Shorten link' }));
+
+    expect(
+      model.actions.onShortenAttachmentPastePromptLink
+    ).toHaveBeenCalledOnce();
   });
 
   it('keeps the hovered link node stable when paste-as actions become available', () => {

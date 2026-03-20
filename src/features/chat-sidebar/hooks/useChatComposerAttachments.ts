@@ -11,6 +11,8 @@ import {
   type SetStateAction,
 } from 'react';
 import toast from 'react-hot-toast';
+import { extractChatStoragePath } from '../../../../shared/chatStoragePaths';
+import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
 import {
   CHAT_SIDEBAR_TOASTER_ID,
   COMPOSER_IMAGE_PREVIEW_EXIT_DURATION,
@@ -109,6 +111,9 @@ export const useChatComposerAttachments = ({
   >([]);
   const [rawAttachmentUrl, setRawAttachmentUrl] = useState<string | null>(null);
   const attachmentPasteValidationScopeRef = useRef(0);
+  const isAttachmentPastePromptShortenable = Boolean(
+    attachmentPastePrompt?.url
+  );
 
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
@@ -692,6 +697,67 @@ export const useChatComposerAttachments = ({
     focusComposerSelection,
   ]);
 
+  const handleShortenAttachmentPastePromptLink = useCallback(async () => {
+    if (!attachmentPastePrompt) return;
+
+    const promptState = attachmentPastePrompt;
+    const storagePath = extractChatStoragePath(promptState.url)?.trim();
+
+    const sharedLinkResult = await chatSidebarShareGateway.createSharedLink(
+      storagePath
+        ? { storagePath }
+        : {
+            targetUrl: promptState.url,
+          }
+    );
+    const shortUrl = sharedLinkResult.data?.shortUrl?.trim() || null;
+
+    if (!shortUrl) {
+      toast.error(sharedLinkResult.error?.message || 'Gagal memendekkan link', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+      return;
+    }
+
+    setMessage(currentMessage => {
+      const pastedSegment = currentMessage.slice(
+        promptState.rangeStart,
+        promptState.rangeEnd
+      );
+      if (pastedSegment !== promptState.pastedText) {
+        return currentMessage;
+      }
+
+      return (
+        currentMessage.slice(0, promptState.rangeStart) +
+        shortUrl +
+        currentMessage.slice(promptState.rangeEnd)
+      );
+    });
+    setPastedAttachmentCandidates(currentCandidates =>
+      currentCandidates.map(candidate =>
+        candidate.id === promptState.id
+          ? {
+              ...candidate,
+              pastedText: shortUrl,
+              url: shortUrl,
+            }
+          : candidate
+      )
+    );
+    setRawAttachmentUrl(null);
+    dismissAttachmentPastePrompt();
+    focusComposerSelection(promptState.rangeStart + shortUrl.length);
+    toast.success('Link berhasil dipendekkan', {
+      toasterId: CHAT_SIDEBAR_TOASTER_ID,
+    });
+  }, [
+    attachmentPastePrompt,
+    dismissAttachmentPastePrompt,
+    focusComposerSelection,
+    setMessage,
+  ]);
+
   const handleUseAttachmentPasteAsAttachment = useCallback(() => {
     if (!attachmentPastePrompt?.isAttachmentCandidate) return;
 
@@ -899,6 +965,7 @@ export const useChatComposerAttachments = ({
     attachmentPastePromptUrl: attachmentPastePrompt?.url ?? null,
     isAttachmentPastePromptAttachmentCandidate:
       attachmentPastePrompt?.isAttachmentCandidate ?? false,
+    isAttachmentPastePromptShortenable,
     hoverableAttachmentCandidates,
     hoverableAttachmentUrl,
     rawAttachmentUrl,
@@ -920,6 +987,7 @@ export const useChatComposerAttachments = ({
     handleEditAttachmentLink,
     handleOpenAttachmentPastePromptLink,
     handleCopyAttachmentPastePromptLink,
+    handleShortenAttachmentPastePromptLink,
     handleAttachButtonClick,
     handleAttachImageClick,
     handleAttachDocumentClick,

@@ -187,22 +187,29 @@ export const resolveCopyableChatAssetUrl = async (
 ) => {
   const normalizedUrl = url.trim();
   const storagePath =
-    storagePathHint?.trim() ||
-    extractChatStoragePath(normalizedUrl) ||
-    (!isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null);
+    storagePathHint?.trim() || extractChatStoragePath(normalizedUrl);
 
-  if (!storagePath) {
+  if (!storagePath && !normalizedUrl) {
     return normalizedUrl || null;
   }
 
-  const sharedLinkResult =
-    await chatSidebarShareGateway.createSharedLink(storagePath);
+  const sharedLinkResult = await chatSidebarShareGateway.createSharedLink(
+    storagePath
+      ? { storagePath }
+      : {
+          targetUrl: normalizedUrl,
+        }
+  );
   if (sharedLinkResult.data?.shortUrl) {
     return sharedLinkResult.data.shortUrl;
   }
 
+  const resolvedAssetUrl = storagePath
+    ? await resolveChatAssetUrl(normalizedUrl || storagePath, storagePath)
+    : null;
+
   return (
-    (await resolveChatAssetUrl(normalizedUrl || storagePath, storagePath)) ??
+    resolvedAssetUrl ??
     (isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null)
   );
 };

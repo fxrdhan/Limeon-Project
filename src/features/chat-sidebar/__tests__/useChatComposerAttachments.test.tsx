@@ -25,6 +25,11 @@ const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
 const { mockValidateAttachmentComposerLink } = vi.hoisted(() => ({
   mockValidateAttachmentComposerLink: vi.fn(),
 }));
+const { mockChatSidebarShareGateway } = vi.hoisted(() => ({
+  mockChatSidebarShareGateway: {
+    createSharedLink: vi.fn(),
+  },
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -32,6 +37,10 @@ vi.mock('react-hot-toast', () => ({
 
 vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
+}));
+
+vi.mock('../data/chatSidebarGateway', () => ({
+  chatSidebarShareGateway: mockChatSidebarShareGateway,
 }));
 
 vi.mock('../utils/composer-attachment-link', async () => {
@@ -104,6 +113,14 @@ describe('useChatComposerAttachments', () => {
     );
     mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
       data: null,
+      error: null,
+    });
+    mockChatSidebarShareGateway.createSharedLink.mockResolvedValue({
+      data: {
+        slug: 'abc123xyzt',
+        shortUrl: 'https://shrtlink.works/abc123xyzt',
+        storagePath: 'images/channel/user-1_photo.png',
+      },
       error: null,
     });
     mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
@@ -554,6 +571,105 @@ describe('useChatComposerAttachments', () => {
     expect(result.current.rawAttachmentUrl).toBeNull();
     expect(messageInput.selectionStart).toBe(10);
     expect(messageInput.selectionEnd).toBe(10);
+  });
+
+  it('shortens a direct chat asset link inside the composer prompt', async () => {
+    const messageInput = document.createElement('textarea');
+    const assetUrl =
+      'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState(assetUrl);
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: messageInput },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: assetUrl,
+        pastedText: assetUrl,
+        rangeStart: 0,
+        rangeEnd: assetUrl.length,
+      });
+    });
+
+    expect(result.current.isAttachmentPastePromptShortenable).toBe(true);
+    messageInput.value = assetUrl;
+
+    await act(async () => {
+      await result.current.handleShortenAttachmentPastePromptLink();
+    });
+
+    await waitFor(() => {
+      expect(result.current.attachmentPastePromptUrl).toBeNull();
+      expect(result.current.rawAttachmentUrl).toBeNull();
+      expect(result.current.message).toBe('https://shrtlink.works/abc123xyzt');
+    });
+
+    expect(mockChatSidebarShareGateway.createSharedLink).toHaveBeenCalledWith({
+      storagePath: 'images/channel/user-1_photo.png',
+    });
+    expect(result.current.hoverableAttachmentCandidates).toEqual([]);
+    expect(messageInput.selectionStart).toBe(
+      'https://shrtlink.works/abc123xyzt'.length
+    );
+    expect(messageInput.selectionEnd).toBe(
+      'https://shrtlink.works/abc123xyzt'.length
+    );
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'Link berhasil dipendekkan',
+      {
+        toasterId: 'chat-sidebar-toaster',
+      }
+    );
+  });
+
+  it('shortens a generic external link through targetUrl', async () => {
+    const messageInput = document.createElement('textarea');
+    const genericUrl =
+      'https://www.kaggle.com/datasets/grandmaster07/student-exam-performance-dataset-analysis/data';
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState(genericUrl);
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: messageInput },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: genericUrl,
+        pastedText: genericUrl,
+        rangeStart: 0,
+        rangeEnd: genericUrl.length,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleShortenAttachmentPastePromptLink();
+    });
+
+    expect(mockChatSidebarShareGateway.createSharedLink).toHaveBeenCalledWith({
+      targetUrl: genericUrl,
+    });
+    expect(result.current.message).toBe('https://shrtlink.works/abc123xyzt');
   });
 
   it('uses a collapsed selection when the composer provides a clicked caret position', async () => {

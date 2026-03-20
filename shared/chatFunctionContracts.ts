@@ -113,15 +113,18 @@ export interface ChatRemoteAssetRequestPayload {
 }
 
 export interface ChatSharedLinkCreateRequest {
-  storagePath: string;
+  storagePath?: string;
+  targetUrl?: string;
 }
 
 export interface ChatSharedLinkCreateRequestPayload {
   storagePath?: string;
+  targetUrl?: string;
 }
 
 export interface ChatSharedLinkResponse {
   slug: string;
   shortUrl: string;
-  storagePath: string;
+  storagePath?: string | null;
+  targetUrl?: string | null;
 }

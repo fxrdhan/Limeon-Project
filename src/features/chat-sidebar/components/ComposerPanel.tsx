@@ -513,6 +513,19 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                             aria-hidden="true"
                           />
                         </button>
+                        {attachments.isAttachmentPastePromptShortenable ? (
+                          <button
+                            type="button"
+                            onClick={actions.onShortenAttachmentPastePromptLink}
+                            className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
+                          >
+                            <span>Shorten link</span>
+                            <TbLink
+                              className="ml-auto h-4 w-4 text-black"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        ) : null}
                         <AnimatePresence initial={false}>
                           {attachments.isAttachmentPastePromptAttachmentCandidate ? (
                             <motion.div
