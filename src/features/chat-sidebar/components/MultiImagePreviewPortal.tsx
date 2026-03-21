@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
+import { LayoutGroup, motion } from 'motion/react';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { TbX } from 'react-icons/tb';
 
@@ -26,12 +27,41 @@ interface MultiImagePreviewPortalProps {
   backdropClassName: string;
 }
 
-const DEFAULT_SIDEBAR_WIDTH = 320;
-const MIN_SIDEBAR_WIDTH = 240;
-const MAX_SIDEBAR_WIDTH = 420;
+const THUMBNAIL_GRID_GAP = 16;
+const THUMBNAIL_GRID_HORIZONTAL_PADDING = 32;
+const BASE_THUMBNAIL_TILE_SIZE = 116;
+const THUMBNAIL_SCALE_STEP = 0.85;
+const buildThumbnailTileSize = (columnCount: number) =>
+  Math.round(
+    BASE_THUMBNAIL_TILE_SIZE * THUMBNAIL_SCALE_STEP ** (columnCount - 1)
+  );
+const SIDEBAR_LAYOUT_LEVELS = [1, 2, 3, 4].map(columnCount => {
+  const tileSize = buildThumbnailTileSize(columnCount);
+
+  return {
+    columnCount,
+    tileSize,
+    width:
+      THUMBNAIL_GRID_HORIZONTAL_PADDING +
+      tileSize * columnCount +
+      THUMBNAIL_GRID_GAP * Math.max(0, columnCount - 1),
+  };
+});
+const DEFAULT_SIDEBAR_WIDTH =
+  SIDEBAR_LAYOUT_LEVELS.find(level => level.columnCount === 2)?.width ?? 280;
+const ONE_COLUMN_SIDEBAR_WIDTH =
+  SIDEBAR_LAYOUT_LEVELS.find(level => level.columnCount === 1)?.width ?? 148;
+const FOUR_COLUMN_SIDEBAR_WIDTH =
+  SIDEBAR_LAYOUT_LEVELS.find(level => level.columnCount === 4)?.width ?? 544;
+const MIN_SIDEBAR_WIDTH = ONE_COLUMN_SIDEBAR_WIDTH;
+const MAX_SIDEBAR_WIDTH = FOUR_COLUMN_SIDEBAR_WIDTH;
 const MIN_PREVIEW_PANE_WIDTH = 360;
-const MIN_SIDEBAR_WIDTH_FOR_THREE_COLUMNS = 300;
-const MIN_SIDEBAR_WIDTH_FOR_FOUR_COLUMNS = 380;
+const THUMBNAIL_LAYOUT_TRANSITION = {
+  type: 'spring' as const,
+  stiffness: 380,
+  damping: 32,
+  mass: 0.85,
+};
 
 const MultiImagePreviewPortal = ({
   isOpen,
@@ -76,6 +106,27 @@ const MultiImagePreviewPortal = ({
     [getMaxSidebarWidth]
   );
 
+  const getSnappedSidebarWidth = useCallback(
+    (nextWidth: number, availableWidth: number) => {
+      const boundedWidth = clampSidebarWidth(nextWidth, availableWidth);
+      const maxSidebarWidth = getMaxSidebarWidth(availableWidth);
+      const snapCandidates = SIDEBAR_LAYOUT_LEVELS.map(
+        level => level.width
+      ).filter(width => width <= maxSidebarWidth);
+
+      return snapCandidates.reduce(
+        (closestWidth, candidateWidth) => {
+          return Math.abs(candidateWidth - boundedWidth) <
+            Math.abs(closestWidth - boundedWidth)
+            ? candidateWidth
+            : closestWidth;
+        },
+        Math.min(maxSidebarWidth, snapCandidates[0] ?? boundedWidth)
+      );
+    },
+    [clampSidebarWidth, getMaxSidebarWidth]
+  );
+
   useEffect(() => {
     const containerElement = containerRef.current;
     if (!containerElement || typeof ResizeObserver === 'undefined') {
@@ -101,10 +152,10 @@ const MultiImagePreviewPortal = ({
 
   useEffect(() => {
     setSidebarWidth(currentWidth => {
-      const boundedWidth = clampSidebarWidth(currentWidth, containerWidth);
-      return boundedWidth === currentWidth ? currentWidth : boundedWidth;
+      const snappedWidth = getSnappedSidebarWidth(currentWidth, containerWidth);
+      return snappedWidth === currentWidth ? currentWidth : snappedWidth;
     });
-  }, [clampSidebarWidth, containerWidth]);
+  }, [containerWidth, getSnappedSidebarWidth]);
 
   const stopSidebarResize = useCallback(
     (target?: HTMLButtonElement | null, pointerId?: number) => {
@@ -146,7 +197,7 @@ const MultiImagePreviewPortal = ({
         return;
       }
 
-      const boundedWidth = clampSidebarWidth(sidebarWidth, containerWidth);
+      const boundedWidth = getSnappedSidebarWidth(sidebarWidth, containerWidth);
 
       event.preventDefault();
       resizeStateRef.current = {
@@ -160,7 +211,7 @@ const MultiImagePreviewPortal = ({
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
     },
-    [clampSidebarWidth, containerWidth, sidebarWidth]
+    [containerWidth, getSnappedSidebarWidth, sidebarWidth]
   );
 
   const handleResizePointerMove = useCallback(
@@ -172,10 +223,13 @@ const MultiImagePreviewPortal = ({
 
       const widthDelta = event.clientX - resizeState.startX;
       setSidebarWidth(
-        clampSidebarWidth(resizeState.startWidth + widthDelta, containerWidth)
+        getSnappedSidebarWidth(
+          resizeState.startWidth + widthDelta,
+          containerWidth
+        )
       );
     },
-    [clampSidebarWidth, containerWidth]
+    [containerWidth, getSnappedSidebarWidth]
   );
 
   const handleResizePointerUp = useCallback(
@@ -196,22 +250,37 @@ const MultiImagePreviewPortal = ({
       }
 
       event.preventDefault();
-      const nextDelta = event.key === 'ArrowLeft' ? -24 : 24;
-      setSidebarWidth(currentWidth =>
-        clampSidebarWidth(currentWidth + nextDelta, containerWidth)
-      );
+      setSidebarWidth(currentWidth => {
+        const maxSidebarWidth = getMaxSidebarWidth(containerWidth);
+        const snapCandidates = SIDEBAR_LAYOUT_LEVELS.map(
+          level => level.width
+        ).filter(width => width <= maxSidebarWidth);
+        const activeIndex = snapCandidates.findIndex(
+          width => width === currentWidth
+        );
+        const currentIndex = activeIndex === -1 ? 0 : activeIndex;
+        const nextIndex =
+          event.key === 'ArrowLeft'
+            ? Math.max(0, currentIndex - 1)
+            : Math.min(snapCandidates.length - 1, currentIndex + 1);
+
+        return (
+          snapCandidates[nextIndex] ?? Math.min(maxSidebarWidth, currentWidth)
+        );
+      });
     },
-    [clampSidebarWidth, containerWidth]
+    [containerWidth, getMaxSidebarWidth]
   );
 
-  const boundedSidebarWidth = clampSidebarWidth(sidebarWidth, containerWidth);
+  const boundedSidebarWidth = getSnappedSidebarWidth(
+    sidebarWidth,
+    containerWidth
+  );
   const maxSidebarWidth = getMaxSidebarWidth(containerWidth);
-  const sidebarColumnCount =
-    boundedSidebarWidth >= MIN_SIDEBAR_WIDTH_FOR_FOUR_COLUMNS
-      ? 4
-      : boundedSidebarWidth >= MIN_SIDEBAR_WIDTH_FOR_THREE_COLUMNS
-        ? 3
-        : 2;
+  const activeLayoutLevel =
+    SIDEBAR_LAYOUT_LEVELS.find(level => level.width === boundedSidebarWidth) ??
+    SIDEBAR_LAYOUT_LEVELS[0];
+  const sidebarColumnCount = activeLayoutLevel.columnCount;
   const containerStyle = {
     '--multi-image-preview-sidebar-width': `${boundedSidebarWidth}px`,
   } as CSSProperties;
@@ -240,38 +309,44 @@ const MultiImagePreviewPortal = ({
           className="flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-slate-300 bg-white md:flex-row"
         >
           <aside className="flex w-full shrink-0 border-b border-slate-300 bg-white md:w-[var(--multi-image-preview-sidebar-width)] md:border-b-0">
-            <div
-              className="grid max-h-full flex-1 content-start gap-4 overflow-y-auto p-4"
-              style={{
-                gridTemplateColumns: `repeat(${sidebarColumnCount}, minmax(0, 1fr))`,
-              }}
-            >
-              {previewItems.map((previewItem, index) => {
-                const isActive = previewItem.id === activePreview.id;
+            <LayoutGroup id="multi-image-preview-thumbnails">
+              <div
+                className="grid max-h-full flex-1 content-start gap-4 overflow-y-auto p-4"
+                style={{
+                  gridTemplateColumns: `repeat(${sidebarColumnCount}, ${activeLayoutLevel.tileSize}px)`,
+                  gridAutoRows: `${activeLayoutLevel.tileSize}px`,
+                  scrollbarGutter: 'stable',
+                }}
+              >
+                {previewItems.map((previewItem, index) => {
+                  const isActive = previewItem.id === activePreview.id;
 
-                return (
-                  <button
-                    key={previewItem.id}
-                    type="button"
-                    onClick={() => onSelectPreview(previewItem.id)}
-                    aria-label={`Pilih gambar ${index + 1}`}
-                    aria-pressed={isActive}
-                    className={`group relative aspect-square overflow-hidden rounded-xl border text-left transition-all ${
-                      isActive
-                        ? 'border-primary'
-                        : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <img
-                      src={previewItem.previewUrl}
-                      alt={`Thumbnail ${previewItem.previewName}`}
-                      className="h-full w-full object-cover"
-                      draggable={false}
-                    />
-                  </button>
-                );
-              })}
-            </div>
+                  return (
+                    <motion.button
+                      key={previewItem.id}
+                      layout
+                      transition={THUMBNAIL_LAYOUT_TRANSITION}
+                      type="button"
+                      onClick={() => onSelectPreview(previewItem.id)}
+                      aria-label={`Pilih gambar ${index + 1}`}
+                      aria-pressed={isActive}
+                      className={`group relative overflow-hidden rounded-xl border text-left transition-[border-color,box-shadow] duration-200 ${
+                        isActive
+                          ? 'border-primary'
+                          : 'border-slate-300 hover:border-slate-400'
+                      } h-full w-full`}
+                    >
+                      <img
+                        src={previewItem.previewUrl}
+                        alt={`Thumbnail ${previewItem.previewName}`}
+                        className="h-full w-full object-cover"
+                        draggable={false}
+                      />
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </LayoutGroup>
           </aside>
 
           <button
