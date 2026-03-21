@@ -216,7 +216,7 @@ export const buildMessageItemDerivations = ({
   const bubbleWrapperClass = isFileMessage
     ? isSquareImageMessage
       ? 'inline-flex w-64 max-w-full flex-col align-top'
-      : 'block w-full'
+      : 'block min-w-0 w-72 max-w-full'
     : isSquareImageMessage
       ? 'inline-flex w-64 max-w-full flex-col align-top'
       : 'block min-w-0 w-fit max-w-full';

@@ -90,7 +90,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                   type="button"
                   onClick={actions.onLoadOlderMessages}
                   disabled={state.isLoadingOlderMessages}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-default disabled:opacity-60"
+                  className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {state.isLoadingOlderMessages
                     ? 'Memuat pesan sebelumnya...'
@@ -135,7 +135,7 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                         index === 0 ? 'pb-3' : 'py-3'
                       }`}
                     >
-                      <div className="inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm backdrop-blur-sm">
+                      <div className="inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-medium text-black shadow-none">
                         {formatMessageGroupDate(messageItem.created_at)}
                       </div>
                     </div>
