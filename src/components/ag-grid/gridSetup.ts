@@ -100,6 +100,7 @@ export const defaultTheme = themeQuartz.withParams({
     style: 'solid',
     width: 1,
   },
+  wrapperBorderRadius: 12,
   accentColor: 'oklch(76.5% 0.177 163.223/0.7)',
   fontFamily: 'var(--font-sans)', // Reference CSS variable from @theme
   fontSize: 13, // Compact size for better space efficiency
