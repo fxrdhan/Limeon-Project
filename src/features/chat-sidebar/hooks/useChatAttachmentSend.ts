@@ -157,6 +157,22 @@ export const useChatAttachmentSend = ({
     ]
   );
 
+  const handoffPendingImagePreview = useCallback(
+    (tempMessageId: string, realMessageId: string) => {
+      const previewUrl = pendingImagePreviewUrlsRef.current.get(tempMessageId);
+      if (!previewUrl) {
+        return;
+      }
+
+      pendingImagePreviewUrlsRef.current.delete(tempMessageId);
+      chatRuntimeCache.imagePreviews.setEntry(realMessageId, {
+        previewUrl,
+        isObjectUrl: true,
+      });
+    },
+    [pendingImagePreviewUrlsRef]
+  );
+
   const seedLocalPdfPreviewCache = useCallback(
     (message: ChatMessage, pendingFile: PendingComposerFile) => {
       const pdfCoverUrl = pendingFile.pdfCoverUrl?.trim();
@@ -244,9 +260,24 @@ export const useChatAttachmentSend = ({
             targetUser,
             stableKey
           ),
+        onAfterCommit: async (
+          realMessage,
+          _stableKey,
+          _uploadedPath,
+          _scope,
+          tempMessageId
+        ) => {
+          handoffPendingImagePreview(tempMessageId, realMessage.id);
+        },
       });
     },
-    [currentChannelId, sendAttachmentMessage, targetUser, user]
+    [
+      currentChannelId,
+      handoffPendingImagePreview,
+      sendAttachmentMessage,
+      targetUser,
+      user,
+    ]
   );
 
   const sendFileMessage = useCallback(

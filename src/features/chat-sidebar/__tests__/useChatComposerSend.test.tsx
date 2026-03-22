@@ -172,6 +172,7 @@ describe('useChatComposerSend', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    chatRuntimeCache.imagePreviews.reset();
     chatRuntimeCache.pdfPreviews.reset();
     vi.stubGlobal(
       'URL',
@@ -1430,6 +1431,75 @@ describe('useChatComposerSend', () => {
         ),
       })
     );
+  });
+
+  it('hands off the optimistic image preview to the persisted bubble after send commit', async () => {
+    mockGateway.uploadImage.mockResolvedValue({
+      path: 'images/channel-1/user-a_image_commit.png',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-image-commit',
+        message: 'images/channel-1/user-a_image_commit.png',
+        message_type: 'image',
+        file_name: undefined,
+        file_kind: undefined,
+        file_mime_type: 'image/png',
+        file_storage_path: 'images/channel-1/user-a_image_commit.png',
+      }),
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [
+          buildPendingAttachment({
+            id: 'pending-image-commit',
+            file: new File(['image'], 'chat.png', { type: 'image/png' }),
+            fileName: 'chat.png',
+            fileTypeLabel: 'PNG',
+            fileKind: 'image',
+            mimeType: 'image/png',
+            previewUrl: 'blob:image-preview',
+          }),
+        ],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(
+      chatRuntimeCache.imagePreviews.getEntry('server-image-commit')
+    ).toEqual({
+      previewUrl: 'blob:temp-upload',
+      isObjectUrl: true,
+    });
   });
 
   it('sends a pasted image url as plain text when the draft is marked to stay raw', async () => {

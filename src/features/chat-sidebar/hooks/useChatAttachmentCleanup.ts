@@ -5,6 +5,7 @@ import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { resolveDeletedThreadMessageIds } from '../utils/message-thread';
 
 const normalizeStoragePaths = (
@@ -97,6 +98,13 @@ export const useChatAttachmentCleanup = ({
       const effectiveDeletedMessageIds = resolveDeletedThreadMessageIds(
         data?.deletedMessageIds,
         [persistedMessageId]
+      );
+
+      chatRuntimeCache.pdfPreviews.deleteByMessageIds(
+        effectiveDeletedMessageIds
+      );
+      chatRuntimeCache.imagePreviews.deleteByMessageIds(
+        effectiveDeletedMessageIds
       );
 
       if (isConversationScopeActive(conversationScopeKey)) {

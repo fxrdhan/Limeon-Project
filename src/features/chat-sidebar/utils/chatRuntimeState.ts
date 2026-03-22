@@ -14,6 +14,11 @@ export type PdfMessagePreviewCacheEntry = {
   cacheKey: string;
 };
 
+export interface ImageMessagePreviewCacheEntry {
+  previewUrl: string;
+  isObjectUrl: boolean;
+}
+
 export interface SignedChatAssetUrlCacheEntry {
   signedUrl: string;
   expiresAt: number;
@@ -130,6 +135,11 @@ export const pendingReadReceiptsStore = createRuntimePersistentStore({
 export const signedChatAssetUrlStore = new Map<
   string,
   SignedChatAssetUrlCacheEntry
+>();
+
+export const imageMessagePreviewStore = new Map<
+  string,
+  ImageMessagePreviewCacheEntry
 >();
 
 export const pdfMessagePreviewStore = {

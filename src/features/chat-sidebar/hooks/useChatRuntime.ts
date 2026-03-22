@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { chatSidebarCleanupGateway } from '../data/chatSidebarGateway';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { loadPersistedPdfPreviewEntries } from '../utils/pdf-preview-persistence';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
 import { useChatRuntimeReadReceipts } from './useChatRuntimeReadReceipts';
 
@@ -15,6 +17,27 @@ export const useChatRuntime = () => {
 
   useChatIncomingDeliveries();
   useChatRuntimeReadReceipts();
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const hydratePersistedPdfPreviews = async () => {
+      const persistedPdfPreviews = await loadPersistedPdfPreviewEntries();
+      if (isCancelled || persistedPdfPreviews.length === 0) {
+        return;
+      }
+
+      persistedPdfPreviews.forEach(({ messageId, preview }) => {
+        chatRuntimeCache.pdfPreviews.hydrate(messageId, preview);
+      });
+    };
+
+    void hydratePersistedPdfPreviews();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const clearScheduledRetry = () => {

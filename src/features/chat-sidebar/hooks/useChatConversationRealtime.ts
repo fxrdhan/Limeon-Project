@@ -9,6 +9,7 @@ import {
 } from '@/services/api/chat/normalizers';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import {
   isConversationMessageForPair,
   reconcileInsertedConversationMessage,
@@ -200,6 +201,9 @@ export const useChatConversationRealtime = ({
             messageId: deletedMessageId,
           });
         }
+
+        chatRuntimeCache.pdfPreviews.deleteByMessageIds([deletedMessageId]);
+        chatRuntimeCache.imagePreviews.deleteByMessageIds([deletedMessageId]);
 
         setMessages(previousMessages => {
           if (

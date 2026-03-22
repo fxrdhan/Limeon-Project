@@ -6,15 +6,71 @@ import {
 } from '../constants';
 import {
   conversationCacheStore,
+  imageMessagePreviewStore,
   pendingReadReceiptsStore,
   pdfMessagePreviewStore,
   signedChatAssetUrlStore,
   type ConversationCacheEntry,
+  type ImageMessagePreviewCacheEntry,
   type PdfMessagePreviewCacheEntry,
   type SignedChatAssetUrlCacheEntry,
 } from './chatRuntimeState';
+import {
+  deletePersistedPdfPreviewEntriesByMessageIds,
+  persistPdfPreviewEntry,
+} from './pdf-preview-persistence';
 
 const MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES = 128;
+const MAX_IMAGE_MESSAGE_PREVIEW_CACHE_ENTRIES = 64;
+
+const revokeCachedImagePreviewObjectUrl = (
+  previewEntry: ImageMessagePreviewCacheEntry | undefined
+) => {
+  if (
+    !previewEntry?.isObjectUrl ||
+    typeof URL === 'undefined' ||
+    typeof URL.revokeObjectURL !== 'function'
+  ) {
+    return;
+  }
+
+  URL.revokeObjectURL(previewEntry.previewUrl);
+};
+
+const deleteCachedImagePreviewByMessageId = (
+  messageId: string,
+  store = imageMessagePreviewStore
+) => {
+  const existingPreview = store.get(messageId);
+  revokeCachedImagePreviewObjectUrl(existingPreview);
+  store.delete(messageId);
+};
+
+const setCachedImagePreview = (
+  messageId: string,
+  preview: ImageMessagePreviewCacheEntry,
+  store = imageMessagePreviewStore
+) => {
+  const existingPreview = store.get(messageId);
+  if (existingPreview && existingPreview.previewUrl !== preview.previewUrl) {
+    revokeCachedImagePreviewObjectUrl(existingPreview);
+  }
+
+  if (store.has(messageId)) {
+    store.delete(messageId);
+  }
+
+  store.set(messageId, preview);
+
+  while (store.size > MAX_IMAGE_MESSAGE_PREVIEW_CACHE_ENTRIES) {
+    const oldestMessageId = store.keys().next().value;
+    if (!oldestMessageId) {
+      break;
+    }
+
+    deleteCachedImagePreviewByMessageId(oldestMessageId, store);
+  }
+};
 
 const removeCachedPdfPreviewByKey = (
   cacheKey: string,
@@ -30,6 +86,68 @@ const removeCachedPdfPreviewByKey = (
 
     keysByMessageId.delete(messageId);
     break;
+  }
+};
+
+const setCachedPdfPreview = (
+  messageId: string,
+  preview: PdfMessagePreviewCacheEntry,
+  {
+    persist = true,
+    cache = pdfMessagePreviewStore.cache,
+    keysByMessageId = pdfMessagePreviewStore.keysByMessageId,
+  }: {
+    persist?: boolean;
+    cache?: Map<string, PdfMessagePreviewCacheEntry>;
+    keysByMessageId?: Map<string, string>;
+  } = {}
+) => {
+  const previousCacheKey = keysByMessageId.get(messageId);
+  if (previousCacheKey && previousCacheKey !== preview.cacheKey) {
+    removeCachedPdfPreviewByKey(previousCacheKey, cache, keysByMessageId);
+  }
+
+  if (cache.has(preview.cacheKey)) {
+    cache.delete(preview.cacheKey);
+  }
+
+  cache.set(preview.cacheKey, preview);
+  keysByMessageId.set(messageId, preview.cacheKey);
+
+  while (cache.size > PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES) {
+    const oldestCacheKey = cache.keys().next().value;
+    if (!oldestCacheKey) {
+      break;
+    }
+
+    removeCachedPdfPreviewByKey(oldestCacheKey, cache, keysByMessageId);
+  }
+
+  if (persist && !messageId.startsWith('temp_')) {
+    void persistPdfPreviewEntry(messageId, preview);
+  }
+};
+
+const deleteCachedPdfPreviewsByMessageIds = (
+  messageIds: string[],
+  cache = pdfMessagePreviewStore.cache,
+  keysByMessageId = pdfMessagePreviewStore.keysByMessageId
+) => {
+  const normalizedMessageIds = [...new Set(messageIds)]
+    .map(messageId => messageId.trim())
+    .filter(Boolean);
+
+  normalizedMessageIds.forEach(messageId => {
+    const cacheKey = keysByMessageId.get(messageId);
+    if (!cacheKey) {
+      return;
+    }
+
+    removeCachedPdfPreviewByKey(cacheKey, cache, keysByMessageId);
+  });
+
+  if (normalizedMessageIds.length > 0) {
+    void deletePersistedPdfPreviewEntriesByMessageIds(normalizedMessageIds);
   }
 };
 
@@ -222,6 +340,107 @@ export const chatRuntimeCache = {
     },
   },
 
+  imagePreviews: {
+    getEntry(
+      messageId: string,
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      return store.get(messageId) ?? null;
+    },
+
+    setEntry(
+      messageId: string,
+      preview: ImageMessagePreviewCacheEntry,
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      setCachedImagePreview(messageId, preview, store);
+    },
+
+    transferEntry(
+      sourceMessageId: string,
+      targetMessageId: string,
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      const existingPreview = store.get(sourceMessageId);
+      if (!existingPreview) {
+        return false;
+      }
+
+      store.delete(sourceMessageId);
+      setCachedImagePreview(targetMessageId, existingPreview, store);
+      return true;
+    },
+
+    deleteByMessageIds(
+      messageIds: string[],
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      [...new Set(messageIds)]
+        .map(messageId => messageId.trim())
+        .filter(Boolean)
+        .forEach(messageId => {
+          deleteCachedImagePreviewByMessageId(messageId, store);
+        });
+    },
+
+    pruneExcept(
+      retainedMessageIds: Iterable<string>,
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      const retainedIds = new Set(
+        [...retainedMessageIds]
+          .map(messageId => messageId.trim())
+          .filter(Boolean)
+      );
+
+      const staleMessageIds: string[] = [];
+
+      for (const messageId of store.keys()) {
+        if (retainedIds.has(messageId)) {
+          continue;
+        }
+
+        staleMessageIds.push(messageId);
+      }
+
+      staleMessageIds.forEach(messageId => {
+        deleteCachedImagePreviewByMessageId(messageId, store);
+      });
+    },
+
+    reset(
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      const cachedMessageIds: string[] = [];
+
+      for (const messageId of store.keys()) {
+        cachedMessageIds.push(messageId);
+      }
+
+      cachedMessageIds.forEach(messageId => {
+        deleteCachedImagePreviewByMessageId(messageId, store);
+      });
+    },
+  },
+
   signedAssets: {
     pruneExpired(now = Date.now()) {
       pruneExpiredSignedAssetEntries(now);
@@ -277,26 +496,31 @@ export const chatRuntimeCache = {
       cache = pdfMessagePreviewStore.cache,
       keysByMessageId = pdfMessagePreviewStore.keysByMessageId
     ) {
-      const previousCacheKey = keysByMessageId.get(messageId);
-      if (previousCacheKey && previousCacheKey !== preview.cacheKey) {
-        removeCachedPdfPreviewByKey(previousCacheKey, cache, keysByMessageId);
-      }
+      setCachedPdfPreview(messageId, preview, {
+        cache,
+        keysByMessageId,
+      });
+    },
 
-      if (cache.has(preview.cacheKey)) {
-        cache.delete(preview.cacheKey);
-      }
+    hydrate(
+      messageId: string,
+      preview: PdfMessagePreviewCacheEntry,
+      cache = pdfMessagePreviewStore.cache,
+      keysByMessageId = pdfMessagePreviewStore.keysByMessageId
+    ) {
+      setCachedPdfPreview(messageId, preview, {
+        persist: false,
+        cache,
+        keysByMessageId,
+      });
+    },
 
-      cache.set(preview.cacheKey, preview);
-      keysByMessageId.set(messageId, preview.cacheKey);
-
-      while (cache.size > PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES) {
-        const oldestCacheKey = cache.keys().next().value;
-        if (!oldestCacheKey) {
-          break;
-        }
-
-        removeCachedPdfPreviewByKey(oldestCacheKey, cache, keysByMessageId);
-      }
+    deleteByMessageIds(
+      messageIds: string[],
+      cache = pdfMessagePreviewStore.cache,
+      keysByMessageId = pdfMessagePreviewStore.keysByMessageId
+    ) {
+      deleteCachedPdfPreviewsByMessageIds(messageIds, cache, keysByMessageId);
     },
 
     pruneInactiveMessageIds(

@@ -10,6 +10,7 @@ import {
   renderPdfMessagePreview,
   resolvePersistedPdfMessagePreview,
 } from '../utils/pdf-message-preview';
+import { loadPersistedPdfPreviewEntry } from '../utils/pdf-preview-persistence';
 
 export type PdfMessagePreview = PdfMessagePreviewCacheEntry;
 const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
@@ -194,10 +195,12 @@ export const useMessagePdfPreviews = ({
 
           try {
             const nextPreview =
+              (await loadPersistedPdfPreviewEntry(cacheKey))?.preview ??
               (await resolvePersistedPdfMessagePreview(
                 pendingMessage,
                 cacheKey
-              )) ?? (await renderPdfMessagePreview(pendingMessage, cacheKey));
+              )) ??
+              (await renderPdfMessagePreview(pendingMessage, cacheKey));
             if (!nextPreview) {
               schedulePdfPreviewRetry(pendingMessage.id);
               continue;

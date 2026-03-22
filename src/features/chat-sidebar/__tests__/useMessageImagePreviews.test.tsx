@@ -9,6 +9,7 @@ import {
 } from 'vite-plus/test';
 import { useMessageImagePreviews } from '../hooks/useMessageImagePreviews';
 import type { ChatMessage } from '../data/chatSidebarGateway';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 const { mockResolveChatAssetUrlWithExpiry, mockFetchChatFileBlobWithFallback } =
   vi.hoisted(() => ({
@@ -36,9 +37,11 @@ describe('useMessageImagePreviews', () => {
     mockResolveChatAssetUrlWithExpiry.mockReset();
     mockFetchChatFileBlobWithFallback.mockReset();
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
+    chatRuntimeCache.imagePreviews.reset();
   });
 
   afterEach(() => {
+    chatRuntimeCache.imagePreviews.reset();
     vi.useRealTimers();
   });
 
@@ -172,5 +175,36 @@ describe('useMessageImagePreviews', () => {
       'https://example.com/signed-image-file'
     );
     expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses handed-off local image previews before the persisted asset url resolves', async () => {
+    const messages: ChatMessage[] = [
+      {
+        id: 'image-local-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        channel_id: 'dm_user-a_user-b',
+        message: 'images/channel/image-local-1.png',
+        created_at: '2026-03-10T10:00:00.000Z',
+        updated_at: '2026-03-10T10:00:00.000Z',
+        is_read: false,
+        message_type: 'image',
+        file_storage_path: 'images/channel/user-a_image-local-1.png',
+      },
+    ];
+
+    chatRuntimeCache.imagePreviews.setEntry('image-local-1', {
+      previewUrl: 'blob:handoff-preview',
+      isObjectUrl: false,
+    });
+    mockResolveChatAssetUrlWithExpiry.mockImplementation(
+      () => new Promise(() => {})
+    );
+
+    const { result } = renderHook(() => useMessageImagePreviews({ messages }));
+
+    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
+      'blob:handoff-preview'
+    );
   });
 });

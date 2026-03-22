@@ -7,6 +7,7 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
 import { isTempMessageId } from '../utils/optimistic-message';
 import type {
@@ -173,6 +174,11 @@ export const useChatMessageDeleteAction = ({
           });
         }
 
+        chatRuntimeCache.pdfPreviews.deleteByMessageIds(data.deletedMessageIds);
+        chatRuntimeCache.imagePreviews.deleteByMessageIds(
+          data.deletedMessageIds
+        );
+
         if (
           !options?.suppressErrorToast &&
           isCurrentConversationScopeActive()
@@ -295,6 +301,13 @@ export const useChatMessageDeleteAction = ({
             );
           }
         }
+
+        const deletedMessageIds =
+          data.deletedMessageIds.length > 0
+            ? data.deletedMessageIds
+            : messageIdsToDelete;
+        chatRuntimeCache.pdfPreviews.deleteByMessageIds(deletedMessageIds);
+        chatRuntimeCache.imagePreviews.deleteByMessageIds(deletedMessageIds);
 
         return true;
       } catch (error) {

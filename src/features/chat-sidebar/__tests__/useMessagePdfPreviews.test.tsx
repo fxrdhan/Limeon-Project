@@ -3,15 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 
 const {
   mockFetchChatFileBlobWithFallback,
   mockFetchPdfBlobWithFallback,
   mockRenderPdfPreviewDataUrl,
+  mockLoadPersistedPdfPreviewEntry,
 } = vi.hoisted(() => ({
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
   mockRenderPdfPreviewDataUrl: vi.fn(),
+  mockLoadPersistedPdfPreviewEntry: vi.fn(),
 }));
 
 vi.mock('../utils/message-file', async () => {
@@ -25,6 +28,10 @@ vi.mock('../utils/message-file', async () => {
 
 vi.mock('../utils/pdf-preview', () => ({
   renderPdfPreviewDataUrl: mockRenderPdfPreviewDataUrl,
+}));
+
+vi.mock('../utils/pdf-preview-persistence', () => ({
+  loadPersistedPdfPreviewEntry: mockLoadPersistedPdfPreviewEntry,
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -59,8 +66,63 @@ describe('useMessagePdfPreviews', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     chatRuntimeCache.pdfPreviews.reset();
+    mockLoadPersistedPdfPreviewEntry.mockResolvedValue(null);
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);
     mockRenderPdfPreviewDataUrl.mockResolvedValue(null);
+  });
+
+  it('loads cached persistent PDF previews before checking storage or rerendering the PDF', async () => {
+    const message = buildMessage({
+      file_preview_url: null,
+      file_preview_page_count: null,
+      file_preview_status: null,
+    });
+    mockLoadPersistedPdfPreviewEntry.mockResolvedValue({
+      messageId: message.id,
+      preview: {
+        cacheKey: buildPdfMessagePreviewCacheKey(
+          {
+            id: message.id,
+            message: message.message,
+            message_type: message.message_type,
+            file_name: message.file_name,
+            file_mime_type: message.file_mime_type,
+            file_preview_url: message.file_preview_url,
+            file_preview_page_count: message.file_preview_page_count,
+            file_preview_status: message.file_preview_status,
+            file_storage_path: message.file_storage_path,
+            file_size: message.file_size,
+          },
+          'report.pdf'
+        ),
+        coverDataUrl: 'data:image/png;base64,persistedpreview',
+        pageCount: 5,
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useMessagePdfPreviews({
+        messages: [message],
+        getAttachmentFileName: currentMessage =>
+          currentMessage.file_name || 'Lampiran',
+        getAttachmentFileKind: () => 'document',
+      })
+    );
+
+    await waitFor(() => {
+      const preview = result.current.getPdfMessagePreview(
+        message,
+        'report.pdf'
+      );
+      expect(preview?.pageCount).toBe(5);
+      expect(preview?.coverDataUrl).toBe(
+        'data:image/png;base64,persistedpreview'
+      );
+    });
+
+    expect(mockFetchChatFileBlobWithFallback).not.toHaveBeenCalled();
+    expect(mockFetchPdfBlobWithFallback).not.toHaveBeenCalled();
+    expect(mockRenderPdfPreviewDataUrl).not.toHaveBeenCalled();
   });
 
   it('loads persisted path-based PDF previews from storage instead of rerendering the PDF', async () => {

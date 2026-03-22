@@ -60,7 +60,8 @@ export interface SendAttachmentOptions {
     realMessage: ChatMessage,
     stableKey: string,
     uploadedPath: string,
-    conversationScopeKey: string | null
+    conversationScopeKey: string | null,
+    tempId: string
   ) => void | Promise<void>;
 }
 
@@ -424,7 +425,8 @@ export const sendAttachmentThread = async (
         realMessage,
         stableKey,
         uploadedStoragePath,
-        conversationScopeKey
+        conversationScopeKey,
+        tempId
       );
     }
 

@@ -11,11 +11,13 @@ import {
 const {
   mockRetryChatCleanupFailures,
   mockUseChatIncomingDeliveries,
+  mockLoadPersistedPdfPreviewEntries,
   authState,
   mockToast,
 } = vi.hoisted(() => ({
   mockRetryChatCleanupFailures: vi.fn(),
   mockUseChatIncomingDeliveries: vi.fn(),
+  mockLoadPersistedPdfPreviewEntries: vi.fn(),
   authState: {
     user: null as { id: string } | null,
   },
@@ -40,6 +42,10 @@ vi.mock('../hooks/useChatIncomingDeliveries', () => ({
   useChatIncomingDeliveries: mockUseChatIncomingDeliveries,
 }));
 
+vi.mock('../utils/pdf-preview-persistence', () => ({
+  loadPersistedPdfPreviewEntries: mockLoadPersistedPdfPreviewEntries,
+}));
+
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
@@ -51,6 +57,7 @@ describe('useChatRuntime', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     authState.user = null;
+    mockLoadPersistedPdfPreviewEntries.mockResolvedValue([]);
     mockRetryChatCleanupFailures.mockResolvedValue({
       data: {
         resolvedCount: 0,
@@ -70,6 +77,7 @@ describe('useChatRuntime', () => {
     const { rerender } = renderHook(() => useChatRuntime());
 
     expect(mockUseChatIncomingDeliveries).toHaveBeenCalledTimes(1);
+    expect(mockLoadPersistedPdfPreviewEntries).toHaveBeenCalledTimes(1);
     expect(mockRetryChatCleanupFailures).not.toHaveBeenCalled();
 
     authState.user = {

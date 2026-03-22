@@ -7,6 +7,7 @@ import {
   resolveFileExtension,
   resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
 const IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
@@ -148,6 +149,8 @@ export const useMessageImagePreviews = ({
         .map(messageItem => messageItem.id)
     );
 
+    chatRuntimeCache.imagePreviews.pruneExcept(activeImageMessageIds);
+
     for (const [messageId] of imagePreviewRetryAttemptsRef.current) {
       if (activeImageMessageIds.has(messageId)) {
         continue;
@@ -285,11 +288,14 @@ export const useMessageImagePreviews = ({
         string,
         ImageMessagePreviewEntry
       > = {};
+      const resolvedMessageIds: string[] = [];
 
       resolvedEntries.forEach(resolvedEntry => {
         if (!resolvedEntry) {
           return;
         }
+
+        resolvedMessageIds.push(resolvedEntry.messageId);
 
         const previousUrl = objectUrlsRef.current.get(resolvedEntry.messageId);
         if (
@@ -311,6 +317,8 @@ export const useMessageImagePreviews = ({
         nextImageMessagePreviewEntries[resolvedEntry.messageId] =
           resolvedEntry.previewEntry;
       });
+
+      chatRuntimeCache.imagePreviews.deleteByMessageIds(resolvedMessageIds);
 
       if (Object.keys(nextImageMessagePreviewEntries).length === 0) {
         return;
@@ -361,6 +369,13 @@ export const useMessageImagePreviews = ({
       const resolvedPreviewUrl = imageMessagePreviewEntries[message.id]?.url;
       if (resolvedPreviewUrl) {
         return resolvedPreviewUrl;
+      }
+
+      const handedOffPreviewUrl = chatRuntimeCache.imagePreviews.getEntry(
+        message.id
+      )?.previewUrl;
+      if (handedOffPreviewUrl) {
+        return handedOffPreviewUrl;
       }
 
       if (
