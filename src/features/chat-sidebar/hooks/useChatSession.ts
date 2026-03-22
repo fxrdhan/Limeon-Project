@@ -1,12 +1,19 @@
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { UserDetails } from '@/types/database';
-import { useCallback, useRef, useState, type MutableRefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   mapConversationMessageForDisplay,
   mergeConversationContextWithExisting,
 } from '../utils/conversation-sync';
+import { prewarmCopyableChatAssetUrls } from '../utils/message-file';
 import { useChatConversationCacheSync } from './useChatConversationCacheSync';
 import { useChatConversationInitialLoad } from './useChatConversationInitialLoad';
 import { useChatSessionPresence } from './useChatSessionPresence';
@@ -269,6 +276,14 @@ export const useChatSession = ({
     setLoadError(null);
     setRetryInitialLoadTick(previousTick => previousTick + 1);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen || messages.length === 0) {
+      return;
+    }
+
+    void prewarmCopyableChatAssetUrls(messages);
+  }, [isOpen, messages]);
 
   useChatConversationCacheSync({
     isOpen,

@@ -30,6 +30,10 @@ const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
   })
 );
 
+const { mockPrewarmCopyableChatAssetUrls } = vi.hoisted(() => ({
+  mockPrewarmCopyableChatAssetUrls: vi.fn(),
+}));
+
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
   chatMessagesService: mockChatService,
@@ -39,6 +43,10 @@ vi.mock('@/services/api/chat.service', () => ({
 
 vi.mock('@/services/realtime/realtime.service', () => ({
   realtimeService: mockRealtimeService,
+}));
+
+vi.mock('../utils/message-file', () => ({
+  prewarmCopyableChatAssetUrls: mockPrewarmCopyableChatAssetUrls,
 }));
 
 const currentUser: UserDetails = {
@@ -163,6 +171,7 @@ describe('useChatSession', () => {
       createdChannels.push(channel);
       return channel;
     });
+    mockPrewarmCopyableChatAssetUrls.mockResolvedValue(undefined);
   });
 
   it('does not mutate current user presence when the sidebar opens or closes', async () => {
@@ -263,6 +272,49 @@ describe('useChatSession', () => {
     expect(
       mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
     ).toEqual(['chat_channel-1']);
+  });
+
+  it('prewarms cached shared links after attachment messages load', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    const attachmentMessage = buildMessage({
+      id: 'file-1',
+      message: 'documents/channel/stok-opname.xlsx',
+      message_type: 'file',
+      file_name: 'stok-opname.xlsx',
+      file_kind: 'document',
+      file_storage_path: 'documents/channel/stok-opname.xlsx',
+    });
+
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: {
+        messages: [attachmentMessage],
+        hasMore: false,
+      },
+      error: null,
+    });
+
+    renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockPrewarmCopyableChatAssetUrls).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'file-1',
+            file_storage_path: 'documents/channel/stok-opname.xlsx',
+          }),
+        ])
+      );
+    });
   });
 
   it('reconnects the conversation channel after a channel error', async () => {

@@ -6,18 +6,25 @@ import {
   PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES,
 } from '../constants';
 import {
+  chatSharedLinkStore,
+  chatSharedLinkVersionStore,
   conversationCacheStore,
   imageExpandStageStore,
   imageMessagePreviewStore,
   pendingReadReceiptsStore,
   pdfMessagePreviewStore,
   signedChatAssetUrlStore,
+  type ChatSharedLinkCacheEntry,
   type ConversationCacheEntry,
   type ImageExpandStageCacheEntry,
   type ImageMessagePreviewCacheEntry,
   type PdfMessagePreviewCacheEntry,
   type SignedChatAssetUrlCacheEntry,
 } from './chatRuntimeState';
+import {
+  deletePersistedChatSharedLinkEntriesByMessageIds,
+  persistChatSharedLinkEntry,
+} from './chat-shared-link-persistence';
 import {
   deletePersistedImagePreviewEntriesByMessageIds,
   persistImagePreviewEntry,
@@ -29,6 +36,7 @@ import {
 
 const MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES = 128;
 const MAX_IMAGE_MESSAGE_PREVIEW_CACHE_ENTRIES = 64;
+const MAX_CHAT_SHARED_LINK_CACHE_ENTRIES = 512;
 
 const shouldPersistImagePreview = (preview: ImageMessagePreviewCacheEntry) =>
   !preview.isObjectUrl && preview.previewUrl.trim().startsWith('data:');
@@ -244,6 +252,69 @@ const pruneExpiredSignedAssetEntries = (now = Date.now()) => {
     }
 
     signedChatAssetUrlStore.delete(storagePath);
+  }
+};
+
+const setCachedChatSharedLink = (
+  messageId: string,
+  sharedLink: ChatSharedLinkCacheEntry,
+  {
+    persist = true,
+    store = chatSharedLinkStore,
+  }: {
+    persist?: boolean;
+    store?: Map<string, ChatSharedLinkCacheEntry>;
+  } = {}
+) => {
+  const normalizedMessageId = messageId.trim();
+  const normalizedShortUrl = sharedLink.shortUrl.trim();
+
+  if (!normalizedMessageId || !normalizedShortUrl) {
+    return;
+  }
+
+  const nextSharedLink: ChatSharedLinkCacheEntry = {
+    shortUrl: normalizedShortUrl,
+    storagePath: sharedLink.storagePath?.trim() || null,
+    targetUrl: sharedLink.targetUrl?.trim() || null,
+  };
+
+  if (store.has(normalizedMessageId)) {
+    store.delete(normalizedMessageId);
+  }
+
+  store.set(normalizedMessageId, nextSharedLink);
+
+  while (store.size > MAX_CHAT_SHARED_LINK_CACHE_ENTRIES) {
+    const oldestMessageId = store.keys().next().value;
+    if (!oldestMessageId) {
+      break;
+    }
+
+    store.delete(oldestMessageId);
+  }
+
+  if (persist && !normalizedMessageId.startsWith('temp_')) {
+    void persistChatSharedLinkEntry(normalizedMessageId, nextSharedLink);
+  }
+};
+
+const deleteCachedChatSharedLinksByMessageIds = (
+  messageIds: string[],
+  store = chatSharedLinkStore,
+  versions = chatSharedLinkVersionStore
+) => {
+  const normalizedMessageIds = [...new Set(messageIds)]
+    .map(messageId => messageId.trim())
+    .filter(Boolean);
+
+  normalizedMessageIds.forEach(messageId => {
+    store.delete(messageId);
+    versions.set(messageId, (versions.get(messageId) ?? 0) + 1);
+  });
+
+  if (normalizedMessageIds.length > 0) {
+    void deletePersistedChatSharedLinkEntriesByMessageIds(normalizedMessageIds);
   }
 };
 
@@ -633,6 +704,57 @@ export const chatRuntimeCache = {
 
     reset() {
       signedChatAssetUrlStore.clear();
+    },
+  },
+
+  sharedLinks: {
+    getEntry(
+      messageId: string,
+      store: Map<string, ChatSharedLinkCacheEntry> = chatSharedLinkStore
+    ) {
+      return store.get(messageId) ?? null;
+    },
+
+    getVersion(
+      messageId: string,
+      store: Map<string, number> = chatSharedLinkVersionStore
+    ) {
+      return store.get(messageId) ?? 0;
+    },
+
+    setEntry(
+      messageId: string,
+      sharedLink: ChatSharedLinkCacheEntry,
+      store: Map<string, ChatSharedLinkCacheEntry> = chatSharedLinkStore
+    ) {
+      setCachedChatSharedLink(messageId, sharedLink, { store });
+    },
+
+    hydrate(
+      messageId: string,
+      sharedLink: ChatSharedLinkCacheEntry,
+      store: Map<string, ChatSharedLinkCacheEntry> = chatSharedLinkStore
+    ) {
+      setCachedChatSharedLink(messageId, sharedLink, {
+        persist: false,
+        store,
+      });
+    },
+
+    deleteByMessageIds(
+      messageIds: string[],
+      store: Map<string, ChatSharedLinkCacheEntry> = chatSharedLinkStore,
+      versions: Map<string, number> = chatSharedLinkVersionStore
+    ) {
+      deleteCachedChatSharedLinksByMessageIds(messageIds, store, versions);
+    },
+
+    reset(
+      store: Map<string, ChatSharedLinkCacheEntry> = chatSharedLinkStore,
+      versions: Map<string, number> = chatSharedLinkVersionStore
+    ) {
+      store.clear();
+      versions.clear();
     },
   },
 

@@ -204,6 +204,7 @@ export const useChatConversationRealtime = ({
 
         chatRuntimeCache.pdfPreviews.deleteByMessageIds([deletedMessageId]);
         chatRuntimeCache.imagePreviews.deleteByMessageIds([deletedMessageId]);
+        chatRuntimeCache.sharedLinks.deleteByMessageIds([deletedMessageId]);
 
         setMessages(previousMessages => {
           if (

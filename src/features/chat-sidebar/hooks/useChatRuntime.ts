@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { chatSidebarCleanupGateway } from '../data/chatSidebarGateway';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { loadPersistedChatSharedLinkEntries } from '../utils/chat-shared-link-persistence';
 import { loadPersistedImagePreviewEntries } from '../utils/image-preview-persistence';
 import { loadPersistedPdfPreviewEntries } from '../utils/pdf-preview-persistence';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
@@ -44,8 +45,20 @@ export const useChatRuntime = () => {
       });
     };
 
+    const hydratePersistedSharedLinks = async () => {
+      const persistedSharedLinks = await loadPersistedChatSharedLinkEntries();
+      if (isCancelled || persistedSharedLinks.length === 0) {
+        return;
+      }
+
+      persistedSharedLinks.forEach(({ messageId, sharedLink }) => {
+        chatRuntimeCache.sharedLinks.hydrate(messageId, sharedLink);
+      });
+    };
+
     void hydratePersistedPdfPreviews();
     void hydratePersistedImagePreviews();
+    void hydratePersistedSharedLinks();
 
     return () => {
       isCancelled = true;

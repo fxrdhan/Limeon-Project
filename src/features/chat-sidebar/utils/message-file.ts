@@ -1,5 +1,6 @@
 import type { ComposerPendingFileKind } from '../types';
 import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
 import type { TransformOptions } from '@supabase/storage-js';
 import {
@@ -58,6 +59,8 @@ export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
 
 export type ChatAssetTransformOptions = TransformOptions;
 
+const COPYABLE_CHAT_ASSET_PREWARM_CONCURRENCY = 8;
+
 const buildSignedChatAssetCacheKey = (
   storagePath: string,
   transform?: ChatAssetTransformOptions
@@ -74,6 +77,157 @@ const buildSignedChatAssetCacheKey = (
     transform.quality ?? '',
     transform.format ?? '',
   ].join('::');
+};
+
+const buildCopyableChatAssetRequest = (
+  url: string,
+  storagePathHint?: string | null
+) => {
+  const normalizedUrl = url.trim();
+  const storagePath =
+    storagePathHint?.trim() || extractChatStoragePath(normalizedUrl);
+  const targetUrl = storagePath ? null : normalizedUrl || null;
+
+  if (!storagePath && !targetUrl) {
+    return null;
+  }
+
+  return {
+    normalizedUrl,
+    storagePath: storagePath || null,
+    targetUrl,
+    requestKey: storagePath
+      ? `storage:${storagePath}`
+      : `target:${targetUrl || normalizedUrl}`,
+  };
+};
+
+const doesChatSharedLinkEntryMatchRequest = (
+  request: NonNullable<ReturnType<typeof buildCopyableChatAssetRequest>>,
+  cachedEntry: {
+    storagePath: string | null;
+    targetUrl: string | null;
+  }
+) =>
+  request.storagePath
+    ? cachedEntry.storagePath === request.storagePath
+    : cachedEntry.targetUrl === request.targetUrl;
+
+const pendingCopyableChatAssetRequests = new Map<
+  string,
+  Promise<string | null>
+>();
+
+const getCachedCopyableChatAssetUrl = (
+  request: NonNullable<ReturnType<typeof buildCopyableChatAssetRequest>>,
+  messageId?: string | null
+) => {
+  const normalizedMessageId = messageId?.trim() || '';
+  if (!normalizedMessageId) {
+    return null;
+  }
+
+  const cachedSharedLink =
+    chatRuntimeCache.sharedLinks.getEntry(normalizedMessageId);
+  if (!cachedSharedLink) {
+    return null;
+  }
+
+  if (!doesChatSharedLinkEntryMatchRequest(request, cachedSharedLink)) {
+    chatRuntimeCache.sharedLinks.deleteByMessageIds([normalizedMessageId]);
+    return null;
+  }
+
+  return cachedSharedLink.shortUrl;
+};
+
+const ensureCopyableChatSharedLink = async (
+  url: string,
+  storagePathHint?: string | null,
+  options?: {
+    messageId?: string | null;
+  }
+) => {
+  const request = buildCopyableChatAssetRequest(url, storagePathHint);
+  if (!request) {
+    return null;
+  }
+
+  const normalizedMessageId = options?.messageId?.trim() || '';
+  const cachedCopyableUrl = getCachedCopyableChatAssetUrl(
+    request,
+    normalizedMessageId
+  );
+  if (cachedCopyableUrl) {
+    return cachedCopyableUrl;
+  }
+
+  const requestVersion = normalizedMessageId
+    ? chatRuntimeCache.sharedLinks.getVersion(normalizedMessageId)
+    : 0;
+
+  const pendingRequest = pendingCopyableChatAssetRequests.get(
+    request.requestKey
+  );
+  if (pendingRequest) {
+    const shortUrl = await pendingRequest;
+
+    if (shortUrl && normalizedMessageId) {
+      const currentVersion =
+        chatRuntimeCache.sharedLinks.getVersion(normalizedMessageId);
+      if (currentVersion === requestVersion) {
+        chatRuntimeCache.sharedLinks.setEntry(normalizedMessageId, {
+          shortUrl,
+          storagePath: request.storagePath,
+          targetUrl: request.targetUrl,
+        });
+      }
+    }
+
+    return shortUrl;
+  }
+
+  const nextRequest = (async () => {
+    const sharedLinkResult = await chatSidebarShareGateway.createSharedLink(
+      request.storagePath
+        ? { storagePath: request.storagePath }
+        : {
+            targetUrl: request.targetUrl || request.normalizedUrl,
+          }
+    );
+
+    const shortUrl = sharedLinkResult.data?.shortUrl?.trim() || null;
+    if (!shortUrl) {
+      return null;
+    }
+
+    if (normalizedMessageId) {
+      const currentVersion =
+        chatRuntimeCache.sharedLinks.getVersion(normalizedMessageId);
+      if (currentVersion === requestVersion) {
+        chatRuntimeCache.sharedLinks.setEntry(normalizedMessageId, {
+          shortUrl,
+          storagePath: request.storagePath,
+          targetUrl: request.targetUrl,
+        });
+      }
+    }
+
+    return shortUrl;
+  })();
+
+  pendingCopyableChatAssetRequests.set(request.requestKey, nextRequest);
+
+  try {
+    return await nextRequest;
+  } finally {
+    const activeRequest = pendingCopyableChatAssetRequests.get(
+      request.requestKey
+    );
+    if (activeRequest === nextRequest) {
+      pendingCopyableChatAssetRequests.delete(request.requestKey);
+    }
+  }
 };
 
 export const fetchChatFileBlobWithFallback = async (
@@ -217,25 +371,26 @@ export const resolveChatAssetUrl = async (
 
 export const resolveCopyableChatAssetUrl = async (
   url: string,
-  storagePathHint?: string | null
+  storagePathHint?: string | null,
+  options?: {
+    messageId?: string | null;
+  }
 ) => {
   const normalizedUrl = url.trim();
-  const storagePath =
-    storagePathHint?.trim() || extractChatStoragePath(normalizedUrl);
+  const request = buildCopyableChatAssetRequest(normalizedUrl, storagePathHint);
+  const storagePath = request?.storagePath ?? null;
 
   if (!storagePath && !normalizedUrl) {
     return normalizedUrl || null;
   }
 
-  const sharedLinkResult = await chatSidebarShareGateway.createSharedLink(
-    storagePath
-      ? { storagePath }
-      : {
-          targetUrl: normalizedUrl,
-        }
+  const shortUrl = await ensureCopyableChatSharedLink(
+    normalizedUrl,
+    storagePathHint,
+    options
   );
-  if (sharedLinkResult.data?.shortUrl) {
-    return sharedLinkResult.data.shortUrl;
+  if (shortUrl) {
+    return shortUrl;
   }
 
   const resolvedAssetUrl = storagePath
@@ -246,6 +401,42 @@ export const resolveCopyableChatAssetUrl = async (
     resolvedAssetUrl ??
     (isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null)
   );
+};
+
+export const prewarmCopyableChatAssetUrls = async (messages: ChatMessage[]) => {
+  const attachmentMessages = messages.filter(
+    messageItem =>
+      !messageItem.id.startsWith('temp_') &&
+      (messageItem.message_type === 'image' ||
+        messageItem.message_type === 'file')
+  );
+
+  if (attachmentMessages.length === 0) {
+    return;
+  }
+
+  for (
+    let candidateIndex = 0;
+    candidateIndex < attachmentMessages.length;
+    candidateIndex += COPYABLE_CHAT_ASSET_PREWARM_CONCURRENCY
+  ) {
+    const candidateSlice = attachmentMessages.slice(
+      candidateIndex,
+      candidateIndex + COPYABLE_CHAT_ASSET_PREWARM_CONCURRENCY
+    );
+
+    await Promise.allSettled(
+      candidateSlice.map(messageItem =>
+        ensureCopyableChatSharedLink(
+          messageItem.message,
+          messageItem.file_storage_path,
+          {
+            messageId: messageItem.id,
+          }
+        )
+      )
+    );
+  }
 };
 
 export const openChatFileInNewTab = async (

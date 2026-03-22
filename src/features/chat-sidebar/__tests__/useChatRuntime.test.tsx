@@ -7,12 +7,14 @@ import {
   it,
   vi,
 } from 'vite-plus/test';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 const {
   mockRetryChatCleanupFailures,
   mockUseChatIncomingDeliveries,
   mockLoadPersistedPdfPreviewEntries,
   mockLoadPersistedImagePreviewEntries,
+  mockLoadPersistedChatSharedLinkEntries,
   authState,
   mockToast,
 } = vi.hoisted(() => ({
@@ -20,6 +22,7 @@ const {
   mockUseChatIncomingDeliveries: vi.fn(),
   mockLoadPersistedPdfPreviewEntries: vi.fn(),
   mockLoadPersistedImagePreviewEntries: vi.fn(),
+  mockLoadPersistedChatSharedLinkEntries: vi.fn(),
   authState: {
     user: null as { id: string } | null,
   },
@@ -52,6 +55,10 @@ vi.mock('../utils/image-preview-persistence', () => ({
   loadPersistedImagePreviewEntries: mockLoadPersistedImagePreviewEntries,
 }));
 
+vi.mock('../utils/chat-shared-link-persistence', () => ({
+  loadPersistedChatSharedLinkEntries: mockLoadPersistedChatSharedLinkEntries,
+}));
+
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
@@ -62,9 +69,11 @@ describe('useChatRuntime', () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
+    chatRuntimeCache.sharedLinks.reset();
     authState.user = null;
     mockLoadPersistedPdfPreviewEntries.mockResolvedValue([]);
     mockLoadPersistedImagePreviewEntries.mockResolvedValue([]);
+    mockLoadPersistedChatSharedLinkEntries.mockResolvedValue([]);
     mockRetryChatCleanupFailures.mockResolvedValue({
       data: {
         resolvedCount: 0,
@@ -86,6 +95,7 @@ describe('useChatRuntime', () => {
     expect(mockUseChatIncomingDeliveries).toHaveBeenCalledTimes(1);
     expect(mockLoadPersistedPdfPreviewEntries).toHaveBeenCalledTimes(1);
     expect(mockLoadPersistedImagePreviewEntries).toHaveBeenCalledTimes(1);
+    expect(mockLoadPersistedChatSharedLinkEntries).toHaveBeenCalledTimes(1);
     expect(mockRetryChatCleanupFailures).not.toHaveBeenCalled();
 
     authState.user = {
@@ -189,5 +199,32 @@ describe('useChatRuntime', () => {
     });
 
     expect(mockRetryChatCleanupFailures).toHaveBeenCalledTimes(1);
+  });
+
+  it('hydrates persisted shared links into the runtime cache on boot', async () => {
+    mockLoadPersistedChatSharedLinkEntries.mockResolvedValueOnce([
+      {
+        messageId: 'file-1',
+        sharedLink: {
+          shortUrl: 'https://shrtlink.works/chat/file-1',
+          storagePath: 'documents/channel/file-1.xlsx',
+          targetUrl: null,
+        },
+      },
+    ]);
+
+    const { useChatRuntime } = await import('../hooks/useChatRuntime');
+    renderHook(() => useChatRuntime());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(chatRuntimeCache.sharedLinks.getEntry('file-1')).toEqual({
+      shortUrl: 'https://shrtlink.works/chat/file-1',
+      storagePath: 'documents/channel/file-1.xlsx',
+      targetUrl: null,
+    });
   });
 });

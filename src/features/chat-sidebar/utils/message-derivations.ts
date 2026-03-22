@@ -160,7 +160,10 @@ export const serializeSelectedMessages = async (
         const resolvedAttachmentUrl = shouldCopyAttachmentUrl
           ? await resolveCopyableChatAssetUrl(
               messageItem.message,
-              messageItem.file_storage_path
+              messageItem.file_storage_path,
+              {
+                messageId: messageItem.id,
+              }
             )
           : null;
         const attachmentLabel =

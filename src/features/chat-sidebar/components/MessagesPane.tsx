@@ -307,7 +307,10 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
               (async () => {
                 const copyableUrl = await resolveCopyableChatAssetUrl(
                   activeImageGroupPreviewMessage.message,
-                  activeImageGroupPreviewMessage.file_storage_path
+                  activeImageGroupPreviewMessage.file_storage_path,
+                  {
+                    messageId: activeImageGroupPreviewMessage.id,
+                  }
                 );
 
                 if (!copyableUrl) {

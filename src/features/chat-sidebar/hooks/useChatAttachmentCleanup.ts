@@ -106,6 +106,9 @@ export const useChatAttachmentCleanup = ({
       chatRuntimeCache.imagePreviews.deleteByMessageIds(
         effectiveDeletedMessageIds
       );
+      chatRuntimeCache.sharedLinks.deleteByMessageIds(
+        effectiveDeletedMessageIds
+      );
 
       if (isConversationScopeActive(conversationScopeKey)) {
         setMessages(previousMessages =>
