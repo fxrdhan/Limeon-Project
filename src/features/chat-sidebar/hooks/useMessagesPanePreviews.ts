@@ -380,14 +380,19 @@ export const useMessagesPanePreviews = () => {
         setImageGroupPreviewItems(previousItems =>
           previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
-              ? {
-                  ...previousItem,
-                  thumbnailUrl: previousItem.thumbnailUrl || previewUrl,
-                  previewUrl: previousItem.previewUrl || previewUrl,
-                  stageUrls: previousItem.stageUrls,
-                  fullPreviewUrl: previewUrl,
-                  previewName,
-                }
+              ? (() => {
+                  const stableBackdropUrl =
+                    previousItem.previewUrl || previousItem.thumbnailUrl;
+
+                  return {
+                    ...previousItem,
+                    thumbnailUrl: previousItem.thumbnailUrl || previewUrl,
+                    previewUrl: stableBackdropUrl || previewUrl,
+                    stageUrls: previousItem.stageUrls,
+                    fullPreviewUrl: previewUrl,
+                    previewName,
+                  };
+                })()
               : previousItem
           )
         );
@@ -502,36 +507,6 @@ export const useMessagesPanePreviews = () => {
         fullPreviewUrl: null,
         previewName: getImagePreviewName(message, index),
       }));
-      const missingThumbnailMessageIds = nextPreviewItems
-        .filter(previewItem => !previewItem.thumbnailUrl)
-        .map(previewItem => previewItem.id);
-      if (missingThumbnailMessageIds.length > 0) {
-        const persistedPreviewEntries =
-          await loadPersistedImagePreviewEntriesByMessageIds(
-            missingThumbnailMessageIds
-          );
-        if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
-          return;
-        }
-
-        const persistedPreviewUrlByMessageId = new Map(
-          persistedPreviewEntries.map(({ messageId, preview }) => {
-            chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
-            return [messageId, preview.previewUrl];
-          })
-        );
-
-        nextPreviewItems.forEach(previewItem => {
-          const persistedPreviewUrl = persistedPreviewUrlByMessageId.get(
-            previewItem.id
-          );
-          if (!persistedPreviewUrl) {
-            return;
-          }
-
-          previewItem.thumbnailUrl = persistedPreviewUrl;
-        });
-      }
       const nextActivePreviewId =
         initialMessageId &&
         nextPreviewItems.some(
@@ -546,6 +521,59 @@ export const useMessagesPanePreviews = () => {
           setIsImageGroupPreviewVisible(true);
         }
       });
+
+      const missingThumbnailMessageIds = nextPreviewItems
+        .filter(previewItem => !previewItem.thumbnailUrl)
+        .map(previewItem => previewItem.id);
+      if (missingThumbnailMessageIds.length > 0) {
+        void loadPersistedImagePreviewEntriesByMessageIds(
+          missingThumbnailMessageIds
+        )
+          .then(persistedPreviewEntries => {
+            if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+              return;
+            }
+
+            const persistedPreviewUrlByMessageId = new Map(
+              persistedPreviewEntries.map(({ messageId, preview }) => {
+                chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
+                return [messageId, preview.previewUrl];
+              })
+            );
+
+            setImageGroupPreviewItems(previousItems =>
+              previousItems.map(previousItem => {
+                const persistedPreviewUrl = persistedPreviewUrlByMessageId.get(
+                  previousItem.id
+                );
+                if (!persistedPreviewUrl) {
+                  return previousItem;
+                }
+
+                const previewMessage = imageGroupPreviewMessagesRef.current.get(
+                  previousItem.id
+                )?.message;
+                const hydratedPreviewUrl =
+                  previewMessage && !previousItem.previewUrl
+                    ? resolveInitialImagePreviewUrl(
+                        previewMessage,
+                        persistedPreviewUrl
+                      )
+                    : previousItem.previewUrl;
+
+                return {
+                  ...previousItem,
+                  thumbnailUrl:
+                    previousItem.thumbnailUrl || persistedPreviewUrl,
+                  previewUrl: hydratedPreviewUrl || previousItem.previewUrl,
+                };
+              })
+            );
+          })
+          .catch(() => {
+            // Ignore IndexedDB cache lookup failures and keep the current preview state.
+          });
+      }
 
       void (async () => {
         const prioritizedMessageIds = [

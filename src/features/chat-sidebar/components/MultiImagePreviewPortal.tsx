@@ -83,6 +83,8 @@ const MultiImagePreviewPortal = ({
   const activePreviewIndex = activePreview
     ? previewItems.findIndex(previewItem => previewItem.id === activePreview.id)
     : -1;
+  const activeBackdropUrl =
+    activePreview?.previewUrl || activePreview?.thumbnailUrl || null;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resizeHandleRef = useRef<HTMLButtonElement | null>(null);
   const resizeStateRef = useRef<{
@@ -418,7 +420,7 @@ const MultiImagePreviewPortal = ({
             <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-white p-4 md:p-6">
               <ProgressiveImagePreview
                 fullSrc={activePreview.fullPreviewUrl}
-                backdropSrc={activePreview.previewUrl}
+                backdropSrc={activeBackdropUrl}
                 stageSrcs={activePreview.stageUrls}
                 alt={activePreview.previewName || 'Preview gambar'}
                 className="h-full w-full rounded-[28px]"
