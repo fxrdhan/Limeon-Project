@@ -157,6 +157,7 @@ export interface MessagesPaneModel {
     closeImagePreview: () => void;
     imageGroupPreviewItems: Array<{
       id: string;
+      thumbnailUrl: string | null;
       previewUrl: string | null;
       stageUrls: string[];
       fullPreviewUrl: string | null;

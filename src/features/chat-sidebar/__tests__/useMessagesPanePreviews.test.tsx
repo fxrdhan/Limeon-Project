@@ -8,11 +8,13 @@ import { imageExpandStageStore } from '../utils/chatRuntimeState';
 const {
   mockFetchChatFileBlobWithFallback,
   mockFetchPdfBlobWithFallback,
+  mockLoadPersistedImagePreviewEntriesByMessageIds,
   mockOpenDocumentPreview,
   mockResolveChatAssetUrl,
 } = vi.hoisted(() => ({
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
+  mockLoadPersistedImagePreviewEntriesByMessageIds: vi.fn(),
   mockOpenDocumentPreview: vi.fn(),
   mockResolveChatAssetUrl: vi.fn(),
 }));
@@ -22,6 +24,11 @@ vi.mock('../utils/message-file', () => ({
   fetchPdfBlobWithFallback: mockFetchPdfBlobWithFallback,
   isDirectChatAssetUrl: vi.fn(() => false),
   resolveChatAssetUrl: mockResolveChatAssetUrl,
+}));
+
+vi.mock('../utils/image-preview-persistence', () => ({
+  loadPersistedImagePreviewEntriesByMessageIds:
+    mockLoadPersistedImagePreviewEntriesByMessageIds,
 }));
 
 vi.mock('../hooks/useDocumentPreviewPortal', () => ({
@@ -48,6 +55,7 @@ describe('useMessagesPanePreviews', () => {
     vi.useFakeTimers();
     chatRuntimeCache.imagePreviews.reset();
     mockResolveChatAssetUrl.mockResolvedValue(null);
+    mockLoadPersistedImagePreviewEntriesByMessageIds.mockResolvedValue([]);
     mockOpenDocumentPreview.mockResolvedValue(true);
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       callback(0);
@@ -149,6 +157,8 @@ describe('useMessagesPanePreviews', () => {
     expect(result.current.imageGroupPreviewItems).toEqual([
       {
         id: 'image-a',
+        thumbnailUrl:
+          'https://example.com/storage/v1/object/sign/chat/images/channel/a.png',
         previewUrl:
           'https://example.com/storage/v1/object/sign/chat/images/channel/a.png',
         stageUrls: [],
@@ -158,6 +168,7 @@ describe('useMessagesPanePreviews', () => {
       },
       {
         id: 'image-b',
+        thumbnailUrl: 'blob:chat-group-image-b',
         previewUrl: 'blob:chat-group-image-b',
         stageUrls: [],
         fullPreviewUrl: 'blob:chat-group-image-b',
@@ -225,6 +236,7 @@ describe('useMessagesPanePreviews', () => {
     expect(result.current.imageGroupPreviewItems).toEqual([
       {
         id: 'image-a',
+        thumbnailUrl: null,
         previewUrl: null,
         stageUrls: [],
         fullPreviewUrl: null,
@@ -232,6 +244,8 @@ describe('useMessagesPanePreviews', () => {
       },
       {
         id: 'image-b',
+        thumbnailUrl:
+          'https://example.com/storage/v1/object/sign/chat/images/channel/b.png',
         previewUrl:
           'https://example.com/storage/v1/object/sign/chat/images/channel/b.png',
         stageUrls: [],
@@ -247,6 +261,73 @@ describe('useMessagesPanePreviews', () => {
       );
       await flushMicrotasks();
     });
+  });
+
+  it('hydrates grouped image thumbnails from the persisted preview cache before resolving full assets', async () => {
+    mockLoadPersistedImagePreviewEntriesByMessageIds.mockResolvedValue([
+      {
+        messageId: 'image-a',
+        preview: {
+          previewUrl: 'data:image/webp;base64,cGVyc2lzdGVkLXRodW1iLWE=',
+          isObjectUrl: false,
+        },
+      },
+      {
+        messageId: 'image-b',
+        preview: {
+          previewUrl: 'data:image/webp;base64,cGVyc2lzdGVkLXRodW1iLWI=',
+          isObjectUrl: false,
+        },
+      },
+    ]);
+
+    const { result } = renderHook(() => useMessagesPanePreviews());
+
+    await act(async () => {
+      await result.current.openImageGroupInPortal(
+        [
+          {
+            id: 'image-a',
+            message: 'images/channel/a.png',
+            file_storage_path: 'images/channel/a.png',
+            file_mime_type: 'image/png',
+            file_name: 'A.png',
+            file_preview_url: 'previews/channel/a.webp',
+          },
+          {
+            id: 'image-b',
+            message: 'images/channel/b.png',
+            file_storage_path: 'images/channel/b.png',
+            file_mime_type: 'image/png',
+            file_name: 'B.png',
+            file_preview_url: 'previews/channel/b.webp',
+          },
+        ],
+        'image-a'
+      );
+    });
+
+    expect(
+      mockLoadPersistedImagePreviewEntriesByMessageIds
+    ).toHaveBeenCalledWith(['image-a', 'image-b']);
+    expect(result.current.imageGroupPreviewItems).toEqual([
+      {
+        id: 'image-a',
+        thumbnailUrl: 'data:image/webp;base64,cGVyc2lzdGVkLXRodW1iLWE=',
+        previewUrl: 'blob:chat-image-preview',
+        stageUrls: [],
+        fullPreviewUrl: 'blob:chat-image-preview',
+        previewName: 'A.png',
+      },
+      {
+        id: 'image-b',
+        thumbnailUrl: 'data:image/webp;base64,cGVyc2lzdGVkLXRodW1iLWI=',
+        previewUrl: 'blob:chat-image-preview',
+        stageUrls: [],
+        fullPreviewUrl: 'blob:chat-image-preview',
+        previewName: 'B.png',
+      },
+    ]);
   });
 
   it('does not reuse a storage-backed bubble preview while full resolution is still resolving', async () => {

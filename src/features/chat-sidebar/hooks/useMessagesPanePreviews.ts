@@ -11,6 +11,7 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { isAspectPreservingImagePreviewPath } from '../utils/image-preview-path';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { loadPersistedImagePreviewEntriesByMessageIds } from '../utils/image-preview-persistence';
 
 type PreviewableMessage = Pick<
   ChatMessage,
@@ -38,10 +39,31 @@ type ImagePreviewState = {
 
 type ImageGroupPreviewItem = {
   id: string;
+  thumbnailUrl: string | null;
   previewUrl: string | null;
   stageUrls: string[];
   fullPreviewUrl: string | null;
   previewName: string;
+};
+
+const resolveCachedImageThumbnailUrl = (messageId: string) => {
+  const cachedPreviewUrl =
+    chatRuntimeCache.imagePreviews.getEntry(messageId)?.previewUrl?.trim() ||
+    null;
+  if (
+    cachedPreviewUrl &&
+    /^(blob:|data:|https?:\/\/|\/)/i.test(cachedPreviewUrl)
+  ) {
+    return cachedPreviewUrl;
+  }
+
+  const cachedExpandStageUrl =
+    chatRuntimeCache.imagePreviews.getExpandStage(messageId);
+  if (cachedExpandStageUrl) {
+    return cachedExpandStageUrl;
+  }
+
+  return null;
 };
 
 const getImagePreviewName = (
@@ -93,6 +115,35 @@ const resolveInitialImagePreviewUrl = (
     isDirectChatAssetUrl(directPreviewUrl) &&
     (isDirectChatAssetUrl(message.message) || hasAspectPreservingPreview)
   ) {
+    return directPreviewUrl;
+  }
+
+  if (isDirectChatAssetUrl(message.message)) {
+    return message.message;
+  }
+
+  return null;
+};
+
+const resolveInitialImageGroupThumbnailUrl = (
+  message: PreviewableMessage,
+  preferredPreviewUrl?: string | null
+) => {
+  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
+  if (
+    normalizedPreferredPreviewUrl &&
+    /^(blob:|data:|https?:\/\/|\/)/i.test(normalizedPreferredPreviewUrl)
+  ) {
+    return normalizedPreferredPreviewUrl;
+  }
+
+  const cachedThumbnailUrl = resolveCachedImageThumbnailUrl(message.id);
+  if (cachedThumbnailUrl) {
+    return cachedThumbnailUrl;
+  }
+
+  const directPreviewUrl = message.file_preview_url?.trim();
+  if (directPreviewUrl && isDirectChatAssetUrl(directPreviewUrl)) {
     return directPreviewUrl;
   }
 
@@ -331,6 +382,7 @@ export const useMessagesPanePreviews = () => {
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
+                  thumbnailUrl: previousItem.thumbnailUrl || previewUrl,
                   previewUrl: previousItem.previewUrl || previewUrl,
                   stageUrls: previousItem.stageUrls,
                   fullPreviewUrl: previewUrl,
@@ -438,6 +490,10 @@ export const useMessagesPanePreviews = () => {
       );
       const nextPreviewItems = messages.map((message, index) => ({
         id: message.id,
+        thumbnailUrl: resolveInitialImageGroupThumbnailUrl(
+          message,
+          message.previewUrl || null
+        ),
         previewUrl: resolveInitialImagePreviewUrl(
           message,
           message.previewUrl || null
@@ -446,6 +502,36 @@ export const useMessagesPanePreviews = () => {
         fullPreviewUrl: null,
         previewName: getImagePreviewName(message, index),
       }));
+      const missingThumbnailMessageIds = nextPreviewItems
+        .filter(previewItem => !previewItem.thumbnailUrl)
+        .map(previewItem => previewItem.id);
+      if (missingThumbnailMessageIds.length > 0) {
+        const persistedPreviewEntries =
+          await loadPersistedImagePreviewEntriesByMessageIds(
+            missingThumbnailMessageIds
+          );
+        if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        const persistedPreviewUrlByMessageId = new Map(
+          persistedPreviewEntries.map(({ messageId, preview }) => {
+            chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
+            return [messageId, preview.previewUrl];
+          })
+        );
+
+        nextPreviewItems.forEach(previewItem => {
+          const persistedPreviewUrl = persistedPreviewUrlByMessageId.get(
+            previewItem.id
+          );
+          if (!persistedPreviewUrl) {
+            return;
+          }
+
+          previewItem.thumbnailUrl = persistedPreviewUrl;
+        });
+      }
       const nextActivePreviewId =
         initialMessageId &&
         nextPreviewItems.some(

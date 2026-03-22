@@ -14,6 +14,7 @@ import ProgressiveImagePreview from './ProgressiveImagePreview';
 
 interface MultiImagePreviewPortalItem {
   id: string;
+  thumbnailUrl: string | null;
   previewUrl: string | null;
   stageUrls: string[];
   fullPreviewUrl: string | null;
@@ -340,10 +341,13 @@ const MultiImagePreviewPortal = ({
                           : 'border-slate-300 hover:border-slate-400'
                       } h-full w-full`}
                     >
-                      {previewItem.fullPreviewUrl || previewItem.previewUrl ? (
+                      {previewItem.fullPreviewUrl ||
+                      previewItem.thumbnailUrl ||
+                      previewItem.previewUrl ? (
                         <img
                           src={
                             previewItem.fullPreviewUrl ||
+                            previewItem.thumbnailUrl ||
                             previewItem.previewUrl ||
                             ''
                           }
@@ -352,9 +356,10 @@ const MultiImagePreviewPortal = ({
                           draggable={false}
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[11px] font-medium tracking-[0.12em] text-slate-400 uppercase">
-                          Memuat
-                        </div>
+                        <div
+                          className="h-full w-full bg-slate-100"
+                          aria-hidden="true"
+                        />
                       )}
                     </motion.button>
                   );

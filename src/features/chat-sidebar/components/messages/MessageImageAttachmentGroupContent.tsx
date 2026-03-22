@@ -251,9 +251,10 @@ export const MessageImageAttachmentGroupContent = ({
                         draggable={false}
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-center text-xs text-slate-400">
-                        Memuat gambar...
-                      </div>
+                      <div
+                        className="h-full w-full bg-slate-100"
+                        aria-hidden="true"
+                      />
                     )}
                     {isOverflowTile ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-slate-950/52 text-[1.75rem] font-semibold text-white">
