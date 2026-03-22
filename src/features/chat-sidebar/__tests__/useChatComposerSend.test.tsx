@@ -32,7 +32,11 @@ const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
     mockCreatePdfPreviewUploadArtifact: vi.fn(),
     mockReadBlobAsDataUrl: vi.fn(),
   }));
-const { mockCreateImagePreviewUploadArtifact } = vi.hoisted(() => ({
+const {
+  mockCreateImageExpandStageDataUrl,
+  mockCreateImagePreviewUploadArtifact,
+} = vi.hoisted(() => ({
+  mockCreateImageExpandStageDataUrl: vi.fn(),
   mockCreateImagePreviewUploadArtifact: vi.fn(),
 }));
 const { mockPersistImageMessagePreview } = vi.hoisted(() => ({
@@ -87,6 +91,7 @@ vi.mock('../utils/image-message-preview', async () => {
 
   return {
     ...actual,
+    createImageExpandStageDataUrl: mockCreateImageExpandStageDataUrl,
     createImagePreviewUploadArtifact: mockCreateImagePreviewUploadArtifact,
     persistImageMessagePreview: mockPersistImageMessagePreview,
   };
@@ -239,6 +244,7 @@ describe('useChatComposerSend', () => {
       previewDataUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
       previewPath: 'previews/channel/server-image-preview.fit-v2.webp',
     });
+    mockCreateImageExpandStageDataUrl.mockResolvedValue(null);
     mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
       data: null,
       error: null,
