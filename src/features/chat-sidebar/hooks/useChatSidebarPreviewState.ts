@@ -9,6 +9,7 @@ import { useMessagesPanePreviews } from './useMessagesPanePreviews';
 interface UseChatSidebarPreviewStateProps {
   messages: ChatMessage[];
   pendingComposerAttachments: PendingComposerAttachment[];
+  closeMessageMenu: () => void;
   handleAttachImageClick: (replaceAttachmentId?: string) => void;
   handleAttachDocumentClick: (replaceAttachmentId?: string) => void;
   compressPendingComposerImage: (attachmentId: string) => Promise<boolean>;
@@ -22,6 +23,7 @@ interface UseChatSidebarPreviewStateProps {
 export const useChatSidebarPreviewState = ({
   messages,
   pendingComposerAttachments,
+  closeMessageMenu,
   handleAttachImageClick,
   handleAttachDocumentClick,
   compressPendingComposerImage,
@@ -40,6 +42,7 @@ export const useChatSidebarPreviewState = ({
   });
   const composerAttachmentPreview = useComposerAttachmentPreview({
     pendingComposerAttachments,
+    onOpenImageActionsMenu: closeMessageMenu,
     onAttachImageClick: handleAttachImageClick,
     onAttachDocumentClick: handleAttachDocumentClick,
     onCompressPendingComposerImage: compressPendingComposerImage,

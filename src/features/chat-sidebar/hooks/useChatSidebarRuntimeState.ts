@@ -132,6 +132,7 @@ export const useChatSidebarRuntimeState = ({
   const previews = useChatSidebarPreviewState({
     messages: session.messages,
     pendingComposerAttachments: composer.pendingComposerAttachments,
+    closeMessageMenu: refs.closeMessageMenu,
     handleAttachImageClick: composer.handleAttachImageClick,
     handleAttachDocumentClick: composer.handleAttachDocumentClick,
     compressPendingComposerImage: composer.compressPendingComposerImage,

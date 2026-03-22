@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import ComposerPanel from '../components/ComposerPanel';
 import type { ComposerPanelModel } from '../models';
 
+const { mockPopupMenuContent } = vi.hoisted(() => ({
+  mockPopupMenuContent: vi.fn((_props: unknown) => <div>popup content</div>),
+}));
+
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   motion: new Proxy(
@@ -33,7 +37,7 @@ vi.mock('motion/react', () => ({
 }));
 
 vi.mock('@/components/image-manager/PopupMenuContent', () => ({
-  default: () => <div>popup content</div>,
+  default: (props: unknown) => mockPopupMenuContent(props),
 }));
 
 vi.mock('@/components/shared/popup-menu-popover', () => ({
@@ -164,6 +168,37 @@ const buildComposerModel = (): ComposerPanelModel => ({
 describe('ComposerPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('passes first-item preselection behavior into the composer attachment popup', () => {
+    const model = buildComposerModel();
+    model.attachments.openImageActionsAttachmentId = 'pending-image-1';
+    model.attachments.imageActionsMenuPosition = {
+      top: 48,
+      left: 64,
+    };
+    model.attachments.imageActions = [
+      {
+        label: 'Buka',
+        icon: <span>icon</span>,
+        onClick: vi.fn(),
+      },
+      {
+        label: 'Ganti',
+        icon: <span>icon</span>,
+        onClick: vi.fn(),
+      },
+    ];
+
+    render(<ComposerPanel model={model} />);
+
+    expect(mockPopupMenuContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actions: model.attachments.imageActions,
+        enableArrowNavigation: true,
+        autoFocusFirstItem: true,
+      })
+    );
   });
 
   it('renders each hoverable attachment link as a separate inline anchor', () => {

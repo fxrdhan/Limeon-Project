@@ -19,6 +19,7 @@ const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 128;
 
 interface UseComposerAttachmentPreviewProps {
   pendingComposerAttachments: PendingComposerAttachment[];
+  onOpenImageActionsMenu: () => void;
   onAttachImageClick: (replaceAttachmentId?: string) => void;
   onAttachDocumentClick: (replaceAttachmentId?: string) => void;
   onCompressPendingComposerImage: (attachmentId: string) => Promise<boolean>;
@@ -28,6 +29,7 @@ interface UseComposerAttachmentPreviewProps {
 
 export const useComposerAttachmentPreview = ({
   pendingComposerAttachments,
+  onOpenImageActionsMenu,
   onAttachImageClick,
   onAttachDocumentClick,
   onCompressPendingComposerImage,
@@ -148,7 +150,6 @@ export const useComposerAttachmentPreview = ({
           label: 'Buka',
           icon: <TbEye className="h-4.5 w-4.5" />,
           onClick: () => {
-            closeImageActionsMenu();
             onOpenComposerImagePreview(openImageActionsAttachment.id);
           },
         },
@@ -185,7 +186,6 @@ export const useComposerAttachmentPreview = ({
         label: 'Buka',
         icon: <TbEye className="h-4.5 w-4.5" />,
         onClick: () => {
-          closeImageActionsMenu();
           openDocumentAttachmentInPortal(openImageActionsAttachment);
         },
       },
@@ -225,6 +225,7 @@ export const useComposerAttachmentPreview = ({
         return;
       }
 
+      onOpenImageActionsMenu();
       setOpenImageActionsAttachmentId(attachmentId);
       setImageActionsMenuPosition(
         getImageActionsMenuPosition(event.currentTarget)
@@ -233,6 +234,7 @@ export const useComposerAttachmentPreview = ({
     [
       closeImageActionsMenu,
       getImageActionsMenuPosition,
+      onOpenImageActionsMenu,
       openImageActionsAttachmentId,
     ]
   );

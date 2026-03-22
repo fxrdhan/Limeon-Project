@@ -449,6 +449,8 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                       <PopupMenuContent
                         actions={attachments.imageActions}
                         minWidthClassName="min-w-[132px]"
+                        enableArrowNavigation
+                        autoFocusFirstItem
                         iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
                       />
                     </div>
@@ -786,7 +788,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
         )}
         isVisible={attachments.isComposerImageExpandedVisible}
         onClose={actions.onCloseComposerImagePreview}
-        backdropClassName="z-[70] px-4 py-6"
+        backdropClassName="z-[130] px-4 py-6"
         contentClassName="max-h-[92vh] max-w-[92vw] p-0"
         backdropRole="button"
         backdropTabIndex={0}
@@ -836,7 +838,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
         previewUrl={documentPreview.composerDocumentPreviewUrl}
         previewName={documentPreview.composerDocumentPreviewName}
         onClose={actions.onCloseComposerDocumentPreview}
-        backdropClassName="z-[72] px-4 py-6"
+        backdropClassName="z-[130] px-4 py-6"
         iframeTitle="Preview dokumen composer"
       />
     </>
