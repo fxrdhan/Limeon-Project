@@ -9,7 +9,13 @@ import {
 } from 'react';
 import { LayoutGroup, motion } from 'motion/react';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import { TbX } from 'react-icons/tb';
+import {
+  TbLink,
+  TbPhotoDown,
+  TbPhotoShare,
+  TbShare3,
+  TbX,
+} from 'react-icons/tb';
 import ProgressiveImagePreview from './ProgressiveImagePreview';
 
 interface MultiImagePreviewPortalItem {
@@ -26,7 +32,12 @@ interface MultiImagePreviewPortalProps {
   isVisible: boolean;
   previewItems: MultiImagePreviewPortalItem[];
   activePreviewId: string | null;
+  isActivePreviewForwardable: boolean;
   onSelectPreview: (messageId: string) => void;
+  onDownloadActivePreview: () => void;
+  onOpenActivePreviewInNewTab: () => void;
+  onCopyActivePreviewLink: () => void;
+  onForwardActivePreview: () => void;
   onClose: () => void;
   backdropClassName: string;
 }
@@ -72,7 +83,12 @@ const MultiImagePreviewPortal = ({
   isVisible,
   previewItems,
   activePreviewId,
+  isActivePreviewForwardable,
   onSelectPreview,
+  onDownloadActivePreview,
+  onOpenActivePreviewInNewTab,
+  onCopyActivePreviewLink,
+  onForwardActivePreview,
   onClose,
   backdropClassName,
 }: MultiImagePreviewPortalProps) => {
@@ -398,7 +414,7 @@ const MultiImagePreviewPortal = ({
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
             <div className="flex h-14 items-center justify-between border-b border-slate-300 px-4">
               <p
-                className="flex min-w-0 items-center gap-2 truncate text-sm font-medium text-slate-600"
+                className="flex min-w-0 items-center gap-2 truncate text-sm font-medium text-black"
                 title={`${activePreviewIndex + 1}/${previewItems.length} | ${activePreview.previewName}`}
               >
                 <span className="shrink-0">
@@ -407,14 +423,58 @@ const MultiImagePreviewPortal = ({
                 <span className="shrink-0 text-slate-400">|</span>
                 <span className="truncate">{activePreview.previewName}</span>
               </p>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Tutup preview gambar"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              >
-                <TbX className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onOpenActivePreviewInNewTab}
+                  aria-label="Buka di tab baru"
+                  title="Buka di tab baru"
+                  className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
+                >
+                  <TbPhotoShare className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onCopyActivePreviewLink}
+                  aria-label="Salin link"
+                  title="Salin link"
+                  className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
+                >
+                  <TbLink className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onForwardActivePreview}
+                  aria-label="Teruskan gambar"
+                  title="Teruskan gambar"
+                  disabled={!isActivePreviewForwardable}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-black transition-colors ${
+                    isActivePreviewForwardable
+                      ? 'cursor-pointer hover:bg-slate-100'
+                      : 'cursor-default opacity-40'
+                  }`}
+                >
+                  <TbShare3 className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onDownloadActivePreview}
+                  aria-label="Unduh gambar"
+                  title="Unduh gambar"
+                  className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
+                >
+                  <TbPhotoDown className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Tutup preview gambar"
+                  title="Tutup preview gambar"
+                  className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
+                >
+                  <TbX className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-white p-4 md:p-6">

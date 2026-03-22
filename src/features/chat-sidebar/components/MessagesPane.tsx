@@ -1,9 +1,14 @@
 import { LayoutGroup } from 'motion/react';
 import { Fragment } from 'react';
+import toast from 'react-hot-toast';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import { MAX_MESSAGE_CHARS } from '../constants';
+import { CHAT_SIDEBAR_TOASTER_ID, MAX_MESSAGE_CHARS } from '../constants';
 import type { MessagesPaneModel } from '../models';
+import {
+  openChatFileInNewTab,
+  resolveCopyableChatAssetUrl,
+} from '../utils/message-file';
 import { buildMessageRenderItems } from '../utils/message-render-items';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MultiImagePreviewPortal from './MultiImagePreviewPortal';
@@ -38,6 +43,11 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
     enableDocumentBubbleGrouping:
       !interaction.isSelectionMode && state.normalizedSearchQuery.length === 0,
   });
+  const activeImageGroupPreviewMessage = previews.activeImageGroupPreviewId
+    ? state.messages.find(
+        messageItem => messageItem.id === previews.activeImageGroupPreviewId
+      ) || null
+    : null;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -264,7 +274,76 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
         isVisible={previews.isImageGroupPreviewVisible}
         previewItems={previews.imageGroupPreviewItems}
         activePreviewId={previews.activeImageGroupPreviewId}
+        isActivePreviewForwardable={Boolean(
+          activeImageGroupPreviewMessage &&
+          !activeImageGroupPreviewMessage.id.startsWith('temp_')
+        )}
         onSelectPreview={previews.selectImageGroupPreviewItem}
+        onDownloadActivePreview={() => {
+          if (!activeImageGroupPreviewMessage) {
+            return;
+          }
+
+          void actions.handleDownloadMessage(activeImageGroupPreviewMessage);
+        }}
+        onOpenActivePreviewInNewTab={() => {
+          if (!activeImageGroupPreviewMessage) {
+            return;
+          }
+
+          void openChatFileInNewTab(
+            activeImageGroupPreviewMessage.message,
+            activeImageGroupPreviewMessage.file_storage_path,
+            activeImageGroupPreviewMessage.file_mime_type
+          );
+        }}
+        onCopyActivePreviewLink={() => {
+          if (!activeImageGroupPreviewMessage) {
+            return;
+          }
+
+          void toast
+            .promise(
+              (async () => {
+                const copyableUrl = await resolveCopyableChatAssetUrl(
+                  activeImageGroupPreviewMessage.message,
+                  activeImageGroupPreviewMessage.file_storage_path
+                );
+
+                if (!copyableUrl) {
+                  throw new Error('Link gambar tidak tersedia');
+                }
+
+                await navigator.clipboard.writeText(copyableUrl);
+              })(),
+              {
+                loading: 'Menyiapkan link gambar...',
+                success: 'Link gambar berhasil disalin',
+                error: error =>
+                  error instanceof Error
+                    ? error.message
+                    : 'Gagal menyalin link gambar',
+              },
+              {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              }
+            )
+            .catch(error => {
+              console.error('Failed to copy image link:', error);
+            });
+        }}
+        onForwardActivePreview={() => {
+          if (
+            !activeImageGroupPreviewMessage ||
+            activeImageGroupPreviewMessage.id.startsWith('temp_')
+          ) {
+            return;
+          }
+
+          actions.handleOpenForwardMessagePicker(
+            activeImageGroupPreviewMessage
+          );
+        }}
         onClose={previews.closeImageGroupPreview}
         backdropClassName="z-[80] px-4 py-6"
       />
