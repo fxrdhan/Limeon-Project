@@ -16,6 +16,9 @@ const { mockResolveChatAssetUrlWithExpiry, mockFetchChatFileBlobWithFallback } =
     mockResolveChatAssetUrlWithExpiry: vi.fn(),
     mockFetchChatFileBlobWithFallback: vi.fn(),
   }));
+const { mockPersistImageMessagePreview } = vi.hoisted(() => ({
+  mockPersistImageMessagePreview: vi.fn(),
+}));
 
 vi.mock('../utils/message-file', async importOriginal => {
   const actual = await importOriginal<typeof import('../utils/message-file')>();
@@ -29,6 +32,16 @@ vi.mock('../utils/message-file', async importOriginal => {
   };
 });
 
+vi.mock('../utils/image-message-preview', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('../utils/image-message-preview')>();
+
+  return {
+    ...actual,
+    persistImageMessagePreview: mockPersistImageMessagePreview,
+  };
+});
+
 describe('useMessageImagePreviews', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -36,7 +49,9 @@ describe('useMessageImagePreviews', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mockResolveChatAssetUrlWithExpiry.mockReset();
     mockFetchChatFileBlobWithFallback.mockReset();
+    mockPersistImageMessagePreview.mockReset();
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
+    mockPersistImageMessagePreview.mockResolvedValue(null);
     chatRuntimeCache.imagePreviews.reset();
   });
 
@@ -177,6 +192,45 @@ describe('useMessageImagePreviews', () => {
     expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(1);
   });
 
+  it('prefers persisted image thumbnail paths when preview metadata exists', async () => {
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValueOnce({
+      url: 'https://example.com/signed-image-thumbnail',
+      expiresAt: Date.now() + 90_000,
+    });
+
+    const messages: ChatMessage[] = [
+      {
+        id: 'image-thumb-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        channel_id: 'dm_user-a_user-b',
+        message: 'images/channel/image-thumb-1.png',
+        created_at: '2026-03-10T10:00:00.000Z',
+        updated_at: '2026-03-10T10:00:00.000Z',
+        is_read: false,
+        message_type: 'image',
+        file_mime_type: 'image/png',
+        file_storage_path: 'images/channel/user-a_image-thumb-1.png',
+        file_preview_url: 'previews/channel/user-a_image-thumb-1.webp',
+      },
+    ];
+
+    const { result } = renderHook(() => useMessageImagePreviews({ messages }));
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
+      'https://example.com/signed-image-thumbnail'
+    );
+    expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledWith(
+      'previews/channel/user-a_image-thumb-1.webp',
+      'previews/channel/user-a_image-thumb-1.webp'
+    );
+  });
+
   it('uses handed-off local image previews before the persisted asset url resolves', async () => {
     const messages: ChatMessage[] = [
       {
@@ -205,6 +259,64 @@ describe('useMessageImagePreviews', () => {
 
     expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
       'blob:handoff-preview'
+    );
+  });
+
+  it('backfills thumbnails for existing image messages without preview metadata', async () => {
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValueOnce({
+      url: 'https://example.com/signed-image-original',
+      expiresAt: Date.now() + 90_000,
+    });
+    mockFetchChatFileBlobWithFallback.mockResolvedValueOnce(
+      new Blob(['image'], { type: 'image/png' })
+    );
+    mockPersistImageMessagePreview.mockResolvedValueOnce({
+      previewDataUrl: 'data:image/webp;base64,dGh1bWJuYWls',
+      previewPath: 'previews/channel/image-backfill.webp',
+      message: null,
+      error: null,
+    });
+
+    const messages: ChatMessage[] = [
+      {
+        id: 'image-backfill-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        channel_id: 'dm_user-a_user-b',
+        message: 'images/channel/image-backfill-1.png',
+        created_at: '2026-03-10T10:00:00.000Z',
+        updated_at: '2026-03-10T10:00:00.000Z',
+        is_read: false,
+        message_type: 'image',
+        file_mime_type: 'image/png',
+        file_storage_path: 'images/channel/image-backfill-1.png',
+      },
+    ];
+
+    const { result } = renderHook(() => useMessageImagePreviews({ messages }));
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
+      'https://example.com/signed-image-original'
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockPersistImageMessagePreview).toHaveBeenCalledWith({
+      messageId: 'image-backfill-1',
+      file: expect.any(Blob),
+      fileStoragePath: 'images/channel/image-backfill-1.png',
+    });
+    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
+      'data:image/webp;base64,dGh1bWJuYWls'
     );
   });
 });

@@ -42,12 +42,6 @@ interface MessageDocumentAttachmentGroupContentProps {
     preferredSide: 'left' | 'right'
   ) => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
-  getImageMessageUrl: (
-    message: Pick<
-      ChatMessage,
-      'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
-    >
-  ) => string | null;
   getPdfMessagePreview: (
     message: ChatMessage,
     fileName: string | null
@@ -82,7 +76,6 @@ export const MessageDocumentAttachmentGroupContent = ({
   shouldAnimateMenuOpen,
   toggleMessageMenu,
   getAttachmentFileName,
-  getImageMessageUrl,
   getPdfMessagePreview,
   openImageInPortal,
   openDocumentInPortal,
@@ -169,10 +162,8 @@ export const MessageDocumentAttachmentGroupContent = ({
     const fileSecondaryLabel =
       [fileTypeLabel, fileSizeLabel].filter(Boolean).join(' · ') ||
       fileTypeLabel;
-    const resolvedMessageUrl = isImageFile ? getImageMessageUrl(message) : null;
     const menuActions = buildMessageMenuActions({
       message,
-      resolvedMessageUrl,
       isCurrentUser: message.sender_id === userId,
       isImageMessage: false,
       isFileMessage: true,

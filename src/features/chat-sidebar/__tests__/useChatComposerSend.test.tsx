@@ -13,10 +13,12 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
   mockGateway: {
     fetchConversationMessages: vi.fn(),
     createMessage: vi.fn(),
+    updateFilePreview: vi.fn(),
     deleteMessageThread: vi.fn(),
     deleteMessageThreadAndCleanup: vi.fn(),
     persistPdfPreview: vi.fn(),
     uploadImage: vi.fn(),
+    uploadImagePreview: vi.fn(),
     uploadAttachment: vi.fn(),
     cleanupStoragePaths: vi.fn(),
   },
@@ -30,6 +32,12 @@ const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
     mockCreatePdfPreviewUploadArtifact: vi.fn(),
     mockReadBlobAsDataUrl: vi.fn(),
   }));
+const { mockCreateImagePreviewUploadArtifact } = vi.hoisted(() => ({
+  mockCreateImagePreviewUploadArtifact: vi.fn(),
+}));
+const { mockPersistImageMessagePreview } = vi.hoisted(() => ({
+  mockPersistImageMessagePreview: vi.fn(),
+}));
 const { mockRemoteAssetService } = vi.hoisted(() => ({
   mockRemoteAssetService: {
     fetchRemoteAsset: vi.fn(),
@@ -40,6 +48,7 @@ vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
     fetchMessagesBetweenUsers: mockGateway.fetchConversationMessages,
     insertMessage: mockGateway.createMessage,
+    updateFilePreview: mockGateway.updateFilePreview,
     deleteMessageThread: mockGateway.deleteMessageThread,
   },
   chatCleanupService: {
@@ -54,6 +63,7 @@ vi.mock('@/services/api/chat.service', () => ({
 vi.mock('../data/chatSidebarAssetsGateway', () => ({
   chatSidebarAssetsGateway: {
     uploadImage: mockGateway.uploadImage,
+    uploadImagePreview: mockGateway.uploadImagePreview,
     uploadAttachment: mockGateway.uploadAttachment,
   },
 }));
@@ -69,6 +79,16 @@ vi.mock('../utils/pdf-message-preview', async () => {
     ...actual,
     createPdfPreviewUploadArtifact: mockCreatePdfPreviewUploadArtifact,
     readBlobAsDataUrl: mockReadBlobAsDataUrl,
+  };
+});
+
+vi.mock('../utils/image-message-preview', async () => {
+  const actual = await vi.importActual('../utils/image-message-preview');
+
+  return {
+    ...actual,
+    createImagePreviewUploadArtifact: mockCreateImagePreviewUploadArtifact,
+    persistImageMessagePreview: mockPersistImageMessagePreview,
   };
 });
 
@@ -188,6 +208,15 @@ describe('useChatComposerSend', () => {
       data: [],
       error: null,
     });
+    mockGateway.updateFilePreview.mockImplementation(
+      async (messageId: string, payload: Partial<ChatMessage>) => ({
+        data: buildMessage({
+          id: messageId,
+          ...payload,
+        }),
+        error: null,
+      })
+    );
     mockGateway.cleanupStoragePaths.mockResolvedValue({
       data: {
         failedStoragePaths: [],
@@ -203,6 +232,13 @@ describe('useChatComposerSend', () => {
     mockReadBlobAsDataUrl.mockResolvedValue(
       'data:image/png;base64,cHJldmlldw=='
     );
+    mockCreateImagePreviewUploadArtifact.mockResolvedValue({
+      previewFile: new File(['preview'], 'server-image-preview.webp', {
+        type: 'image/webp',
+      }),
+      previewDataUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
+      previewPath: 'previews/channel/server-image-preview.webp',
+    });
     mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
       data: null,
       error: null,
@@ -220,6 +256,49 @@ describe('useChatComposerSend', () => {
         },
         error: null,
       })
+    );
+    mockGateway.uploadImagePreview.mockResolvedValue({
+      path: 'previews/channel/server-image-preview.webp',
+    });
+    mockPersistImageMessagePreview.mockImplementation(
+      async ({
+        messageId,
+        file,
+        fileStoragePath,
+      }: {
+        messageId: string;
+        file: Blob;
+        fileStoragePath: string;
+      }) => {
+        const renderedPreview = await mockCreateImagePreviewUploadArtifact(
+          file,
+          fileStoragePath
+        );
+
+        if (!renderedPreview) {
+          return null;
+        }
+
+        await mockGateway.uploadImagePreview(
+          renderedPreview.previewFile,
+          renderedPreview.previewPath,
+          renderedPreview.previewFile.type
+        );
+
+        const updateResult = await mockGateway.updateFilePreview(messageId, {
+          file_preview_url: renderedPreview.previewPath,
+          file_preview_page_count: null,
+          file_preview_status: 'ready',
+          file_preview_error: null,
+        });
+
+        return {
+          previewDataUrl: renderedPreview.previewDataUrl,
+          previewPath: renderedPreview.previewPath,
+          message: updateResult.data,
+          error: updateResult.error,
+        };
+      }
     );
   });
 
@@ -1353,6 +1432,13 @@ describe('useChatComposerSend', () => {
   });
 
   it('converts a pasted image url draft into an image attachment send', async () => {
+    mockCreateImagePreviewUploadArtifact.mockResolvedValueOnce({
+      previewFile: new File(['preview'], 'user-a_image_attachment.webp', {
+        type: 'image/webp',
+      }),
+      previewDataUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
+      previewPath: 'previews/channel-1/user-a_image_attachment.webp',
+    });
     mockGateway.uploadImage.mockResolvedValue({
       path: 'images/channel-1/user-a_image_attachment.png',
     });
@@ -1422,6 +1508,20 @@ describe('useChatComposerSend', () => {
     });
 
     expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
+    expect(mockGateway.uploadImagePreview).toHaveBeenCalledWith(
+      expect.any(File),
+      'previews/channel-1/user-a_image_attachment.webp',
+      'image/webp'
+    );
+    expect(mockGateway.updateFilePreview).toHaveBeenCalledWith(
+      'server-image-attachment',
+      {
+        file_preview_url: 'previews/channel-1/user-a_image_attachment.webp',
+        file_preview_page_count: null,
+        file_preview_status: 'ready',
+        file_preview_error: null,
+      }
+    );
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         receiver_id: 'user-b',
@@ -1497,8 +1597,8 @@ describe('useChatComposerSend', () => {
     expect(
       chatRuntimeCache.imagePreviews.getEntry('server-image-commit')
     ).toEqual({
-      previewUrl: 'blob:temp-upload',
-      isObjectUrl: true,
+      previewUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
+      isObjectUrl: false,
     });
   });
 

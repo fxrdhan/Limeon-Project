@@ -54,7 +54,7 @@ describe('messageItemUtils', () => {
     expect(actions.map(action => action.label)).toEqual(['Salin', 'Hapus']);
   });
 
-  it('copies image messages using the resolved preview url when available', async () => {
+  it('copies image messages using the original asset payload', async () => {
     const handleCopyMessage = vi.fn().mockResolvedValue(undefined);
     const imageMessage = buildMessage({
       message_type: 'image',
@@ -64,7 +64,6 @@ describe('messageItemUtils', () => {
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
-      resolvedMessageUrl: 'blob:resolved-image',
       isCurrentUser: true,
       isImageMessage: true,
       isFileMessage: false,
@@ -84,13 +83,10 @@ describe('messageItemUtils', () => {
     const copyAction = actions.find(action => action.label === 'Salin');
     await copyAction?.onClick();
 
-    expect(handleCopyMessage).toHaveBeenCalledWith({
-      ...imageMessage,
-      message: 'blob:resolved-image',
-    });
+    expect(handleCopyMessage).toHaveBeenCalledWith(imageMessage);
   });
 
-  it('opens image messages using the resolved preview url when available', async () => {
+  it('opens image messages using the original asset payload', async () => {
     const openImageInPortal = vi.fn().mockResolvedValue(undefined);
     const imageMessage = buildMessage({
       message_type: 'image',
@@ -100,7 +96,6 @@ describe('messageItemUtils', () => {
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
-      resolvedMessageUrl: 'blob:resolved-image',
       isCurrentUser: true,
       isImageMessage: true,
       isFileMessage: false,
@@ -120,10 +115,7 @@ describe('messageItemUtils', () => {
     await actions.find(action => action.label === 'Buka')?.onClick();
 
     expect(openImageInPortal).toHaveBeenCalledWith(
-      {
-        ...imageMessage,
-        message: 'blob:resolved-image',
-      },
+      imageMessage,
       'Lampiran.png'
     );
   });
@@ -138,7 +130,6 @@ describe('messageItemUtils', () => {
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
-      resolvedMessageUrl: 'blob:resolved-image',
       isCurrentUser: true,
       isImageMessage: true,
       isFileMessage: false,

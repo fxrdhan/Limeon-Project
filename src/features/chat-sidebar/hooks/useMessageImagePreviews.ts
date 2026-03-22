@@ -8,10 +8,12 @@ import {
   resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { persistImageMessagePreview } from '../utils/image-message-preview';
 
 const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
 const IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
 const IMAGE_PREVIEW_RETRY_BASE_DELAY_MS = 900;
+const IMAGE_PREVIEW_BACKFILL_DELAY_MS = 120;
 
 interface ImageMessagePreviewEntry {
   url: string;
@@ -22,7 +24,11 @@ interface ImageMessagePreviewEntry {
 const isImagePreviewableMessage = (
   message: Pick<
     ChatMessage,
-    'message_type' | 'message' | 'file_name' | 'file_mime_type'
+    | 'message_type'
+    | 'message'
+    | 'file_name'
+    | 'file_mime_type'
+    | 'file_preview_url'
   >
 ) => {
   if (message.message_type === 'image') {
@@ -58,6 +64,7 @@ export const useMessageImagePreviews = ({
   >({});
   const imagePreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
   const imagePreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
+  const imagePreviewBackfillAttemptedIdsRef = useRef<Set<string>>(new Set());
 
   const releaseImagePreviewUrl = useCallback((messageId: string) => {
     const existingUrl = objectUrlsRef.current.get(messageId);
@@ -160,6 +167,20 @@ export const useMessageImagePreviews = ({
       clearImagePreviewRetryTimer(messageId);
     }
 
+    const inactiveBackfillMessageIds: string[] = [];
+
+    for (const messageId of imagePreviewBackfillAttemptedIdsRef.current) {
+      if (activeImageMessageIds.has(messageId)) {
+        continue;
+      }
+
+      inactiveBackfillMessageIds.push(messageId);
+    }
+
+    inactiveBackfillMessageIds.forEach(messageId => {
+      imagePreviewBackfillAttemptedIdsRef.current.delete(messageId);
+    });
+
     setImageMessagePreviewEntries(previousEntries => {
       let hasChanges = false;
       const nextEntries: Record<string, ImageMessagePreviewEntry> = {};
@@ -231,8 +252,9 @@ export const useMessageImagePreviews = ({
         pendingImageMessages.map(async messageItem => {
           try {
             const resolvedAsset = await resolveChatAssetUrlWithExpiry(
-              messageItem.message,
-              messageItem.file_storage_path
+              messageItem.file_preview_url?.trim() || messageItem.message,
+              messageItem.file_preview_url?.trim() ||
+                messageItem.file_storage_path
             );
             if (resolvedAsset) {
               imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
@@ -248,9 +270,9 @@ export const useMessageImagePreviews = ({
             }
 
             const imageBlob = await fetchChatFileBlobWithFallback(
-              messageItem.message,
-              messageItem.file_storage_path,
-              messageItem.file_mime_type
+              messageItem.file_preview_url?.trim() || messageItem.message,
+              messageItem.file_preview_url?.trim() ||
+                messageItem.file_storage_path
             );
             if (!imageBlob) {
               scheduleImagePreviewRetry(messageItem.id);
@@ -345,6 +367,102 @@ export const useMessageImagePreviews = ({
   ]);
 
   useEffect(() => {
+    let isCancelled = false;
+
+    const pendingBackfillMessages = messages.filter(messageItem => {
+      if (!isImagePreviewableMessage(messageItem)) {
+        return false;
+      }
+
+      if (messageItem.id.startsWith('temp_')) {
+        return false;
+      }
+
+      if (!messageItem.file_storage_path?.trim()) {
+        return false;
+      }
+
+      if (messageItem.file_preview_url?.trim()) {
+        return false;
+      }
+
+      if (imagePreviewBackfillAttemptedIdsRef.current.has(messageItem.id)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (pendingBackfillMessages.length === 0) {
+      return;
+    }
+
+    const backfillTimerId = window.setTimeout(() => {
+      void (async () => {
+        for (const pendingMessage of pendingBackfillMessages) {
+          if (isCancelled) {
+            return;
+          }
+
+          imagePreviewBackfillAttemptedIdsRef.current.add(pendingMessage.id);
+          const fileStoragePath = pendingMessage.file_storage_path?.trim();
+          if (!fileStoragePath) {
+            continue;
+          }
+
+          try {
+            const imageBlob = await fetchChatFileBlobWithFallback(
+              pendingMessage.message,
+              fileStoragePath,
+              pendingMessage.file_mime_type
+            );
+            if (!imageBlob) {
+              continue;
+            }
+
+            const persistedPreview = await persistImageMessagePreview({
+              messageId: pendingMessage.id,
+              file: imageBlob,
+              fileStoragePath,
+            });
+            if (!persistedPreview || isCancelled) {
+              continue;
+            }
+
+            chatRuntimeCache.imagePreviews.setEntry(pendingMessage.id, {
+              previewUrl: persistedPreview.previewDataUrl,
+              isObjectUrl: false,
+            });
+
+            setImageMessagePreviewEntries(previousEntries => ({
+              ...previousEntries,
+              [pendingMessage.id]: {
+                url: persistedPreview.previewDataUrl,
+                expiresAt: null,
+                isObjectUrl: false,
+              },
+            }));
+
+            if (persistedPreview.error) {
+              console.error(
+                'Failed to backfill image preview metadata:',
+                persistedPreview.error
+              );
+            }
+          } catch (error) {
+            console.error('Error backfilling image preview metadata:', error);
+          }
+        }
+      })();
+    }, IMAGE_PREVIEW_BACKFILL_DELAY_MS);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(backfillTimerId);
+    };
+  }, [messages]);
+
+  useEffect(() => {
     const objectUrls = objectUrlsRef.current;
 
     return () => {
@@ -359,7 +477,12 @@ export const useMessageImagePreviews = ({
     (
       message: Pick<
         ChatMessage,
-        'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+        | 'id'
+        | 'message'
+        | 'message_type'
+        | 'file_name'
+        | 'file_mime_type'
+        | 'file_preview_url'
       >
     ) => {
       if (!isImagePreviewableMessage(message)) {
@@ -376,6 +499,11 @@ export const useMessageImagePreviews = ({
       )?.previewUrl;
       if (handedOffPreviewUrl) {
         return handedOffPreviewUrl;
+      }
+
+      const directPreviewUrl = message.file_preview_url?.trim();
+      if (directPreviewUrl && isDirectChatAssetUrl(directPreviewUrl)) {
+        return directPreviewUrl;
       }
 
       if (

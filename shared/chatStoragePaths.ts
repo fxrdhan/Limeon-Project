@@ -100,6 +100,14 @@ export const resolveChatMessageStoragePaths = (
     storagePaths.add(primaryStoragePath);
   }
 
+  const persistedPreviewStoragePath = message.file_preview_url
+    ? extractChatStoragePath(message.file_preview_url)
+    : null;
+
+  if (persistedPreviewStoragePath) {
+    storagePaths.add(persistedPreviewStoragePath);
+  }
+
   if (message.message_type !== 'file') {
     return [...storagePaths];
   }
@@ -117,8 +125,8 @@ export const resolveChatMessageStoragePaths = (
     return [...storagePaths];
   }
 
-  const previewStoragePath = message.file_preview_url
-    ? extractChatStoragePath(message.file_preview_url)
+  const previewStoragePath = persistedPreviewStoragePath
+    ? null
     : primaryStoragePath?.startsWith('documents/')
       ? buildPdfPreviewStoragePath(primaryStoragePath)
       : null;

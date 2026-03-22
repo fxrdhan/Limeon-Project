@@ -132,7 +132,12 @@ export interface MessagesPaneModel {
     getImageMessageUrl: (
       message: Pick<
         ChatMessage,
-        'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+        | 'id'
+        | 'message'
+        | 'message_type'
+        | 'file_name'
+        | 'file_mime_type'
+        | 'file_preview_url'
       >
     ) => string | null;
     getPdfMessagePreview: (

@@ -58,4 +58,18 @@ describe('message-file utils', () => {
       })
     ).toEqual(['documents/channel/stok.pdf', 'previews/channel/stok.png']);
   });
+
+  it('collects persisted preview storage paths for image messages', () => {
+    expect(
+      resolveChatMessageStoragePaths({
+        message:
+          'https://example.com/storage/v1/object/public/chat/images/channel/foto.png',
+        message_type: 'image',
+        file_mime_type: 'image/png',
+        file_preview_url:
+          'https://example.com/storage/v1/object/public/chat/previews/channel/foto.webp',
+        file_storage_path: 'images/channel/foto.png',
+      })
+    ).toEqual(['images/channel/foto.png', 'previews/channel/foto.webp']);
+  });
 });

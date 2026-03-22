@@ -35,7 +35,12 @@ interface MessageImageAttachmentGroupContentProps {
   getImageMessageUrl: (
     message: Pick<
       ChatMessage,
-      'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+      | 'id'
+      | 'message'
+      | 'message_type'
+      | 'file_name'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >
   ) => string | null;
   openImageGroupInPortal: (
@@ -147,7 +152,6 @@ export const MessageImageAttachmentGroupContent = ({
     const previewName = getImagePreviewName(message, index);
     const menuActions = buildMessageMenuActions({
       message,
-      resolvedMessageUrl,
       isCurrentUser: message.sender_id === userId,
       isImageMessage: true,
       isFileMessage: false,

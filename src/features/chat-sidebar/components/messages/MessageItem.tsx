@@ -65,7 +65,12 @@ export interface MessageItemModel {
   getImageMessageUrl: (
     message: Pick<
       ChatMessage,
-      'id' | 'message' | 'message_type' | 'file_name' | 'file_mime_type'
+      | 'id'
+      | 'message'
+      | 'message_type'
+      | 'file_name'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >
   ) => string | null;
   getPdfMessagePreview: (
@@ -179,7 +184,6 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     menuActions,
   } = buildMessageItemDerivations({
     message,
-    resolvedMessageUrl,
     userId,
     openMenuMessageId,
     menuTransitionSourceId,
@@ -326,7 +330,6 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           shouldAnimateMenuOpen={shouldAnimateMenuOpen}
           toggleMessageMenu={toggleMessageMenu}
           getAttachmentFileName={getAttachmentFileName}
-          getImageMessageUrl={getImageMessageUrl}
           getPdfMessagePreview={getPdfMessagePreview}
           openImageInPortal={openImageInPortal}
           openDocumentInPortal={openDocumentInPortal}

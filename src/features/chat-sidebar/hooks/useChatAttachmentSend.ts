@@ -43,7 +43,12 @@ interface UseChatAttachmentSendProps {
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
   mutationScope: ChatAttachmentMutationScope;
+  isImagePendingFile: (pendingFile: PendingComposerFile) => boolean;
   isPdfPendingFile: (pendingFile: PendingComposerFile) => boolean;
+  syncPersistedImagePreview: (context: {
+    realMessage: ChatMessage;
+    file: File;
+  }) => Promise<void>;
   syncPersistedPdfPreview: (context: {
     realMessage: ChatMessage;
     pendingFile: PendingComposerFile;
@@ -61,7 +66,9 @@ export const useChatAttachmentSend = ({
   pendingImagePreviewUrlsRef,
   registerPendingSend,
   mutationScope,
+  isImagePendingFile,
   isPdfPendingFile,
+  syncPersistedImagePreview,
   syncPersistedPdfPreview,
 }: UseChatAttachmentSendProps) => {
   const {
@@ -268,6 +275,14 @@ export const useChatAttachmentSend = ({
           tempMessageId
         ) => {
           handoffPendingImagePreview(tempMessageId, realMessage.id);
+          await syncPersistedImagePreview({
+            realMessage: {
+              ...realMessage,
+              file_storage_path: realMessage.file_storage_path || imagePath,
+              file_mime_type: realMessage.file_mime_type ?? file.type,
+            },
+            file,
+          });
         },
       });
     },
@@ -275,6 +290,7 @@ export const useChatAttachmentSend = ({
       currentChannelId,
       handoffPendingImagePreview,
       sendAttachmentMessage,
+      syncPersistedImagePreview,
       targetUser,
       user,
     ]
@@ -299,6 +315,7 @@ export const useChatAttachmentSend = ({
         pendingFile.fileKind === 'audio'
           ? 'Gagal mengirim audio'
           : 'Gagal mengirim dokumen';
+      const shouldPersistImagePreview = isImagePendingFile(pendingFile);
       const shouldPersistPdfPreview = isPdfPendingFile(pendingFile);
 
       return sendAttachmentMessage({
@@ -367,30 +384,53 @@ export const useChatAttachmentSend = ({
             targetUser,
             stableKey
           ),
-        onAfterCommit: shouldPersistPdfPreview
-          ? async realMessage => {
-              seedLocalPdfPreviewCache(realMessage, pendingFile);
-              await syncPersistedPdfPreview({
-                realMessage: {
-                  ...realMessage,
-                  sender_id: user.id,
-                  file_name: pendingFile.fileName,
-                  file_mime_type: pendingFile.mimeType,
-                  file_storage_path: realMessage.file_storage_path || filePath,
-                },
-                pendingFile,
-              });
-            }
-          : async realMessage => {
-              seedLocalPdfPreviewCache(realMessage, pendingFile);
+        onAfterCommit: async (
+          realMessage,
+          _stableKey,
+          _uploadedPath,
+          _scope,
+          tempMessageId
+        ) => {
+          if (shouldPersistImagePreview) {
+            handoffPendingImagePreview(tempMessageId, realMessage.id);
+            await syncPersistedImagePreview({
+              realMessage: {
+                ...realMessage,
+                sender_id: user.id,
+                file_name: pendingFile.fileName,
+                file_mime_type: pendingFile.mimeType,
+                file_storage_path: realMessage.file_storage_path || filePath,
+              },
+              file: pendingFile.file,
+            });
+          }
+
+          if (!shouldPersistPdfPreview) {
+            return;
+          }
+
+          seedLocalPdfPreviewCache(realMessage, pendingFile);
+          await syncPersistedPdfPreview({
+            realMessage: {
+              ...realMessage,
+              sender_id: user.id,
+              file_name: pendingFile.fileName,
+              file_mime_type: pendingFile.mimeType,
+              file_storage_path: realMessage.file_storage_path || filePath,
             },
+            pendingFile,
+          });
+        },
       });
     },
     [
       currentChannelId,
+      handoffPendingImagePreview,
+      isImagePendingFile,
       isPdfPendingFile,
       seedLocalPdfPreviewCache,
       sendAttachmentMessage,
+      syncPersistedImagePreview,
       syncPersistedPdfPreview,
       targetUser,
       user,
