@@ -26,6 +26,7 @@ export interface ChatDatabase {
           receiver_id: string;
           reply_to_id: string | null;
           sender_id: string;
+          shared_link_slug: string | null;
           updated_at: string;
         };
         Insert: {
@@ -49,6 +50,7 @@ export interface ChatDatabase {
           receiver_id: string;
           reply_to_id?: string | null;
           sender_id: string;
+          shared_link_slug?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -72,6 +74,7 @@ export interface ChatDatabase {
           receiver_id?: string;
           reply_to_id?: string | null;
           sender_id?: string;
+          shared_link_slug?: string | null;
           updated_at?: string;
         };
       };

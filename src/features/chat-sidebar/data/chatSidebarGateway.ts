@@ -180,6 +180,7 @@ export const chatSidebarPreviewGateway = {
 
 export const chatSidebarShareGateway = {
   createSharedLink(request: {
+    messageId?: string;
     storagePath?: string;
     targetUrl?: string;
   }): Promise<ServiceResponse<ChatSharedLinkResult>> {

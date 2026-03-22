@@ -58,6 +58,7 @@ const buildRpcMessage = (
   file_preview_page_count: null,
   file_preview_status: null,
   file_preview_error: null,
+  shared_link_slug: null,
   ...overrides,
 });
 

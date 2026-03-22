@@ -178,7 +178,6 @@ export const useChatMessageDeleteAction = ({
         chatRuntimeCache.imagePreviews.deleteByMessageIds(
           data.deletedMessageIds
         );
-        chatRuntimeCache.sharedLinks.deleteByMessageIds(data.deletedMessageIds);
 
         if (
           !options?.suppressErrorToast &&
@@ -309,7 +308,6 @@ export const useChatMessageDeleteAction = ({
             : messageIdsToDelete;
         chatRuntimeCache.pdfPreviews.deleteByMessageIds(deletedMessageIds);
         chatRuntimeCache.imagePreviews.deleteByMessageIds(deletedMessageIds);
-        chatRuntimeCache.sharedLinks.deleteByMessageIds(deletedMessageIds);
 
         return true;
       } catch (error) {

@@ -163,6 +163,7 @@ export const serializeSelectedMessages = async (
               messageItem.file_storage_path,
               {
                 messageId: messageItem.id,
+                sharedLinkSlug: messageItem.shared_link_slug,
               }
             )
           : null;

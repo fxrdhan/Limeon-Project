@@ -9,6 +9,7 @@ import {
 import type { RefObject } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { CHAT_COPY_LOADING_TOAST_DELAY_MS } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
@@ -211,37 +212,57 @@ export const useChatInteractionModes = ({
     }
 
     try {
-      await toast.promise(
-        (async () => {
-          const serializedMessages = await serializeSelectedMessages(
-            selectedVisibleMessages,
-            {
-              captionMessagesByAttachmentId,
-              currentUser: user,
-              targetUser,
-              getAttachmentFileName,
-            }
-          );
-
-          if (!serializedMessages) {
-            throw new EmptySelectedMessagesCopyError();
-          }
-
-          await navigator.clipboard.writeText(serializedMessages);
-          return selectedVisibleMessages.length;
-        })(),
-        {
-          loading: 'Menyalin pesan...',
-          success: copiedCount => `${copiedCount} pesan berhasil disalin`,
-          error: error =>
-            error instanceof EmptySelectedMessagesCopyError
-              ? 'Tidak ada isi pesan untuk disalin'
-              : 'Gagal menyalin pesan terpilih',
-        },
-        {
+      const loadingToastId = 'chat-copy-selected-messages';
+      let didShowLoadingToast = false;
+      const loadingToastTimeout = window.setTimeout(() => {
+        didShowLoadingToast = true;
+        toast.loading('Menyalin pesan...', {
+          id: loadingToastId,
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+      }, CHAT_COPY_LOADING_TOAST_DELAY_MS);
+
+      try {
+        const serializedMessages = await serializeSelectedMessages(
+          selectedVisibleMessages,
+          {
+            captionMessagesByAttachmentId,
+            currentUser: user,
+            targetUser,
+            getAttachmentFileName,
+          }
+        );
+
+        if (!serializedMessages) {
+          throw new EmptySelectedMessagesCopyError();
         }
-      );
+
+        await navigator.clipboard.writeText(serializedMessages);
+
+        window.clearTimeout(loadingToastTimeout);
+        toast.success(
+          `${selectedVisibleMessages.length} pesan berhasil disalin`,
+          {
+            id: didShowLoadingToast ? loadingToastId : undefined,
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+      } catch (error) {
+        window.clearTimeout(loadingToastTimeout);
+
+        if (error instanceof EmptySelectedMessagesCopyError) {
+          if (didShowLoadingToast) {
+            toast.dismiss(loadingToastId);
+          }
+          return;
+        }
+
+        toast.error('Gagal menyalin pesan terpilih', {
+          id: didShowLoadingToast ? loadingToastId : undefined,
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        throw error;
+      }
     } catch (error) {
       if (error instanceof EmptySelectedMessagesCopyError) {
         return;

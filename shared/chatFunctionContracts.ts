@@ -95,6 +95,7 @@ export interface ChatPdfPreviewMessagePayload {
   file_preview_page_count?: number | null;
   file_preview_status?: ChatPdfPreviewStatus | null;
   file_preview_error?: string | null;
+  shared_link_slug?: string | null;
 }
 
 export interface ChatPdfPreviewResponse {
@@ -119,11 +120,13 @@ export const CHAT_PDF_COMPRESS_DEFAULT_LEVEL: ChatPdfCompressionLevel =
 export const CHAT_PDF_COMPRESS_MAX_BYTES = 50 * 1024 * 1024;
 
 export interface ChatSharedLinkCreateRequest {
+  messageId?: string;
   storagePath?: string;
   targetUrl?: string;
 }
 
 export interface ChatSharedLinkCreateRequestPayload {
+  messageId?: string;
   storagePath?: string;
   targetUrl?: string;
 }

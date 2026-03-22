@@ -1,12 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import {
   fetchPdfBlobWithFallback,
-  prewarmCopyableChatAssetUrls,
   resetSignedChatAssetUrlCache,
   resolveCopyableChatAssetUrl,
   resolveChatMessageStoragePaths,
 } from '../utils/message-file';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 const { mockStorageService, mockShareGateway } = vi.hoisted(() => ({
   mockStorageService: {
@@ -32,7 +30,6 @@ describe('message-file utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetSignedChatAssetUrlCache();
-    chatRuntimeCache.sharedLinks.reset();
   });
 
   it('falls back to the chat storage gateway when direct fetch fails', async () => {
@@ -84,55 +81,18 @@ describe('message-file utils', () => {
     ).toEqual(['images/channel/foto.png', 'previews/channel/foto.webp']);
   });
 
-  it('prewarms attachment shared links and reuses the cached short url on copy', async () => {
+  it('requests the attachment short link by messageId when payload slug is missing', async () => {
     mockShareGateway.createSharedLink.mockResolvedValue({
       data: {
-        slug: 'stok123abc',
-        shortUrl: 'https://shrtlink.works/stok123abc',
+        slug: 'stak234abc',
+        shortUrl: 'https://shrtlink.works/stak234abc',
         storagePath: 'documents/channel/stok.xlsx',
         targetUrl: null,
       },
       error: null,
     });
 
-    await prewarmCopyableChatAssetUrls([
-      {
-        id: 'file-1',
-        sender_id: 'user-a',
-        receiver_id: 'user-b',
-        channel_id: 'channel-1',
-        message: 'documents/channel/stok.xlsx',
-        message_type: 'file',
-        created_at: '2026-03-06T09:30:00.000Z',
-        updated_at: '2026-03-06T09:30:00.000Z',
-        is_read: false,
-        is_delivered: false,
-        reply_to_id: null,
-        file_name: 'stok.xlsx',
-        file_kind: 'document',
-        file_storage_path: 'documents/channel/stok.xlsx',
-      },
-      {
-        id: 'text-1',
-        sender_id: 'user-a',
-        receiver_id: 'user-b',
-        channel_id: 'channel-1',
-        message: 'halo',
-        message_type: 'text',
-        created_at: '2026-03-06T09:31:00.000Z',
-        updated_at: '2026-03-06T09:31:00.000Z',
-        is_read: false,
-        is_delivered: false,
-        reply_to_id: null,
-      },
-    ]);
-
-    expect(mockShareGateway.createSharedLink).toHaveBeenCalledTimes(1);
-    expect(mockShareGateway.createSharedLink).toHaveBeenCalledWith({
-      storagePath: 'documents/channel/stok.xlsx',
-    });
-
-    const cachedShortUrl = await resolveCopyableChatAssetUrl(
+    const shortUrl = await resolveCopyableChatAssetUrl(
       'documents/channel/stok.xlsx',
       'documents/channel/stok.xlsx',
       {
@@ -140,7 +100,24 @@ describe('message-file utils', () => {
       }
     );
 
-    expect(cachedShortUrl).toBe('https://shrtlink.works/stok123abc');
+    expect(shortUrl).toBe('https://shrtlink.works/stak234abc');
     expect(mockShareGateway.createSharedLink).toHaveBeenCalledTimes(1);
+    expect(mockShareGateway.createSharedLink).toHaveBeenCalledWith({
+      messageId: 'file-1',
+    });
+  });
+
+  it('builds the copyable short url directly from the message shared_link_slug', async () => {
+    const shortUrl = await resolveCopyableChatAssetUrl(
+      'documents/channel/stok.xlsx',
+      'documents/channel/stok.xlsx',
+      {
+        messageId: 'file-1',
+        sharedLinkSlug: 'stak234abc',
+      }
+    );
+
+    expect(shortUrl).toBe('https://shrtlink.works/stak234abc');
+    expect(mockShareGateway.createSharedLink).not.toHaveBeenCalled();
   });
 });

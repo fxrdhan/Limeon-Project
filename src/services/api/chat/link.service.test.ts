@@ -196,4 +196,47 @@ describe('chatLinkService', () => {
       error: null,
     });
   });
+
+  it('passes messageId to the chat link worker for attachment-linked requests', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+        },
+      },
+      error: null,
+    });
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          slug: 'msg123xyzt',
+          shortUrl: 'https://shrtlink.works/msg123xyzt',
+          storagePath: 'documents/channel/report.pdf',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    );
+
+    const { chatLinkService } = await import('./link.service');
+
+    await chatLinkService.createSharedLink({
+      messageId: '4a2558e0-91f4-4b7c-830e-8388e6f3050d',
+    });
+
+    expect(fetch).toHaveBeenCalledWith('https://shrtlink.works/api/chat-link', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        Authorization: 'Bearer access-token-123',
+      },
+      body: JSON.stringify({
+        messageId: '4a2558e0-91f4-4b7c-830e-8388e6f3050d',
+      }),
+    });
+  });
 });

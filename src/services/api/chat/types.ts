@@ -37,6 +37,7 @@ type ChatMessageOptionalMetadata = Partial<
     | 'file_preview_url'
     | 'file_size'
     | 'file_storage_path'
+    | 'shared_link_slug'
     | 'is_delivered'
   >
 >;

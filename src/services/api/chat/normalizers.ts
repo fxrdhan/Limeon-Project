@@ -88,6 +88,7 @@ export const normalizeChatMessage = (
         ? message.file_preview_status
         : null,
     file_preview_error: message.file_preview_error ?? null,
+    shared_link_slug: message.shared_link_slug ?? null,
   };
 };
 

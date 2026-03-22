@@ -29,12 +29,6 @@ export interface SignedChatAssetUrlCacheEntry {
   expiresAt: number;
 }
 
-export interface ChatSharedLinkCacheEntry {
-  shortUrl: string;
-  storagePath: string | null;
-  targetUrl: string | null;
-}
-
 export interface RuntimePersistentStore<T> {
   value: T;
   listeners: Set<RuntimeListener>;
@@ -147,10 +141,6 @@ export const signedChatAssetUrlStore = new Map<
   string,
   SignedChatAssetUrlCacheEntry
 >();
-
-export const chatSharedLinkStore = new Map<string, ChatSharedLinkCacheEntry>();
-
-export const chatSharedLinkVersionStore = new Map<string, number>();
 
 export const imageMessagePreviewStore = new Map<
   string,

@@ -8,8 +8,16 @@ import type {
 
 const DEFAULT_CHAT_LINK_API_URL = 'https://shrtlink.works';
 
-const normalizeChatLinkApiUrl = (value?: string) =>
+export const normalizeChatLinkApiUrl = (value?: string) =>
   (value?.trim() || DEFAULT_CHAT_LINK_API_URL).replace(/\/+$/, '');
+
+export const getChatLinkApiBaseUrl = () =>
+  normalizeChatLinkApiUrl(
+    import.meta.env.VITE_CHAT_LINK_API_URL as string | undefined
+  );
+
+export const buildChatSharedLinkShortUrl = (slug: string) =>
+  `${getChatLinkApiBaseUrl()}/${slug.trim().replace(/^\/+/, '')}`;
 
 const buildChatLinkError = (
   message: string,
@@ -43,9 +51,7 @@ export const chatLinkService = {
         };
       }
 
-      const chatLinkApiUrl = normalizeChatLinkApiUrl(
-        import.meta.env.VITE_CHAT_LINK_API_URL as string | undefined
-      );
+      const chatLinkApiUrl = getChatLinkApiBaseUrl();
       const response = await fetch(`${chatLinkApiUrl}/api/chat-link`, {
         method: 'POST',
         headers: {

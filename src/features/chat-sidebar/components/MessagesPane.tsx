@@ -3,7 +3,11 @@ import { Fragment } from 'react';
 import toast from 'react-hot-toast';
 import { TbArrowDown } from 'react-icons/tb';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import { CHAT_SIDEBAR_TOASTER_ID, MAX_MESSAGE_CHARS } from '../constants';
+import {
+  CHAT_COPY_LOADING_TOAST_DELAY_MS,
+  CHAT_SIDEBAR_TOASTER_ID,
+  MAX_MESSAGE_CHARS,
+} from '../constants';
 import type { MessagesPaneModel } from '../models';
 import {
   openChatFileInNewTab,
@@ -302,38 +306,52 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
             return;
           }
 
-          void toast
-            .promise(
-              (async () => {
-                const copyableUrl = await resolveCopyableChatAssetUrl(
-                  activeImageGroupPreviewMessage.message,
-                  activeImageGroupPreviewMessage.file_storage_path,
-                  {
-                    messageId: activeImageGroupPreviewMessage.id,
-                  }
-                );
-
-                if (!copyableUrl) {
-                  throw new Error('Link gambar tidak tersedia');
-                }
-
-                await navigator.clipboard.writeText(copyableUrl);
-              })(),
-              {
-                loading: 'Menyiapkan link gambar...',
-                success: 'Link gambar berhasil disalin',
-                error: error =>
-                  error instanceof Error
-                    ? error.message
-                    : 'Gagal menyalin link gambar',
-              },
-              {
+          void (async () => {
+            const loadingToastId = 'chat-copy-image-link';
+            let didShowLoadingToast = false;
+            const loadingToastTimeout = window.setTimeout(() => {
+              didShowLoadingToast = true;
+              toast.loading('Menyiapkan link gambar...', {
+                id: loadingToastId,
                 toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }, CHAT_COPY_LOADING_TOAST_DELAY_MS);
+
+            try {
+              const copyableUrl = await resolveCopyableChatAssetUrl(
+                activeImageGroupPreviewMessage.message,
+                activeImageGroupPreviewMessage.file_storage_path,
+                {
+                  messageId: activeImageGroupPreviewMessage.id,
+                  sharedLinkSlug:
+                    activeImageGroupPreviewMessage.shared_link_slug,
+                }
+              );
+
+              if (!copyableUrl) {
+                throw new Error('Link gambar tidak tersedia');
               }
-            )
-            .catch(error => {
+
+              await navigator.clipboard.writeText(copyableUrl);
+              window.clearTimeout(loadingToastTimeout);
+              toast.success('Link gambar berhasil disalin', {
+                id: didShowLoadingToast ? loadingToastId : undefined,
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            } catch (error) {
+              window.clearTimeout(loadingToastTimeout);
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : 'Gagal menyalin link gambar',
+                {
+                  id: didShowLoadingToast ? loadingToastId : undefined,
+                  toasterId: CHAT_SIDEBAR_TOASTER_ID,
+                }
+              );
               console.error('Failed to copy image link:', error);
-            });
+            }
+          })();
         }}
         onForwardActivePreview={() => {
           if (

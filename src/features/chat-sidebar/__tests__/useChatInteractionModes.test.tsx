@@ -1,6 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { createRef } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
 import { getAttachmentCaptionData } from '../utils/message-derivations';
@@ -17,8 +24,10 @@ const { mockResolveCopyableChatAssetUrl } = vi.hoisted(() => ({
 
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
+    dismiss: vi.fn(),
     error: vi.fn(),
-    promise: vi.fn(),
+    loading: vi.fn(),
+    success: vi.fn(),
   },
 }));
 
@@ -74,7 +83,6 @@ describe('useChatInteractionModes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockToast.promise.mockImplementation(async promise => await promise);
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback
     ) => {
@@ -113,6 +121,10 @@ describe('useChatInteractionModes', () => {
 
       return null;
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('tracks search matches and navigates active search message', async () => {
@@ -278,13 +290,9 @@ describe('useChatInteractionModes', () => {
     });
 
     expect(closeMessageMenu).toHaveBeenCalledOnce();
-    expect(mockToast.promise).toHaveBeenCalledWith(
-      expect.any(Promise),
-      expect.objectContaining({
-        loading: 'Menyalin pesan...',
-        success: expect.any(Function),
-        error: expect.any(Function),
-      }),
+    expect(mockToast.loading).not.toHaveBeenCalled();
+    expect(mockToast.success).toHaveBeenCalledWith(
+      '2 pesan berhasil disalin',
       expect.objectContaining({
         toasterId: 'chat-sidebar-toaster',
       })
