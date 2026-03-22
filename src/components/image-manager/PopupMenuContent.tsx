@@ -181,8 +181,8 @@ const PopupMenuContent = ({
               ? POPUP_DANGER_ACTIVE_BG_CLASS
               : ''
             : isPreselected
-              ? `${POPUP_ACTIVE_BG_CLASS} !text-slate-700 data-[preselected=true]:!text-slate-700 hover:!text-slate-700`
-              : `!text-slate-700 ${POPUP_HOVER_BG_CLASS} hover:!text-slate-700`;
+              ? `${POPUP_ACTIVE_BG_CLASS} !text-black data-[preselected=true]:!text-black hover:!text-black`
+              : `!text-black ${POPUP_HOVER_BG_CLASS} hover:!text-black`;
         const iconToneClassName =
           action.tone === 'danger'
             ? (dangerIconClassName ?? '')
