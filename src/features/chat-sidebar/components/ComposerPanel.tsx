@@ -422,6 +422,9 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   imageActionsButtonRef={refs.imageActionsButtonRef}
                   transition={contextualPanelTransition}
                   onToggleImageActionsMenu={actions.onToggleImageActionsMenu}
+                  onCancelLoadingComposerAttachment={
+                    actions.onCancelLoadingComposerAttachment
+                  }
                   onRemovePendingComposerAttachment={
                     actions.onRemovePendingComposerAttachment
                   }
@@ -451,6 +454,37 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                         minWidthClassName="min-w-[132px]"
                         enableArrowNavigation
                         autoFocusFirstItem
+                        iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
+                      />
+                    </div>
+                  </PopupMenuPopover>,
+                  document.body
+                )
+              : null}
+
+            {typeof document !== 'undefined' &&
+            attachments.openImageActionsAttachmentId &&
+            attachments.pdfCompressionMenuPosition &&
+            attachments.pdfCompressionLevelActions.length > 0
+              ? createPortal(
+                  <PopupMenuPopover
+                    isOpen
+                    className="fixed z-[121] origin-top-right"
+                    style={{
+                      top: attachments.pdfCompressionMenuPosition.top,
+                      left: attachments.pdfCompressionMenuPosition.left,
+                    }}
+                  >
+                    <div
+                      ref={refs.pdfCompressionMenuRef}
+                      onClick={event => event.stopPropagation()}
+                      role="presentation"
+                    >
+                      <PopupMenuContent
+                        actions={attachments.pdfCompressionLevelActions}
+                        minWidthClassName="min-w-[168px]"
+                        enableArrowNavigation
+                        initialPreselectedIndex={1}
                         iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
                       />
                     </div>

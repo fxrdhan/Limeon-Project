@@ -11,6 +11,11 @@ import {
   type SetStateAction,
 } from 'react';
 import toast from 'react-hot-toast';
+import { chatPdfCompressService } from '@/services/api/chat/pdf-compress.service';
+import {
+  CHAT_PDF_COMPRESS_DEFAULT_LEVEL,
+  CHAT_PDF_COMPRESS_MAX_BYTES,
+} from '../../../../shared/chatFunctionContracts';
 import { extractChatStoragePath } from '../../../../shared/chatStoragePaths';
 import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
 import {
@@ -28,6 +33,7 @@ import {
   fetchAttachmentComposerRemoteFile,
   validateAttachmentComposerLink,
 } from '../utils/composer-attachment-link';
+import { isPdfComposerAttachment } from '../utils/pending-composer-attachment';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 import type { ComposerPromptableLink } from '../models';
 
@@ -61,6 +67,9 @@ interface HoverableAttachmentCandidate {
   rangeStart: number;
   rangeEnd: number;
 }
+
+const PDF_COMPRESSION_PROCESSING_PHASE_DELAY = 900;
+const PDF_COMPRESSION_DONE_PHASE_DELAY = 360;
 
 export const useChatComposerAttachments = ({
   editingMessageId,
@@ -97,6 +106,7 @@ export const useChatComposerAttachments = ({
     queueComposerImage,
     queueComposerFile,
     compressPendingComposerImage,
+    replacePendingComposerAttachmentFile,
   } = useComposerPendingAttachments({
     editingMessageId,
     messageInputRef,
@@ -105,6 +115,9 @@ export const useChatComposerAttachments = ({
     LoadingComposerAttachment[]
   >([]);
   const loadingComposerAttachmentsRef = useRef<LoadingComposerAttachment[]>([]);
+  const pdfCompressionAbortControllersRef = useRef(
+    new Map<string, AbortController>()
+  );
   const [attachmentPastePrompt, setAttachmentPastePrompt] =
     useState<AttachmentPastePromptState | null>(null);
   const [pastedAttachmentCandidates, setPastedAttachmentCandidates] = useState<
@@ -148,6 +161,35 @@ export const useChatComposerAttachments = ({
     hoverableAttachmentCandidates.length === 1
       ? (hoverableAttachmentCandidates[0]?.url ?? null)
       : null;
+  const composerAttachmentPreviewItems = useMemo(() => {
+    if (loadingComposerAttachments.length === 0) {
+      return pendingComposerAttachments;
+    }
+
+    const pendingAttachmentIds = new Set(
+      pendingComposerAttachments.map(attachment => attachment.id)
+    );
+    const loadingByReplacedAttachmentId = new Map(
+      loadingComposerAttachments
+        .filter(
+          attachment =>
+            attachment.replaceAttachmentId &&
+            pendingAttachmentIds.has(attachment.replaceAttachmentId)
+        )
+        .map(attachment => [attachment.replaceAttachmentId!, attachment])
+    );
+
+    const previewItems = pendingComposerAttachments.map(attachment => {
+      return loadingByReplacedAttachmentId.get(attachment.id) ?? attachment;
+    });
+    const danglingLoadingAttachments = loadingComposerAttachments.filter(
+      attachment =>
+        !attachment.replaceAttachmentId ||
+        !pendingAttachmentIds.has(attachment.replaceAttachmentId)
+    );
+
+    return [...previewItems, ...danglingLoadingAttachments];
+  }, [loadingComposerAttachments, pendingComposerAttachments]);
 
   useEffect(() => {
     if (previewComposerImageAttachment || !isComposerImageExpanded) return;
@@ -243,18 +285,81 @@ export const useChatComposerAttachments = ({
     []
   );
 
-  const buildLoadingComposerAttachment = useCallback(
-    (sourceUrl: string): LoadingComposerAttachment => {
-      let fileName = 'Media dari link';
+  const abortAllPendingPdfCompressionRequests = useCallback(() => {
+    for (const abortController of pdfCompressionAbortControllersRef.current.values()) {
+      abortController.abort();
+    }
+    pdfCompressionAbortControllersRef.current.clear();
+  }, []);
 
-      try {
-        const parsedUrl = new URL(sourceUrl);
-        const rawFileName = parsedUrl.pathname.split('/').pop();
-        if (rawFileName) {
-          fileName = decodeURIComponent(rawFileName);
+  const cancelLoadingComposerAttachment = useCallback(
+    (attachmentId: string) => {
+      const abortController =
+        pdfCompressionAbortControllersRef.current.get(attachmentId);
+      if (abortController) {
+        pdfCompressionAbortControllersRef.current.delete(attachmentId);
+        abortController.abort();
+      }
+
+      removeLoadingComposerAttachment(attachmentId);
+    },
+    [removeLoadingComposerAttachment]
+  );
+
+  const updateLoadingComposerAttachment = useCallback(
+    (
+      attachmentId: string,
+      updates: Partial<
+        Pick<LoadingComposerAttachment, 'loadingKind' | 'loadingPhase'>
+      >
+    ) => {
+      let hasChanged = false;
+      const nextAttachments = loadingComposerAttachmentsRef.current.map(
+        attachment => {
+          if (attachment.id !== attachmentId) {
+            return attachment;
+          }
+
+          hasChanged = true;
+          return {
+            ...attachment,
+            ...updates,
+          };
         }
-      } catch {
-        // Ignore invalid URLs and keep fallback label.
+      );
+      if (!hasChanged) {
+        return false;
+      }
+
+      loadingComposerAttachmentsRef.current = nextAttachments;
+      setLoadingComposerAttachments(nextAttachments);
+      return true;
+    },
+    []
+  );
+
+  const buildLoadingComposerAttachment = useCallback(
+    (
+      sourceUrl: string,
+      options?: {
+        fileName?: string;
+        replaceAttachmentId?: string | null;
+        loadingKind?: LoadingComposerAttachment['loadingKind'];
+        loadingPhase?: LoadingComposerAttachment['loadingPhase'];
+      }
+    ): LoadingComposerAttachment => {
+      let fileName = options?.fileName?.trim() || 'Media dari link';
+
+      if (!options?.fileName) {
+        try {
+          const parsedUrl = new URL(sourceUrl);
+          const rawFileName = parsedUrl.pathname.split('/').pop();
+          if (rawFileName) {
+            fileName = decodeURIComponent(rawFileName);
+          }
+        } catch {
+          // Ignore invalid URLs and keep fallback label.
+        }
       }
 
       return {
@@ -263,6 +368,9 @@ export const useChatComposerAttachments = ({
           .slice(2, 8)}`,
         fileName,
         sourceUrl,
+        replaceAttachmentId: options?.replaceAttachmentId ?? null,
+        loadingKind: options?.loadingKind ?? 'default',
+        loadingPhase: options?.loadingPhase,
         status: 'loading',
       };
     },
@@ -270,7 +378,15 @@ export const useChatComposerAttachments = ({
   );
 
   const queueLoadingComposerAttachment = useCallback(
-    (sourceUrl: string) => {
+    (
+      sourceUrl: string,
+      options?: {
+        fileName?: string;
+        replaceAttachmentId?: string | null;
+        loadingKind?: LoadingComposerAttachment['loadingKind'];
+        loadingPhase?: LoadingComposerAttachment['loadingPhase'];
+      }
+    ) => {
       if (editingMessageId) {
         toast.error('Selesaikan edit pesan terlebih dahulu', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -278,8 +394,16 @@ export const useChatComposerAttachments = ({
         return null;
       }
 
+      const replaceAttachmentId = options?.replaceAttachmentId?.trim() || null;
+      const isReplacingExistingAttachment = replaceAttachmentId
+        ? pendingComposerAttachments.some(
+            attachment => attachment.id === replaceAttachmentId
+          )
+        : false;
       const currentAttachmentCount =
-        pendingComposerAttachments.length + loadingComposerAttachments.length;
+        pendingComposerAttachments.length +
+        loadingComposerAttachments.length -
+        (isReplacingExistingAttachment ? 1 : 0);
       if (currentAttachmentCount >= MAX_PENDING_COMPOSER_ATTACHMENTS) {
         toast.error(
           `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
@@ -290,7 +414,10 @@ export const useChatComposerAttachments = ({
         return null;
       }
 
-      const loadingAttachment = buildLoadingComposerAttachment(sourceUrl);
+      const loadingAttachment = buildLoadingComposerAttachment(
+        sourceUrl,
+        options
+      );
       const nextAttachments = [
         ...loadingComposerAttachmentsRef.current,
         loadingAttachment,
@@ -303,7 +430,7 @@ export const useChatComposerAttachments = ({
       buildLoadingComposerAttachment,
       editingMessageId,
       loadingComposerAttachments.length,
-      pendingComposerAttachments.length,
+      pendingComposerAttachments,
     ]
   );
 
@@ -335,11 +462,16 @@ export const useChatComposerAttachments = ({
     setComposerImagePreviewAttachmentId(null);
     replaceComposerImageAttachmentIdRef.current = null;
     replaceComposerDocumentAttachmentIdRef.current = null;
+    abortAllPendingPdfCompressionRequests();
     loadingComposerAttachmentsRef.current = [];
     setLoadingComposerAttachments([]);
     clearAttachmentPasteState();
     clearPendingComposerAttachmentsFromQueue();
-  }, [clearAttachmentPasteState, clearPendingComposerAttachmentsFromQueue]);
+  }, [
+    abortAllPendingPdfCompressionRequests,
+    clearAttachmentPasteState,
+    clearPendingComposerAttachmentsFromQueue,
+  ]);
 
   const closeComposerImagePreview = useCallback(() => {
     setIsComposerImageExpandedVisible(false);
@@ -389,12 +521,17 @@ export const useChatComposerAttachments = ({
       setComposerImagePreviewAttachmentId(null);
       replaceComposerImageAttachmentIdRef.current = null;
       replaceComposerDocumentAttachmentIdRef.current = null;
+      abortAllPendingPdfCompressionRequests();
       loadingComposerAttachmentsRef.current = [];
       setLoadingComposerAttachments([]);
       clearAttachmentPasteState();
       restorePendingComposerAttachmentsFromQueue(attachments);
     },
-    [clearAttachmentPasteState, restorePendingComposerAttachmentsFromQueue]
+    [
+      abortAllPendingPdfCompressionRequests,
+      clearAttachmentPasteState,
+      restorePendingComposerAttachmentsFromQueue,
+    ]
   );
 
   const handleAttachImageClick = useCallback(
@@ -480,6 +617,106 @@ export const useChatComposerAttachments = ({
       }
     },
     [queueComposerFile]
+  );
+
+  const compressPendingComposerPdf = useCallback(
+    async (
+      attachmentId: string,
+      compressionLevel = CHAT_PDF_COMPRESS_DEFAULT_LEVEL
+    ) => {
+      const targetAttachment = pendingComposerAttachments.find(
+        attachment =>
+          attachment.id === attachmentId && isPdfComposerAttachment(attachment)
+      );
+      if (!targetAttachment) {
+        return false;
+      }
+
+      if (targetAttachment.file.size > CHAT_PDF_COMPRESS_MAX_BYTES) {
+        toast.error('Ukuran PDF maksimal 50 MB untuk kompres', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return false;
+      }
+
+      const loadingAttachment = queueLoadingComposerAttachment(
+        targetAttachment.fileName,
+        {
+          fileName: targetAttachment.fileName,
+          replaceAttachmentId: targetAttachment.id,
+          loadingKind: 'pdf-compression',
+          loadingPhase: 'uploading',
+        }
+      );
+      if (!loadingAttachment) {
+        return false;
+      }
+
+      const processingPhaseTimer = window.setTimeout(() => {
+        updateLoadingComposerAttachment(loadingAttachment.id, {
+          loadingPhase: 'processing',
+        });
+      }, PDF_COMPRESSION_PROCESSING_PHASE_DELAY);
+      const abortController = new AbortController();
+      pdfCompressionAbortControllersRef.current.set(
+        loadingAttachment.id,
+        abortController
+      );
+
+      const result = await chatPdfCompressService.compressPdf(
+        targetAttachment.file,
+        {
+          compressionLevel,
+          signal: abortController.signal,
+        }
+      );
+      pdfCompressionAbortControllersRef.current.delete(loadingAttachment.id);
+      window.clearTimeout(processingPhaseTimer);
+      const isLoadingAttachmentActive =
+        loadingComposerAttachmentsRef.current.some(
+          attachment => attachment.id === loadingAttachment.id
+        );
+      if (!isLoadingAttachmentActive) {
+        return false;
+      }
+
+      if (result.error || !result.data) {
+        removeLoadingComposerAttachment(loadingAttachment.id);
+        toast.error(result.error?.message || 'Gagal mengompres PDF', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return false;
+      }
+
+      updateLoadingComposerAttachment(loadingAttachment.id, {
+        loadingPhase: 'done',
+      });
+      await new Promise(resolve => {
+        window.setTimeout(resolve, PDF_COMPRESSION_DONE_PHASE_DELAY);
+      });
+
+      const isLoadingAttachmentStillActive =
+        loadingComposerAttachmentsRef.current.some(
+          attachment => attachment.id === loadingAttachment.id
+        );
+      if (!isLoadingAttachmentStillActive) {
+        return false;
+      }
+
+      removeLoadingComposerAttachment(loadingAttachment.id);
+
+      return replacePendingComposerAttachmentFile(
+        targetAttachment.id,
+        result.data.file
+      );
+    },
+    [
+      pendingComposerAttachments,
+      queueLoadingComposerAttachment,
+      removeLoadingComposerAttachment,
+      replacePendingComposerAttachmentFile,
+      updateLoadingComposerAttachment,
+    ]
   );
 
   const queueAttachmentComposerLink = useCallback(
@@ -960,6 +1197,7 @@ export const useChatComposerAttachments = ({
   return {
     isAttachModalOpen,
     pendingComposerAttachments,
+    composerAttachmentPreviewItems,
     loadingComposerAttachments,
     isLoadingAttachmentComposerAttachments:
       loadingComposerAttachments.length > 0,
@@ -1004,7 +1242,9 @@ export const useChatComposerAttachments = ({
     removePendingComposerAttachment,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
+    cancelLoadingComposerAttachment,
     queueComposerImage,
     compressPendingComposerImage,
+    compressPendingComposerPdf,
   };
 };

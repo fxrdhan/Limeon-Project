@@ -112,6 +112,12 @@ export interface ChatRemoteAssetRequestPayload {
   fileNameSourceUrl?: string;
 }
 
+export type ChatPdfCompressionLevel = 'low' | 'recommended' | 'extreme';
+
+export const CHAT_PDF_COMPRESS_DEFAULT_LEVEL: ChatPdfCompressionLevel =
+  'recommended';
+export const CHAT_PDF_COMPRESS_MAX_BYTES = 50 * 1024 * 1024;
+
 export interface ChatSharedLinkCreateRequest {
   storagePath?: string;
   targetUrl?: string;

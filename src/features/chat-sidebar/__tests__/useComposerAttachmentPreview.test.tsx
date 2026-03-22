@@ -1,6 +1,13 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import { useComposerAttachmentPreview } from '../hooks/useComposerAttachmentPreview';
 import type { PendingComposerAttachment } from '../types';
 
@@ -40,10 +47,15 @@ const ComposerAttachmentPreviewHarness = ({
   attachment,
   onOpenImageActionsMenu = vi.fn(),
   onOpenComposerImagePreview = vi.fn<(attachmentId: string) => void>(),
+  onCompressPendingComposerPdf = vi.fn().mockResolvedValue(true),
 }: {
   attachment: PendingComposerAttachment;
   onOpenImageActionsMenu?: () => void;
   onOpenComposerImagePreview?: (attachmentId: string) => void;
+  onCompressPendingComposerPdf?: (
+    attachmentId: string,
+    compressionLevel?: 'low' | 'recommended' | 'extreme'
+  ) => Promise<boolean>;
 }) => {
   const preview = useComposerAttachmentPreview({
     pendingComposerAttachments: [attachment],
@@ -51,6 +63,7 @@ const ComposerAttachmentPreviewHarness = ({
     onAttachImageClick: vi.fn(),
     onAttachDocumentClick: vi.fn(),
     onCompressPendingComposerImage: vi.fn().mockResolvedValue(true),
+    onCompressPendingComposerPdf,
     onRemovePendingComposerAttachment: vi.fn(),
     onOpenComposerImagePreview,
   });
@@ -72,7 +85,15 @@ const ComposerAttachmentPreviewHarness = ({
       <span data-testid="menu-position">
         {preview.imageActionsMenuPosition ? 'open' : 'closed'}
       </span>
+      <span data-testid="compression-menu-position">
+        {preview.pdfCompressionMenuPosition ? 'open' : 'closed'}
+      </span>
       {preview.imageActions.map(action => (
+        <button key={action.label} type="button" onClick={action.onClick}>
+          {action.label}
+        </button>
+      ))}
+      {preview.pdfCompressionLevelActions.map(action => (
         <button key={action.label} type="button" onClick={action.onClick}>
           {action.label}
         </button>
@@ -84,6 +105,10 @@ const ComposerAttachmentPreviewHarness = ({
 describe('useComposerAttachmentPreview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('keeps the composer menu open when opening an image preview', () => {
@@ -132,5 +157,118 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('open-id').textContent).toBe('attachment-2');
     expect(screen.getByTestId('menu-position').textContent).toBe('open');
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
+  });
+
+  it('shows a compress action for pending PDF documents', () => {
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-3',
+          file: new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+          fileName: 'stok.pdf',
+          fileTypeLabel: 'PDF',
+          fileKind: 'document',
+          mimeType: 'application/pdf',
+          previewUrl: null,
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+
+    expect(screen.getByRole('button', { name: 'Kompres' })).toBeTruthy();
+  });
+
+  it('opens the pdf compression levels menu before compressing', () => {
+    const onCompressPendingComposerPdf = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-3',
+          file: new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+          fileName: 'stok.pdf',
+          fileTypeLabel: 'PDF',
+          fileKind: 'document',
+          mimeType: 'application/pdf',
+          previewUrl: null,
+        })}
+        onCompressPendingComposerPdf={onCompressPendingComposerPdf}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kompres' }));
+
+    expect(onCompressPendingComposerPdf).not.toHaveBeenCalled();
+    expect(screen.getByTestId('open-id').textContent).toBe('attachment-3');
+    expect(screen.getByTestId('menu-position').textContent).toBe('open');
+    expect(screen.getByTestId('compression-menu-position').textContent).toBe(
+      'open'
+    );
+    expect(screen.getByRole('button', { name: 'Extreme' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Recommended' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Less' })).toBeTruthy();
+  });
+
+  it('compresses the pdf with the selected level from the submenu', () => {
+    const onCompressPendingComposerPdf = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-5',
+          file: new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+          fileName: 'stok.pdf',
+          fileTypeLabel: 'PDF',
+          fileKind: 'document',
+          mimeType: 'application/pdf',
+          previewUrl: null,
+        })}
+        onCompressPendingComposerPdf={onCompressPendingComposerPdf}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kompres' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Recommended' }));
+
+    expect(onCompressPendingComposerPdf).toHaveBeenCalledWith(
+      'attachment-5',
+      'recommended'
+    );
+    expect(screen.getByTestId('open-id').textContent).toBe('');
+    expect(screen.getByTestId('compression-menu-position').textContent).toBe(
+      'closed'
+    );
+  });
+
+  it('hides the compress action for non-pdf documents', () => {
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-4',
+          file: new File(['doc'], 'stok.docx', {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          }),
+          fileName: 'stok.docx',
+          fileTypeLabel: 'DOCX',
+          fileKind: 'document',
+          mimeType:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          previewUrl: null,
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+
+    expect(screen.queryByRole('button', { name: 'Kompres' })).toBeNull();
   });
 });

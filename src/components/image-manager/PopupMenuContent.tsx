@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
 import Button from '@/components/button';
@@ -17,13 +18,14 @@ import {
 export interface PopupMenuAction {
   label: string;
   icon: ReactNode;
-  onClick: () => void;
+  onClick: (event?: ReactMouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   tone?: 'default' | 'danger';
 }
 
 interface PopupMenuContentProps {
   actions: PopupMenuAction[];
+  header?: ReactNode;
   minWidthClassName?: string;
   enableArrowNavigation?: boolean;
   autoFocusFirstItem?: boolean;
@@ -67,6 +69,7 @@ const resolveInitialActionIndex = ({
 
 const PopupMenuContent = ({
   actions,
+  header,
   minWidthClassName = 'min-w-[90px]',
   enableArrowNavigation = false,
   autoFocusFirstItem = false,
@@ -166,6 +169,7 @@ const PopupMenuContent = ({
         setHoveredActionIndex(null);
       }}
     >
+      {header}
       {actions.map((action, actionIndex) => {
         const isPreselected =
           enableArrowNavigation &&
@@ -196,7 +200,7 @@ const PopupMenuContent = ({
             withUnderline={false}
             onClick={event => {
               event.stopPropagation();
-              action.onClick();
+              action.onClick(event);
             }}
             disabled={action.disabled}
             role={

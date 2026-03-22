@@ -253,7 +253,12 @@ export interface ComposerPanelModel {
       top: number;
       left: number;
     } | null;
+    pdfCompressionMenuPosition: {
+      top: number;
+      left: number;
+    } | null;
     imageActions: PopupMenuAction[];
+    pdfCompressionLevelActions: PopupMenuAction[];
   };
   documentPreview: {
     composerDocumentPreviewUrl: string | null;
@@ -271,6 +276,7 @@ export interface ComposerPanelModel {
     audioInputRef: RefObject<HTMLInputElement | null>;
     imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
     imageActionsMenuRef: RefObject<HTMLDivElement | null>;
+    pdfCompressionMenuRef: RefObject<HTMLDivElement | null>;
   };
   actions: {
     onMessageChange: (nextMessage: string) => void;
@@ -305,12 +311,14 @@ export interface ComposerPanelModel {
     onFocusEditingTargetMessage: () => void;
     onOpenComposerImagePreview: (attachmentId: string) => void;
     onCloseComposerImagePreview: () => void;
+    onCancelLoadingComposerAttachment: (attachmentId: string) => void;
     onRemovePendingComposerAttachment: (attachmentId: string) => void;
     onQueueComposerImage: (file: File, replaceAttachmentId?: string) => boolean;
     onCloseComposerDocumentPreview: () => void;
     onOpenDocumentAttachmentInPortal: (
       attachment: PendingComposerAttachment
     ) => void;
+    onClosePdfCompressionMenu: () => void;
     onToggleImageActionsMenu: (
       event: ReactMouseEvent<HTMLButtonElement>,
       attachmentId: string

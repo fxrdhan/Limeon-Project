@@ -109,8 +109,7 @@ export const useChatSidebarRuntimeState = ({
     composerContextualOffset: composer.composerContextualOffset,
     isMessageInputMultiline: composer.isMessageInputMultiline,
     pendingComposerAttachmentsCount:
-      composer.pendingComposerAttachments.length +
-      composer.loadingComposerAttachments.length,
+      composer.composerAttachmentPreviewItems.length,
     normalizedMessageSearchQuery: interaction.normalizedMessageSearchQuery,
     isMessageSearchMode: interaction.isMessageSearchMode,
     activeSearchMessageId: interaction.activeSearchMessageId,
@@ -136,6 +135,7 @@ export const useChatSidebarRuntimeState = ({
     handleAttachImageClick: composer.handleAttachImageClick,
     handleAttachDocumentClick: composer.handleAttachDocumentClick,
     compressPendingComposerImage: composer.compressPendingComposerImage,
+    compressPendingComposerPdf: composer.compressPendingComposerPdf,
     removePendingComposerAttachment: composer.removePendingComposerAttachment,
     openComposerImagePreview: composer.openComposerImagePreview,
     getAttachmentFileName,

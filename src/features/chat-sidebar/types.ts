@@ -45,6 +45,9 @@ export type LoadingComposerAttachment = {
   id: string;
   fileName: string;
   sourceUrl: string;
+  replaceAttachmentId?: string | null;
+  loadingKind?: 'default' | 'pdf-compression';
+  loadingPhase?: 'uploading' | 'processing' | 'done';
   status: 'loading';
 };
 

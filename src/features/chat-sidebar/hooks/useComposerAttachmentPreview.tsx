@@ -1,8 +1,13 @@
 import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
+import {
+  CHAT_PDF_COMPRESS_DEFAULT_LEVEL,
+  type ChatPdfCompressionLevel,
+} from '../../../../shared/chatFunctionContracts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   TbEye,
   TbFileIsr,
+  TbFileMinus,
   TbPhotoEdit,
   TbPhotoMinus,
   TbTrash,
@@ -16,6 +21,9 @@ const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
 const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
 const IMAGE_ACTIONS_MENU_FALLBACK_WIDTH = 148;
 const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 128;
+const PDF_COMPRESSION_LEVELS_MENU_SIDE_GAP = 6;
+const PDF_COMPRESSION_LEVELS_MENU_FALLBACK_WIDTH = 168;
+const PDF_COMPRESSION_LEVELS_MENU_FALLBACK_HEIGHT = 180;
 
 interface UseComposerAttachmentPreviewProps {
   pendingComposerAttachments: PendingComposerAttachment[];
@@ -23,6 +31,10 @@ interface UseComposerAttachmentPreviewProps {
   onAttachImageClick: (replaceAttachmentId?: string) => void;
   onAttachDocumentClick: (replaceAttachmentId?: string) => void;
   onCompressPendingComposerImage: (attachmentId: string) => Promise<boolean>;
+  onCompressPendingComposerPdf: (
+    attachmentId: string,
+    compressionLevel?: ChatPdfCompressionLevel
+  ) => Promise<boolean>;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
   onOpenComposerImagePreview: (attachmentId: string) => void;
 }
@@ -33,6 +45,7 @@ export const useComposerAttachmentPreview = ({
   onAttachImageClick,
   onAttachDocumentClick,
   onCompressPendingComposerImage,
+  onCompressPendingComposerPdf,
   onRemovePendingComposerAttachment,
   onOpenComposerImagePreview,
 }: UseComposerAttachmentPreviewProps) => {
@@ -42,8 +55,14 @@ export const useComposerAttachmentPreview = ({
     top: number;
     left: number;
   } | null>(null);
+  const [pdfCompressionMenuPosition, setPdfCompressionMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const imageActionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const pdfCompressionMenuRef = useRef<HTMLDivElement | null>(null);
+  const pdfCompressionMenuAnchorRef = useRef<HTMLButtonElement | null>(null);
   const {
     previewUrl: composerDocumentPreviewUrl,
     previewName: composerDocumentPreviewName,
@@ -92,7 +111,72 @@ export const useComposerAttachmentPreview = ({
   const closeImageActionsMenu = useCallback(() => {
     setOpenImageActionsAttachmentId(null);
     setImageActionsMenuPosition(null);
+    setPdfCompressionMenuPosition(null);
+    pdfCompressionMenuAnchorRef.current = null;
   }, []);
+
+  const getPdfCompressionMenuPosition = useCallback(
+    (targetButton: HTMLButtonElement) => {
+      const triggerRect = targetButton.getBoundingClientRect();
+      const renderedMenuRect =
+        pdfCompressionMenuRef.current?.getBoundingClientRect();
+      const menuWidth = Math.ceil(
+        renderedMenuRect?.width ?? PDF_COMPRESSION_LEVELS_MENU_FALLBACK_WIDTH
+      );
+      const menuHeight = Math.ceil(
+        renderedMenuRect?.height ?? PDF_COMPRESSION_LEVELS_MENU_FALLBACK_HEIGHT
+      );
+      const maxLeft = Math.max(
+        IMAGE_ACTIONS_MENU_VIEWPORT_PADDING,
+        window.innerWidth - menuWidth - IMAGE_ACTIONS_MENU_VIEWPORT_PADDING
+      );
+      const preferredLeft =
+        triggerRect.left - menuWidth - PDF_COMPRESSION_LEVELS_MENU_SIDE_GAP;
+      const left = Math.min(
+        Math.max(preferredLeft, IMAGE_ACTIONS_MENU_VIEWPORT_PADDING),
+        maxLeft
+      );
+      const preferredTop =
+        triggerRect.top + triggerRect.height / 2 - menuHeight / 2;
+      const maxTop = Math.max(
+        IMAGE_ACTIONS_MENU_VIEWPORT_PADDING,
+        window.innerHeight - menuHeight - IMAGE_ACTIONS_MENU_VIEWPORT_PADDING
+      );
+      const top = Math.min(
+        Math.max(preferredTop, IMAGE_ACTIONS_MENU_VIEWPORT_PADDING),
+        maxTop
+      );
+
+      return { top, left };
+    },
+    []
+  );
+
+  const closePdfCompressionMenu = useCallback(() => {
+    setPdfCompressionMenuPosition(null);
+    pdfCompressionMenuAnchorRef.current = null;
+  }, []);
+
+  const openPdfCompressionMenu = useCallback(
+    (targetButton: HTMLButtonElement) => {
+      const isAlreadyOpen =
+        pdfCompressionMenuAnchorRef.current === targetButton;
+      if (isAlreadyOpen && pdfCompressionMenuPosition) {
+        closePdfCompressionMenu();
+        return;
+      }
+
+      pdfCompressionMenuAnchorRef.current = targetButton;
+      setPdfCompressionMenuPosition(
+        getPdfCompressionMenuPosition(targetButton)
+      );
+    },
+    [
+      closePdfCompressionMenu,
+      getPdfCompressionMenuPosition,
+      pdfCompressionMenuPosition,
+    ]
+  );
 
   const openDocumentAttachmentInPortal = useCallback(
     (attachment: PendingComposerAttachment) => {
@@ -139,6 +223,55 @@ export const useComposerAttachmentPreview = ({
       (attachment.fileKind === 'image' || attachment.fileKind === 'document')
   );
 
+  const pdfCompressionLevelActions = useMemo<PopupMenuAction[]>(() => {
+    if (
+      !openImageActionsAttachment ||
+      openImageActionsAttachment.fileKind !== 'document'
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        label: 'Extreme',
+        icon: <span className="h-4 w-4" aria-hidden="true" />,
+        onClick: () => {
+          closeImageActionsMenu();
+          void onCompressPendingComposerPdf(
+            openImageActionsAttachment.id,
+            'extreme'
+          );
+        },
+      },
+      {
+        label: 'Recommended',
+        icon: <span className="h-4 w-4" aria-hidden="true" />,
+        onClick: () => {
+          closeImageActionsMenu();
+          void onCompressPendingComposerPdf(
+            openImageActionsAttachment.id,
+            CHAT_PDF_COMPRESS_DEFAULT_LEVEL
+          );
+        },
+      },
+      {
+        label: 'Less',
+        icon: <span className="h-4 w-4" aria-hidden="true" />,
+        onClick: () => {
+          closeImageActionsMenu();
+          void onCompressPendingComposerPdf(
+            openImageActionsAttachment.id,
+            'low'
+          );
+        },
+      },
+    ];
+  }, [
+    closeImageActionsMenu,
+    onCompressPendingComposerPdf,
+    openImageActionsAttachment,
+  ]);
+
   const imageActions = useMemo<PopupMenuAction[]>(() => {
     if (!openImageActionsAttachment) {
       return [];
@@ -150,6 +283,7 @@ export const useComposerAttachmentPreview = ({
           label: 'Buka',
           icon: <TbEye className="h-4.5 w-4.5" />,
           onClick: () => {
+            closePdfCompressionMenu();
             onOpenComposerImagePreview(openImageActionsAttachment.id);
           },
         },
@@ -157,6 +291,7 @@ export const useComposerAttachmentPreview = ({
           label: 'Ganti',
           icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
           onClick: () => {
+            closePdfCompressionMenu();
             closeImageActionsMenu();
             onAttachImageClick(openImageActionsAttachment.id);
           },
@@ -174,6 +309,7 @@ export const useComposerAttachmentPreview = ({
           icon: <TbTrash className="h-4 w-4" />,
           tone: 'danger',
           onClick: () => {
+            closePdfCompressionMenu();
             closeImageActionsMenu();
             onRemovePendingComposerAttachment(openImageActionsAttachment.id);
           },
@@ -181,11 +317,17 @@ export const useComposerAttachmentPreview = ({
       ];
     }
 
+    const isPdfAttachment =
+      resolveComposerAttachmentExtension(openImageActionsAttachment) ===
+        'pdf' ||
+      openImageActionsAttachment.mimeType.toLowerCase().includes('pdf');
+
     return [
       {
         label: 'Buka',
         icon: <TbEye className="h-4.5 w-4.5" />,
         onClick: () => {
+          closePdfCompressionMenu();
           openDocumentAttachmentInPortal(openImageActionsAttachment);
         },
       },
@@ -193,15 +335,33 @@ export const useComposerAttachmentPreview = ({
         label: 'Ganti',
         icon: <TbFileIsr className="h-4.5 w-4.5" />,
         onClick: () => {
+          closePdfCompressionMenu();
           closeImageActionsMenu();
           onAttachDocumentClick(openImageActionsAttachment.id);
         },
       },
+      ...(isPdfAttachment
+        ? [
+            {
+              label: 'Kompres',
+              icon: <TbFileMinus className="h-4.5 w-4.5" />,
+              onClick: event => {
+                const currentTarget = event?.currentTarget;
+                if (!(currentTarget instanceof HTMLButtonElement)) {
+                  return;
+                }
+
+                openPdfCompressionMenu(currentTarget);
+              },
+            } satisfies PopupMenuAction,
+          ]
+        : []),
       {
         label: 'Hapus',
         icon: <TbTrash className="h-4 w-4" />,
         tone: 'danger',
         onClick: () => {
+          closePdfCompressionMenu();
           closeImageActionsMenu();
           onRemovePendingComposerAttachment(openImageActionsAttachment.id);
         },
@@ -209,6 +369,7 @@ export const useComposerAttachmentPreview = ({
     ];
   }, [
     closeImageActionsMenu,
+    closePdfCompressionMenu,
     onCompressPendingComposerImage,
     onAttachDocumentClick,
     onAttachImageClick,
@@ -216,6 +377,7 @@ export const useComposerAttachmentPreview = ({
     onRemovePendingComposerAttachment,
     openDocumentAttachmentInPortal,
     openImageActionsAttachment,
+    openPdfCompressionMenu,
   ]);
 
   const handleToggleImageActionsMenu = useCallback(
@@ -226,6 +388,7 @@ export const useComposerAttachmentPreview = ({
       }
 
       onOpenImageActionsMenu();
+      closePdfCompressionMenu();
       setOpenImageActionsAttachmentId(attachmentId);
       setImageActionsMenuPosition(
         getImageActionsMenuPosition(event.currentTarget)
@@ -233,6 +396,7 @@ export const useComposerAttachmentPreview = ({
     },
     [
       closeImageActionsMenu,
+      closePdfCompressionMenu,
       getImageActionsMenuPosition,
       onOpenImageActionsMenu,
       openImageActionsAttachmentId,
@@ -247,9 +411,13 @@ export const useComposerAttachmentPreview = ({
         (attachment.fileKind === 'image' || attachment.fileKind === 'document')
     );
     if (!isOpenTargetStillPresent) {
-      setOpenImageActionsAttachmentId(null);
+      closeImageActionsMenu();
     }
-  }, [openImageActionsAttachmentId, pendingComposerAttachments]);
+  }, [
+    closeImageActionsMenu,
+    openImageActionsAttachmentId,
+    pendingComposerAttachments,
+  ]);
 
   useEffect(() => {
     if (!openImageActionsAttachmentId) return;
@@ -258,6 +426,7 @@ export const useComposerAttachmentPreview = ({
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (imageActionsMenuRef.current?.contains(target)) return;
+      if (pdfCompressionMenuRef.current?.contains(target)) return;
       if (imageActionsButtonRef.current?.contains(target)) return;
       closeImageActionsMenu();
     };
@@ -288,6 +457,22 @@ export const useComposerAttachmentPreview = ({
       }
 
       setImageActionsMenuPosition(getImageActionsMenuPosition(targetButton));
+      const compressionMenuAnchor = pdfCompressionMenuAnchorRef.current;
+      if (compressionMenuAnchor) {
+        const nextCompressionMenuPosition = getPdfCompressionMenuPosition(
+          compressionMenuAnchor
+        );
+        setPdfCompressionMenuPosition(currentPosition => {
+          if (
+            currentPosition?.top === nextCompressionMenuPosition.top &&
+            currentPosition?.left === nextCompressionMenuPosition.left
+          ) {
+            return currentPosition;
+          }
+
+          return nextCompressionMenuPosition;
+        });
+      }
     };
 
     syncMenuPosition();
@@ -300,6 +485,7 @@ export const useComposerAttachmentPreview = ({
     };
   }, [
     closeImageActionsMenu,
+    getPdfCompressionMenuPosition,
     getImageActionsMenuPosition,
     openImageActionsAttachmentId,
   ]);
@@ -307,13 +493,17 @@ export const useComposerAttachmentPreview = ({
   return {
     openImageActionsAttachmentId,
     imageActionsMenuPosition,
+    pdfCompressionMenuPosition,
     composerDocumentPreviewUrl,
     composerDocumentPreviewName,
     isComposerDocumentPreviewVisible,
     imageActionsButtonRef,
     imageActionsMenuRef,
+    pdfCompressionMenuRef,
     imageActions,
+    pdfCompressionLevelActions,
     closeImageActionsMenu,
+    closePdfCompressionMenu,
     closeComposerDocumentPreview,
     openDocumentAttachmentInPortal,
     handleToggleImageActionsMenu,

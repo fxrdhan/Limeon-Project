@@ -191,8 +191,7 @@ export const useChatSidebarController = ({
         runtime.composer.hoverableAttachmentCandidates,
       hoverableAttachmentUrl: runtime.composer.hoverableAttachmentUrl,
       pendingComposerAttachments: [
-        ...runtime.composer.pendingComposerAttachments,
-        ...runtime.composer.loadingComposerAttachments,
+        ...runtime.composer.composerAttachmentPreviewItems,
       ],
       previewComposerImageAttachment:
         runtime.composer.previewComposerImageAttachment,
@@ -202,7 +201,9 @@ export const useChatSidebarController = ({
       openImageActionsAttachmentId:
         runtime.previews.openImageActionsAttachmentId,
       imageActionsMenuPosition: runtime.previews.imageActionsMenuPosition,
+      pdfCompressionMenuPosition: runtime.previews.pdfCompressionMenuPosition,
       imageActions: runtime.previews.imageActions,
+      pdfCompressionLevelActions: runtime.previews.pdfCompressionLevelActions,
     },
     documentPreview: {
       composerDocumentPreviewUrl: runtime.previews.composerDocumentPreviewUrl,
@@ -221,6 +222,7 @@ export const useChatSidebarController = ({
       audioInputRef: runtime.composer.audioInputRef,
       imageActionsButtonRef: runtime.previews.imageActionsButtonRef,
       imageActionsMenuRef: runtime.previews.imageActionsMenuRef,
+      pdfCompressionMenuRef: runtime.previews.pdfCompressionMenuRef,
     },
     actions: {
       onMessageChange: runtime.composer.handleMessageChange,
@@ -252,6 +254,8 @@ export const useChatSidebarController = ({
       onFocusEditingTargetMessage: runtime.viewport.focusEditingTargetMessage,
       onOpenComposerImagePreview: runtime.composer.openComposerImagePreview,
       onCloseComposerImagePreview: runtime.composer.closeComposerImagePreview,
+      onCancelLoadingComposerAttachment:
+        runtime.composer.cancelLoadingComposerAttachment,
       onRemovePendingComposerAttachment:
         runtime.composer.removePendingComposerAttachment,
       onQueueComposerImage: runtime.composer.queueComposerImage,
@@ -259,6 +263,7 @@ export const useChatSidebarController = ({
         runtime.previews.closeComposerDocumentPreview,
       onOpenDocumentAttachmentInPortal:
         runtime.previews.openDocumentAttachmentInPortal,
+      onClosePdfCompressionMenu: runtime.previews.closePdfCompressionMenu,
       onToggleImageActionsMenu: runtime.previews.handleToggleImageActionsMenu,
     },
   };

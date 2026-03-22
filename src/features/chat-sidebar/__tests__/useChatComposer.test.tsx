@@ -21,6 +21,14 @@ const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
 const { mockValidateAttachmentComposerLink } = vi.hoisted(() => ({
   mockValidateAttachmentComposerLink: vi.fn(),
 }));
+const { mockRenderPdfPreviewDataUrl } = vi.hoisted(() => ({
+  mockRenderPdfPreviewDataUrl: vi.fn(),
+}));
+const { mockChatPdfCompressService } = vi.hoisted(() => ({
+  mockChatPdfCompressService: {
+    compressPdf: vi.fn(),
+  },
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -28,6 +36,14 @@ vi.mock('react-hot-toast', () => ({
 
 vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
+}));
+
+vi.mock('@/services/api/chat/pdf-compress.service', () => ({
+  chatPdfCompressService: mockChatPdfCompressService,
+}));
+
+vi.mock('../utils/pdf-preview', () => ({
+  renderPdfPreviewDataUrl: mockRenderPdfPreviewDataUrl,
 }));
 
 vi.mock('../utils/composer-attachment-link', async () => {
@@ -83,6 +99,17 @@ describe('useChatComposer', () => {
     });
     mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
     mockValidateAttachmentComposerLink.mockResolvedValue(true);
+    mockRenderPdfPreviewDataUrl.mockResolvedValue(null);
+    mockChatPdfCompressService.compressPdf.mockResolvedValue({
+      data: {
+        file: new File(['compressed-pdf'], 'stok-kompres.pdf', {
+          type: 'application/pdf',
+        }),
+        originalSize: 4096,
+        compressedSize: 2048,
+      },
+      error: null,
+    });
   });
 
   it('mereset state composer ketika berpindah ke channel lain', async () => {
@@ -216,5 +243,87 @@ describe('useChatComposer', () => {
     });
 
     expect(result.current.pendingComposerAttachments).toEqual([]);
+  });
+
+  it('menonaktifkan kirim saat kompres pdf composer sedang berjalan', async () => {
+    let resolveCompression:
+      | ((value: {
+          data: {
+            file: File;
+            originalSize: number;
+            compressedSize: number;
+          };
+          error: null;
+        }) => void)
+      | undefined;
+    mockChatPdfCompressService.compressPdf.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveCompression = resolve;
+        })
+    );
+
+    const { result } = renderHook(() => {
+      const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+      return useChatComposer({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        closeMessageMenu: vi.fn(),
+        messageInputRef,
+      });
+    });
+
+    act(() => {
+      result.current.handleDocumentFileChange({
+        target: {
+          files: [
+            new File(['pdf'], 'stok.pdf', {
+              type: 'application/pdf',
+            }),
+          ],
+          value: '',
+        },
+      } as never);
+    });
+
+    let compressPromise: Promise<boolean>;
+    act(() => {
+      compressPromise = result.current.compressPendingComposerPdf(
+        result.current.pendingComposerAttachments[0]!.id
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoadingAttachmentComposerAttachments).toBe(true);
+      expect(result.current.composerAttachmentPreviewItems).toEqual([
+        expect.objectContaining({
+          fileName: 'stok.pdf',
+          status: 'loading',
+        }),
+      ]);
+    });
+
+    await act(async () => {
+      resolveCompression?.({
+        data: {
+          file: new File(['compressed-pdf'], 'stok-kompres.pdf', {
+            type: 'application/pdf',
+          }),
+          originalSize: 4096,
+          compressedSize: 2048,
+        },
+        error: null,
+      });
+      await compressPromise!;
+    });
+
+    expect(result.current.isLoadingAttachmentComposerAttachments).toBe(false);
+    expect(result.current.composerAttachmentPreviewItems).toEqual([
+      expect.objectContaining({
+        fileName: 'stok-kompres.pdf',
+      }),
+    ]);
   });
 });

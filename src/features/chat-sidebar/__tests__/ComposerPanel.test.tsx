@@ -5,7 +5,12 @@ import ComposerPanel from '../components/ComposerPanel';
 import type { ComposerPanelModel } from '../models';
 
 const { mockPopupMenuContent } = vi.hoisted(() => ({
-  mockPopupMenuContent: vi.fn((_props: unknown) => <div>popup content</div>),
+  mockPopupMenuContent: vi.fn((props: { header?: React.ReactNode }) => (
+    <div>
+      {props.header}
+      popup content
+    </div>
+  )),
 }));
 
 vi.mock('motion/react', () => ({
@@ -37,7 +42,7 @@ vi.mock('motion/react', () => ({
 }));
 
 vi.mock('@/components/image-manager/PopupMenuContent', () => ({
-  default: (props: unknown) => mockPopupMenuContent(props),
+  default: (props: { header?: React.ReactNode }) => mockPopupMenuContent(props),
 }));
 
 vi.mock('@/components/shared/popup-menu-popover', () => ({
@@ -113,7 +118,9 @@ const buildComposerModel = (): ComposerPanelModel => ({
     isComposerImageExpandedVisible: false,
     openImageActionsAttachmentId: null,
     imageActionsMenuPosition: null,
+    pdfCompressionMenuPosition: null,
     imageActions: [],
+    pdfCompressionLevelActions: [],
   },
   documentPreview: {
     composerDocumentPreviewUrl: null,
@@ -131,6 +138,7 @@ const buildComposerModel = (): ComposerPanelModel => ({
     audioInputRef: { current: null },
     imageActionsButtonRef: { current: null },
     imageActionsMenuRef: { current: null },
+    pdfCompressionMenuRef: { current: null },
   },
   actions: {
     onMessageChange: vi.fn(),
@@ -157,10 +165,12 @@ const buildComposerModel = (): ComposerPanelModel => ({
     onFocusEditingTargetMessage: vi.fn(),
     onOpenComposerImagePreview: vi.fn(),
     onCloseComposerImagePreview: vi.fn(),
+    onCancelLoadingComposerAttachment: vi.fn(),
     onRemovePendingComposerAttachment: vi.fn(),
     onQueueComposerImage: vi.fn(() => true),
     onCloseComposerDocumentPreview: vi.fn(),
     onOpenDocumentAttachmentInPortal: vi.fn(),
+    onClosePdfCompressionMenu: vi.fn(),
     onToggleImageActionsMenu: vi.fn(),
   },
 });
@@ -197,6 +207,42 @@ describe('ComposerPanel', () => {
         actions: model.attachments.imageActions,
         enableArrowNavigation: true,
         autoFocusFirstItem: true,
+      })
+    );
+  });
+
+  it('passes recommended preselection into the pdf compression submenu popup', () => {
+    const model = buildComposerModel();
+    model.attachments.openImageActionsAttachmentId = 'pending-pdf-1';
+    model.attachments.pdfCompressionMenuPosition = {
+      top: 72,
+      left: 32,
+    };
+    model.attachments.pdfCompressionLevelActions = [
+      {
+        label: 'Extreme',
+        icon: <span>icon</span>,
+        onClick: vi.fn(),
+      },
+      {
+        label: 'Recommended',
+        icon: <span>icon</span>,
+        onClick: vi.fn(),
+      },
+      {
+        label: 'Less',
+        icon: <span>icon</span>,
+        onClick: vi.fn(),
+      },
+    ];
+
+    render(<ComposerPanel model={model} />);
+
+    expect(mockPopupMenuContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actions: model.attachments.pdfCompressionLevelActions,
+        enableArrowNavigation: true,
+        initialPreselectedIndex: 1,
       })
     );
   });

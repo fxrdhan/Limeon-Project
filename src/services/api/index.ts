@@ -33,6 +33,7 @@ export {
   chatService,
   chatMessagesService,
   chatCleanupService,
+  chatPdfCompressService,
   chatPresenceService,
 } from './chat.service';
 export { StorageService } from './storage.service';

@@ -1,3 +1,4 @@
+import type { ChatPdfCompressionLevel } from '../../../../shared/chatFunctionContracts';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerAttachment } from '../types';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
@@ -13,6 +14,10 @@ interface UseChatSidebarPreviewStateProps {
   handleAttachImageClick: (replaceAttachmentId?: string) => void;
   handleAttachDocumentClick: (replaceAttachmentId?: string) => void;
   compressPendingComposerImage: (attachmentId: string) => Promise<boolean>;
+  compressPendingComposerPdf: (
+    attachmentId: string,
+    compressionLevel?: ChatPdfCompressionLevel
+  ) => Promise<boolean>;
   removePendingComposerAttachment: (attachmentId: string) => void;
   openComposerImagePreview: (attachmentId: string) => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
@@ -27,6 +32,7 @@ export const useChatSidebarPreviewState = ({
   handleAttachImageClick,
   handleAttachDocumentClick,
   compressPendingComposerImage,
+  compressPendingComposerPdf,
   removePendingComposerAttachment,
   openComposerImagePreview,
   getAttachmentFileName,
@@ -46,6 +52,7 @@ export const useChatSidebarPreviewState = ({
     onAttachImageClick: handleAttachImageClick,
     onAttachDocumentClick: handleAttachDocumentClick,
     onCompressPendingComposerImage: compressPendingComposerImage,
+    onCompressPendingComposerPdf: compressPendingComposerPdf,
     onRemovePendingComposerAttachment: removePendingComposerAttachment,
     onOpenComposerImagePreview: openComposerImagePreview,
   });

@@ -57,6 +57,7 @@ export const useChatComposer = ({
   const {
     isAttachModalOpen,
     pendingComposerAttachments,
+    composerAttachmentPreviewItems,
     loadingComposerAttachments,
     isLoadingAttachmentComposerAttachments,
     attachmentPastePromptUrl,
@@ -96,11 +97,13 @@ export const useChatComposer = ({
     handleUseAttachmentPasteAsAttachment,
     openComposerImagePreview,
     closeComposerImagePreview,
+    cancelLoadingComposerAttachment,
     removePendingComposerAttachment,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
     compressPendingComposerImage,
+    compressPendingComposerPdf,
   } = attachments;
 
   const isHoldingMultilineByInlineOverflow =
@@ -279,6 +282,7 @@ export const useChatComposer = ({
     isSendSuccessGlowVisible,
     isAttachModalOpen,
     pendingComposerAttachments,
+    composerAttachmentPreviewItems,
     loadingComposerAttachments,
     isLoadingAttachmentComposerAttachments,
     attachmentPastePromptUrl,
@@ -320,11 +324,13 @@ export const useChatComposer = ({
     handleUseAttachmentPasteAsAttachment,
     openComposerImagePreview,
     closeComposerImagePreview,
+    cancelLoadingComposerAttachment,
     removePendingComposerAttachment,
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
     compressPendingComposerImage,
+    compressPendingComposerPdf,
     handleMessageChange,
     triggerSendSuccessGlow,
   };

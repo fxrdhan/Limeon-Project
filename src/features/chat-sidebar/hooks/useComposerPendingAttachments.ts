@@ -320,6 +320,45 @@ export const useComposerPendingAttachments = ({
     [focusTextarea]
   );
 
+  const replacePendingComposerAttachmentFile = useCallback(
+    (attachmentId: string, nextFile: File) => {
+      const targetAttachment = pendingComposerAttachmentsRef.current.find(
+        attachment => attachment.id === attachmentId
+      );
+      if (!targetAttachment) {
+        return false;
+      }
+
+      const nextAttachment =
+        targetAttachment.fileKind === 'image'
+          ? {
+              ...buildPendingImageComposerAttachment(nextFile),
+              id: targetAttachment.id,
+            }
+          : {
+              ...buildPendingFileComposerAttachment(
+                nextFile,
+                targetAttachment.fileKind
+              ),
+              id: targetAttachment.id,
+            };
+
+      setPendingComposerAttachments(previousAttachments =>
+        previousAttachments.map(attachment =>
+          attachment.id === attachmentId ? nextAttachment : attachment
+        )
+      );
+
+      if (targetAttachment.previewUrl) {
+        URL.revokeObjectURL(targetAttachment.previewUrl);
+      }
+
+      focusTextarea();
+      return true;
+    },
+    [focusTextarea]
+  );
+
   useEffect(() => {
     const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
     const pendingAttachments = pendingComposerAttachmentsRef.current;
@@ -348,5 +387,6 @@ export const useComposerPendingAttachments = ({
     queueComposerImage,
     queueComposerFile,
     compressPendingComposerImage,
+    replacePendingComposerAttachmentFile,
   };
 };

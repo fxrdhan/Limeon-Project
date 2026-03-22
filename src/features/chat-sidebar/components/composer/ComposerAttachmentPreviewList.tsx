@@ -1,5 +1,11 @@
 import { motion } from 'motion/react';
-import { forwardRef, type MouseEvent, type RefObject } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useState,
+  type MouseEvent,
+  type RefObject,
+} from 'react';
 import { TbFileTypeJpg, TbFileTypePng, TbMusic, TbX } from 'react-icons/tb';
 import type {
   ComposerAttachmentPreviewItem,
@@ -29,6 +35,7 @@ interface ComposerAttachmentPreviewListProps {
     event: MouseEvent<HTMLButtonElement>,
     attachmentId: string
   ) => void;
+  onCancelLoadingComposerAttachment: (attachmentId: string) => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
 }
 
@@ -43,178 +50,245 @@ const ComposerAttachmentPreviewList = forwardRef<
       imageActionsButtonRef,
       transition,
       onToggleImageActionsMenu,
+      onCancelLoadingComposerAttachment,
       onRemovePendingComposerAttachment,
     },
     ref
-  ) => (
-    <motion.div
-      ref={ref}
-      layout
-      key="composer-attachments-preview"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 2 }}
-      transition={transition}
-      className="mb-2"
-    >
-      <div className="mb-1 px-0.5 text-[11px] text-slate-500">
-        Lampiran {attachments.length}/5
-      </div>
-      <div className="flex flex-col gap-2 pr-1">
-        {attachments.map(attachment => {
-          if ('status' in attachment && attachment.status === 'loading') {
+  ) => {
+    const [loadingDotCount, setLoadingDotCount] = useState(1);
+    const hasPdfCompressionLoading = attachments.some(
+      attachment =>
+        'status' in attachment &&
+        attachment.status === 'loading' &&
+        attachment.loadingKind === 'pdf-compression'
+    );
+
+    useEffect(() => {
+      if (!hasPdfCompressionLoading) {
+        setLoadingDotCount(1);
+        return;
+      }
+
+      const intervalId = window.setInterval(() => {
+        setLoadingDotCount(currentCount => (currentCount % 3) + 1);
+      }, 360);
+
+      return () => {
+        window.clearInterval(intervalId);
+      };
+    }, [hasPdfCompressionLoading]);
+
+    const animatedDots = '.'.repeat(loadingDotCount);
+    const resolveCompressionStatusLabel = (
+      phase: 'uploading' | 'processing' | 'done' | undefined
+    ) => {
+      if (phase === 'done') {
+        return 'Selesai';
+      }
+      if (phase === 'processing') {
+        return 'Memproses';
+      }
+      return 'Mengunggah';
+    };
+
+    return (
+      <motion.div
+        ref={ref}
+        layout
+        key="composer-attachments-preview"
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 2 }}
+        transition={transition}
+        className="mb-2"
+      >
+        <div className="mb-1 px-0.5 text-[11px] text-slate-500">
+          Lampiran {attachments.length}/5
+        </div>
+        <div className="flex flex-col gap-2 pr-1">
+          {attachments.map(attachment => {
+            if ('status' in attachment && attachment.status === 'loading') {
+              const isPdfCompressionLoading =
+                attachment.loadingKind === 'pdf-compression';
+
+              return (
+                <div
+                  key={attachment.id}
+                  className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
+                    <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-200" />
+                    <div className="min-w-0 flex-1">
+                      {isPdfCompressionLoading ? (
+                        <>
+                          <p className="text-sm font-medium text-slate-700">
+                            {resolveCompressionStatusLabel(
+                              attachment.loadingPhase
+                            )}
+                            {animatedDots}
+                          </p>
+                          <p className="text-xs text-slate-500">Kompres PDF</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
+                          <div className="mt-1 h-3 w-14 animate-pulse rounded bg-slate-200" />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {isPdfCompressionLoading ? (
+                    <button
+                      type="button"
+                      aria-label="Batalkan kompres PDF"
+                      onClick={() => {
+                        onCancelLoadingComposerAttachment(attachment.id);
+                      }}
+                      className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-200 hover:text-black"
+                    >
+                      <TbX className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+              );
+            }
+
+            const resolvedAttachment = attachment as PendingComposerAttachment;
+            const isImageAttachment = resolvedAttachment.fileKind === 'image';
+            const isAudioAttachment = resolvedAttachment.fileKind === 'audio';
+            const isDocumentAttachment =
+              resolvedAttachment.fileKind === 'document';
+            const attachmentExtension =
+              resolveComposerAttachmentExtension(resolvedAttachment);
+            const isJpgDocumentAttachment =
+              attachmentExtension === 'jpg' || attachmentExtension === 'jpeg';
+            const isPngDocumentAttachment = attachmentExtension === 'png';
+            const isMenuOpen = openImageActionsAttachmentId === attachment.id;
+            const fileSizeLabel = formatFileSize(resolvedAttachment.file.size);
+            const fileSecondaryLabel =
+              [resolvedAttachment.fileTypeLabel, fileSizeLabel]
+                .filter(Boolean)
+                .join(' · ') || resolvedAttachment.fileTypeLabel;
+
             return (
               <div
                 key={attachment.id}
                 className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
               >
-                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
-                  <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-200" />
-                  <div className="min-w-0 flex-1">
-                    <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
-                    <div className="mt-1 h-3 w-14 animate-pulse rounded bg-slate-200" />
+                {isImageAttachment ? (
+                  <button
+                    ref={isMenuOpen ? imageActionsButtonRef : undefined}
+                    type="button"
+                    aria-label="Aksi gambar"
+                    title="Aksi gambar"
+                    aria-haspopup="menu"
+                    aria-expanded={isMenuOpen}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
+                    onClick={event => {
+                      event.stopPropagation();
+                      onToggleImageActionsMenu(event, attachment.id);
+                    }}
+                  >
+                    <img
+                      src={resolvedAttachment.previewUrl ?? ''}
+                      alt={resolvedAttachment.fileName}
+                      className="h-11 w-11 rounded-xl object-cover"
+                      draggable={false}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-800">
+                        {attachment.fileName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {fileSecondaryLabel}
+                      </p>
+                    </div>
+                  </button>
+                ) : isDocumentAttachment ? (
+                  <button
+                    ref={isMenuOpen ? imageActionsButtonRef : undefined}
+                    type="button"
+                    aria-label="Aksi dokumen"
+                    title="Aksi dokumen"
+                    aria-haspopup="menu"
+                    aria-expanded={isMenuOpen}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
+                    onClick={event => {
+                      event.stopPropagation();
+                      onToggleImageActionsMenu(event, attachment.id);
+                    }}
+                  >
+                    {resolvedAttachment.pdfCoverUrl ? (
+                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
+                        <img
+                          src={resolvedAttachment.pdfCoverUrl}
+                          alt="PDF cover preview"
+                          className="h-full w-full object-cover"
+                          draggable={false}
+                        />
+                      </div>
+                    ) : isJpgDocumentAttachment ? (
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
+                        <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
+                      </div>
+                    ) : isPngDocumentAttachment ? (
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
+                        <TbFileTypePng className="h-5 w-5 text-slate-600" />
+                      </div>
+                    ) : (
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
+                        {(
+                          resolvedAttachment.fileName
+                            .split('.')
+                            .pop()
+                            ?.toUpperCase() || resolvedAttachment.fileTypeLabel
+                        ).slice(0, 4)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-800">
+                        {attachment.fileName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {fileSecondaryLabel}
+                      </p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
+                    <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-800">
+                        {attachment.fileName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {fileSecondaryLabel}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="h-7 w-7 shrink-0 animate-pulse rounded-xl bg-slate-200" />
+                )}
+
+                {isImageAttachment || isDocumentAttachment ? null : (
+                  <button
+                    type="button"
+                    aria-label={
+                      isAudioAttachment ? 'Hapus audio' : 'Hapus dokumen'
+                    }
+                    onClick={() => {
+                      onRemovePendingComposerAttachment(attachment.id);
+                    }}
+                    className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-200 hover:text-black"
+                  >
+                    <TbX className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             );
-          }
-
-          const resolvedAttachment = attachment as PendingComposerAttachment;
-          const isImageAttachment = resolvedAttachment.fileKind === 'image';
-          const isAudioAttachment = resolvedAttachment.fileKind === 'audio';
-          const isDocumentAttachment =
-            resolvedAttachment.fileKind === 'document';
-          const attachmentExtension =
-            resolveComposerAttachmentExtension(resolvedAttachment);
-          const isJpgDocumentAttachment =
-            attachmentExtension === 'jpg' || attachmentExtension === 'jpeg';
-          const isPngDocumentAttachment = attachmentExtension === 'png';
-          const isMenuOpen = openImageActionsAttachmentId === attachment.id;
-          const fileSizeLabel = formatFileSize(resolvedAttachment.file.size);
-          const fileSecondaryLabel =
-            [resolvedAttachment.fileTypeLabel, fileSizeLabel]
-              .filter(Boolean)
-              .join(' · ') || resolvedAttachment.fileTypeLabel;
-
-          return (
-            <div
-              key={attachment.id}
-              className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
-            >
-              {isImageAttachment ? (
-                <button
-                  ref={isMenuOpen ? imageActionsButtonRef : undefined}
-                  type="button"
-                  aria-label="Aksi gambar"
-                  title="Aksi gambar"
-                  aria-haspopup="menu"
-                  aria-expanded={isMenuOpen}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
-                  onClick={event => {
-                    event.stopPropagation();
-                    onToggleImageActionsMenu(event, attachment.id);
-                  }}
-                >
-                  <img
-                    src={resolvedAttachment.previewUrl ?? ''}
-                    alt={resolvedAttachment.fileName}
-                    className="h-11 w-11 rounded-xl object-cover"
-                    draggable={false}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {attachment.fileName}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {fileSecondaryLabel}
-                    </p>
-                  </div>
-                </button>
-              ) : isDocumentAttachment ? (
-                <button
-                  ref={isMenuOpen ? imageActionsButtonRef : undefined}
-                  type="button"
-                  aria-label="Aksi dokumen"
-                  title="Aksi dokumen"
-                  aria-haspopup="menu"
-                  aria-expanded={isMenuOpen}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
-                  onClick={event => {
-                    event.stopPropagation();
-                    onToggleImageActionsMenu(event, attachment.id);
-                  }}
-                >
-                  {resolvedAttachment.pdfCoverUrl ? (
-                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
-                      <img
-                        src={resolvedAttachment.pdfCoverUrl}
-                        alt="PDF cover preview"
-                        className="h-full w-full object-cover"
-                        draggable={false}
-                      />
-                    </div>
-                  ) : isJpgDocumentAttachment ? (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
-                      <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
-                    </div>
-                  ) : isPngDocumentAttachment ? (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
-                      <TbFileTypePng className="h-5 w-5 text-slate-600" />
-                    </div>
-                  ) : (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
-                      {(
-                        resolvedAttachment.fileName
-                          .split('.')
-                          .pop()
-                          ?.toUpperCase() || resolvedAttachment.fileTypeLabel
-                      ).slice(0, 4)}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {attachment.fileName}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {fileSecondaryLabel}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
-                  <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {attachment.fileName}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {fileSecondaryLabel}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {isImageAttachment || isDocumentAttachment ? null : (
-                <button
-                  type="button"
-                  aria-label={
-                    isAudioAttachment ? 'Hapus audio' : 'Hapus dokumen'
-                  }
-                  onClick={() => {
-                    onRemovePendingComposerAttachment(attachment.id);
-                  }}
-                  className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-200 hover:text-black"
-                >
-                  <TbX className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </motion.div>
-  )
+          })}
+        </div>
+      </motion.div>
+    );
+  }
 );
 
 ComposerAttachmentPreviewList.displayName = 'ComposerAttachmentPreviewList';
