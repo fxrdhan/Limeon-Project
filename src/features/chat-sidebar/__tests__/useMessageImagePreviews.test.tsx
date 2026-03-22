@@ -19,6 +19,15 @@ const { mockResolveChatAssetUrlWithExpiry, mockFetchChatFileBlobWithFallback } =
 const { mockPersistImageMessagePreview } = vi.hoisted(() => ({
   mockPersistImageMessagePreview: vi.fn(),
 }));
+const { mockReadImageBlobAsDataUrl } = vi.hoisted(() => ({
+  mockReadImageBlobAsDataUrl: vi.fn(),
+}));
+const { mockLoadPersistedImagePreviewEntriesByMessageIds } = vi.hoisted(() => ({
+  mockLoadPersistedImagePreviewEntriesByMessageIds: vi.fn(),
+}));
+const { mockPersistImagePreviewEntry } = vi.hoisted(() => ({
+  mockPersistImagePreviewEntry: vi.fn(),
+}));
 
 vi.mock('../utils/message-file', async importOriginal => {
   const actual = await importOriginal<typeof import('../utils/message-file')>();
@@ -39,10 +48,24 @@ vi.mock('../utils/image-message-preview', async importOriginal => {
   return {
     ...actual,
     persistImageMessagePreview: mockPersistImageMessagePreview,
+    readBlobAsDataUrl: mockReadImageBlobAsDataUrl,
   };
 });
 
+vi.mock('../utils/image-preview-persistence', () => ({
+  loadPersistedImagePreviewEntriesByMessageIds:
+    mockLoadPersistedImagePreviewEntriesByMessageIds,
+  persistImagePreviewEntry: mockPersistImagePreviewEntry,
+  deletePersistedImagePreviewEntriesByMessageIds: vi.fn(),
+}));
+
 describe('useMessageImagePreviews', () => {
+  const flushPromises = async (count = 6) => {
+    for (let index = 0; index < count; index += 1) {
+      await Promise.resolve();
+    }
+  };
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-10T10:00:00.000Z'));
@@ -50,8 +73,15 @@ describe('useMessageImagePreviews', () => {
     mockResolveChatAssetUrlWithExpiry.mockReset();
     mockFetchChatFileBlobWithFallback.mockReset();
     mockPersistImageMessagePreview.mockReset();
+    mockReadImageBlobAsDataUrl.mockReset();
+    mockLoadPersistedImagePreviewEntriesByMessageIds.mockReset();
+    mockPersistImagePreviewEntry.mockReset();
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
     mockPersistImageMessagePreview.mockResolvedValue(null);
+    mockReadImageBlobAsDataUrl.mockResolvedValue(
+      'data:image/webp;base64,cGVyc2lzdGVkLXByZXZpZXc='
+    );
+    mockLoadPersistedImagePreviewEntriesByMessageIds.mockResolvedValue([]);
     chatRuntimeCache.imagePreviews.reset();
   });
 
@@ -193,10 +223,9 @@ describe('useMessageImagePreviews', () => {
   });
 
   it('prefers persisted image thumbnail paths when preview metadata exists', async () => {
-    mockResolveChatAssetUrlWithExpiry.mockResolvedValueOnce({
-      url: 'https://example.com/signed-image-thumbnail',
-      expiresAt: Date.now() + 90_000,
-    });
+    mockFetchChatFileBlobWithFallback.mockResolvedValueOnce(
+      new Blob(['thumb'], { type: 'image/webp' })
+    );
 
     const messages: ChatMessage[] = [
       {
@@ -218,17 +247,17 @@ describe('useMessageImagePreviews', () => {
     const { result } = renderHook(() => useMessageImagePreviews({ messages }));
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushPromises();
     });
 
     expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
-      'https://example.com/signed-image-thumbnail'
+      'data:image/webp;base64,cGVyc2lzdGVkLXByZXZpZXc='
     );
-    expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledWith(
+    expect(mockFetchChatFileBlobWithFallback).toHaveBeenCalledWith(
       'previews/channel/user-a_image-thumb-1.webp',
       'previews/channel/user-a_image-thumb-1.webp'
     );
+    expect(mockResolveChatAssetUrlWithExpiry).not.toHaveBeenCalled();
   });
 
   it('uses handed-off local image previews before the persisted asset url resolves', async () => {
@@ -260,6 +289,44 @@ describe('useMessageImagePreviews', () => {
     expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
       'blob:handoff-preview'
     );
+  });
+
+  it('hydrates locally persisted image previews before hitting network', async () => {
+    mockLoadPersistedImagePreviewEntriesByMessageIds.mockResolvedValueOnce([
+      {
+        messageId: 'image-hydrated-1',
+        preview: {
+          previewUrl: 'data:image/webp;base64,aHlkcmF0ZWQ=',
+          isObjectUrl: false,
+        },
+      },
+    ]);
+
+    const messages: ChatMessage[] = [
+      {
+        id: 'image-hydrated-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        channel_id: 'dm_user-a_user-b',
+        message: 'images/channel/image-hydrated-1.png',
+        created_at: '2026-03-10T10:00:00.000Z',
+        updated_at: '2026-03-10T10:00:00.000Z',
+        is_read: false,
+        message_type: 'image',
+        file_storage_path: 'images/channel/image-hydrated-1.png',
+      },
+    ];
+
+    const { result } = renderHook(() => useMessageImagePreviews({ messages }));
+
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
+      'data:image/webp;base64,aHlkcmF0ZWQ='
+    );
+    expect(mockResolveChatAssetUrlWithExpiry).not.toHaveBeenCalled();
   });
 
   it('backfills thumbnails for existing image messages without preview metadata', async () => {
@@ -306,8 +373,7 @@ describe('useMessageImagePreviews', () => {
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(120);
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushPromises();
     });
 
     expect(mockPersistImageMessagePreview).toHaveBeenCalledWith({
@@ -315,6 +381,7 @@ describe('useMessageImagePreviews', () => {
       file: expect.any(Blob),
       fileStoragePath: 'images/channel/image-backfill-1.png',
     });
+
     expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
       'data:image/webp;base64,dGh1bWJuYWls'
     );

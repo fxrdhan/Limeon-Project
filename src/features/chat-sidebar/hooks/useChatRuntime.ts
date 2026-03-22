@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { chatSidebarCleanupGateway } from '../data/chatSidebarGateway';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { loadPersistedImagePreviewEntries } from '../utils/image-preview-persistence';
 import { loadPersistedPdfPreviewEntries } from '../utils/pdf-preview-persistence';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
 import { useChatRuntimeReadReceipts } from './useChatRuntimeReadReceipts';
@@ -32,7 +33,19 @@ export const useChatRuntime = () => {
       });
     };
 
+    const hydratePersistedImagePreviews = async () => {
+      const persistedImagePreviews = await loadPersistedImagePreviewEntries();
+      if (isCancelled || persistedImagePreviews.length === 0) {
+        return;
+      }
+
+      persistedImagePreviews.forEach(({ messageId, preview }) => {
+        chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
+      });
+    };
+
     void hydratePersistedPdfPreviews();
+    void hydratePersistedImagePreviews();
 
     return () => {
       isCancelled = true;

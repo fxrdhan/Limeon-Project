@@ -16,12 +16,19 @@ import {
   type SignedChatAssetUrlCacheEntry,
 } from './chatRuntimeState';
 import {
+  deletePersistedImagePreviewEntriesByMessageIds,
+  persistImagePreviewEntry,
+} from './image-preview-persistence';
+import {
   deletePersistedPdfPreviewEntriesByMessageIds,
   persistPdfPreviewEntry,
 } from './pdf-preview-persistence';
 
 const MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES = 128;
 const MAX_IMAGE_MESSAGE_PREVIEW_CACHE_ENTRIES = 64;
+
+const shouldPersistImagePreview = (preview: ImageMessagePreviewCacheEntry) =>
+  !preview.isObjectUrl && preview.previewUrl.trim().startsWith('data:');
 
 const revokeCachedImagePreviewObjectUrl = (
   previewEntry: ImageMessagePreviewCacheEntry | undefined
@@ -49,7 +56,13 @@ const deleteCachedImagePreviewByMessageId = (
 const setCachedImagePreview = (
   messageId: string,
   preview: ImageMessagePreviewCacheEntry,
-  store = imageMessagePreviewStore
+  {
+    persist = true,
+    store = imageMessagePreviewStore,
+  }: {
+    persist?: boolean;
+    store?: Map<string, ImageMessagePreviewCacheEntry>;
+  } = {}
 ) => {
   const existingPreview = store.get(messageId);
   if (existingPreview && existingPreview.previewUrl !== preview.previewUrl) {
@@ -69,6 +82,14 @@ const setCachedImagePreview = (
     }
 
     deleteCachedImagePreviewByMessageId(oldestMessageId, store);
+  }
+
+  if (
+    persist &&
+    !messageId.startsWith('temp_') &&
+    shouldPersistImagePreview(preview)
+  ) {
+    void persistImagePreviewEntry(messageId, preview);
   }
 };
 
@@ -359,7 +380,21 @@ export const chatRuntimeCache = {
         ImageMessagePreviewCacheEntry
       > = imageMessagePreviewStore
     ) {
-      setCachedImagePreview(messageId, preview, store);
+      setCachedImagePreview(messageId, preview, { store });
+    },
+
+    hydrate(
+      messageId: string,
+      preview: ImageMessagePreviewCacheEntry,
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      setCachedImagePreview(messageId, preview, {
+        persist: false,
+        store,
+      });
     },
 
     transferEntry(
@@ -376,11 +411,28 @@ export const chatRuntimeCache = {
       }
 
       store.delete(sourceMessageId);
-      setCachedImagePreview(targetMessageId, existingPreview, store);
+      setCachedImagePreview(targetMessageId, existingPreview, { store });
       return true;
     },
 
     deleteByMessageIds(
+      messageIds: string[],
+      store: Map<
+        string,
+        ImageMessagePreviewCacheEntry
+      > = imageMessagePreviewStore
+    ) {
+      [...new Set(messageIds)]
+        .map(messageId => messageId.trim())
+        .filter(Boolean)
+        .forEach(messageId => {
+          deleteCachedImagePreviewByMessageId(messageId, store);
+        });
+
+      void deletePersistedImagePreviewEntriesByMessageIds(messageIds);
+    },
+
+    deleteRuntimeByMessageIds(
       messageIds: string[],
       store: Map<
         string,

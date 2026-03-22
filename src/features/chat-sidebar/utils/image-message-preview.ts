@@ -74,6 +74,27 @@ const renderCanvasBlob = (
     );
   });
 
+export const readBlobAsDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const fileReader = new FileReader();
+
+    fileReader.onload = () => {
+      if (typeof fileReader.result === 'string') {
+        resolve(fileReader.result);
+        return;
+      }
+
+      reject(new Error('Failed to read image preview blob'));
+    };
+    fileReader.onerror = () => {
+      reject(
+        fileReader.error ?? new Error('Failed to read image preview blob')
+      );
+    };
+
+    fileReader.readAsDataURL(blob);
+  });
+
 const getPreviewExtension = (mimeType: string) =>
   mimeType === IMAGE_PREVIEW_PRIMARY_MIME_TYPE ? 'webp' : 'jpg';
 

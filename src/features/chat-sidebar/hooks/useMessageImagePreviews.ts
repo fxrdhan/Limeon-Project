@@ -8,7 +8,11 @@ import {
   resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { persistImageMessagePreview } from '../utils/image-message-preview';
+import {
+  persistImageMessagePreview,
+  readBlobAsDataUrl,
+} from '../utils/image-message-preview';
+import { loadPersistedImagePreviewEntriesByMessageIds } from '../utils/image-preview-persistence';
 
 const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
 const IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
@@ -58,6 +62,8 @@ export const useMessageImagePreviews = ({
   >({});
   const [imagePreviewRefreshTick, setImagePreviewRefreshTick] = useState(0);
   const [imagePreviewRetryNonce, setImagePreviewRetryNonce] = useState(0);
+  const [isPersistedPreviewLookupReady, setIsPersistedPreviewLookupReady] =
+    useState(false);
   const objectUrlsRef = useRef<Map<string, string>>(new Map());
   const imageMessagePreviewEntriesRef = useRef<
     Record<string, ImageMessagePreviewEntry>
@@ -149,6 +155,63 @@ export const useMessageImagePreviews = ({
 
   useEffect(() => {
     let isCancelled = false;
+    setIsPersistedPreviewLookupReady(false);
+
+    const hydratePersistedImagePreviews = async () => {
+      const activeImageMessageIds = messages
+        .filter(messageItem => isImagePreviewableMessage(messageItem))
+        .map(messageItem => messageItem.id);
+      if (activeImageMessageIds.length === 0) {
+        if (!isCancelled) {
+          setIsPersistedPreviewLookupReady(true);
+        }
+        return;
+      }
+
+      const persistedImagePreviews =
+        await loadPersistedImagePreviewEntriesByMessageIds(
+          activeImageMessageIds
+        );
+      if (isCancelled) {
+        return;
+      }
+
+      persistedImagePreviews.forEach(({ messageId, preview }) => {
+        chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
+      });
+
+      if (persistedImagePreviews.length > 0) {
+        setImageMessagePreviewEntries(previousEntries => ({
+          ...previousEntries,
+          ...Object.fromEntries(
+            persistedImagePreviews.map(({ messageId, preview }) => [
+              messageId,
+              {
+                url: preview.previewUrl,
+                expiresAt: null,
+                isObjectUrl: false,
+              },
+            ])
+          ),
+        }));
+      }
+
+      setIsPersistedPreviewLookupReady(true);
+    };
+
+    void hydratePersistedImagePreviews();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [messages]);
+
+  useEffect(() => {
+    if (!isPersistedPreviewLookupReady) {
+      return;
+    }
+
+    let isCancelled = false;
 
     const activeImageMessageIds = new Set(
       messages
@@ -222,6 +285,10 @@ export const useMessageImagePreviews = ({
         return false;
       }
 
+      if (chatRuntimeCache.imagePreviews.getEntry(messageItem.id)) {
+        return false;
+      }
+
       if (
         objectUrlsRef.current.has(messageItem.id) &&
         !existingPreviewEntry?.expiresAt
@@ -251,10 +318,31 @@ export const useMessageImagePreviews = ({
       const resolvedEntries = await Promise.all(
         pendingImageMessages.map(async messageItem => {
           try {
+            const persistedPreviewPath = messageItem.file_preview_url?.trim();
+
+            if (persistedPreviewPath) {
+              const previewBlob = await fetchChatFileBlobWithFallback(
+                persistedPreviewPath,
+                persistedPreviewPath
+              );
+              if (previewBlob) {
+                imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
+                clearImagePreviewRetryTimer(messageItem.id);
+                const previewDataUrl = await readBlobAsDataUrl(previewBlob);
+                return {
+                  messageId: messageItem.id,
+                  previewEntry: {
+                    url: previewDataUrl,
+                    expiresAt: null,
+                    isObjectUrl: false,
+                  },
+                };
+              }
+            }
+
             const resolvedAsset = await resolveChatAssetUrlWithExpiry(
-              messageItem.file_preview_url?.trim() || messageItem.message,
-              messageItem.file_preview_url?.trim() ||
-                messageItem.file_storage_path
+              messageItem.message,
+              messageItem.file_storage_path
             );
             if (resolvedAsset) {
               imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
@@ -310,14 +398,12 @@ export const useMessageImagePreviews = ({
         string,
         ImageMessagePreviewEntry
       > = {};
-      const resolvedMessageIds: string[] = [];
+      const transientResolvedMessageIds: string[] = [];
 
       resolvedEntries.forEach(resolvedEntry => {
         if (!resolvedEntry) {
           return;
         }
-
-        resolvedMessageIds.push(resolvedEntry.messageId);
 
         const previousUrl = objectUrlsRef.current.get(resolvedEntry.messageId);
         if (
@@ -336,11 +422,22 @@ export const useMessageImagePreviews = ({
           );
         }
 
+        if (resolvedEntry.previewEntry.isObjectUrl) {
+          transientResolvedMessageIds.push(resolvedEntry.messageId);
+        } else if (resolvedEntry.previewEntry.url.startsWith('data:')) {
+          chatRuntimeCache.imagePreviews.setEntry(resolvedEntry.messageId, {
+            previewUrl: resolvedEntry.previewEntry.url,
+            isObjectUrl: false,
+          });
+        }
+
         nextImageMessagePreviewEntries[resolvedEntry.messageId] =
           resolvedEntry.previewEntry;
       });
 
-      chatRuntimeCache.imagePreviews.deleteByMessageIds(resolvedMessageIds);
+      chatRuntimeCache.imagePreviews.deleteRuntimeByMessageIds(
+        transientResolvedMessageIds
+      );
 
       if (Object.keys(nextImageMessagePreviewEntries).length === 0) {
         return;
@@ -361,6 +458,7 @@ export const useMessageImagePreviews = ({
     clearImagePreviewRetryTimer,
     imagePreviewRefreshTick,
     imagePreviewRetryNonce,
+    isPersistedPreviewLookupReady,
     messages,
     releaseImagePreviewUrl,
     scheduleImagePreviewRetry,
@@ -489,16 +587,16 @@ export const useMessageImagePreviews = ({
         return null;
       }
 
-      const resolvedPreviewUrl = imageMessagePreviewEntries[message.id]?.url;
-      if (resolvedPreviewUrl) {
-        return resolvedPreviewUrl;
-      }
-
       const handedOffPreviewUrl = chatRuntimeCache.imagePreviews.getEntry(
         message.id
       )?.previewUrl;
       if (handedOffPreviewUrl) {
         return handedOffPreviewUrl;
+      }
+
+      const resolvedPreviewUrl = imageMessagePreviewEntries[message.id]?.url;
+      if (resolvedPreviewUrl) {
+        return resolvedPreviewUrl;
       }
 
       const directPreviewUrl = message.file_preview_url?.trim();
