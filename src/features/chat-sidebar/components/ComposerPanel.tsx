@@ -704,29 +704,74 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                   }`}
                 />
               </motion.div>
-              <motion.button
+              <motion.div
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                type="button"
-                ref={refs.attachButtonRef}
-                onClick={actions.onAttachButtonClick}
-                aria-label="Lampirkan file"
-                aria-expanded={attachments.isAttachModalOpen}
-                aria-haspopup="dialog"
-                className={`h-8 w-8 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center justify-self-start shrink-0 cursor-pointer ${
+                className={`relative justify-self-start shrink-0 ${
                   state.isMessageInputMultiline
                     ? 'col-start-1 row-start-2'
                     : 'col-start-1 row-start-1'
                 }`}
               >
-                <motion.span
-                  animate={{ rotate: attachments.isAttachModalOpen ? 45 : 0 }}
-                  transition={{ duration: 0.16, ease: 'easeOut' }}
-                  className="flex items-center justify-center"
+                <motion.button
+                  type="button"
+                  ref={refs.attachButtonRef}
+                  onClick={actions.onAttachButtonClick}
+                  aria-label="Lampirkan file"
+                  aria-expanded={attachments.isAttachModalOpen}
+                  aria-haspopup="dialog"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-slate-700 transition-colors hover:bg-slate-100"
                 >
-                  <TbPlus size={20} />
-                </motion.span>
-              </motion.button>
+                  <motion.span
+                    animate={{ rotate: attachments.isAttachModalOpen ? 45 : 0 }}
+                    transition={{ duration: 0.16, ease: 'easeOut' }}
+                    className="flex items-center justify-center"
+                  >
+                    <TbPlus size={20} />
+                  </motion.span>
+                </motion.button>
+                <AnimatePresence>
+                  {attachments.isAttachModalOpen ? (
+                    <div className="absolute bottom-[calc(100%+16px)] left-[-10px] z-20">
+                      <motion.div
+                        ref={refs.attachModalRef}
+                        role="dialog"
+                        aria-label="Lampirkan file"
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => actions.onAttachImageClick()}
+                          className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-black transition-colors hover:bg-slate-100"
+                        >
+                          <TbPhoto className="h-4 w-4 text-black" />
+                          <span>Gambar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => actions.onAttachDocumentClick()}
+                          className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl py-1.5 pl-1.5 pr-3 text-sm text-black transition-colors hover:bg-slate-100"
+                        >
+                          <TbFileDescription className="h-4 w-4 text-black" />
+                          <span>Dokumen</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={actions.onAttachAudioClick}
+                          className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-black transition-colors hover:bg-slate-100"
+                        >
+                          <TbMusic className="h-4 w-4 text-black" />
+                          <span>Audio</span>
+                        </button>
+                      </motion.div>
+                    </div>
+                  ) : null}
+                </AnimatePresence>
+              </motion.div>
               <motion.button
                 layout="position"
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
@@ -771,46 +816,6 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 onChange={actions.onAudioFileChange}
               />
             </motion.div>
-
-            <AnimatePresence>
-              {attachments.isAttachModalOpen ? (
-                <motion.div
-                  ref={refs.attachModalRef}
-                  role="dialog"
-                  aria-label="Lampirkan file"
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="absolute bottom-[calc(100%+10px)] left-0 z-20 inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
-                >
-                  <button
-                    type="button"
-                    onClick={() => actions.onAttachImageClick()}
-                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
-                  >
-                    <TbPhoto className="h-4 w-4 text-black" />
-                    <span>Gambar</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => actions.onAttachDocumentClick()}
-                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl pl-1.5 pr-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
-                  >
-                    <TbFileDescription className="h-4 w-4 text-black" />
-                    <span>Dokumen</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={actions.onAttachAudioClick}
-                    className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100"
-                  >
-                    <TbMusic className="h-4 w-4 text-black" />
-                    <span>Audio</span>
-                  </button>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
           </motion.div>
         </motion.div>
       </div>

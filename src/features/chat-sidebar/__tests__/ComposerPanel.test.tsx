@@ -247,6 +247,29 @@ describe('ComposerPanel', () => {
     );
   });
 
+  it('anchors the composer attach menu above the plus button with bezel alignment and black action labels', () => {
+    const model = buildComposerModel();
+    model.attachments.isAttachModalOpen = true;
+
+    render(<ComposerPanel model={model} />);
+
+    const dialog = screen.getByRole('dialog', { name: 'Lampirkan file' });
+
+    expect(dialog.parentElement?.className).toContain('left-[-10px]');
+    expect(dialog.parentElement?.className).toContain(
+      'bottom-[calc(100%+16px)]'
+    );
+    expect(screen.getByRole('button', { name: 'Gambar' }).className).toContain(
+      'text-black'
+    );
+    expect(screen.getByRole('button', { name: 'Dokumen' }).className).toContain(
+      'text-black'
+    );
+    expect(screen.getByRole('button', { name: 'Audio' }).className).toContain(
+      'text-black'
+    );
+  });
+
   it('renders each hoverable attachment link as a separate inline anchor', () => {
     const model = buildComposerModel();
 
