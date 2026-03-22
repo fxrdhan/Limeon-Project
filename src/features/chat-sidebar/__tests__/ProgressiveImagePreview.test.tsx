@@ -200,4 +200,35 @@ describe('ProgressiveImagePreview', () => {
       { timeout: 1000 }
     );
   });
+
+  it('renders the active stage inside a contained frame derived from the decoded image dimensions', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {}))
+    );
+
+    render(
+      <ProgressiveImagePreview
+        alt="Preview gambar"
+        fullSrc="https://example.com/full-image.jpg"
+        backdropSrc="data:image/webp;base64,preview"
+        className="h-[480px] w-[720px]"
+        imageClassName="h-full w-full rounded-xl"
+      />
+    );
+
+    const imageElement = await screen.findByAltText('Preview gambar');
+    const expectedWidth = Math.round(window.innerWidth * 0.92);
+    const expectedHeight = Math.round((800 / 1200) * expectedWidth);
+
+    await waitFor(() => {
+      expect(imageElement.parentElement?.getAttribute('style')).toContain(
+        `width: ${expectedWidth}px`
+      );
+      expect(imageElement.parentElement?.getAttribute('style')).toContain(
+        `height: ${expectedHeight}px`
+      );
+    });
+    expect(imageElement.className).toContain('object-contain');
+  });
 });

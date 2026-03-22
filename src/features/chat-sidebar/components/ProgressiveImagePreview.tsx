@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 interface ProgressiveImagePreviewProps {
   alt: string;
@@ -98,6 +104,13 @@ const resolveFallbackFrameSize = () => ({
     Math.round(window.innerHeight * PREVIEW_MAX_VIEWPORT_HEIGHT_RATIO)
   ),
 });
+
+const areFrameSizesEqual = (
+  leftFrameSize: PreviewFrameSize | null,
+  rightFrameSize: PreviewFrameSize | null
+) =>
+  leftFrameSize?.width === rightFrameSize?.width &&
+  leftFrameSize?.height === rightFrameSize?.height;
 
 const renderCanvasBlob = (
   canvas: HTMLCanvasElement,
@@ -296,9 +309,21 @@ const ProgressiveImagePreview = ({
   const activeRequestIdRef = useRef(0);
   const activeFrameSizeRequestIdRef = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const hasCustomStageSrcs = stageSrcs.some(
-    stageSrc => stageSrc.trim().length > 0
-  );
+  const imageDimensionsBySourceRef = useRef<
+    Map<string, { height: number; width: number }>
+  >(new Map());
+  const normalizedFullSrc = fullSrc?.trim() || null;
+  const normalizedBackdropSrc = backdropSrc?.trim() || null;
+  const normalizedStageSrcs = stageSrcs
+    .map(stageSrc => stageSrc.trim())
+    .filter(Boolean);
+  const normalizedStageSrcsKey = normalizedStageSrcs.join('\n');
+  const hasCustomStageSrcs = normalizedStageSrcsKey.length > 0;
+  const canUseImmediatePreview =
+    Boolean(normalizedBackdropSrc) &&
+    normalizedBackdropSrc !== normalizedFullSrc;
+  const dimensionSource =
+    normalizedBackdropSrc || normalizedStageSrcs[0] || normalizedFullSrc;
   const activeStageUrl = displayStageUrls[activeStageIndex] ?? null;
 
   const clearProgressiveStageTimers = useCallback(() => {
@@ -392,15 +417,11 @@ const ProgressiveImagePreview = ({
     };
   }, []);
 
-  useEffect(() => {
-    const dimensionSource =
-      backdropSrc?.trim() ||
-      stageSrcs.find(stageSrc => stageSrc.trim()) ||
-      fullSrc?.trim();
-    const requestId = activeFrameSizeRequestIdRef.current + 1;
-
+  useLayoutEffect(() => {
     if (!dimensionSource) {
-      setFrameSize(null);
+      setFrameSize(previousFrameSize =>
+        previousFrameSize === null ? previousFrameSize : null
+      );
       return;
     }
 
@@ -408,7 +429,28 @@ const ProgressiveImagePreview = ({
       return;
     }
 
+    const cachedDimensions =
+      imageDimensionsBySourceRef.current.get(dimensionSource) ?? null;
+    if (cachedDimensions) {
+      const nextFrameSize = buildContainedFrameSize({
+        availableWidth: availableFrameSize.width,
+        availableHeight: availableFrameSize.height,
+        sourceWidth: cachedDimensions.width,
+        sourceHeight: cachedDimensions.height,
+      });
+      setFrameSize(previousFrameSize =>
+        areFrameSizesEqual(previousFrameSize, nextFrameSize)
+          ? previousFrameSize
+          : nextFrameSize
+      );
+      return;
+    }
+
+    const requestId = activeFrameSizeRequestIdRef.current + 1;
     activeFrameSizeRequestIdRef.current = requestId;
+    setFrameSize(previousFrameSize =>
+      previousFrameSize === null ? previousFrameSize : null
+    );
 
     void loadDecodedImage(dimensionSource)
       .then(imageElement => {
@@ -416,19 +458,30 @@ const ProgressiveImagePreview = ({
           return;
         }
 
-        setFrameSize(
-          buildContainedFrameSize({
-            availableWidth: availableFrameSize.width,
-            availableHeight: availableFrameSize.height,
-            sourceWidth: Math.max(
-              imageElement.naturalWidth || imageElement.width || 1,
-              1
-            ),
-            sourceHeight: Math.max(
-              imageElement.naturalHeight || imageElement.height || 1,
-              1
-            ),
-          })
+        const decodedDimensions = {
+          width: Math.max(
+            imageElement.naturalWidth || imageElement.width || 1,
+            1
+          ),
+          height: Math.max(
+            imageElement.naturalHeight || imageElement.height || 1,
+            1
+          ),
+        };
+        imageDimensionsBySourceRef.current.set(
+          dimensionSource,
+          decodedDimensions
+        );
+        const nextFrameSize = buildContainedFrameSize({
+          availableWidth: availableFrameSize.width,
+          availableHeight: availableFrameSize.height,
+          sourceWidth: decodedDimensions.width,
+          sourceHeight: decodedDimensions.height,
+        });
+        setFrameSize(previousFrameSize =>
+          areFrameSizesEqual(previousFrameSize, nextFrameSize)
+            ? previousFrameSize
+            : nextFrameSize
         );
       })
       .catch(() => {
@@ -436,30 +489,20 @@ const ProgressiveImagePreview = ({
           return;
         }
 
-        setFrameSize(null);
+        setFrameSize(previousFrameSize =>
+          previousFrameSize === null ? previousFrameSize : null
+        );
       });
-  }, [
-    availableFrameSize.height,
-    availableFrameSize.width,
-    backdropSrc,
-    fullSrc,
-    stageSrcs,
-  ]);
+  }, [availableFrameSize.height, availableFrameSize.width, dimensionSource]);
 
-  useEffect(() => {
-    const normalizedFullSrc = fullSrc?.trim() || null;
-    const normalizedBackdropSrc = backdropSrc?.trim() || null;
-    const normalizedStageSrcs = stageSrcs
-      .map(stageSrc => stageSrc.trim())
-      .filter(Boolean);
-    const canUseImmediatePreview =
-      Boolean(normalizedBackdropSrc) &&
-      normalizedBackdropSrc !== normalizedFullSrc;
-
-    if (normalizedStageSrcs.length === 0) {
+  useLayoutEffect(() => {
+    if (!hasCustomStageSrcs) {
       return;
     }
 
+    const normalizedStageSrcEntries = normalizedStageSrcsKey
+      ? normalizedStageSrcsKey.split('\n')
+      : [];
     const requestId = activeRequestIdRef.current + 1;
     const nextDisplayStageUrls =
       canUseImmediatePreview && normalizedBackdropSrc
@@ -473,7 +516,7 @@ const ProgressiveImagePreview = ({
     setActiveStageIndex(0);
 
     const candidateStageUrls = [
-      ...normalizedStageSrcs,
+      ...normalizedStageSrcEntries,
       normalizedFullSrc,
     ].filter((stageUrl, index, stageUrls): stageUrl is string => {
       if (!stageUrl) {
@@ -514,19 +557,16 @@ const ProgressiveImagePreview = ({
       // Fall through to the current visible stage if a transformed stage fails.
     });
   }, [
-    backdropSrc,
     clearProgressiveStageTimers,
-    fullSrc,
+    canUseImmediatePreview,
+    hasCustomStageSrcs,
+    normalizedBackdropSrc,
+    normalizedFullSrc,
+    normalizedStageSrcsKey,
     releasePreparedStageObjectUrls,
-    stageSrcs,
   ]);
 
-  useEffect(() => {
-    const normalizedFullSrc = fullSrc?.trim() || null;
-    const normalizedBackdropSrc = backdropSrc?.trim() || null;
-    const canUseImmediatePreview =
-      Boolean(normalizedBackdropSrc) &&
-      normalizedBackdropSrc !== normalizedFullSrc;
+  useLayoutEffect(() => {
     const requestId = activeRequestIdRef.current + 1;
     const abortController =
       typeof AbortController === 'undefined' ? null : new AbortController();
@@ -624,10 +664,11 @@ const ProgressiveImagePreview = ({
       abortController?.abort();
     };
   }, [
-    backdropSrc,
     clearProgressiveStageTimers,
-    fullSrc,
     hasCustomStageSrcs,
+    canUseImmediatePreview,
+    normalizedBackdropSrc,
+    normalizedFullSrc,
     releasePreparedStageObjectUrls,
   ]);
 
@@ -658,7 +699,7 @@ const ProgressiveImagePreview = ({
     };
   }, [clearProgressiveStageTimers, displayStageUrls, hasCustomStageSrcs]);
 
-  const stageImageClassName = `col-start-1 row-start-1 max-h-full max-w-full object-contain ${imageClassName}`;
+  const stageImageClassName = `col-start-1 row-start-1 h-full w-full max-h-full max-w-full object-contain ${imageClassName}`;
 
   return (
     <div
