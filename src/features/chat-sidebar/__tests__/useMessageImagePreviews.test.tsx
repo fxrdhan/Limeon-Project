@@ -16,9 +16,6 @@ const { mockResolveChatAssetUrlWithExpiry, mockFetchChatFileBlobWithFallback } =
     mockResolveChatAssetUrlWithExpiry: vi.fn(),
     mockFetchChatFileBlobWithFallback: vi.fn(),
   }));
-const { mockPersistImageMessagePreview } = vi.hoisted(() => ({
-  mockPersistImageMessagePreview: vi.fn(),
-}));
 const { mockReadImageBlobAsDataUrl } = vi.hoisted(() => ({
   mockReadImageBlobAsDataUrl: vi.fn(),
 }));
@@ -47,7 +44,6 @@ vi.mock('../utils/image-message-preview', async importOriginal => {
 
   return {
     ...actual,
-    persistImageMessagePreview: mockPersistImageMessagePreview,
     readBlobAsDataUrl: mockReadImageBlobAsDataUrl,
   };
 });
@@ -72,12 +68,10 @@ describe('useMessageImagePreviews', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mockResolveChatAssetUrlWithExpiry.mockReset();
     mockFetchChatFileBlobWithFallback.mockReset();
-    mockPersistImageMessagePreview.mockReset();
     mockReadImageBlobAsDataUrl.mockReset();
     mockLoadPersistedImagePreviewEntriesByMessageIds.mockReset();
     mockPersistImagePreviewEntry.mockReset();
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
-    mockPersistImageMessagePreview.mockResolvedValue(null);
     mockReadImageBlobAsDataUrl.mockResolvedValue(
       'data:image/webp;base64,cGVyc2lzdGVkLXByZXZpZXc='
     );
@@ -327,63 +321,5 @@ describe('useMessageImagePreviews', () => {
       'data:image/webp;base64,aHlkcmF0ZWQ='
     );
     expect(mockResolveChatAssetUrlWithExpiry).not.toHaveBeenCalled();
-  });
-
-  it('backfills thumbnails for existing image messages without preview metadata', async () => {
-    mockResolveChatAssetUrlWithExpiry.mockResolvedValueOnce({
-      url: 'https://example.com/signed-image-original',
-      expiresAt: Date.now() + 90_000,
-    });
-    mockFetchChatFileBlobWithFallback.mockResolvedValueOnce(
-      new Blob(['image'], { type: 'image/png' })
-    );
-    mockPersistImageMessagePreview.mockResolvedValueOnce({
-      previewDataUrl: 'data:image/webp;base64,dGh1bWJuYWls',
-      previewPath: 'previews/channel/image-backfill.webp',
-      message: null,
-      error: null,
-    });
-
-    const messages: ChatMessage[] = [
-      {
-        id: 'image-backfill-1',
-        sender_id: 'user-b',
-        receiver_id: 'user-a',
-        channel_id: 'dm_user-a_user-b',
-        message: 'images/channel/image-backfill-1.png',
-        created_at: '2026-03-10T10:00:00.000Z',
-        updated_at: '2026-03-10T10:00:00.000Z',
-        is_read: false,
-        message_type: 'image',
-        file_mime_type: 'image/png',
-        file_storage_path: 'images/channel/image-backfill-1.png',
-      },
-    ];
-
-    const { result } = renderHook(() => useMessageImagePreviews({ messages }));
-
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
-      'https://example.com/signed-image-original'
-    );
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(120);
-      await flushPromises();
-    });
-
-    expect(mockPersistImageMessagePreview).toHaveBeenCalledWith({
-      messageId: 'image-backfill-1',
-      file: expect.any(Blob),
-      fileStoragePath: 'images/channel/image-backfill-1.png',
-    });
-
-    expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
-      'data:image/webp;base64,dGh1bWJuYWls'
-    );
   });
 });

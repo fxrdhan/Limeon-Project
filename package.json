@@ -36,6 +36,7 @@
     "add-admin:help": "bun scripts/add-admin-user.ts --help",
     "update-password": "bun scripts/update-user-password.ts",
     "update-password:help": "bun scripts/update-user-password.ts --help",
+    "backfill:chat-image-previews": "bun scripts/backfill-chat-image-previews.ts",
     "export": "bun scripts/export.ts",
     "loc-stats": "bun scripts/loc-stats.ts",
     "gen:schemas": "bun gen:schemas:db && bun gen:schemas:forms && bun gen:schemas:invoice && bun gen:schemas:purchase",

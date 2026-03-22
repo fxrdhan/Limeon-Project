@@ -4,6 +4,7 @@ import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
+import { buildImagePreviewStoragePath } from './image-preview-path';
 
 const IMAGE_PREVIEW_PRIMARY_MIME_TYPE = 'image/webp';
 const IMAGE_PREVIEW_FALLBACK_MIME_TYPE = 'image/jpeg';
@@ -94,23 +95,6 @@ export const readBlobAsDataUrl = (blob: Blob) =>
 
     fileReader.readAsDataURL(blob);
   });
-
-const getPreviewExtension = (mimeType: string) =>
-  mimeType === IMAGE_PREVIEW_PRIMARY_MIME_TYPE ? 'webp' : 'jpg';
-
-export const buildImagePreviewStoragePath = (
-  filePath: string,
-  mimeType = IMAGE_PREVIEW_PRIMARY_MIME_TYPE
-) => {
-  const normalizedPath = filePath.replace(/^(images|documents)\//, 'previews/');
-  const extension = getPreviewExtension(mimeType);
-
-  if (/\.[^./]+$/.test(normalizedPath)) {
-    return normalizedPath.replace(/\.[^./]+$/, `.${extension}`);
-  }
-
-  return `${normalizedPath}.${extension}`;
-};
 
 export const createImagePreviewUploadArtifact = async (
   file: Blob,

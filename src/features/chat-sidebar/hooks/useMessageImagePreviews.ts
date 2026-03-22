@@ -8,16 +8,12 @@ import {
   resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import {
-  persistImageMessagePreview,
-  readBlobAsDataUrl,
-} from '../utils/image-message-preview';
+import { readBlobAsDataUrl } from '../utils/image-message-preview';
 import { loadPersistedImagePreviewEntriesByMessageIds } from '../utils/image-preview-persistence';
 
 const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
 const IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
 const IMAGE_PREVIEW_RETRY_BASE_DELAY_MS = 900;
-const IMAGE_PREVIEW_BACKFILL_DELAY_MS = 120;
 
 interface ImageMessagePreviewEntry {
   url: string;
@@ -70,7 +66,6 @@ export const useMessageImagePreviews = ({
   >({});
   const imagePreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
   const imagePreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
-  const imagePreviewBackfillAttemptedIdsRef = useRef<Set<string>>(new Set());
 
   const releaseImagePreviewUrl = useCallback((messageId: string) => {
     const existingUrl = objectUrlsRef.current.get(messageId);
@@ -229,20 +224,6 @@ export const useMessageImagePreviews = ({
       imagePreviewRetryAttemptsRef.current.delete(messageId);
       clearImagePreviewRetryTimer(messageId);
     }
-
-    const inactiveBackfillMessageIds: string[] = [];
-
-    for (const messageId of imagePreviewBackfillAttemptedIdsRef.current) {
-      if (activeImageMessageIds.has(messageId)) {
-        continue;
-      }
-
-      inactiveBackfillMessageIds.push(messageId);
-    }
-
-    inactiveBackfillMessageIds.forEach(messageId => {
-      imagePreviewBackfillAttemptedIdsRef.current.delete(messageId);
-    });
 
     setImageMessagePreviewEntries(previousEntries => {
       let hasChanges = false;
@@ -463,102 +444,6 @@ export const useMessageImagePreviews = ({
     releaseImagePreviewUrl,
     scheduleImagePreviewRetry,
   ]);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const pendingBackfillMessages = messages.filter(messageItem => {
-      if (!isImagePreviewableMessage(messageItem)) {
-        return false;
-      }
-
-      if (messageItem.id.startsWith('temp_')) {
-        return false;
-      }
-
-      if (!messageItem.file_storage_path?.trim()) {
-        return false;
-      }
-
-      if (messageItem.file_preview_url?.trim()) {
-        return false;
-      }
-
-      if (imagePreviewBackfillAttemptedIdsRef.current.has(messageItem.id)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (pendingBackfillMessages.length === 0) {
-      return;
-    }
-
-    const backfillTimerId = window.setTimeout(() => {
-      void (async () => {
-        for (const pendingMessage of pendingBackfillMessages) {
-          if (isCancelled) {
-            return;
-          }
-
-          imagePreviewBackfillAttemptedIdsRef.current.add(pendingMessage.id);
-          const fileStoragePath = pendingMessage.file_storage_path?.trim();
-          if (!fileStoragePath) {
-            continue;
-          }
-
-          try {
-            const imageBlob = await fetchChatFileBlobWithFallback(
-              pendingMessage.message,
-              fileStoragePath,
-              pendingMessage.file_mime_type
-            );
-            if (!imageBlob) {
-              continue;
-            }
-
-            const persistedPreview = await persistImageMessagePreview({
-              messageId: pendingMessage.id,
-              file: imageBlob,
-              fileStoragePath,
-            });
-            if (!persistedPreview || isCancelled) {
-              continue;
-            }
-
-            chatRuntimeCache.imagePreviews.setEntry(pendingMessage.id, {
-              previewUrl: persistedPreview.previewDataUrl,
-              isObjectUrl: false,
-            });
-
-            setImageMessagePreviewEntries(previousEntries => ({
-              ...previousEntries,
-              [pendingMessage.id]: {
-                url: persistedPreview.previewDataUrl,
-                expiresAt: null,
-                isObjectUrl: false,
-              },
-            }));
-
-            if (persistedPreview.error) {
-              console.error(
-                'Failed to backfill image preview metadata:',
-                persistedPreview.error
-              );
-            }
-          } catch (error) {
-            console.error('Error backfilling image preview metadata:', error);
-          }
-        }
-      })();
-    }, IMAGE_PREVIEW_BACKFILL_DELAY_MS);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(backfillTimerId);
-    };
-  }, [messages]);
 
   useEffect(() => {
     const objectUrls = objectUrlsRef.current;
