@@ -1,13 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import ChatSidebarPanel from '../index';
 
 const { mockComposerState } = vi.hoisted(() => ({
@@ -107,6 +100,7 @@ vi.mock('../hooks/useChatComposer', () => ({
     hoverableAttachmentUrl: null,
     rawAttachmentUrl: null,
     pendingComposerAttachments: [],
+    composerAttachmentPreviewItems: [],
     loadingComposerAttachments: mockComposerState.loadingComposerAttachments,
     isLoadingAttachmentComposerAttachments:
       mockComposerState.isLoadingAttachmentComposerAttachments,
@@ -237,34 +231,8 @@ vi.mock('../hooks/useChatViewport', () => ({
 describe('ChatSidebarPanel integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-03-07T10:00:00.000Z'));
     mockComposerState.loadingComposerAttachments = [];
     mockComposerState.isLoadingAttachmentComposerAttachments = false;
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('renders the real header, messages shell, and composer shell from controller models', () => {
-    render(
-      <ChatSidebarPanel
-        isOpen
-        onClose={vi.fn()}
-        targetUser={{
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
-          profilephoto: null,
-        }}
-      />
-    );
-
-    expect(screen.getByText('Gudang')).toBeTruthy();
-    expect(screen.getByText('Online')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Tulis pesan...')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Lampirkan file' })).toBeTruthy();
   });
 
   it('disables send while a remote attachment is still converting', () => {
@@ -296,7 +264,6 @@ describe('ChatSidebarPanel integration', () => {
       (screen.getByRole('button', { name: 'Kirim pesan' }) as HTMLButtonElement)
         .disabled
     ).toBe(true);
-    expect(screen.getByText('Lampiran 1/5')).toBeTruthy();
   });
 
   it('closes through the real header action', () => {

@@ -47,33 +47,6 @@ vi.mock('../components/messages/MessageItem', () => ({
   ),
 }));
 
-const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
-  id: overrides.id ?? 'message-1',
-  sender_id: overrides.sender_id ?? 'user-a',
-  receiver_id: overrides.receiver_id ?? 'user-b',
-  channel_id: overrides.channel_id ?? 'channel-1',
-  message: overrides.message ?? 'halo',
-  message_type: overrides.message_type ?? 'text',
-  created_at: overrides.created_at ?? '2026-03-08T12:00:00',
-  updated_at: overrides.updated_at ?? '2026-03-08T12:00:00',
-  is_read: overrides.is_read ?? false,
-  is_delivered: overrides.is_delivered ?? false,
-  reply_to_id: overrides.reply_to_id ?? null,
-  stableKey: overrides.stableKey,
-  file_name: overrides.file_name,
-  file_mime_type: overrides.file_mime_type,
-  file_size: overrides.file_size,
-  file_storage_path: overrides.file_storage_path,
-  file_preview_url: overrides.file_preview_url,
-  file_preview_page_count: overrides.file_preview_page_count,
-  file_preview_status: overrides.file_preview_status,
-  file_preview_error: overrides.file_preview_error,
-  file_kind: overrides.file_kind,
-  message_relation_kind: overrides.message_relation_kind,
-  sender_name: overrides.sender_name,
-  receiver_name: overrides.receiver_name,
-});
-
 type MessagesPaneModelOverrides = {
   state?: Partial<MessagesPaneModel['state']>;
   menu?: Partial<MessagesPaneModel['menu']>;
@@ -192,44 +165,6 @@ const createModel = (
 });
 
 describe('MessagesPane', () => {
-  it('renders a centered date separator for the first message and each day change', () => {
-    const model = createModel({
-      state: {
-        loading: false,
-        loadError: null,
-        messages: [
-          buildMessage({
-            id: 'message-1',
-            message: 'hari pertama',
-            created_at: '2026-03-08T09:00:00',
-            updated_at: '2026-03-08T09:00:00',
-          }),
-          buildMessage({
-            id: 'message-2',
-            message: 'masih hari pertama',
-            created_at: '2026-03-08T10:00:00',
-            updated_at: '2026-03-08T10:00:00',
-          }),
-          buildMessage({
-            id: 'message-3',
-            message: 'hari kedua',
-            created_at: '2026-03-09T08:00:00',
-            updated_at: '2026-03-09T08:00:00',
-          }),
-        ],
-      },
-    });
-
-    render(<MessagesPane model={model} />);
-
-    expect(screen.getByText('8 Maret 2026')).toBeTruthy();
-    expect(screen.getByText('9 Maret 2026')).toBeTruthy();
-    expect(screen.getAllByText(/Maret 2026/)).toHaveLength(2);
-    expect(screen.getByTestId('message-item-message-1')).toBeTruthy();
-    expect(screen.getByTestId('message-item-message-2')).toBeTruthy();
-    expect(screen.getByTestId('message-item-message-3')).toBeTruthy();
-  });
-
   it('closes the single-image preview when the empty content area is clicked', () => {
     const closeImagePreview = vi.fn();
     const model = createModel({

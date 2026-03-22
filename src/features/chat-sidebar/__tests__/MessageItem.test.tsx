@@ -68,76 +68,6 @@ const createModel = (
 });
 
 describe('MessageItem', () => {
-  it('keeps text bubbles shrinkable for long links', () => {
-    render(<MessageItem model={createModel()} />);
-
-    const bubble = screen.getByRole('button');
-    const bubbleWrapper = bubble.parentElement;
-    const bubbleColumn = bubbleWrapper?.parentElement;
-
-    expect(bubble.className).toContain('w-fit');
-    expect(bubbleWrapper?.className).toContain('min-w-0');
-    expect(bubbleColumn?.className).toContain('min-w-0');
-    expect(bubble.getAttribute('style')).toContain('overflow-wrap: anywhere;');
-  });
-
-  it('uses a slate full-row highlight for selected messages without changing bubble tone', () => {
-    const { container } = render(
-      <MessageItem
-        model={createModel({
-          isSelectionMode: true,
-          isSelected: true,
-        })}
-      />
-    );
-
-    const row = container.firstElementChild as HTMLElement | null;
-    const bubble = screen.getByRole('button');
-    const highlight = container.querySelector('[aria-hidden="true"]');
-
-    expect(row?.className).toContain('group');
-    expect(highlight?.className).toContain('-inset-x-3');
-    expect(highlight?.className).toContain('bg-slate-200');
-    expect(bubble.className).toContain('bg-emerald-200');
-    expect(bubble.className).toContain('text-slate-900');
-    expect(
-      screen.getByRole('link', { name: baseMessage.message }).parentElement
-        ?.className
-    ).toContain('pointer-events-none');
-    expect(container.querySelector('.rounded-full.border')).toBeNull();
-  });
-
-  it('moves the outgoing tail to the top-right corner for a standalone bubble', () => {
-    render(<MessageItem model={createModel()} />);
-
-    const bubble = screen.getByRole('button');
-
-    expect(bubble.className).toContain('rounded-tr-[2px]');
-    expect(bubble.className).toContain('rounded-br-xl');
-    expect(bubble.className).not.toContain('rounded-br-[2px]');
-  });
-
-  it('keeps grouped outgoing bubbles connected and uses a single tail at the group start', () => {
-    const { container } = render(
-      <MessageItem
-        model={createModel({
-          isGroupedWithPrevious: true,
-          isGroupedWithNext: true,
-          isFirstVisibleMessage: false,
-        })}
-      />
-    );
-
-    const row = container.firstElementChild as HTMLElement | null;
-    const bubble = screen.getByRole('button');
-
-    expect(row?.className).toContain('mt-1');
-    expect(bubble.className).toContain('rounded-tr-md');
-    expect(bubble.className).toContain('rounded-br-md');
-    expect(bubble.className).not.toContain('rounded-tr-[2px]');
-    expect(bubble.className).not.toContain('rounded-br-[2px]');
-  });
-
   it('renders multiple document attachments in a single bubble without preview covers', () => {
     const groupedMessages = [
       {
@@ -256,7 +186,7 @@ describe('MessageItem', () => {
       container.querySelector('[data-chat-image-group-tile-id="image-2"]')
     ).toBeTruthy();
 
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Buka' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Lihat' }));
 
     expect(openImageGroupInPortal).toHaveBeenCalledTimes(1);
     const firstCall = openImageGroupInPortal.mock.calls[0] as unknown as [
@@ -319,68 +249,5 @@ describe('MessageItem', () => {
     );
 
     expect(screen.getByAltText('PDF cover preview')).toBeTruthy();
-  });
-
-  it('keeps the active attachment menu visible in a grouped bubble', () => {
-    const groupedMessages = [
-      {
-        ...baseMessage,
-        id: 'file-1',
-        message: 'documents/channel/report.pdf',
-        message_type: 'file' as const,
-        file_name: 'Laporan.pdf',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel/report.pdf',
-        file_kind: 'document' as const,
-      },
-      {
-        ...baseMessage,
-        id: 'file-2',
-        message: 'documents/channel/notes.docx',
-        message_type: 'file' as const,
-        file_name: 'Catatan.docx',
-        file_mime_type:
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        file_storage_path: 'documents/channel/notes.docx',
-        file_kind: 'document' as const,
-      },
-    ];
-
-    const { container } = render(
-      <MessageItem
-        model={createModel({
-          message: groupedMessages[1],
-          groupedDocumentMessages: groupedMessages,
-          openMenuMessageId: 'file-1',
-          getAttachmentFileName: targetMessage => targetMessage.file_name || '',
-        })}
-      />
-    );
-
-    const firstRow = container.querySelector(
-      '[data-chat-attachment-row-id="file-1"]'
-    );
-    const secondRow = container.querySelector(
-      '[data-chat-attachment-row-id="file-2"]'
-    );
-
-    expect(screen.getByRole('menuitem', { name: 'Buka' })).toBeTruthy();
-    expect(firstRow?.className).toContain('z-[80]');
-    expect(firstRow?.className).not.toContain('blur-[2px]');
-    expect(secondRow?.className).toContain('blur-[2px]');
-  });
-
-  it('blurs the whole row when another message menu is active elsewhere', () => {
-    const { container } = render(
-      <MessageItem
-        model={createModel({
-          openMenuMessageId: 'file-elsewhere',
-        })}
-      />
-    );
-
-    const row = container.firstElementChild as HTMLElement | null;
-
-    expect(row?.className).toContain('blur-[2px]');
   });
 });

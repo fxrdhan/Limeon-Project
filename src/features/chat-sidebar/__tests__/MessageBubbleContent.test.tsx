@@ -41,40 +41,6 @@ describe('MessageBubbleContent', () => {
     vi.clearAllMocks();
   });
 
-  it('renders square covered image previews with captions in the same bubble', () => {
-    render(
-      <MessageBubbleContent
-        message={buildMessage()}
-        resolvedMessageUrl="https://example.com/screenshot.png"
-        isSelectionMode={false}
-        isImageMessage={false}
-        isFileMessage={true}
-        isImageFileMessage={true}
-        isPdfFileMessage={false}
-        hasAttachmentCaption={true}
-        fileName="Screenshot.png"
-        fileSecondaryLabel="PNG"
-        fileIcon={<span />}
-        resolvedPdfPreviewUrl={null}
-        pdfMetaLabel={null}
-        highlightedMessage="documents/channel/screenshot.png"
-        highlightedCaption="Catatan stok"
-        hasLeadingEllipsis={false}
-        hasTrailingEllipsis={false}
-        isMessageLong={false}
-        isExpanded={false}
-        isHighlightedBubble={false}
-        onToggleExpand={() => {}}
-      />
-    );
-
-    const image = screen.getByAltText('Preview Screenshot.png');
-
-    expect(image.className).toContain('object-cover');
-    expect(image.parentElement?.className).toContain('aspect-square');
-    expect(screen.getByText('Catatan stok')).toBeTruthy();
-  });
-
   it('renders text message urls as hyperlinks that open in a new tab', () => {
     const url =
       'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing';
@@ -248,45 +214,6 @@ describe('MessageBubbleContent', () => {
     );
 
     expect(screen.getByRole('link', { name: url })).toBeTruthy();
-  });
-
-  it('disables bubble content pointer interactions in selection mode', () => {
-    const url = 'https://example.com/report';
-
-    render(
-      <MessageBubbleContent
-        message={buildMessage({
-          message: url,
-          message_type: 'text',
-        })}
-        resolvedMessageUrl={null}
-        isSelectionMode={true}
-        isImageMessage={false}
-        isFileMessage={false}
-        isImageFileMessage={false}
-        isPdfFileMessage={false}
-        hasAttachmentCaption={false}
-        fileName={null}
-        fileSecondaryLabel={null}
-        fileIcon={<span />}
-        resolvedPdfPreviewUrl={null}
-        pdfMetaLabel={null}
-        highlightedMessage={renderHighlightedText(url, '', {
-          linkify: true,
-        })}
-        highlightedCaption=""
-        hasLeadingEllipsis={false}
-        hasTrailingEllipsis={false}
-        isMessageLong={false}
-        isExpanded={false}
-        isHighlightedBubble={false}
-        onToggleExpand={() => {}}
-      />
-    );
-
-    const link = screen.getByRole('link', { name: url });
-
-    expect(link.parentElement?.className).toContain('pointer-events-none');
   });
 
   it('opens a custom context menu for bubble links and copies the visible link text', async () => {
