@@ -47,8 +47,15 @@ interface MessageImageAttachmentGroupContentProps {
     messages: Array<
       Pick<
         ChatMessage,
-        'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_name'
-      >
+        | 'id'
+        | 'message'
+        | 'file_storage_path'
+        | 'file_mime_type'
+        | 'file_name'
+        | 'file_preview_url'
+      > & {
+        previewUrl?: string | null;
+      }
     >,
     initialMessageId?: string | null
   ) => Promise<void>;
@@ -98,6 +105,8 @@ export const MessageImageAttachmentGroupContent = ({
     file_storage_path: message.file_storage_path,
     file_mime_type: message.file_mime_type,
     file_name: message.file_name,
+    file_preview_url: message.file_preview_url,
+    previewUrl: getImageMessageUrl(message),
   }));
   const isCurrentUserGroup = messages[0]?.sender_id === userId;
   const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(

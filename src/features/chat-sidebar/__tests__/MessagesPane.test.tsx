@@ -1,13 +1,33 @@
 import { createRef } from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import type { MessagesPaneModel } from '../models';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import MessagesPane from '../components/MessagesPane';
 
 vi.mock('@/components/shared/image-expand-preview', () => ({
-  default: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="image-expand-preview">{children}</div>
+  default: ({
+    children,
+    onClose,
+    closeOnContentBackgroundClick,
+  }: {
+    children?: React.ReactNode;
+    onClose?: () => void;
+    closeOnContentBackgroundClick?: boolean;
+  }) => (
+    <div data-testid="image-expand-preview">
+      <div
+        data-testid="image-expand-preview-content"
+        role="presentation"
+        onClick={() => {
+          if (closeOnContentBackgroundClick) {
+            onClose?.();
+          }
+        }}
+      >
+        {children}
+      </div>
+    </div>
   ),
 }));
 
@@ -124,7 +144,10 @@ const createModel = (
     documentPreviewName: '',
     isDocumentPreviewVisible: false,
     closeDocumentPreview: vi.fn(),
+    isImagePreviewOpen: false,
     imagePreviewUrl: null,
+    imagePreviewBackdropUrl: null,
+    imagePreviewStageUrls: [],
     imagePreviewName: '',
     isImagePreviewVisible: false,
     closeImagePreview: vi.fn(),
@@ -205,5 +228,28 @@ describe('MessagesPane', () => {
     expect(screen.getByTestId('message-item-message-1')).toBeTruthy();
     expect(screen.getByTestId('message-item-message-2')).toBeTruthy();
     expect(screen.getByTestId('message-item-message-3')).toBeTruthy();
+  });
+
+  it('closes the single-image preview when the empty content area is clicked', () => {
+    const closeImagePreview = vi.fn();
+    const model = createModel({
+      previews: {
+        isImagePreviewOpen: true,
+        isImagePreviewVisible: true,
+        imagePreviewUrl: 'https://example.com/full.png',
+        imagePreviewBackdropUrl: null,
+        imagePreviewStageUrls: [],
+        imagePreviewName: 'Lampiran',
+        closeImagePreview,
+      },
+    });
+
+    render(<MessagesPane model={model} />);
+
+    const previewContent = screen.getByTestId('image-expand-preview-content');
+
+    fireEvent.click(previewContent);
+
+    expect(closeImagePreview).toHaveBeenCalledTimes(1);
   });
 });

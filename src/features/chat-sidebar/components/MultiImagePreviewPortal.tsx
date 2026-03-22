@@ -10,10 +10,13 @@ import {
 import { LayoutGroup, motion } from 'motion/react';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { TbX } from 'react-icons/tb';
+import ProgressiveImagePreview from './ProgressiveImagePreview';
 
 interface MultiImagePreviewPortalItem {
   id: string;
-  previewUrl: string;
+  previewUrl: string | null;
+  stageUrls: string[];
+  fullPreviewUrl: string | null;
   previewName: string;
 }
 
@@ -290,6 +293,7 @@ const MultiImagePreviewPortal = ({
       isOpen={isOpen}
       isVisible={isVisible}
       onClose={onClose}
+      animateScale={false}
       backdropClassName={backdropClassName}
       contentClassName="h-[92vh] w-[min(1180px,92vw)] max-w-[92vw] p-0"
       backdropRole="button"
@@ -336,12 +340,22 @@ const MultiImagePreviewPortal = ({
                           : 'border-slate-300 hover:border-slate-400'
                       } h-full w-full`}
                     >
-                      <img
-                        src={previewItem.previewUrl}
-                        alt={`Thumbnail ${previewItem.previewName}`}
-                        className="h-full w-full object-cover"
-                        draggable={false}
-                      />
+                      {previewItem.fullPreviewUrl || previewItem.previewUrl ? (
+                        <img
+                          src={
+                            previewItem.fullPreviewUrl ||
+                            previewItem.previewUrl ||
+                            ''
+                          }
+                          alt={`Thumbnail ${previewItem.previewName}`}
+                          className="h-full w-full object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[11px] font-medium tracking-[0.12em] text-slate-400 uppercase">
+                          Memuat
+                        </div>
+                      )}
                     </motion.button>
                   );
                 })}
@@ -397,11 +411,13 @@ const MultiImagePreviewPortal = ({
             </div>
 
             <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-white p-4 md:p-6">
-              <img
-                src={activePreview.previewUrl}
+              <ProgressiveImagePreview
+                fullSrc={activePreview.fullPreviewUrl}
+                backdropSrc={activePreview.previewUrl}
+                stageSrcs={activePreview.stageUrls}
                 alt={activePreview.previewName || 'Preview gambar'}
-                className="max-h-full max-w-full object-contain"
-                draggable={false}
+                className="h-full w-full rounded-[28px]"
+                imageClassName="h-full w-full"
               />
             </div>
           </section>

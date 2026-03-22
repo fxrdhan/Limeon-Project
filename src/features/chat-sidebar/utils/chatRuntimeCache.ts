@@ -6,6 +6,7 @@ import {
 } from '../constants';
 import {
   conversationCacheStore,
+  imageExpandStageStore,
   imageMessagePreviewStore,
   pendingReadReceiptsStore,
   pdfMessagePreviewStore,
@@ -53,6 +54,13 @@ const deleteCachedImagePreviewByMessageId = (
   store.delete(messageId);
 };
 
+const deleteCachedImageExpandStageByMessageId = (
+  messageId: string,
+  store = imageExpandStageStore
+) => {
+  store.delete(messageId);
+};
+
 const setCachedImagePreview = (
   messageId: string,
   preview: ImageMessagePreviewCacheEntry,
@@ -90,6 +98,32 @@ const setCachedImagePreview = (
     shouldPersistImagePreview(preview)
   ) {
     void persistImagePreviewEntry(messageId, preview);
+  }
+};
+
+const setCachedImageExpandStage = (
+  messageId: string,
+  stageDataUrl: string,
+  store = imageExpandStageStore
+) => {
+  const normalizedStageDataUrl = stageDataUrl.trim();
+  if (!normalizedStageDataUrl) {
+    return;
+  }
+
+  if (store.has(messageId)) {
+    store.delete(messageId);
+  }
+
+  store.set(messageId, normalizedStageDataUrl);
+
+  while (store.size > MAX_IMAGE_MESSAGE_PREVIEW_CACHE_ENTRIES) {
+    const oldestMessageId = store.keys().next().value;
+    if (!oldestMessageId) {
+      break;
+    }
+
+    deleteCachedImageExpandStageByMessageId(oldestMessageId, store);
   }
 };
 
@@ -372,6 +406,10 @@ export const chatRuntimeCache = {
       return store.get(messageId) ?? null;
     },
 
+    getExpandStage(messageId: string, store = imageExpandStageStore) {
+      return store.get(messageId) ?? null;
+    },
+
     setEntry(
       messageId: string,
       preview: ImageMessagePreviewCacheEntry,
@@ -381,6 +419,14 @@ export const chatRuntimeCache = {
       > = imageMessagePreviewStore
     ) {
       setCachedImagePreview(messageId, preview, { store });
+    },
+
+    setExpandStage(
+      messageId: string,
+      stageDataUrl: string,
+      store = imageExpandStageStore
+    ) {
+      setCachedImageExpandStage(messageId, stageDataUrl, store);
     },
 
     hydrate(
@@ -406,12 +452,21 @@ export const chatRuntimeCache = {
       > = imageMessagePreviewStore
     ) {
       const existingPreview = store.get(sourceMessageId);
+      const existingExpandStage = imageExpandStageStore.get(sourceMessageId);
       if (!existingPreview) {
-        return false;
+        if (!existingExpandStage) {
+          return false;
+        }
+      } else {
+        store.delete(sourceMessageId);
+        setCachedImagePreview(targetMessageId, existingPreview, { store });
       }
 
-      store.delete(sourceMessageId);
-      setCachedImagePreview(targetMessageId, existingPreview, { store });
+      if (existingExpandStage) {
+        imageExpandStageStore.delete(sourceMessageId);
+        setCachedImageExpandStage(targetMessageId, existingExpandStage);
+      }
+
       return true;
     },
 
@@ -427,6 +482,7 @@ export const chatRuntimeCache = {
         .filter(Boolean)
         .forEach(messageId => {
           deleteCachedImagePreviewByMessageId(messageId, store);
+          deleteCachedImageExpandStageByMessageId(messageId);
         });
 
       void deletePersistedImagePreviewEntriesByMessageIds(messageIds);
@@ -444,6 +500,7 @@ export const chatRuntimeCache = {
         .filter(Boolean)
         .forEach(messageId => {
           deleteCachedImagePreviewByMessageId(messageId, store);
+          deleteCachedImageExpandStageByMessageId(messageId);
         });
     },
 
@@ -460,18 +517,27 @@ export const chatRuntimeCache = {
           .filter(Boolean)
       );
 
-      const staleMessageIds: string[] = [];
+      const staleMessageIds = new Set<string>();
 
       for (const messageId of store.keys()) {
         if (retainedIds.has(messageId)) {
           continue;
         }
 
-        staleMessageIds.push(messageId);
+        staleMessageIds.add(messageId);
       }
 
-      staleMessageIds.forEach(messageId => {
+      for (const messageId of imageExpandStageStore.keys()) {
+        if (retainedIds.has(messageId)) {
+          continue;
+        }
+
+        staleMessageIds.add(messageId);
+      }
+
+      [...staleMessageIds].forEach(messageId => {
         deleteCachedImagePreviewByMessageId(messageId, store);
+        deleteCachedImageExpandStageByMessageId(messageId);
       });
     },
 
@@ -481,14 +547,19 @@ export const chatRuntimeCache = {
         ImageMessagePreviewCacheEntry
       > = imageMessagePreviewStore
     ) {
-      const cachedMessageIds: string[] = [];
+      const cachedMessageIds = new Set<string>();
 
       for (const messageId of store.keys()) {
-        cachedMessageIds.push(messageId);
+        cachedMessageIds.add(messageId);
       }
 
-      cachedMessageIds.forEach(messageId => {
+      for (const messageId of imageExpandStageStore.keys()) {
+        cachedMessageIds.add(messageId);
+      }
+
+      [...cachedMessageIds].forEach(messageId => {
         deleteCachedImagePreviewByMessageId(messageId, store);
+        deleteCachedImageExpandStageByMessageId(messageId);
       });
     },
   },

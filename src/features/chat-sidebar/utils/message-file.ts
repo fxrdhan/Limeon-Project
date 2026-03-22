@@ -1,6 +1,7 @@
 import type { ComposerPendingFileKind } from '../types';
 import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
+import type { TransformOptions } from '@supabase/storage-js';
 import {
   buildPdfPreviewStoragePath,
   extractChatStoragePath,
@@ -54,6 +55,26 @@ export const isDirectChatAssetUrl = (url: string) =>
   /^(https?:\/\/|blob:|data:|\/)/i.test(url);
 
 export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
+
+export type ChatAssetTransformOptions = TransformOptions;
+
+const buildSignedChatAssetCacheKey = (
+  storagePath: string,
+  transform?: ChatAssetTransformOptions
+) => {
+  if (!transform || Object.keys(transform).length === 0) {
+    return storagePath;
+  }
+
+  return [
+    storagePath,
+    transform.width ?? '',
+    transform.height ?? '',
+    transform.resize ?? '',
+    transform.quality ?? '',
+    transform.format ?? '',
+  ].join('::');
+};
 
 export const fetchChatFileBlobWithFallback = async (
   url: string,
@@ -126,7 +147,8 @@ export const fetchPdfBlobWithFallback = (
 export const resolveChatAssetUrlWithExpiry = async (
   url: string,
   storagePathHint?: string | null,
-  expiresInSeconds = 3600
+  expiresInSeconds = 3600,
+  transform?: ChatAssetTransformOptions
 ) => {
   if (isDirectChatAssetUrl(url)) {
     return {
@@ -140,8 +162,13 @@ export const resolveChatAssetUrlWithExpiry = async (
     return null;
   }
 
+  const signedAssetCacheKey = buildSignedChatAssetCacheKey(
+    storagePath,
+    transform
+  );
   chatRuntimeCache.signedAssets.pruneExpired();
-  const cachedSignedUrl = chatRuntimeCache.signedAssets.getEntry(storagePath);
+  const cachedSignedUrl =
+    chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey);
   if (cachedSignedUrl) {
     return {
       url: cachedSignedUrl.signedUrl,
@@ -152,11 +179,16 @@ export const resolveChatAssetUrlWithExpiry = async (
   try {
     const signedUrl = await chatSidebarAssetsGateway.createSignedAssetUrl(
       storagePath,
-      expiresInSeconds
+      expiresInSeconds,
+      transform
     );
 
     const expiresAt = Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS;
-    chatRuntimeCache.signedAssets.setEntry(storagePath, signedUrl, expiresAt);
+    chatRuntimeCache.signedAssets.setEntry(
+      signedAssetCacheKey,
+      signedUrl,
+      expiresAt
+    );
 
     return {
       url: signedUrl,
@@ -170,12 +202,14 @@ export const resolveChatAssetUrlWithExpiry = async (
 export const resolveChatAssetUrl = async (
   url: string,
   storagePathHint?: string | null,
-  expiresInSeconds = 3600
+  expiresInSeconds = 3600,
+  transform?: ChatAssetTransformOptions
 ) => {
   const resolvedAsset = await resolveChatAssetUrlWithExpiry(
     url,
     storagePathHint,
-    expiresInSeconds
+    expiresInSeconds,
+    transform
   );
 
   return resolvedAsset?.url ?? null;

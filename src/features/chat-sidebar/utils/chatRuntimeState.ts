@@ -142,6 +142,8 @@ export const imageMessagePreviewStore = new Map<
   ImageMessagePreviewCacheEntry
 >();
 
+export const imageExpandStageStore = new Map<string, string>();
+
 export const pdfMessagePreviewStore = {
   cache: new Map<string, PdfMessagePreviewCacheEntry>(),
   keysByMessageId: new Map<string, string>(),

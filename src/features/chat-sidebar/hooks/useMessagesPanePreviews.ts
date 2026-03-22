@@ -9,22 +9,39 @@ import {
 } from '../utils/message-file';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { isAspectPreservingImagePreviewPath } from '../utils/image-preview-path';
+import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 
 type PreviewableMessage = Pick<
   ChatMessage,
-  'message' | 'file_storage_path' | 'file_mime_type'
+  'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_preview_url'
 >;
 
 type PreviewableImageGroupMessage = Pick<
   ChatMessage,
-  'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_name'
->;
+  | 'id'
+  | 'message'
+  | 'file_storage_path'
+  | 'file_mime_type'
+  | 'file_name'
+  | 'file_preview_url'
+> & {
+  previewUrl?: string | null;
+};
 
-type ResolvedImageGroupPreviewItem = {
-  id: string;
-  previewUrl: string;
+type ImagePreviewState = {
+  backdropUrl: string | null;
+  stageUrls: string[];
+  fullUrl: string | null;
   previewName: string;
-  revokeOnClose: boolean;
+};
+
+type ImageGroupPreviewItem = {
+  id: string;
+  previewUrl: string | null;
+  stageUrls: string[];
+  fullPreviewUrl: string | null;
+  previewName: string;
 };
 
 const getImagePreviewName = (
@@ -44,6 +61,48 @@ const getImagePreviewName = (
   return `Gambar ${fallbackIndex + 1}`;
 };
 
+const resolveInitialImagePreviewUrl = (
+  message: PreviewableMessage,
+  preferredPreviewUrl?: string | null
+) => {
+  const cachedExpandStageUrl = chatRuntimeCache.imagePreviews.getExpandStage(
+    message.id
+  );
+  if (cachedExpandStageUrl) {
+    return cachedExpandStageUrl;
+  }
+
+  const hasAspectPreservingPreview = isAspectPreservingImagePreviewPath(
+    message.file_preview_url
+  );
+
+  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
+  if (
+    normalizedPreferredPreviewUrl &&
+    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
+      (normalizedPreferredPreviewUrl.startsWith('data:') &&
+        hasAspectPreservingPreview) ||
+      /^(https?:\/\/|\/)/i.test(normalizedPreferredPreviewUrl))
+  ) {
+    return normalizedPreferredPreviewUrl;
+  }
+
+  const directPreviewUrl = message.file_preview_url?.trim();
+  if (
+    directPreviewUrl &&
+    isDirectChatAssetUrl(directPreviewUrl) &&
+    (isDirectChatAssetUrl(message.message) || hasAspectPreservingPreview)
+  ) {
+    return directPreviewUrl;
+  }
+
+  if (isDirectChatAssetUrl(message.message)) {
+    return message.message;
+  }
+
+  return null;
+};
+
 export const useMessagesPanePreviews = () => {
   const {
     previewUrl: documentPreviewUrl,
@@ -52,15 +111,18 @@ export const useMessagesPanePreviews = () => {
     closeDocumentPreview,
     openDocumentPreview,
   } = useDocumentPreviewPortal();
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [imagePreviewName, setImagePreviewName] = useState('');
+  const [imagePreviewState, setImagePreviewState] = useState<ImagePreviewState>(
+    {
+      backdropUrl: null,
+      stageUrls: [],
+      fullUrl: null,
+      previewName: '',
+    }
+  );
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
   const [imageGroupPreviewItems, setImageGroupPreviewItems] = useState<
-    Array<{
-      id: string;
-      previewUrl: string;
-      previewName: string;
-    }>
+    ImageGroupPreviewItem[]
   >([]);
   const [activeImageGroupPreviewId, setActiveImageGroupPreviewId] = useState<
     string | null
@@ -71,6 +133,11 @@ export const useMessagesPanePreviews = () => {
   const imageGroupPreviewCloseTimerRef = useRef<number | null>(null);
   const imagePreviewObjectUrlRef = useRef<string | null>(null);
   const imageGroupPreviewObjectUrlsRef = useRef<string[]>([]);
+  const imageGroupPreviewMessagesRef = useRef<
+    Map<string, { index: number; message: PreviewableImageGroupMessage }>
+  >(new Map());
+  const imageGroupPreviewInflightIdsRef = useRef<Set<string>>(new Set());
+  const imageGroupPreviewResolvedIdsRef = useRef<Set<string>>(new Set());
   const activeImagePreviewRequestIdRef = useRef(0);
   const activeImageGroupPreviewRequestIdRef = useRef(0);
 
@@ -101,8 +168,13 @@ export const useMessagesPanePreviews = () => {
       imagePreviewCloseTimerRef.current = null;
     }
     setIsImagePreviewVisible(false);
-    setImagePreviewUrl(null);
-    setImagePreviewName('');
+    setIsImagePreviewOpen(false);
+    setImagePreviewState({
+      backdropUrl: null,
+      stageUrls: [],
+      fullUrl: null,
+      previewName: '',
+    });
     releaseImagePreviewObjectUrl();
   }, [releaseImagePreviewObjectUrl]);
 
@@ -115,6 +187,9 @@ export const useMessagesPanePreviews = () => {
     setIsImageGroupPreviewVisible(false);
     setImageGroupPreviewItems([]);
     setActiveImageGroupPreviewId(null);
+    imageGroupPreviewMessagesRef.current.clear();
+    imageGroupPreviewInflightIdsRef.current.clear();
+    imageGroupPreviewResolvedIdsRef.current.clear();
     releaseImageGroupPreviewObjectUrls();
   }, [releaseImageGroupPreviewObjectUrls]);
 
@@ -167,8 +242,13 @@ export const useMessagesPanePreviews = () => {
       imagePreviewCloseTimerRef.current = null;
     }
     imagePreviewCloseTimerRef.current = window.setTimeout(() => {
-      setImagePreviewUrl(null);
-      setImagePreviewName('');
+      setIsImagePreviewOpen(false);
+      setImagePreviewState({
+        backdropUrl: null,
+        stageUrls: [],
+        fullUrl: null,
+        previewName: '',
+      });
       releaseImagePreviewObjectUrl();
       imagePreviewCloseTimerRef.current = null;
     }, 150);
@@ -184,13 +264,94 @@ export const useMessagesPanePreviews = () => {
     imageGroupPreviewCloseTimerRef.current = window.setTimeout(() => {
       setImageGroupPreviewItems([]);
       setActiveImageGroupPreviewId(null);
+      imageGroupPreviewMessagesRef.current.clear();
+      imageGroupPreviewInflightIdsRef.current.clear();
+      imageGroupPreviewResolvedIdsRef.current.clear();
       releaseImageGroupPreviewObjectUrls();
       imageGroupPreviewCloseTimerRef.current = null;
     }, 150);
   }, [releaseImageGroupPreviewObjectUrls]);
 
+  const resolveImageGroupPreviewItem = useCallback(
+    async (
+      messageId: string,
+      requestId = activeImageGroupPreviewRequestIdRef.current
+    ) => {
+      const normalizedMessageId = messageId.trim();
+      if (!normalizedMessageId) {
+        return;
+      }
+
+      if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      if (
+        imageGroupPreviewInflightIdsRef.current.has(normalizedMessageId) ||
+        imageGroupPreviewResolvedIdsRef.current.has(normalizedMessageId)
+      ) {
+        return;
+      }
+
+      const imageGroupEntry =
+        imageGroupPreviewMessagesRef.current.get(normalizedMessageId);
+      if (!imageGroupEntry) {
+        return;
+      }
+
+      imageGroupPreviewInflightIdsRef.current.add(normalizedMessageId);
+
+      try {
+        const { previewUrl, revokeOnClose } = await resolveImagePreviewResource(
+          imageGroupEntry.message
+        );
+
+        if (!previewUrl) {
+          return;
+        }
+
+        if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+          if (revokeOnClose) {
+            URL.revokeObjectURL(previewUrl);
+          }
+          return;
+        }
+
+        if (revokeOnClose) {
+          imageGroupPreviewObjectUrlsRef.current.push(previewUrl);
+        }
+
+        imageGroupPreviewResolvedIdsRef.current.add(normalizedMessageId);
+        const previewName = getImagePreviewName(
+          imageGroupEntry.message,
+          imageGroupEntry.index
+        );
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
+            previousItem.id === normalizedMessageId
+              ? {
+                  ...previousItem,
+                  previewUrl: previousItem.previewUrl || previewUrl,
+                  stageUrls: previousItem.stageUrls,
+                  fullPreviewUrl: previewUrl,
+                  previewName,
+                }
+              : previousItem
+          )
+        );
+      } finally {
+        imageGroupPreviewInflightIdsRef.current.delete(normalizedMessageId);
+      }
+    },
+    [resolveImagePreviewResource]
+  );
+
   const openImageInPortal = useCallback(
-    async (message: PreviewableMessage, previewName: string) => {
+    async (
+      message: PreviewableMessage,
+      previewName: string,
+      initialPreviewUrl?: string | null
+    ) => {
       clearImageGroupPreviewStateImmediately();
 
       const requestId = activeImagePreviewRequestIdRef.current + 1;
@@ -202,10 +363,26 @@ export const useMessagesPanePreviews = () => {
       }
       releaseImagePreviewObjectUrl();
 
+      setIsImagePreviewOpen(true);
+      setImagePreviewState({
+        backdropUrl: resolveInitialImagePreviewUrl(message, initialPreviewUrl),
+        stageUrls: [],
+        fullUrl: null,
+        previewName,
+      });
+      requestAnimationFrame(() => {
+        if (activeImagePreviewRequestIdRef.current === requestId) {
+          setIsImagePreviewVisible(true);
+        }
+      });
+
       const { previewUrl: nextPreviewUrl, revokeOnClose } =
         await resolveImagePreviewResource(message);
 
       if (!nextPreviewUrl) {
+        if (!resolveInitialImagePreviewUrl(message, initialPreviewUrl)) {
+          clearImagePreviewStateImmediately();
+        }
         toast.error('Preview gambar tidak tersedia', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
@@ -220,15 +397,15 @@ export const useMessagesPanePreviews = () => {
       }
 
       imagePreviewObjectUrlRef.current = revokeOnClose ? nextPreviewUrl : null;
-      setImagePreviewUrl(nextPreviewUrl);
-      setImagePreviewName(previewName);
-      requestAnimationFrame(() => {
-        if (activeImagePreviewRequestIdRef.current === requestId) {
-          setIsImagePreviewVisible(true);
-        }
-      });
+      setImagePreviewState(previousState => ({
+        backdropUrl: previousState.backdropUrl || nextPreviewUrl,
+        stageUrls: previousState.stageUrls,
+        fullUrl: nextPreviewUrl,
+        previewName,
+      }));
     },
     [
+      clearImagePreviewStateImmediately,
       clearImageGroupPreviewStateImmediately,
       releaseImagePreviewObjectUrl,
       resolveImagePreviewResource,
@@ -254,73 +431,59 @@ export const useMessagesPanePreviews = () => {
         imageGroupPreviewCloseTimerRef.current = null;
       }
       releaseImageGroupPreviewObjectUrls();
-
-      const resolvedPreviewCandidates = await Promise.all(
-        messages.map(async (message, index) => {
-          const { previewUrl, revokeOnClose } =
-            await resolveImagePreviewResource(message);
-
-          if (!previewUrl) {
-            return null;
-          }
-
-          return {
-            id: message.id,
-            previewUrl,
-            previewName: getImagePreviewName(message, index),
-            revokeOnClose,
-          } satisfies ResolvedImageGroupPreviewItem;
-        })
+      imageGroupPreviewInflightIdsRef.current.clear();
+      imageGroupPreviewResolvedIdsRef.current.clear();
+      imageGroupPreviewMessagesRef.current = new Map(
+        messages.map((message, index) => [message.id, { message, index }])
       );
-      const resolvedPreviewItems = resolvedPreviewCandidates.filter(
-        (previewItem): previewItem is ResolvedImageGroupPreviewItem =>
-          previewItem !== null
-      );
-
-      if (resolvedPreviewItems.length === 0) {
-        toast.error('Preview gambar tidak tersedia', {
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
-        return;
-      }
-
-      if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
-        resolvedPreviewItems.forEach(previewItem => {
-          if (previewItem.revokeOnClose) {
-            URL.revokeObjectURL(previewItem.previewUrl);
-          }
-        });
-        return;
-      }
-
-      imageGroupPreviewObjectUrlsRef.current = resolvedPreviewItems
-        .filter(previewItem => previewItem.revokeOnClose)
-        .map(previewItem => previewItem.previewUrl);
-      setImageGroupPreviewItems(
-        resolvedPreviewItems.map(({ id, previewName, previewUrl }) => ({
-          id,
-          previewName,
-          previewUrl,
-        }))
-      );
-      setActiveImageGroupPreviewId(
+      const nextPreviewItems = messages.map((message, index) => ({
+        id: message.id,
+        previewUrl: resolveInitialImagePreviewUrl(
+          message,
+          message.previewUrl || null
+        ),
+        stageUrls: [],
+        fullPreviewUrl: null,
+        previewName: getImagePreviewName(message, index),
+      }));
+      const nextActivePreviewId =
         initialMessageId &&
-          resolvedPreviewItems.some(
-            previewItem => previewItem.id === initialMessageId
-          )
+        nextPreviewItems.some(
+          previewItem => previewItem.id === initialMessageId
+        )
           ? initialMessageId
-          : resolvedPreviewItems[0]?.id || null
-      );
+          : nextPreviewItems[0]?.id || null;
+      setImageGroupPreviewItems(nextPreviewItems);
+      setActiveImageGroupPreviewId(nextActivePreviewId);
       requestAnimationFrame(() => {
         if (activeImageGroupPreviewRequestIdRef.current === requestId) {
           setIsImageGroupPreviewVisible(true);
         }
       });
+
+      void (async () => {
+        const prioritizedMessageIds = [
+          ...(nextActivePreviewId ? [nextActivePreviewId] : []),
+          ...messages
+            .map(message => message.id)
+            .filter(messageId => messageId !== nextActivePreviewId),
+        ];
+
+        for (const messageId of prioritizedMessageIds) {
+          if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+            return;
+          }
+
+          await resolveImageGroupPreviewItem(messageId, requestId);
+        }
+      })().catch(() => {
+        // Ignore background prefetch failures; the fallback preview or skeleton remains visible.
+      });
     },
     [
       clearImagePreviewStateImmediately,
       releaseImageGroupPreviewObjectUrls,
-      resolveImagePreviewResource,
+      resolveImageGroupPreviewItem,
     ]
   );
 
@@ -411,9 +574,18 @@ export const useMessagesPanePreviews = () => {
   );
 
   useEffect(() => {
+    const imageGroupPreviewMessages = imageGroupPreviewMessagesRef.current;
+    const imageGroupPreviewInflightIds =
+      imageGroupPreviewInflightIdsRef.current;
+    const imageGroupPreviewResolvedIds =
+      imageGroupPreviewResolvedIdsRef.current;
+
     return () => {
       activeImagePreviewRequestIdRef.current += 1;
       activeImageGroupPreviewRequestIdRef.current += 1;
+      imageGroupPreviewMessages.clear();
+      imageGroupPreviewInflightIds.clear();
+      imageGroupPreviewResolvedIds.clear();
       if (imagePreviewCloseTimerRef.current) {
         window.clearTimeout(imagePreviewCloseTimerRef.current);
         imagePreviewCloseTimerRef.current = null;
@@ -427,20 +599,31 @@ export const useMessagesPanePreviews = () => {
     };
   }, [releaseImageGroupPreviewObjectUrls, releaseImagePreviewObjectUrl]);
 
+  const selectImageGroupPreviewItem = useCallback(
+    (messageId: string) => {
+      setActiveImageGroupPreviewId(messageId);
+      void resolveImageGroupPreviewItem(messageId);
+    },
+    [resolveImageGroupPreviewItem]
+  );
+
   return {
     documentPreviewUrl,
     documentPreviewName,
     isDocumentPreviewVisible,
     closeDocumentPreview,
-    imagePreviewUrl,
-    imagePreviewName,
+    isImagePreviewOpen,
+    imagePreviewUrl: imagePreviewState.fullUrl,
+    imagePreviewBackdropUrl: imagePreviewState.backdropUrl,
+    imagePreviewStageUrls: imagePreviewState.stageUrls,
+    imagePreviewName: imagePreviewState.previewName,
     isImagePreviewVisible,
     closeImagePreview,
     imageGroupPreviewItems,
     activeImageGroupPreviewId,
     isImageGroupPreviewVisible,
     closeImageGroupPreview,
-    selectImageGroupPreviewItem: setActiveImageGroupPreviewId,
+    selectImageGroupPreviewItem,
     openImageInPortal,
     openImageGroupInPortal,
     openDocumentInPortal,

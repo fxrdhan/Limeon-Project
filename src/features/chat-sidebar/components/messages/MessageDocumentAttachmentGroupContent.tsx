@@ -49,9 +49,14 @@ interface MessageDocumentAttachmentGroupContentProps {
   openImageInPortal: (
     message: Pick<
       ChatMessage,
-      'message' | 'file_storage_path' | 'file_mime_type'
+      | 'id'
+      | 'message'
+      | 'file_storage_path'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >,
-    previewName: string
+    previewName: string,
+    initialPreviewUrl?: string | null
   ) => Promise<void>;
   openDocumentInPortal: (
     message: Pick<ChatMessage, 'message' | 'file_storage_path'>,

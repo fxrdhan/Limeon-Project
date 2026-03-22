@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { compressImageIfNeeded } from '@/utils/image';
-import type { FileObject } from '@supabase/storage-js';
+import type { FileObject, TransformOptions } from '@supabase/storage-js';
 
 export interface UploadResult {
   path: string;
@@ -95,11 +95,16 @@ export class StorageService {
   public static async createSignedUrl(
     bucket: string,
     path: string,
-    expiresInSeconds = 3600
+    expiresInSeconds = 3600,
+    transform?: TransformOptions
   ): Promise<string> {
     const { data, error } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(path, expiresInSeconds);
+      .createSignedUrl(
+        path,
+        expiresInSeconds,
+        transform ? { transform } : undefined
+      );
 
     if (error || !data?.signedUrl) {
       throw new Error(

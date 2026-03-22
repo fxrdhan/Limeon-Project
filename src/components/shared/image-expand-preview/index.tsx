@@ -6,6 +6,8 @@ interface ImageExpandPreviewProps {
   isVisible: boolean;
   onClose: () => void;
   children: ReactNode;
+  animateScale?: boolean;
+  closeOnContentBackgroundClick?: boolean;
   backdropClassName?: string;
   contentClassName?: string;
   backdropRole?: string;
@@ -19,6 +21,8 @@ const ImageExpandPreview = ({
   isVisible,
   onClose,
   children,
+  animateScale = true,
+  closeOnContentBackgroundClick = false,
   backdropClassName = '',
   contentClassName = '',
   backdropRole,
@@ -45,9 +49,21 @@ const ImageExpandPreview = ({
     >
       <div
         className={`max-h-[90vh] max-w-[90vw] p-3 transform-gpu will-change-transform transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+          isVisible ? 'opacity-100' : 'opacity-0'
+        } ${
+          animateScale ? (isVisible ? 'scale-100' : 'scale-90') : 'scale-100'
         } ${contentClassName}`}
-        onClick={event => event.stopPropagation()}
+        onClick={event => {
+          if (
+            closeOnContentBackgroundClick &&
+            event.target === event.currentTarget
+          ) {
+            onClose();
+            return;
+          }
+
+          event.stopPropagation();
+        }}
         role="presentation"
       >
         {children}

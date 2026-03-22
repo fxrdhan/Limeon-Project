@@ -19,6 +19,9 @@ const { mockResolveChatAssetUrlWithExpiry, mockFetchChatFileBlobWithFallback } =
 const { mockReadImageBlobAsDataUrl } = vi.hoisted(() => ({
   mockReadImageBlobAsDataUrl: vi.fn(),
 }));
+const { mockCreateImageExpandStageDataUrl } = vi.hoisted(() => ({
+  mockCreateImageExpandStageDataUrl: vi.fn(),
+}));
 const { mockLoadPersistedImagePreviewEntriesByMessageIds } = vi.hoisted(() => ({
   mockLoadPersistedImagePreviewEntriesByMessageIds: vi.fn(),
 }));
@@ -44,6 +47,7 @@ vi.mock('../utils/image-message-preview', async importOriginal => {
 
   return {
     ...actual,
+    createImageExpandStageDataUrl: mockCreateImageExpandStageDataUrl,
     readBlobAsDataUrl: mockReadImageBlobAsDataUrl,
   };
 });
@@ -69,11 +73,15 @@ describe('useMessageImagePreviews', () => {
     mockResolveChatAssetUrlWithExpiry.mockReset();
     mockFetchChatFileBlobWithFallback.mockReset();
     mockReadImageBlobAsDataUrl.mockReset();
+    mockCreateImageExpandStageDataUrl.mockReset();
     mockLoadPersistedImagePreviewEntriesByMessageIds.mockReset();
     mockPersistImagePreviewEntry.mockReset();
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
     mockReadImageBlobAsDataUrl.mockResolvedValue(
       'data:image/webp;base64,cGVyc2lzdGVkLXByZXZpZXc='
+    );
+    mockCreateImageExpandStageDataUrl.mockResolvedValue(
+      'data:image/webp;base64,ZXhwYW5kLXN0YWdl'
     );
     mockLoadPersistedImagePreviewEntriesByMessageIds.mockResolvedValue([]);
     chatRuntimeCache.imagePreviews.reset();
@@ -234,7 +242,7 @@ describe('useMessageImagePreviews', () => {
         message_type: 'image',
         file_mime_type: 'image/png',
         file_storage_path: 'images/channel/user-a_image-thumb-1.png',
-        file_preview_url: 'previews/channel/user-a_image-thumb-1.webp',
+        file_preview_url: 'previews/channel/user-a_image-thumb-1.fit-v2.webp',
       },
     ];
 
@@ -247,9 +255,12 @@ describe('useMessageImagePreviews', () => {
     expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
       'data:image/webp;base64,cGVyc2lzdGVkLXByZXZpZXc='
     );
+    expect(chatRuntimeCache.imagePreviews.getExpandStage('image-thumb-1')).toBe(
+      'data:image/webp;base64,ZXhwYW5kLXN0YWdl'
+    );
     expect(mockFetchChatFileBlobWithFallback).toHaveBeenCalledWith(
-      'previews/channel/user-a_image-thumb-1.webp',
-      'previews/channel/user-a_image-thumb-1.webp'
+      'previews/channel/user-a_image-thumb-1.fit-v2.webp',
+      'previews/channel/user-a_image-thumb-1.fit-v2.webp'
     );
     expect(mockResolveChatAssetUrlWithExpiry).not.toHaveBeenCalled();
   });
@@ -320,6 +331,9 @@ describe('useMessageImagePreviews', () => {
     expect(result.current.getImageMessageUrl(messages[0]!)).toBe(
       'data:image/webp;base64,aHlkcmF0ZWQ='
     );
+    expect(
+      chatRuntimeCache.imagePreviews.getExpandStage('image-hydrated-1')
+    ).toBeNull();
     expect(mockResolveChatAssetUrlWithExpiry).not.toHaveBeenCalled();
   });
 });

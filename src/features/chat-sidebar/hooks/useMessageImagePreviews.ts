@@ -8,7 +8,11 @@ import {
   resolveChatAssetUrlWithExpiry,
 } from '../utils/message-file';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { readBlobAsDataUrl } from '../utils/image-message-preview';
+import {
+  createImageExpandStageDataUrl,
+  readBlobAsDataUrl,
+} from '../utils/image-message-preview';
+import { isAspectPreservingImagePreviewPath } from '../utils/image-preview-path';
 import { loadPersistedImagePreviewEntriesByMessageIds } from '../utils/image-preview-persistence';
 
 const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
@@ -175,6 +179,34 @@ export const useMessageImagePreviews = ({
         chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
       });
 
+      await Promise.all(
+        persistedImagePreviews.map(async ({ messageId, preview }) => {
+          const matchingMessage = messages.find(
+            messageItem => messageItem.id === messageId
+          );
+          if (
+            !matchingMessage ||
+            !isAspectPreservingImagePreviewPath(
+              matchingMessage.file_preview_url
+            )
+          ) {
+            return;
+          }
+
+          const expandStageDataUrl = await createImageExpandStageDataUrl(
+            preview.previewUrl
+          ).catch(() => null);
+          if (!expandStageDataUrl || isCancelled) {
+            return;
+          }
+
+          chatRuntimeCache.imagePreviews.setExpandStage(
+            messageId,
+            expandStageDataUrl
+          );
+        })
+      );
+
       if (persistedImagePreviews.length > 0) {
         setImageMessagePreviewEntries(previousEntries => ({
           ...previousEntries,
@@ -310,6 +342,19 @@ export const useMessageImagePreviews = ({
                 imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
                 clearImagePreviewRetryTimer(messageItem.id);
                 const previewDataUrl = await readBlobAsDataUrl(previewBlob);
+                const expandStageDataUrl = isAspectPreservingImagePreviewPath(
+                  persistedPreviewPath
+                )
+                  ? await createImageExpandStageDataUrl(previewBlob).catch(
+                      () => null
+                    )
+                  : null;
+                if (expandStageDataUrl) {
+                  chatRuntimeCache.imagePreviews.setExpandStage(
+                    messageItem.id,
+                    expandStageDataUrl
+                  );
+                }
                 return {
                   messageId: messageItem.id,
                   previewEntry: {
@@ -350,6 +395,15 @@ export const useMessageImagePreviews = ({
 
             imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
             clearImagePreviewRetryTimer(messageItem.id);
+            const expandStageDataUrl = await createImageExpandStageDataUrl(
+              imageBlob
+            ).catch(() => null);
+            if (expandStageDataUrl) {
+              chatRuntimeCache.imagePreviews.setExpandStage(
+                messageItem.id,
+                expandStageDataUrl
+              );
+            }
             return {
               messageId: messageItem.id,
               previewEntry: {

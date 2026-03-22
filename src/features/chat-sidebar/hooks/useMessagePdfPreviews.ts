@@ -15,12 +15,39 @@ import { loadPersistedPdfPreviewEntry } from '../utils/pdf-preview-persistence';
 export type PdfMessagePreview = PdfMessagePreviewCacheEntry;
 const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
 const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
+const PDF_PREVIEW_BACKGROUND_CONCURRENCY = 3;
 
 interface UseMessagePdfPreviewsProps {
   messages: ChatMessage[];
   getAttachmentFileName: (message: ChatMessage) => string;
   getAttachmentFileKind: (message: ChatMessage) => 'audio' | 'document';
 }
+
+const runConcurrentPdfPreviewTasks = async <T>(
+  items: T[],
+  worker: (item: T) => Promise<void>
+) => {
+  let currentIndex = 0;
+  const workerCount = Math.min(
+    PDF_PREVIEW_BACKGROUND_CONCURRENCY,
+    items.length
+  );
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (currentIndex < items.length) {
+        const item = items[currentIndex];
+        currentIndex += 1;
+
+        if (!item) {
+          return;
+        }
+
+        await worker(item);
+      }
+    })
+  );
+};
 
 export const useMessagePdfPreviews = ({
   messages,
@@ -144,27 +171,30 @@ export const useMessagePdfPreviews = ({
   useEffect(() => {
     let isCancelled = false;
 
-    const pendingPdfMessages = messages.filter(message => {
-      if (message.message_type !== 'file') return false;
-      if (getAttachmentFileKind(message) !== 'document') return false;
+    const pendingPdfMessages = messages
+      .filter(message => {
+        if (message.message_type !== 'file') return false;
+        if (getAttachmentFileKind(message) !== 'document') return false;
 
-      const fileName = getAttachmentFileName(message);
-      if (!isPdfPreviewableMessage(message, fileName)) return false;
+        const fileName = getAttachmentFileName(message);
+        if (!isPdfPreviewableMessage(message, fileName)) return false;
 
-      const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-      if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-      if (chatRuntimeCache.pdfPreviews.get(cacheKey)) return false;
-      if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
-      if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
-      if (
-        (pdfPreviewRetryAttemptsRef.current.get(message.id) ?? 0) >=
-        PDF_PREVIEW_MAX_RETRY_ATTEMPTS
-      ) {
-        return false;
-      }
+        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
+        if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
+        if (chatRuntimeCache.pdfPreviews.get(cacheKey)) return false;
+        if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
+        if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
+        if (
+          (pdfPreviewRetryAttemptsRef.current.get(message.id) ?? 0) >=
+          PDF_PREVIEW_MAX_RETRY_ATTEMPTS
+        ) {
+          return false;
+        }
 
-      return true;
-    });
+        return true;
+      })
+      .slice()
+      .reverse();
 
     if (pendingPdfMessages.length === 0) return;
 
@@ -183,38 +213,41 @@ export const useMessagePdfPreviews = ({
 
     const renderPdfPreviews = async () => {
       try {
-        for (const pendingMessage of pendingPdfMessages) {
-          if (isCancelled) return;
-          pdfPreviewRenderingIdsRef.current.add(pendingMessage.id);
-
-          const pendingFileName = getAttachmentFileName(pendingMessage);
-          const cacheKey = buildPdfMessagePreviewCacheKey(
-            pendingMessage,
-            pendingFileName
-          );
-
-          try {
-            const nextPreview =
-              (await loadPersistedPdfPreviewEntry(cacheKey))?.preview ??
-              (await resolvePersistedPdfMessagePreview(
-                pendingMessage,
-                cacheKey
-              )) ??
-              (await renderPdfMessagePreview(pendingMessage, cacheKey));
-            if (!nextPreview) {
-              schedulePdfPreviewRetry(pendingMessage.id);
-              continue;
-            }
-
+        await runConcurrentPdfPreviewTasks(
+          pendingPdfMessages,
+          async pendingMessage => {
             if (isCancelled) return;
-            syncResolvedPreview(pendingMessage, nextPreview);
-          } catch (error) {
-            console.error('Error rendering PDF message preview:', error);
-            schedulePdfPreviewRetry(pendingMessage.id);
-          } finally {
-            pdfPreviewRenderingIdsRef.current.delete(pendingMessage.id);
+            pdfPreviewRenderingIdsRef.current.add(pendingMessage.id);
+
+            const pendingFileName = getAttachmentFileName(pendingMessage);
+            const cacheKey = buildPdfMessagePreviewCacheKey(
+              pendingMessage,
+              pendingFileName
+            );
+
+            try {
+              const nextPreview =
+                (await loadPersistedPdfPreviewEntry(cacheKey))?.preview ??
+                (await resolvePersistedPdfMessagePreview(
+                  pendingMessage,
+                  cacheKey
+                )) ??
+                (await renderPdfMessagePreview(pendingMessage, cacheKey));
+              if (!nextPreview) {
+                schedulePdfPreviewRetry(pendingMessage.id);
+                return;
+              }
+
+              if (isCancelled) return;
+              syncResolvedPreview(pendingMessage, nextPreview);
+            } catch (error) {
+              console.error('Error rendering PDF message preview:', error);
+              schedulePdfPreviewRetry(pendingMessage.id);
+            } finally {
+              pdfPreviewRenderingIdsRef.current.delete(pendingMessage.id);
+            }
           }
-        }
+        );
       } catch (error) {
         console.error('Error preparing PDF preview renderer:', error);
         for (const pendingMessage of pendingPdfMessages) {

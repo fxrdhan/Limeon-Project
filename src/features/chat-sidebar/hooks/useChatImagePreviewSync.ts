@@ -5,7 +5,10 @@ import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerFile } from '../types';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { persistImageMessagePreview } from '../utils/image-message-preview';
+import {
+  createImageExpandStageDataUrl,
+  persistImageMessagePreview,
+} from '../utils/image-message-preview';
 import {
   isImageFileExtensionOrMime,
   resolveFileExtension,
@@ -58,10 +61,23 @@ export const useChatImagePreviewSync = ({
           return;
         }
 
+        let expandStageDataUrl: string | null = null;
+        try {
+          expandStageDataUrl = await createImageExpandStageDataUrl(file);
+        } catch (stageError) {
+          console.error('Failed to create in-memory expand stage:', stageError);
+        }
+
         chatRuntimeCache.imagePreviews.setEntry(realMessage.id, {
           previewUrl: persistedPreview.previewDataUrl,
           isObjectUrl: false,
         });
+        if (expandStageDataUrl) {
+          chatRuntimeCache.imagePreviews.setExpandStage(
+            realMessage.id,
+            expandStageDataUrl
+          );
+        }
 
         if (persistedPreview.error || !persistedPreview.message) {
           console.error(

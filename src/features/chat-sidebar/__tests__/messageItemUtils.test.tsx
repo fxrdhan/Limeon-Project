@@ -116,7 +116,8 @@ describe('messageItemUtils', () => {
 
     expect(openImageInPortal).toHaveBeenCalledWith(
       imageMessage,
-      'Lampiran.png'
+      'Lampiran.png',
+      undefined
     );
   });
 

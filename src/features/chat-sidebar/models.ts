@@ -148,13 +148,18 @@ export interface MessagesPaneModel {
     documentPreviewName: string;
     isDocumentPreviewVisible: boolean;
     closeDocumentPreview: () => void;
+    isImagePreviewOpen: boolean;
     imagePreviewUrl: string | null;
+    imagePreviewBackdropUrl: string | null;
+    imagePreviewStageUrls: string[];
     imagePreviewName: string;
     isImagePreviewVisible: boolean;
     closeImagePreview: () => void;
     imageGroupPreviewItems: Array<{
       id: string;
-      previewUrl: string;
+      previewUrl: string | null;
+      stageUrls: string[];
+      fullPreviewUrl: string | null;
       previewName: string;
     }>;
     activeImageGroupPreviewId: string | null;
@@ -164,9 +169,14 @@ export interface MessagesPaneModel {
     openImageInPortal: (
       message: Pick<
         ChatMessage,
-        'message' | 'file_storage_path' | 'file_mime_type'
+        | 'id'
+        | 'message'
+        | 'file_storage_path'
+        | 'file_mime_type'
+        | 'file_preview_url'
       >,
-      previewName: string
+      previewName: string,
+      initialPreviewUrl?: string | null
     ) => Promise<void>;
     openImageGroupInPortal: (
       messages: Array<
@@ -177,7 +187,10 @@ export interface MessagesPaneModel {
           | 'file_storage_path'
           | 'file_mime_type'
           | 'file_name'
-        >
+          | 'file_preview_url'
+        > & {
+          previewUrl?: string | null;
+        }
       >,
       initialMessageId?: string | null
     ) => Promise<void>;

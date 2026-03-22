@@ -237,7 +237,7 @@ describe('useChatComposerSend', () => {
         type: 'image/webp',
       }),
       previewDataUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
-      previewPath: 'previews/channel/server-image-preview.webp',
+      previewPath: 'previews/channel/server-image-preview.fit-v2.webp',
     });
     mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
       data: null,
@@ -258,7 +258,7 @@ describe('useChatComposerSend', () => {
       })
     );
     mockGateway.uploadImagePreview.mockResolvedValue({
-      path: 'previews/channel/server-image-preview.webp',
+      path: 'previews/channel/server-image-preview.fit-v2.webp',
     });
     mockPersistImageMessagePreview.mockImplementation(
       async ({
@@ -1437,7 +1437,7 @@ describe('useChatComposerSend', () => {
         type: 'image/webp',
       }),
       previewDataUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
-      previewPath: 'previews/channel-1/user-a_image_attachment.webp',
+      previewPath: 'previews/channel-1/user-a_image_attachment.fit-v2.webp',
     });
     mockGateway.uploadImage.mockResolvedValue({
       path: 'images/channel-1/user-a_image_attachment.png',
@@ -1510,13 +1510,14 @@ describe('useChatComposerSend', () => {
     expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
     expect(mockGateway.uploadImagePreview).toHaveBeenCalledWith(
       expect.any(File),
-      'previews/channel-1/user-a_image_attachment.webp',
+      'previews/channel-1/user-a_image_attachment.fit-v2.webp',
       'image/webp'
     );
     expect(mockGateway.updateFilePreview).toHaveBeenCalledWith(
       'server-image-attachment',
       {
-        file_preview_url: 'previews/channel-1/user-a_image_attachment.webp',
+        file_preview_url:
+          'previews/channel-1/user-a_image_attachment.fit-v2.webp',
         file_preview_page_count: null,
         file_preview_status: 'ready',
         file_preview_error: null,

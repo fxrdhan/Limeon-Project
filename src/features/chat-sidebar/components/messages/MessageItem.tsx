@@ -81,16 +81,28 @@ export interface MessageItemModel {
   openImageInPortal: (
     message: Pick<
       ChatMessage,
-      'message' | 'file_storage_path' | 'file_mime_type'
+      | 'id'
+      | 'message'
+      | 'file_storage_path'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >,
-    previewName: string
+    previewName: string,
+    initialPreviewUrl?: string | null
   ) => Promise<void>;
   openImageGroupInPortal: (
     messages: Array<
       Pick<
         ChatMessage,
-        'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_name'
-      >
+        | 'id'
+        | 'message'
+        | 'file_storage_path'
+        | 'file_mime_type'
+        | 'file_name'
+        | 'file_preview_url'
+      > & {
+        previewUrl?: string | null;
+      }
     >,
     initialMessageId?: string | null
   ) => Promise<void>;
@@ -184,6 +196,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     menuActions,
   } = buildMessageItemDerivations({
     message,
+    resolvedMessageUrl,
     userId,
     openMenuMessageId,
     menuTransitionSourceId,

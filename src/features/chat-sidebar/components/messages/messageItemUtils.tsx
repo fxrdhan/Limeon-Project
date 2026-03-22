@@ -81,12 +81,18 @@ interface BuildMessageMenuActionsProps {
   isPdfFileMessage: boolean;
   fileKind: ComposerPendingFileKind;
   fileName: string | null;
+  previewUrl?: string | null;
   openImageInPortal: (
     message: Pick<
       ChatMessage,
-      'message' | 'file_storage_path' | 'file_mime_type'
+      | 'id'
+      | 'message'
+      | 'file_storage_path'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >,
-    previewName: string
+    previewName: string,
+    initialPreviewUrl?: string | null
   ) => Promise<void>;
   openDocumentInPortal: (
     message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
@@ -109,6 +115,7 @@ export const buildMessageMenuActions = ({
   isPdfFileMessage,
   fileKind,
   fileName,
+  previewUrl,
   openImageInPortal,
   openDocumentInPortal,
   handleEditMessage,
@@ -141,7 +148,7 @@ export const buildMessageMenuActions = ({
       icon: <TbEye className="h-4 w-4" />,
       onClick: () => {
         if (isImageMessage || isImageFileMessage) {
-          void openImageInPortal(message, fileName || 'Gambar');
+          void openImageInPortal(message, fileName || 'Gambar', previewUrl);
           return;
         }
         if (isFileMessage && fileKind === 'document' && isPdfFileMessage) {

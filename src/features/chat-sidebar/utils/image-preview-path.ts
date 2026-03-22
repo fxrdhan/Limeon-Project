@@ -1,3 +1,5 @@
+const IMAGE_PREVIEW_ASPECT_VERSION_SUFFIX = '.fit-v2';
+
 const getPreviewExtension = (mimeType: string) =>
   mimeType === 'image/webp' ? 'webp' : 'jpg';
 
@@ -9,8 +11,15 @@ export const buildImagePreviewStoragePath = (
   const extension = getPreviewExtension(mimeType);
 
   if (/\.[^./]+$/.test(normalizedPath)) {
-    return normalizedPath.replace(/\.[^./]+$/, `.${extension}`);
+    return normalizedPath.replace(
+      /\.[^./]+$/,
+      `${IMAGE_PREVIEW_ASPECT_VERSION_SUFFIX}.${extension}`
+    );
   }
 
-  return `${normalizedPath}.${extension}`;
+  return `${normalizedPath}${IMAGE_PREVIEW_ASPECT_VERSION_SUFFIX}.${extension}`;
 };
+
+export const isAspectPreservingImagePreviewPath = (
+  filePreviewPath?: string | null
+) => filePreviewPath?.includes(IMAGE_PREVIEW_ASPECT_VERSION_SUFFIX) ?? false;

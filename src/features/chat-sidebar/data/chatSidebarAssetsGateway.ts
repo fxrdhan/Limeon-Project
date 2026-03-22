@@ -1,4 +1,5 @@
 import { StorageService } from '@/services/api/storage.service';
+import type { TransformOptions } from '@supabase/storage-js';
 import { CHAT_IMAGE_BUCKET } from '../constants';
 
 export interface ChatSidebarAssetUploadResult {
@@ -67,12 +68,14 @@ export const chatSidebarAssetsGateway = {
   },
   createSignedAssetUrl(
     storagePath: string,
-    expiresInSeconds = 3600
+    expiresInSeconds = 3600,
+    transform?: TransformOptions
   ): Promise<string> {
     return StorageService.createSignedUrl(
       CHAT_IMAGE_BUCKET,
       storagePath,
-      expiresInSeconds
+      expiresInSeconds,
+      transform
     );
   },
 };

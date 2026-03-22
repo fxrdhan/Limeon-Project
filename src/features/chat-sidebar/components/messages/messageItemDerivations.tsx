@@ -17,6 +17,7 @@ import { buildMessageMenuActions, getFileIcon } from './messageItemUtils';
 
 interface BuildMessageItemDerivationsParams {
   message: ChatMessage;
+  resolvedMessageUrl: string | null;
   userId?: string;
   openMenuMessageId: string | null;
   menuTransitionSourceId: string | null;
@@ -36,9 +37,14 @@ interface BuildMessageItemDerivationsParams {
   openImageInPortal: (
     message: Pick<
       ChatMessage,
-      'message' | 'file_storage_path' | 'file_mime_type'
+      | 'id'
+      | 'message'
+      | 'file_storage_path'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >,
-    previewName: string
+    previewName: string,
+    initialPreviewUrl?: string | null
   ) => Promise<void>;
   openDocumentInPortal: (
     message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
@@ -91,6 +97,7 @@ export interface MessageItemDerivations {
 
 export const buildMessageItemDerivations = ({
   message,
+  resolvedMessageUrl,
   userId,
   openMenuMessageId,
   menuTransitionSourceId,
@@ -255,6 +262,7 @@ export const buildMessageItemDerivations = ({
     fileKind,
     fileName,
     openImageInPortal,
+    previewUrl: resolvedMessageUrl,
     openDocumentInPortal,
     handleEditMessage,
     handleCopyMessage,

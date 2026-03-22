@@ -1,4 +1,5 @@
 import {
+  IMAGE_EXPAND_STAGE_TARGET_SIZE,
   IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY,
   IMAGE_MESSAGE_PREVIEW_TARGET_SIZE,
 } from '../constants';
@@ -11,45 +12,55 @@ import { buildImagePreviewStoragePath } from './image-preview-path';
 
 const IMAGE_PREVIEW_PRIMARY_MIME_TYPE = 'image/webp';
 const IMAGE_PREVIEW_FALLBACK_MIME_TYPE = 'image/jpeg';
-const loadImageElement = (file: Blob) =>
+const loadImageElement = (source: Blob | string) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
     const imageElement = new Image();
+    const objectUrl =
+      typeof source === 'string' ? null : URL.createObjectURL(source);
+    const imageSource = typeof source === 'string' ? source : objectUrl;
+
+    const cleanup = () => {
+      if (!objectUrl) {
+        return;
+      }
+
+      URL.revokeObjectURL(objectUrl);
+    };
 
     imageElement.onload = () => {
-      URL.revokeObjectURL(objectUrl);
+      cleanup();
       resolve(imageElement);
     };
 
     imageElement.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
+      cleanup();
       reject(new Error('Failed to decode image preview source'));
     };
 
-    imageElement.src = objectUrl;
+    if (!imageSource) {
+      cleanup();
+      reject(new Error('Failed to resolve image preview source'));
+      return;
+    }
+
+    imageElement.src = imageSource;
   });
 
 const renderImagePreviewCanvas = async (
-  file: Blob,
+  source: Blob | string,
   targetSize: number = IMAGE_MESSAGE_PREVIEW_TARGET_SIZE
 ) => {
-  const imageElement = await loadImageElement(file);
+  const imageElement = await loadImageElement(source);
   const sourceWidth = Math.max(
     imageElement.naturalWidth || imageElement.width || 1
   );
   const sourceHeight = Math.max(
     imageElement.naturalHeight || imageElement.height || 1
   );
-  const sourceCropSize = Math.max(1, Math.min(sourceWidth, sourceHeight));
-  const sourceCropX = Math.max(
-    0,
-    Math.floor((sourceWidth - sourceCropSize) / 2)
-  );
-  const sourceCropY = Math.max(
-    0,
-    Math.floor((sourceHeight - sourceCropSize) / 2)
-  );
-  const targetDimension = Math.max(1, Math.min(targetSize, sourceCropSize));
+  const longestSide = Math.max(sourceWidth, sourceHeight, 1);
+  const targetScale = Math.min(targetSize / longestSide, 1);
+  const targetWidth = Math.max(1, Math.round(sourceWidth * targetScale));
+  const targetHeight = Math.max(1, Math.round(sourceHeight * targetScale));
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 
@@ -57,19 +68,11 @@ const renderImagePreviewCanvas = async (
     return null;
   }
 
-  canvas.width = targetDimension;
-  canvas.height = targetDimension;
-  context.drawImage(
-    imageElement,
-    sourceCropX,
-    sourceCropY,
-    sourceCropSize,
-    sourceCropSize,
-    0,
-    0,
-    targetDimension,
-    targetDimension
-  );
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(imageElement, 0, 0, targetWidth, targetHeight);
 
   return canvas;
 };
@@ -156,6 +159,30 @@ export const createImagePreviewUploadArtifact = async (
     previewDataUrl,
     previewPath,
   };
+};
+
+export const createImageExpandStageDataUrl = async (
+  source: Blob | string,
+  targetSize: number = IMAGE_EXPAND_STAGE_TARGET_SIZE
+) => {
+  const canvas = await renderImagePreviewCanvas(source, targetSize);
+  if (!canvas) {
+    return null;
+  }
+
+  const webpDataUrl = canvas.toDataURL(
+    IMAGE_PREVIEW_PRIMARY_MIME_TYPE,
+    IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
+  );
+  if (webpDataUrl !== 'data:,') {
+    return webpDataUrl;
+  }
+
+  const jpegDataUrl = canvas.toDataURL(
+    IMAGE_PREVIEW_FALLBACK_MIME_TYPE,
+    IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
+  );
+  return jpegDataUrl === 'data:,' ? null : jpegDataUrl;
 };
 
 export const persistImageMessagePreview = async ({

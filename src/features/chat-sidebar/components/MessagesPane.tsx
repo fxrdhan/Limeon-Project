@@ -7,6 +7,7 @@ import type { MessagesPaneModel } from '../models';
 import { buildMessageRenderItems } from '../utils/message-render-items';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MultiImagePreviewPortal from './MultiImagePreviewPortal';
+import ProgressiveImagePreview from './ProgressiveImagePreview';
 import MessageItem from './messages/MessageItem';
 
 const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
@@ -230,9 +231,11 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
       ) : null}
 
       <ImageExpandPreview
-        isOpen={Boolean(previews.imagePreviewUrl)}
+        isOpen={previews.isImagePreviewOpen}
         isVisible={previews.isImagePreviewVisible}
         onClose={previews.closeImagePreview}
+        animateScale={false}
+        closeOnContentBackgroundClick={true}
         backdropClassName="z-[79] px-4 py-6"
         contentClassName="max-h-[92vh] max-w-[92vw] p-0"
         backdropRole="button"
@@ -245,14 +248,15 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
           }
         }}
       >
-        {previews.imagePreviewUrl ? (
-          <img
-            src={previews.imagePreviewUrl}
-            alt={previews.imagePreviewName || 'Preview gambar'}
-            className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain"
-            draggable={false}
-          />
-        ) : null}
+        <ProgressiveImagePreview
+          fullSrc={previews.imagePreviewUrl}
+          backdropSrc={previews.imagePreviewBackdropUrl}
+          stageSrcs={previews.imagePreviewStageUrls}
+          allowPointerPassthrough={true}
+          alt={previews.imagePreviewName || 'Preview gambar'}
+          className="h-[92vh] w-[92vw] box-border px-6 py-8"
+          imageClassName="h-full w-full rounded-xl"
+        />
       </ImageExpandPreview>
 
       <MultiImagePreviewPortal
