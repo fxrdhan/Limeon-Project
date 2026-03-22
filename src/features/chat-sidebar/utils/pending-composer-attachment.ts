@@ -3,6 +3,7 @@ import type {
   PendingComposerAttachment,
   PendingComposerAttachmentKind,
 } from '../types';
+import { resolveFileExtension } from '../../../../shared/chatStoragePaths';
 
 interface UpsertPendingComposerAttachmentOptions {
   maxAttachments: number;
@@ -20,10 +21,13 @@ const buildPendingAttachmentId = (prefix: 'pending_image' | 'pending_file') =>
   `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const getFileTypeLabel = (file: File, fallbackLabel: string) => {
-  const mimeSubtype = file.type.split('/')[1];
-  const extensionFromName = file.name.split('.').pop();
+  const resolvedExtension = resolveFileExtension(
+    file.name || null,
+    null,
+    file.type
+  );
 
-  return (mimeSubtype || extensionFromName || fallbackLabel).toUpperCase();
+  return (resolvedExtension || fallbackLabel).toUpperCase();
 };
 
 export const isPdfComposerAttachment = (

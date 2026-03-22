@@ -107,6 +107,10 @@ describe('useChatInteractionModes', () => {
         return 'https://signed.example.com/chat/image.png';
       }
 
+      if (url.includes('stok-opname.xlsx')) {
+        return 'https://signed.example.com/chat/stok-opname.xlsx';
+      }
+
       return null;
     });
   });
@@ -213,6 +217,14 @@ describe('useChatInteractionModes', () => {
         message_relation_kind: 'attachment_caption',
         sender_name: 'Admin',
       }),
+      buildMessage({
+        id: 'file-1',
+        message: 'https://example.com/stok-opname.xlsx',
+        message_type: 'file',
+        file_name: 'stok-opname.xlsx',
+        file_kind: 'document',
+        sender_name: 'Admin',
+      }),
     ];
     const { result, rerender } = renderHook(
       ({ channelId }: { channelId: string }) =>
@@ -254,10 +266,11 @@ describe('useChatInteractionModes', () => {
 
     act(() => {
       result.current.handleToggleMessageSelection('image-1');
+      result.current.handleToggleMessageSelection('file-1');
     });
 
     await waitFor(() => {
-      expect(result.current.selectedVisibleMessages).toHaveLength(1);
+      expect(result.current.selectedVisibleMessages).toHaveLength(2);
     });
 
     await act(async () => {
@@ -278,6 +291,9 @@ describe('useChatInteractionModes', () => {
     );
     expect(clipboardWriteText).toHaveBeenCalledWith(
       expect.stringContaining('Admin: signed.example.com/chat/image.png')
+    );
+    expect(clipboardWriteText).toHaveBeenCalledWith(
+      expect.stringContaining('Admin: signed.example.com/chat/stok-opname.xlsx')
     );
 
     mockSearchConversationMessages.mockResolvedValueOnce({

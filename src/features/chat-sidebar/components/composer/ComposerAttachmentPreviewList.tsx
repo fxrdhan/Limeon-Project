@@ -199,7 +199,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       <p className="truncate text-sm font-medium text-slate-800">
                         {attachment.fileName}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="truncate text-xs text-slate-500">
                         {fileSecondaryLabel}
                       </p>
                     </div>
@@ -249,7 +249,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       <p className="truncate text-sm font-medium text-slate-800">
                         {attachment.fileName}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="truncate text-xs text-slate-500">
                         {fileSecondaryLabel}
                       </p>
                     </div>
@@ -261,7 +261,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       <p className="truncate text-sm font-medium text-slate-800">
                         {attachment.fileName}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="truncate text-xs text-slate-500">
                         {fileSecondaryLabel}
                       </p>
                     </div>

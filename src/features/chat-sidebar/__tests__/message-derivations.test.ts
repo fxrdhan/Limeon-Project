@@ -107,7 +107,7 @@ describe('message-derivations', () => {
     expect(selectableIds.has('text-1')).toBe(true);
   });
 
-  it('serializes selected messages with public URLs for images and pdf attachments', async () => {
+  it('serializes selected messages with copyable URLs for images and all file attachments', async () => {
     const imageMessage = buildMessage({
       id: 'image-1',
       message:
@@ -138,10 +138,30 @@ describe('message-derivations', () => {
       created_at: '2026-03-06T10:00:00.000Z',
       updated_at: '2026-03-06T10:00:00.000Z',
     });
+    const spreadsheetMessage = buildMessage({
+      id: 'file-2',
+      message:
+        'documents/dm_18babd2b-1621-4b8f-bb2c-e4de266d8a55_3dc5f797-4bd0-4c68-895a-cbce61d01000/18babd2b-1621-4b8f-bb2c-e4de266d8a55_document_7b0af424-fb1d-49bc-8b27-70a4aa9c1140.xlsx',
+      message_type: 'file',
+      file_name: 'stok-opname.xlsx',
+      file_kind: 'document',
+      file_mime_type:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      file_storage_path:
+        'documents/dm_18babd2b-1621-4b8f-bb2c-e4de266d8a55_3dc5f797-4bd0-4c68-895a-cbce61d01000/18babd2b-1621-4b8f-bb2c-e4de266d8a55_document_7b0af424-fb1d-49bc-8b27-70a4aa9c1140.xlsx',
+      sender_id: 'user-b',
+      sender_name: 'Gudang',
+      created_at: '2026-03-06T10:05:00.000Z',
+      updated_at: '2026-03-06T10:05:00.000Z',
+    });
 
     mockResolveCopyableChatAssetUrl.mockImplementation(async (url: string) => {
       if (url.includes('_image_') || url.includes('image.png')) {
         return 'https://signed.example.com/chat/image.png';
+      }
+
+      if (url.includes('stok-opname.xlsx') || url.includes('.xlsx')) {
+        return 'https://signed.example.com/chat/stok-opname.xlsx';
       }
 
       if (url.includes('_document_') || url.includes('invoice.pdf')) {
@@ -155,11 +175,12 @@ describe('message-derivations', () => {
       imageMessage,
       captionMessage,
       fileMessage,
+      spreadsheetMessage,
     ]);
     const selectedMessages = getSelectedVisibleMessages(
-      [imageMessage, captionMessage, fileMessage],
+      [imageMessage, captionMessage, fileMessage, spreadsheetMessage],
       captionData.captionMessageIds,
-      new Set(['image-1', 'file-1'])
+      new Set(['image-1', 'file-1', 'file-2'])
     );
     const serialized = await serializeSelectedMessages(selectedMessages, {
       captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
@@ -170,5 +191,8 @@ describe('message-derivations', () => {
 
     expect(serialized).toContain('Admin: signed.example.com/chat/image.png');
     expect(serialized).toContain('Gudang: signed.example.com/chat/invoice.pdf');
+    expect(serialized).toContain(
+      'Gudang: signed.example.com/chat/stok-opname.xlsx'
+    );
   });
 });

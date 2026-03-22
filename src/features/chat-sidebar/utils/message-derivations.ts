@@ -1,9 +1,6 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { getAttachmentFileName } from './attachment';
-import {
-  resolveCopyableChatAssetUrl,
-  resolveFileExtension,
-} from './message-file';
+import { resolveCopyableChatAssetUrl } from './message-file';
 import { isAttachmentCaptionMessage } from './message-relations';
 
 export type AttachmentCaptionData = {
@@ -157,20 +154,9 @@ export const serializeSelectedMessages = async (
         const attachmentCaption = options.captionMessagesByAttachmentId
           .get(messageItem.id)
           ?.message?.trim();
-        const fileExtension =
-          messageItem.message_type === 'file'
-            ? resolveFileExtension(
-                messageItem.file_name ?? null,
-                messageItem.message,
-                messageItem.file_mime_type
-              )
-            : '';
-        const isPdfAttachment =
-          messageItem.message_type === 'file' &&
-          (fileExtension === 'pdf' ||
-            messageItem.file_mime_type?.toLowerCase().includes('pdf') === true);
         const shouldCopyAttachmentUrl =
-          messageItem.message_type === 'image' || isPdfAttachment;
+          messageItem.message_type === 'image' ||
+          messageItem.message_type === 'file';
         const resolvedAttachmentUrl = shouldCopyAttachmentUrl
           ? await resolveCopyableChatAssetUrl(
               messageItem.message,
