@@ -1,4 +1,5 @@
 import {
+  IMAGE_EXPAND_STAGE_TARGET_SIZE,
   CHAT_CONVERSATION_CACHE_MAX_AGE_MS,
   CHAT_CONVERSATION_CACHE_MAX_ENTRIES,
   CHAT_CONVERSATION_CACHE_MAX_MESSAGES,
@@ -12,6 +13,7 @@ import {
   pdfMessagePreviewStore,
   signedChatAssetUrlStore,
   type ConversationCacheEntry,
+  type ImageExpandStageCacheEntry,
   type ImageMessagePreviewCacheEntry,
   type PdfMessagePreviewCacheEntry,
   type SignedChatAssetUrlCacheEntry,
@@ -104,10 +106,11 @@ const setCachedImagePreview = (
 const setCachedImageExpandStage = (
   messageId: string,
   stageDataUrl: string,
+  targetSize = IMAGE_EXPAND_STAGE_TARGET_SIZE,
   store = imageExpandStageStore
 ) => {
   const normalizedStageDataUrl = stageDataUrl.trim();
-  if (!normalizedStageDataUrl) {
+  if (!normalizedStageDataUrl || targetSize <= 0) {
     return;
   }
 
@@ -115,7 +118,10 @@ const setCachedImageExpandStage = (
     store.delete(messageId);
   }
 
-  store.set(messageId, normalizedStageDataUrl);
+  store.set(messageId, {
+    previewUrl: normalizedStageDataUrl,
+    targetSize,
+  });
 
   while (store.size > MAX_IMAGE_MESSAGE_PREVIEW_CACHE_ENTRIES) {
     const oldestMessageId = store.keys().next().value;
@@ -406,8 +412,25 @@ export const chatRuntimeCache = {
       return store.get(messageId) ?? null;
     },
 
-    getExpandStage(messageId: string, store = imageExpandStageStore) {
-      return store.get(messageId) ?? null;
+    getExpandStage(
+      messageId: string,
+      targetSize = IMAGE_EXPAND_STAGE_TARGET_SIZE,
+      store: Map<string, ImageExpandStageCacheEntry> = imageExpandStageStore
+    ) {
+      const cachedEntry = store.get(messageId) ?? null;
+      if (
+        !cachedEntry ||
+        cachedEntry.targetSize !== targetSize ||
+        !cachedEntry.previewUrl.trim()
+      ) {
+        if (cachedEntry) {
+          deleteCachedImageExpandStageByMessageId(messageId, store);
+        }
+
+        return null;
+      }
+
+      return cachedEntry.previewUrl;
     },
 
     setEntry(
@@ -424,9 +447,10 @@ export const chatRuntimeCache = {
     setExpandStage(
       messageId: string,
       stageDataUrl: string,
-      store = imageExpandStageStore
+      targetSize = IMAGE_EXPAND_STAGE_TARGET_SIZE,
+      store: Map<string, ImageExpandStageCacheEntry> = imageExpandStageStore
     ) {
-      setCachedImageExpandStage(messageId, stageDataUrl, store);
+      setCachedImageExpandStage(messageId, stageDataUrl, targetSize, store);
     },
 
     hydrate(
@@ -464,7 +488,11 @@ export const chatRuntimeCache = {
 
       if (existingExpandStage) {
         imageExpandStageStore.delete(sourceMessageId);
-        setCachedImageExpandStage(targetMessageId, existingExpandStage);
+        setCachedImageExpandStage(
+          targetMessageId,
+          existingExpandStage.previewUrl,
+          existingExpandStage.targetSize
+        );
       }
 
       return true;

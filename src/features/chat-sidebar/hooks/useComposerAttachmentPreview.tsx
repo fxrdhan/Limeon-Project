@@ -3,9 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   TbEye,
   TbFileIsr,
-  TbFileShredder,
   TbPhotoEdit,
   TbPhotoMinus,
+  TbTrash,
 } from 'react-icons/tb';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { PendingComposerAttachment } from '../types';
@@ -15,12 +15,13 @@ import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
 const IMAGE_ACTIONS_MENU_VIEWPORT_PADDING = 8;
 const IMAGE_ACTIONS_MENU_FALLBACK_WIDTH = 148;
-const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 92;
+const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 128;
 
 interface UseComposerAttachmentPreviewProps {
   pendingComposerAttachments: PendingComposerAttachment[];
   onAttachImageClick: (replaceAttachmentId?: string) => void;
   onAttachDocumentClick: (replaceAttachmentId?: string) => void;
+  onCompressPendingComposerImage: (attachmentId: string) => Promise<boolean>;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
   onOpenComposerImagePreview: (attachmentId: string) => void;
 }
@@ -29,6 +30,7 @@ export const useComposerAttachmentPreview = ({
   pendingComposerAttachments,
   onAttachImageClick,
   onAttachDocumentClick,
+  onCompressPendingComposerImage,
   onRemovePendingComposerAttachment,
   onOpenComposerImagePreview,
 }: UseComposerAttachmentPreviewProps) => {
@@ -159,8 +161,16 @@ export const useComposerAttachmentPreview = ({
           },
         },
         {
-          label: 'Hapus',
+          label: 'Kompres',
           icon: <TbPhotoMinus className="h-4 w-4" />,
+          onClick: () => {
+            closeImageActionsMenu();
+            void onCompressPendingComposerImage(openImageActionsAttachment.id);
+          },
+        },
+        {
+          label: 'Hapus',
+          icon: <TbTrash className="h-4 w-4" />,
           tone: 'danger',
           onClick: () => {
             closeImageActionsMenu();
@@ -189,7 +199,7 @@ export const useComposerAttachmentPreview = ({
       },
       {
         label: 'Hapus',
-        icon: <TbFileShredder className="h-4 w-4" />,
+        icon: <TbTrash className="h-4 w-4" />,
         tone: 'danger',
         onClick: () => {
           closeImageActionsMenu();
@@ -199,6 +209,7 @@ export const useComposerAttachmentPreview = ({
     ];
   }, [
     closeImageActionsMenu,
+    onCompressPendingComposerImage,
     onAttachDocumentClick,
     onAttachImageClick,
     onOpenComposerImagePreview,

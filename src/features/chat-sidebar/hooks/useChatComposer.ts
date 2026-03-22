@@ -100,6 +100,7 @@ export const useChatComposer = ({
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
+    compressPendingComposerImage,
   } = attachments;
 
   const isHoldingMultilineByInlineOverflow =
@@ -323,6 +324,7 @@ export const useChatComposer = ({
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
+    compressPendingComposerImage,
     handleMessageChange,
     triggerSendSuccessGlow,
   };

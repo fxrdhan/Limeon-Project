@@ -134,6 +134,7 @@ export const useChatSidebarRuntimeState = ({
     pendingComposerAttachments: composer.pendingComposerAttachments,
     handleAttachImageClick: composer.handleAttachImageClick,
     handleAttachDocumentClick: composer.handleAttachDocumentClick,
+    compressPendingComposerImage: composer.compressPendingComposerImage,
     removePendingComposerAttachment: composer.removePendingComposerAttachment,
     openComposerImagePreview: composer.openComposerImagePreview,
     getAttachmentFileName,

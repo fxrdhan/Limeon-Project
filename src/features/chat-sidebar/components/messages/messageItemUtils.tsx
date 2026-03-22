@@ -144,7 +144,7 @@ export const buildMessageMenuActions = ({
 
   if (isImageMessage || isFileMessage) {
     menuActions.unshift({
-      label: 'Buka',
+      label: 'Lihat',
       icon: <TbEye className="h-4 w-4" />,
       onClick: () => {
         if (isImageMessage || isImageFileMessage) {
@@ -170,7 +170,7 @@ export const buildMessageMenuActions = ({
 
   if (isImageMessage || isFileMessage) {
     menuActions.splice(1, 0, {
-      label: 'Download',
+      label: 'Unduh',
       icon: <TbDownload className="h-4 w-4" />,
       onClick: () => {
         void handleDownloadMessage(message);

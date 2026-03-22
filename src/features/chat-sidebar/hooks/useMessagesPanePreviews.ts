@@ -65,13 +65,6 @@ const resolveInitialImagePreviewUrl = (
   message: PreviewableMessage,
   preferredPreviewUrl?: string | null
 ) => {
-  const cachedExpandStageUrl = chatRuntimeCache.imagePreviews.getExpandStage(
-    message.id
-  );
-  if (cachedExpandStageUrl) {
-    return cachedExpandStageUrl;
-  }
-
   const hasAspectPreservingPreview = isAspectPreservingImagePreviewPath(
     message.file_preview_url
   );
@@ -85,6 +78,13 @@ const resolveInitialImagePreviewUrl = (
       /^(https?:\/\/|\/)/i.test(normalizedPreferredPreviewUrl))
   ) {
     return normalizedPreferredPreviewUrl;
+  }
+
+  const cachedExpandStageUrl = chatRuntimeCache.imagePreviews.getExpandStage(
+    message.id
+  );
+  if (cachedExpandStageUrl) {
+    return cachedExpandStageUrl;
   }
 
   const directPreviewUrl = message.file_preview_url?.trim();

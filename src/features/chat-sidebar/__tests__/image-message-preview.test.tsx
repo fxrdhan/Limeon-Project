@@ -6,7 +6,10 @@ import {
   it,
   vi,
 } from 'vite-plus/test';
-import { createImagePreviewUploadArtifact } from '../utils/image-message-preview';
+import {
+  createImageExpandStageDataUrl,
+  createImagePreviewUploadArtifact,
+} from '../utils/image-message-preview';
 
 class MockImage {
   naturalWidth = 3072;
@@ -109,5 +112,33 @@ describe('image-message-preview', () => {
     expect(result?.previewDataUrl).toBe('data:image/webp;base64,preview');
     expect(drawImage).toHaveBeenCalledTimes(1);
     expect(drawImage.mock.calls[0]?.slice(1)).toEqual([0, 0, 357, 640]);
+  });
+
+  it('creates the default expand stage at half of the canonical preview size', async () => {
+    const drawImage = vi.fn();
+
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      configurable: true,
+      value: vi.fn(
+        () =>
+          ({
+            drawImage,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+          }) as unknown as CanvasRenderingContext2D
+      ),
+    });
+    Object.defineProperty(HTMLCanvasElement.prototype, 'toDataURL', {
+      configurable: true,
+      value: vi.fn(() => 'data:image/webp;base64,expand-stage'),
+    });
+
+    const result = await createImageExpandStageDataUrl(
+      new Blob(['image'], { type: 'image/png' })
+    );
+
+    expect(result).toBe('data:image/webp;base64,expand-stage');
+    expect(drawImage).toHaveBeenCalledTimes(1);
+    expect(drawImage.mock.calls[0]?.slice(1)).toEqual([0, 0, 179, 320]);
   });
 });

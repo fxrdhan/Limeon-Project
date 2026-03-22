@@ -10,6 +10,7 @@ import {
   CHAT_SIDEBAR_TOASTER_ID,
   MAX_PENDING_COMPOSER_ATTACHMENTS,
 } from '../constants';
+import { compressImageIfNeeded } from '@/utils/image';
 import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
 import type {
   ComposerPendingFileKind,
@@ -268,6 +269,57 @@ export const useComposerPendingAttachments = ({
     [editingMessageId, focusTextarea]
   );
 
+  const compressPendingComposerImage = useCallback(
+    async (attachmentId: string) => {
+      const targetAttachment = pendingComposerAttachmentsRef.current.find(
+        attachment =>
+          attachment.id === attachmentId && attachment.fileKind === 'image'
+      );
+      if (!targetAttachment) {
+        return false;
+      }
+
+      const compressedImage = await compressImageIfNeeded(
+        targetAttachment.file
+      );
+      const nextFile =
+        compressedImage instanceof File
+          ? compressedImage
+          : new File(
+              [compressedImage],
+              targetAttachment.file.name || targetAttachment.fileName,
+              {
+                type: compressedImage.type || targetAttachment.file.type,
+                lastModified: Date.now(),
+              }
+            );
+
+      if (nextFile === targetAttachment.file) {
+        focusTextarea();
+        return true;
+      }
+
+      const nextAttachment = {
+        ...buildPendingImageComposerAttachment(nextFile),
+        id: targetAttachment.id,
+      };
+
+      setPendingComposerAttachments(previousAttachments =>
+        previousAttachments.map(attachment =>
+          attachment.id === attachmentId ? nextAttachment : attachment
+        )
+      );
+
+      if (targetAttachment.previewUrl) {
+        URL.revokeObjectURL(targetAttachment.previewUrl);
+      }
+
+      focusTextarea();
+      return true;
+    },
+    [focusTextarea]
+  );
+
   useEffect(() => {
     const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
     const pendingAttachments = pendingComposerAttachmentsRef.current;
@@ -295,5 +347,6 @@ export const useComposerPendingAttachments = ({
     restorePendingComposerAttachments,
     queueComposerImage,
     queueComposerFile,
+    compressPendingComposerImage,
   };
 };

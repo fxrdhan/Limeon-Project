@@ -19,6 +19,11 @@ export interface ImageMessagePreviewCacheEntry {
   isObjectUrl: boolean;
 }
 
+export interface ImageExpandStageCacheEntry {
+  previewUrl: string;
+  targetSize: number;
+}
+
 export interface SignedChatAssetUrlCacheEntry {
   signedUrl: string;
   expiresAt: number;
@@ -142,7 +147,10 @@ export const imageMessagePreviewStore = new Map<
   ImageMessagePreviewCacheEntry
 >();
 
-export const imageExpandStageStore = new Map<string, string>();
+export const imageExpandStageStore = new Map<
+  string,
+  ImageExpandStageCacheEntry
+>();
 
 export const pdfMessagePreviewStore = {
   cache: new Map<string, PdfMessagePreviewCacheEntry>(),

@@ -11,6 +11,7 @@ interface UseChatSidebarPreviewStateProps {
   pendingComposerAttachments: PendingComposerAttachment[];
   handleAttachImageClick: (replaceAttachmentId?: string) => void;
   handleAttachDocumentClick: (replaceAttachmentId?: string) => void;
+  compressPendingComposerImage: (attachmentId: string) => Promise<boolean>;
   removePendingComposerAttachment: (attachmentId: string) => void;
   openComposerImagePreview: (attachmentId: string) => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
@@ -23,6 +24,7 @@ export const useChatSidebarPreviewState = ({
   pendingComposerAttachments,
   handleAttachImageClick,
   handleAttachDocumentClick,
+  compressPendingComposerImage,
   removePendingComposerAttachment,
   openComposerImagePreview,
   getAttachmentFileName,
@@ -40,6 +42,7 @@ export const useChatSidebarPreviewState = ({
     pendingComposerAttachments,
     onAttachImageClick: handleAttachImageClick,
     onAttachDocumentClick: handleAttachDocumentClick,
+    onCompressPendingComposerImage: compressPendingComposerImage,
     onRemovePendingComposerAttachment: removePendingComposerAttachment,
     onOpenComposerImagePreview: openComposerImagePreview,
   });

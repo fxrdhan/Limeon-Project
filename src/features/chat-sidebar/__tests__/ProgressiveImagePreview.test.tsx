@@ -154,7 +154,6 @@ describe('ProgressiveImagePreview', () => {
     );
     vi.spyOn(URL, 'createObjectURL')
       .mockReturnValueOnce('blob:full-stage')
-      .mockReturnValueOnce('blob:quarter-stage')
       .mockReturnValueOnce('blob:half-stage')
       .mockReturnValueOnce('blob:three-quarter-stage');
     Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
@@ -186,7 +185,7 @@ describe('ProgressiveImagePreview', () => {
 
     await waitFor(() => {
       expect(screen.getByAltText('Preview gambar').getAttribute('src')).toBe(
-        'blob:quarter-stage'
+        'blob:half-stage'
       );
     });
 

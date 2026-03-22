@@ -25,6 +25,9 @@ const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
 const { mockValidateAttachmentComposerLink } = vi.hoisted(() => ({
   mockValidateAttachmentComposerLink: vi.fn(),
 }));
+const { mockCompressImageIfNeeded } = vi.hoisted(() => ({
+  mockCompressImageIfNeeded: vi.fn(),
+}));
 const { mockChatSidebarShareGateway } = vi.hoisted(() => ({
   mockChatSidebarShareGateway: {
     createSharedLink: vi.fn(),
@@ -41,6 +44,10 @@ vi.mock('@/services/api/chat/remote-asset.service', () => ({
 
 vi.mock('../data/chatSidebarGateway', () => ({
   chatSidebarShareGateway: mockChatSidebarShareGateway,
+}));
+
+vi.mock('@/utils/image', () => ({
+  compressImageIfNeeded: mockCompressImageIfNeeded,
 }));
 
 vi.mock('../utils/composer-attachment-link', async () => {
@@ -125,6 +132,7 @@ describe('useChatComposerAttachments', () => {
     });
     mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
     mockValidateAttachmentComposerLink.mockResolvedValue(true);
+    mockCompressImageIfNeeded.mockImplementation(async (file: File) => file);
   });
 
   it('revokes queued attachment preview urls on unmount', () => {
@@ -190,6 +198,53 @@ describe('useChatComposerAttachments', () => {
         previewUrl: 'blob:queued-image-preview',
       })
     );
+  });
+
+  it('compresses a pending image in place without adding a new attachment', async () => {
+    const compressedFile = new File(['compressed-image'], 'foto-kecil.jpg', {
+      type: 'image/jpeg',
+    });
+    mockCompressImageIfNeeded.mockResolvedValueOnce(compressedFile);
+    const createObjectURLMock = vi.spyOn(URL, 'createObjectURL');
+    createObjectURLMock
+      .mockReturnValueOnce('blob:original-preview')
+      .mockReturnValueOnce('blob:compressed-preview');
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu: vi.fn(),
+        messageInputRef: { current: null },
+        message,
+        setMessage,
+      });
+    });
+
+    act(() => {
+      result.current.queueComposerImage(
+        new File(['image'], 'foto-besar.png', { type: 'image/png' })
+      );
+    });
+
+    await act(async () => {
+      await result.current.compressPendingComposerImage(
+        result.current.pendingComposerAttachments[0]!.id
+      );
+    });
+
+    expect(result.current.pendingComposerAttachments).toHaveLength(1);
+    expect(result.current.pendingComposerAttachments[0]).toEqual(
+      expect.objectContaining({
+        file: compressedFile,
+        fileName: 'foto-kecil.jpg',
+        mimeType: 'image/jpeg',
+        previewUrl: 'blob:compressed-preview',
+      })
+    );
+    expect(createObjectURLMock).toHaveBeenCalledTimes(2);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:original-preview');
   });
 
   it('pastes an attachment link as raw url first and waits for the user choice', async () => {

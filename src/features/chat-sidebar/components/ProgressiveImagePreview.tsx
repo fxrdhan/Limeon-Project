@@ -16,7 +16,6 @@ interface PreviewFrameSize {
 }
 
 interface PreparedProgressiveImageStages {
-  stage25Url: string | null;
   stage50Url: string | null;
   stage75Url: string | null;
   fullUrl: string;
@@ -199,11 +198,9 @@ const createResizedStageObjectUrl = async (
 
 const prepareProgressiveImageStages = async ({
   fullSrc,
-  includeQuarterStage,
   signal,
 }: {
   fullSrc: string;
-  includeQuarterStage: boolean;
   signal?: AbortSignal;
 }): Promise<PreparedProgressiveImageStages> => {
   const response = await fetch(fullSrc, signal ? { signal } : undefined);
@@ -219,21 +216,14 @@ const prepareProgressiveImageStages = async ({
     const decodedFullImage = await loadDecodedImage(fullObjectUrl);
     const containedDimensions = getContainedImageDimensions(decodedFullImage);
     const stageTargets: Array<{
-      key: 'stage25Url' | 'stage50Url' | 'stage75Url';
+      key: 'stage50Url' | 'stage75Url';
       scale: number;
-    }> = [];
-
-    if (includeQuarterStage) {
-      stageTargets.push({ key: 'stage25Url', scale: 0.25 });
-    }
-
-    stageTargets.push(
+    }> = [
       { key: 'stage50Url', scale: 0.5 },
-      { key: 'stage75Url', scale: 0.75 }
-    );
+      { key: 'stage75Url', scale: 0.75 },
+    ];
 
     const nextStages: PreparedProgressiveImageStages = {
-      stage25Url: null,
       stage50Url: null,
       stage75Url: null,
       fullUrl: fullObjectUrl,
@@ -565,7 +555,6 @@ const ProgressiveImagePreview = ({
 
     void prepareProgressiveImageStages({
       fullSrc: normalizedFullSrc,
-      includeQuarterStage: !canUseImmediatePreview,
       signal: abortController?.signal,
     })
       .then(preparedStages => {
@@ -581,7 +570,7 @@ const ProgressiveImagePreview = ({
         const nextDisplayStageUrls = [
           canUseImmediatePreview && normalizedBackdropSrc
             ? normalizedBackdropSrc
-            : preparedStages.stage25Url,
+            : preparedStages.stage50Url,
           preparedStages.stage50Url,
           preparedStages.stage75Url,
           preparedStages.fullUrl,

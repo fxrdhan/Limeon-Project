@@ -1,7 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { IMAGE_EXPAND_STAGE_TARGET_SIZE } from '../constants';
 import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { imageExpandStageStore } from '../utils/chatRuntimeState';
 
 const {
   mockFetchChatFileBlobWithFallback,
@@ -335,7 +337,7 @@ describe('useMessagesPanePreviews', () => {
     );
   });
 
-  it('prefers the cached in-memory expand stage before the full image resolves', () => {
+  it('prefers the reusable bubble preview before the cached in-memory expand stage', () => {
     mockResolveChatAssetUrl.mockImplementation(() => new Promise(() => {}));
     chatRuntimeCache.imagePreviews.setExpandStage(
       'image-stage-1',
@@ -359,9 +361,65 @@ describe('useMessagesPanePreviews', () => {
     });
 
     expect(result.current.imagePreviewBackdropUrl).toBe(
+      'data:image/webp;base64,YnViYmxlLXByZXZpZXc='
+    );
+    expect(result.current.imagePreviewUrl).toBeNull();
+  });
+
+  it('falls back to the cached in-memory expand stage when no reusable bubble preview exists', () => {
+    mockResolveChatAssetUrl.mockImplementation(() => new Promise(() => {}));
+    chatRuntimeCache.imagePreviews.setExpandStage(
+      'image-stage-fallback-1',
+      'data:image/webp;base64,ZXhwYW5kLXN0YWdl'
+    );
+
+    const { result } = renderHook(() => useMessagesPanePreviews());
+
+    act(() => {
+      void result.current.openImageInPortal(
+        {
+          id: 'image-stage-fallback-1',
+          message: 'images/channel/staged-fallback.png',
+          file_storage_path: 'images/channel/staged-fallback.png',
+          file_mime_type: 'image/png',
+          file_preview_url: null,
+        },
+        'Lampiran'
+      );
+    });
+
+    expect(result.current.imagePreviewBackdropUrl).toBe(
       'data:image/webp;base64,ZXhwYW5kLXN0YWdl'
     );
     expect(result.current.imagePreviewUrl).toBeNull();
+  });
+
+  it('drops stale cached expand stages that were generated at an older target size', () => {
+    mockResolveChatAssetUrl.mockImplementation(() => new Promise(() => {}));
+    imageExpandStageStore.set('image-stage-stale-1', {
+      previewUrl: 'data:image/webp;base64,c3RhbGUtc3RhZ2U=',
+      targetSize: Math.max(1, Math.round(IMAGE_EXPAND_STAGE_TARGET_SIZE * 0.5)),
+    });
+
+    const { result } = renderHook(() => useMessagesPanePreviews());
+
+    act(() => {
+      void result.current.openImageInPortal(
+        {
+          id: 'image-stage-stale-1',
+          message: 'images/channel/staged-stale.png',
+          file_storage_path: 'images/channel/staged-stale.png',
+          file_mime_type: 'image/png',
+          file_preview_url: null,
+        },
+        'Lampiran'
+      );
+    });
+
+    expect(result.current.imagePreviewBackdropUrl).toBeNull();
+    expect(
+      chatRuntimeCache.imagePreviews.getExpandStage('image-stage-stale-1')
+    ).toBeNull();
   });
 
   it('reuses the current signed bubble image immediately while the full image is re-resolving', async () => {

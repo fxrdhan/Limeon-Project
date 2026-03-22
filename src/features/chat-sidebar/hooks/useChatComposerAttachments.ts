@@ -96,6 +96,7 @@ export const useChatComposerAttachments = ({
       restorePendingComposerAttachmentsFromQueue,
     queueComposerImage,
     queueComposerFile,
+    compressPendingComposerImage,
   } = useComposerPendingAttachments({
     editingMessageId,
     messageInputRef,
@@ -1004,5 +1005,6 @@ export const useChatComposerAttachments = ({
     clearPendingComposerAttachments,
     restorePendingComposerAttachments,
     queueComposerImage,
+    compressPendingComposerImage,
   };
 };

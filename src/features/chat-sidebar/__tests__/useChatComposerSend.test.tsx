@@ -1078,7 +1078,7 @@ describe('useChatComposerSend', () => {
       file_storage_path: 'images/channel/chat.png',
     });
 
-    mockGateway.uploadImage.mockResolvedValue({
+    mockGateway.uploadAttachment.mockResolvedValue({
       path: 'images/channel/chat.png',
     });
     mockGateway.createMessage.mockImplementation(
@@ -1445,7 +1445,7 @@ describe('useChatComposerSend', () => {
       previewDataUrl: 'data:image/webp;base64,aW1hZ2UtcHJldmlldw==',
       previewPath: 'previews/channel-1/user-a_image_attachment.fit-v2.webp',
     });
-    mockGateway.uploadImage.mockResolvedValue({
+    mockGateway.uploadAttachment.mockResolvedValue({
       path: 'images/channel-1/user-a_image_attachment.png',
     });
     mockGateway.createMessage.mockResolvedValue({
@@ -1507,13 +1507,14 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.uploadImage).toHaveBeenCalledWith(
+      expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
         expect.any(File),
-        expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/)
+        expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/),
+        'image/png'
       );
     });
 
-    expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
+    expect(mockGateway.uploadImage).not.toHaveBeenCalled();
     expect(mockGateway.uploadImagePreview).toHaveBeenCalledWith(
       expect.any(File),
       'previews/channel-1/user-a_image_attachment.fit-v2.webp',
@@ -1541,7 +1542,7 @@ describe('useChatComposerSend', () => {
   });
 
   it('hands off the optimistic image preview to the persisted bubble after send commit', async () => {
-    mockGateway.uploadImage.mockResolvedValue({
+    mockGateway.uploadAttachment.mockResolvedValue({
       path: 'images/channel-1/user-a_image_commit.png',
     });
     mockGateway.createMessage.mockResolvedValue({

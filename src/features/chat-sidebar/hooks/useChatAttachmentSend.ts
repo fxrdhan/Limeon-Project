@@ -249,7 +249,11 @@ export const useChatAttachmentSend = ({
           stableKey,
         }),
         uploadAsset: async () =>
-          chatSidebarAssetsGateway.uploadImage(file, imagePath),
+          chatSidebarAssetsGateway.uploadAttachment(
+            file,
+            imagePath,
+            file.type || undefined
+          ),
         createPersistedMessage: async () =>
           chatSidebarMessagesGateway.createMessage({
             receiver_id: targetUser.id,
