@@ -1,7 +1,7 @@
 import type { ImageMessagePreviewCacheEntry } from './chatRuntimeState';
 
 const IMAGE_PREVIEW_CACHE_DB_NAME = 'pharmasys-chat-image-preview-cache';
-const IMAGE_PREVIEW_CACHE_DB_VERSION = 1;
+const IMAGE_PREVIEW_CACHE_DB_VERSION = 2;
 const IMAGE_PREVIEW_CACHE_STORE_NAME = 'image-previews';
 const IMAGE_PREVIEW_CACHE_UPDATED_AT_INDEX = 'updatedAt';
 const IMAGE_PREVIEW_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -57,6 +57,14 @@ const getImagePreviewCacheDb = async (): Promise<IDBDatabase | null> => {
 
       request.onupgradeneeded = event => {
         const database = (event.target as IDBOpenDBRequest).result;
+        const previousVersion = event.oldVersion;
+
+        if (
+          previousVersion < IMAGE_PREVIEW_CACHE_DB_VERSION &&
+          database.objectStoreNames.contains(IMAGE_PREVIEW_CACHE_STORE_NAME)
+        ) {
+          database.deleteObjectStore(IMAGE_PREVIEW_CACHE_STORE_NAME);
+        }
 
         if (
           !database.objectStoreNames.contains(IMAGE_PREVIEW_CACHE_STORE_NAME)

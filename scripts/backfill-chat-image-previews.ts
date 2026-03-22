@@ -1,14 +1,16 @@
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
+import {
+  IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY,
+  IMAGE_MESSAGE_PREVIEW_TARGET_SIZE,
+} from '../src/features/chat-sidebar/constants';
 import { buildImagePreviewStoragePath } from '../src/features/chat-sidebar/utils/image-preview-path';
 
 config();
 
 const CHAT_BUCKET = 'chat';
 const DEFAULT_PAGE_SIZE = 500;
-const DEFAULT_PREVIEW_TARGET_SIZE = 320;
-const DEFAULT_IMAGE_QUALITY = 0.72;
 
 interface ChatImageMessageRow {
   id: string;
@@ -21,6 +23,7 @@ interface ChatImageMessageRow {
 
 interface ScriptOptions {
   dryRun: boolean;
+  force: boolean;
   limit: number | null;
 }
 
@@ -48,6 +51,7 @@ const parseOptions = (): ScriptOptions => {
 
   return {
     dryRun: process.argv.includes('--dry-run'),
+    force: process.argv.includes('--force'),
     limit: parsedLimit,
   };
 };
@@ -75,23 +79,50 @@ const renderImagePreviewUploadArtifact = async (
 ) => {
   const imageBuffer = Buffer.from(await file.arrayBuffer());
   const image = await loadImage(imageBuffer);
-  const maxSourceSide = Math.max(image.width || 1, image.height || 1);
-  const scale = Math.min(1, DEFAULT_PREVIEW_TARGET_SIZE / maxSourceSide);
-  const targetWidth = Math.max(1, Math.round((image.width || 1) * scale));
-  const targetHeight = Math.max(1, Math.round((image.height || 1) * scale));
-  const canvas = createCanvas(targetWidth, targetHeight);
+  const sourceWidth = Math.max(image.width || 1, 1);
+  const sourceHeight = Math.max(image.height || 1, 1);
+  const sourceCropSize = Math.max(1, Math.min(sourceWidth, sourceHeight));
+  const sourceCropX = Math.max(
+    0,
+    Math.floor((sourceWidth - sourceCropSize) / 2)
+  );
+  const sourceCropY = Math.max(
+    0,
+    Math.floor((sourceHeight - sourceCropSize) / 2)
+  );
+  const targetDimension = Math.max(
+    1,
+    Math.min(IMAGE_MESSAGE_PREVIEW_TARGET_SIZE, sourceCropSize)
+  );
+  const canvas = createCanvas(targetDimension, targetDimension);
   const context = canvas.getContext('2d');
 
-  context.drawImage(image, 0, 0, targetWidth, targetHeight);
+  context.drawImage(
+    image,
+    sourceCropX,
+    sourceCropY,
+    sourceCropSize,
+    sourceCropSize,
+    0,
+    0,
+    targetDimension,
+    targetDimension
+  );
 
   let previewMimeType = 'image/webp';
   let previewBuffer: Buffer;
 
   try {
-    previewBuffer = canvas.toBuffer('image/webp', DEFAULT_IMAGE_QUALITY);
+    previewBuffer = canvas.toBuffer(
+      'image/webp',
+      IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
+    );
   } catch {
     previewMimeType = 'image/jpeg';
-    previewBuffer = canvas.toBuffer('image/jpeg', DEFAULT_IMAGE_QUALITY);
+    previewBuffer = canvas.toBuffer(
+      'image/jpeg',
+      IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
+    );
   }
 
   const previewPath = buildImagePreviewStoragePath(
@@ -137,7 +168,13 @@ const listChatMessagesPage = async (
   return (data ?? []) as ChatImageMessageRow[];
 };
 
-const loadPendingImageMessages = async (limit: number | null) => {
+const loadPendingImageMessages = async ({
+  force,
+  limit,
+}: {
+  force: boolean;
+  limit: number | null;
+}) => {
   const pendingMessages: ChatImageMessageRow[] = [];
 
   for (const messageType of ['image', 'file'] as const) {
@@ -152,7 +189,7 @@ const loadPendingImageMessages = async (limit: number | null) => {
           return;
         }
 
-        if (!isMissingPreviewPath(message.file_preview_url)) {
+        if (!force && !isMissingPreviewPath(message.file_preview_url)) {
           return;
         }
 
@@ -186,6 +223,7 @@ const uploadAndPersistPreview = async (message: ChatImageMessageRow) => {
   if (!fileStoragePath) {
     throw new Error('Missing file storage path');
   }
+  const previousPreviewPath = message.file_preview_url?.trim() || null;
 
   const { data: originalFile, error: downloadError } = await supabase.storage
     .from(CHAT_BUCKET)
@@ -219,6 +257,12 @@ const uploadAndPersistPreview = async (message: ChatImageMessageRow) => {
     })
     .eq('id', message.id);
   if (!updateError) {
+    if (
+      previousPreviewPath &&
+      previousPreviewPath !== renderedPreview.previewPath
+    ) {
+      await supabase.storage.from(CHAT_BUCKET).remove([previousPreviewPath]);
+    }
     return renderedPreview.previewPath;
   }
 
@@ -233,17 +277,21 @@ const main = async () => {
 
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
     console.log(`
-Usage: bun scripts/backfill-chat-image-previews.ts [--limit <number>] [--dry-run]
+Usage: bun scripts/backfill-chat-image-previews.ts [--limit <number>] [--dry-run] [--force]
 
 Options:
   --limit <number>  Process only the first N pending image previews
   --dry-run         Show pending messages without uploading or updating metadata
+  --force           Rebuild previews even when file_preview_url already exists
   -h, --help        Show this help message
 `);
     return;
   }
 
-  const pendingMessages = await loadPendingImageMessages(options.limit);
+  const pendingMessages = await loadPendingImageMessages({
+    force: options.force,
+    limit: options.limit,
+  });
 
   console.log(
     `[chat-image-preview-backfill] found ${pendingMessages.length} pending messages`

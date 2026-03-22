@@ -1,4 +1,7 @@
-import { IMAGE_MESSAGE_PREVIEW_TARGET_SIZE } from '../constants';
+import {
+  IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY,
+  IMAGE_MESSAGE_PREVIEW_TARGET_SIZE,
+} from '../constants';
 import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import {
   chatSidebarMessagesGateway,
@@ -8,8 +11,6 @@ import { buildImagePreviewStoragePath } from './image-preview-path';
 
 const IMAGE_PREVIEW_PRIMARY_MIME_TYPE = 'image/webp';
 const IMAGE_PREVIEW_FALLBACK_MIME_TYPE = 'image/jpeg';
-const IMAGE_PREVIEW_QUALITY = 0.72;
-
 const loadImageElement = (file: Blob) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -33,19 +34,22 @@ const renderImagePreviewCanvas = async (
   targetSize: number = IMAGE_MESSAGE_PREVIEW_TARGET_SIZE
 ) => {
   const imageElement = await loadImageElement(file);
-  const maxSourceSide = Math.max(
-    imageElement.naturalWidth || imageElement.width || 1,
+  const sourceWidth = Math.max(
+    imageElement.naturalWidth || imageElement.width || 1
+  );
+  const sourceHeight = Math.max(
     imageElement.naturalHeight || imageElement.height || 1
   );
-  const scale = Math.min(1, targetSize / maxSourceSide);
-  const targetWidth = Math.max(
-    1,
-    Math.round((imageElement.naturalWidth || imageElement.width || 1) * scale)
+  const sourceCropSize = Math.max(1, Math.min(sourceWidth, sourceHeight));
+  const sourceCropX = Math.max(
+    0,
+    Math.floor((sourceWidth - sourceCropSize) / 2)
   );
-  const targetHeight = Math.max(
-    1,
-    Math.round((imageElement.naturalHeight || imageElement.height || 1) * scale)
+  const sourceCropY = Math.max(
+    0,
+    Math.floor((sourceHeight - sourceCropSize) / 2)
   );
+  const targetDimension = Math.max(1, Math.min(targetSize, sourceCropSize));
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 
@@ -53,9 +57,19 @@ const renderImagePreviewCanvas = async (
     return null;
   }
 
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
-  context.drawImage(imageElement, 0, 0, targetWidth, targetHeight);
+  canvas.width = targetDimension;
+  canvas.height = targetDimension;
+  context.drawImage(
+    imageElement,
+    sourceCropX,
+    sourceCropY,
+    sourceCropSize,
+    sourceCropSize,
+    0,
+    0,
+    targetDimension,
+    targetDimension
+  );
 
   return canvas;
 };
@@ -109,7 +123,7 @@ export const createImagePreviewUploadArtifact = async (
   let previewBlob = await renderCanvasBlob(
     canvas,
     previewMimeType,
-    IMAGE_PREVIEW_QUALITY
+    IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
   );
 
   if (!previewBlob) {
@@ -117,7 +131,7 @@ export const createImagePreviewUploadArtifact = async (
     previewBlob = await renderCanvasBlob(
       canvas,
       previewMimeType,
-      IMAGE_PREVIEW_QUALITY
+      IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
     );
   }
 
@@ -127,7 +141,7 @@ export const createImagePreviewUploadArtifact = async (
 
   const previewDataUrl = canvas.toDataURL(
     previewMimeType,
-    IMAGE_PREVIEW_QUALITY
+    IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY
   );
   const previewPath = buildImagePreviewStoragePath(filePath, previewMimeType);
 
