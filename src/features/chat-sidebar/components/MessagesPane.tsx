@@ -352,6 +352,13 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
             }
           })();
         }}
+        onCopyActivePreviewImage={() => {
+          if (!activeImageGroupPreviewMessage) {
+            return;
+          }
+
+          void actions.handleCopyMessage(activeImageGroupPreviewMessage);
+        }}
         onForwardActivePreview={() => {
           if (
             !activeImageGroupPreviewMessage ||

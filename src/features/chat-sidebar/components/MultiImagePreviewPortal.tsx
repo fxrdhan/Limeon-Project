@@ -10,9 +10,10 @@ import {
 import { LayoutGroup, motion } from 'motion/react';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import {
+  TbArrowUpRight,
+  TbCopy,
+  TbDownload,
   TbLink,
-  TbPhotoDown,
-  TbPhotoShare,
   TbShare3,
   TbX,
 } from 'react-icons/tb';
@@ -36,6 +37,7 @@ interface MultiImagePreviewPortalProps {
   onDownloadActivePreview: () => void;
   onOpenActivePreviewInNewTab: () => void;
   onCopyActivePreviewLink: () => void;
+  onCopyActivePreviewImage: () => void;
   onForwardActivePreview: () => void;
   onClose: () => void;
   backdropClassName: string;
@@ -87,6 +89,7 @@ const MultiImagePreviewPortal = ({
   onDownloadActivePreview,
   onOpenActivePreviewInNewTab,
   onCopyActivePreviewLink,
+  onCopyActivePreviewImage,
   onForwardActivePreview,
   onClose,
   backdropClassName,
@@ -427,7 +430,7 @@ const MultiImagePreviewPortal = ({
                   title="Buka di tab baru"
                   className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
                 >
-                  <TbPhotoShare className="h-5 w-5" />
+                  <TbArrowUpRight className="h-5 w-5" />
                 </button>
                 <button
                   type="button"
@@ -437,6 +440,15 @@ const MultiImagePreviewPortal = ({
                   className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
                 >
                   <TbLink className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onCopyActivePreviewImage}
+                  aria-label="Salin gambar"
+                  title="Salin gambar"
+                  className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
+                >
+                  <TbCopy className="h-5 w-5" />
                 </button>
                 <button
                   type="button"
@@ -459,7 +471,7 @@ const MultiImagePreviewPortal = ({
                   title="Unduh gambar"
                   className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
                 >
-                  <TbPhotoDown className="h-5 w-5" />
+                  <TbDownload className="h-5 w-5" />
                 </button>
                 <button
                   type="button"

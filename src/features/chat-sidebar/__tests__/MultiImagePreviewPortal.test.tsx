@@ -45,6 +45,7 @@ describe('MultiImagePreviewPortal', () => {
         onDownloadActivePreview={() => {}}
         onOpenActivePreviewInNewTab={() => {}}
         onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
         onForwardActivePreview={() => {}}
         onClose={() => {}}
         backdropClassName="z-[80]"
@@ -60,11 +61,12 @@ describe('MultiImagePreviewPortal', () => {
     );
   });
 
-  it('renders black header controls and wires share, forward, download, and close actions', () => {
+  it('renders black header controls and wires open, copy, forward, download, and close actions', () => {
     const onSelectPreview = vi.fn();
     const onDownloadActivePreview = vi.fn();
     const onOpenActivePreviewInNewTab = vi.fn();
     const onCopyActivePreviewLink = vi.fn();
+    const onCopyActivePreviewImage = vi.fn();
     const onForwardActivePreview = vi.fn();
     const onClose = vi.fn();
 
@@ -87,6 +89,7 @@ describe('MultiImagePreviewPortal', () => {
         onDownloadActivePreview={onDownloadActivePreview}
         onOpenActivePreviewInNewTab={onOpenActivePreviewInNewTab}
         onCopyActivePreviewLink={onCopyActivePreviewLink}
+        onCopyActivePreviewImage={onCopyActivePreviewImage}
         onForwardActivePreview={onForwardActivePreview}
         onClose={onClose}
         backdropClassName="z-[80]"
@@ -100,6 +103,9 @@ describe('MultiImagePreviewPortal', () => {
     ).toContain('text-black');
     expect(
       screen.getByRole('button', { name: 'Salin link' }).className
+    ).toContain('text-black');
+    expect(
+      screen.getByRole('button', { name: 'Salin gambar' }).className
     ).toContain('text-black');
     expect(
       screen.getByRole('button', { name: 'Teruskan gambar' }).className
@@ -117,6 +123,9 @@ describe('MultiImagePreviewPortal', () => {
       screen.getByRole('button', { name: 'Salin link' }).className
     ).toContain('cursor-pointer');
     expect(
+      screen.getByRole('button', { name: 'Salin gambar' }).className
+    ).toContain('cursor-pointer');
+    expect(
       screen.getByRole('button', { name: 'Unduh gambar' }).className
     ).toContain('cursor-pointer');
     expect(
@@ -125,6 +134,7 @@ describe('MultiImagePreviewPortal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Buka di tab baru' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salin link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salin gambar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Teruskan gambar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Unduh gambar' }));
     fireEvent.click(
@@ -133,6 +143,7 @@ describe('MultiImagePreviewPortal', () => {
 
     expect(onOpenActivePreviewInNewTab).toHaveBeenCalledTimes(1);
     expect(onCopyActivePreviewLink).toHaveBeenCalledTimes(1);
+    expect(onCopyActivePreviewImage).toHaveBeenCalledTimes(1);
     expect(onForwardActivePreview).toHaveBeenCalledTimes(1);
     expect(onDownloadActivePreview).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -159,6 +170,7 @@ describe('MultiImagePreviewPortal', () => {
         onDownloadActivePreview={() => {}}
         onOpenActivePreviewInNewTab={() => {}}
         onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
         onForwardActivePreview={() => {}}
         onClose={() => {}}
         backdropClassName="z-[80]"
