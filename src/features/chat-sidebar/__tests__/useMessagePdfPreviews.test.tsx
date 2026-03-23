@@ -10,11 +10,13 @@ const {
   mockFetchPdfBlobWithFallback,
   mockRenderPdfPreviewDataUrl,
   mockLoadPersistedPdfPreviewEntry,
+  mockResolveChatAssetUrl,
 } = vi.hoisted(() => ({
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
   mockRenderPdfPreviewDataUrl: vi.fn(),
   mockLoadPersistedPdfPreviewEntry: vi.fn(),
+  mockResolveChatAssetUrl: vi.fn(),
 }));
 
 vi.mock('../utils/message-file', async () => {
@@ -23,6 +25,7 @@ vi.mock('../utils/message-file', async () => {
     ...actual,
     fetchChatFileBlobWithFallback: mockFetchChatFileBlobWithFallback,
     fetchPdfBlobWithFallback: mockFetchPdfBlobWithFallback,
+    resolveChatAssetUrl: mockResolveChatAssetUrl,
   };
 });
 
@@ -69,6 +72,7 @@ describe('useMessagePdfPreviews', () => {
     mockLoadPersistedPdfPreviewEntry.mockResolvedValue(null);
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);
     mockRenderPdfPreviewDataUrl.mockResolvedValue(null);
+    mockResolveChatAssetUrl.mockResolvedValue(null);
   });
 
   it('loads cached persistent PDF previews before checking storage or rerendering the PDF', async () => {
@@ -154,6 +158,44 @@ describe('useMessagePdfPreviews', () => {
       'previews/channel/report.png',
       'image/png'
     );
+    expect(mockFetchPdfBlobWithFallback).not.toHaveBeenCalled();
+    expect(mockRenderPdfPreviewDataUrl).not.toHaveBeenCalled();
+  });
+
+  it('uses a resolved preview asset url while the preview blob hydration is still pending', async () => {
+    let resolvePreviewBlob: ((value: Blob | null) => void) | null = null;
+    mockResolveChatAssetUrl.mockResolvedValue(
+      'https://signed.example/previews/channel/report.png'
+    );
+    mockFetchChatFileBlobWithFallback.mockImplementation(
+      async () =>
+        await new Promise<Blob | null>(resolve => {
+          resolvePreviewBlob = resolve;
+        })
+    );
+
+    const message = buildMessage({});
+    const { result } = renderHook(() =>
+      useMessagePdfPreviews({
+        messages: [message],
+        getAttachmentFileName: currentMessage =>
+          currentMessage.file_name || 'Lampiran',
+        getAttachmentFileKind: () => 'document',
+      })
+    );
+
+    await waitFor(() => {
+      const preview = result.current.getPdfMessagePreview(
+        message,
+        'report.pdf'
+      );
+      expect(preview?.coverDataUrl).toBe(
+        'https://signed.example/previews/channel/report.png'
+      );
+      expect(preview?.pageCount).toBe(3);
+    });
+
+    expect(resolvePreviewBlob).not.toBeNull();
     expect(mockFetchPdfBlobWithFallback).not.toHaveBeenCalled();
     expect(mockRenderPdfPreviewDataUrl).not.toHaveBeenCalled();
   });

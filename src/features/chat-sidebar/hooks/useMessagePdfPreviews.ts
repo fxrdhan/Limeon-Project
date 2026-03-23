@@ -11,6 +11,7 @@ import {
   resolvePersistedPdfMessagePreview,
 } from '../utils/pdf-message-preview';
 import { loadPersistedPdfPreviewEntry } from '../utils/pdf-preview-persistence';
+import { resolveChatAssetUrl } from '../utils/message-file';
 
 export type PdfMessagePreview = PdfMessagePreviewCacheEntry;
 const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
@@ -57,6 +58,8 @@ export const useMessagePdfPreviews = ({
   const [pdfMessagePreviews, setPdfMessagePreviews] = useState<
     Record<string, PdfMessagePreview>
   >({});
+  const [resolvedPdfPreviewAssetEntries, setResolvedPdfPreviewAssetEntries] =
+    useState<Record<string, PdfMessagePreview>>({});
   const [pdfPreviewRetryNonce, setPdfPreviewRetryNonce] = useState(0);
   const pdfPreviewRenderingIdsRef = useRef<Set<string>>(new Set());
   const pdfPreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
@@ -141,6 +144,55 @@ export const useMessagePdfPreviews = ({
   }, [getAttachmentFileKind, getAttachmentFileName, messages]);
 
   useEffect(() => {
+    setResolvedPdfPreviewAssetEntries(previousEntries => {
+      let hasChanges = false;
+      const nextEntries: Record<string, PdfMessagePreview> = {};
+
+      for (const message of messages) {
+        if (message.message_type !== 'file') continue;
+        if (getAttachmentFileKind(message) !== 'document') continue;
+
+        const fileName = getAttachmentFileName(message);
+        if (!isPdfPreviewableMessage(message, fileName)) continue;
+
+        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
+        const existingEntry = previousEntries[message.id];
+        if (!existingEntry || existingEntry.cacheKey !== cacheKey) {
+          if (existingEntry) {
+            hasChanges = true;
+          }
+          continue;
+        }
+
+        if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) {
+          hasChanges = true;
+          continue;
+        }
+
+        if (chatRuntimeCache.pdfPreviews.get(cacheKey)) {
+          hasChanges = true;
+          continue;
+        }
+
+        nextEntries[message.id] = existingEntry;
+      }
+
+      if (
+        Object.keys(nextEntries).length !== Object.keys(previousEntries).length
+      ) {
+        hasChanges = true;
+      }
+
+      return hasChanges ? nextEntries : previousEntries;
+    });
+  }, [
+    getAttachmentFileKind,
+    getAttachmentFileName,
+    messages,
+    pdfMessagePreviews,
+  ]);
+
+  useEffect(() => {
     const activePdfMessageIds = new Set<string>();
 
     for (const message of messages) {
@@ -166,6 +218,96 @@ export const useMessagePdfPreviews = ({
     getAttachmentFileKind,
     getAttachmentFileName,
     messages,
+  ]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const pendingPreviewAssetMessages = messages
+      .filter(message => {
+        if (message.message_type !== 'file') return false;
+        if (getAttachmentFileKind(message) !== 'document') return false;
+
+        const fileName = getAttachmentFileName(message);
+        if (!isPdfPreviewableMessage(message, fileName)) return false;
+        if (!message.file_preview_url?.trim()) return false;
+
+        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
+        if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
+        if (chatRuntimeCache.pdfPreviews.get(cacheKey)) return false;
+
+        return (
+          resolvedPdfPreviewAssetEntries[message.id]?.cacheKey !== cacheKey
+        );
+      })
+      .slice()
+      .reverse();
+
+    if (pendingPreviewAssetMessages.length === 0) {
+      return;
+    }
+
+    const resolvePreviewAssets = async () => {
+      await runConcurrentPdfPreviewTasks(
+        pendingPreviewAssetMessages,
+        async pendingMessage => {
+          const persistedPreviewPath = pendingMessage.file_preview_url?.trim();
+          if (!persistedPreviewPath || isCancelled) {
+            return;
+          }
+
+          const pendingFileName = getAttachmentFileName(pendingMessage);
+          const cacheKey = buildPdfMessagePreviewCacheKey(
+            pendingMessage,
+            pendingFileName
+          );
+
+          const resolvedPreviewUrl = await resolveChatAssetUrl(
+            persistedPreviewPath,
+            persistedPreviewPath
+          );
+          if (!resolvedPreviewUrl || isCancelled) {
+            return;
+          }
+
+          const pageCount = Math.max(
+            pendingMessage.file_preview_page_count ?? 1,
+            1
+          );
+          setResolvedPdfPreviewAssetEntries(previousEntries => {
+            const existingEntry = previousEntries[pendingMessage.id];
+            if (
+              existingEntry?.cacheKey === cacheKey &&
+              existingEntry.coverDataUrl === resolvedPreviewUrl &&
+              existingEntry.pageCount === pageCount
+            ) {
+              return previousEntries;
+            }
+
+            return {
+              ...previousEntries,
+              [pendingMessage.id]: {
+                cacheKey,
+                coverDataUrl: resolvedPreviewUrl,
+                pageCount,
+              },
+            };
+          });
+        }
+      );
+    };
+
+    void resolvePreviewAssets();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    getAttachmentFileKind,
+    getAttachmentFileName,
+    messages,
+    pdfMessagePreviews,
+    resolvedPdfPreviewAssetEntries,
   ]);
 
   useEffect(() => {
@@ -280,7 +422,19 @@ export const useMessagePdfPreviews = ({
         return localPreview;
       }
 
-      return cacheKey ? chatRuntimeCache.pdfPreviews.get(cacheKey) : undefined;
+      const cachedPreview = cacheKey
+        ? chatRuntimeCache.pdfPreviews.get(cacheKey)
+        : undefined;
+      if (cachedPreview) {
+        return cachedPreview;
+      }
+
+      const resolvedPreviewAsset = resolvedPdfPreviewAssetEntries[message.id];
+      if (resolvedPreviewAsset?.cacheKey === cacheKey) {
+        return resolvedPreviewAsset;
+      }
+
+      return undefined;
     },
   };
 };
