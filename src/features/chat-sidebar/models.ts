@@ -193,7 +193,12 @@ export interface MessagesPaneModel {
           previewUrl?: string | null;
         }
       >,
-      initialMessageId?: string | null
+      initialMessageId?: string | null,
+      initialPreviewUrl?: string | null,
+      initialPreviewIntrinsicDimensions?: {
+        width: number;
+        height: number;
+      } | null
     ) => Promise<void>;
     openDocumentInPortal: (
       message: Pick<ChatMessage, 'message' | 'file_storage_path'>,

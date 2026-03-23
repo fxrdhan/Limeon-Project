@@ -17,10 +17,16 @@ interface AttachmentMenuAnchorPosition {
   width: number;
 }
 
+interface ImagePreviewIntrinsicDimensions {
+  width: number;
+  height: number;
+}
+
 interface MessageImageAttachmentGroupContentProps {
   messages: ChatMessage[];
   userId?: string;
   captionMessage?: ChatMessage;
+  isSelectionMode: boolean;
   isHighlightedBubble: boolean;
   openMenuMessageId: string | null;
   menuPlacement: MenuPlacement;
@@ -57,7 +63,9 @@ interface MessageImageAttachmentGroupContentProps {
         previewUrl?: string | null;
       }
     >,
-    initialMessageId?: string | null
+    initialMessageId?: string | null,
+    initialPreviewUrl?: string | null,
+    initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
   ) => Promise<void>;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
@@ -85,6 +93,7 @@ export const MessageImageAttachmentGroupContent = ({
   messages,
   userId,
   captionMessage,
+  isSelectionMode,
   isHighlightedBubble,
   openMenuMessageId,
   menuPlacement,
@@ -108,20 +117,24 @@ export const MessageImageAttachmentGroupContent = ({
     file_preview_url: message.file_preview_url,
     previewUrl: getImageMessageUrl(message),
   }));
+  const representativeMessage = messages[messages.length - 1] ?? null;
+  const initialPreviewMessage = groupPreviewMessages[0] ?? null;
   const isCurrentUserGroup = messages[0]?.sender_id === userId;
   const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(
     menuPlacement,
     menuSideAnchor
   );
   const openMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const previewDimensionsByMessageIdRef = useRef<
+    Map<string, ImagePreviewIntrinsicDimensions>
+  >(new Map());
   const [menuAnchorPosition, setMenuAnchorPosition] =
     useState<AttachmentMenuAnchorPosition | null>(null);
   const visibleMessages = messages.slice(0, MAX_VISIBLE_IMAGE_GROUP_TILES);
   const hiddenImageCount = messages.length - visibleMessages.length;
   const openGroupedMenuMessageId =
-    openMenuMessageId &&
-    visibleMessages.some(message => message.id === openMenuMessageId)
-      ? openMenuMessageId
+    representativeMessage && openMenuMessageId === representativeMessage.id
+      ? representativeMessage.id
       : null;
 
   useEffect(() => {
@@ -156,38 +169,47 @@ export const MessageImageAttachmentGroupContent = ({
     };
   }, [openGroupedMenuMessageId]);
 
-  const imageTiles = visibleMessages.map((message, index) => {
-    const resolvedMessageUrl = getImageMessageUrl(message);
-    const previewName = getImagePreviewName(message, index);
-    const menuActions = buildMessageMenuActions({
-      message,
-      isCurrentUser: message.sender_id === userId,
-      isImageMessage: true,
-      isFileMessage: false,
-      isImageFileMessage: false,
-      isPdfFileMessage: false,
-      fileKind: 'document',
-      fileName: previewName,
-      openImageInPortal: async () => {
-        await openImageGroupInPortal(groupPreviewMessages, message.id);
-      },
-      openDocumentInPortal: async () => {},
-      handleEditMessage: () => {},
-      handleCopyMessage,
-      handleDownloadMessage,
-      handleOpenForwardMessagePicker,
-      handleDeleteMessage,
-    });
-
-    return {
-      message,
-      resolvedMessageUrl,
-      previewName,
-      menuActions,
-      isOverflowTile:
-        hiddenImageCount > 0 && index === visibleMessages.length - 1,
-    };
-  });
+  const imageTiles = visibleMessages.map((message, index) => ({
+    message,
+    resolvedMessageUrl: getImageMessageUrl(message),
+    previewName: getImagePreviewName(message, index),
+    isOverflowTile:
+      hiddenImageCount > 0 && index === visibleMessages.length - 1,
+  }));
+  const groupMenuActions = representativeMessage
+    ? buildMessageMenuActions({
+        message: representativeMessage,
+        isCurrentUser: representativeMessage.sender_id === userId,
+        isImageMessage: true,
+        isFileMessage: false,
+        isImageFileMessage: false,
+        isPdfFileMessage: false,
+        fileKind: 'document',
+        fileName:
+          getImagePreviewName(
+            representativeMessage,
+            messages.length > 0 ? messages.length - 1 : 0
+          ) || 'Gambar',
+        openImageInPortal: async () => {
+          await openImageGroupInPortal(
+            groupPreviewMessages,
+            initialPreviewMessage?.id || representativeMessage.id,
+            initialPreviewMessage?.previewUrl || null,
+            (initialPreviewMessage
+              ? previewDimensionsByMessageIdRef.current.get(
+                  initialPreviewMessage.id
+                )
+              : null) || null
+          );
+        },
+        openDocumentInPortal: async () => {},
+        handleEditMessage: () => {},
+        handleCopyMessage,
+        handleDownloadMessage,
+        handleOpenForwardMessagePicker,
+        handleDeleteMessage,
+      })
+    : [];
 
   const captionText = captionMessage?.message?.trim() ?? '';
   const highlightedCaption = renderHighlightedText(captionText, '', {
@@ -200,10 +222,47 @@ export const MessageImageAttachmentGroupContent = ({
         data-chat-image-group-grid
         className="overflow-hidden rounded-xl bg-slate-200"
       >
-        <div className="grid aspect-square grid-cols-2 gap-[2px] bg-slate-200">
+        <button
+          ref={openMenuTriggerRef}
+          type="button"
+          aria-label="Aksi grup gambar"
+          title="Aksi grup gambar"
+          aria-haspopup={isSelectionMode ? undefined : 'menu'}
+          aria-expanded={
+            isSelectionMode
+              ? undefined
+              : openGroupedMenuMessageId === representativeMessage?.id
+          }
+          disabled={isSelectionMode || !representativeMessage}
+          onClick={event => {
+            if (isSelectionMode || !representativeMessage) {
+              return;
+            }
+
+            event.stopPropagation();
+
+            const rect = event.currentTarget.getBoundingClientRect();
+            setMenuAnchorPosition({
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+            });
+            toggleMessageMenu(
+              event.currentTarget,
+              representativeMessage.id,
+              isCurrentUserGroup ? 'left' : 'right'
+            );
+          }}
+          className={`grid aspect-square w-full gap-[2px] bg-slate-200 text-left ${
+            isSelectionMode ? 'cursor-inherit' : 'cursor-pointer'
+          }`}
+          style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
+        >
           {imageTiles.map(
             ({ message, resolvedMessageUrl, previewName, isOverflowTile }) => {
-              const isMenuOpen = openGroupedMenuMessageId === message.id;
+              const isMenuOpen =
+                openGroupedMenuMessageId === representativeMessage?.id;
               const isAnotherAttachmentFocused =
                 openGroupedMenuMessageId !== null && !isMenuOpen;
 
@@ -217,31 +276,7 @@ export const MessageImageAttachmentGroupContent = ({
                     isAnotherAttachmentFocused ? 'blur-[2px] brightness-95' : ''
                   }`}
                 >
-                  <button
-                    ref={isMenuOpen ? openMenuTriggerRef : undefined}
-                    type="button"
-                    aria-label="Aksi gambar"
-                    title="Aksi gambar"
-                    aria-haspopup="menu"
-                    aria-expanded={isMenuOpen}
-                    onClick={event => {
-                      event.stopPropagation();
-
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      setMenuAnchorPosition({
-                        top: rect.top,
-                        left: rect.left,
-                        width: rect.width,
-                        height: rect.height,
-                      });
-                      toggleMessageMenu(
-                        event.currentTarget,
-                        message.id,
-                        isCurrentUserGroup ? 'left' : 'right'
-                      );
-                    }}
-                    className="relative block aspect-square w-full cursor-pointer overflow-hidden bg-slate-100 text-left"
-                  >
+                  <div className="relative block aspect-square w-full overflow-hidden bg-slate-100 text-left">
                     {resolvedMessageUrl ? (
                       <img
                         src={resolvedMessageUrl}
@@ -249,6 +284,39 @@ export const MessageImageAttachmentGroupContent = ({
                         className="h-full w-full object-cover"
                         loading="lazy"
                         draggable={false}
+                        ref={imageElement => {
+                          if (
+                            !imageElement?.naturalWidth ||
+                            !imageElement.naturalHeight
+                          ) {
+                            return;
+                          }
+
+                          previewDimensionsByMessageIdRef.current.set(
+                            message.id,
+                            {
+                              width: imageElement.naturalWidth,
+                              height: imageElement.naturalHeight,
+                            }
+                          );
+                        }}
+                        onLoad={event => {
+                          const imageElement = event.currentTarget;
+                          if (
+                            !imageElement.naturalWidth ||
+                            !imageElement.naturalHeight
+                          ) {
+                            return;
+                          }
+
+                          previewDimensionsByMessageIdRef.current.set(
+                            message.id,
+                            {
+                              width: imageElement.naturalWidth,
+                              height: imageElement.naturalHeight,
+                            }
+                          );
+                        }}
                       />
                     ) : (
                       <div
@@ -261,12 +329,12 @@ export const MessageImageAttachmentGroupContent = ({
                         +{hiddenImageCount}
                       </div>
                     ) : null}
-                  </button>
+                  </div>
                 </div>
               );
             }
           )}
-        </div>
+        </button>
       </div>
 
       {typeof document !== 'undefined' &&
@@ -301,12 +369,7 @@ export const MessageImageAttachmentGroupContent = ({
                   menuOffsetX={menuOffsetX}
                   sidePlacementClass={sidePlacementClass}
                   sideArrowAnchorClass={sideArrowAnchorClass}
-                  actions={
-                    imageTiles.find(
-                      imageTile =>
-                        imageTile.message.id === openGroupedMenuMessageId
-                    )?.menuActions ?? []
-                  }
+                  actions={groupMenuActions}
                 />
               </div>
             </motion.div>,

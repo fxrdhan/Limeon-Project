@@ -9,6 +9,7 @@ import {
 interface ProgressiveImagePreviewProps {
   alt: string;
   fullSrc: string | null;
+  frameSourceSrc?: string | null;
   backdropSrc?: string | null;
   stageSrcs?: string[];
   allowPointerPassthrough?: boolean;
@@ -290,6 +291,7 @@ const prepareProgressiveImageStages = async ({
 const ProgressiveImagePreview = ({
   alt,
   fullSrc,
+  frameSourceSrc,
   backdropSrc,
   stageSrcs = [],
   allowPointerPassthrough = false,
@@ -313,6 +315,7 @@ const ProgressiveImagePreview = ({
     Map<string, { height: number; width: number }>
   >(new Map());
   const normalizedFullSrc = fullSrc?.trim() || null;
+  const normalizedFrameSourceSrc = frameSourceSrc?.trim() || null;
   const normalizedBackdropSrc = backdropSrc?.trim() || null;
   const normalizedStageSrcs = stageSrcs
     .map(stageSrc => stageSrc.trim())
@@ -323,7 +326,10 @@ const ProgressiveImagePreview = ({
     Boolean(normalizedBackdropSrc) &&
     normalizedBackdropSrc !== normalizedFullSrc;
   const dimensionSource =
-    normalizedBackdropSrc || normalizedStageSrcs[0] || normalizedFullSrc;
+    normalizedFrameSourceSrc ||
+    normalizedBackdropSrc ||
+    normalizedStageSrcs[0] ||
+    normalizedFullSrc;
   const activeStageUrl = displayStageUrls[activeStageIndex] ?? null;
 
   const clearProgressiveStageTimers = useCallback(() => {

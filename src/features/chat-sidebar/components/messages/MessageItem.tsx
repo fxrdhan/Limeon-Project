@@ -104,7 +104,12 @@ export interface MessageItemModel {
         previewUrl?: string | null;
       }
     >,
-    initialMessageId?: string | null
+    initialMessageId?: string | null,
+    initialPreviewUrl?: string | null,
+    initialPreviewIntrinsicDimensions?: {
+      width: number;
+      height: number;
+    } | null
   ) => Promise<void>;
   openDocumentInPortal: (
     message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
@@ -316,6 +321,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           messages={groupedImageMessages}
           userId={userId}
           captionMessage={captionMessage}
+          isSelectionMode={isSelectionMode}
           isHighlightedBubble={isFlashingTarget}
           openMenuMessageId={openMenuMessageId}
           menuPlacement={menuPlacement}

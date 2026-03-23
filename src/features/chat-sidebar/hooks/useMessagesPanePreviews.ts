@@ -46,6 +46,11 @@ type ImageGroupPreviewItem = {
   previewName: string;
 };
 
+type ImagePreviewIntrinsicDimensions = {
+  width: number;
+  height: number;
+};
+
 const resolveCachedImageThumbnailUrl = (messageId: string) => {
   const cachedPreviewUrl =
     chatRuntimeCache.imagePreviews.getEntry(messageId)?.previewUrl?.trim() ||
@@ -85,18 +90,29 @@ const getImagePreviewName = (
 
 const resolveInitialImagePreviewUrl = (
   message: PreviewableMessage,
-  preferredPreviewUrl?: string | null
+  preferredPreviewUrl?: string | null,
+  preferredPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
 ) => {
   const hasAspectPreservingPreview = isAspectPreservingImagePreviewPath(
     message.file_preview_url
   );
+  const hasAspectPreservingPreferredDimensions =
+    typeof preferredPreviewIntrinsicDimensions?.width === 'number' &&
+    typeof preferredPreviewIntrinsicDimensions?.height === 'number' &&
+    preferredPreviewIntrinsicDimensions.width > 0 &&
+    preferredPreviewIntrinsicDimensions.height > 0 &&
+    Math.abs(
+      preferredPreviewIntrinsicDimensions.width -
+        preferredPreviewIntrinsicDimensions.height
+    ) > 1;
 
   const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
   if (
     normalizedPreferredPreviewUrl &&
     (normalizedPreferredPreviewUrl.startsWith('blob:') ||
       (normalizedPreferredPreviewUrl.startsWith('data:') &&
-        hasAspectPreservingPreview) ||
+        (hasAspectPreservingPreview ||
+          hasAspectPreservingPreferredDimensions)) ||
       /^(https?:\/\/|\/)/i.test(normalizedPreferredPreviewUrl))
   ) {
     return normalizedPreferredPreviewUrl;
@@ -381,8 +397,7 @@ export const useMessagesPanePreviews = () => {
           previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
               ? (() => {
-                  const stableBackdropUrl =
-                    previousItem.previewUrl || previousItem.thumbnailUrl;
+                  const stableBackdropUrl = previousItem.previewUrl;
 
                   return {
                     ...previousItem,
@@ -472,7 +487,9 @@ export const useMessagesPanePreviews = () => {
   const openImageGroupInPortal = useCallback(
     async (
       messages: PreviewableImageGroupMessage[],
-      initialMessageId?: string | null
+      initialMessageId?: string | null,
+      initialPreviewUrl?: string | null,
+      initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
     ) => {
       if (messages.length === 0) {
         return;
@@ -493,27 +510,35 @@ export const useMessagesPanePreviews = () => {
       imageGroupPreviewMessagesRef.current = new Map(
         messages.map((message, index) => [message.id, { message, index }])
       );
-      const nextPreviewItems = messages.map((message, index) => ({
-        id: message.id,
-        thumbnailUrl: resolveInitialImageGroupThumbnailUrl(
-          message,
-          message.previewUrl || null
-        ),
-        previewUrl: resolveInitialImagePreviewUrl(
-          message,
-          message.previewUrl || null
-        ),
-        stageUrls: [],
-        fullPreviewUrl: null,
-        previewName: getImagePreviewName(message, index),
-      }));
       const nextActivePreviewId =
         initialMessageId &&
-        nextPreviewItems.some(
-          previewItem => previewItem.id === initialMessageId
-        )
+        messages.some(message => message.id === initialMessageId)
           ? initialMessageId
-          : nextPreviewItems[0]?.id || null;
+          : messages[0]?.id || null;
+      const nextPreviewItems = messages.map((message, index) => {
+        const preferredPreviewUrl =
+          message.id === nextActivePreviewId
+            ? initialPreviewUrl || message.previewUrl || null
+            : message.previewUrl || null;
+
+        return {
+          id: message.id,
+          thumbnailUrl: resolveInitialImageGroupThumbnailUrl(
+            message,
+            preferredPreviewUrl
+          ),
+          previewUrl: resolveInitialImagePreviewUrl(
+            message,
+            preferredPreviewUrl,
+            message.id === nextActivePreviewId
+              ? initialPreviewIntrinsicDimensions
+              : null
+          ),
+          stageUrls: [],
+          fullPreviewUrl: null,
+          previewName: getImagePreviewName(message, index),
+        };
+      });
       setImageGroupPreviewItems(nextPreviewItems);
       setActiveImageGroupPreviewId(nextActivePreviewId);
       requestAnimationFrame(() => {
@@ -550,22 +575,11 @@ export const useMessagesPanePreviews = () => {
                   return previousItem;
                 }
 
-                const previewMessage = imageGroupPreviewMessagesRef.current.get(
-                  previousItem.id
-                )?.message;
-                const hydratedPreviewUrl =
-                  previewMessage && !previousItem.previewUrl
-                    ? resolveInitialImagePreviewUrl(
-                        previewMessage,
-                        persistedPreviewUrl
-                      )
-                    : previousItem.previewUrl;
-
                 return {
                   ...previousItem,
                   thumbnailUrl:
                     previousItem.thumbnailUrl || persistedPreviewUrl,
-                  previewUrl: hydratedPreviewUrl || previousItem.previewUrl,
+                  previewUrl: previousItem.previewUrl,
                 };
               })
             );
@@ -716,6 +730,38 @@ export const useMessagesPanePreviews = () => {
   const selectImageGroupPreviewItem = useCallback(
     (messageId: string) => {
       setActiveImageGroupPreviewId(messageId);
+      setImageGroupPreviewItems(previousItems => {
+        const previewMessage =
+          imageGroupPreviewMessagesRef.current.get(messageId)?.message;
+        if (!previewMessage) {
+          return previousItems;
+        }
+
+        const targetPreviewItem =
+          previousItems.find(previousItem => previousItem.id === messageId) ??
+          null;
+        const seededPreviewUrl = resolveInitialImagePreviewUrl(
+          previewMessage,
+          targetPreviewItem?.fullPreviewUrl ||
+            targetPreviewItem?.previewUrl ||
+            targetPreviewItem?.thumbnailUrl ||
+            previewMessage.previewUrl ||
+            null
+        );
+        if (!seededPreviewUrl) {
+          return previousItems;
+        }
+
+        return previousItems.map(previousItem =>
+          previousItem.id === messageId
+            ? {
+                ...previousItem,
+                thumbnailUrl: previousItem.thumbnailUrl || seededPreviewUrl,
+                previewUrl: previousItem.previewUrl || seededPreviewUrl,
+              }
+            : previousItem
+        );
+      });
       void resolveImageGroupPreviewItem(messageId);
     },
     [resolveImageGroupPreviewItem]

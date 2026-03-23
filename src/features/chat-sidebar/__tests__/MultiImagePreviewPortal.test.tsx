@@ -2,6 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import MultiImagePreviewPortal from '../components/MultiImagePreviewPortal';
 
+const { mockProgressiveImagePreview } = vi.hoisted(() => ({
+  mockProgressiveImagePreview: vi.fn(),
+}));
+
 vi.mock('@/components/shared/image-expand-preview', () => ({
   default: ({
     children,
@@ -14,10 +18,49 @@ vi.mock('@/components/shared/image-expand-preview', () => ({
 }));
 
 vi.mock('../components/ProgressiveImagePreview', () => ({
-  default: () => <div data-testid="progressive-image-preview" />,
+  default: (props: Record<string, unknown>) => {
+    mockProgressiveImagePreview(props);
+    return <div data-testid="progressive-image-preview" />;
+  },
 }));
 
 describe('MultiImagePreviewPortal', () => {
+  it('uses the resolved preview as the backdrop and the full preview as the sizing source', () => {
+    render(
+      <MultiImagePreviewPortal
+        isOpen={true}
+        isVisible={true}
+        previewItems={[
+          {
+            id: 'image-1',
+            thumbnailUrl: 'data:image/png;base64,thumb',
+            previewUrl: null,
+            stageUrls: [],
+            fullPreviewUrl: 'https://example.com/full.png',
+            previewName: 'photo.png',
+          },
+        ]}
+        activePreviewId="image-1"
+        isActivePreviewForwardable={true}
+        onSelectPreview={() => {}}
+        onDownloadActivePreview={() => {}}
+        onOpenActivePreviewInNewTab={() => {}}
+        onCopyActivePreviewLink={() => {}}
+        onForwardActivePreview={() => {}}
+        onClose={() => {}}
+        backdropClassName="z-[80]"
+      />
+    );
+
+    expect(mockProgressiveImagePreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fullSrc: 'https://example.com/full.png',
+        frameSourceSrc: 'https://example.com/full.png',
+        backdropSrc: null,
+      })
+    );
+  });
+
   it('renders black header controls and wires share, forward, download, and close actions', () => {
     const onSelectPreview = vi.fn();
     const onDownloadActivePreview = vi.fn();

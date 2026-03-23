@@ -159,7 +159,7 @@ describe('MessageItem', () => {
     expect(screen.getByText('+2')).toBeTruthy();
   });
 
-  it('opens grouped images in the multi-image portal from the tile action menu', async () => {
+  it('opens grouped images in the multi-image portal from the group action menu', async () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,
       id: `image-${index + 1}`,
@@ -176,12 +176,15 @@ describe('MessageItem', () => {
         model={createModel({
           message: groupedMessages[3],
           groupedImageMessages: groupedMessages,
-          openMenuMessageId: 'image-2',
+          openMenuMessageId: 'image-4',
           getImageMessageUrl: targetMessage => targetMessage.message,
           openImageGroupInPortal,
         })}
       />
     );
+    expect(
+      screen.getByRole('button', { name: 'Aksi grup gambar' })
+    ).toBeTruthy();
     expect(
       container.querySelector('[data-chat-image-group-tile-id="image-2"]')
     ).toBeTruthy();
@@ -198,12 +201,15 @@ describe('MessageItem', () => {
         file_name?: string | null;
       }>,
       string | null | undefined,
+      string | null | undefined,
     ];
     expect(firstCall).toBeTruthy();
     const previewMessages = firstCall[0];
     const activeMessageId = firstCall[1];
+    const initialPreviewUrl = firstCall[2];
     expect(previewMessages).toHaveLength(4);
-    expect(activeMessageId).toBe('image-2');
+    expect(activeMessageId).toBe('image-1');
+    expect(initialPreviewUrl).toBe('images/channel/chat-1.png');
   });
 
   it('renders a PDF cover thumbnail inside a grouped document bubble when preview data exists', () => {

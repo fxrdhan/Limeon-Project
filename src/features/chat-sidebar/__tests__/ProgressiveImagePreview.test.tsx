@@ -9,6 +9,11 @@ import {
 } from 'vite-plus/test';
 import ProgressiveImagePreview from '../components/ProgressiveImagePreview';
 
+const imageDimensionsBySrc = new Map<
+  string,
+  { width: number; height: number }
+>();
+
 class MockImage {
   decoding = 'async';
   naturalWidth = 1200;
@@ -21,6 +26,13 @@ class MockImage {
 
   set src(value: string) {
     this.#src = value;
+    const dimensions = imageDimensionsBySrc.get(value);
+    if (dimensions) {
+      this.naturalWidth = dimensions.width;
+      this.width = dimensions.width;
+      this.naturalHeight = dimensions.height;
+      this.height = dimensions.height;
+    }
     queueMicrotask(() => {
       this.onload?.();
     });
@@ -79,6 +91,7 @@ describe('ProgressiveImagePreview', () => {
     vi.stubGlobal('Image', MockImage);
     vi.stubGlobal('ResizeObserver', MockResizeObserver);
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    imageDimensionsBySrc.clear();
   });
 
   afterEach(() => {
@@ -230,5 +243,42 @@ describe('ProgressiveImagePreview', () => {
       );
     });
     expect(imageElement.className).toContain('object-contain');
+  });
+
+  it('prefers the full preview as the sizing source when frameSourceSrc is provided', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {}))
+    );
+    imageDimensionsBySrc.set('data:image/webp;base64,preview', {
+      width: 800,
+      height: 800,
+    });
+    imageDimensionsBySrc.set('https://example.com/full-image.jpg', {
+      width: 800,
+      height: 1200,
+    });
+
+    render(
+      <ProgressiveImagePreview
+        alt="Preview gambar"
+        fullSrc="https://example.com/full-image.jpg"
+        frameSourceSrc="https://example.com/full-image.jpg"
+        backdropSrc="data:image/webp;base64,preview"
+      />
+    );
+
+    const imageElement = await screen.findByAltText('Preview gambar');
+    const expectedHeight = Math.round(window.innerHeight * 0.92);
+    const expectedWidth = Math.round((800 / 1200) * expectedHeight);
+
+    await waitFor(() => {
+      expect(imageElement.parentElement?.getAttribute('style')).toContain(
+        `width: ${expectedWidth}px`
+      );
+      expect(imageElement.parentElement?.getAttribute('style')).toContain(
+        `height: ${expectedHeight}px`
+      );
+    });
   });
 });
