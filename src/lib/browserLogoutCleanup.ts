@@ -3,6 +3,7 @@ import { chatRuntimeCache } from '@/features/chat-sidebar/utils/chatRuntimeCache
 import { resetPersistedPdfPreviewCache } from '@/features/chat-sidebar/utils/pdf-preview-persistence';
 import { resetPharmacyQueryPersistence } from '@/lib/indexedDBPersistence';
 import { queryClient } from '@/lib/queryClient';
+import { supabase } from '@/lib/supabase';
 import { useInvoiceUploadStore } from '@/store/invoiceUploadStore';
 import { resetImageCache } from '@/utils/imageCache';
 
@@ -92,6 +93,12 @@ export const clearClientBrowserState = async () => {
     await queryClient.cancelQueries();
   } catch {
     // ignore query cancellation failures during logout cleanup
+  }
+
+  try {
+    await supabase.removeAllChannels();
+  } catch {
+    // ignore realtime cleanup failures during logout cleanup
   }
 
   queryClient.clear();
