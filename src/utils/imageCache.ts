@@ -256,3 +256,34 @@ export const removeCachedImageBlobs = async (urls: string[]) => {
 export const releaseCachedImageBlobs = (urls: string[]) => {
   urls.forEach(url => releaseCachedImageBlob(url));
 };
+
+export const resetImageCache = async () => {
+  cache.clear();
+  preloadedUrls.clear();
+  blobUrlRefCount.clear();
+
+  blobUrlCache.forEach(objectUrl => {
+    URL.revokeObjectURL(objectUrl);
+  });
+  blobUrlCache.clear();
+
+  if (!isBrowser) {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+
+  if (!('caches' in window)) {
+    return;
+  }
+
+  try {
+    await window.caches.delete(BLOB_CACHE_NAME);
+  } catch {
+    // ignore
+  }
+};

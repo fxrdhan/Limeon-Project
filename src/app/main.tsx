@@ -1,9 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { configurePersistence } from '@/lib/queryPersistence';
+import { queryClient } from '@/lib/queryClient';
 import { preloadCachedImages } from '@/utils/imageCache';
 import '@/fonts.css'; // AG Grid font weight customization
 import '@/App.css';
@@ -23,19 +24,6 @@ if (import.meta.env.DEV) {
     originalError.apply(console, args);
   };
 }
-
-// Create QueryClient with optimized pharmacy data caching
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Longer cache for master data that rarely changes
-      staleTime: 30 * 60 * 1000, // 30 minutes fresh (master data stable)
-      gcTime: 60 * 60 * 1000, // 1 hour in memory
-      retry: 2,
-      refetchOnWindowFocus: false, // Reduce unnecessary refetches
-    },
-  },
-});
 
 // Configure custom IndexedDB persistence (works in both dev and production)
 const initializeApp = async () => {

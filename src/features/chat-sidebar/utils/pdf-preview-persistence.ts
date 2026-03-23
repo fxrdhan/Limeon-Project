@@ -304,3 +304,27 @@ export const deletePersistedPdfPreviewEntriesByMessageIds = async (
     };
   });
 };
+
+export const resetPersistedPdfPreviewCache = async () => {
+  if (!canUseIndexedDb()) {
+    return;
+  }
+
+  try {
+    const database = pdfPreviewCacheDbPromise
+      ? await pdfPreviewCacheDbPromise
+      : null;
+    database?.close();
+  } catch {
+    // ignore
+  } finally {
+    pdfPreviewCacheDbPromise = null;
+  }
+
+  await new Promise<void>(resolve => {
+    const request = window.indexedDB.deleteDatabase(PDF_PREVIEW_CACHE_DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
+};

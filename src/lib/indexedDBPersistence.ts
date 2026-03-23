@@ -248,6 +248,26 @@ class PharmacyIndexedDB {
     }
   }
 
+  async deleteDatabase(): Promise<void> {
+    try {
+      if (this.db) {
+        this.db.close();
+        this.db = null;
+      }
+
+      await new Promise<void>(resolve => {
+        const deleteRequest = indexedDB.deleteDatabase(this.dbName);
+        deleteRequest.onsuccess = () => resolve();
+        deleteRequest.onerror = () => resolve();
+        deleteRequest.onblocked = () => resolve();
+      });
+
+      this.recreationAttempts = 0;
+    } catch (error) {
+      console.warn('Failed to delete IndexedDB database:', error);
+    }
+  }
+
   async getStats(): Promise<{ count: number; size: string }> {
     try {
       if (!this.db) await this.init();
@@ -404,3 +424,6 @@ async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
 }
 
 // Private instance - no exports needed for production
+export const resetPharmacyQueryPersistence = async () => {
+  await pharmacyDB.deleteDatabase();
+};

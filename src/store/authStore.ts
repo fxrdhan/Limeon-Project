@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import authService from '@/services/authService';
 import { chatPresenceService } from '@/services/api/chat.service';
 import { StorageService } from '@/services/api/storage.service';
+import { clearClientBrowserState } from '@/lib/browserLogoutCleanup';
 import type { AuthState } from '@/types';
 import type { Session } from '@supabase/supabase-js';
 
@@ -118,7 +119,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     try {
       const { user } = get();
-      set({ loading: true });
+      set({ loading: true, error: null });
       if (user?.id) {
         try {
           await chatPresenceService.upsertUserPresence(user.id, {
@@ -132,7 +133,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
       await authService.signOut();
+      await clearClientBrowserState();
       set({ session: null, user: null, loading: false });
+
+      if (typeof window !== 'undefined') {
+        window.location.replace('/login');
+      }
     } catch (error: unknown) {
       console.error('Logout error:', error);
       set({

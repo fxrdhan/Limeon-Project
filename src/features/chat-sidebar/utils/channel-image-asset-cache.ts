@@ -675,3 +675,38 @@ export const activateChannelImageAssetScope = async (
   activeChannelImageAssetScopeId = normalizedChannelId;
   await purgeChannelImageAssetsExcept(normalizedChannelId);
 };
+
+export const resetChannelImageAssetCache = async () => {
+  activeChannelImageAssetScopeId = null;
+  pendingChannelImageAssetLoads.clear();
+
+  for (const assetKey of runtimeChannelImageAssets.keys()) {
+    revokeRuntimeChannelImageAssetEntry(assetKey);
+  }
+
+  runtimeChannelImageAssets.clear();
+
+  try {
+    const database = channelImageAssetDbPromise
+      ? await channelImageAssetDbPromise
+      : null;
+    database?.close();
+  } catch {
+    // ignore
+  } finally {
+    channelImageAssetDbPromise = null;
+  }
+
+  if (!canUseIndexedDb()) {
+    return;
+  }
+
+  await new Promise<void>(resolve => {
+    const request = window.indexedDB.deleteDatabase(
+      CHANNEL_IMAGE_ASSET_DB_NAME
+    );
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
+};
