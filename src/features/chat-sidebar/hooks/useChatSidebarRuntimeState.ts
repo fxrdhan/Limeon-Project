@@ -129,7 +129,12 @@ export const useChatSidebarRuntimeState = ({
     viewport.scheduleScrollMessagesToBottom;
 
   const previews = useChatSidebarPreviewState({
+    currentChannelId,
     messages: session.messages,
+    messagesContainerRef: refs.messagesContainerRef,
+    chatHeaderContainerRef: refs.chatHeaderContainerRef,
+    messageBubbleRefs: refs.messageBubbleRefs,
+    getVisibleMessagesBounds: viewport.getVisibleMessagesBounds,
     pendingComposerAttachments: composer.pendingComposerAttachments,
     closeMessageMenu: refs.closeMessageMenu,
     handleAttachImageClick: composer.handleAttachImageClick,

@@ -25,7 +25,7 @@ vi.mock('../components/ProgressiveImagePreview', () => ({
 }));
 
 describe('MultiImagePreviewPortal', () => {
-  it('uses the resolved preview as the backdrop and the full preview as the sizing source', () => {
+  it('uses the full preview as the backdrop and the sizing source', () => {
     render(
       <MultiImagePreviewPortal
         isOpen={true}
@@ -35,7 +35,6 @@ describe('MultiImagePreviewPortal', () => {
             id: 'image-1',
             thumbnailUrl: 'data:image/png;base64,thumb',
             previewUrl: null,
-            stageUrls: [],
             fullPreviewUrl: 'https://example.com/full.png',
             previewName: 'photo.png',
           },
@@ -56,7 +55,7 @@ describe('MultiImagePreviewPortal', () => {
       expect.objectContaining({
         fullSrc: 'https://example.com/full.png',
         frameSourceSrc: 'https://example.com/full.png',
-        backdropSrc: null,
+        backdropSrc: 'https://example.com/full.png',
       })
     );
   });
@@ -78,7 +77,6 @@ describe('MultiImagePreviewPortal', () => {
             id: 'image-1',
             thumbnailUrl: 'data:image/png;base64,thumb',
             previewUrl: 'data:image/png;base64,preview',
-            stageUrls: [],
             fullPreviewUrl: 'https://example.com/full.png',
             previewName: 'photo.png',
           },
@@ -151,7 +149,6 @@ describe('MultiImagePreviewPortal', () => {
             id: 'temp-image-1',
             thumbnailUrl: 'data:image/png;base64,thumb',
             previewUrl: 'data:image/png;base64,preview',
-            stageUrls: [],
             fullPreviewUrl: null,
             previewName: 'photo.png',
           },

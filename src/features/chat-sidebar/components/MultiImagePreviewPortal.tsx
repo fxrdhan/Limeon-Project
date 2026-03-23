@@ -22,7 +22,6 @@ interface MultiImagePreviewPortalItem {
   id: string;
   thumbnailUrl: string | null;
   previewUrl: string | null;
-  stageUrls: string[];
   fullPreviewUrl: string | null;
   previewName: string;
 }
@@ -99,7 +98,8 @@ const MultiImagePreviewPortal = ({
   const activePreviewIndex = activePreview
     ? previewItems.findIndex(previewItem => previewItem.id === activePreview.id)
     : -1;
-  const activeBackdropUrl = activePreview?.previewUrl || null;
+  const activeBackdropUrl =
+    activePreview?.fullPreviewUrl || activePreview?.previewUrl || null;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resizeHandleRef = useRef<HTMLButtonElement | null>(null);
   const resizeStateRef = useRef<{
@@ -358,13 +358,10 @@ const MultiImagePreviewPortal = ({
                           : 'border-slate-300 hover:border-slate-400'
                       } h-full w-full`}
                     >
-                      {previewItem.fullPreviewUrl ||
-                      previewItem.thumbnailUrl ||
-                      previewItem.previewUrl ? (
+                      {previewItem.fullPreviewUrl || previewItem.previewUrl ? (
                         <img
                           src={
                             previewItem.fullPreviewUrl ||
-                            previewItem.thumbnailUrl ||
                             previewItem.previewUrl ||
                             ''
                           }
@@ -481,7 +478,6 @@ const MultiImagePreviewPortal = ({
                 fullSrc={activePreview.fullPreviewUrl}
                 frameSourceSrc={activePreview.fullPreviewUrl}
                 backdropSrc={activeBackdropUrl}
-                stageSrcs={activePreview.stageUrls}
                 alt={activePreview.previewName || 'Preview gambar'}
                 className="h-full w-full rounded-[28px]"
                 imageClassName="h-full w-full rounded-[28px]"

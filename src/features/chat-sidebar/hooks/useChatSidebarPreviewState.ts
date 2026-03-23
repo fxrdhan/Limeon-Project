@@ -1,14 +1,22 @@
 import type { ChatPdfCompressionLevel } from '../../../../shared/chatFunctionContracts';
+import type { RefObject } from 'react';
+import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerAttachment } from '../types';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
+import type { VisibleBounds } from '../utils/viewport-visibility';
 import { useComposerAttachmentPreview } from './useComposerAttachmentPreview';
 import { useMessageImagePreviews } from './useMessageImagePreviews';
 import { useMessagePdfPreviews } from './useMessagePdfPreviews';
 import { useMessagesPanePreviews } from './useMessagesPanePreviews';
 
 interface UseChatSidebarPreviewStateProps {
+  currentChannelId: string | null;
   messages: ChatMessage[];
+  messagesContainerRef: RefObject<HTMLDivElement | null>;
+  chatHeaderContainerRef: RefObject<HTMLDivElement | null>;
+  messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
+  getVisibleMessagesBounds: () => VisibleBounds | null;
   pendingComposerAttachments: PendingComposerAttachment[];
   closeMessageMenu: () => void;
   handleAttachImageClick: (replaceAttachmentId?: string) => void;
@@ -26,7 +34,12 @@ interface UseChatSidebarPreviewStateProps {
 }
 
 export const useChatSidebarPreviewState = ({
+  currentChannelId,
   messages,
+  messagesContainerRef,
+  chatHeaderContainerRef,
+  messageBubbleRefs,
+  getVisibleMessagesBounds,
   pendingComposerAttachments,
   closeMessageMenu,
   handleAttachImageClick,
@@ -39,8 +52,15 @@ export const useChatSidebarPreviewState = ({
   getAttachmentFileKind,
   captionData,
 }: UseChatSidebarPreviewStateProps) => {
-  const panePreviews = useMessagesPanePreviews();
-  const { getImageMessageUrl } = useMessageImagePreviews({ messages });
+  const panePreviews = useMessagesPanePreviews({ currentChannelId });
+  const { getImageMessageUrl } = useMessageImagePreviews({
+    messages,
+    currentChannelId,
+    messagesContainerRef,
+    chatHeaderContainerRef,
+    messageBubbleRefs,
+    getVisibleMessagesBounds,
+  });
   const { getPdfMessagePreview } = useMessagePdfPreviews({
     messages,
     getAttachmentFileName,

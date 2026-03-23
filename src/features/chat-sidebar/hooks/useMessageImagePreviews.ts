@@ -1,512 +1,244 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import {
-  fetchChatFileBlobWithFallback,
-  isImageFileExtensionOrMime,
-  isDirectChatAssetUrl,
-  resolveFileExtension,
-  resolveChatAssetUrlWithExpiry,
-} from '../utils/message-file';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+  activateChannelImageAssetScope,
+  ensureChannelImageAssetUrl,
+  getRuntimeChannelImageAssetUrl,
+  isCacheableChannelImageMessage,
+} from '../utils/channel-image-asset-cache';
+import { isDirectChatAssetUrl } from '../utils/message-file';
 import {
-  createImageExpandStageDataUrl,
-  readBlobAsDataUrl,
-} from '../utils/image-message-preview';
-import { isAspectPreservingImagePreviewPath } from '../utils/image-preview-path';
-import { loadPersistedImagePreviewEntriesByMessageIds } from '../utils/image-preview-persistence';
+  getVerticalVisibilityBounds,
+  type VisibleBounds,
+} from '../utils/viewport-visibility';
 
-const IMAGE_URL_REFRESH_LEAD_MS = 60_000;
-const IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
-const IMAGE_PREVIEW_RETRY_BASE_DELAY_MS = 900;
+const IMAGE_PREFETCH_DEBOUNCE_MS = 16;
+const MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX = 48;
 
-interface ImageMessagePreviewEntry {
-  url: string;
-  expiresAt: number | null;
-  isObjectUrl: boolean;
-}
-
-const isImagePreviewableMessage = (
-  message: Pick<
-    ChatMessage,
-    | 'message_type'
-    | 'message'
-    | 'file_name'
-    | 'file_mime_type'
-    | 'file_preview_url'
-  >
+const runTasksWithConcurrency = async <T>(
+  items: T[],
+  limit: number,
+  task: (item: T) => Promise<void>
 ) => {
-  if (message.message_type === 'image') {
-    return true;
-  }
+  const boundedLimit = Math.max(1, limit);
+  const taskQueue = [...items];
 
-  if (message.message_type !== 'file') {
-    return false;
-  }
+  await Promise.all(
+    Array.from({
+      length: Math.min(boundedLimit, taskQueue.length),
+    }).map(async () => {
+      while (taskQueue.length > 0) {
+        const nextItem = taskQueue.shift();
+        if (!nextItem) {
+          return;
+        }
 
-  const fileExtension = resolveFileExtension(
-    message.file_name ?? null,
-    message.message,
-    message.file_mime_type
+        await task(nextItem);
+      }
+    })
   );
-
-  return isImageFileExtensionOrMime(fileExtension, message.file_mime_type);
 };
 
 export const useMessageImagePreviews = ({
   messages,
+  currentChannelId,
+  messagesContainerRef,
+  chatHeaderContainerRef,
+  messageBubbleRefs,
+  getVisibleMessagesBounds,
 }: {
   messages: ChatMessage[];
+  currentChannelId: string | null;
+  messagesContainerRef: RefObject<HTMLDivElement | null>;
+  chatHeaderContainerRef: RefObject<HTMLDivElement | null>;
+  messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
+  getVisibleMessagesBounds: () => VisibleBounds | null;
 }) => {
-  const [imageMessagePreviewEntries, setImageMessagePreviewEntries] = useState<
-    Record<string, ImageMessagePreviewEntry>
-  >({});
-  const [imagePreviewRefreshTick, setImagePreviewRefreshTick] = useState(0);
-  const [imagePreviewRetryNonce, setImagePreviewRetryNonce] = useState(0);
-  const [isPersistedPreviewLookupReady, setIsPersistedPreviewLookupReady] =
-    useState(false);
-  const objectUrlsRef = useRef<Map<string, string>>(new Map());
-  const imageMessagePreviewEntriesRef = useRef<
-    Record<string, ImageMessagePreviewEntry>
-  >({});
-  const imagePreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
-  const imagePreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
+  const [resolvedPreviewUrlsByMessageId, setResolvedPreviewUrlsByMessageId] =
+    useState<Record<string, string>>({});
+  const prefetchTimeoutRef = useRef<number | null>(null);
 
-  const releaseImagePreviewUrl = useCallback((messageId: string) => {
-    const existingUrl = objectUrlsRef.current.get(messageId);
-    if (!existingUrl) {
-      return;
-    }
+  const setResolvedPreviewUrl = useCallback(
+    (messageId: string, previewUrl: string | null) => {
+      if (!previewUrl) {
+        return;
+      }
 
-    URL.revokeObjectURL(existingUrl);
-    objectUrlsRef.current.delete(messageId);
-  }, []);
+      setResolvedPreviewUrlsByMessageId(previousUrls => {
+        if (previousUrls[messageId] === previewUrl) {
+          return previousUrls;
+        }
 
-  const clearImagePreviewRetryTimer = useCallback((messageId: string) => {
-    const existingTimerId = imagePreviewRetryTimersRef.current.get(messageId);
-    if (!existingTimerId) {
-      return;
-    }
-
-    window.clearTimeout(existingTimerId);
-    imagePreviewRetryTimersRef.current.delete(messageId);
-  }, []);
-
-  const scheduleImagePreviewRetry = useCallback((messageId: string) => {
-    if (imagePreviewRetryTimersRef.current.has(messageId)) {
-      return;
-    }
-
-    const nextAttemptCount =
-      (imagePreviewRetryAttemptsRef.current.get(messageId) ?? 0) + 1;
-    imagePreviewRetryAttemptsRef.current.set(messageId, nextAttemptCount);
-
-    if (nextAttemptCount >= IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS) {
-      return;
-    }
-
-    const retryDelay = IMAGE_PREVIEW_RETRY_BASE_DELAY_MS * nextAttemptCount;
-    const retryTimerId = window.setTimeout(() => {
-      imagePreviewRetryTimersRef.current.delete(messageId);
-      setImagePreviewRetryNonce(previousValue => previousValue + 1);
-    }, retryDelay);
-    imagePreviewRetryTimersRef.current.set(messageId, retryTimerId);
-  }, []);
-
-  useEffect(() => {
-    imageMessagePreviewEntriesRef.current = imageMessagePreviewEntries;
-  }, [imageMessagePreviewEntries]);
-
-  useEffect(() => {
-    const retryTimers = imagePreviewRetryTimersRef.current;
-
-    return () => {
-      retryTimers.forEach(timerId => {
-        window.clearTimeout(timerId);
+        return {
+          ...previousUrls,
+          [messageId]: previewUrl,
+        };
       });
-      retryTimers.clear();
-    };
-  }, []);
+    },
+    []
+  );
 
-  useEffect(() => {
-    const signedUrlExpirations = Object.values(imageMessagePreviewEntries)
-      .map(previewEntry => previewEntry.expiresAt)
-      .filter(
-        (expiresAt): expiresAt is number => typeof expiresAt === 'number'
-      );
-
-    if (signedUrlExpirations.length === 0) {
-      return;
+  const collectVisibleImageMessages = useCallback(() => {
+    const normalizedChannelId = currentChannelId?.trim() || '';
+    if (!normalizedChannelId) {
+      return [];
     }
 
-    const nearestExpiry = Math.min(...signedUrlExpirations);
-    const refreshDelay = Math.max(
-      nearestExpiry - Date.now() - IMAGE_URL_REFRESH_LEAD_MS,
+    const bounds = getVisibleMessagesBounds();
+    if (!bounds) {
+      return [];
+    }
+
+    const verticalVisibilityBounds = getVerticalVisibilityBounds(
+      bounds,
+      chatHeaderContainerRef.current?.getBoundingClientRect(),
       0
     );
-    const refreshTimerId = window.setTimeout(() => {
-      setImagePreviewRefreshTick(previousTick => previousTick + 1);
-    }, refreshDelay);
 
-    return () => {
-      window.clearTimeout(refreshTimerId);
-    };
-  }, [imageMessagePreviewEntries]);
+    return messages.filter(messageItem => {
+      if (
+        messageItem.channel_id !== normalizedChannelId ||
+        messageItem.id.startsWith('temp_') ||
+        !isCacheableChannelImageMessage(messageItem)
+      ) {
+        return false;
+      }
+
+      const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
+      if (!bubbleElement) {
+        return false;
+      }
+
+      const bubbleRect = bubbleElement.getBoundingClientRect();
+      const visibleTop = Math.max(
+        bubbleRect.top,
+        verticalVisibilityBounds.minVisibleTop
+      );
+      const visibleBottom = Math.min(
+        bubbleRect.bottom,
+        verticalVisibilityBounds.maxVisibleBottom
+      );
+      const visibleHeight = visibleBottom - visibleTop;
+      const isTopEdgeVisible =
+        bubbleRect.top >= verticalVisibilityBounds.minVisibleTop &&
+        bubbleRect.top < verticalVisibilityBounds.maxVisibleBottom;
+      const isMeaningfullyVisibleBelowHeader =
+        bubbleRect.top < verticalVisibilityBounds.minVisibleTop &&
+        visibleHeight >= MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX;
+
+      return (
+        visibleHeight > 0 &&
+        (isTopEdgeVisible || isMeaningfullyVisibleBelowHeader)
+      );
+    });
+  }, [
+    chatHeaderContainerRef,
+    currentChannelId,
+    getVisibleMessagesBounds,
+    messageBubbleRefs,
+    messages,
+  ]);
+
+  const prefetchVisibleImageAssets = useCallback(async () => {
+    const normalizedChannelId = currentChannelId?.trim() || '';
+    if (!normalizedChannelId) {
+      return;
+    }
+
+    const visibleImageMessages = collectVisibleImageMessages();
+    if (visibleImageMessages.length === 0) {
+      return;
+    }
+
+    await runTasksWithConcurrency(
+      visibleImageMessages,
+      4,
+      async messageItem => {
+        const previewUrl = await ensureChannelImageAssetUrl(
+          normalizedChannelId,
+          messageItem,
+          'full'
+        );
+        setResolvedPreviewUrl(messageItem.id, previewUrl);
+      }
+    );
+  }, [collectVisibleImageMessages, currentChannelId, setResolvedPreviewUrl]);
+
+  const scheduleVisibleImageAssetPrefetch = useCallback(() => {
+    if (prefetchTimeoutRef.current !== null) {
+      window.clearTimeout(prefetchTimeoutRef.current);
+    }
+
+    prefetchTimeoutRef.current = window.setTimeout(() => {
+      prefetchTimeoutRef.current = null;
+      void prefetchVisibleImageAssets();
+    }, IMAGE_PREFETCH_DEBOUNCE_MS);
+  }, [prefetchVisibleImageAssets]);
 
   useEffect(() => {
-    let isCancelled = false;
-    setIsPersistedPreviewLookupReady(false);
+    void activateChannelImageAssetScope(currentChannelId);
+    setResolvedPreviewUrlsByMessageId({});
+  }, [currentChannelId]);
 
-    const hydratePersistedImagePreviews = async () => {
-      const activeImageMessageIds = messages
-        .filter(messageItem => isImagePreviewableMessage(messageItem))
-        .map(messageItem => messageItem.id);
-      if (activeImageMessageIds.length === 0) {
-        if (!isCancelled) {
-          setIsPersistedPreviewLookupReady(true);
+  useEffect(() => {
+    const activeMessageIds = new Set(
+      messages.map(messageItem => messageItem.id)
+    );
+    setResolvedPreviewUrlsByMessageId(previousUrls => {
+      let hasChanges = false;
+      const nextUrls: Record<string, string> = {};
+
+      Object.entries(previousUrls).forEach(([messageId, previewUrl]) => {
+        if (!activeMessageIds.has(messageId)) {
+          hasChanges = true;
+          return;
         }
-        return;
-      }
 
-      const persistedImagePreviews =
-        await loadPersistedImagePreviewEntriesByMessageIds(
-          activeImageMessageIds
-        );
-      if (isCancelled) {
-        return;
-      }
-
-      persistedImagePreviews.forEach(({ messageId, preview }) => {
-        chatRuntimeCache.imagePreviews.hydrate(messageId, preview);
+        nextUrls[messageId] = previewUrl;
       });
 
-      await Promise.all(
-        persistedImagePreviews.map(async ({ messageId, preview }) => {
-          const matchingMessage = messages.find(
-            messageItem => messageItem.id === messageId
-          );
-          if (
-            !matchingMessage ||
-            !isAspectPreservingImagePreviewPath(
-              matchingMessage.file_preview_url
-            )
-          ) {
-            return;
-          }
-
-          const expandStageDataUrl = await createImageExpandStageDataUrl(
-            preview.previewUrl
-          ).catch(() => null);
-          if (!expandStageDataUrl || isCancelled) {
-            return;
-          }
-
-          chatRuntimeCache.imagePreviews.setExpandStage(
-            messageId,
-            expandStageDataUrl
-          );
-        })
-      );
-
-      if (persistedImagePreviews.length > 0) {
-        setImageMessagePreviewEntries(previousEntries => ({
-          ...previousEntries,
-          ...Object.fromEntries(
-            persistedImagePreviews.map(({ messageId, preview }) => [
-              messageId,
-              {
-                url: preview.previewUrl,
-                expiresAt: null,
-                isObjectUrl: false,
-              },
-            ])
-          ),
-        }));
-      }
-
-      setIsPersistedPreviewLookupReady(true);
-    };
-
-    void hydratePersistedImagePreviews();
-
-    return () => {
-      isCancelled = true;
-    };
+      return hasChanges ? nextUrls : previousUrls;
+    });
   }, [messages]);
 
   useEffect(() => {
-    if (!isPersistedPreviewLookupReady) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    const activeImageMessageIds = new Set(
-      messages
-        .filter(messageItem => isImagePreviewableMessage(messageItem))
-        .map(messageItem => messageItem.id)
-    );
-
-    chatRuntimeCache.imagePreviews.pruneExcept(activeImageMessageIds);
-
-    for (const [messageId] of imagePreviewRetryAttemptsRef.current) {
-      if (activeImageMessageIds.has(messageId)) {
-        continue;
-      }
-
-      imagePreviewRetryAttemptsRef.current.delete(messageId);
-      clearImagePreviewRetryTimer(messageId);
-    }
-
-    setImageMessagePreviewEntries(previousEntries => {
-      let hasChanges = false;
-      const nextEntries: Record<string, ImageMessagePreviewEntry> = {};
-
-      Object.entries(previousEntries).forEach(([messageId, previewEntry]) => {
-        if (!activeImageMessageIds.has(messageId)) {
-          hasChanges = true;
-          releaseImagePreviewUrl(messageId);
-          return;
-        }
-
-        nextEntries[messageId] = previewEntry;
-      });
-
-      return hasChanges ? nextEntries : previousEntries;
-    });
-
-    const pendingImageMessages = messages.filter(messageItem => {
-      if (!isImagePreviewableMessage(messageItem)) {
-        return false;
-      }
-
-      if (messageItem.id.startsWith('temp_')) {
-        return false;
-      }
-
-      if (!messageItem.file_storage_path) {
-        return false;
-      }
-
-      const existingPreviewEntry =
-        imageMessagePreviewEntriesRef.current[messageItem.id];
-      if (
-        existingPreviewEntry &&
-        (existingPreviewEntry.expiresAt === null ||
-          existingPreviewEntry.expiresAt >
-            Date.now() + IMAGE_URL_REFRESH_LEAD_MS)
-      ) {
-        return false;
-      }
-
-      if (chatRuntimeCache.imagePreviews.getEntry(messageItem.id)) {
-        return false;
-      }
-
-      if (
-        objectUrlsRef.current.has(messageItem.id) &&
-        !existingPreviewEntry?.expiresAt
-      ) {
-        return false;
-      }
-
-      if (imagePreviewRetryTimersRef.current.has(messageItem.id)) {
-        return false;
-      }
-
-      if (
-        (imagePreviewRetryAttemptsRef.current.get(messageItem.id) ?? 0) >=
-        IMAGE_PREVIEW_MAX_RETRY_ATTEMPTS
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (pendingImageMessages.length === 0) {
-      return;
-    }
-
-    const resolveImagePreviews = async () => {
-      const resolvedEntries = await Promise.all(
-        pendingImageMessages.map(async messageItem => {
-          try {
-            const persistedPreviewPath = messageItem.file_preview_url?.trim();
-
-            if (persistedPreviewPath) {
-              const previewBlob = await fetchChatFileBlobWithFallback(
-                persistedPreviewPath,
-                persistedPreviewPath
-              );
-              if (previewBlob) {
-                imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
-                clearImagePreviewRetryTimer(messageItem.id);
-                const previewDataUrl = await readBlobAsDataUrl(previewBlob);
-                const expandStageDataUrl = isAspectPreservingImagePreviewPath(
-                  persistedPreviewPath
-                )
-                  ? await createImageExpandStageDataUrl(previewBlob).catch(
-                      () => null
-                    )
-                  : null;
-                if (expandStageDataUrl) {
-                  chatRuntimeCache.imagePreviews.setExpandStage(
-                    messageItem.id,
-                    expandStageDataUrl
-                  );
-                }
-                return {
-                  messageId: messageItem.id,
-                  previewEntry: {
-                    url: previewDataUrl,
-                    expiresAt: null,
-                    isObjectUrl: false,
-                  },
-                };
-              }
-            }
-
-            const resolvedAsset = await resolveChatAssetUrlWithExpiry(
-              messageItem.message,
-              messageItem.file_storage_path
-            );
-            if (resolvedAsset) {
-              imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
-              clearImagePreviewRetryTimer(messageItem.id);
-              return {
-                messageId: messageItem.id,
-                previewEntry: {
-                  url: resolvedAsset.url,
-                  expiresAt: resolvedAsset.expiresAt,
-                  isObjectUrl: false,
-                },
-              };
-            }
-
-            const imageBlob = await fetchChatFileBlobWithFallback(
-              messageItem.file_preview_url?.trim() || messageItem.message,
-              messageItem.file_preview_url?.trim() ||
-                messageItem.file_storage_path
-            );
-            if (!imageBlob) {
-              scheduleImagePreviewRetry(messageItem.id);
-              return null;
-            }
-
-            imagePreviewRetryAttemptsRef.current.delete(messageItem.id);
-            clearImagePreviewRetryTimer(messageItem.id);
-            const expandStageDataUrl = await createImageExpandStageDataUrl(
-              imageBlob
-            ).catch(() => null);
-            if (expandStageDataUrl) {
-              chatRuntimeCache.imagePreviews.setExpandStage(
-                messageItem.id,
-                expandStageDataUrl
-              );
-            }
-            return {
-              messageId: messageItem.id,
-              previewEntry: {
-                url: URL.createObjectURL(imageBlob),
-                expiresAt: null,
-                isObjectUrl: true,
-              },
-            };
-          } catch (error) {
-            console.error('Error resolving chat image preview:', error);
-            scheduleImagePreviewRetry(messageItem.id);
-            return null;
-          }
-        })
-      );
-
-      if (isCancelled) {
-        resolvedEntries.forEach(resolvedEntry => {
-          if (resolvedEntry?.previewEntry.isObjectUrl) {
-            URL.revokeObjectURL(resolvedEntry.previewEntry.url);
-          }
-        });
-        return;
-      }
-
-      const nextImageMessagePreviewEntries: Record<
-        string,
-        ImageMessagePreviewEntry
-      > = {};
-      const transientResolvedMessageIds: string[] = [];
-
-      resolvedEntries.forEach(resolvedEntry => {
-        if (!resolvedEntry) {
-          return;
-        }
-
-        const previousUrl = objectUrlsRef.current.get(resolvedEntry.messageId);
-        if (
-          previousUrl &&
-          (!resolvedEntry.previewEntry.isObjectUrl ||
-            previousUrl !== resolvedEntry.previewEntry.url)
-        ) {
-          URL.revokeObjectURL(previousUrl);
-          objectUrlsRef.current.delete(resolvedEntry.messageId);
-        }
-
-        if (resolvedEntry.previewEntry.isObjectUrl) {
-          objectUrlsRef.current.set(
-            resolvedEntry.messageId,
-            resolvedEntry.previewEntry.url
-          );
-        }
-
-        if (resolvedEntry.previewEntry.isObjectUrl) {
-          transientResolvedMessageIds.push(resolvedEntry.messageId);
-        } else if (resolvedEntry.previewEntry.url.startsWith('data:')) {
-          chatRuntimeCache.imagePreviews.setEntry(resolvedEntry.messageId, {
-            previewUrl: resolvedEntry.previewEntry.url,
-            isObjectUrl: false,
-          });
-        }
-
-        nextImageMessagePreviewEntries[resolvedEntry.messageId] =
-          resolvedEntry.previewEntry;
-      });
-
-      chatRuntimeCache.imagePreviews.deleteRuntimeByMessageIds(
-        transientResolvedMessageIds
-      );
-
-      if (Object.keys(nextImageMessagePreviewEntries).length === 0) {
-        return;
-      }
-
-      setImageMessagePreviewEntries(previousEntries => ({
-        ...previousEntries,
-        ...nextImageMessagePreviewEntries,
-      }));
-    };
-
-    void resolveImagePreviews();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    clearImagePreviewRetryTimer,
-    imagePreviewRefreshTick,
-    imagePreviewRetryNonce,
-    isPersistedPreviewLookupReady,
-    messages,
-    releaseImagePreviewUrl,
-    scheduleImagePreviewRetry,
-  ]);
+    scheduleVisibleImageAssetPrefetch();
+  }, [messages, currentChannelId, scheduleVisibleImageAssetPrefetch]);
 
   useEffect(() => {
-    const objectUrls = objectUrlsRef.current;
+    const containerElement = messagesContainerRef.current;
+    if (!containerElement) {
+      return;
+    }
+
+    containerElement.addEventListener(
+      'scroll',
+      scheduleVisibleImageAssetPrefetch
+    );
+    window.addEventListener('resize', scheduleVisibleImageAssetPrefetch);
 
     return () => {
-      objectUrls.forEach(previewUrl => {
-        URL.revokeObjectURL(previewUrl);
-      });
-      objectUrls.clear();
+      containerElement.removeEventListener(
+        'scroll',
+        scheduleVisibleImageAssetPrefetch
+      );
+      window.removeEventListener('resize', scheduleVisibleImageAssetPrefetch);
+    };
+  }, [messagesContainerRef, scheduleVisibleImageAssetPrefetch]);
+
+  useEffect(() => {
+    return () => {
+      if (prefetchTimeoutRef.current !== null) {
+        window.clearTimeout(prefetchTimeoutRef.current);
+        prefetchTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -522,25 +254,21 @@ export const useMessageImagePreviews = ({
         | 'file_preview_url'
       >
     ) => {
-      if (!isImagePreviewableMessage(message)) {
+      if (!isCacheableChannelImageMessage(message)) {
         return null;
       }
 
-      const handedOffPreviewUrl = chatRuntimeCache.imagePreviews.getEntry(
-        message.id
-      )?.previewUrl;
-      if (handedOffPreviewUrl) {
-        return handedOffPreviewUrl;
+      const normalizedChannelId = currentChannelId?.trim() || null;
+      const runtimeFullUrl =
+        normalizedChannelId &&
+        getRuntimeChannelImageAssetUrl(normalizedChannelId, message.id, 'full');
+      if (runtimeFullUrl) {
+        return runtimeFullUrl;
       }
 
-      const resolvedPreviewUrl = imageMessagePreviewEntries[message.id]?.url;
+      const resolvedPreviewUrl = resolvedPreviewUrlsByMessageId[message.id];
       if (resolvedPreviewUrl) {
         return resolvedPreviewUrl;
-      }
-
-      const directPreviewUrl = message.file_preview_url?.trim();
-      if (directPreviewUrl && isDirectChatAssetUrl(directPreviewUrl)) {
-        return directPreviewUrl;
       }
 
       if (
@@ -552,10 +280,11 @@ export const useMessageImagePreviews = ({
 
       return null;
     },
-    [imageMessagePreviewEntries]
+    [currentChannelId, resolvedPreviewUrlsByMessageId]
   );
 
   return {
     getImageMessageUrl,
+    scheduleVisibleImageAssetPrefetch,
   };
 };

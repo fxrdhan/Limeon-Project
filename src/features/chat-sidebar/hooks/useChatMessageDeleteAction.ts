@@ -6,6 +6,7 @@ import {
   chatSidebarCleanupGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
+import { deleteChannelImageAssetsByMessageIds } from '../utils/channel-image-asset-cache';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { getAttachmentCaptionMessageIds } from '../utils/message-relations';
@@ -175,7 +176,8 @@ export const useChatMessageDeleteAction = ({
         }
 
         chatRuntimeCache.pdfPreviews.deleteByMessageIds(data.deletedMessageIds);
-        chatRuntimeCache.imagePreviews.deleteByMessageIds(
+        void deleteChannelImageAssetsByMessageIds(
+          currentChannelId,
           data.deletedMessageIds
         );
 
@@ -307,7 +309,10 @@ export const useChatMessageDeleteAction = ({
             ? data.deletedMessageIds
             : messageIdsToDelete;
         chatRuntimeCache.pdfPreviews.deleteByMessageIds(deletedMessageIds);
-        chatRuntimeCache.imagePreviews.deleteByMessageIds(deletedMessageIds);
+        void deleteChannelImageAssetsByMessageIds(
+          currentChannelId,
+          deletedMessageIds
+        );
 
         return true;
       } catch (error) {

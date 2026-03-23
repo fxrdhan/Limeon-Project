@@ -71,53 +71,39 @@ class MockResizeObserver {
   disconnect() {}
 }
 
-const flushMicrotasks = async (count = 6) => {
-  for (let index = 0; index < count; index += 1) {
-    await Promise.resolve();
-  }
-};
-
 describe('ProgressiveImagePreview', () => {
-  const originalGetContextDescriptor = Object.getOwnPropertyDescriptor(
-    HTMLCanvasElement.prototype,
-    'getContext'
-  );
-  const originalToBlobDescriptor = Object.getOwnPropertyDescriptor(
-    HTMLCanvasElement.prototype,
-    'toBlob'
-  );
-
   beforeEach(() => {
     vi.stubGlobal('Image', MockImage);
     vi.stubGlobal('ResizeObserver', MockResizeObserver);
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     imageDimensionsBySrc.clear();
   });
 
   afterEach(() => {
-    if (originalGetContextDescriptor) {
-      Object.defineProperty(
-        HTMLCanvasElement.prototype,
-        'getContext',
-        originalGetContextDescriptor
-      );
-    }
-    if (originalToBlobDescriptor) {
-      Object.defineProperty(
-        HTMLCanvasElement.prototype,
-        'toBlob',
-        originalToBlobDescriptor
-      );
-    }
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it('keeps rendering the immediate preview while the full image pipeline is still pending', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => new Promise<Response>(() => {}))
-    );
+  it('keeps rendering the immediate preview while the full image is still pending', async () => {
+    const releaseFullImageRef: { current: null | (() => void) } = {
+      current: null,
+    };
+
+    class SlowFullImage extends MockImage {
+      set src(value: string) {
+        if (value === 'https://example.com/full-image.jpg') {
+          queueMicrotask(() => {
+            releaseFullImageRef.current = () => {
+              this.onload?.();
+            };
+          });
+          return;
+        }
+
+        super.src = value;
+      }
+    }
+
+    vi.stubGlobal('Image', SlowFullImage);
 
     render(
       <ProgressiveImagePreview
@@ -132,17 +118,13 @@ describe('ProgressiveImagePreview', () => {
         'data:image/webp;base64,preview'
       );
     });
-    expect(
-      document.querySelector('img[src="https://example.com/full-image.jpg"]')
-    ).toBeNull();
+
+    if (releaseFullImageRef.current) {
+      releaseFullImageRef.current();
+    }
   });
 
-  it('keeps the preview empty until a generated stage is ready when the source starts as a single raw url', () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => new Promise<Response>(() => {}))
-    );
-
+  it('keeps the preview empty until the full image is decoded when the source starts as a single raw url', () => {
     render(
       <ProgressiveImagePreview
         alt="Preview gambar"
@@ -152,43 +134,9 @@ describe('ProgressiveImagePreview', () => {
     );
 
     expect(screen.queryByAltText('Preview gambar')).toBeNull();
-    expect(
-      document.querySelector('img[src="https://example.com/full-image.jpg"]')
-    ).toBeNull();
   });
 
-  it('reveals the decoded full image only after the staged layers are prepared', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        blob: async () => new Blob(['full-image'], { type: 'image/jpeg' }),
-      }))
-    );
-    vi.spyOn(URL, 'createObjectURL')
-      .mockReturnValueOnce('blob:full-stage')
-      .mockReturnValueOnce('blob:half-stage')
-      .mockReturnValueOnce('blob:three-quarter-stage');
-    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
-      configurable: true,
-      value: vi.fn(
-        () =>
-          ({
-            drawImage: vi.fn(),
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high',
-          }) as unknown as CanvasRenderingContext2D
-      ),
-    });
-    Object.defineProperty(HTMLCanvasElement.prototype, 'toBlob', {
-      configurable: true,
-      value: vi.fn(
-        (callback: BlobCallback, _type?: string, _quality?: number) => {
-          callback(new Blob(['stage'], { type: 'image/webp' }));
-        }
-      ),
-    });
-
+  it('reveals the decoded full image once the full source is ready', async () => {
     render(
       <ProgressiveImagePreview
         alt="Preview gambar"
@@ -198,28 +146,12 @@ describe('ProgressiveImagePreview', () => {
 
     await waitFor(() => {
       expect(screen.getByAltText('Preview gambar').getAttribute('src')).toBe(
-        'blob:half-stage'
+        'https://example.com/full-image.jpg'
       );
     });
-
-    await flushMicrotasks(2);
-
-    await waitFor(
-      () => {
-        expect(screen.getByAltText('Preview gambar').getAttribute('src')).toBe(
-          'blob:full-stage'
-        );
-      },
-      { timeout: 1000 }
-    );
   });
 
   it('renders the active stage inside a contained frame derived from the decoded image dimensions', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => new Promise<Response>(() => {}))
-    );
-
     render(
       <ProgressiveImagePreview
         alt="Preview gambar"
@@ -246,10 +178,6 @@ describe('ProgressiveImagePreview', () => {
   });
 
   it('prefers the full preview as the sizing source when frameSourceSrc is provided', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => new Promise<Response>(() => {}))
-    );
     imageDimensionsBySrc.set('data:image/webp;base64,preview', {
       width: 800,
       height: 800,
@@ -280,5 +208,36 @@ describe('ProgressiveImagePreview', () => {
         `height: ${expectedHeight}px`
       );
     });
+  });
+
+  it('keeps rendering the current preview while a new sizing source is still decoding', async () => {
+    const { rerender } = render(
+      <ProgressiveImagePreview
+        alt="Preview gambar"
+        fullSrc={null}
+        backdropSrc="data:image/webp;base64,preview"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Preview gambar').getAttribute('src')).toBe(
+        'data:image/webp;base64,preview'
+      );
+    });
+
+    imageDimensionsBySrc.clear();
+
+    rerender(
+      <ProgressiveImagePreview
+        alt="Preview gambar"
+        fullSrc="https://example.com/full-image.jpg"
+        frameSourceSrc="https://example.com/full-image.jpg"
+        backdropSrc="data:image/webp;base64,preview"
+      />
+    );
+
+    expect(screen.getByAltText('Preview gambar').getAttribute('src')).toBe(
+      'data:image/webp;base64,preview'
+    );
   });
 });

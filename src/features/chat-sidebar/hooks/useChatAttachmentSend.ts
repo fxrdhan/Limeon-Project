@@ -83,6 +83,7 @@ export const useChatAttachmentSend = ({
     rollbackPersistedAttachmentThread,
     releasePendingPreviewUrl,
   } = useChatAttachmentCleanup({
+    currentChannelId,
     setMessages,
     pendingImagePreviewUrlsRef,
     isConversationScopeActive,
@@ -162,22 +163,6 @@ export const useChatAttachmentSend = ({
       triggerSendSuccessGlow,
       user,
     ]
-  );
-
-  const handoffPendingImagePreview = useCallback(
-    (tempMessageId: string, realMessageId: string) => {
-      const previewUrl = pendingImagePreviewUrlsRef.current.get(tempMessageId);
-      if (!previewUrl) {
-        return;
-      }
-
-      pendingImagePreviewUrlsRef.current.delete(tempMessageId);
-      chatRuntimeCache.imagePreviews.setEntry(realMessageId, {
-        previewUrl,
-        isObjectUrl: true,
-      });
-    },
-    [pendingImagePreviewUrlsRef]
   );
 
   const seedLocalPdfPreviewCache = useCallback(
@@ -278,7 +263,7 @@ export const useChatAttachmentSend = ({
           _scope,
           tempMessageId
         ) => {
-          handoffPendingImagePreview(tempMessageId, realMessage.id);
+          pendingImagePreviewUrlsRef.current.delete(tempMessageId);
           await syncPersistedImagePreview({
             realMessage: {
               ...realMessage,
@@ -292,7 +277,7 @@ export const useChatAttachmentSend = ({
     },
     [
       currentChannelId,
-      handoffPendingImagePreview,
+      pendingImagePreviewUrlsRef,
       sendAttachmentMessage,
       syncPersistedImagePreview,
       targetUser,
@@ -396,7 +381,7 @@ export const useChatAttachmentSend = ({
           tempMessageId
         ) => {
           if (shouldPersistImagePreview) {
-            handoffPendingImagePreview(tempMessageId, realMessage.id);
+            pendingImagePreviewUrlsRef.current.delete(tempMessageId);
             await syncPersistedImagePreview({
               realMessage: {
                 ...realMessage,
@@ -429,9 +414,9 @@ export const useChatAttachmentSend = ({
     },
     [
       currentChannelId,
-      handoffPendingImagePreview,
       isImagePendingFile,
       isPdfPendingFile,
+      pendingImagePreviewUrlsRef,
       seedLocalPdfPreviewCache,
       sendAttachmentMessage,
       syncPersistedImagePreview,

@@ -151,7 +151,6 @@ export interface MessagesPaneModel {
     isImagePreviewOpen: boolean;
     imagePreviewUrl: string | null;
     imagePreviewBackdropUrl: string | null;
-    imagePreviewStageUrls: string[];
     imagePreviewName: string;
     isImagePreviewVisible: boolean;
     closeImagePreview: () => void;
@@ -159,7 +158,6 @@ export interface MessagesPaneModel {
       id: string;
       thumbnailUrl: string | null;
       previewUrl: string | null;
-      stageUrls: string[];
       fullPreviewUrl: string | null;
       previewName: string;
     }>;

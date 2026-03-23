@@ -33,20 +33,6 @@ export const chatSidebarAssetsGateway = {
 
     return { path };
   },
-  async uploadImagePreview(
-    file: File,
-    storagePath: string,
-    contentType?: string
-  ): Promise<ChatSidebarAssetUploadResult> {
-    const { path } = await StorageService.uploadRawFile(
-      CHAT_IMAGE_BUCKET,
-      file,
-      storagePath,
-      contentType
-    );
-
-    return { path };
-  },
   async uploadPdfPreview(
     file: File,
     storagePath: string

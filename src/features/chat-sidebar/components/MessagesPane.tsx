@@ -265,7 +265,6 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
         <ProgressiveImagePreview
           fullSrc={previews.imagePreviewUrl}
           backdropSrc={previews.imagePreviewBackdropUrl}
-          stageSrcs={previews.imagePreviewStageUrls}
           allowPointerPassthrough={true}
           alt={previews.imagePreviewName || 'Preview gambar'}
           className="h-[92vh] w-[92vw] box-border px-6 py-8"

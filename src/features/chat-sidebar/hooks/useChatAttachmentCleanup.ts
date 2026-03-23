@@ -5,6 +5,7 @@ import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
+import { deleteChannelImageAssetsByMessageIds } from '../utils/channel-image-asset-cache';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { resolveDeletedThreadMessageIds } from '../utils/message-thread';
 
@@ -16,12 +17,14 @@ const normalizeStoragePaths = (
     .filter((storagePath): storagePath is string => Boolean(storagePath));
 
 interface UseChatAttachmentCleanupProps {
+  currentChannelId: string | null;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   isConversationScopeActive: (conversationScopeKey: string | null) => boolean;
 }
 
 export const useChatAttachmentCleanup = ({
+  currentChannelId,
   setMessages,
   pendingImagePreviewUrlsRef,
   isConversationScopeActive,
@@ -103,9 +106,12 @@ export const useChatAttachmentCleanup = ({
       chatRuntimeCache.pdfPreviews.deleteByMessageIds(
         effectiveDeletedMessageIds
       );
-      chatRuntimeCache.imagePreviews.deleteByMessageIds(
-        effectiveDeletedMessageIds
-      );
+      if (currentChannelId?.trim()) {
+        void deleteChannelImageAssetsByMessageIds(
+          currentChannelId,
+          effectiveDeletedMessageIds
+        );
+      }
 
       if (isConversationScopeActive(conversationScopeKey)) {
         setMessages(previousMessages =>
@@ -121,7 +127,12 @@ export const useChatAttachmentCleanup = ({
         );
       });
     },
-    [deleteUploadedStorageFilesOrThrow, isConversationScopeActive, setMessages]
+    [
+      currentChannelId,
+      deleteUploadedStorageFilesOrThrow,
+      isConversationScopeActive,
+      setMessages,
+    ]
   );
 
   const releasePendingPreviewUrl = useCallback(

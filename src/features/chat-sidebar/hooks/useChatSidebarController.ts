@@ -128,7 +128,6 @@ export const useChatSidebarController = ({
       isImagePreviewOpen: runtime.previews.isImagePreviewOpen,
       imagePreviewUrl: runtime.previews.imagePreviewUrl,
       imagePreviewBackdropUrl: runtime.previews.imagePreviewBackdropUrl,
-      imagePreviewStageUrls: runtime.previews.imagePreviewStageUrls,
       imagePreviewName: runtime.previews.imagePreviewName,
       isImagePreviewVisible: runtime.previews.isImagePreviewVisible,
       closeImagePreview: runtime.previews.closeImagePreview,
