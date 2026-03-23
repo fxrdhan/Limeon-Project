@@ -1,6 +1,7 @@
 # Project Info
 
 - Remember is that Bun as the runtime environment in this project.
+- This repo uses the native VitePlus toolchain. Prefer `vp` semantics and `bun run` project scripts over raw `vite` or `vitest` commands.
 - Always use Exa MCP to search for information on the web and scrape pages.
 - Always use Supabase MCP if you need understanding this project databases.
 
@@ -8,7 +9,8 @@
 
 - Run 'npx oxlint [filenames path] --fix && npx tsc -b --noEmit' after editing/adding complex line in code files.
 - When creating Git commits, use git-commit skills.
-- Vitest in this project is on 4.1.x. Prefer `bun test:run:agent` or `bun test:agent` when running tests. Use `bun test:run` for regular local terminal output.
+- Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
+- Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun test:run:agent` or `bun test:agent` when running tests. Use `bun test:run` for regular local terminal output.
 
 # Code Exploration
 
