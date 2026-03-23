@@ -29,6 +29,75 @@ const { mockChatPdfCompressService } = vi.hoisted(() => ({
     compressPdf: vi.fn(),
   },
 }));
+const {
+  mockComposerDraftPersistence,
+  persistedComposerDraftMessages,
+  persistedComposerDraftAttachments,
+} = vi.hoisted(() => {
+  const draftMessages = new Map<string, string>();
+  const draftAttachments = new Map<string, Record<string, unknown>[]>();
+
+  const normalizeChannelId = (channelId?: string | null) =>
+    channelId?.trim() || '';
+  const cloneAttachments = (attachments: Record<string, unknown>[]) =>
+    attachments.map(attachment => ({
+      ...attachment,
+    }));
+
+  return {
+    persistedComposerDraftMessages: draftMessages,
+    persistedComposerDraftAttachments: draftAttachments,
+    mockComposerDraftPersistence: {
+      readPersistedComposerDraftMessage: vi.fn((channelId?: string | null) => {
+        return draftMessages.get(normalizeChannelId(channelId)) ?? '';
+      }),
+      writePersistedComposerDraftMessage: vi.fn(
+        (channelId: string | null | undefined, message: string) => {
+          const normalizedChannelId = normalizeChannelId(channelId);
+          if (!normalizedChannelId) {
+            return false;
+          }
+
+          if (message.length === 0) {
+            draftMessages.delete(normalizedChannelId);
+          } else {
+            draftMessages.set(normalizedChannelId, message);
+          }
+
+          return true;
+        }
+      ),
+      loadPersistedComposerDraftAttachments: vi.fn(
+        async (channelId?: string | null) => {
+          return cloneAttachments(
+            draftAttachments.get(normalizeChannelId(channelId)) ?? []
+          );
+        }
+      ),
+      persistComposerDraftAttachments: vi.fn(
+        async (
+          channelId: string | null | undefined,
+          attachments: Record<string, unknown>[]
+        ) => {
+          const normalizedChannelId = normalizeChannelId(channelId);
+          if (!normalizedChannelId) {
+            return;
+          }
+
+          if (attachments.length === 0) {
+            draftAttachments.delete(normalizedChannelId);
+            return;
+          }
+
+          draftAttachments.set(
+            normalizedChannelId,
+            cloneAttachments(attachments)
+          );
+        }
+      ),
+    },
+  };
+});
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -44,6 +113,10 @@ vi.mock('@/services/api/chat/pdf-compress.service', () => ({
 
 vi.mock('../utils/pdf-preview', () => ({
   renderPdfPreviewDataUrl: mockRenderPdfPreviewDataUrl,
+}));
+
+vi.mock('../utils/composer-draft-persistence', () => ({
+  ...mockComposerDraftPersistence,
 }));
 
 vi.mock('../utils/composer-attachment-link', async () => {
@@ -76,6 +149,8 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 describe('useChatComposer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    persistedComposerDraftMessages.clear();
+    persistedComposerDraftAttachments.clear();
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback
     ) => {
@@ -155,6 +230,146 @@ describe('useChatComposer', () => {
       expect(result.current.message).toBe('');
       expect(result.current.editingMessageId).toBeNull();
       expect(result.current.pendingComposerAttachments).toHaveLength(0);
+    });
+  });
+
+  it('tetap memulihkan draft text dan attachment meski composer dimuat ulang lebih dari sekali', async () => {
+    const closeMessageMenu = vi.fn();
+    const imageFile = new File(['image'], 'draft.png', {
+      type: 'image/png',
+    });
+
+    const { result, unmount } = renderHook(() => {
+      const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+      return useChatComposer({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        closeMessageMenu,
+        messageInputRef,
+      });
+    });
+
+    await act(async () => {
+      result.current.setMessage('draft stok opname');
+      result.current.queueComposerImage(imageFile);
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('draft stok opname');
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+    });
+
+    unmount();
+
+    const { result: restoredResult, unmount: unmountRestored } = renderHook(
+      () => {
+        const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+        return useChatComposer({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages: [],
+          closeMessageMenu,
+          messageInputRef,
+        });
+      }
+    );
+
+    await waitFor(() => {
+      expect(restoredResult.current.message).toBe('draft stok opname');
+      expect(restoredResult.current.pendingComposerAttachments).toHaveLength(1);
+      expect(
+        restoredResult.current.pendingComposerAttachments[0]?.fileName
+      ).toBe('draft.png');
+    });
+
+    unmountRestored();
+
+    const { result: restoredAgainResult } = renderHook(() => {
+      const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+      return useChatComposer({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        closeMessageMenu,
+        messageInputRef,
+      });
+    });
+
+    await waitFor(() => {
+      expect(restoredAgainResult.current.message).toBe('draft stok opname');
+      expect(
+        restoredAgainResult.current.pendingComposerAttachments
+      ).toHaveLength(1);
+      expect(
+        restoredAgainResult.current.pendingComposerAttachments[0]?.fileName
+      ).toBe('draft.png');
+    });
+  });
+
+  it('memulihkan draft yang berbeda untuk tiap channel', async () => {
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) => {
+        const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+        return useChatComposer({
+          isOpen: true,
+          currentChannelId: channelId,
+          messages: [],
+          closeMessageMenu: vi.fn(),
+          messageInputRef,
+        });
+      },
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    await act(async () => {
+      result.current.setMessage('draft channel satu');
+      result.current.handleDocumentFileChange({
+        target: {
+          files: [
+            new File(['pdf'], 'channel-satu.pdf', {
+              type: 'application/pdf',
+            }),
+          ],
+          value: '',
+        },
+      } as never);
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('draft channel satu');
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+    });
+
+    rerender({ channelId: 'channel-2' });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('');
+      expect(result.current.pendingComposerAttachments).toHaveLength(0);
+    });
+
+    await act(async () => {
+      result.current.setMessage('draft channel dua');
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('draft channel dua');
+    });
+
+    rerender({ channelId: 'channel-1' });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('draft channel satu');
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+      expect(result.current.pendingComposerAttachments[0]?.fileName).toBe(
+        'channel-satu.pdf'
+      );
     });
   });
 

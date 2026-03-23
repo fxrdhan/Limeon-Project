@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type RefObject,
@@ -22,13 +23,19 @@ import {
   isPdfComposerAttachment,
   upsertPendingComposerAttachment,
 } from '../utils/pending-composer-attachment';
+import {
+  loadPersistedComposerDraftAttachments,
+  persistComposerDraftAttachments,
+} from '../utils/composer-draft-persistence';
 
 interface UseComposerPendingAttachmentsProps {
+  currentChannelId: string | null;
   editingMessageId: string | null;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
 export const useComposerPendingAttachments = ({
+  currentChannelId,
   editingMessageId,
   messageInputRef,
 }: UseComposerPendingAttachmentsProps) => {
@@ -37,13 +44,21 @@ export const useComposerPendingAttachments = ({
   >([]);
   const pendingComposerAttachmentsRef = useRef<PendingComposerAttachment[]>([]);
   const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+  const pendingComposerAttachmentsMutationVersionRef = useRef(0);
+  const pendingComposerAttachmentsHydrationRef = useRef<{
+    channelId: string | null;
+    isHydrating: boolean;
+  }>({
+    channelId: null,
+    isHydrating: false,
+  });
 
   useEffect(() => {
     pendingComposerAttachmentsRef.current.length = 0;
     pendingComposerAttachmentsRef.current.push(...pendingComposerAttachments);
   }, [pendingComposerAttachments]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let isCancelled = false;
     const pendingPdfAttachments = pendingComposerAttachments.filter(
       attachment =>
@@ -98,8 +113,96 @@ export const useComposerPendingAttachments = ({
     });
   }, [messageInputRef]);
 
+  const markPendingComposerAttachmentsDirty = useCallback(() => {
+    pendingComposerAttachmentsMutationVersionRef.current += 1;
+    pendingComposerAttachmentsHydrationRef.current = {
+      channelId: currentChannelId,
+      isHydrating: false,
+    };
+  }, [currentChannelId]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    pendingComposerAttachmentsMutationVersionRef.current += 1;
+    const hydrationVersion =
+      pendingComposerAttachmentsMutationVersionRef.current;
+    pendingComposerAttachmentsHydrationRef.current = {
+      channelId: currentChannelId,
+      isHydrating: true,
+    };
+
+    setPendingComposerAttachments(previousAttachments => {
+      previousAttachments.forEach(attachment => {
+        if (attachment.previewUrl) {
+          URL.revokeObjectURL(attachment.previewUrl);
+        }
+      });
+      return [];
+    });
+
+    if (!currentChannelId) {
+      pendingComposerAttachmentsHydrationRef.current = {
+        channelId: null,
+        isHydrating: false,
+      };
+      return;
+    }
+
+    void (async () => {
+      const persistedAttachments =
+        await loadPersistedComposerDraftAttachments(currentChannelId);
+      if (
+        isCancelled ||
+        pendingComposerAttachmentsMutationVersionRef.current !==
+          hydrationVersion
+      ) {
+        return;
+      }
+
+      pendingComposerAttachmentsMutationVersionRef.current += 1;
+      pendingComposerAttachmentsHydrationRef.current = {
+        channelId: currentChannelId,
+        isHydrating: false,
+      };
+      setPendingComposerAttachments(() =>
+        persistedAttachments.map(attachment => ({
+          ...attachment,
+          previewUrl:
+            attachment.fileKind === 'image'
+              ? URL.createObjectURL(attachment.file)
+              : null,
+        }))
+      );
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentChannelId]);
+
+  useEffect(() => {
+    if (!currentChannelId) {
+      return;
+    }
+
+    const hydrationState = pendingComposerAttachmentsHydrationRef.current;
+    if (
+      hydrationState.channelId === currentChannelId &&
+      hydrationState.isHydrating
+    ) {
+      return;
+    }
+
+    void persistComposerDraftAttachments(
+      currentChannelId,
+      pendingComposerAttachments
+    );
+  }, [currentChannelId, pendingComposerAttachments]);
+
   const removePendingComposerAttachment = useCallback(
     (attachmentId: string) => {
+      markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments => {
         const targetAttachment = previousAttachments.find(
           attachment => attachment.id === attachmentId
@@ -112,10 +215,11 @@ export const useComposerPendingAttachments = ({
         );
       });
     },
-    []
+    [markPendingComposerAttachmentsDirty]
   );
 
   const clearPendingComposerAttachments = useCallback(() => {
+    markPendingComposerAttachmentsDirty();
     setPendingComposerAttachments(previousAttachments => {
       previousAttachments.forEach(attachment => {
         if (attachment.previewUrl) {
@@ -124,10 +228,11 @@ export const useComposerPendingAttachments = ({
       });
       return [];
     });
-  }, []);
+  }, [markPendingComposerAttachmentsDirty]);
 
   const restorePendingComposerAttachments = useCallback(
     (attachments: PendingComposerAttachment[]) => {
+      markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments => {
         previousAttachments.forEach(attachment => {
           if (attachment.previewUrl) {
@@ -146,7 +251,7 @@ export const useComposerPendingAttachments = ({
 
       focusTextarea();
     },
-    [focusTextarea]
+    [focusTextarea, markPendingComposerAttachmentsDirty]
   );
 
   const queueComposerImage = useCallback(
@@ -169,6 +274,7 @@ export const useComposerPendingAttachments = ({
       let exceededAttachmentLimit = false;
       let replacedPreviewUrl: string | null = null;
 
+      markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments => {
         const upsertResult = upsertPendingComposerAttachment(
           previousAttachments,
@@ -205,7 +311,7 @@ export const useComposerPendingAttachments = ({
       focusTextarea();
       return true;
     },
-    [editingMessageId, focusTextarea]
+    [editingMessageId, focusTextarea, markPendingComposerAttachmentsDirty]
   );
 
   const queueComposerFile = useCallback(
@@ -233,6 +339,7 @@ export const useComposerPendingAttachments = ({
       let exceededAttachmentLimit = false;
       let replacedPreviewUrl: string | null = null;
 
+      markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments => {
         const upsertResult = upsertPendingComposerAttachment(
           previousAttachments,
@@ -266,7 +373,7 @@ export const useComposerPendingAttachments = ({
       focusTextarea();
       return true;
     },
-    [editingMessageId, focusTextarea]
+    [editingMessageId, focusTextarea, markPendingComposerAttachmentsDirty]
   );
 
   const compressPendingComposerImage = useCallback(
@@ -304,6 +411,7 @@ export const useComposerPendingAttachments = ({
         id: targetAttachment.id,
       };
 
+      markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments =>
         previousAttachments.map(attachment =>
           attachment.id === attachmentId ? nextAttachment : attachment
@@ -317,7 +425,7 @@ export const useComposerPendingAttachments = ({
       focusTextarea();
       return true;
     },
-    [focusTextarea]
+    [focusTextarea, markPendingComposerAttachmentsDirty]
   );
 
   const replacePendingComposerAttachmentFile = useCallback(
@@ -343,6 +451,7 @@ export const useComposerPendingAttachments = ({
               id: targetAttachment.id,
             };
 
+      markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments =>
         previousAttachments.map(attachment =>
           attachment.id === attachmentId ? nextAttachment : attachment
@@ -356,7 +465,7 @@ export const useComposerPendingAttachments = ({
       focusTextarea();
       return true;
     },
-    [focusTextarea]
+    [focusTextarea, markPendingComposerAttachmentsDirty]
   );
 
   useEffect(() => {

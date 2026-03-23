@@ -9,6 +9,7 @@ import { resetImageCache } from '@/utils/imageCache';
 
 const KNOWN_INDEXED_DB_NAMES = [
   'pharmasys-cache',
+  'pharmasys-chat-composer-drafts',
   'pharmasys-chat-preview-cache',
   'pharmasys-chat-channel-image-assets',
 ];

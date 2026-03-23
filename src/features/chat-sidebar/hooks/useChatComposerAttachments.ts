@@ -2,6 +2,7 @@ import {
   type Dispatch,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -38,6 +39,7 @@ import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 import type { ComposerPromptableLink } from '../models';
 
 interface UseChatComposerAttachmentsProps {
+  currentChannelId: string | null;
   editingMessageId: string | null;
   closeMessageMenu: () => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
@@ -72,6 +74,7 @@ const PDF_COMPRESSION_PROCESSING_PHASE_DELAY = 900;
 const PDF_COMPRESSION_DONE_PHASE_DELAY = 360;
 
 export const useChatComposerAttachments = ({
+  currentChannelId,
   editingMessageId,
   closeMessageMenu,
   messageInputRef,
@@ -108,6 +111,7 @@ export const useChatComposerAttachments = ({
     compressPendingComposerImage,
     replacePendingComposerAttachmentFile,
   } = useComposerPendingAttachments({
+    currentChannelId,
     editingMessageId,
     messageInputRef,
   });
@@ -291,6 +295,28 @@ export const useChatComposerAttachments = ({
     }
     pdfCompressionAbortControllersRef.current.clear();
   }, []);
+
+  useLayoutEffect(() => {
+    if (composerImagePreviewCloseTimerRef.current) {
+      window.clearTimeout(composerImagePreviewCloseTimerRef.current);
+      composerImagePreviewCloseTimerRef.current = null;
+    }
+
+    setIsAttachModalOpen(false);
+    setIsComposerImageExpandedVisible(false);
+    setIsComposerImageExpanded(false);
+    setComposerImagePreviewAttachmentId(null);
+    replaceComposerImageAttachmentIdRef.current = null;
+    replaceComposerDocumentAttachmentIdRef.current = null;
+    abortAllPendingPdfCompressionRequests();
+    loadingComposerAttachmentsRef.current = [];
+    setLoadingComposerAttachments([]);
+    clearAttachmentPasteState();
+  }, [
+    abortAllPendingPdfCompressionRequests,
+    clearAttachmentPasteState,
+    currentChannelId,
+  ]);
 
   const cancelLoadingComposerAttachment = useCallback(
     (attachmentId: string) => {

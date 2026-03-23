@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import type { RefObject, SetStateAction } from 'react';
 import {
   useCallback,
   useEffect,
@@ -14,6 +14,10 @@ import {
   SEND_SUCCESS_GLOW_DURATION,
   SEND_SUCCESS_GLOW_RESET_BUFFER,
 } from '../constants';
+import {
+  readPersistedComposerDraftMessage,
+  writePersistedComposerDraftMessage,
+} from '../utils/composer-draft-persistence';
 import { useChatComposerAttachments } from './useChatComposerAttachments';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 
@@ -32,7 +36,9 @@ export const useChatComposer = ({
   closeMessageMenu,
   messageInputRef,
 }: UseChatComposerProps) => {
-  const [message, setMessage] = useState('');
+  const [message, setMessageState] = useState(() =>
+    readPersistedComposerDraftMessage(currentChannelId)
+  );
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [messageInputHeight, setMessageInputHeight] = useState(
     MESSAGE_INPUT_MIN_HEIGHT
@@ -47,7 +53,43 @@ export const useChatComposer = ({
   const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inlineOverflowThresholdRef = useRef<number | null>(null);
 
+  const triggerSendSuccessGlow = useCallback(() => {
+    if (sendSuccessGlowTimeoutRef.current) {
+      clearTimeout(sendSuccessGlowTimeoutRef.current);
+    }
+    setIsSendSuccessGlowVisible(false);
+    requestAnimationFrame(() => {
+      setIsSendSuccessGlowVisible(true);
+    });
+    sendSuccessGlowTimeoutRef.current = setTimeout(() => {
+      setIsSendSuccessGlowVisible(false);
+      sendSuccessGlowTimeoutRef.current = null;
+    }, SEND_SUCCESS_GLOW_DURATION + SEND_SUCCESS_GLOW_RESET_BUFFER);
+  }, []);
+
+  const setMessage = useCallback(
+    (nextMessage: SetStateAction<string>) => {
+      setMessageState(previousMessage => {
+        const resolvedNextMessage =
+          typeof nextMessage === 'function'
+            ? nextMessage(previousMessage)
+            : nextMessage;
+
+        if (!editingMessageId && currentChannelId) {
+          writePersistedComposerDraftMessage(
+            currentChannelId,
+            resolvedNextMessage
+          );
+        }
+
+        return resolvedNextMessage;
+      });
+    },
+    [currentChannelId, editingMessageId]
+  );
+
   const attachments = useChatComposerAttachments({
+    currentChannelId,
     editingMessageId,
     closeMessageMenu,
     messageInputRef,
@@ -124,33 +166,13 @@ export const useChatComposer = ({
       ? COMPOSER_IMAGE_PREVIEW_OFFSET
       : 0);
 
-  const triggerSendSuccessGlow = useCallback(() => {
-    if (sendSuccessGlowTimeoutRef.current) {
-      clearTimeout(sendSuccessGlowTimeoutRef.current);
-    }
-    setIsSendSuccessGlowVisible(false);
-    requestAnimationFrame(() => {
-      setIsSendSuccessGlowVisible(true);
-    });
-    sendSuccessGlowTimeoutRef.current = setTimeout(() => {
-      setIsSendSuccessGlowVisible(false);
-      sendSuccessGlowTimeoutRef.current = null;
-    }, SEND_SUCCESS_GLOW_DURATION + SEND_SUCCESS_GLOW_RESET_BUFFER);
-  }, []);
-
   const resetConversationScopedComposerState = useCallback(() => {
     closeAttachModal();
-    setMessage('');
+    setMessageState(readPersistedComposerDraftMessage(currentChannelId));
     setEditingMessageId(null);
     inlineOverflowThresholdRef.current = null;
     setIsSendSuccessGlowVisible(false);
-    clearAttachmentPasteState();
-    clearPendingComposerAttachments();
-  }, [
-    clearAttachmentPasteState,
-    clearPendingComposerAttachments,
-    closeAttachModal,
-  ]);
+  }, [closeAttachModal, currentChannelId]);
 
   const handleMessageChange = useCallback(
     (nextMessage: string) => {
@@ -160,7 +182,7 @@ export const useChatComposer = ({
 
       setMessage(nextMessage);
     },
-    [attachmentPastePromptUrl, dismissAttachmentPastePrompt]
+    [attachmentPastePromptUrl, dismissAttachmentPastePrompt, setMessage]
   );
 
   const resizeMessageInput = useCallback(
@@ -242,7 +264,7 @@ export const useChatComposer = ({
     resizeMessageInput(message);
   }, [isOpen, message, resizeMessageInput]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     resetConversationScopedComposerState();
   }, [currentChannelId, resetConversationScopedComposerState]);
 
