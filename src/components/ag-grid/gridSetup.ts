@@ -93,7 +93,7 @@ export const setupAgGrid = () => {
   }
 };
 
-// Default theme - uses CSS variables from @theme (App.scss)
+// Default theme - uses CSS variables from @theme (App.css)
 export const defaultTheme = themeQuartz.withParams({
   inputFocusBorder: {
     color: 'oklch(59.6% 0.145 163.225)',

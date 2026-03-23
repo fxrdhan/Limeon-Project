@@ -6,7 +6,7 @@ import App from './App';
 import { configurePersistence } from '@/lib/queryPersistence';
 import { preloadCachedImages } from '@/utils/imageCache';
 import '@/fonts.css'; // AG Grid font weight customization
-import '@/output.css';
+import '@/App.css';
 
 // Suppress React 19 ref warning from framer-motion/motion library
 // This is a known issue: https://github.com/motiondivision/motion/issues/2668

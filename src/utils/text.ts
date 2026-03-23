@@ -6,7 +6,7 @@ export const truncateText = (text: string, maxWidth: number): string => {
 
   if (!context) return text;
 
-  // Use font from Tailwind @theme (defined in App.scss)
+  // Use font from Tailwind @theme (defined in App.css)
   const fontFamily = getComputedStyle(document.documentElement)
     .getPropertyValue('--font-sans')
     .trim();
@@ -38,7 +38,7 @@ export const shouldTruncateText = (text: string, maxWidth: number): boolean => {
 
   if (!context) return false;
 
-  // Use font from Tailwind @theme (defined in App.scss)
+  // Use font from Tailwind @theme (defined in App.css)
   const fontFamily = getComputedStyle(document.documentElement)
     .getPropertyValue('--font-sans')
     .trim();

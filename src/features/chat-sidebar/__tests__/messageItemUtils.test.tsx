@@ -112,7 +112,7 @@ describe('messageItemUtils', () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    await actions.find(action => action.label === 'Buka')?.onClick();
+    await actions.find(action => action.label === 'Lihat')?.onClick();
 
     expect(openImageInPortal).toHaveBeenCalledWith(
       imageMessage,
@@ -148,14 +148,14 @@ describe('messageItemUtils', () => {
     });
 
     expect(actions.map(action => action.label)).toEqual([
-      'Buka',
-      'Download',
+      'Lihat',
+      'Unduh',
       'Salin',
       'Teruskan',
       'Hapus',
     ]);
 
-    await actions.find(action => action.label === 'Download')?.onClick();
+    await actions.find(action => action.label === 'Unduh')?.onClick();
 
     expect(handleDownloadMessage).toHaveBeenCalledWith(imageMessage);
   });

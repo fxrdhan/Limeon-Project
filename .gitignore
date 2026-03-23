@@ -9,8 +9,6 @@ lerna-debug.log*
 *-this-session-is-being-continued-from-a-previous-co.txt
 
 # Build artifacts (Tailwind CSS output)
-src/output.css
-output.css
 
 # Dependency directories
 node_modules
@@ -88,3 +86,5 @@ readme-local.md
 
 # virtual environment
 .venv
+src/output.css
+output.css

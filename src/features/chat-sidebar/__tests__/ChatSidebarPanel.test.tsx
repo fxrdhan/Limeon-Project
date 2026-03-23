@@ -75,6 +75,7 @@ vi.mock('../hooks/useChatComposer', () => ({
     isComposerImageExpandedVisible: false,
     editingMessagePreview: null,
     composerContextualOffset: 0,
+    composerAttachmentPreviewItems: [],
     attachButtonRef: { current: null },
     attachModalRef: { current: null },
     attachmentPastePromptRef: { current: null },

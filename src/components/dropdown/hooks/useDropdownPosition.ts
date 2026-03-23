@@ -39,7 +39,7 @@ export const useDropdownPosition = (
     const context = canvas.getContext('2d');
     if (!context) return 200;
 
-    // Use font from Tailwind @theme (defined in App.scss)
+    // Use font from Tailwind @theme (defined in App.css)
     const fontFamily = getComputedStyle(document.documentElement)
       .getPropertyValue('--font-sans')
       .trim();

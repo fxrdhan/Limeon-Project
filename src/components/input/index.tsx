@@ -185,7 +185,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
       // Create a temporary element to measure text width
       const tempElement = document.createElement('span');
-      // Use font from Tailwind @theme (defined in App.scss)
+      // Use font from Tailwind @theme (defined in App.css)
       const fontFamily = getComputedStyle(document.documentElement)
         .getPropertyValue('--font-sans')
         .trim();
