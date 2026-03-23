@@ -18,6 +18,11 @@ type VisibleBounds = {
   visibleBottom: number;
 };
 
+type MenuOpenScrollPlan = {
+  projectedAnchorRect: DOMRect;
+  targetScrollTop: number;
+};
+
 interface UseChatViewportMenuProps {
   getVisibleMessagesBounds: () => VisibleBounds | null;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
@@ -53,8 +58,10 @@ export const useChatViewportMenu = ({
   const menuTransitionSourceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingMenuRepositionAnimationFrameRef = useRef<number | null>(null);
   const menuOpenScrollAnimationFrameRef = useRef<number | null>(null);
+  const openMenuMessageIdRef = useRef<string | null>(null);
   const openMenuAnchorRef = useRef<HTMLElement | null>(null);
   const openMenuPreferredSideRef = useRef<'left' | 'right'>('left');
+  const lockedMenuLayoutRef = useRef<{ messageId: string } | null>(null);
 
   const cancelNextFrame = useCallback((frameId: number) => {
     const cancelAnimationFrameFn =
@@ -168,12 +175,17 @@ export const useChatViewportMenu = ({
   }, [cancelNextFrame]);
 
   const animateMenuOpenScroll = useCallback(
-    (container: HTMLDivElement, targetScrollTop: number) => {
+    (
+      container: HTMLDivElement,
+      targetScrollTop: number,
+      onComplete?: () => void
+    ) => {
       const startScrollTop = container.scrollTop;
       const distance = targetScrollTop - startScrollTop;
 
       if (Math.abs(distance) < 0.5) {
         container.scrollTop = targetScrollTop;
+        onComplete?.();
         return;
       }
 
@@ -199,11 +211,58 @@ export const useChatViewportMenu = ({
 
         container.scrollTop = targetScrollTop;
         menuOpenScrollAnimationFrameRef.current = null;
+        onComplete?.();
       };
 
       menuOpenScrollAnimationFrameRef.current = requestNextFrame(step);
     },
     [cancelMenuOpenScrollAnimation, requestNextFrame]
+  );
+
+  const getMenuOpenScrollPlan = useCallback(
+    (anchorRect: DOMRect): MenuOpenScrollPlan | null => {
+      const container = messagesContainerRef.current;
+      const bounds = getVisibleMessagesBounds();
+      if (!container || !bounds) {
+        return null;
+      }
+
+      const minVisibleTop =
+        bounds.containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
+      const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
+
+      let scrollOffset = 0;
+      if (anchorRect.top < minVisibleTop) {
+        scrollOffset = anchorRect.top - minVisibleTop;
+      } else if (anchorRect.bottom > maxVisibleBottom) {
+        scrollOffset = anchorRect.bottom - maxVisibleBottom;
+      }
+
+      if (Math.abs(scrollOffset) < 0.5) {
+        return null;
+      }
+
+      const targetScrollTop = Math.min(
+        Math.max(container.scrollTop + scrollOffset, 0),
+        Math.max(0, container.scrollHeight - container.clientHeight)
+      );
+      const appliedScrollDelta = targetScrollTop - container.scrollTop;
+
+      if (Math.abs(appliedScrollDelta) < 0.5) {
+        return null;
+      }
+
+      return {
+        targetScrollTop,
+        projectedAnchorRect: new DOMRect(
+          anchorRect.x,
+          anchorRect.y - appliedScrollDelta,
+          anchorRect.width,
+          anchorRect.height
+        ),
+      };
+    },
+    [getVisibleMessagesBounds, messagesContainerRef]
   );
 
   const closeMessageMenu = useCallback(() => {
@@ -216,7 +275,9 @@ export const useChatViewportMenu = ({
       cancelNextFrame(pendingMenuRepositionAnimationFrameRef.current);
       pendingMenuRepositionAnimationFrameRef.current = null;
     }
+    openMenuMessageIdRef.current = null;
     openMenuAnchorRef.current = null;
+    lockedMenuLayoutRef.current = null;
     setOpenMenuMessageId(null);
     setMenuTransitionSourceId(null);
     setMenuOffsetX(0);
@@ -251,43 +312,6 @@ export const useChatViewportMenu = ({
     [closeMessageMenu, getMenuLayout, getVisibleMessagesBounds]
   );
 
-  const ensureAnchorVisibleForMenuOpen = useCallback(
-    (anchorRect: DOMRect) => {
-      const container = messagesContainerRef.current;
-      const bounds = getVisibleMessagesBounds();
-      if (!container || !bounds) {
-        return;
-      }
-
-      const minVisibleTop =
-        bounds.containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
-      const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
-
-      let scrollOffset = 0;
-      if (anchorRect.top < minVisibleTop) {
-        scrollOffset = anchorRect.top - minVisibleTop;
-      } else if (anchorRect.bottom > maxVisibleBottom) {
-        scrollOffset = anchorRect.bottom - maxVisibleBottom;
-      }
-
-      if (Math.abs(scrollOffset) < 0.5) {
-        return;
-      }
-
-      const nextScrollTop = Math.min(
-        Math.max(container.scrollTop + scrollOffset, 0),
-        Math.max(0, container.scrollHeight - container.clientHeight)
-      );
-
-      if (Math.abs(nextScrollTop - container.scrollTop) < 0.5) {
-        return;
-      }
-
-      animateMenuOpenScroll(container, nextScrollTop);
-    },
-    [animateMenuOpenScroll, getVisibleMessagesBounds, messagesContainerRef]
-  );
-
   const requestOpenMenuReposition = useCallback(() => {
     if (pendingMenuRepositionAnimationFrameRef.current !== null) {
       return;
@@ -296,7 +320,12 @@ export const useChatViewportMenu = ({
     pendingMenuRepositionAnimationFrameRef.current = requestNextFrame(() => {
       pendingMenuRepositionAnimationFrameRef.current = null;
 
+      const openMenuMessageId = openMenuMessageIdRef.current;
       if (!openMenuMessageId) {
+        return;
+      }
+
+      if (lockedMenuLayoutRef.current?.messageId === openMenuMessageId) {
         return;
       }
 
@@ -308,12 +337,7 @@ export const useChatViewportMenu = ({
 
       syncOpenMenuLayout(anchor, openMenuPreferredSideRef.current);
     });
-  }, [
-    closeMessageMenu,
-    openMenuMessageId,
-    requestNextFrame,
-    syncOpenMenuLayout,
-  ]);
+  }, [closeMessageMenu, requestNextFrame, syncOpenMenuLayout]);
 
   const toggleMessageMenu = useCallback(
     (
@@ -327,11 +351,13 @@ export const useChatViewportMenu = ({
       }
 
       const anchorRect = anchor.getBoundingClientRect();
-      const nextMenuLayout = getMenuLayout(anchorRect, preferredSide);
+      const menuOpenScrollPlan = getMenuOpenScrollPlan(anchorRect);
+      const nextMenuLayout = getMenuLayout(
+        menuOpenScrollPlan?.projectedAnchorRect ?? anchorRect,
+        preferredSide
+      );
       const isSwitchingMenuMessage =
         openMenuMessageId !== null && openMenuMessageId !== messageId;
-
-      ensureAnchorVisibleForMenuOpen(anchorRect);
 
       if (menuTransitionSourceTimeoutRef.current) {
         clearTimeout(menuTransitionSourceTimeoutRef.current);
@@ -342,6 +368,7 @@ export const useChatViewportMenu = ({
         pendingMenuRepositionAnimationFrameRef.current = null;
       }
 
+      openMenuMessageIdRef.current = messageId;
       openMenuAnchorRef.current = anchor;
       openMenuPreferredSideRef.current = preferredSide;
       setMenuOffsetX(0);
@@ -360,13 +387,49 @@ export const useChatViewportMenu = ({
 
       setShouldAnimateMenuOpen(!isSwitchingMenuMessage);
       setOpenMenuMessageId(messageId);
+
+      if (menuOpenScrollPlan) {
+        const container = messagesContainerRef.current;
+        if (container) {
+          lockedMenuLayoutRef.current = {
+            messageId,
+          };
+          animateMenuOpenScroll(
+            container,
+            menuOpenScrollPlan.targetScrollTop,
+            () => {
+              if (openMenuMessageIdRef.current !== messageId) {
+                return;
+              }
+
+              lockedMenuLayoutRef.current = null;
+
+              const currentAnchor = openMenuAnchorRef.current;
+              if (!currentAnchor || !currentAnchor.isConnected) {
+                closeMessageMenu();
+                return;
+              }
+
+              syncOpenMenuLayout(
+                currentAnchor,
+                openMenuPreferredSideRef.current
+              );
+            }
+          );
+        }
+      } else {
+        lockedMenuLayoutRef.current = null;
+      }
     },
     [
       cancelNextFrame,
       closeMessageMenu,
-      ensureAnchorVisibleForMenuOpen,
+      getMenuOpenScrollPlan,
       getMenuLayout,
       openMenuMessageId,
+      messagesContainerRef,
+      syncOpenMenuLayout,
+      animateMenuOpenScroll,
     ]
   );
 

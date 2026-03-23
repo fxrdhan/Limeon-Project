@@ -333,105 +333,15 @@ describe('useChatViewport', () => {
     unmount();
   });
 
-  it('places the message menu below when the bubble is too close to the header overlay', () => {
+  it('uses the post-scroll menu placement immediately when the bubble starts behind the header overlay', () => {
     const messagesContainer = document.createElement('div');
     const messagesEnd = document.createElement('div');
     const composerContainer = document.createElement('div');
     const chatHeaderContainer = document.createElement('div');
     const anchor = document.createElement('div');
-
-    Object.defineProperty(messagesContainer, 'clientHeight', {
-      configurable: true,
-      value: 400,
-    });
-    Object.defineProperty(messagesContainer, 'scrollHeight', {
-      configurable: true,
-      value: 800,
-    });
-    Object.defineProperty(messagesContainer, 'scrollTop', {
-      configurable: true,
-      value: 120,
-      writable: true,
-    });
-    Object.defineProperty(composerContainer, 'offsetHeight', {
-      configurable: true,
-      value: 80,
-    });
-
-    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
-    composerContainer.getBoundingClientRect = () => createRect(320, 400);
-    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
-    anchor.getBoundingClientRect = () =>
-      ({
-        top: 92,
-        bottom: 188,
-        left: 156,
-        right: 284,
-        width: 128,
-        height: 96,
-        x: 156,
-        y: 92,
-        toJSON: () => ({}),
-      }) as DOMRect;
-
-    const messagesContainerRef = createRef<HTMLDivElement>();
-    const messagesEndRef = createRef<HTMLDivElement>();
-    const composerContainerRef = createRef<HTMLDivElement>();
-    const chatHeaderContainerRef = createRef<HTMLDivElement>();
-    const messageBubbleRefs = {
-      current: new Map<string, HTMLDivElement>(),
-    };
-
-    messagesContainerRef.current = messagesContainer;
-    messagesEndRef.current = messagesEnd;
-    composerContainerRef.current = composerContainer;
-    chatHeaderContainerRef.current = chatHeaderContainer;
-
-    const { result } = renderHook(() =>
-      useChatViewport({
-        isOpen: true,
-        currentChannelId: 'channel-1',
-        messages: [],
-        userId: 'user-a',
-        targetUserId: 'user-b',
-        messagesCount: 0,
-        loading: false,
-        messageInputHeight: 22,
-        composerContextualOffset: 0,
-        isMessageInputMultiline: false,
-        pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: '',
-        isMessageSearchMode: false,
-        activeSearchMessageId: null,
-        searchNavigationTick: 0,
-        editingMessageId: null,
-        focusMessageComposer: vi.fn(),
-        markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
-        messagesContainerRef,
-        messagesEndRef,
-        composerContainerRef,
-        chatHeaderContainerRef,
-        messageBubbleRefs,
-      })
-    );
-
-    act(() => {
-      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
-    });
-
-    expect(result.current.menuPlacement).toBe('up');
-    expect(messagesContainer.scrollTop).toBe(76);
-  });
-
-  it('repositions an open message menu while the user scrolls', () => {
-    const messagesContainer = document.createElement('div');
-    const messagesEnd = document.createElement('div');
-    const composerContainer = document.createElement('div');
-    const chatHeaderContainer = document.createElement('div');
-    const anchor = document.createElement('div');
-
-    let anchorTop = 92;
-    let anchorBottom = 188;
+    const anchorDocumentTop = 212;
+    const anchorHeight = 96;
+    let scrollTop = 120;
 
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
@@ -446,8 +356,10 @@ describe('useChatViewport', () => {
     });
     Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
-      value: 120,
-      writable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
     });
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
@@ -459,14 +371,14 @@ describe('useChatViewport', () => {
     messagesEnd.getBoundingClientRect = () => createRect(760, 760);
     anchor.getBoundingClientRect = () =>
       ({
-        top: anchorTop,
-        bottom: anchorBottom,
+        top: anchorDocumentTop - scrollTop,
+        bottom: anchorDocumentTop - scrollTop + anchorHeight,
         left: 156,
         right: 284,
         width: 128,
-        height: anchorBottom - anchorTop,
+        height: anchorHeight,
         x: 156,
-        y: anchorTop,
+        y: anchorDocumentTop - scrollTop,
         toJSON: () => ({}),
       }) as DOMRect;
 
@@ -515,12 +427,111 @@ describe('useChatViewport', () => {
       result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuPlacement).toBe('left');
+    expect(messagesContainer.scrollTop).toBe(76);
+
+    messagesContainer.remove();
+  });
+
+  it('repositions an open message menu while the user scrolls', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+    const anchorHeight = 96;
+    let anchorDocumentTop = 212;
+    let scrollTop = 120;
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(anchor);
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+    anchor.getBoundingClientRect = () =>
+      ({
+        top: anchorDocumentTop - scrollTop,
+        bottom: anchorDocumentTop - scrollTop + anchorHeight,
+        left: 156,
+        right: 284,
+        width: 128,
+        height: anchorHeight,
+        x: 156,
+        y: anchorDocumentTop - scrollTop,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const { result } = renderHook(() =>
+      useChatViewport({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        messagesCount: 0,
+        loading: false,
+        messageInputHeight: 22,
+        composerContextualOffset: 0,
+        isMessageInputMultiline: false,
+        pendingComposerAttachmentsCount: 0,
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        editingMessageId: null,
+        focusMessageComposer: vi.fn(),
+        markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+        messagesContainerRef,
+        messagesEndRef,
+        composerContainerRef,
+        chatHeaderContainerRef,
+        messageBubbleRefs,
+      })
+    );
+
+    act(() => {
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
+    });
+
+    expect(result.current.menuPlacement).toBe('left');
     expect(messagesContainer.scrollTop).toBe(76);
 
     act(() => {
-      anchorTop = 240;
-      anchorBottom = 336;
+      anchorDocumentTop = scrollTop + 240;
       messagesContainer.dispatchEvent(new Event('scroll'));
       vi.runAllTimers();
     });
@@ -537,6 +548,12 @@ describe('useChatViewport', () => {
     const composerContainer = document.createElement('div');
     const chatHeaderContainer = document.createElement('div');
     const anchor = document.createElement('div');
+    const anchorDocumentTop = 368;
+    const anchorHeight = 96;
+    let scrollTop = 120;
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(anchor);
 
     Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
@@ -548,8 +565,10 @@ describe('useChatViewport', () => {
     });
     Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
-      value: 120,
-      writable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
     });
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
@@ -561,14 +580,14 @@ describe('useChatViewport', () => {
     messagesEnd.getBoundingClientRect = () => createRect(760, 760);
     anchor.getBoundingClientRect = () =>
       ({
-        top: 248,
-        bottom: 344,
+        top: anchorDocumentTop - scrollTop,
+        bottom: anchorDocumentTop - scrollTop + anchorHeight,
         left: 156,
         right: 284,
         width: 128,
-        height: 96,
+        height: anchorHeight,
         x: 156,
-        y: 248,
+        y: anchorDocumentTop - scrollTop,
         toJSON: () => ({}),
       }) as DOMRect;
 
@@ -619,6 +638,8 @@ describe('useChatViewport', () => {
 
     expect(result.current.openMenuMessageId).toBe('message-1');
     expect(messagesContainer.scrollTop).toBe(152);
+
+    messagesContainer.remove();
   });
 
   it('closes the message menu when its anchor scrolls out of the visible viewport', () => {
