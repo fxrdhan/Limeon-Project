@@ -108,6 +108,7 @@ export const useChatSidebarController = ({
     },
     refs: {
       messagesContainerRef: refs.messagesContainerRef,
+      messagesContentRef: refs.messagesContentRef,
       messagesEndRef: refs.messagesEndRef,
       messageBubbleRefs: refs.messageBubbleRefs,
       initialMessageAnimationKeysRef: refs.initialMessageAnimationKeysRef,

@@ -7,6 +7,7 @@ export const useChatSidebarRefs = () => {
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesContentRef = useRef<HTMLDivElement>(null);
   const composerContainerRef = useRef<HTMLDivElement>(null);
   const chatHeaderContainerRef = useRef<HTMLDivElement>(null);
   const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -40,6 +41,7 @@ export const useChatSidebarRefs = () => {
     messageInputRef,
     messagesEndRef,
     messagesContainerRef,
+    messagesContentRef,
     composerContainerRef,
     chatHeaderContainerRef,
     messageBubbleRefs,

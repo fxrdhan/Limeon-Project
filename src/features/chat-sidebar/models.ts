@@ -117,6 +117,7 @@ export interface MessagesPaneModel {
   };
   refs: {
     messagesContainerRef: RefObject<HTMLDivElement | null>;
+    messagesContentRef?: RefObject<HTMLDivElement | null>;
     messagesEndRef: RefObject<HTMLDivElement | null>;
     messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
     initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;

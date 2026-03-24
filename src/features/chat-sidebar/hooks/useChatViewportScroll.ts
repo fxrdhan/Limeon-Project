@@ -22,6 +22,7 @@ interface UseChatViewportScrollProps {
   composerContainerHeight: number;
   getVisibleMessagesBounds: () => VisibleBounds | null;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
+  messagesContentRef?: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   scheduleVisibleUnreadReadReceipts: () => void;
 }
@@ -37,6 +38,7 @@ export const useChatViewportScroll = ({
   composerContainerHeight,
   getVisibleMessagesBounds,
   messagesContainerRef,
+  messagesContentRef,
   messagesEndRef,
   scheduleVisibleUnreadReadReceipts,
 }: UseChatViewportScrollProps) => {
@@ -92,10 +94,15 @@ export const useChatViewportScroll = ({
       const metrics = getBottomScrollMetrics();
       if (!metrics) return;
 
-      metrics.container.scrollTo({
-        top: metrics.targetScrollTop,
-        behavior,
-      });
+      if (typeof metrics.container.scrollTo === 'function') {
+        metrics.container.scrollTo({
+          top: metrics.targetScrollTop,
+          behavior,
+        });
+        return;
+      }
+
+      metrics.container.scrollTop = metrics.targetScrollTop;
     },
     [getBottomScrollMetrics]
   );
@@ -104,6 +111,13 @@ export const useChatViewportScroll = ({
     requestAnimationFrame(() => {
       scrollMessagesToBottom('auto');
     });
+  }, [scrollMessagesToBottom]);
+
+  const pinViewportToBottom = useCallback(() => {
+    scrollMessagesToBottom('auto');
+    isAtBottomRef.current = true;
+    setIsAtBottom(true);
+    setHasNewMessages(false);
   }, [scrollMessagesToBottom]);
 
   const cancelScrollToBottomAnimation = useCallback(() => {
@@ -124,17 +138,14 @@ export const useChatViewportScroll = ({
   const maintainBottomDuringComposerResize = useCallback(() => {
     shouldMaintainBottomDuringComposerResizeRef.current = true;
     composerResizeBottomSyncDeadlineRef.current = Date.now() + 260;
-    isAtBottomRef.current = true;
-    setIsAtBottom(true);
-    setHasNewMessages(false);
-    scrollMessagesToBottom('auto');
+    pinViewportToBottom();
 
     if (composerResizeBottomSyncTimeoutRef.current !== null) {
       return;
     }
 
     const step = () => {
-      scrollMessagesToBottom('auto');
+      pinViewportToBottom();
 
       if (
         composerResizeBottomSyncDeadlineRef.current !== null &&
@@ -147,7 +158,7 @@ export const useChatViewportScroll = ({
         return;
       }
 
-      scrollMessagesToBottom('auto');
+      pinViewportToBottom();
       scheduleVisibleUnreadReadReceipts();
       shouldMaintainBottomDuringComposerResizeRef.current = false;
       composerResizeBottomSyncTimeoutRef.current = null;
@@ -155,7 +166,7 @@ export const useChatViewportScroll = ({
     };
 
     composerResizeBottomSyncTimeoutRef.current = window.setTimeout(step, 16);
-  }, [scheduleVisibleUnreadReadReceipts, scrollMessagesToBottom]);
+  }, [pinViewportToBottom, scheduleVisibleUnreadReadReceipts]);
 
   const animateScrollToBottom = useCallback(() => {
     const metrics = getBottomScrollMetrics();
@@ -289,6 +300,49 @@ export const useChatViewportScroll = ({
   ]);
 
   useEffect(() => {
+    const contentElement = messagesContentRef?.current;
+    if (!isOpen || !contentElement || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    let previousContentHeight = contentElement.getBoundingClientRect().height;
+
+    const syncPinnedViewport = () => {
+      const nextContentHeight = contentElement.getBoundingClientRect().height;
+      if (Math.abs(nextContentHeight - previousContentHeight) < 0.5) {
+        return;
+      }
+
+      previousContentHeight = nextContentHeight;
+
+      if (
+        !shouldPinToBottomOnOpenRef.current &&
+        !shouldMaintainBottomDuringComposerResizeRef.current &&
+        !isAtBottomRef.current
+      ) {
+        return;
+      }
+
+      pinViewportToBottom();
+      scheduleVisibleUnreadReadReceipts();
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(syncPinnedViewport);
+    });
+    resizeObserver.observe(contentElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [
+    isOpen,
+    messagesContentRef,
+    pinViewportToBottom,
+    scheduleVisibleUnreadReadReceipts,
+  ]);
+
+  useEffect(() => {
     const latestMessageId = messages[messages.length - 1]?.id ?? null;
     const previousMessagesCount = previousMessagesCountRef.current;
     const previousLatestMessageId = previousLatestMessageIdRef.current;
@@ -324,7 +378,14 @@ export const useChatViewportScroll = ({
   ]);
 
   useLayoutEffect(() => {
-    if (!isOpen || !shouldPinToBottomOnOpenRef.current) return;
+    if (
+      !isOpen ||
+      messagesCount === 0 ||
+      !shouldPinToBottomOnOpenRef.current ||
+      composerContainerHeight <= 0
+    ) {
+      return;
+    }
 
     scrollMessagesToBottom('auto');
     isAtBottomRef.current = true;
@@ -339,6 +400,7 @@ export const useChatViewportScroll = ({
     }
   }, [
     checkIfAtTop,
+    composerContainerHeight,
     isOpen,
     loading,
     messageInputHeight,

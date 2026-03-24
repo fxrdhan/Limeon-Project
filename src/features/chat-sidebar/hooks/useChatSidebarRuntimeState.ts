@@ -118,6 +118,7 @@ export const useChatSidebarRuntimeState = ({
     focusMessageComposer,
     markMessageIdsAsRead: session.markMessageIdsAsRead,
     messagesContainerRef: refs.messagesContainerRef,
+    messagesContentRef: refs.messagesContentRef,
     messagesEndRef: refs.messagesEndRef,
     composerContainerRef: refs.composerContainerRef,
     chatHeaderContainerRef: refs.chatHeaderContainerRef,

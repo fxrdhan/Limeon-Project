@@ -890,6 +890,281 @@ describe('useChatViewport', () => {
     unmount();
   });
 
+  it('waits for the restored draft composer height before completing the initial open pin', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+
+    let scrollTop = 0;
+    let scrollHeight = 800;
+    let composerTop = 400;
+    let composerHeight = 0;
+    const endMarkerContentTop = 760;
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      get: () => scrollHeight,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+      scrollTop = top ?? scrollTop;
+    });
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      get: () => composerHeight,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () =>
+      createRect(composerTop, composerTop + composerHeight);
+    messagesEnd.getBoundingClientRect = () =>
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const messages = [
+      {
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        is_read: false,
+      },
+    ];
+
+    const { rerender, unmount } = renderHook(
+      ({ messageInputHeight }) =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages,
+          userId: 'user-a',
+          targetUserId: 'user-b',
+          messagesCount: messages.length,
+          loading: false,
+          messageInputHeight,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: messageInputHeight > 22,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+          messagesContainerRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        }),
+      {
+        initialProps: {
+          messageInputHeight: 22,
+        },
+      }
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(scrollTop).toBe(0);
+
+    composerTop = 260;
+    composerHeight = 140;
+    scrollHeight = 912;
+
+    act(() => {
+      rerender({
+        messageInputHeight: 86,
+      });
+      vi.runAllTimers();
+    });
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      behavior: 'auto',
+      top: 512,
+    });
+    expect(scrollTop).toBe(512);
+
+    unmount();
+  });
+
+  it('keeps the viewport pinned when message content height grows after the initial open pin', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesContent = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+
+    let scrollTop = 452;
+    let scrollHeight = 852;
+    let contentHeight = 760;
+    let endMarkerContentTop = 760;
+    const composerTop = 320;
+    const composerHeight = 80;
+    const resizeObserverCallbacks = new Map<Element, ResizeObserverCallback>();
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private readonly callback: ResizeObserverCallback;
+
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback;
+        }
+
+        observe(target: Element) {
+          resizeObserverCallbacks.set(target, this.callback);
+        }
+
+        disconnect() {
+          resizeObserverCallbacks.clear();
+        }
+      }
+    );
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      get: () => scrollHeight,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+      scrollTop = top ?? scrollTop;
+    });
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: composerHeight,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    messagesContent.getBoundingClientRect = () => createRect(0, contentHeight);
+    composerContainer.getBoundingClientRect = () =>
+      createRect(composerTop, composerTop + composerHeight);
+    messagesEnd.getBoundingClientRect = () =>
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesContentRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesContentRef.current = messagesContent;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const messages = [
+      {
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
+        is_read: false,
+      },
+    ];
+
+    const { unmount } = renderHook(() =>
+      useChatViewport({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages,
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        messagesCount: messages.length,
+        loading: false,
+        messageInputHeight: 22,
+        composerContextualOffset: 0,
+        isMessageInputMultiline: false,
+        pendingComposerAttachmentsCount: 0,
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        editingMessageId: null,
+        focusMessageComposer: vi.fn(),
+        markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+        messagesContainerRef,
+        messagesContentRef,
+        messagesEndRef,
+        composerContainerRef,
+        chatHeaderContainerRef,
+        messageBubbleRefs,
+      })
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    scrollTo.mockClear();
+
+    contentHeight = 820;
+    endMarkerContentTop = 820;
+    scrollHeight = 912;
+
+    act(() => {
+      resizeObserverCallbacks.get(messagesContent)?.([], {} as ResizeObserver);
+      vi.runAllTimers();
+    });
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      behavior: 'auto',
+      top: 512,
+    });
+    expect(scrollTop).toBe(512);
+
+    unmount();
+  });
+
   it('keeps the latest bubble visible while composer resize finishes settling', () => {
     const messagesContainer = document.createElement('div');
     const messagesEnd = document.createElement('div');

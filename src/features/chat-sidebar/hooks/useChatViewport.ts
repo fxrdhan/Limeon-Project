@@ -36,6 +36,7 @@ interface UseChatViewportProps {
   focusMessageComposer: () => void;
   markMessageIdsAsRead: (messageIds: string[]) => Promise<void>;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
+  messagesContentRef?: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   composerContainerRef: RefObject<HTMLDivElement | null>;
   chatHeaderContainerRef: RefObject<HTMLDivElement | null>;
@@ -62,6 +63,7 @@ export const useChatViewport = ({
   focusMessageComposer,
   markMessageIdsAsRead,
   messagesContainerRef,
+  messagesContentRef,
   messagesEndRef,
   composerContainerRef,
   chatHeaderContainerRef,
@@ -133,6 +135,7 @@ export const useChatViewport = ({
     composerContainerHeight,
     getVisibleMessagesBounds,
     messagesContainerRef,
+    messagesContentRef,
     messagesEndRef,
     scheduleVisibleUnreadReadReceipts,
   });
