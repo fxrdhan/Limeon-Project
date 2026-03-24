@@ -85,19 +85,14 @@ const buildCopyableChatAssetRequest = (
   const normalizedUrl = url.trim();
   const storagePath =
     storagePathHint?.trim() || extractChatStoragePath(normalizedUrl);
-  const targetUrl = storagePath ? null : normalizedUrl || null;
-
-  if (!storagePath && !targetUrl) {
+  if (!storagePath) {
     return null;
   }
 
   return {
     normalizedUrl,
-    storagePath: storagePath || null,
-    targetUrl,
-    requestKey: storagePath
-      ? `storage:${storagePath}`
-      : `target:${targetUrl || normalizedUrl}`,
+    storagePath,
+    requestKey: `storage:${storagePath}`,
   };
 };
 
@@ -145,11 +140,9 @@ const ensureCopyableChatSharedLink = async (
         ? {
             messageId: normalizedMessageId,
           }
-        : request.storagePath
-          ? { storagePath: request.storagePath }
-          : {
-              targetUrl: request.targetUrl || request.normalizedUrl,
-            }
+        : {
+            storagePath: request.storagePath,
+          }
     );
 
     const shortUrl = sharedLinkResult.data?.shortUrl?.trim() || null;
@@ -361,8 +354,8 @@ export const resolveCopyableChatAssetUrl = async (
   const request = buildCopyableChatAssetRequest(normalizedUrl, storagePathHint);
   const storagePath = request?.storagePath ?? null;
 
-  if (!storagePath && !normalizedUrl) {
-    return normalizedUrl || null;
+  if (!storagePath) {
+    return isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null;
   }
 
   const shortUrl = await ensureCopyableChatSharedLink(

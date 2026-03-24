@@ -295,6 +295,7 @@ export const useChatComposer = ({
   }, [isTargetMultiline]);
 
   return {
+    linkPrompt: attachments.linkPrompt,
     message,
     setMessage,
     editingMessageId,

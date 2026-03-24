@@ -10,6 +10,10 @@ export type ChatMessageRow = ChatTableRow<'chat_messages'>;
 export type ChatMessageInsertRow = ChatTableInsert<'chat_messages'>;
 export type ChatMessageUpdateRow = ChatTableUpdate<'chat_messages'>;
 
+export type ChatSharedLinkRow = ChatTableRow<'chat_shared_links'>;
+export type ChatSharedLinkInsertRow = ChatTableInsert<'chat_shared_links'>;
+export type ChatSharedLinkUpdateRow = ChatTableUpdate<'chat_shared_links'>;
+
 export type UserPresenceRow = ChatTableRow<'user_presence'>;
 export type UserPresenceInsertRow = ChatTableInsert<'user_presence'>;
 export type UserPresenceUpdateRow = ChatTableUpdate<'user_presence'>;
@@ -45,6 +49,11 @@ export type FetchChatMessagesPageRpcArgs =
   ChatFunctionArgs<'fetch_chat_messages_page'>;
 export type FetchChatMessagesPageRpcReturn =
   ChatFunctionReturn<'fetch_chat_messages_page'>;
+
+export type GenerateChatSharedLinkSlugRpcArgs =
+  ChatFunctionArgs<'generate_chat_shared_link_slug'>;
+export type GenerateChatSharedLinkSlugRpcReturn =
+  ChatFunctionReturn<'generate_chat_shared_link_slug'>;
 
 export type ListActiveUserPresenceSinceRpcArgs =
   ChatFunctionArgs<'list_active_user_presence_since'>;

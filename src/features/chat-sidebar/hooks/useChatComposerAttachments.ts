@@ -363,6 +363,7 @@ export const useChatComposerAttachments = ({
   }, [closeAttachModal, isAttachModalOpen]);
 
   return {
+    linkPrompt,
     isAttachModalOpen,
     pendingComposerAttachments,
     composerAttachmentPreviewItems,

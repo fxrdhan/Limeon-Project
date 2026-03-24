@@ -107,7 +107,7 @@ export const useComposerAttachmentLinkPrompt = ({
       ? (hoverableAttachmentCandidates[0]?.url ?? null)
       : null;
   const isAttachmentPastePromptShortenable =
-    Boolean(attachmentPastePrompt?.url) &&
+    Boolean(extractChatStoragePath(attachmentPastePrompt?.url ?? '')) &&
     !isChatSharedLinkUrl(attachmentPastePrompt?.url ?? '');
 
   const clearAttachmentPasteState = useCallback(() => {
@@ -324,14 +324,16 @@ export const useComposerAttachmentLinkPrompt = ({
 
     const promptState = attachmentPastePrompt;
     const storagePath = extractChatStoragePath(promptState.url)?.trim();
+    if (!storagePath) {
+      toast.error('Hanya link attachment chat yang bisa dipendekkan', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+      return;
+    }
 
-    const sharedLinkResult = await chatSidebarShareGateway.createSharedLink(
-      storagePath
-        ? { storagePath }
-        : {
-            targetUrl: promptState.url,
-          }
-    );
+    const sharedLinkResult = await chatSidebarShareGateway.createSharedLink({
+      storagePath,
+    });
     const shortUrl = sharedLinkResult.data?.shortUrl?.trim() || null;
 
     if (!shortUrl) {

@@ -1,4 +1,4 @@
-// Generated from the Supabase chat schema on 2026-03-11.
+// Generated from the Supabase chat schema on 2026-03-24.
 // Refresh this file from Supabase whenever the chat contract changes.
 
 export interface ChatDatabase {
@@ -75,6 +75,41 @@ export interface ChatDatabase {
           reply_to_id?: string | null;
           sender_id?: string;
           shared_link_slug?: string | null;
+          updated_at?: string;
+        };
+      };
+      chat_shared_links: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: string;
+          last_accessed_at: string | null;
+          message_id: string | null;
+          revoked_at: string | null;
+          slug: string;
+          storage_path: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          last_accessed_at?: string | null;
+          message_id?: string | null;
+          revoked_at?: string | null;
+          slug: string;
+          storage_path: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          last_accessed_at?: string | null;
+          message_id?: string | null;
+          revoked_at?: string | null;
+          slug?: string;
+          storage_path?: string;
           updated_at?: string;
         };
       };
@@ -214,6 +249,10 @@ export interface ChatDatabase {
           p_target_user_id: string;
         };
         Returns: ChatDatabase['public']['Tables']['chat_messages']['Row'][];
+      };
+      generate_chat_shared_link_slug: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
       };
       mark_chat_message_ids_as_delivered: {
         Args: { p_message_ids: string[] };

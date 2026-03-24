@@ -137,18 +137,15 @@ export interface ChatForwardMessageResponse {
 export interface ChatSharedLinkCreateRequest {
   messageId?: string;
   storagePath?: string;
-  targetUrl?: string;
 }
 
 export interface ChatSharedLinkCreateRequestPayload {
   messageId?: string;
   storagePath?: string;
-  targetUrl?: string;
 }
 
 export interface ChatSharedLinkResponse {
   slug: string;
   shortUrl: string;
   storagePath?: string | null;
-  targetUrl?: string | null;
 }

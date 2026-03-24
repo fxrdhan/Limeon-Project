@@ -26,11 +26,13 @@ export interface ComposerPanelModel {
   };
   attachments: {
     isAttachModalOpen: boolean;
-    attachmentPastePromptUrl: string | null;
-    isAttachmentPastePromptAttachmentCandidate: boolean;
-    isAttachmentPastePromptShortenable: boolean;
-    hoverableAttachmentCandidates: ComposerHoverableAttachmentCandidate[];
-    hoverableAttachmentUrl: string | null;
+    linkPrompt: {
+      url: string | null;
+      isAttachmentCandidate: boolean;
+      isShortenable: boolean;
+      hoverableCandidates: ComposerHoverableAttachmentCandidate[];
+      hoverableUrl: string | null;
+    };
     pendingComposerAttachments: ComposerAttachmentPreviewItem[];
     previewComposerImageAttachment: PendingComposerAttachment | undefined;
     isComposerImageExpanded: boolean;

@@ -47,7 +47,6 @@ describe('chatLinkService', () => {
         shortUrl:
           'https://example.supabase.co/functions/v1/chat-link/abc123xyzt',
         storagePath: 'images/channel/image.png',
-        targetUrl: null,
       },
       error: null,
     });
@@ -80,40 +79,6 @@ describe('chatLinkService', () => {
         message: 'Unauthorized',
         name: 'FunctionsHttpError',
       },
-    });
-  });
-
-  it('creates a shared link for a generic target url', async () => {
-    mockInvoke.mockResolvedValue({
-      data: {
-        slug: 'link234xyz',
-        shortUrl:
-          'https://example.supabase.co/functions/v1/chat-link/link234xyz',
-        targetUrl: 'https://www.kaggle.com/datasets/sample',
-      },
-      error: null,
-    });
-
-    const { chatLinkService } = await import('./link.service');
-
-    const result = await chatLinkService.createSharedLink({
-      targetUrl: 'https://www.kaggle.com/datasets/sample',
-    });
-
-    expect(mockInvoke).toHaveBeenCalledWith('chat-link', {
-      body: {
-        targetUrl: 'https://www.kaggle.com/datasets/sample',
-      },
-    });
-    expect(result).toEqual({
-      data: {
-        slug: 'link234xyz',
-        shortUrl:
-          'https://example.supabase.co/functions/v1/chat-link/link234xyz',
-        storagePath: null,
-        targetUrl: 'https://www.kaggle.com/datasets/sample',
-      },
-      error: null,
     });
   });
 

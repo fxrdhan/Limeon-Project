@@ -68,8 +68,6 @@ export const chatLinkService = {
             typeof payload.storagePath === 'string'
               ? payload.storagePath
               : null,
-          targetUrl:
-            typeof payload.targetUrl === 'string' ? payload.targetUrl : null,
         },
         error: null,
       };

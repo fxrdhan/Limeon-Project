@@ -56,7 +56,7 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
     left: number;
   } | null>(null);
   const composerLinkOverlaySegments = buildComposerLinkOverlaySegments({
-    candidates: attachments.hoverableAttachmentCandidates,
+    candidates: attachments.linkPrompt.hoverableCandidates,
     message: state.message,
   });
   const shouldRenderComposerLinkOverlay =
@@ -183,9 +183,9 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
   }, [clearAttachmentPromptCloseTimer]);
 
   useEffect(() => {
-    if (attachments.attachmentPastePromptUrl) return;
+    if (attachments.linkPrompt.url) return;
     setAttachmentPromptPosition(null);
-  }, [attachments.attachmentPastePromptUrl]);
+  }, [attachments.linkPrompt.url]);
 
   const contextualPanelTransition = {
     duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
@@ -355,13 +355,13 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
 
             <ComposerLinkPromptPopover
               isOpen={Boolean(
-                attachments.attachmentPastePromptUrl && attachmentPromptPosition
+                attachments.linkPrompt.url && attachmentPromptPosition
               )}
               position={attachmentPromptPosition}
               isAttachmentCandidate={
-                attachments.isAttachmentPastePromptAttachmentCandidate
+                attachments.linkPrompt.isAttachmentCandidate
               }
-              isShortenable={attachments.isAttachmentPastePromptShortenable}
+              isShortenable={attachments.linkPrompt.isShortenable}
               promptRef={refs.attachmentPastePromptRef}
               onCopyLink={actions.onCopyAttachmentPastePromptLink}
               onMouseEnter={clearAttachmentPromptCloseTimer}

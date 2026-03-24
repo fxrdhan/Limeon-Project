@@ -91,27 +91,29 @@ const buildComposerModel = (): ComposerPanelModel => ({
   },
   attachments: {
     isAttachModalOpen: false,
-    attachmentPastePromptUrl: null,
-    isAttachmentPastePromptAttachmentCandidate: false,
-    isAttachmentPastePromptShortenable: false,
-    hoverableAttachmentCandidates: [
-      {
-        id: 'candidate-1',
-        url: 'https://shrtlink.works/bwdrrk3ugm',
-        pastedText: 'https://shrtlink.works/bwdrrk3ugm',
-        rangeStart: 0,
-        rangeEnd: 33,
-      },
-      {
-        id: 'candidate-2',
-        url: 'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
-        pastedText:
-          'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
-        rangeStart: 38,
-        rangeEnd: 120,
-      },
-    ],
-    hoverableAttachmentUrl: null,
+    linkPrompt: {
+      url: null,
+      isAttachmentCandidate: false,
+      isShortenable: false,
+      hoverableCandidates: [
+        {
+          id: 'candidate-1',
+          url: 'https://shrtlink.works/bwdrrk3ugm',
+          pastedText: 'https://shrtlink.works/bwdrrk3ugm',
+          rangeStart: 0,
+          rangeEnd: 33,
+        },
+        {
+          id: 'candidate-2',
+          url: 'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
+          pastedText:
+            'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
+          rangeStart: 38,
+          rangeEnd: 120,
+        },
+      ],
+      hoverableUrl: null,
+    },
     pendingComposerAttachments: [],
     previewComposerImageAttachment: undefined,
     isComposerImageExpanded: false,
@@ -264,7 +266,7 @@ describe('ComposerPanel', () => {
     fireEvent.mouseEnter(links[0]);
 
     expect(model.actions.onOpenAttachmentPastePrompt).toHaveBeenCalledWith(
-      model.attachments.hoverableAttachmentCandidates[0]
+      model.attachments.linkPrompt.hoverableCandidates[0]
     );
   });
 
@@ -294,7 +296,7 @@ describe('ComposerPanel', () => {
     fireEvent.click(firstLink, { detail: 1 });
 
     expect(model.actions.onEditAttachmentLink).toHaveBeenCalledWith(
-      model.attachments.hoverableAttachmentCandidates[0],
+      model.attachments.linkPrompt.hoverableCandidates[0],
       {
         selectionStart: 8,
         selectionEnd: 8,
@@ -305,10 +307,9 @@ describe('ComposerPanel', () => {
 
   it('renders the attachment link popover without shorten action for shared links', () => {
     const model = buildComposerModel();
-    model.attachments.attachmentPastePromptUrl =
-      'https://shrtlink.works/bwdrrk3ugm';
-    model.attachments.isAttachmentPastePromptAttachmentCandidate = true;
-    model.attachments.isAttachmentPastePromptShortenable = false;
+    model.attachments.linkPrompt.url = 'https://shrtlink.works/bwdrrk3ugm';
+    model.attachments.linkPrompt.isAttachmentCandidate = true;
+    model.attachments.linkPrompt.isShortenable = false;
 
     render(<ComposerPanel model={model} />);
 
@@ -353,7 +354,7 @@ describe('ComposerPanel', () => {
   it('renders plain message domains without a protocol as inline links', () => {
     const model = buildComposerModel();
     model.state.message = 'github.com';
-    model.attachments.hoverableAttachmentCandidates = [];
+    model.attachments.linkPrompt.hoverableCandidates = [];
 
     render(<ComposerPanel model={model} />);
 
@@ -374,12 +375,11 @@ describe('ComposerPanel', () => {
     expect(model.actions.onOpenAttachmentPastePrompt).not.toHaveBeenCalled();
   });
 
-  it('renders the generic link popover without paste-as actions', () => {
+  it('renders the generic link popover without shorten or paste-as actions', () => {
     const model = buildComposerModel();
     model.state.message = 'github.com';
-    model.attachments.hoverableAttachmentCandidates = [];
-    model.attachments.attachmentPastePromptUrl = 'https://github.com/';
-    model.attachments.isAttachmentPastePromptShortenable = true;
+    model.attachments.linkPrompt.hoverableCandidates = [];
+    model.attachments.linkPrompt.url = 'https://github.com/';
 
     render(<ComposerPanel model={model} />);
 
@@ -405,7 +405,7 @@ describe('ComposerPanel', () => {
     expect(screen.getByText('Aksi')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Shorten link' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Shorten link' })).toBeNull();
     expect(screen.queryByText('Tempel sebagai')).toBeNull();
     expect(screen.queryByRole('button', { name: 'URL' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Attachment' })).toBeNull();
@@ -415,10 +415,10 @@ describe('ComposerPanel', () => {
     const model = buildComposerModel();
     model.state.message =
       'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
-    model.attachments.hoverableAttachmentCandidates = [];
-    model.attachments.attachmentPastePromptUrl =
+    model.attachments.linkPrompt.hoverableCandidates = [];
+    model.attachments.linkPrompt.url =
       'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
-    model.attachments.isAttachmentPastePromptShortenable = true;
+    model.attachments.linkPrompt.isShortenable = true;
 
     render(<ComposerPanel model={model} />);
 
@@ -450,8 +450,8 @@ describe('ComposerPanel', () => {
   it('keeps the hovered link node stable when paste-as actions become available', () => {
     const initialModel = buildComposerModel();
     initialModel.state.message = 'github.com';
-    initialModel.attachments.hoverableAttachmentCandidates = [];
-    initialModel.attachments.attachmentPastePromptUrl = 'https://github.com/';
+    initialModel.attachments.linkPrompt.hoverableCandidates = [];
+    initialModel.attachments.linkPrompt.url = 'https://github.com/';
 
     const { rerender } = render(<ComposerPanel model={initialModel} />);
 
@@ -478,9 +478,9 @@ describe('ComposerPanel', () => {
 
     const upgradedModel = buildComposerModel();
     upgradedModel.state.message = 'github.com';
-    upgradedModel.attachments.attachmentPastePromptUrl = 'https://github.com/';
-    upgradedModel.attachments.isAttachmentPastePromptAttachmentCandidate = true;
-    upgradedModel.attachments.hoverableAttachmentCandidates = [
+    upgradedModel.attachments.linkPrompt.url = 'https://github.com/';
+    upgradedModel.attachments.linkPrompt.isAttachmentCandidate = true;
+    upgradedModel.attachments.linkPrompt.hoverableCandidates = [
       {
         id: 'candidate-github',
         url: 'https://github.com/',

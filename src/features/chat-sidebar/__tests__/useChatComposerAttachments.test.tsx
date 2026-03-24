@@ -1125,7 +1125,7 @@ describe('useChatComposerAttachments', () => {
     expect(result.current.isAttachmentPastePromptShortenable).toBe(false);
   });
 
-  it('shortens a generic external link through targetUrl', async () => {
+  it('does not shorten a generic external link', async () => {
     const messageInput = document.createElement('textarea');
     const genericUrl =
       'https://www.kaggle.com/datasets/grandmaster07/student-exam-performance-dataset-analysis/data';
@@ -1154,14 +1154,20 @@ describe('useChatComposerAttachments', () => {
       });
     });
 
+    expect(result.current.isAttachmentPastePromptShortenable).toBe(false);
+
     await act(async () => {
       await result.current.handleShortenAttachmentPastePromptLink();
     });
 
-    expect(mockChatSidebarShareGateway.createSharedLink).toHaveBeenCalledWith({
-      targetUrl: genericUrl,
-    });
-    expect(result.current.message).toBe('https://shrtlink.works/abc123xyzt');
+    expect(mockChatSidebarShareGateway.createSharedLink).not.toHaveBeenCalled();
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Hanya link attachment chat yang bisa dipendekkan',
+      {
+        toasterId: 'chat-sidebar-toaster',
+      }
+    );
+    expect(result.current.message).toBe(genericUrl);
   });
 
   it('uses a collapsed selection when the composer provides a clicked caret position', async () => {

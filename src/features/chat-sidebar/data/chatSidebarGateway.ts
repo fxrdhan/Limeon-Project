@@ -202,7 +202,6 @@ export const chatSidebarShareGateway = {
   createSharedLink(request: {
     messageId?: string;
     storagePath?: string;
-    targetUrl?: string;
   }): Promise<ServiceResponse<ChatSharedLinkResult>> {
     return chatLinkService.createSharedLink(request);
   },

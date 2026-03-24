@@ -17,13 +17,16 @@ const buildComposerPanelAttachmentsModel = (
   runtime: ChatSidebarRuntimeState
 ): ComposerPanelModel['attachments'] => ({
   isAttachModalOpen: runtime.composer.isAttachModalOpen,
-  attachmentPastePromptUrl: runtime.composer.attachmentPastePromptUrl,
-  isAttachmentPastePromptAttachmentCandidate:
-    runtime.composer.isAttachmentPastePromptAttachmentCandidate,
-  isAttachmentPastePromptShortenable:
-    runtime.composer.isAttachmentPastePromptShortenable,
-  hoverableAttachmentCandidates: runtime.composer.hoverableAttachmentCandidates,
-  hoverableAttachmentUrl: runtime.composer.hoverableAttachmentUrl,
+  linkPrompt: {
+    url: runtime.composer.linkPrompt.attachmentPastePromptUrl,
+    isAttachmentCandidate:
+      runtime.composer.linkPrompt.isAttachmentPastePromptAttachmentCandidate,
+    isShortenable:
+      runtime.composer.linkPrompt.isAttachmentPastePromptShortenable,
+    hoverableCandidates:
+      runtime.composer.linkPrompt.hoverableAttachmentCandidates,
+    hoverableUrl: runtime.composer.linkPrompt.hoverableAttachmentUrl,
+  },
   pendingComposerAttachments: [
     ...runtime.composer.composerAttachmentPreviewItems,
   ],

@@ -97,7 +97,6 @@ describe('message-file utils', () => {
         slug: 'stak234abc',
         shortUrl: 'https://shrtlink.works/stak234abc',
         storagePath: 'documents/channel/stok.xlsx',
-        targetUrl: null,
       },
       error: null,
     });
