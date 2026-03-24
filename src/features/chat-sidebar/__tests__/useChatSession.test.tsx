@@ -148,6 +148,11 @@ describe('useChatSession', () => {
       channel: null,
       onlineUsers: 0,
       onlineUsersList: [],
+      presenceSyncHealth: {
+        status: 'idle',
+        errorMessage: null,
+        lastSyncedAt: null,
+      },
     });
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
@@ -643,6 +648,100 @@ describe('useChatSession', () => {
     });
 
     expect(result.current.isTargetOnline).toBe(true);
+  });
+
+  it('polls target presence snapshots while the roster channel is unavailable', async () => {
+    vi.useFakeTimers();
+    try {
+      const initialMessageAnimationKeysRef = { current: new Set<string>() };
+      const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+      mockChatService.getUserPresence.mockResolvedValue({
+        data: {
+          user_id: targetUser.id,
+          is_online: true,
+          last_seen: new Date().toISOString(),
+        },
+        error: null,
+      });
+
+      renderHook(() =>
+        useChatSession({
+          isOpen: true,
+          user: currentUser,
+          targetUser,
+          currentChannelId: 'channel-1',
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        })
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000);
+        await Promise.resolve();
+      });
+
+      expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('polls target presence snapshots while presence sync is degraded', async () => {
+    vi.useFakeTimers();
+    try {
+      const initialMessageAnimationKeysRef = { current: new Set<string>() };
+      const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+      usePresenceStore.setState({
+        channel: {} as never,
+        onlineUsers: 1,
+        onlineUsersList: [],
+        presenceSyncHealth: {
+          status: 'degraded',
+          errorMessage: 'sync lag',
+          lastSyncedAt: null,
+        },
+      });
+      mockChatService.getUserPresence.mockResolvedValue({
+        data: {
+          user_id: targetUser.id,
+          is_online: false,
+          last_seen: '2026-03-06T09:55:00.000Z',
+        },
+        error: null,
+      });
+
+      renderHook(() =>
+        useChatSession({
+          isOpen: true,
+          user: currentUser,
+          targetUser,
+          currentChannelId: 'channel-1',
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        })
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_000);
+        await Promise.resolve();
+      });
+
+      expect(mockChatService.getUserPresence).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('expires the fallback presence snapshot after the freshness window elapses', async () => {

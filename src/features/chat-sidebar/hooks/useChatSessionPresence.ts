@@ -1,6 +1,7 @@
 import type { UserDetails } from '@/types/database';
 import { usePresenceStore } from '@/store/presenceStore';
 import {
+  PRESENCE_HEARTBEAT_MS,
   getPresenceFreshnessRemainingMs,
   isPresenceFresh,
 } from '@/hooks/presence/presenceStatus';
@@ -115,6 +116,33 @@ export const useChatSessionPresence = ({
       window.clearTimeout(timeoutId);
     };
   }, [isOpen, targetUserPresence]);
+
+  useEffect(() => {
+    const shouldPollTargetPresenceSnapshot =
+      isOpen &&
+      Boolean(user && targetUser && currentChannelId) &&
+      (!hasPresenceRosterChannel || presenceSyncHealth.status === 'degraded');
+
+    if (!shouldPollTargetPresenceSnapshot) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadTargetUserPresenceSnapshot();
+    }, PRESENCE_HEARTBEAT_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    currentChannelId,
+    hasPresenceRosterChannel,
+    isOpen,
+    loadTargetUserPresenceSnapshot,
+    presenceSyncHealth.status,
+    targetUser,
+    user,
+  ]);
 
   const isTargetOnline =
     isOpen && targetUser

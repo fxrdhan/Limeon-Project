@@ -1,105 +1,97 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { usePresenceDirectoryStore } from '@/store/presenceDirectoryStore';
 import { usePresenceStore } from '@/store/presenceStore';
-import { usersService } from '@/services/api/users.service';
 import type { OnlineUser } from '@/types';
 import { mergePresenceUsers, moveCurrentUserToEdge } from './roster';
 
-const DIRECTORY_PAGE_SIZE = 30;
 const DIRECTORY_CACHE_MAX_AGE_MS = 60_000;
-
-const EMPTY_USERS: OnlineUser[] = [];
-
-const mergeDirectoryUsers = (
-  previousUsers: OnlineUser[],
-  nextUsers: OnlineUser[]
-) => {
-  const mergedUsersById = new Map(previousUsers.map(user => [user.id, user]));
-  nextUsers.forEach(user => {
-    mergedUsersById.set(user.id, user);
-  });
-
-  return [...mergedUsersById.values()];
-};
+const EMPTY_DIRECTORY_USERS: OnlineUser[] = [];
 
 export const usePresenceRoster = (shouldLoadDirectory = false) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
-  const [directoryUsers, setDirectoryUsers] = useState(EMPTY_USERS);
-  const [isDirectoryLoading, setIsDirectoryLoading] = useState(false);
-  const [directoryError, setDirectoryError] = useState<string | null>(null);
-  const [hasMoreDirectoryUsers, setHasMoreDirectoryUsers] = useState(true);
-  const lastDirectoryLoadedAtRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!user?.id) {
-      lastDirectoryLoadedAtRef.current = null;
-      setDirectoryUsers(EMPTY_USERS);
-      setDirectoryError(null);
-      setIsDirectoryLoading(false);
-      setHasMoreDirectoryUsers(true);
-    }
-  }, [user?.id]);
-
-  const loadDirectoryPage = useCallback(
-    async (reset = false) => {
-      if (!user?.id || isDirectoryLoading) {
-        return;
-      }
-
-      if (!reset && !hasMoreDirectoryUsers) {
-        return;
-      }
-
-      setIsDirectoryLoading(true);
-      setDirectoryError(null);
-      try {
-        const { data, error } = await usersService.getUsersPage(
-          DIRECTORY_PAGE_SIZE,
-          reset ? 0 : directoryUsers.length
-        );
-
-        if (error || !data) {
-          setDirectoryError('Gagal memuat daftar pengguna');
-          return;
-        }
-
-        lastDirectoryLoadedAtRef.current = Date.now();
-        setDirectoryError(null);
-        setHasMoreDirectoryUsers(data.hasMore);
-        setDirectoryUsers(previousUsers =>
-          reset ? data.users : mergeDirectoryUsers(previousUsers, data.users)
-        );
-      } catch (error) {
-        console.error('Error loading chat user directory:', error);
-        setDirectoryError('Gagal memuat daftar pengguna');
-      } finally {
-        setIsDirectoryLoading(false);
-      }
-    },
-    [directoryUsers.length, hasMoreDirectoryUsers, isDirectoryLoading, user?.id]
+  const activeDirectoryOwnerUserId = user?.id ?? null;
+  const directoryOwnerUserId = usePresenceDirectoryStore(
+    state => state.ownerUserId
   );
+  const directoryUsers = usePresenceDirectoryStore(
+    state => state.directoryUsers
+  );
+  const isDirectoryLoading = usePresenceDirectoryStore(
+    state => state.isDirectoryLoading
+  );
+  const directoryError = usePresenceDirectoryStore(
+    state => state.directoryError
+  );
+  const hasMoreDirectoryUsers = usePresenceDirectoryStore(
+    state => state.hasMoreDirectoryUsers
+  );
+  const lastDirectoryLoadedAt = usePresenceDirectoryStore(
+    state => state.lastDirectoryLoadedAt
+  );
+  const hasAttemptedDirectoryLoad = usePresenceDirectoryStore(
+    state => state.hasAttemptedDirectoryLoad
+  );
+  const resetDirectoryState = usePresenceDirectoryStore(
+    state => state.resetDirectoryState
+  );
+  const loadDirectoryPage = usePresenceDirectoryStore(
+    state => state.loadDirectoryPage
+  );
+  const isActiveDirectoryOwner =
+    directoryOwnerUserId === activeDirectoryOwnerUserId;
+  const resolvedDirectoryUsers = isActiveDirectoryOwner
+    ? directoryUsers
+    : EMPTY_DIRECTORY_USERS;
+  const resolvedIsDirectoryLoading = isActiveDirectoryOwner
+    ? isDirectoryLoading
+    : false;
+  const resolvedDirectoryError = isActiveDirectoryOwner ? directoryError : null;
+  const resolvedHasMoreDirectoryUsers = isActiveDirectoryOwner
+    ? hasMoreDirectoryUsers
+    : true;
+  const resolvedLastDirectoryLoadedAt = isActiveDirectoryOwner
+    ? lastDirectoryLoadedAt
+    : null;
+  const resolvedHasAttemptedDirectoryLoad = isActiveDirectoryOwner
+    ? hasAttemptedDirectoryLoad
+    : false;
 
   useEffect(() => {
-    if (!shouldLoadDirectory || !user?.id || isDirectoryLoading) {
+    if (directoryOwnerUserId !== activeDirectoryOwnerUserId) {
+      resetDirectoryState(activeDirectoryOwnerUserId);
+    }
+  }, [activeDirectoryOwnerUserId, directoryOwnerUserId, resetDirectoryState]);
+
+  useEffect(() => {
+    if (
+      !shouldLoadDirectory ||
+      !activeDirectoryOwnerUserId ||
+      resolvedIsDirectoryLoading
+    ) {
       return;
     }
 
     const isDirectoryStale =
-      lastDirectoryLoadedAtRef.current === null ||
-      Date.now() - lastDirectoryLoadedAtRef.current >
-        DIRECTORY_CACHE_MAX_AGE_MS;
-    if (!isDirectoryStale && directoryUsers.length > 0) {
+      resolvedLastDirectoryLoadedAt !== null &&
+      Date.now() - resolvedLastDirectoryLoadedAt > DIRECTORY_CACHE_MAX_AGE_MS;
+
+    if (
+      resolvedHasAttemptedDirectoryLoad &&
+      (resolvedLastDirectoryLoadedAt === null || !isDirectoryStale)
+    ) {
       return;
     }
 
-    void loadDirectoryPage(true);
+    void loadDirectoryPage(activeDirectoryOwnerUserId, true);
   }, [
-    directoryUsers.length,
-    isDirectoryLoading,
+    activeDirectoryOwnerUserId,
     loadDirectoryPage,
+    resolvedHasAttemptedDirectoryLoad,
+    resolvedIsDirectoryLoading,
+    resolvedLastDirectoryLoadedAt,
     shouldLoadDirectory,
-    user?.id,
   ]);
 
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
@@ -125,23 +117,24 @@ export const usePresenceRoster = (shouldLoadDirectory = false) => {
   const portalOrderedUsers = useMemo(
     () =>
       moveCurrentUserToEdge(
-        mergePresenceUsers(onlineUsersList, directoryUsers),
-        user?.id,
+        mergePresenceUsers(onlineUsersList, resolvedDirectoryUsers),
+        activeDirectoryOwnerUserId ?? undefined,
         'start'
       ),
-    [directoryUsers, onlineUsersList, user?.id]
+    [activeDirectoryOwnerUserId, onlineUsersList, resolvedDirectoryUsers]
   );
 
   const retryLoadDirectory = useCallback(() => {
-    lastDirectoryLoadedAtRef.current = null;
-    setDirectoryError(null);
-    setHasMoreDirectoryUsers(true);
-    setDirectoryUsers(EMPTY_USERS);
-  }, []);
+    resetDirectoryState(activeDirectoryOwnerUserId);
+  }, [activeDirectoryOwnerUserId, resetDirectoryState]);
 
   const loadMoreDirectoryUsers = useCallback(() => {
-    void loadDirectoryPage(false);
-  }, [loadDirectoryPage]);
+    if (!activeDirectoryOwnerUserId) {
+      return;
+    }
+
+    void loadDirectoryPage(activeDirectoryOwnerUserId, false);
+  }, [activeDirectoryOwnerUserId, loadDirectoryPage]);
 
   return {
     displayOnlineUsers,
@@ -149,9 +142,9 @@ export const usePresenceRoster = (shouldLoadDirectory = false) => {
     onlineUsersList,
     reorderedOnlineUsers,
     portalOrderedUsers,
-    isDirectoryLoading,
-    directoryError,
-    hasMoreDirectoryUsers,
+    isDirectoryLoading: resolvedIsDirectoryLoading,
+    directoryError: resolvedDirectoryError,
+    hasMoreDirectoryUsers: resolvedHasMoreDirectoryUsers,
     retryLoadDirectory,
     loadMoreDirectoryUsers,
   };
