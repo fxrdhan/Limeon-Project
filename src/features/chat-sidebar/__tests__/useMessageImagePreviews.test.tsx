@@ -268,4 +268,33 @@ describe('useMessageImagePreviews', () => {
       'https://example.com/images/direct-preview.png'
     );
   });
+
+  it('does not activate a null channel scope when the sidebar closes', () => {
+    const message = createMessage();
+    const props = createHookProps([message]);
+    const initialProps: { currentChannelId: string | null } = {
+      currentChannelId: 'dm_user-a_user-b',
+    };
+
+    const { rerender } = renderHook(
+      ({ currentChannelId }: { currentChannelId: string | null }) =>
+        useMessageImagePreviews({
+          ...props,
+          currentChannelId,
+        }),
+      {
+        initialProps,
+      }
+    );
+
+    rerender({
+      currentChannelId: null,
+    });
+
+    expect(mockActivateChannelImageAssetScope).toHaveBeenCalledTimes(1);
+    expect(mockActivateChannelImageAssetScope).toHaveBeenCalledWith(
+      'dm_user-a_user-b'
+    );
+    expect(mockActivateChannelImageAssetScope).not.toHaveBeenCalledWith(null);
+  });
 });

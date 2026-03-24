@@ -15,7 +15,10 @@ import {
   applyConversationSnapshot,
   mergeLatestConversationPageWithExisting,
 } from '../utils/conversation-sync';
-import { isCacheableChannelImageMessage } from '../utils/channel-image-asset-cache';
+import {
+  isCacheableChannelImageMessage,
+  loadCachedChannelImageAssetUrl,
+} from '../utils/channel-image-asset-cache';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import { resolveChatAssetUrl } from '../utils/message-file';
 import {
@@ -24,6 +27,8 @@ import {
 } from './useChatConversationRealtime';
 
 const INITIAL_IMAGE_PREVIEW_PRIME_LIMIT = 12;
+const INITIAL_CACHED_IMAGE_ASSET_PRIME_LIMIT = 8;
+const INITIAL_CACHED_IMAGE_ASSET_PRIME_TIMEOUT_MS = 80;
 
 interface UseChatConversationInitialLoadProps {
   isOpen: boolean;
@@ -156,6 +161,39 @@ export const useChatConversationInitialLoad = ({
         );
       };
 
+      const primeRecentCachedImageAssets = async (messages: ChatMessage[]) => {
+        const normalizedChannelId = currentChannelId?.trim() || null;
+        if (!normalizedChannelId) {
+          return;
+        }
+
+        const recentCacheableMessages = [...messages]
+          .reverse()
+          .filter(messageItem => isCacheableChannelImageMessage(messageItem))
+          .slice(0, INITIAL_CACHED_IMAGE_ASSET_PRIME_LIMIT);
+        if (recentCacheableMessages.length === 0) {
+          return;
+        }
+
+        await Promise.race([
+          Promise.all(
+            recentCacheableMessages.map(messageItem =>
+              loadCachedChannelImageAssetUrl(
+                normalizedChannelId,
+                messageItem.id,
+                'full'
+              ).catch(() => null)
+            )
+          ),
+          new Promise(resolve => {
+            window.setTimeout(
+              resolve,
+              INITIAL_CACHED_IMAGE_ASSET_PRIME_TIMEOUT_MS
+            );
+          }),
+        ]);
+      };
+
       const cachedConversation =
         chatRuntimeCache.conversation.getFreshEntry(currentChannelId);
       const hasCachedConversation = Boolean(cachedConversation);
@@ -211,7 +249,8 @@ export const useChatConversationInitialLoad = ({
         }
 
         if (!hasCachedConversation) {
-          await primeRecentImagePreviewUrls(existingMessagesPage.messages);
+          await primeRecentCachedImageAssets(existingMessagesPage.messages);
+          void primeRecentImagePreviewUrls(existingMessagesPage.messages);
         }
 
         const transformedMessages = hasCachedConversation
@@ -296,7 +335,7 @@ export const useChatConversationInitialLoad = ({
           )
           .map(messageItem => messageItem.id);
 
-        await markMessageIdsAsDelivered(
+        void markMessageIdsAsDelivered(
           undeliveredIncomingMessageIds,
           sessionToken
         );

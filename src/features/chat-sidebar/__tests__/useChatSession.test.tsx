@@ -32,6 +32,9 @@ const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
 const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
   mockResolveChatAssetUrl: vi.fn(),
 }));
+const { mockLoadCachedChannelImageAssetUrl } = vi.hoisted(() => ({
+  mockLoadCachedChannelImageAssetUrl: vi.fn(),
+}));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
@@ -50,6 +53,15 @@ vi.mock('../utils/message-file', async () => {
   return {
     ...actual,
     resolveChatAssetUrl: mockResolveChatAssetUrl,
+  };
+});
+
+vi.mock('../utils/channel-image-asset-cache', async () => {
+  const actual = await vi.importActual('../utils/channel-image-asset-cache');
+
+  return {
+    ...actual,
+    loadCachedChannelImageAssetUrl: mockLoadCachedChannelImageAssetUrl,
   };
 });
 
@@ -143,6 +155,7 @@ describe('useChatSession', () => {
       error: null,
     });
     mockResolveChatAssetUrl.mockResolvedValue(null);
+    mockLoadCachedChannelImageAssetUrl.mockResolvedValue(null);
     mockChatService.updateUserPresence.mockResolvedValue({
       data: [
         {
@@ -250,6 +263,109 @@ describe('useChatSession', () => {
     });
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(1);
+    });
+  });
+
+  it('primes recent cached image blobs before the first uncached snapshot render', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [
+        buildMessage({
+          id: 'image-cached',
+          message: 'images/channel/image-cached.png',
+          message_type: 'image',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/image-cached.png',
+          file_preview_url: 'previews/channel/image-cached.fit-v2.webp',
+        }),
+      ],
+      error: null,
+    });
+
+    renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockLoadCachedChannelImageAssetUrl).toHaveBeenCalledWith(
+        'channel-1',
+        'image-cached',
+        'full'
+      );
+    });
+  });
+
+  it('does not block initial conversation render on preview priming or delivered receipts', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    let resolvePreviewUrl: ((value: string | null) => void) | undefined;
+    let resolveDelivered:
+      | ((value: { data: ChatMessage[]; error: null }) => void)
+      | undefined;
+
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [
+        buildMessage({
+          id: 'image-delayed',
+          sender_id: 'user-b',
+          receiver_id: currentUser.id,
+          message: 'images/channel/image-delayed.png',
+          message_type: 'image',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/image-delayed.png',
+          file_preview_url: 'previews/channel/image-delayed.fit-v2.webp',
+          is_delivered: false,
+        }),
+      ],
+      error: null,
+    });
+    mockResolveChatAssetUrl.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolvePreviewUrl = resolve;
+        })
+    );
+    mockChatService.markMessageIdsAsDelivered.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveDelivered = resolve;
+        })
+    );
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.loading).toBe(false);
+    });
+
+    await act(async () => {
+      resolvePreviewUrl?.(
+        'https://signed.example/previews/channel/image-delayed.fit-v2.webp'
+      );
+      resolveDelivered?.({
+        data: [],
+        error: null,
+      });
+      await Promise.resolve();
     });
   });
 

@@ -277,9 +277,13 @@ export const useMessageImagePreviews = ({
   }, [prefetchVisibleImageAssets, resolveVisibleImagePreviewAssetUrls]);
 
   useEffect(() => {
-    void activateChannelImageAssetScope(currentChannelId);
     setResolvedPreviewAssetUrlsByMessageId({});
     setResolvedFullAssetUrlsByMessageId({});
+    if (!currentChannelId?.trim()) {
+      return;
+    }
+
+    void activateChannelImageAssetScope(currentChannelId);
   }, [currentChannelId]);
 
   useEffect(() => {
